@@ -2636,6 +2636,9 @@ function refreshAutoTotals(fields, idOf){
 function xlsxCol(n){ let s=''; while(n>0){ const m=(n-1)%26; s=String.fromCharCode(65+m)+s; n=Math.floor((n-1)/26); } return s; }
 /* Bangun peta: index kolom (1-based) untuk tiap key field dalam sebuah daftar fields. */
 function fieldColMap(fields){ const m={}; fields.forEach((f,i)=>{ m[f.key]=i+1; }); return m; }
+/* Kolom yang WAJIB berformat teks di Excel agar angka depan (mis. 0 pada 083x) & format NPWP tidak berubah. */
+const FORCE_TEXT_KEYS = ['no_telp_pic','npwp','no_telp'];
+function isForceTextKey(key){ return FORCE_TEXT_KEYS.includes(key); }
 /* Terapkan rumus otomatis (Barang + Jasa) ke sel total pada baris data Excel.
    ws: worksheet ExcelJS; fields: daftar field terurut sesuai kolom; rowNum: nomor baris data. */
 function applyExcelAutoFormula(ws, fields, colMap, rowNum){
@@ -3085,6 +3088,7 @@ async function downloadTemplate(){
     const c=idx+1;
     if(f.type==='date'){ for(let r=2;r<=251;r++) wsD.getCell(r,c).numFmt='dd-mm-yyyy'; }
     if(f.type==='num'){  for(let r=2;r<=251;r++){ wsD.getCell(r,c).numFmt='"Rp"#,##0'; wsD.getCell(r,c).alignment={vertical:'middle',horizontal:'right'}; } }
+    if(isForceTextKey(f.key)){ for(let r=2;r<=251;r++) wsD.getCell(r,c).numFmt='@'; }
   });
 
   // --- Sheet Opsi (sumber dropdown, disembunyikan) ---
@@ -3179,6 +3183,7 @@ async function exportExcel(){
       cell.border = allBorder;
       cell.alignment = {vertical:'middle'};
       if(COLS[c-1].type==='num' && typeof cell.value==='number') cell.numFmt = /_total_tanpa_ppn$/.test(COLS[c-1].key) ? '"Rp"#,##0' : '#,##0';
+      if(isForceTextKey(COLS[c-1].key)) cell.numFmt='@';
       if(r%2===1) cell.fill = {type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F7F8'}};
     }
   }
@@ -3959,6 +3964,7 @@ async function downloadTemplatePl(){
   COLS.forEach((f,idx)=>{ const c=idx+1;
     if(f.type==='date'){ for(let r=2;r<=251;r++) wsD.getCell(r,c).numFmt='dd-mm-yyyy'; }
     if(f.type==='num'){ for(let r=2;r<=251;r++){ wsD.getCell(r,c).numFmt='"Rp"#,##0'; wsD.getCell(r,c).alignment={vertical:'middle',horizontal:'right'}; } }
+    if(isForceTextKey(f.key)){ for(let r=2;r<=251;r++) wsD.getCell(r,c).numFmt='@'; }
   });
   // #12: Harga Total (Tanpa PPN) diisi manual sebagai nilai (tanpa rumus). Format currency Rupiah tanpa desimal sudah diterapkan di atas.
 
@@ -4015,7 +4021,7 @@ async function exportExcelPl(){
   const allBorder={top:thin,left:thin,bottom:thin,right:thin};
   const headRow=ws.getRow(1); headRow.height=32;
   for(let c=1;c<=COLS.length;c++){ const cell=ws.getCell(1,c); cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0E7C86'}}; cell.font={bold:true,color:{argb:'FFFFFFFF'},size:11}; cell.alignment={wrapText:true,vertical:'middle',horizontal:'center'}; cell.border=allBorder; }
-  for(let r=2;r<=rows.length+1;r++){ for(let c=1;c<=COLS.length;c++){ const cell=ws.getCell(r,c); cell.border=allBorder; cell.alignment={vertical:'middle'}; if(COLS[c-1].type==='num' && typeof cell.value==='number') cell.numFmt=/_total_tanpa_ppn$/.test(COLS[c-1].key)?'"Rp"#,##0':'#,##0'; if(r%2===1) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F7F8'}}; } }
+  for(let r=2;r<=rows.length+1;r++){ for(let c=1;c<=COLS.length;c++){ const cell=ws.getCell(r,c); cell.border=allBorder; cell.alignment={vertical:'middle'}; if(COLS[c-1].type==='num' && typeof cell.value==='number') cell.numFmt=/_total_tanpa_ppn$/.test(COLS[c-1].key)?'"Rp"#,##0':'#,##0'; if(isForceTextKey(COLS[c-1].key)) cell.numFmt='@'; if(r%2===1) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F7F8'}}; } }
   try{
     const buf=await wb.xlsx.writeBuffer();
     const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
@@ -4957,6 +4963,7 @@ async function downloadTemplateTender(){
   COLS.forEach((f,idx)=>{ const c=idx+1;
     if(f.type==='date'){ for(let r=2;r<=251;r++) wsD.getCell(r,c).numFmt='dd-mm-yyyy'; }
     if(f.type==='num'){ for(let r=2;r<=251;r++){ wsD.getCell(r,c).numFmt='"Rp"#,##0'; wsD.getCell(r,c).alignment={vertical:'middle',horizontal:'right'}; } }
+    if(isForceTextKey(f.key)){ for(let r=2;r<=251;r++) wsD.getCell(r,c).numFmt='@'; }
   });
   // #12: Harga Total (Tanpa PPN) diisi manual sebagai nilai (tanpa rumus). Format currency Rupiah tanpa desimal.
   const colMapTdT=fieldColMap(COLS);
@@ -5027,7 +5034,7 @@ async function exportExcelTender(){
   const allBorder={top:thin,left:thin,bottom:thin,right:thin};
   const headRow=ws.getRow(1); headRow.height=34;
   for(let c=1;c<=COLS.length;c++){ const cell=ws.getCell(1,c); const fld=COLS[c-1]; const pp=isStackKey(fld.key); cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:pp?'FF0E9E8E':'FF0E7C86'}}; cell.font={bold:true,color:{argb:'FFFFFFFF'},size:11}; cell.alignment={wrapText:true,vertical:'middle',horizontal:'center'}; cell.border=allBorder; }
-  for(let r=2;r<=rows.length+1;r++){ for(let c=1;c<=COLS.length;c++){ const cell=ws.getCell(r,c); const fld=COLS[c-1]; const pp=isStackKey(fld.key); cell.border=allBorder; cell.alignment=pp?{wrapText:true,vertical:'top'}:{vertical:'middle'}; if(fld.type==='num' && typeof cell.value==='number') cell.numFmt=/_total_tanpa_ppn$/.test(fld.key)?'"Rp"#,##0':'#,##0'; if(r%2===1) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F7F8'}}; } }
+  for(let r=2;r<=rows.length+1;r++){ for(let c=1;c<=COLS.length;c++){ const cell=ws.getCell(r,c); const fld=COLS[c-1]; const pp=isStackKey(fld.key); cell.border=allBorder; cell.alignment=pp?{wrapText:true,vertical:'top'}:{vertical:'middle'}; if(fld.type==='num' && typeof cell.value==='number') cell.numFmt=/_total_tanpa_ppn$/.test(fld.key)?'"Rp"#,##0':'#,##0'; if(isForceTextKey(fld.key)) cell.numFmt='@'; if(r%2===1) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F7F8'}}; } }
   try{
     const buf=await wb.xlsx.writeBuffer();
     const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
