@@ -2343,6 +2343,7 @@ function enterApp(role){
   document.getElementById('topbar-user').style.display='flex';
   resetLoginForm();
   showView('dashboard');
+  startIdleTimer();   // mulai hitung mundur auto-logout 5 menit idle
 }
 function applyRole(role){
   document.querySelectorAll('.topnav-link[data-role], .topnav-item[data-role], .btn[data-role]').forEach(l=>{
@@ -2373,6 +2374,7 @@ function applyRole(role){
   renderTableTender();
 }
 function performLogout(){
+  stopIdleTimer();   // hentikan pemantauan idle
   const anim=document.getElementById('logout-anim');
   const finish=()=>{
     try{ sessionStorage.removeItem(ROLE_KEY); sessionStorage.removeItem(USER_KEY); }catch(e){}
@@ -2399,6 +2401,38 @@ function logout(){
     text:'Apakah anda yakin ingin keluar?',
     onYes:performLogout
   });
+}
+
+/* ============ AUTO LOGOUT (IDLE 5 MENIT) ============ */
+const IDLE_LIMIT_MS = 5 * 60 * 1000;   // 5 menit tanpa aktivitas
+let _idleTimer = null;
+let _idleListenersBound = false;
+const _idleActivityEvents = ['mousemove','mousedown','keydown','touchstart','touchmove','scroll','wheel','click'];
+function _onIdleTimeout(){
+  // Hanya berlaku bila masih ada sesi login yang aktif
+  if(!currentRole) return;
+  stopIdleTimer();
+  try{ closeConfirm(); }catch(e){}
+  toast('Sesi berakhir otomatis karena tidak ada aktivitas selama 5 menit','warn');
+  performLogout();
+}
+function _resetIdleTimer(){
+  if(!currentRole) return;            // jangan jalan saat belum login
+  if(_idleTimer) clearTimeout(_idleTimer);
+  _idleTimer = setTimeout(_onIdleTimeout, IDLE_LIMIT_MS);
+}
+function startIdleTimer(){
+  if(!_idleListenersBound){
+    _idleActivityEvents.forEach(ev=>document.addEventListener(ev, _resetIdleTimer, {passive:true}));
+    // Aktivitas di tab lain / kembali fokus juga dihitung sebagai aktivitas
+    window.addEventListener('focus', _resetIdleTimer);
+    document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) _resetIdleTimer(); });
+    _idleListenersBound = true;
+  }
+  _resetIdleTimer();
+}
+function stopIdleTimer(){
+  if(_idleTimer){ clearTimeout(_idleTimer); _idleTimer=null; }
 }
 
 /* ============ NAVIGATION ============ */
