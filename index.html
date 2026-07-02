@@ -406,11 +406,10 @@ td.cell-center{text-align:center}
 .modal-actions .btn{flex:1;justify-content:center;padding:13px;border-radius:12px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13.5px;font-weight:700;letter-spacing:.3px;transition:transform .14s ease,box-shadow .18s ease,filter .18s ease}
 .modal-actions .btn:hover{transform:translateY(-1px);filter:brightness(1.03)}
 .modal-actions .btn:active{transform:translateY(0) scale(.99)}
-/* Konfirmasi (Hapus/Simpan/Keluar/Batalkan): dua opsi ikon di kanan bawah —
-   Ya = checklist (hijau), Tidak = X (merah). */
-#confirm-overlay .modal-actions{justify-content:flex-end;gap:14px;padding:16px 30px 26px}
-#confirm-overlay .modal-actions .btn.cf-icon{flex:0 0 auto;width:52px;height:52px;min-width:0;padding:0;border-radius:50%;display:grid;place-items:center}
-#confirm-overlay .modal-actions .btn.cf-icon svg{width:25px;height:25px}
+/* Konfirmasi (Hapus/Simpan/Keluar/Batalkan): dua opsi teks kecil di kanan bawah —
+   Ya (hijau) dan Tidak (merah). */
+#confirm-overlay .modal-actions{justify-content:flex-end;gap:10px;padding:14px 26px 22px}
+#confirm-overlay .modal-actions .btn.cf-icon{flex:0 0 auto;min-width:0;width:auto;padding:7px 16px;border-radius:9px;font-size:12px;font-weight:700;letter-spacing:.3px}
 
 /* detail modal */
 .modal.wide{max-width:720px}
@@ -1746,12 +1745,8 @@ tbody tr{animation:rowIn .3s ease both}
       <p id="confirm-text"></p>
     </div>
     <div class="modal-actions">
-      <button class="btn btn-green cf-icon" id="confirm-yes" title="Ya" aria-label="Ya">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-      </button>
-      <button class="btn btn-red cf-icon" onclick="closeConfirm()" title="Tidak" aria-label="Tidak">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-      </button>
+      <button class="btn btn-green cf-icon" id="confirm-yes" title="Ya" aria-label="Ya">Ya</button>
+      <button class="btn btn-red cf-icon" onclick="closeConfirm()" title="Tidak" aria-label="Tidak">Tidak</button>
     </div>
   </div>
 </div>
