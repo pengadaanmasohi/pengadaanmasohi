@@ -2046,41 +2046,28 @@ function cleanForDb(rec){
 /* ============ STORE: Supabase atau localStorage ============ */
 const Store = {
   async list(){
-    if(USE_SUPABASE){
-      const {data,error}=await db.from(TABLE).select('*').order('created_at',{ascending:false});
-      if(error) throw error;
-      return (data||[]).map(r=>{
-        FIELDS.forEach(f=>{ if(f.type==='num'&&r[f.key]!=null) r[f.key]=Number(r[f.key]); if(r[f.key]==null)r[f.key]=''; });
-        return r;
-      });
-    }else{
-      try{ const raw=localStorage.getItem(STORE); if(raw){const d=JSON.parse(raw); seq=d.seq||1; return d.records||[];} }catch(e){}
-      const s=seedSamples(); lsPersist(s); return s;
-    }
+    const {data,error}=await db.from(TABLE).select('*').order('created_at',{ascending:false});
+    if(error) throw error;
+    return (data||[]).map(r=>{
+      FIELDS.forEach(f=>{ if(f.type==='num'&&r[f.key]!=null) r[f.key]=Number(r[f.key]); if(r[f.key]==null)r[f.key]=''; });
+      return r;
+    });
   },
   async create(rec){
-    if(USE_SUPABASE){
-      const {data,error}=await db.from(TABLE).insert(cleanForDb(rec)).select();
-      if(error) throw error; return data[0];
-    }else{ rec.id=id(); records.unshift(rec); lsPersist(records); return rec; }
+    const {data,error}=await db.from(TABLE).insert(cleanForDb(rec)).select();
+    if(error) throw error; return data[0];
   },
   async bulkCreate(arr){
-    if(USE_SUPABASE){
-      const {data,error}=await db.from(TABLE).insert(arr.map(cleanForDb)).select();
-      if(error) throw error; return data;
-    }else{ arr.forEach(r=>{ r.id=id(); records.unshift(r); }); lsPersist(records); return arr; }
+    const {data,error}=await db.from(TABLE).insert(arr.map(cleanForDb)).select();
+    if(error) throw error; return data;
   },
   async update(rid,rec){
-    if(USE_SUPABASE){
-      const {error}=await db.from(TABLE).update(cleanForDb(rec)).eq('id',rid);
-      if(error) throw error;
-    }else{ const i=records.findIndex(r=>r.id===rid); if(i>-1)records[i]={...records[i],...rec}; lsPersist(records); }
+    const {error}=await db.from(TABLE).update(cleanForDb(rec)).eq('id',rid);
+    if(error) throw error;
   },
   async remove(rid){
-    if(USE_SUPABASE){
-      const {error}=await db.from(TABLE).delete().eq('id',rid);
-      if(error) throw error;
-    }else{ records=records.filter(r=>r.id!==rid); lsPersist(records); }
+    const {error}=await db.from(TABLE).delete().eq('id',rid);
+    if(error) throw error;
   }
 };
 function lsPersist(arr){ try{ localStorage.setItem(STORE, JSON.stringify({records:arr,seq})); }catch(e){} }
@@ -3259,7 +3246,7 @@ let records_pl = [];
 let editingIdPl = null;
 let plReturnView = 'dashboard';
 let seqPl = 1;
-let useSupaPl = false;                      // Pengadaan Langsung disimpan di data lokal HTML (tanpa tabel Supabase baru)
+let useSupaPl = USE_SUPABASE;               // Pengadaan Langsung disimpan di Supabase (tabel: pengadaan_langsung)
 function idPl(){ return 'p'+(seqPl++)+'_'+Date.now().toString(36); }
 function plInputId(key){ return 'pl_'+key; }
 
@@ -3281,42 +3268,21 @@ function lsPersistPl(arr){ try{ localStorage.setItem(STORE_PL, JSON.stringify({r
 
 const Store_PL = {
   async list(){
-    if(useSupaPl){
-      try{
-        const {data,error}=await db.from(TABLE_PL).select('*').order('created_at',{ascending:false});
-        if(error) throw error;
-        return (data||[]).map(r=>{ FIELDS_PL.forEach(f=>{ if(f.type==='num'&&r[f.key]!=null)r[f.key]=Number(r[f.key]); if(r[f.key]==null)r[f.key]=''; }); return r; });
-      }catch(err){ useSupaPl=false; toast('Tabel "pengadaan_langsung" belum ada di Supabase — memakai penyimpanan lokal','warn'); }
-    }
-    return lsListPl();
+    const {data,error}=await db.from(TABLE_PL).select('*').order('created_at',{ascending:false});
+    if(error) throw error;
+    return (data||[]).map(r=>{ FIELDS_PL.forEach(f=>{ if(f.type==='num'&&r[f.key]!=null)r[f.key]=Number(r[f.key]); if(r[f.key]==null)r[f.key]=''; }); return r; });
   },
   async create(rec){
-    if(useSupaPl){
-      try{ const {data,error}=await db.from(TABLE_PL).insert(cleanForDbPl(rec)).select(); if(error) throw error; return data[0]; }
-      catch(err){ useSupaPl=false; toast('Gagal simpan ke Supabase — memakai lokal: '+errMsg(err),'warn'); }
-    }
-    rec.id=idPl(); records_pl.unshift(rec); lsPersistPl(records_pl); return rec;
+    const {data,error}=await db.from(TABLE_PL).insert(cleanForDbPl(rec)).select(); if(error) throw error; return data[0];
   },
   async bulkCreate(arr){
-    if(useSupaPl){
-      try{ const {data,error}=await db.from(TABLE_PL).insert(arr.map(cleanForDbPl)).select(); if(error) throw error; return data; }
-      catch(err){ useSupaPl=false; toast('Gagal impor ke Supabase — memakai lokal','warn'); }
-    }
-    arr.forEach(r=>{ r.id=idPl(); records_pl.unshift(r); }); lsPersistPl(records_pl); return arr;
+    const {data,error}=await db.from(TABLE_PL).insert(arr.map(cleanForDbPl)).select(); if(error) throw error; return data;
   },
   async update(rid,rec){
-    if(useSupaPl){
-      try{ const {error}=await db.from(TABLE_PL).update(cleanForDbPl(rec)).eq('id',rid); if(error) throw error; return; }
-      catch(err){ useSupaPl=false; toast('Gagal ubah di Supabase — memakai lokal','warn'); }
-    }
-    const i=records_pl.findIndex(r=>r.id===rid); if(i>-1)records_pl[i]={...records_pl[i],...rec}; lsPersistPl(records_pl);
+    const {error}=await db.from(TABLE_PL).update(cleanForDbPl(rec)).eq('id',rid); if(error) throw error;
   },
   async remove(rid){
-    if(useSupaPl){
-      try{ const {error}=await db.from(TABLE_PL).delete().eq('id',rid); if(error) throw error; return; }
-      catch(err){ useSupaPl=false; toast('Gagal hapus di Supabase — memakai lokal','warn'); }
-    }
-    records_pl=records_pl.filter(r=>r.id!==rid); lsPersistPl(records_pl);
+    const {error}=await db.from(TABLE_PL).delete().eq('id',rid); if(error) throw error;
   }
 };
 
@@ -3330,7 +3296,7 @@ function seedSamplesPl(){
 
 async function refreshDataPl(){
   try{ records_pl = await Store_PL.list(); }
-  catch(err){ console.error(err); records_pl = records_pl||[]; }
+  catch(err){ console.error(err); records_pl = records_pl||[]; toast('Gagal memuat data Pengadaan Langsung dari Supabase: '+errMsg(err),'err'); }
   renderTablePl();
   if(document.getElementById('dash-filter-jenis')?.value==='pl') renderDashboard();
 }
@@ -4354,7 +4320,7 @@ let records_tender = [];
 let editingIdTender = null;
 let tenderReturnView = 'dashboard';
 let seqTender = 1;
-let useSupaTender = false;
+let useSupaTender = USE_SUPABASE;
 function idTender(){ return 't'+(seqTender++)+'_'+Date.now().toString(36); }
 function tenderInputId(key){ return 't_'+key; }
 
@@ -4366,6 +4332,10 @@ function cleanForDbTender(rec){
     if(f.type==='num' && v!=null && v!=='') v=Number(v);
     o[f.key]=v;
   });
+  // Simpan struktur multi-penyedia & field multi-nilai sebagai JSON (kolom jsonb)
+  o.penyedia_layers = Array.isArray(rec.penyedia_layers) ? rec.penyedia_layers : null;
+  o.bidang_sub_bidang_list = Array.isArray(rec.bidang_sub_bidang_list) ? rec.bidang_sub_bidang_list : null;
+  o.no_sppbj_list = Array.isArray(rec.no_sppbj_list) ? rec.no_sppbj_list : null;
   return o;
 }
 function lsListTender(){
@@ -4376,42 +4346,27 @@ function lsPersistTender(arr){ try{ localStorage.setItem(STORE_TENDER, JSON.stri
 
 const Store_TENDER = {
   async list(){
-    if(useSupaTender){
-      try{
-        const {data,error}=await db.from(TABLE_TENDER).select('*').order('created_at',{ascending:false});
-        if(error) throw error;
-        return (data||[]).map(r=>{ FIELDS_TENDER.forEach(f=>{ if(f.type==='num'&&r[f.key]!=null)r[f.key]=Number(r[f.key]); if(r[f.key]==null)r[f.key]=''; }); return r; });
-      }catch(err){ useSupaTender=false; toast('Tabel "tender" belum ada di Supabase — memakai penyimpanan lokal','warn'); }
-    }
-    return lsListTender();
+    const {data,error}=await db.from(TABLE_TENDER).select('*').order('created_at',{ascending:false});
+    if(error) throw error;
+    return (data||[]).map(r=>{
+      FIELDS_TENDER.forEach(f=>{ if(f.type==='num'&&r[f.key]!=null)r[f.key]=Number(r[f.key]); if(r[f.key]==null)r[f.key]=''; });
+      if(!Array.isArray(r.penyedia_layers)) r.penyedia_layers = r.penyedia_layers || undefined;
+      if(r.bidang_sub_bidang_list==null) delete r.bidang_sub_bidang_list;
+      if(r.no_sppbj_list==null) delete r.no_sppbj_list;
+      return r;
+    });
   },
   async create(rec){
-    if(useSupaTender){
-      try{ const {data,error}=await db.from(TABLE_TENDER).insert(cleanForDbTender(rec)).select(); if(error) throw error; return data[0]; }
-      catch(err){ useSupaTender=false; toast('Gagal simpan ke Supabase — memakai lokal: '+errMsg(err),'warn'); }
-    }
-    rec.id=idTender(); records_tender.unshift(rec); lsPersistTender(records_tender); return rec;
+    const {data,error}=await db.from(TABLE_TENDER).insert(cleanForDbTender(rec)).select(); if(error) throw error; return data[0];
   },
   async bulkCreate(arr){
-    if(useSupaTender){
-      try{ const {data,error}=await db.from(TABLE_TENDER).insert(arr.map(cleanForDbTender)).select(); if(error) throw error; return data; }
-      catch(err){ useSupaTender=false; toast('Gagal impor ke Supabase — memakai lokal','warn'); }
-    }
-    arr.forEach(r=>{ r.id=idTender(); records_tender.unshift(r); }); lsPersistTender(records_tender); return arr;
+    const {data,error}=await db.from(TABLE_TENDER).insert(arr.map(cleanForDbTender)).select(); if(error) throw error; return data;
   },
   async update(rid,rec){
-    if(useSupaTender){
-      try{ const {error}=await db.from(TABLE_TENDER).update(cleanForDbTender(rec)).eq('id',rid); if(error) throw error; return; }
-      catch(err){ useSupaTender=false; toast('Gagal ubah di Supabase — memakai lokal','warn'); }
-    }
-    const i=records_tender.findIndex(r=>r.id===rid); if(i>-1)records_tender[i]={...records_tender[i],...rec}; lsPersistTender(records_tender);
+    const {error}=await db.from(TABLE_TENDER).update(cleanForDbTender(rec)).eq('id',rid); if(error) throw error;
   },
   async remove(rid){
-    if(useSupaTender){
-      try{ const {error}=await db.from(TABLE_TENDER).delete().eq('id',rid); if(error) throw error; return; }
-      catch(err){ useSupaTender=false; toast('Gagal hapus di Supabase — memakai lokal','warn'); }
-    }
-    records_tender=records_tender.filter(r=>r.id!==rid); lsPersistTender(records_tender);
+    const {error}=await db.from(TABLE_TENDER).delete().eq('id',rid); if(error) throw error;
   }
 };
 
@@ -4429,7 +4384,7 @@ function seedSamplesTender(){
 
 async function refreshDataTender(){
   try{ records_tender = await Store_TENDER.list(); }
-  catch(err){ console.error(err); records_tender = records_tender||[]; }
+  catch(err){ console.error(err); records_tender = records_tender||[]; toast('Gagal memuat data Tender dari Supabase: '+errMsg(err),'err'); }
   renderTableTender();
   if(document.getElementById('dash-filter-jenis')?.value==='tender') renderDashboard();
 }
