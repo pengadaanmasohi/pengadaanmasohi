@@ -179,18 +179,19 @@ a{color:inherit}
 .filter-field{display:flex;flex-direction:column;gap:5px}
 .filter-field label{font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
 .filter-field select,.filter-field input{min-width:180px;max-width:180px}
-/* Monitoring: perkecil sedikit agar tombol Reset & Export sejajar satu baris dengan filter */
+/* Monitoring: perkecil sedikit agar tombol Reset & Hapus Semua sejajar satu baris dengan filter */
 .toolbar .filter-field select,.toolbar .filter-field input{min-width:158px;max-width:158px}
-.toolbar #filter-search,.toolbar #filter-pl-search,.toolbar #filter-tender-search{min-width:200px;max-width:260px}
-#filter-search,#filter-pl-search,#filter-tender-search{min-width:270px;max-width:270px}
+/* Kolom "Cari" diperlebar ~1,5x dari ukuran sebelumnya (200–260px → 300–390px) */
+.toolbar #filter-search,.toolbar #filter-pl-search,.toolbar #filter-tender-search{min-width:300px;max-width:390px}
+#filter-search,#filter-pl-search,#filter-tender-search{min-width:300px;max-width:390px}
 .toolbar .spacer{flex:0 0 0;width:0;margin:0}
-/* Cari + Reset/Export/Semua dikelompokkan pada satu baris.
-   Tanpa margin-left:auto agar jarak Tahun→Cari = gap antar-filter toolbar (10px). */
-.toolbar .toolbar-actions{display:flex;align-items:flex-end;gap:12px;flex-wrap:nowrap}
+/* Kolom Cari tetap mengalir bersama filter di kiri */
+.toolbar .toolbar-search{flex:0 1 auto}
+/* Reset & Hapus Semua didorong ke pojok kanan toolbar */
+.toolbar .toolbar-actions{display:flex;align-items:flex-end;gap:12px;flex-wrap:nowrap;margin-left:auto}
 .toolbar .toolbar-actions>.btn{margin:0;flex:0 0 auto}
-.toolbar .toolbar-actions .toolbar-search{flex:0 1 auto}
-/* Samakan ukuran tombol Reset & Export */
-.toolbar .toolbar-actions>.btn-red,.toolbar .toolbar-actions>.btn-green{min-width:118px;justify-content:center}
+/* Samakan ukuran tombol Reset & Hapus Semua */
+.toolbar .toolbar-actions>.btn-red,.toolbar .toolbar-actions>.btn-danger{min-width:118px;justify-content:center}
 select,input,textarea{font-family:'Inter';font-size:12px;padding:9px 11px;border:1px solid #cdd9de;border-radius:10px;background:linear-gradient(180deg,#ffffff,#fbfdfe);color:var(--ink);width:100%;transition:border .15s,box-shadow .15s,background .15s;box-shadow:0 1px 2px rgba(16,40,50,.05),inset 0 1px 0 rgba(255,255,255,.6)}
 select:hover,input:hover{border-color:#a7bec5;box-shadow:0 2px 6px rgba(16,40,50,.08),inset 0 1px 0 rgba(255,255,255,.6)}
 select:focus,input:focus,textarea:focus{outline:none;border-color:var(--teal);background:#fff;box-shadow:0 0 0 3px var(--teal-soft),0 3px 10px rgba(14,124,134,.16)}
@@ -218,12 +219,12 @@ th{background:linear-gradient(180deg,var(--teal),var(--teal-dark));font-weight:7
 tbody tr{transition:background .15s}
 tbody tr:nth-child(even){background:#f5f9fa}
 tbody tr:hover{background:var(--teal-soft)}
-td.wrap-cell{white-space:normal;min-width:270px}
+td.wrap-cell{white-space:normal;min-width:280px}
 td.wrap-penyedia{white-space:normal;min-width:225px}
 /* Kolom Bidang Pelaksana pada tabel monitoring: lebar tetap 200px, teks di-wrap (tidak melebar mengikuti isi) */
-th.col-bidang,td.col-bidang{width:210px;min-width:210px;max-width:210px;white-space:normal;word-break:break-word;overflow-wrap:break-word;line-height:1.3}
+th.col-bidang,td.col-bidang{width:200px;min-width:200px;max-width:200px;white-space:normal;word-break:break-word;overflow-wrap:break-word;line-height:1.3}
 /* Kolom Penyedia pada tabel monitoring: lebar tetap 210px, teks di-wrap */
-th.col-penyedia,td.col-penyedia{width:210px;min-width:210px;max-width:210px;white-space:normal;word-break:break-word;overflow-wrap:break-word;line-height:1.3}
+th.col-penyedia,td.col-penyedia{width:200px;min-width:200px;max-width:200px;white-space:normal;word-break:break-word;overflow-wrap:break-word;line-height:1.3}
 .stack-line{display:block;padding:2px 0;line-height:1.35}
 .stack-line+.stack-line{border-top:1px dashed var(--line);margin-top:2px}
 .stack-no{display:inline-block;min-width:16px;color:var(--teal-dark);font-weight:800;font-size:10px}
@@ -825,6 +826,19 @@ tbody.tbody-reveal>tr:nth-child(10){animation-delay:.29s}
 .field.locked input,.field.locked select{background:#f1f4f6;color:#9aa7ad;cursor:not-allowed;border-style:dashed}
 .field .lock-note{font-size:8.5px;color:#b08400;font-weight:600;display:none;align-items:center;gap:3px}
 .field.locked .lock-note{display:flex}
+/* "Data Terkunci" ditaruh menimpa (menutup total) area input — di TENGAH field,
+   bukan di atas label — sehingga placeholder "— Pilih —" & petunjuk pengisian tertimpa. */
+.field.locked{position:relative}
+.lock-overlay{display:none}
+.field.locked .lock-overlay{
+  display:flex;align-items:center;justify-content:center;gap:5px;
+  position:absolute;left:0;right:0;bottom:0;box-sizing:border-box;
+  line-height:18px;padding:10px 12px;
+  border:1px dashed #d3b25a;border-radius:11px;
+  background:linear-gradient(180deg,#f1f5f6,#eef3f4);
+  color:#b08400;font-weight:700;font-size:10.5px;letter-spacing:.2px;
+  white-space:nowrap;overflow:hidden;pointer-events:none;z-index:2}
+.field.locked .lock-overlay svg{width:11px;height:11px;flex:0 0 auto}
 
 /* ---- Penawaran Harga: layer multi-penyedia ---- */
 .pnw-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:-4px 0 14px;padding:8px 12px;background:linear-gradient(180deg,#f3fafb,#eef6f7);border:1px solid var(--line);border-radius:11px}
@@ -1055,8 +1069,8 @@ body.nav-open{overflow:hidden}
   .toolbar .spacer{display:none}
   .toolbar>.btn{flex:1 1 auto;justify-content:center}
   .toolbar .toolbar-actions{flex:1 1 100%;margin-left:0;gap:12px;flex-wrap:wrap}
-  .toolbar .toolbar-actions .toolbar-search{flex:1 1 100%}
-  .toolbar .toolbar-actions .toolbar-search input{min-width:0;max-width:none;width:100%}
+  .toolbar .toolbar-search{flex:1 1 100%}
+  .toolbar .toolbar-search input{min-width:0;max-width:none;width:100%}
   .toolbar .toolbar-actions>.btn{flex:1 1 auto;justify-content:center}
   #view-dashboard .page-head>div:last-child{width:100%;flex-wrap:wrap}
   #view-dashboard .filter-field{flex:1 1 100%}
@@ -1379,6 +1393,10 @@ tbody tr{animation:rowIn .3s ease both}
       <div>
         <h2>Daftar Kontrak Rinci <span class="count-badge" id="list-count">0</span></h2>
       </div>
+      <button class="btn btn-green" onclick="exportExcel()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9.2 12.5 4.6 5.5"/><path d="m13.8 12.5-4.6 5.5"/></svg>
+        Export Data
+      </button>
     </div>
 
     <!-- Filters + Export (satu baris) -->
@@ -1408,22 +1426,18 @@ tbody tr{animation:rowIn .3s ease both}
         <label>Tahun</label>
         <select id="filter-tahun" onchange="currentPage=1;renderTable()"><option value="">Semua Tahun</option></select>
       </div>
+      <div class="filter-field toolbar-search">
+        <label>Cari</label>
+        <input id="filter-search" type="text" placeholder="Cari No. SPBJ / Pekerjaan / Penyedia" oninput="currentPage=1;renderTable()">
+      </div>
       <div class="toolbar-actions">
-        <div class="filter-field toolbar-search">
-          <label>Cari</label>
-          <input id="filter-search" type="text" placeholder="Cari No. SPBJ / Pekerjaan / Penyedia" oninput="currentPage=1;renderTable()">
-        </div>
         <button class="btn btn-red" onclick="resetFilters()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
           Reset
         </button>
-        <button class="btn btn-green" onclick="exportExcel()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9.2 12.5 4.6 5.5"/><path d="m13.8 12.5-4.6 5.5"/></svg>
-          Export
-        </button>
-        <button class="btn btn-danger" data-role="admin" onclick="askDeleteAll()">
+        <button class="btn btn-danger" data-role="admin user" onclick="askDeleteAll()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6M14 11v6"/></svg>
-          Semua
+          Hapus Semua
         </button>
       </div>
     </div>
@@ -1508,6 +1522,10 @@ tbody tr{animation:rowIn .3s ease both}
       <div>
         <h2>Daftar Pengadaan Langsung <span class="count-badge" id="list-pl-count">0</span></h2>
       </div>
+      <button class="btn btn-green" onclick="exportExcelPl()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9.2 12.5 4.6 5.5"/><path d="m13.8 12.5-4.6 5.5"/></svg>
+        Export Data
+      </button>
     </div>
 
     <!-- Filters + Export (satu baris) -->
@@ -1538,22 +1556,18 @@ tbody tr{animation:rowIn .3s ease both}
         <label>Tahun</label>
         <select id="filter-pl-tahun" onchange="currentPagePl=1;renderTablePl()"><option value="">Semua Tahun</option></select>
       </div>
+      <div class="filter-field toolbar-search">
+        <label>Cari</label>
+        <input id="filter-pl-search" type="text" placeholder="Cari No. Kontrak / Pekerjaan / Penyedia" oninput="currentPagePl=1;renderTablePl()">
+      </div>
       <div class="toolbar-actions">
-        <div class="filter-field toolbar-search">
-          <label>Cari</label>
-          <input id="filter-pl-search" type="text" placeholder="Cari No. Kontrak / Pekerjaan / Penyedia" oninput="currentPagePl=1;renderTablePl()">
-        </div>
         <button class="btn btn-red" onclick="resetFiltersPl()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
           Reset
         </button>
-        <button class="btn btn-green" onclick="exportExcelPl()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9.2 12.5 4.6 5.5"/><path d="m13.8 12.5-4.6 5.5"/></svg>
-          Export
-        </button>
         <button class="btn btn-danger" data-role="admin" onclick="askDeleteAllPl()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6M14 11v6"/></svg>
-          Semua
+          Hapus Semua
         </button>
       </div>
     </div>
@@ -1639,6 +1653,10 @@ tbody tr{animation:rowIn .3s ease both}
       <div>
         <h2>Daftar Tender <span class="count-badge" id="list-tender-count">0</span></h2>
       </div>
+      <button class="btn btn-green" onclick="exportExcelTender()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9.2 12.5 4.6 5.5"/><path d="m13.8 12.5-4.6 5.5"/></svg>
+        Export Data
+      </button>
     </div>
 
     <!-- Filters + Export (satu baris) -->
@@ -1669,22 +1687,18 @@ tbody tr{animation:rowIn .3s ease both}
         <label>Tahun</label>
         <select id="filter-tender-tahun" onchange="currentPageTender=1;renderTableTender()"><option value="">Semua Tahun</option></select>
       </div>
+      <div class="filter-field toolbar-search">
+        <label>Cari</label>
+        <input id="filter-tender-search" type="text" placeholder="Cari No. Kontrak / Pekerjaan / Penyedia" oninput="currentPageTender=1;renderTableTender()">
+      </div>
       <div class="toolbar-actions">
-        <div class="filter-field toolbar-search">
-          <label>Cari</label>
-          <input id="filter-tender-search" type="text" placeholder="Cari No. Kontrak / Pekerjaan / Penyedia" oninput="currentPageTender=1;renderTableTender()">
-        </div>
         <button class="btn btn-red" onclick="resetFiltersTender()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
           Reset
         </button>
-        <button class="btn btn-green" onclick="exportExcelTender()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9.2 12.5 4.6 5.5"/><path d="m13.8 12.5-4.6 5.5"/></svg>
-          Export
-        </button>
         <button class="btn btn-danger" data-role="admin" onclick="askDeleteAllTender()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6M14 11v6"/></svg>
-          Semua
+          Hapus Semua
         </button>
       </div>
     </div>
@@ -2347,7 +2361,7 @@ function enterApp(role){
   document.getElementById('login-screen').style.display='none';
   document.getElementById('topbar-user').style.display='flex';
   resetLoginForm();
-  showView('dashboard');
+  showView('dashboard', null, true);   // #2: tanpa loader "Memuat" (hanya animasi selamat datang)
   startIdleTimer();   // mulai hitung mundur auto-logout 5 menit idle
 }
 function applyRole(role){
@@ -2489,11 +2503,24 @@ function revealTbody(tb){
 }
 
 let routeTimer=null;
-function showView(name, loaderMsg){
+/* #5: Kembalikan semua filter monitoring (Bidang, Status, Tahun, Cari) ke default
+   setiap kali pindah halaman. Hanya membersihkan nilai; render dilakukan oleh showView. */
+function resetAllFilters(){
+  ['filter-bidang','filter-status','filter-tahun','filter-search',
+   'filter-pl-bidang','filter-pl-tahapan','filter-pl-tahun','filter-pl-search',
+   'filter-tender-bidang','filter-tender-tahapan','filter-tender-tahun','filter-tender-search'
+  ].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  if(typeof currentPage!=='undefined') currentPage=1;
+  if(typeof currentPagePl!=='undefined') currentPagePl=1;
+  if(typeof currentPageTender!=='undefined') currentPageTender=1;
+}
+
+function showView(name, loaderMsg, noLoader){
   if(PYN_REG.pl.active && name!=='input-pl') exitPenyesuaianPl(); if(PYN_REG.kr.active && name!=='input') exitPenyesuaianKr(); if(PYN_REG.tender.active && name!=='input-tender') exitPenyesuaianTender();
   closeMobileNav();
   // Animasi "Memuat" halus pada setiap perpindahan halaman/menu
-  showLoader(loaderMsg||'Memuat');
+  // (#2: dilewati saat masuk dari login — cukup animasi "Selamat Datang").
+  if(!noLoader) showLoader(loaderMsg||'Memuat');
   const t0=Date.now();
   const doSwap=()=>{
     try{
@@ -2510,13 +2537,13 @@ function showView(name, loaderMsg){
           grp.classList.remove('open');
         });
         window.scrollTo({top:0,left:0,behavior:'smooth'});
+        resetAllFilters();   // #5: filter di-reset ke default setiap pindah halaman
         if(name==='dashboard') renderDashboard();
         if(name==='list') renderTable();
         if(name==='list-pl') renderTablePl();
         if(name==='list-tender') renderTableTender();
     }catch(err){ console.error('showView error:', err); }
-    const wait=Math.max(0, 460-(Date.now()-t0));
-    setTimeout(hideLoader, wait);
+    if(!noLoader){ const wait=Math.max(0, 460-(Date.now()-t0)); setTimeout(hideLoader, wait); }
   };
   requestAnimationFrame(()=>{ requestAnimationFrame(doSwap); });
 }
@@ -2671,7 +2698,7 @@ function askSave(){
   }
   openConfirm({
     icon:'save', title:'Simpan Data',
-    text:'Apakah anda yakin akan menyimpan data pekerjaan?',
+    text:'Apakah anda yakin ingin menyimpan data pekerjaan?',
     onYes:doSave
   });
 }
@@ -2718,9 +2745,10 @@ function askDelete(rid){
   });
 }
 
-/* HAPUS SEMUA (KR) — menghapus seluruh data pada tabel monitoring Kontrak Rinci */
+/* HAPUS SEMUA (KR) — menghapus seluruh data pada tabel monitoring Kontrak Rinci.
+   #1: akun user punya kontrol penuh di modul SPBJ/Kontrak, termasuk Hapus Semua. */
 function askDeleteAll(){
-  if(!requireAdmin()) return;
+  if(!requireInput()) return;
   if(!records || records.length===0){ toast('Tidak ada data untuk dihapus','warn'); return; }
   openConfirm({
     icon:'del', title:'Hapus Semua Data',
@@ -3118,7 +3146,7 @@ function renderDashboard(){
           <div class="card-ic" style="--ic:${c.c}">${cardIcon(c.k)}</div>
           <div class="k">${c.k}</div><div class="v" style="${c.vs||''}">${c.v}</div><div class="sub">${c.sub}</div>
         </div>`).join('');
-      nilaiRow.innerHTML = nilaiCards + efisiensiCardHTML(data);
+      nilaiRow.innerHTML = nilaiCards + efisiensiCardHTML(data, totHPS, nilai);
     }
   }
 
@@ -3129,25 +3157,20 @@ function renderDashboard(){
 }
 
 /* Kartu Efisiensi: Nilai Kontrak terhadap HPS (grafik batang % + penghematan Rp) */
-function efisiensiCardHTML(data){
-  let sKontrak=0, sHPS=0;
-  (data||[]).forEach(r=>{
-    const k=Number(r.kontrak_total_dengan_ppn)||0;
-    const h=dashHPS(r);
-    if(k>0&&h>0){ sKontrak+=k; sHPS+=h; }
-  });
+function efisiensiCardHTML(data, totHPS, nilaiPekerjaan){
+  const sHPS = Number(totHPS)||0;          // Nilai HPS (akumulasi, sesuai kartu Dashboard)
+  const sPek = Number(nilaiPekerjaan)||0;  // Nilai Pekerjaan (akumulasi nilai kontrak)
   if(sHPS<=0){
     return `<div class="card efisiensi-card"><div class="accent" style="background:var(--green)"></div>
       <div class="k">Efisiensi Kontrak vs HPS</div>
       <div class="eff-empty">Data belum tersedia.</div></div>`;
   }
-  const pctKontrak = sKontrak/sHPS*100;            // porsi kontrak terhadap HPS
-  const eff = Math.max(0, 100 - pctKontrak);       // % efisiensi
-  const hemat = Math.round(sHPS - sKontrak);        // penghematan (Rp)
-  const barW = Math.max(2, Math.min(100, eff));
+  const hemat = Math.round(sHPS - sPek);   // Rp Penghematan terhadap HPS = Nilai HPS − Nilai Pekerjaan
+  const pct = (sHPS - sPek) / sHPS * 100;  // Persentase = Penghematan / Nilai HPS × 100
+  const barW = Math.max(0, Math.min(100, pct));
   return `<div class="card efisiensi-card"><div class="accent" style="background:var(--green)"></div>
     <div class="k">Efisiensi Kontrak vs HPS</div>
-    <div class="eff-pct">${Math.round(eff)}<span>%</span></div>
+    <div class="eff-pct">${pct.toFixed(2)}<span>%</span></div>
     <div class="eff-bar"><div class="eff-bar-fill" style="width:${barW}%"></div></div>
     <div class="eff-rp">${rupiah(hemat)||'Rp 0'}<small>penghematan terhadap HPS</small></div>
   </div>`;
@@ -3709,7 +3732,7 @@ function askSavePl(){
     const key=dupKey(rec.no_kontrak);
     if(records_pl.some(r=>r.id!==editingIdPl && dupKey(r.no_kontrak)===key)){ toast('Data sudah ada','err'); return; }
   }
-  openConfirm({icon:'save',title:'Simpan Data',text:'Apakah anda yakin akan menyimpan data pekerjaan?',onYes:doSavePl});
+  openConfirm({icon:'save',title:'Simpan Data',text:'Apakah anda yakin ingin menyimpan data pekerjaan?',onYes:doSavePl});
 }
 async function doSavePl(){
   const rec=readFormPl();
@@ -4572,6 +4595,15 @@ const GROUPS_TENDER = [
   {title:'XVIII. CSMS', cols:3, pnw:true, keys:['csms_jenis_dokumen','csms_level_risiko','csms_tgl_terbit','csms_tgl_berakhir']},
   {title:'XIX. Data Lain-Lain', cols:3, keys:['norm_eproc','nama_material_jasa','nomor_pr','manajemen_kontrak']},
 ];
+/* #6: Field wajib Tender hanya untuk kelompok data I–II
+   (I. Informasi Pekerjaan & II. Nota Dinas Pengadaan). Field lain tidak wajib.
+   'tahun' dikecualikan karena dipindah ke baris judul (bukan field biasa). */
+(function(){
+  const reqKeys=new Set();
+  [0,1].forEach(i=>{ (GROUPS_TENDER[i] && GROUPS_TENDER[i].keys || []).forEach(k=>reqKeys.add(k)); });
+  reqKeys.delete('tahun');
+  FIELDS_TENDER.forEach(f=>{ f.req = reqKeys.has(f.key); });
+})();
 /* Snapshot tata letak awal Tender (untuk "Kembalikan ke Default") */
 const TENDER_SCHEMA_BASE = { fields: JSON.parse(JSON.stringify(FIELDS_TENDER)), groups: JSON.parse(JSON.stringify(GROUPS_TENDER)) };
 
@@ -4909,7 +4941,7 @@ function indepCellValue(rec,key){
 
 /* ---- Bangun form input Tender dari FIELDS_TENDER/GROUPS_TENDER ---- */
 const TENDER_SECTION_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>';
-const LOCK_NOTE='<span class="lock-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" style="width:10px;height:10px"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Data Terkunci</span>';
+const LOCK_NOTE='<span class="lock-overlay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Data Terkunci</span>';
 const AUTO_NOTE='<span class="lock-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" style="width:10px;height:10px"><path d="M5 12h14M12 5v14"/></svg>Otomatis (Barang + Jasa)</span>';
 function buildFormTender(){
   const cont=document.getElementById('form-tender-fields'); if(!cont) return;
@@ -5017,7 +5049,7 @@ function editRecordTender(rid){
 function clearFormErrorsTender(){
   FIELDS_TENDER.forEach(f=>{ const w=document.getElementById('wrap_'+tenderInputId(f.key)); if(w) w.classList.remove('field-error'); });
 }
-/* Field wajib yang kosong (field terkunci dikecualikan). Hanya field flat sections I-V. */
+/* Field wajib yang kosong (field terkunci dikecualikan). Hanya kelompok data I–II. */
 function missingRequiredTender(rec){
   const missing=[];
   FIELDS_TENDER.forEach(f=>{
@@ -5047,7 +5079,7 @@ function askSaveTender(){
     const key=dupKey(rec.no_kontrak);
     if(records_tender.some(r=>r.id!==editingIdTender && dupKey(r.no_kontrak)===key)){ toast('Data sudah ada','err'); return; }
   }
-  openConfirm({icon:'save',title:'Simpan Data',text:'Apakah anda yakin akan menyimpan data pekerjaan Tender?',onYes:doSaveTender});
+  openConfirm({icon:'save',title:'Simpan Data',text:'Apakah anda yakin ingin menyimpan data pekerjaan Tender?',onYes:doSaveTender});
 }
 async function doSaveTender(){
   const rec=readFormTender();
@@ -5437,10 +5469,19 @@ renderTableTender();
 refreshData();      // muat data SPBJ/Kontrak Rinci
 refreshDataPl();    // muat data Pengadaan Langsung
 refreshDataTender();// muat data Tender
-// Setiap membuka/refresh halaman: paksa login ulang (tidak memulihkan sesi).
+// #3: Refresh TIDAK lagi memaksa logout. Sesi dipulihkan dari sessionStorage,
+// dan filter data setiap halaman kembali ke default (ditangani showView/resetAllFilters).
 resetLoginForm();
-try{ sessionStorage.removeItem(ROLE_KEY); sessionStorage.removeItem(USER_KEY); }catch(e){}
-currentRole=null; currentUsername=null;
+(function restoreSession(){
+  let role=null, uname=null;
+  try{ role=sessionStorage.getItem(ROLE_KEY); uname=sessionStorage.getItem(USER_KEY); }catch(e){}
+  if(role==='admin' || role==='user' || role==='guest'){
+    currentUsername = uname || null;
+    enterApp(role);   // langsung masuk aplikasi tanpa login ulang (filter default)
+  }else{
+    currentRole=null; currentUsername=null;   // belum ada sesi → tampilkan layar login
+  }
+})();
 // close modal on overlay click
 document.getElementById('confirm-overlay').addEventListener('click',e=>{ if(e.target.id==='confirm-overlay')closeConfirm(); });
 document.getElementById('detail-overlay').addEventListener('click',e=>{ if(e.target.id==='detail-overlay')closeDetail(); });
