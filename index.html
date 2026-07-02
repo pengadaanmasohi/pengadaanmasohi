@@ -1929,7 +1929,7 @@ const FIELDS_PL = [
   {key:'hps_total_dengan_ppn', label:'HPS — Harga Total (Dengan PPN)', type:'num'},
   // VII. Proses Pengadaan
   {key:'no_eproc', label:'No. Eproc', type:'text'},
-  {key:'tgl_pengumuman', label:'Tgl. Undangan', type:'date'},
+  {key:'tgl_pengumuman', label:'Tgl. Pengumuman', type:'date'},
   {key:'tgl_upload_dok_penawaran', label:'Tgl. Upload Dokumen Penawaran', type:'date'},
   {key:'no_ba_pembukaan', label:'No. BA Pembukaan Penawaran', type:'text'},
   {key:'tgl_ba_pembukaan', label:'Tgl. BA Pembukaan Penawaran', type:'date'},
@@ -3072,7 +3072,7 @@ async function downloadTemplate(){
     cell.border = allBorder;
   }
   // Border + zebra pada area isian (baris 2..151)
-  for(let r=2;r<=151;r++){
+  for(let r=2;r<=251;r++){
     for(let c=1;c<=COLS.length;c++){
       const cell = wsD.getCell(r,c);
       cell.border = allBorder;
@@ -3083,8 +3083,8 @@ async function downloadTemplate(){
   // Format kolom: tanggal = date, nilai = Rupiah tanpa desimal
   COLS.forEach((f,idx)=>{
     const c=idx+1;
-    if(f.type==='date'){ for(let r=2;r<=151;r++) wsD.getCell(r,c).numFmt='dd-mm-yyyy'; }
-    if(f.type==='num'){  for(let r=2;r<=151;r++){ wsD.getCell(r,c).numFmt='"Rp"#,##0'; wsD.getCell(r,c).alignment={vertical:'middle',horizontal:'right'}; } }
+    if(f.type==='date'){ for(let r=2;r<=251;r++) wsD.getCell(r,c).numFmt='dd-mm-yyyy'; }
+    if(f.type==='num'){  for(let r=2;r<=251;r++){ wsD.getCell(r,c).numFmt='"Rp"#,##0'; wsD.getCell(r,c).alignment={vertical:'middle',horizontal:'right'}; } }
   });
 
   // --- Sheet Opsi (sumber dropdown, disembunyikan) ---
@@ -3097,7 +3097,7 @@ async function downloadTemplate(){
   wsO.state = 'hidden';
 
   // Pasang dropdown pada kolom terkait, baris 2..501
-  const ROWS = 150;
+  const ROWS = 250;
   COLS.forEach((f,idx)=>{
     if(!OPSI[f.key]) return;
     const L = colLetter(idx+1);
@@ -3955,10 +3955,10 @@ async function downloadTemplatePl(){
     cell.alignment={wrapText:true,vertical:'middle',horizontal:'center'};
     cell.border=allBorder;
   }
-  for(let r=2;r<=151;r++){ for(let c=1;c<=COLS.length;c++){ const cell=wsD.getCell(r,c); cell.border=allBorder; cell.alignment={vertical:'middle'}; if(r%2===1) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F7F8'}}; } }
+  for(let r=2;r<=251;r++){ for(let c=1;c<=COLS.length;c++){ const cell=wsD.getCell(r,c); cell.border=allBorder; cell.alignment={vertical:'middle'}; if(r%2===1) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F7F8'}}; } }
   COLS.forEach((f,idx)=>{ const c=idx+1;
-    if(f.type==='date'){ for(let r=2;r<=151;r++) wsD.getCell(r,c).numFmt='dd-mm-yyyy'; }
-    if(f.type==='num'){ for(let r=2;r<=151;r++){ wsD.getCell(r,c).numFmt='"Rp"#,##0'; wsD.getCell(r,c).alignment={vertical:'middle',horizontal:'right'}; } }
+    if(f.type==='date'){ for(let r=2;r<=251;r++) wsD.getCell(r,c).numFmt='dd-mm-yyyy'; }
+    if(f.type==='num'){ for(let r=2;r<=251;r++){ wsD.getCell(r,c).numFmt='"Rp"#,##0'; wsD.getCell(r,c).alignment={vertical:'middle',horizontal:'right'}; } }
   });
   // #12: Harga Total (Tanpa PPN) diisi manual sebagai nilai (tanpa rumus). Format currency Rupiah tanpa desimal sudah diterapkan di atas.
 
@@ -3966,7 +3966,7 @@ async function downloadTemplatePl(){
   dropKeys.forEach((k,ci)=>{ const f=COLS.find(x=>x.key===k); wsO.getCell(1,ci+1).value=f.label; OPSI[k].forEach((v,ri)=>wsO.getCell(ri+2,ci+1).value=v); });
   wsO.state='hidden';
 
-  const ROWS=150;
+  const ROWS=250;
   COLS.forEach((f,idx)=>{ if(!OPSI[f.key]) return; const L=colLetter(idx+1);
     for(let r=2;r<=ROWS+1;r++){ wsD.getCell(`${L}${r}`).dataValidation={type:'list',allowBlank:true,formulae:[opsiRange[f.key]],showErrorMessage:true,errorTitle:'Pilihan tidak valid',error:'Silakan pilih salah satu nilai dari daftar dropdown.'}; }
   });
@@ -4953,20 +4953,20 @@ async function downloadTemplateTender(){
     cell.alignment={wrapText:true,vertical:'middle',horizontal:'center'};
     cell.border=allBorder;
   }
-  for(let r=2;r<=151;r++){ for(let c=1;c<=COLS.length;c++){ const cell=wsD.getCell(r,c); const pp=isStackKey(COLS[c-1].key); cell.border=allBorder; cell.alignment=pp?{wrapText:true,vertical:'top'}:{vertical:'middle'}; if(r%2===1) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F7F8'}}; } }
+  for(let r=2;r<=251;r++){ for(let c=1;c<=COLS.length;c++){ const cell=wsD.getCell(r,c); const pp=isStackKey(COLS[c-1].key); cell.border=allBorder; cell.alignment=pp?{wrapText:true,vertical:'top'}:{vertical:'middle'}; if(r%2===1) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F7F8'}}; } }
   COLS.forEach((f,idx)=>{ const c=idx+1;
-    if(f.type==='date'){ for(let r=2;r<=151;r++) wsD.getCell(r,c).numFmt='dd-mm-yyyy'; }
-    if(f.type==='num'){ for(let r=2;r<=151;r++){ wsD.getCell(r,c).numFmt='"Rp"#,##0'; wsD.getCell(r,c).alignment={vertical:'middle',horizontal:'right'}; } }
+    if(f.type==='date'){ for(let r=2;r<=251;r++) wsD.getCell(r,c).numFmt='dd-mm-yyyy'; }
+    if(f.type==='num'){ for(let r=2;r<=251;r++){ wsD.getCell(r,c).numFmt='"Rp"#,##0'; wsD.getCell(r,c).alignment={vertical:'middle',horizontal:'right'}; } }
   });
   // #12: Harga Total (Tanpa PPN) diisi manual sebagai nilai (tanpa rumus). Format currency Rupiah tanpa desimal.
   const colMapTdT=fieldColMap(COLS);
-  ['hpe','rab','hps'].forEach(p=>{ const tC=colMapTdT[p+'_total_tanpa_ppn']; if(tC){ for(let r=2;r<=151;r++){ const cell=wsD.getCell(r,tC); cell.numFmt='"Rp"#,##0'; cell.alignment={vertical:'middle',horizontal:'right'}; } } });
+  ['hpe','rab','hps'].forEach(p=>{ const tC=colMapTdT[p+'_total_tanpa_ppn']; if(tC){ for(let r=2;r<=251;r++){ const cell=wsD.getCell(r,tC); cell.numFmt='"Rp"#,##0'; cell.alignment={vertical:'middle',horizontal:'right'}; } } });
 
   const wsO=wb.addWorksheet('Opsi');
   dropKeys.forEach((k,ci)=>{ const f=COLS.find(x=>x.key===k); wsO.getCell(1,ci+1).value=f.label; OPSI[k].forEach((v,ri)=>wsO.getCell(ri+2,ci+1).value=v); });
   wsO.state='hidden';
 
-  const ROWS=150;
+  const ROWS=250;
   COLS.forEach((f,idx)=>{ if(!OPSI[f.key]) return; const L=colLetter(idx+1);
     for(let r=2;r<=ROWS+1;r++){ wsD.getCell(`${L}${r}`).dataValidation={type:'list',allowBlank:true,formulae:[opsiRange[f.key]],showErrorMessage:true,errorTitle:'Pilihan tidak valid',error:'Silakan pilih salah satu nilai dari daftar dropdown.'}; }
   });
