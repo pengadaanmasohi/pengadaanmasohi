@@ -2219,10 +2219,28 @@ async function submitChangePass(){
   }
 }
 function playLoginAnim(role, done){
-  // Animasi "Selamat Datang" dihapus agar tidak ada efek ganda saat login.
+  const anim=document.getElementById('login-anim');
+  // Sembunyikan layar login di balik overlay agar transisi mulus
   const loginScreen=document.getElementById('login-screen');
   if(loginScreen) loginScreen.style.display='none';
-  done&&done();
+  // Subteks sesuai peran
+  const subs={admin:'Masuk sebagai Admin',user:'Masuk sebagai User',guest:'Masuk sebagai Tamu'};
+  const sub=document.getElementById('login-anim-sub');
+  if(sub) sub.textContent=subs[role]||'';
+  const finish=()=>{
+    done&&done();                              // masuk ke aplikasi (enterApp)
+    if(anim){
+      anim.classList.add('fade-out');
+      setTimeout(()=>{ anim.classList.remove('show','fade-out'); }, 500);
+    }
+  };
+  if(anim){
+    anim.classList.remove('fade-out');
+    anim.classList.add('show');
+    setTimeout(finish, 1300);   // mainkan animasi ± 1,3 detik sebelum masuk aplikasi
+  }else{
+    finish();
+  }
 }
 function enterApp(role){
   currentRole=role;
