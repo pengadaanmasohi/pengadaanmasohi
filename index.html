@@ -3178,7 +3178,7 @@ async function exportExcel(){
       const cell = ws.getCell(r,c);
       cell.border = allBorder;
       cell.alignment = {vertical:'middle'};
-      if(COLS[c-1].type==='num' && typeof cell.value==='number') cell.numFmt = '#,##0';
+      if(COLS[c-1].type==='num' && typeof cell.value==='number') cell.numFmt = /_total_tanpa_ppn$/.test(COLS[c-1].key) ? '"Rp"#,##0' : '#,##0';
       if(r%2===1) cell.fill = {type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F7F8'}};
     }
   }
@@ -4018,7 +4018,7 @@ async function exportExcelPl(){
   const allBorder={top:thin,left:thin,bottom:thin,right:thin};
   const headRow=ws.getRow(1); headRow.height=32;
   for(let c=1;c<=COLS.length;c++){ const cell=ws.getCell(1,c); cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0E7C86'}}; cell.font={bold:true,color:{argb:'FFFFFFFF'},size:11}; cell.alignment={wrapText:true,vertical:'middle',horizontal:'center'}; cell.border=allBorder; }
-  for(let r=2;r<=rows.length+1;r++){ for(let c=1;c<=COLS.length;c++){ const cell=ws.getCell(r,c); cell.border=allBorder; cell.alignment={vertical:'middle'}; if(COLS[c-1].type==='num' && typeof cell.value==='number') cell.numFmt='#,##0'; if(r%2===1) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F7F8'}}; } }
+  for(let r=2;r<=rows.length+1;r++){ for(let c=1;c<=COLS.length;c++){ const cell=ws.getCell(r,c); cell.border=allBorder; cell.alignment={vertical:'middle'}; if(COLS[c-1].type==='num' && typeof cell.value==='number') cell.numFmt=/_total_tanpa_ppn$/.test(COLS[c-1].key)?'"Rp"#,##0':'#,##0'; if(r%2===1) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F7F8'}}; } }
   try{
     const buf=await wb.xlsx.writeBuffer();
     const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
@@ -5025,14 +5025,14 @@ async function exportExcelTender(){
     let v=r[f.key]; if(v===''||v==null) return ''; if(f.type==='num') return Number(v); return v;
   }));
     // Rumus otomatis hanya untuk total flat (HPE/RAB/HPS); tawar & kontrak per-penyedia sudah dihitung
-    COLS.forEach(f=>{ if(isFlatAutoTotal(f.key)){ const p=f.key.replace(/_total_tanpa_ppn$/,''); const bC=colMapTd[p+'_harga_barang'],jC=colMapTd[p+'_harga_jasa'],tC=colMapTd[f.key]; if(bC&&jC&&tC){ const cell=ws.getCell(ri+2,tC); cell.value={formula:`${xlsxCol(bC)}${ri+2}+${xlsxCol(jC)}${ri+2}`}; cell.numFmt='#,##0'; } } });
+    COLS.forEach(f=>{ if(isFlatAutoTotal(f.key)){ const p=f.key.replace(/_total_tanpa_ppn$/,''); const bC=colMapTd[p+'_harga_barang'],jC=colMapTd[p+'_harga_jasa'],tC=colMapTd[f.key]; if(bC&&jC&&tC){ const cell=ws.getCell(ri+2,tC); cell.value={formula:`${xlsxCol(bC)}${ri+2}+${xlsxCol(jC)}${ri+2}`}; cell.numFmt='"Rp"#,##0'; } } });
   });
   ws.columns=COLS.map(f=>({width:Math.max(16,f.label.length+2)}));
   const thin={style:'thin',color:{argb:'FFBFCAD0'}};
   const allBorder={top:thin,left:thin,bottom:thin,right:thin};
   const headRow=ws.getRow(1); headRow.height=34;
   for(let c=1;c<=COLS.length;c++){ const cell=ws.getCell(1,c); const fld=COLS[c-1]; const pp=isStackKey(fld.key); cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:pp?'FF0E9E8E':'FF0E7C86'}}; cell.font={bold:true,color:{argb:'FFFFFFFF'},size:11}; cell.alignment={wrapText:true,vertical:'middle',horizontal:'center'}; cell.border=allBorder; }
-  for(let r=2;r<=rows.length+1;r++){ for(let c=1;c<=COLS.length;c++){ const cell=ws.getCell(r,c); const fld=COLS[c-1]; const pp=isStackKey(fld.key); cell.border=allBorder; cell.alignment=pp?{wrapText:true,vertical:'top'}:{vertical:'middle'}; if(fld.type==='num' && typeof cell.value==='number') cell.numFmt='#,##0'; if(r%2===1) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F7F8'}}; } }
+  for(let r=2;r<=rows.length+1;r++){ for(let c=1;c<=COLS.length;c++){ const cell=ws.getCell(r,c); const fld=COLS[c-1]; const pp=isStackKey(fld.key); cell.border=allBorder; cell.alignment=pp?{wrapText:true,vertical:'top'}:{vertical:'middle'}; if(fld.type==='num' && typeof cell.value==='number') cell.numFmt=/_total_tanpa_ppn$/.test(fld.key)?'"Rp"#,##0':'#,##0'; if(r%2===1) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F7F8'}}; } }
   try{
     const buf=await wb.xlsx.writeBuffer();
     const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
