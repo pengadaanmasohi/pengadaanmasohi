@@ -2111,14 +2111,34 @@ const DATE_KEYS = FIELDS.filter(f=>f.type==='date').map(f=>f.key);
 const NUM_KEYS  = FIELDS.filter(f=>f.type==='num').map(f=>f.key);
 
 /* Bersihkan record agar cocok dengan tipe kolom Postgres */
+/* ---- Koersi nilai agar aman untuk kolom bertipe di Postgres ----
+   - Angka: kosong / NaN -> null (bukan "NaN") supaya kolom numeric tidak error.
+   - Tanggal: hanya menerima format YYYY-MM-DD; selain itu -> null supaya
+     kolom date tidak menolak (penyebab umum error 400 saat simpan/ubah). */
+function toDbNum(v){
+  if(v===''||v===undefined||v===null) return null;
+  const n = typeof v==='number' ? v : Number(String(v).replace(/[^0-9.-]/g,''));
+  return Number.isFinite(n) ? n : null;
+}
+function toDbDate(v){
+  if(v===''||v===undefined||v===null) return null;
+  const s=String(v).trim();
+  if(!s) return null;
+  // input type=date selalu YYYY-MM-DD; terima juga bila ada bagian waktu
+  const m=s.match(/^(\d{4}-\d{2}-\d{2})/);
+  return m ? m[1] : null;
+}
+/* Bersihkan satu field sesuai tipenya (dipakai ketiga tabel) */
+function cleanFieldValue(f, rec){
+  let v = rec[f.key];
+  if(v===''||v===undefined) return null;
+  if(f.type==='num')  return toDbNum(v);
+  if(f.type==='date') return toDbDate(v);
+  return v;
+}
 function cleanForDb(rec){
   const o={};
-  FIELDS.forEach(f=>{
-    let v = rec[f.key];
-    if(v===''||v===undefined) v=null;
-    if(f.type==='num' && v!=null && v!=='') v=Number(v);
-    o[f.key]=v;
-  });
+  FIELDS.forEach(f=>{ o[f.key]=cleanFieldValue(f, rec); });
   return o;
 }
 
@@ -2159,7 +2179,9 @@ function lsPersist(arr){ /* no-op: penyimpanan lokal dinonaktifkan */ }
 /* Ambil pesan error Supabase yang paling informatif */
 function errMsg(err){
   if(!err) return 'kesalahan tidak diketahui';
-  return err.message || err.hint || err.details || err.code || String(err);
+  const parts=[err.message, err.details, err.hint].filter(Boolean);
+  const msg = parts.length ? parts.join(' — ') : (err.code || String(err));
+  return msg;
 }
 
 function seedSamples(){
@@ -3633,12 +3655,7 @@ function plInputId(key){ return 'pl_'+key; }
 
 function cleanForDbPl(rec){
   const o={};
-  FIELDS_PL.forEach(f=>{
-    let v=rec[f.key];
-    if(v===''||v===undefined) v=null;
-    if(f.type==='num' && v!=null && v!=='') v=Number(v);
-    o[f.key]=v;
-  });
+  FIELDS_PL.forEach(f=>{ o[f.key]=cleanFieldValue(f, rec); });
   // Simpan field multi-nilai independen sebagai JSON (kolom jsonb)
   o.bidang_sub_bidang_list = Array.isArray(rec.bidang_sub_bidang_list) ? rec.bidang_sub_bidang_list : null;
   return o;
@@ -4821,12 +4838,7 @@ function tenderInputId(key){ return 't_'+key; }
 
 function cleanForDbTender(rec){
   const o={};
-  FIELDS_TENDER.forEach(f=>{
-    let v=rec[f.key];
-    if(v===''||v===undefined) v=null;
-    if(f.type==='num' && v!=null && v!=='') v=Number(v);
-    o[f.key]=v;
-  });
+  FIELDS_TENDER.forEach(f=>{ o[f.key]=cleanFieldValue(f, rec); });
   // Simpan struktur multi-penyedia & field multi-nilai sebagai JSON (kolom jsonb)
   o.penyedia_layers = Array.isArray(rec.penyedia_layers) ? rec.penyedia_layers : null;
   o.bidang_sub_bidang_list = Array.isArray(rec.bidang_sub_bidang_list) ? rec.bidang_sub_bidang_list : null;
