@@ -1990,14 +1990,14 @@ const FIELDS_PL = [
   {key:'rab_harga_jasa', label:'RAB — Harga Jasa', type:'num'},
   {key:'rab_total_tanpa_ppn', label:'RAB — Harga Total (Tanpa PPN)', type:'num', auto:'sum'},
   {key:'rab_total_dengan_ppn', label:'RAB — Harga Total (Dengan PPN)', type:'num'},
-  {key:'no_prk', label:'No. PRK', type:'text'},
-  {key:'no_anggaran', label:'No. Anggaran', type:'text'},
+  {key:'no_prk', label:'No. PRK', type:'text', ph:'cth. 2025.MMU.AO-ADM.01.01'},
+  {key:'no_anggaran', label:'No. Anggaran', type:'text', ph:'cth. 001/SKKO/GM.MMU/ADM.NIAGA/MSH/2025/R1'},
   {key:'tgl_anggaran', label:'Tgl. Anggaran', type:'date'},
   {key:'jenis_anggaran', label:'Jenis Anggaran', type:'select', options:['Operasi','Investasi']},
   // V. Kriteria Pengadaan
   {key:'jenis_pengadaan', label:'Jenis Pengadaan', type:'select', options:['Barang','Jasa Lainnya','Jasa Konsultansi','Pekerjaan Konstruksi']},
   {key:'jenis_kontrak', label:'Jenis Perjanjian/Kontrak', type:'select', options:['Lumsum','Turn Key']},
-  {key:'bidang_sub_bidang', label:'Bidang / Sub Bidang', type:'text', span:2},
+  {key:'bidang_sub_bidang', label:'Bidang / Sub Bidang', type:'text', span:2, ph:'cth. Pengadaan Barang - Mekanikal dan Elektrikal'},
   // VI. Dokumen HPS
   {key:'no_hps', label:'No. HPS', type:'text'},
   {key:'tgl_hps', label:'Tgl. HPS', type:'date'},
@@ -2006,7 +2006,7 @@ const FIELDS_PL = [
   {key:'hps_total_tanpa_ppn', label:'HPS — Harga Total (Tanpa PPN)', type:'num', auto:'sum'},
   {key:'hps_total_dengan_ppn', label:'HPS — Harga Total (Dengan PPN)', type:'num'},
   // VII. Proses Pengadaan
-  {key:'no_eproc', label:'No. Eproc', type:'text'},
+  {key:'no_eproc', label:'No. Eproc', type:'text', ph:'cth. EPROC-4230-20250319-4230-00001'},
   {key:'tgl_pengumuman', label:'Tgl. Undangan', type:'date'},
   {key:'tgl_upload_dok_penawaran', label:'Tgl. Upload Dokumen Penawaran', type:'date'},
   {key:'no_ba_pembukaan', label:'No. BA Pembukaan Penawaran', type:'text'},
@@ -2058,7 +2058,7 @@ const FIELDS_PL = [
   // XIV. Data Lain-Lain
   {key:'norm_eproc', label:'Norm. Sistem Eproc', type:'text', ph:'cth. JASA-20160222-135'},
   {key:'nama_material_jasa', label:'Nama Material/Jasa', type:'text', ph:'cth. Komunikasi'},
-  {key:'nomor_pr', label:'No. PR', type:'text', ph:'cth. 3002615245'},
+  {key:'nomor_pr', label:'No. PR', type:'text', ph:'cth. 3002518656'},
   {key:'manajemen_kontrak', label:'Manajemen Kontrak', type:'select', options:['Sudah','Belum'], table:true},
 ];
 const GROUPS_PL = [
@@ -3601,7 +3601,7 @@ const Store_PL = {
 function seedSamplesPl(){
   seqPl=3;
   return [
-    {id:idPl(),nama_pekerjaan:'Pengadaan Material AMR Pelanggan TM',lokasi_pekerjaan:'Masohi Kota',jangka_waktu:'60 hari kalender',bidang_pelaksana:'Transaksi Energi Listrik',level_risiko:'Rendah',no_nota_dinas:'ND-014/2025',jenis_anggaran:'Operasi',jenis_pengadaan:'Barang',jenis_kontrak:'Lumsum',bidang_sub_bidang:'Pengadaan Barang / Meter & AMR',bidang_sub_bidang_list:['Pengadaan Barang / Meter & AMR'],no_eproc:'EP-200145',no_kontrak:'PL-014/UP3MSH/2025',tgl_awal_kontrak:'2025-03-12',tgl_akhir_kontrak:'2025-05-11',kontrak_total_dengan_ppn:185000000,perusahaan:'CV Energi Nusantara',nama_pic:'Rudi Hartono',tahapan:'Terkontrak',manajemen_kontrak:'Sudah'},
+    {id:idPl(),nama_pekerjaan:'Pengadaan Material AMR Pelanggan TM',lokasi_pekerjaan:'Masohi Kota',jangka_waktu:'60 hari kalender',bidang_pelaksana:'Transaksi Energi Listrik',level_risiko:'Rendah',no_nota_dinas:'ND-014/2025',jenis_anggaran:'Operasi',jenis_pengadaan:'Barang',jenis_kontrak:'Lumsum',bidang_sub_bidang:'Pengadaan Barang - Mekanikal dan Elektrikal',bidang_sub_bidang_list:['Pengadaan Barang - Mekanikal dan Elektrikal'],no_prk:'2025.MMU.AO-ADM.01.01',no_anggaran:'001/SKKO/GM.MMU/ADM.NIAGA/MSH/2025/R1',nomor_pr:'3002518656',no_eproc:'EPROC-4230-20250319-4230-00001',no_kontrak:'PL-014/UP3MSH/2025',tgl_awal_kontrak:'2025-03-12',tgl_akhir_kontrak:'2025-05-11',kontrak_total_dengan_ppn:185000000,perusahaan:'CV Energi Nusantara',nama_pic:'Rudi Hartono',tahapan:'Terkontrak',manajemen_kontrak:'Sudah'},
     {id:idPl(),nama_pekerjaan:'Pengadaan Jasa Kebersihan Kantor UP3',lokasi_pekerjaan:'Masohi',jangka_waktu:'1 tahun',bidang_pelaksana:'Keuangan dan Umum',level_risiko:'Tidak Ada',no_nota_dinas:'ND-021/2025',jenis_anggaran:'Operasi',jenis_pengadaan:'Jasa Lainnya',jenis_kontrak:'Lumsum',bidang_sub_bidang:'Jasa Lainnya / Kebersihan',bidang_sub_bidang_list:['Jasa Lainnya / Kebersihan'],no_eproc:'EP-200210',no_kontrak:'',tgl_awal_kontrak:'',perusahaan:'PT Bersih Maluku',tahapan:'Proses Pengadaan',manajemen_kontrak:'Belum'},
   ];
 }
@@ -3648,7 +3648,7 @@ function indepListElPl(key){ return document.getElementById('indeplist_pl_'+key)
 function makeIndepRowPl(val){
   const row=document.createElement('div'); row.className='indep-row';
   const inp=document.createElement('input'); inp.type='text'; inp.value=(val!=null?val:'');
-  inp.placeholder='cth. nama bidang – nama sub bidang';
+  inp.placeholder='cth. Pengadaan Barang - Mekanikal dan Elektrikal';
   row.appendChild(inp); return row;
 }
 function setIndepValuesPl(key,arr){
