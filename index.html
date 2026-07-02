@@ -216,9 +216,9 @@ tbody tr:hover{background:var(--teal-soft)}
 td.wrap-cell{white-space:normal;min-width:270px}
 td.wrap-penyedia{white-space:normal;min-width:225px}
 /* Kolom Bidang Pelaksana pada tabel monitoring: lebar tetap 200px, teks di-wrap (tidak melebar mengikuti isi) */
-th.col-bidang,td.col-bidang{width:200px;min-width:200px;max-width:200px;white-space:normal;word-break:break-word;overflow-wrap:break-word;line-height:1.3}
-/* Kolom Penyedia pada tabel monitoring: lebar tetap 220px, teks di-wrap */
-th.col-penyedia,td.col-penyedia{width:220px;min-width:220px;max-width:220px;white-space:normal;word-break:break-word;overflow-wrap:break-word;line-height:1.3}
+th.col-bidang,td.col-bidang{width:210px;min-width:210px;max-width:210px;white-space:normal;word-break:break-word;overflow-wrap:break-word;line-height:1.3}
+/* Kolom Penyedia pada tabel monitoring: lebar tetap 210px, teks di-wrap */
+th.col-penyedia,td.col-penyedia{width:210px;min-width:210px;max-width:210px;white-space:normal;word-break:break-word;overflow-wrap:break-word;line-height:1.3}
 .stack-line{display:block;padding:2px 0;line-height:1.35}
 .stack-line+.stack-line{border-top:1px dashed var(--line);margin-top:2px}
 .stack-no{display:inline-block;min-width:16px;color:var(--teal-dark);font-weight:800;font-size:10px}
@@ -815,6 +815,13 @@ td.cell-center{text-align:center}
 .jp-control label{margin:0;font-family:'Plus Jakarta Sans';font-weight:700;font-size:10px;letter-spacing:.2px;text-transform:none;color:var(--teal-dark);white-space:nowrap}
 .jp-control select{height:32px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:#fff;font-family:'Plus Jakarta Sans';font-weight:700;font-size:12px;color:var(--ink);cursor:pointer;min-width:120px}
 .jp-control select:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-soft)}
+/* Wrapper kontrol di kanan atas baris judul (Tahun, dan Jumlah Penyedia pada Tender) */
+.title-controls{margin-left:auto;display:inline-flex;align-items:center;gap:30px}
+.title-controls .jp-control{margin-left:0}
+.year-control{display:inline-flex;align-items:center;gap:8px}
+.year-control label{margin:0;font-family:'Plus Jakarta Sans';font-weight:700;font-size:10px;letter-spacing:.2px;text-transform:none;color:var(--teal-dark);white-space:nowrap}
+.year-control select{height:32px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:#fff;font-family:'Plus Jakarta Sans';font-weight:700;font-size:12px;color:var(--ink);cursor:pointer;min-width:120px}
+.year-control select:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-soft)}
 .stack-input-no{flex:0 0 auto;align-self:center;min-width:18px;color:var(--teal-dark);font-weight:800;font-size:11px;margin-right:7px}
 .indep-list .indep-row .stack-input-no+input{flex:1 1 auto}
 .pnw-tabs{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
@@ -1866,6 +1873,12 @@ tbody tr{animation:rowIn .3s ease both}
 /* ============ FIELD DEFINITIONS (mengikuti Data.xlsx) ============ */
 /* Opsi Tahun (dipakai field "Tahun" + filter tahun) — rentang tetap 2024–2034 */
 const TAHUN_OPTS = Array.from({length:11},(_,i)=>String(2024+i));
+/* Kontrol "Tahun" yang tampil di kanan atas baris judul kelompok I. Informasi Pekerjaan.
+   inputId = id elemen select agar konsisten dengan helper input tiap form. */
+function yearControlHTML(inputId){
+  const opts='<option value="">— Pilih —</option>'+TAHUN_OPTS.map(y=>`<option>${y}</option>`).join('');
+  return `<div class="year-control"><label for="${inputId}">Tahun</label><select id="${inputId}">${opts}</select></div>`;
+}
 const FIELDS = [
   {key:'tahun',            label:'Tahun',                           input:'f_tahun',            type:'select', options:TAHUN_OPTS},
   {key:'no_prk',           label:'No. PRK',                         input:'f_no_prk',           type:'text', req:true},
@@ -2128,6 +2141,37 @@ function yearOf(r, fallbackDate){
 }
 function contractYear(r){
   return yearOf(r, r.tgl_terbit_kr);
+}
+/* Komparator daftar pekerjaan:
+   1) Urut berdasarkan Tahun (terbaru → lama). Tanpa tahun ditaruh paling bawah.
+   2) Dalam tahun yang sama: pekerjaan yang MEMILIKI no. kontrak lebih dulu,
+      pekerjaan TANPA no. kontrak berada di urutan paling akhir tahun tersebut.
+      (Tahun bersifat independen — kontrak di tahun lain tidak menggeser urutan
+       pekerjaan tanpa kontrak di tahun berikutnya.)
+   3) Tie-break dalam kelompok yang sama: berdasarkan tanggal (terbaru → lama).
+   Parameter:
+     getYear(r)     -> string tahun record
+     hasKontrak(r)  -> boolean apakah punya no. kontrak
+     getDate(r)     -> string tanggal ISO untuk tie-break
+*/
+function makeWorkComparator(getYear, hasKontrak, getDate){
+  return (a,b)=>{
+    const ya=getYear(a)||'', yb=getYear(b)||'';
+    if(ya!==yb){
+      if(!ya) return 1;      // tanpa tahun -> paling bawah
+      if(!yb) return -1;
+      return ya>yb ? -1 : 1; // tahun terbaru lebih dulu
+    }
+    // tahun sama: yang punya no. kontrak lebih dulu
+    const ka=hasKontrak(a)?1:0, kb=hasKontrak(b)?1:0;
+    if(ka!==kb) return kb-ka; // punya kontrak (1) sebelum tanpa kontrak (0)
+    // tie-break: tanggal terbaru lebih dulu
+    const da=getDate(a)||'', db=getDate(b)||'';
+    if(!da && !db) return 0;
+    if(!da) return 1;
+    if(!db) return -1;
+    return da>db ? -1 : da<db ? 1 : 0;
+  };
 }
 /* Isi opsi filter Tahun (Dashboard + Monitoring) dengan rentang tetap 2024–2034, pertahankan pilihan */
 function fillYearFilters(){
@@ -2397,10 +2441,16 @@ function krInputId(f){ return (f && f.input) ? f.input : ('f_'+ (typeof f==='str
 function buildFormKr(){
   const cont=document.getElementById('work-form-fields'); if(!cont) return;
   let html='';
-  GROUPS.forEach(g=>{
+  GROUPS.forEach((g,gi)=>{
     const cols=pynGroupCols(g);
-    html+=`<div class="form-card"><div class="form-section-title">${KR_SECTION_ICON}${g.title}</div><div class="form-flow" style="--cols:${cols}">`;
+    let titleExtra='';
+    if(gi===0 && g.keys.includes('tahun')){
+      const tf=FIELDS.find(x=>x.key==='tahun');
+      titleExtra=`<div class="title-controls">${yearControlHTML(krInputId(tf))}</div>`;
+    }
+    html+=`<div class="form-card"><div class="form-section-title">${KR_SECTION_ICON}${g.title}${titleExtra}</div><div class="form-flow" style="--cols:${cols}">`;
     g.keys.forEach(k=>{
+      if(gi===0 && k==='tahun') return; // Tahun sudah dipindah ke baris judul
       const f=FIELDS.find(x=>x.key===k); if(!f) return;
       const id=krInputId(f);
       const req=f.req?' <span class="req">*</span>':'';
@@ -2697,13 +2747,11 @@ function getFilteredRecords(){
       if(!hay.includes(fs)) return false;
     }
     return true;
-  }).sort((a,b)=>{
-    const da=a.tgl_terbit_kr||'', db=b.tgl_terbit_kr||'';
-    if(!da && !db) return 0;
-    if(!da) return 1;   // tanpa tanggal di paling bawah
-    if(!db) return -1;
-    return da>db ? -1 : da<db ? 1 : 0;  // terbaru → lama
-  });
+  }).sort(makeWorkComparator(
+    r=>contractYear(r),
+    r=>!!String(r.no_spbj||'').trim(),
+    r=>r.tgl_terbit_kr
+  ));
 }
 let currentPage = 1;
 const PAGE_SIZE = 10;
@@ -3423,10 +3471,15 @@ const PL_LOCK_RULES = {
 function buildFormPl(){
   const cont=document.getElementById('form-pl-fields'); if(!cont) return;
   let html='';
-  GROUPS_PL.forEach(g=>{
+  GROUPS_PL.forEach((g,gi)=>{
     const cols=pynGroupCols(g);
-    html+=`<div class="form-card"><div class="form-section-title">${PL_SECTION_ICON}${g.title}</div><div class="form-flow" style="--cols:${cols}">`;
+    let titleExtra='';
+    if(gi===0 && g.keys.includes('tahun')){
+      titleExtra=`<div class="title-controls">${yearControlHTML(plInputId('tahun'))}</div>`;
+    }
+    html+=`<div class="form-card"><div class="form-section-title">${PL_SECTION_ICON}${g.title}${titleExtra}</div><div class="form-flow" style="--cols:${cols}">`;
     g.keys.forEach(k=>{
+      if(gi===0 && k==='tahun') return; // Tahun sudah dipindah ke baris judul
       const f=FIELDS_PL.find(x=>x.key===k); if(!f) return;
       const id=plInputId(k);
       const req=f.req?' <span class="req">*</span>':'';
@@ -3928,11 +3981,11 @@ function getFilteredRecordsPl(){
       if(!hay.includes(fs)) return false;
     }
     return true;
-  }).sort((a,b)=>{
-    const da=a.tgl_awal_kontrak||'', db=b.tgl_awal_kontrak||'';
-    if(!da && !db) return 0; if(!da) return 1; if(!db) return -1;
-    return da>db ? -1 : da<db ? 1 : 0;
-  });
+  }).sort(makeWorkComparator(
+    r=>yearOf(r, r.tgl_awal_kontrak),
+    r=>!!String(r.no_kontrak||'').trim(),
+    r=>r.tgl_awal_kontrak
+  ));
 }
 let currentPagePl=1;
 function renderTablePl(){
@@ -4724,13 +4777,17 @@ function buildFormTender(){
     const cols=pynGroupCols(g);
     let titleExtra=isPnw?'<span class="pp-tag">per penyedia</span>':'';
     if(gi===0){
+      // Kelompok I. Informasi Pekerjaan: Tahun di kiri, Jumlah Penyedia di kanan (gap 30px)
+      let yearHtml = g.keys.includes('tahun') ? yearControlHTML(tenderInputId('tahun')) : '';
       let opts=''; for(let i=1;i<=MAX_PENYEDIA;i++){ opts+=`<option value="${i}"${i===1?' selected':''}>${i} Penyedia</option>`; }
-      titleExtra+=`<div class="jp-control"><label for="tender-jumlah-penyedia">Jumlah Penyedia</label><select id="tender-jumlah-penyedia" onchange="setJumlahPenyedia(this.value)">${opts}</select></div>`;
+      const jpHtml=`<div class="jp-control"><label for="tender-jumlah-penyedia">Jumlah Penyedia</label><select id="tender-jumlah-penyedia" onchange="setJumlahPenyedia(this.value)">${opts}</select></div>`;
+      titleExtra+=`<div class="title-controls">${yearHtml}${jpHtml}</div>`;
     }
     html+=`<div class="form-card"><div class="form-section-title">${TENDER_SECTION_ICON}${g.title}${titleExtra}</div>`;
     if(isPnw) html+=penyediaBarHTML();
     html+=`<div class="form-flow" style="--cols:${cols}">`;
     g.keys.forEach(k=>{
+      if(gi===0 && k==='tahun') return; // Tahun sudah dipindah ke baris judul
       const f=FIELDS_TENDER.find(x=>x.key===k); if(!f) return;
       if(INDEP_MULTI_KEYS.includes(k)){ html+=indepFieldHTML(f); return; }
       if(PENYEDIA_STACK_FIELDS.includes(k)){ html+=stackFieldHTML(f); return; }
@@ -4928,11 +4985,15 @@ function getFilteredRecordsTender(){
       if(!hay.includes(fs)) return false;
     }
     return true;
-  }).sort((a,b)=>{
-    const da=a.tgl_awal_kontrak||'', db=b.tgl_awal_kontrak||'';
-    if(!da && !db) return 0; if(!da) return 1; if(!db) return -1;
-    return da>db ? -1 : da<db ? 1 : 0;
-  });
+  }).sort(makeWorkComparator(
+    r=>yearOf(r, r.tgl_awal_kontrak),
+    r=>{
+      if(String(r.no_kontrak||'').trim()) return true;
+      const layers=Array.isArray(r.penyedia_layers)?r.penyedia_layers:[];
+      return layers.some(l=>String((l&&l.no_kontrak)||'').trim());
+    },
+    r=>r.tgl_awal_kontrak
+  ));
 }
 let currentPageTender=1;
 function renderTableTender(){
