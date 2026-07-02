@@ -215,6 +215,8 @@ tbody tr:nth-child(even){background:#f5f9fa}
 tbody tr:hover{background:var(--teal-soft)}
 td.wrap-cell{white-space:normal;min-width:270px}
 td.wrap-penyedia{white-space:normal;min-width:225px}
+/* Kolom Bidang Pelaksana pada tabel monitoring: lebar tetap 200px, teks di-wrap (tidak melebar mengikuti isi) */
+th.col-bidang,td.col-bidang{width:200px;min-width:200px;max-width:200px;white-space:normal;word-break:break-word;overflow-wrap:break-word;line-height:1.3}
 .stack-line{display:block;padding:2px 0;line-height:1.35}
 .stack-line+.stack-line{border-top:1px dashed var(--line);margin-top:2px}
 .stack-no{display:inline-block;min-width:16px;color:var(--teal-dark);font-weight:800;font-size:10px}
@@ -1403,7 +1405,7 @@ tbody tr{animation:rowIn .3s ease both}
               <th class="col-date">Tgl. Terbit Kontrak</th>
               <th class="col-date">Tgl. Berakhir Kontrak</th>
               <th>Nama Pekerjaan</th>
-              <th>Bidang Pelaksana</th>
+              <th class="col-bidang">Bidang Pelaksana</th>
               <th>Penyedia</th>
               <th class="col-nilai">Nilai Pekerjaan</th>
               <th>Status</th>
@@ -1529,7 +1531,7 @@ tbody tr{animation:rowIn .3s ease both}
               <th class="col-date">Tgl. Terbit Kontrak</th>
               <th class="col-date">Tgl. Berakhir Kontrak</th>
               <th>Nama Pekerjaan</th>
-              <th>Bidang Pelaksana</th>
+              <th class="col-bidang">Bidang Pelaksana</th>
               <th>Penyedia</th>
               <th class="col-nilai">Nilai Pekerjaan</th>
               <th>Status</th>
@@ -1656,7 +1658,7 @@ tbody tr{animation:rowIn .3s ease both}
               <th class="col-date">Tgl. Terbit Kontrak</th>
               <th class="col-date">Tgl. Berakhir Kontrak</th>
               <th>Nama Pekerjaan</th>
-              <th>Bidang Pelaksana</th>
+              <th class="col-bidang">Bidang Pelaksana</th>
               <th>Penyedia</th>
               <th class="col-nilai">Nilai Pekerjaan</th>
               <th>Metode Pengadaan</th>
@@ -2718,7 +2720,7 @@ function renderTable(){
       <td class="cell-center col-date">${fmtDate(r.tgl_terbit_kr)||'—'}</td>
       <td class="cell-center col-date">${fmtDate(r.tgl_berakhir_kr)||'—'}</td>
       <td class="wrap-cell">${r.nama_pekerjaan_kr||'—'}</td>
-      <td>${r.bidang_pelaksana||'—'}</td>
+      <td class="col-bidang">${r.bidang_pelaksana||'—'}</td>
       <td class="wrap-penyedia">${r.nama_penyedia||'—'}</td>
       <td class="col-nilai">${rupiah(r.nilai_kontrak_kr)||'—'}</td>
       <td>${statusPill(r.status)}</td>
@@ -3945,7 +3947,7 @@ function renderTablePl(){
       <td class="cell-center col-date">${fmtDate(r.tgl_awal_kontrak)||'—'}</td>
       <td class="cell-center col-date">${fmtDate(r.tgl_akhir_kontrak)||'—'}</td>
       <td class="wrap-cell">${r.nama_pekerjaan||'—'}</td>
-      <td>${r.bidang_pelaksana||'—'}</td>
+      <td class="col-bidang">${r.bidang_pelaksana||'—'}</td>
       <td class="wrap-penyedia">${r.perusahaan||'—'}</td>
       <td class="col-nilai">${rupiah(r.kontrak_total_dengan_ppn)||'—'}</td>
       <td class="cell-center">${tahapanPill(r.tahapan)}</td>
@@ -4942,7 +4944,7 @@ function renderTableTender(){
       <td class="cell-center col-date">${fmtDate(r.tgl_awal_kontrak)||'—'}</td>
       <td class="cell-center col-date">${fmtDate(r.tgl_akhir_kontrak)||'—'}</td>
       <td class="wrap-cell">${r.nama_pekerjaan||'—'}</td>
-      <td>${r.bidang_pelaksana||'—'}</td>
+      <td class="col-bidang">${r.bidang_pelaksana||'—'}</td>
       <td class="wrap-penyedia">${stackPenyediaHtml(r,'perusahaan')}</td>
       <td class="wrap-penyedia col-nilai">${stackPenyediaRupiah(r,'kontrak_total_dengan_ppn')}</td>
       <td class="cell-center">${r.metode_pengadaan||'—'}</td>
