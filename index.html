@@ -217,6 +217,8 @@ td.wrap-cell{white-space:normal;min-width:270px}
 td.wrap-penyedia{white-space:normal;min-width:225px}
 /* Kolom Bidang Pelaksana pada tabel monitoring: lebar tetap 200px, teks di-wrap (tidak melebar mengikuti isi) */
 th.col-bidang,td.col-bidang{width:200px;min-width:200px;max-width:200px;white-space:normal;word-break:break-word;overflow-wrap:break-word;line-height:1.3}
+/* Kolom Penyedia pada tabel monitoring: lebar tetap 220px, teks di-wrap */
+th.col-penyedia,td.col-penyedia{width:220px;min-width:220px;max-width:220px;white-space:normal;word-break:break-word;overflow-wrap:break-word;line-height:1.3}
 .stack-line{display:block;padding:2px 0;line-height:1.35}
 .stack-line+.stack-line{border-top:1px dashed var(--line);margin-top:2px}
 .stack-no{display:inline-block;min-width:16px;color:var(--teal-dark);font-weight:800;font-size:10px}
@@ -1309,7 +1311,7 @@ tbody tr{animation:rowIn .3s ease both}
     </div>
 
     <!-- Upload / Download template -->
-    <div class="io-row">
+    <div class="io-row" id="io-tpl-kr">
       <svg viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2" style="width:26px;height:26px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       <div class="io-txt">
         <b>Template Pengisian Data</b>
@@ -1406,7 +1408,7 @@ tbody tr{animation:rowIn .3s ease both}
               <th class="col-date">Tgl. Berakhir Kontrak</th>
               <th>Nama Pekerjaan</th>
               <th class="col-bidang">Bidang Pelaksana</th>
-              <th>Penyedia</th>
+              <th class="col-penyedia">Penyedia</th>
               <th class="col-nilai">Nilai Pekerjaan</th>
               <th>Status</th>
               <th style="text-align:center">Aksi</th>
@@ -1434,7 +1436,7 @@ tbody tr{animation:rowIn .3s ease both}
     </div>
 
     <!-- Upload / Download template -->
-    <div class="io-row">
+    <div class="io-row" id="io-tpl-pl">
       <svg viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2" style="width:26px;height:26px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       <div class="io-txt">
         <b>Template Pengisian Data</b>
@@ -1532,7 +1534,7 @@ tbody tr{animation:rowIn .3s ease both}
               <th class="col-date">Tgl. Berakhir Kontrak</th>
               <th>Nama Pekerjaan</th>
               <th class="col-bidang">Bidang Pelaksana</th>
-              <th>Penyedia</th>
+              <th class="col-penyedia">Penyedia</th>
               <th class="col-nilai">Nilai Pekerjaan</th>
               <th>Status</th>
               <th style="text-align:center">Aksi</th>
@@ -1561,7 +1563,7 @@ tbody tr{animation:rowIn .3s ease both}
     </div>
 
     <!-- Upload / Download template -->
-    <div class="io-row">
+    <div class="io-row" id="io-tpl-tender">
       <svg viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2" style="width:26px;height:26px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       <div class="io-txt">
         <b>Template Pengisian Data</b>
@@ -1659,7 +1661,7 @@ tbody tr{animation:rowIn .3s ease both}
               <th class="col-date">Tgl. Berakhir Kontrak</th>
               <th>Nama Pekerjaan</th>
               <th class="col-bidang">Bidang Pelaksana</th>
-              <th>Penyedia</th>
+              <th class="col-penyedia">Penyedia</th>
               <th class="col-nilai">Nilai Pekerjaan</th>
               <th>Metode Pengadaan</th>
               <th>Status</th>
@@ -1862,7 +1864,10 @@ tbody tr{animation:rowIn .3s ease both}
 
 <script>
 /* ============ FIELD DEFINITIONS (mengikuti Data.xlsx) ============ */
+/* Opsi Tahun (dipakai field "Tahun" + filter tahun) — rentang tetap 2024–2034 */
+const TAHUN_OPTS = Array.from({length:11},(_,i)=>String(2024+i));
 const FIELDS = [
+  {key:'tahun',            label:'Tahun',                           input:'f_tahun',            type:'select', options:TAHUN_OPTS},
   {key:'no_prk',           label:'No. PRK',                         input:'f_no_prk',           type:'text', req:true},
   {key:'no_anggaran',      label:'No. Anggaran',                    input:'f_no_anggaran',      type:'text', req:true},
   {key:'no_pr',            label:'No. PR',                          input:'f_no_pr',            type:'text'},
@@ -1887,7 +1892,7 @@ const FIELDS = [
   {key:'status',           label:'Status',                          input:'f_status',           type:'select', options:['On Progress','Selesai'], req:true},
 ];
 const GROUPS = [
-  {title:'Informasi Umum', cols:4, keys:['no_prk','no_anggaran','no_pr','no_po','no_eproc','jenis_anggaran','bidang_pelaksana','status','tgl_anggaran']},
+  {title:'Informasi Umum', cols:4, keys:['tahun','no_prk','no_anggaran','no_pr','no_po','no_eproc','jenis_anggaran','bidang_pelaksana','status','tgl_anggaran']},
   {title:'Kesepakatan Harga Satuan (KHS)', cols:3, keys:['no_kontrak_khs','tgl_terbit_khs','tgl_berakhir_khs','nama_pekerjaan_khs','lokasi_pekerjaan_khs','nilai_kontrak_khs']},
   {title:'SPBJ / Kontrak Rinci', cols:3, keys:['no_spbj','nama_pekerjaan_kr','lokasi_pekerjaan_kr','tgl_terbit_kr','tgl_berakhir_kr','nilai_kontrak_kr','nama_penyedia']},
 ];
@@ -1900,6 +1905,7 @@ const RISIKO_OPTS = ['Tidak Ada','Rendah','Moderat','Tinggi','Sangat Tinggi','Ek
 /* table:true => tampil di Tabel Daftar Pekerjaan; seluruh field selalu tampil di "Lihat" */
 const FIELDS_PL = [
   // I. Informasi Pekerjaan
+  {key:'tahun', label:'Tahun', type:'select', options:TAHUN_OPTS},
   {key:'nama_pekerjaan', label:'Nama Pekerjaan', type:'text', table:true, span:2, req:true},
   {key:'lokasi_pekerjaan', label:'Lokasi Pekerjaan', type:'text', req:true},
   {key:'jangka_waktu', label:'Jangka Waktu Pelaksanaan Pekerjaan', type:'text', req:true, ph:'..........(hari)'},
@@ -1989,7 +1995,7 @@ const FIELDS_PL = [
   {key:'manajemen_kontrak', label:'Manajemen Kontrak', type:'select', options:['Sudah','Belum'], table:true},
 ];
 const GROUPS_PL = [
-  {title:'I. Informasi Pekerjaan', cols:3, keys:['nama_pekerjaan','lokasi_pekerjaan','jangka_waktu','bidang_pelaksana','level_risiko']},
+  {title:'I. Informasi Pekerjaan', cols:3, keys:['tahun','nama_pekerjaan','lokasi_pekerjaan','jangka_waktu','bidang_pelaksana','level_risiko']},
   {title:'II. Nota Dinas Pengadaan', cols:3, keys:['no_nota_dinas','tgl_nota_dinas']},
   {title:'III. Dokumen Pengadaan', cols:3, keys:['tgl_terima_dok','ketersediaan_drp','no_drp','tgl_drp']},
   {title:'IV. Rencana Anggaran Biaya', cols:3, keys:['rab_harga_barang','rab_harga_jasa','rab_total_tanpa_ppn','rab_total_dengan_ppn','no_prk','no_anggaran','tgl_anggaran','jenis_anggaran']},
@@ -2112,9 +2118,16 @@ function fillPenyediaFilter(){
 }
 
 /* Ambil TAHUN dari Tgl. Terbit Kontrak Rinci (format YYYY-MM-DD) */
-function contractYear(r){
-  const p=String(r.tgl_terbit_kr||'').split('-');
+/* Tahun sebuah record untuk filter: pakai field "Tahun" bila terisi (4 digit),
+   selain itu turunkan dari tanggal (kompatibilitas data lama). */
+function yearOf(r, fallbackDate){
+  const t=String((r&&r.tahun)||'').trim();
+  if(/^\d{4}$/.test(t)) return t;
+  const p=String(fallbackDate||'').split('-');
   return (p[0]&&p[0].length===4)?p[0]:'';
+}
+function contractYear(r){
+  return yearOf(r, r.tgl_terbit_kr);
 }
 /* Isi opsi filter Tahun (Dashboard + Monitoring) dengan rentang tetap 2024–2034, pertahankan pilihan */
 function fillYearFilters(){
@@ -2426,6 +2439,7 @@ function newRecord(){
   editingId=null; krReturnView='dashboard'; buildFormKr(); clearForm();
   document.getElementById('input-title').textContent='Input Kontrak Rinci';
   document.getElementById('edit-banner').style.display='none';
+  document.getElementById('io-tpl-kr').style.display='';
   showView('input');
 }
 function editRecord(rid){
@@ -2436,6 +2450,7 @@ function editRecord(rid){
   document.getElementById('input-title').textContent='Ubah Data Pekerjaan';
   const b=document.getElementById('edit-banner'); b.style.display='flex';
   document.getElementById('edit-banner-text').textContent='Mode Ubah Data';
+  document.getElementById('io-tpl-kr').style.display='none';
   showView('input','Memuat');
 }
 
@@ -2721,7 +2736,7 @@ function renderTable(){
       <td class="cell-center col-date">${fmtDate(r.tgl_berakhir_kr)||'—'}</td>
       <td class="wrap-cell">${r.nama_pekerjaan_kr||'—'}</td>
       <td class="col-bidang">${r.bidang_pelaksana||'—'}</td>
-      <td class="wrap-penyedia">${r.nama_penyedia||'—'}</td>
+      <td class="col-penyedia">${r.nama_penyedia||'—'}</td>
       <td class="col-nilai">${rupiah(r.nilai_kontrak_kr)||'—'}</td>
       <td>${statusPill(r.status)}</td>
       <td>
@@ -2783,11 +2798,10 @@ function resetFilters(){
 
 /* Ambil TAHUN dari sebuah record sesuai jenis data */
 function dashYear(r, jenis){
-  let raw='';
-  if(jenis==='kr')      raw = r.tgl_terbit_kr || '';
-  else                  raw = r.tgl_awal_kontrak || r.tgl_anggaran || r.tgl_nota_dinas || r.tgl_nd_rendan || '';
-  const p=String(raw).split('-');
-  return (p[0]&&p[0].length===4)?p[0]:'';
+  let fallback='';
+  if(jenis==='kr')      fallback = r.tgl_terbit_kr || '';
+  else                  fallback = r.tgl_awal_kontrak || r.tgl_anggaran || r.tgl_nota_dinas || r.tgl_nd_rendan || '';
+  return yearOf(r, fallback);
 }
 
 /* Nilai pekerjaan (nilai kontrak, + PPN) sesuai jenis data */
@@ -2887,9 +2901,9 @@ function renderDashboard(){
     gagal      = data.filter(r=>r.tahapan==='Gagal/Batal').length;
     prog       = total - terkontrak - gagal;
   }
-  const nilai=data.reduce((s,r)=>s+dashNilai(r,jenis),0);
-  const totRAB=data.reduce((s,r)=>s+dashRAB(r),0);
-  const totHPS=data.reduce((s,r)=>s+dashHPS(r),0);
+  const nilai=Math.round(data.reduce((s,r)=>s+dashNilai(r,jenis),0));
+  const totRAB=Math.round(data.reduce((s,r)=>s+dashRAB(r),0));
+  const totHPS=Math.round(data.reduce((s,r)=>s+dashHPS(r),0));
 
   // Kartu ringkasan (baris status)
   const cards=[
@@ -2953,11 +2967,11 @@ function efisiensiCardHTML(data){
   }
   const pctKontrak = sKontrak/sHPS*100;            // porsi kontrak terhadap HPS
   const eff = Math.max(0, 100 - pctKontrak);       // % efisiensi
-  const hemat = sHPS - sKontrak;                    // penghematan (Rp)
+  const hemat = Math.round(sHPS - sKontrak);        // penghematan (Rp)
   const barW = Math.max(2, Math.min(100, eff));
   return `<div class="card efisiensi-card"><div class="accent" style="background:var(--green)"></div>
     <div class="k">Efisiensi Kontrak vs HPS</div>
-    <div class="eff-pct">${eff.toFixed(2)}<span>%</span></div>
+    <div class="eff-pct">${Math.round(eff)}<span>%</span></div>
     <div class="eff-bar"><div class="eff-bar-fill" style="width:${barW}%"></div></div>
     <div class="eff-rp">${rupiah(hemat)||'Rp 0'}<small>penghematan terhadap HPS</small></div>
   </div>`;
@@ -2970,7 +2984,7 @@ function renderBars(elId,key,cats,data,opts){
   if(data.length===0){ el.innerHTML='<div class="empty" style="padding:20px">Belum ada data.</div>'; return; }
   const rows=cats.map(c=>{
     const subset=data.filter(r=>r[key]===c);
-    const val=opts.sum ? subset.reduce((s,r)=>s+dashNilai(r,jenis),0) : subset.length;
+    const val=opts.sum ? Math.round(subset.reduce((s,r)=>s+dashNilai(r,jenis),0)) : subset.length;
     return {c,val};
   });
   const max=Math.max(1,...rows.map(x=>x.val));
@@ -3000,13 +3014,13 @@ function renderEfisiensi(elId, data){
   const rows=[];
   if(sHPS>0){
     const pct=sKontrak/sHPS*100;
-    const hemat=sHPS-sKontrak; // penghematan (HPS − Kontrak), dengan PPN
-    rows.push({c:'Nilai Kontrak terhadap HPS', pct, note:`Efisiensi ${(100-pct).toFixed(2)}% · ${rupiah(hemat)||'Rp 0'}`});
+    const hemat=Math.round(sHPS-sKontrak); // penghematan (HPS − Kontrak), dengan PPN
+    rows.push({c:'Nilai Kontrak terhadap HPS', pct, note:`Efisiensi ${Math.round(100-pct)}% · ${rupiah(hemat)||'Rp 0'}`});
   }
   if(sRAB>0){
     const pct=sHPSforRAB/sRAB*100;
-    const hemat=sRAB-sHPSforRAB; // penghematan (RAB − HPS), dengan PPN
-    rows.push({c:'Nilai HPS terhadap RAB', pct, note:`Efisiensi ${(100-pct).toFixed(2)}% · ${rupiah(hemat)||'Rp 0'}`});
+    const hemat=Math.round(sRAB-sHPSforRAB); // penghematan (RAB − HPS), dengan PPN
+    rows.push({c:'Nilai HPS terhadap RAB', pct, note:`Efisiensi ${Math.round(100-pct)}% · ${rupiah(hemat)||'Rp 0'}`});
   }
   if(rows.length===0){
     el.innerHTML='<div class="empty" style="padding:20px">Data belum tersedia.</div>';
@@ -3017,7 +3031,7 @@ function renderEfisiensi(elId, data){
     <div class="bar-row">
       <span class="lbl" title="${x.c}">${x.c}</span>
       <div class="bar-track"><div class="bar-fill" style="width:${x.pct/max*100}%"></div></div>
-      <span class="num">${x.pct.toFixed(2)}%</span>
+      <span class="num">${Math.round(x.pct)}%</span>
     </div>
     <div style="font-size:10px;color:var(--green-dark);margin:-6px 0 12px 212px">${x.note}</div>`).join('');
 }
@@ -3465,6 +3479,7 @@ function newRecordPl(){
   editingIdPl=null; plReturnView='dashboard'; clearFormPl();
   document.getElementById('input-pl-title').textContent='Input Pekerjaan';
   document.getElementById('edit-banner-pl').style.display='none';
+  document.getElementById('io-tpl-pl').style.display='';
   showView('input-pl');
 }
 function editRecordPl(rid){
@@ -3475,6 +3490,7 @@ function editRecordPl(rid){
   document.getElementById('input-pl-title').textContent='Ubah Data Pekerjaan';
   const b=document.getElementById('edit-banner-pl'); b.style.display='flex';
   document.getElementById('edit-banner-pl-text').textContent='Mode Ubah Data';
+  document.getElementById('io-tpl-pl').style.display='none';
   showView('input-pl','Memuat');
 }
 
@@ -3906,7 +3922,7 @@ function getFilteredRecordsPl(){
   return records_pl.filter(r=>{
     if(fb && r.bidang_pelaksana!==fb) return false;
     if(!matchTahapanFilter(r.tahapan, ftp)) return false;
-    if(fyr && String(r.tgl_awal_kontrak||'').slice(0,4)!==fyr) return false;
+    if(fyr && yearOf(r, r.tgl_awal_kontrak)!==fyr) return false;
     if(fs){
       const hay=[r.nama_pekerjaan,r.no_kontrak,r.perusahaan,r.no_prk,r.no_eproc,r.no_nota_dinas].join(' ').toLowerCase();
       if(!hay.includes(fs)) return false;
@@ -3948,7 +3964,7 @@ function renderTablePl(){
       <td class="cell-center col-date">${fmtDate(r.tgl_akhir_kontrak)||'—'}</td>
       <td class="wrap-cell">${r.nama_pekerjaan||'—'}</td>
       <td class="col-bidang">${r.bidang_pelaksana||'—'}</td>
-      <td class="wrap-penyedia">${r.perusahaan||'—'}</td>
+      <td class="col-penyedia">${r.perusahaan||'—'}</td>
       <td class="col-nilai">${rupiah(r.kontrak_total_dengan_ppn)||'—'}</td>
       <td class="cell-center">${tahapanPill(r.tahapan)}</td>
       <td>
@@ -4171,6 +4187,7 @@ const TINDAK_LANJUT_OPTS = ['Serah Terima','Amandemen','Dikembalikan','Proses Kl
    lock:'<rule>' => terkunci otomatis sesuai aturan pada TENDER_LOCK_RULES. */
 const FIELDS_TENDER = [
   // I. Informasi Pekerjaan
+  {key:'tahun', label:'Tahun', type:'select', options:TAHUN_OPTS},
   {key:'nama_pekerjaan', label:'Nama Pekerjaan', type:'text', table:true, span:2, req:true},
   {key:'lokasi_pekerjaan', label:'Lokasi Pekerjaan', type:'text', req:true},
   {key:'jangka_waktu', label:'Jangka Waktu Pelaksanaan Pekerjaan', type:'text', req:true, ph:'..........(hari)'},
@@ -4340,7 +4357,7 @@ const FIELDS_TENDER = [
   {key:'manajemen_kontrak', label:'Manajemen Kontrak', type:'select', options:['Sudah','Belum']},
 ];
 const GROUPS_TENDER = [
-  {title:'I. Informasi Pekerjaan', cols:3, keys:['nama_pekerjaan','lokasi_pekerjaan','jangka_waktu','bidang_pelaksana','level_risiko']},
+  {title:'I. Informasi Pekerjaan', cols:3, keys:['tahun','nama_pekerjaan','lokasi_pekerjaan','jangka_waktu','bidang_pelaksana','level_risiko']},
   {title:'II. Nota Dinas Pengadaan', cols:3, keys:['no_nd_rendan','tgl_nd_rendan','no_nd_laksda','tgl_nd_laksda']},
   {title:'III. Dokumen Pengadaan', cols:3, keys:['tgl_terima_dok','ketersediaan_drp','no_drp','tgl_drp']},
   {title:'IV. Dokumen RKS', cols:3, keys:['no_rks','tgl_rks','addendum_rks','no_add_rks','tgl_add_rks']},
@@ -4782,6 +4799,7 @@ function newRecordTender(){
   editingIdTender=null; tenderReturnView='dashboard'; clearFormTender(); applyLocksTender();
   document.getElementById('input-tender-title').textContent='Input Pekerjaan Tender';
   document.getElementById('edit-banner-tender').style.display='none';
+  document.getElementById('io-tpl-tender').style.display='';
   showView('input-tender');
 }
 function editRecordTender(rid){
@@ -4792,6 +4810,7 @@ function editRecordTender(rid){
   document.getElementById('input-tender-title').textContent='Ubah Data Pekerjaan';
   const b=document.getElementById('edit-banner-tender'); b.style.display='flex';
   document.getElementById('edit-banner-tender-text').textContent='Mode Ubah Data';
+  document.getElementById('io-tpl-tender').style.display='none';
   showView('input-tender','Memuat');
 }
 
@@ -4903,7 +4922,7 @@ function getFilteredRecordsTender(){
   return records_tender.filter(r=>{
     if(fb && r.bidang_pelaksana!==fb) return false;
     if(!matchTahapanFilter(r.tahapan, ftp)) return false;
-    if(fyr && String(r.tgl_awal_kontrak||'').slice(0,4)!==fyr) return false;
+    if(fyr && yearOf(r, r.tgl_awal_kontrak)!==fyr) return false;
     if(fs){
       const hay=[r.nama_pekerjaan,r.no_kontrak,r.perusahaan,r.no_prk,r.no_eproc,r.no_rks].join(' ').toLowerCase();
       if(!hay.includes(fs)) return false;
@@ -4945,7 +4964,7 @@ function renderTableTender(){
       <td class="cell-center col-date">${fmtDate(r.tgl_akhir_kontrak)||'—'}</td>
       <td class="wrap-cell">${r.nama_pekerjaan||'—'}</td>
       <td class="col-bidang">${r.bidang_pelaksana||'—'}</td>
-      <td class="wrap-penyedia">${stackPenyediaHtml(r,'perusahaan')}</td>
+      <td class="col-penyedia">${stackPenyediaHtml(r,'perusahaan')}</td>
       <td class="wrap-penyedia col-nilai">${stackPenyediaRupiah(r,'kontrak_total_dengan_ppn')}</td>
       <td class="cell-center">${r.metode_pengadaan||'—'}</td>
       <td class="cell-center">${tahapanPill(r.tahapan)}</td>
