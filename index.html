@@ -1357,6 +1357,7 @@ tbody tr{animation:rowIn .3s ease both}
         <select id="filter-bidang" onchange="currentPage=1;renderTable()">
           <option value="">Semua Bidang</option>
           <option>Jaringan dan Konstruksi</option>
+          <option>Pembangkitan</option>
           <option>Transaksi Energi Listrik</option>
           <option>Niaga dan Pemasaran</option>
           <option>Perencanaan</option>
@@ -1481,6 +1482,7 @@ tbody tr{animation:rowIn .3s ease both}
         <select id="filter-pl-bidang" onchange="currentPagePl=1;renderTablePl()">
           <option value="">Semua Bidang</option>
           <option>Jaringan dan Konstruksi</option>
+          <option>Pembangkitan</option>
           <option>Transaksi Energi Listrik</option>
           <option>Niaga dan Pemasaran</option>
           <option>Perencanaan</option>
@@ -1607,6 +1609,7 @@ tbody tr{animation:rowIn .3s ease both}
         <select id="filter-tender-bidang" onchange="currentPageTender=1;renderTableTender()">
           <option value="">Semua Bidang</option>
           <option>Jaringan dan Konstruksi</option>
+          <option>Pembangkitan</option>
           <option>Transaksi Energi Listrik</option>
           <option>Niaga dan Pemasaran</option>
           <option>Perencanaan</option>
@@ -1865,7 +1868,7 @@ const FIELDS = [
   {key:'tgl_anggaran',     label:'Tgl. Anggaran',                   input:'f_tgl_anggaran',     type:'date', req:true},
   {key:'no_eproc',         label:'No. Eproc',                       input:'f_no_eproc',         type:'text'},
   {key:'jenis_anggaran',   label:'Jenis Anggaran',                  input:'f_jenis_anggaran',   type:'select', options:['Operasi','Investasi'], req:true},
-  {key:'bidang_pelaksana', label:'Bidang Pelaksana',                input:'f_bidang_pelaksana', type:'select', options:['Jaringan dan Konstruksi','Transaksi Energi Listrik','Niaga dan Pemasaran','Perencanaan','Keuangan dan Umum','Keselamatan, Kesehatan Kerja, Lingkungan dan Keamanan'], req:true},
+  {key:'bidang_pelaksana', label:'Bidang Pelaksana',                input:'f_bidang_pelaksana', type:'select', options:['Jaringan dan Konstruksi','Pembangkitan','Transaksi Energi Listrik','Niaga dan Pemasaran','Perencanaan','Keuangan dan Umum','Keselamatan, Kesehatan Kerja, Lingkungan dan Keamanan'], req:true},
   {key:'no_kontrak_khs',   label:'No. Kontrak KHS',                 input:'f_no_kontrak_khs',   type:'text'},
   {key:'tgl_terbit_khs',   label:'Tgl. Terbit Kontrak (KHS)',       input:'f_tgl_terbit_khs',   type:'date'},
   {key:'tgl_berakhir_khs', label:'Tgl. Berakhir Kontrak (KHS)',     input:'f_tgl_berakhir_khs', type:'date'},
@@ -1890,7 +1893,7 @@ const GROUPS = [
 const KR_SCHEMA_BASE = { fields: JSON.parse(JSON.stringify(FIELDS)), groups: JSON.parse(JSON.stringify(GROUPS)) };
 
 /* ============ FIELD DEFINITIONS PENGADAAN LANGSUNG (mengikuti Data_Untuk_Coding.xlsx) ============ */
-const BIDANG_OPTS = ['Jaringan dan Konstruksi','Transaksi Energi Listrik','Niaga dan Pemasaran','Perencanaan','Keuangan dan Umum','Keselamatan, Kesehatan Kerja, Lingkungan dan Keamanan'];
+const BIDANG_OPTS = ['Jaringan dan Konstruksi','Pembangkitan','Transaksi Energi Listrik','Niaga dan Pemasaran','Perencanaan','Keuangan dan Umum','Keselamatan, Kesehatan Kerja, Lingkungan dan Keamanan'];
 const RISIKO_OPTS = ['Tidak Ada','Rendah','Moderat','Tinggi','Sangat Tinggi','Ekstrem'];
 /* table:true => tampil di Tabel Daftar Pekerjaan; seluruh field selalu tampil di "Lihat" */
 const FIELDS_PL = [
@@ -2928,7 +2931,7 @@ function renderDashboard(){
   }
 
   // Grafik per Bidang Pelaksana
-  const bidangList=['Jaringan dan Konstruksi','Transaksi Energi Listrik','Niaga dan Pemasaran','Perencanaan','Keuangan dan Umum','Keselamatan, Kesehatan Kerja, Lingkungan dan Keamanan'];
+  const bidangList=['Jaringan dan Konstruksi','Pembangkitan','Transaksi Energi Listrik','Niaga dan Pemasaran','Perencanaan','Keuangan dan Umum','Keselamatan, Kesehatan Kerja, Lingkungan dan Keamanan'];
   renderBars('chart-bidang','bidang_pelaksana',bidangList,data,{jenis});
   renderBars('chart-anggaran','bidang_pelaksana',bidangList,data,{jenis,sum:true});
 }
@@ -3121,7 +3124,7 @@ async function downloadTemplate(){
   wsG.columns=[{width:26},{width:82}];
   [['PETUNJUK PENGISIAN',''],['',''],
    ['Jenis Anggaran','Pilih dari dropdown: Operasi / Investasi'],
-   ['Bidang Pelaksana','Pilih dari dropdown (6 bidang)'],
+   ['Bidang Pelaksana','Pilih dari dropdown (7 bidang)'],
    ['Status','Pilih dari dropdown: On Progress / Selesai'],
    ['Format Tanggal','Kolom tanggal sudah berformat dd-mm-yyyy. Ketik tanggal langsung (mis. 31-01-2025).'],
    ['Nilai','Kolom nilai sudah berformat Rupiah tanpa desimal. Ketik angka saja (mis. 100000000).'],
@@ -3218,14 +3221,14 @@ function handleUpload(ev){
       for(let r=1;r<rows.length;r++){
         const row=rows[r]; if(!row || row.every(c=>String(c).trim()===''))continue;
         const rec={};
+        let fmtBad=false;
         FIELDS.forEach(f=>{
-          let v = map[f.key]!=null ? row[map[f.key]] : '';
-          v = v==null?'':v;
-          if(f.type==='num'){ const n=Number(String(v).replace(/[^\d.-]/g,'')); v=isNaN(n)?'':n; }
-          else if(f.type==='date'){ v=normDate(v); }
-          else v=String(v).trim();
-          rec[f.key]=v;
+          const raw = map[f.key]!=null ? row[map[f.key]] : '';
+          const c=coerceCell(f,raw);
+          if(!c.ok) fmtBad=true;
+          rec[f.key]=c.value;
         });
+        if(fmtBad){ toast('Data gagal diperbarui : format tidak sesuai','err'); ev.target.value=''; return; }
         if(validateRequiredKr(rec).length){ toast('Data gagal diperbarui, lengkapi data terlebih dahulu','warn'); ev.target.value=''; return; }
         batch.push(rec);
       }
@@ -3258,6 +3261,57 @@ function normDate(v){
   let m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/); if(m)return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
   m=s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/); if(m)return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
   return s;
+}
+
+/* ===== Validasi format sel Excel saat Upload =====
+   Dipakai ketiga modul (SPBJ/KR, PL, Tender). Bila sebuah sel berisi nilai
+   yang tidak sesuai (bukan salah satu opsi dropdown, atau format tanggal/angka
+   tidak valid) maka upload dibatalkan dengan pesan:
+   "Data gagal diperbarui : format tidak sesuai". */
+function isValidNumCell(v){
+  if(typeof v==='number') return isFinite(v);
+  let s=String(v).trim(); if(s==='') return true;      // kosong ditangani cek wajib
+  s=s.replace(/rp/gi,'').trim();
+  if(/[a-z]/i.test(s)) return false;                    // ada huruf → bukan angka
+  const cleaned=s.replace(/[^\d.\-]/g,'');
+  if(cleaned===''||cleaned==='-'||cleaned==='.') return false;
+  return !isNaN(Number(cleaned));
+}
+function isValidDateCell(v){
+  if(v===''||v==null) return true;                      // kosong ditangani cek wajib
+  const iso=normDate(v);
+  const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if(!m) return false;
+  const y=+m[1], mo=+m[2], d=+m[3];
+  if(mo<1||mo>12||d<1||d>31) return false;
+  const dt=new Date(y,mo-1,d);
+  return dt.getFullYear()===y && dt.getMonth()===mo-1 && dt.getDate()===d;
+}
+/* Cocokkan nilai dengan opsi dropdown (abaikan spasi & kapitalisasi).
+   Kembalikan opsi kanonik bila cocok, '' bila kosong, atau null bila tidak cocok. */
+function matchOption(v, opts){
+  const s=String(v==null?'':v).trim(); if(s==='') return '';
+  const hit=(opts||[]).find(o=>String(o).trim().toLowerCase()===s.toLowerCase());
+  return hit==null ? null : hit;
+}
+/* Validasi + normalisasi 1 sel menurut tipe field.
+   Kembalikan {ok:boolean, value:any}. ok=false → format tidak sesuai. */
+function coerceCell(f, raw){
+  raw=(raw==null)?'':raw;
+  if(f.type==='select' && Array.isArray(f.options) && f.options.length){
+    const mo=matchOption(raw,f.options);
+    if(mo===null) return {ok:false, value:String(raw).trim()};
+    return {ok:true, value:mo};
+  }
+  if(f.type==='num'){
+    if(!isValidNumCell(raw)) return {ok:false, value:''};
+    const n=Number(String(raw).replace(/[^\d.\-]/g,'')); return {ok:true, value:isNaN(n)?'':n};
+  }
+  if(f.type==='date'){
+    if(!isValidDateCell(raw)) return {ok:false, value:''};
+    return {ok:true, value:normDate(raw)};
+  }
+  return {ok:true, value:String(raw).trim()};
 }
 
 /* ============================================================
@@ -3980,7 +4034,7 @@ async function downloadTemplatePl(){
   const wsG=wb.addWorksheet('Petunjuk');
   wsG.columns=[{width:30},{width:80}];
   [['PETUNJUK PENGISIAN — PENGADAAN LANGSUNG',''],['',''],
-   ['Bidang Pelaksana','Pilih dari dropdown (6 bidang)'],
+   ['Bidang Pelaksana','Pilih dari dropdown (7 bidang)'],
    ['Level Risiko / Level Risiko (CSMS)','Pilih dari dropdown: Tidak Ada s/d Ekstrem'],
    ['Jenis Anggaran','Pilih: Operasi / Investasi'],
    ['Jenis Pengadaan','Pilih: Barang / Jasa Lainnya / Jasa Konsultansi / Pekerjaan Konstruksi'],
@@ -4050,14 +4104,14 @@ function handleUploadPl(ev){
       for(let r=1;r<rows.length;r++){
         const row=rows[r]; if(!row || row.every(c=>String(c).trim()===''))continue;
         const rec={};
+        let fmtBad=false;
         FIELDS_PL.forEach(f=>{
-          let v=map[f.key]!=null ? row[map[f.key]] : '';
-          v=v==null?'':v;
-          if(f.type==='num'){ const n=Number(String(v).replace(/[^\d.-]/g,'')); v=isNaN(n)?'':n; }
-          else if(f.type==='date'){ v=normDate(v); }
-          else v=String(v).trim();
-          rec[f.key]=v;
+          const raw=map[f.key]!=null ? row[map[f.key]] : '';
+          const c=coerceCell(f,raw);
+          if(!c.ok) fmtBad=true;
+          rec[f.key]=c.value;
         });
+        if(fmtBad){ toast('Data gagal diperbarui : format tidak sesuai','err'); ev.target.value=''; return; }
         // #12: pastikan Harga Total (Tanpa PPN) = Harga Barang + Harga Jasa
         FIELDS_PL.forEach(f=>{ if(f.auto==='sum'){ const p=f.key.replace(/_total_tanpa_ppn$/,''); const b=Number(rec[p+'_harga_barang'])||0, j=Number(rec[p+'_harga_jasa'])||0; rec[f.key]=(b+j)>0?(b+j):''; } });
         if(missingRequiredPl(rec).length){ toast('Data gagal diperbarui, lengkapi data terlebih dahulu','warn'); ev.target.value=''; return; }
@@ -4981,7 +5035,7 @@ async function downloadTemplateTender(){
   const wsG=wb.addWorksheet('Petunjuk');
   wsG.columns=[{width:34},{width:84}];
   [['PETUNJUK PENGISIAN — TENDER',''],['',''],
-   ['Bidang Pelaksana','Pilih dari dropdown (6 bidang)'],
+   ['Bidang Pelaksana','Pilih dari dropdown (7 bidang)'],
    ['Level Risiko / Level Risiko (CSMS)','Pilih dari dropdown: Tidak Ada s/d Ekstrem'],
    ['Addendum RKS','Pilih: Ada / Tidak Ada. Bila selain "Ada", No./Tgl. Addendum RKS dikosongkan.'],
    ['Metode Pengadaan','Tender Terbatas / Tender Terbuka / Seleksi Umum / Seleksi Terbatas / Penunjukan Langsung / Tender Cepat'],
@@ -5065,12 +5119,14 @@ function handleUploadTender(ev){
         const row=rows[r]; if(!row || row.every(c=>String(c).trim()===''))continue;
         const rec={};
         const layerLines={}; let maxLayers=1;
+        let fmtBad=false;
         FIELDS_TENDER.forEach(f=>{
           let raw=map[f.key]!=null ? row[map[f.key]] : '';
           raw=raw==null?'':raw;
           if(PNW_SET.has(f.key)){
             let lines=String(raw).split(/\r?\n/).map(s=>s.trim());
             while(lines.length>1 && lines[lines.length-1]==='') lines.pop();
+            lines.forEach(ln=>{ if(!coerceCell(f,ln).ok) fmtBad=true; });
             layerLines[f.key]=lines;
             if(lines.length>maxLayers) maxLayers=lines.length;
           }else if(INDEP_MULTI_KEYS.includes(f.key)){
@@ -5079,13 +5135,12 @@ function handleUploadTender(ev){
             rec[f.key+'_list']=lines;
             rec[f.key]=lines[0]||'';
           }else{
-            let v=raw;
-            if(f.type==='num'){ const n=Number(String(v).replace(/[^\d.-]/g,'')); v=isNaN(n)?'':n; }
-            else if(f.type==='date'){ v=normDate(v); }
-            else v=String(v).trim();
-            rec[f.key]=v;
+            const c=coerceCell(f,raw);
+            if(!c.ok) fmtBad=true;
+            rec[f.key]=c.value;
           }
         });
+        if(fmtBad){ toast('Data gagal diperbarui : format tidak sesuai','err'); ev.target.value=''; return; }
         const layers=[];
         for(let i=0;i<maxLayers;i++){
           const lay={};
