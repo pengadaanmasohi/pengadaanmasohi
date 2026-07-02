@@ -233,7 +233,7 @@ td.cell-center{text-align:center}
 /* #4: Kolom No. dipersempit agar pas dengan angka baris (mis. 1–2 digit) */
 .table-wrap th.col-no,.table-wrap td.col-no{width:34px;min-width:34px;max-width:40px;text-align:center;padding-left:6px;padding-right:6px;white-space:nowrap}
 /* Kolom Tgl. Terbit & Berakhir Kontrak — dilebarkan & judul dibungkus agar muat 2 baris */
-.table-wrap th.col-date,.table-wrap td.col-date{min-width:92px!important;width:92px!important;max-width:96px!important;padding-left:8px;padding-right:8px}
+.table-wrap th.col-date,.table-wrap td.col-date{min-width:118px!important;width:118px!important;max-width:124px!important;padding-left:8px;padding-right:8px}
 .table-wrap th.col-date{white-space:normal;line-height:1.28;text-align:center;vertical-align:middle}
 .table-wrap td.col-date{white-space:nowrap;text-align:center}
 /* Kolom No. Kontrak/SPBJ — menyesuaikan lebar isi data (tampil utuh, tidak terpotong) */
@@ -2232,23 +2232,10 @@ async function submitChangePass(){
   }
 }
 function playLoginAnim(role, done){
-  const anim=document.getElementById('login-anim');
-  if(!anim){ done&&done(); return; }
-  const labels={admin:'Admin',user:'User',guest:'Tamu'};
-  const t=document.getElementById('login-anim-title');
-  const sub=document.getElementById('login-anim-sub');
-  if(t && t.childNodes[0]) t.childNodes[0].nodeValue='Selamat Datang';
-  if(sub) sub.textContent = '';
-  // sembunyikan layar login di belakang overlay agar transisi mulus
-  anim.classList.remove('fade-out');
-  anim.classList.add('show');
+  // Animasi "Selamat Datang" dihapus agar tidak ada efek ganda saat login.
   const loginScreen=document.getElementById('login-screen');
-  setTimeout(()=>{
-    done&&done();
-    if(loginScreen) loginScreen.style.display='none';
-    anim.classList.add('fade-out');
-    setTimeout(()=>{ anim.classList.remove('show','fade-out'); }, 500);
-  }, 1500);   // durasi animasi ± 1,5 detik
+  if(loginScreen) loginScreen.style.display='none';
+  done&&done();
 }
 function enterApp(role){
   currentRole=role;
@@ -2317,40 +2304,26 @@ function logout(){
 
 /* ============ NAVIGATION ============ */
 function showLoader(msg){
-  const l=document.getElementById('route-loader'); if(!l) return;
-  const t=l.querySelector('.rl-text'); if(t) t.textContent=msg||'Memuat';
-  l.classList.add('show');
+  // Animasi loading "Memuat" dihapus — loader tidak lagi ditampilkan.
 }
 function hideLoader(){
   const l=document.getElementById('route-loader'); if(!l) return;
   l.classList.remove('show');
-  const t=l.querySelector('.rl-text'); if(t) t.textContent='Memuat';
 }
-/* Loader untuk aksi async (hapus/simpan) dengan durasi minimum agar animasi terlihat */
+/* Loader untuk aksi async (hapus/simpan) — tanpa animasi & tanpa jeda minimum */
 async function withActionLoader(msg, action, minMs=650){
-  showLoader(msg);
-  const t0=Date.now();
-  try{ return await action(); }
-  finally{
-    const wait=Math.max(0, minMs-(Date.now()-t0));
-    if(wait) await new Promise(r=>setTimeout(r,wait));
-    hideLoader();
-  }
+  return await action();
 }
 /* Loader singkat untuk aksi sinkron (mis. membuka detail / mode ubah) */
 function withQuickLoader(msg, action, ms=520){
-  showLoader(msg);
-  setTimeout(()=>{ try{ action(); } finally{ hideLoader(); } }, ms);
+  try{ action(); } finally{ hideLoader(); }
 }
 
 let routeTimer=null;
 function showView(name, loaderMsg){
   if(PYN_REG.pl.active && name!=='input-pl') exitPenyesuaianPl(); if(PYN_REG.kr.active && name!=='input') exitPenyesuaianKr(); if(PYN_REG.tender.active && name!=='input-tender') exitPenyesuaianTender();
-  showLoader(loaderMsg);
   closeMobileNav();
-  clearTimeout(routeTimer);
-  routeTimer=setTimeout(()=>{
-    try{
+  try{
       document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
       document.getElementById('view-'+name).classList.add('active');
       // active state untuk Dashboard (nav-link) maupun item di dalam grup (nav-item)
@@ -2368,9 +2341,7 @@ function showView(name, loaderMsg){
       if(name==='list') renderTable();
       if(name==='list-pl') renderTablePl();
       if(name==='list-tender') renderTableTender();
-    }catch(err){ console.error('showView error:', err); }
-    finally{ hideLoader(); }
-  }, 550);
+  }catch(err){ console.error('showView error:', err); }
 }
 
 /* ============ NAV (top bar dropdown) ============ */
