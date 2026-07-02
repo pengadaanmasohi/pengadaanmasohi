@@ -5437,15 +5437,10 @@ renderTableTender();
 refreshData();      // muat data SPBJ/Kontrak Rinci
 refreshDataPl();    // muat data Pengadaan Langsung
 refreshDataTender();// muat data Tender
-// Pulihkan sesi login bila ada; selain itu tampilkan layar login
+// Setiap membuka/refresh halaman: paksa login ulang (tidak memulihkan sesi).
 resetLoginForm();
-try{
-  const savedRole=sessionStorage.getItem(ROLE_KEY);
-  if(savedRole==='admin'||savedRole==='user'||savedRole==='guest'){
-    currentUsername = sessionStorage.getItem(USER_KEY) || null;
-    enterApp(savedRole);
-  }
-}catch(e){}
+try{ sessionStorage.removeItem(ROLE_KEY); sessionStorage.removeItem(USER_KEY); }catch(e){}
+currentRole=null; currentUsername=null;
 // close modal on overlay click
 document.getElementById('confirm-overlay').addEventListener('click',e=>{ if(e.target.id==='confirm-overlay')closeConfirm(); });
 document.getElementById('detail-overlay').addEventListener('click',e=>{ if(e.target.id==='detail-overlay')closeDetail(); });
