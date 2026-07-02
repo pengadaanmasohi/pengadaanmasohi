@@ -2249,7 +2249,6 @@ function enterApp(role){
   document.getElementById('topbar-user').style.display='flex';
   resetLoginForm();
   showView('dashboard');
-  startIdleWatch();
 }
 function applyRole(role){
   document.querySelectorAll('.topnav-link[data-role], .topnav-item[data-role]').forEach(l=>{
@@ -2280,7 +2279,6 @@ function applyRole(role){
   renderTableTender();
 }
 function performLogout(){
-  stopIdleWatch();
   const anim=document.getElementById('logout-anim');
   const finish=()=>{
     try{ sessionStorage.removeItem(ROLE_KEY); sessionStorage.removeItem(USER_KEY); }catch(e){}
@@ -2307,36 +2305,6 @@ function logout(){
     text:'Apakah anda yakin ingin keluar?',
     onYes:performLogout
   });
-}
-
-/* ============ AUTO LOGOUT SAAT IDLE (10 menit) ============ */
-const IDLE_LIMIT_MS = 10 * 60 * 1000;   // 10 menit tanpa aktivitas
-let idleTimer = null;
-let idleHandlersBound = false;
-const IDLE_EVENTS = ['mousemove','mousedown','keydown','touchstart','scroll','wheel','click'];
-
-function resetIdleTimer(){
-  if(!currentRole) return;                // hanya aktif saat sudah login
-  if(idleTimer) clearTimeout(idleTimer);
-  idleTimer = setTimeout(onIdleTimeout, IDLE_LIMIT_MS);
-}
-function onIdleActivity(){ resetIdleTimer(); }
-function onIdleTimeout(){
-  if(!currentRole) return;
-  stopIdleWatch();
-  performLogout();
-  // Beri tahu alasan keluar setelah kembali ke layar login
-  setTimeout(()=>toast('Anda keluar otomatis karena tidak ada aktivitas selama 10 menit','warn'), 1400);
-}
-function startIdleWatch(){
-  if(!idleHandlersBound){
-    IDLE_EVENTS.forEach(ev=>document.addEventListener(ev, onIdleActivity, {passive:true}));
-    idleHandlersBound = true;
-  }
-  resetIdleTimer();
-}
-function stopIdleWatch(){
-  if(idleTimer){ clearTimeout(idleTimer); idleTimer=null; }
 }
 
 /* ============ NAVIGATION ============ */
@@ -3210,7 +3178,7 @@ async function exportExcel(){
       const cell = ws.getCell(r,c);
       cell.border = allBorder;
       cell.alignment = {vertical:'middle'};
-      if(COLS[c-1].type==='num' && typeof cell.value==='number') cell.numFmt = '#,##0';
+      if(COLS[c-1].type==='num' && typeof cell.value==='number') cell.numFmt = /_total_tanpa_ppn$/.test(COLS[c-1].key) ? '"Rp"#,##0' : '#,##0';
       if(r%2===1) cell.fill = {type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F7F8'}};
     }
   }
@@ -3992,9 +3960,7 @@ async function downloadTemplatePl(){
     if(f.type==='date'){ for(let r=2;r<=151;r++) wsD.getCell(r,c).numFmt='dd-mm-yyyy'; }
     if(f.type==='num'){ for(let r=2;r<=151;r++){ wsD.getCell(r,c).numFmt='"Rp"#,##0'; wsD.getCell(r,c).alignment={vertical:'middle',horizontal:'right'}; } }
   });
-  // #12: Harga Total (Tanpa PPN) = Harga Barang + Harga Jasa (rumus otomatis di seluruh baris)
-  const colMapPlT=fieldColMap(COLS);
-  for(let r=2;r<=151;r++){ applyExcelAutoFormula(wsD, COLS, colMapPlT, r); }
+  // #12: Harga Total (Tanpa PPN) diisi manual sebagai nilai (tanpa rumus). Format currency Rupiah tanpa desimal sudah diterapkan di atas.
 
   const wsO=wb.addWorksheet('Opsi');
   dropKeys.forEach((k,ci)=>{ const f=COLS.find(x=>x.key===k); wsO.getCell(1,ci+1).value=f.label; OPSI[k].forEach((v,ri)=>wsO.getCell(ri+2,ci+1).value=v); });
@@ -4043,14 +4009,13 @@ async function exportExcelPl(){
   const wb=new ExcelJS.Workbook();
   const ws=wb.addWorksheet('Daftar Pengadaan Langsung');
   ws.addRow(COLS.map(f=>f.label));
-  const colMapPl=fieldColMap(COLS);
-  rows.forEach((r,ri)=>{ ws.addRow(COLS.map(f=>{ let v=r[f.key]; if(f.auto==='sum') return null; if(v===''||v==null) return ''; if(f.type==='num') return Number(v); return v; })); applyExcelAutoFormula(ws, COLS, colMapPl, ri+2); });
+  rows.forEach((r,ri)=>{ ws.addRow(COLS.map(f=>{ let v=r[f.key]; if(f.auto==='sum'){ const p=f.key.replace(/_total_tanpa_ppn$/,''); const b=Number(r[p+'_harga_barang'])||0, j=Number(r[p+'_harga_jasa'])||0; const t=b+j; return t>0?t:''; } if(v===''||v==null) return ''; if(f.type==='num') return Number(v); return v; })); });
   ws.columns=COLS.map(f=>({width:Math.max(16,f.label.length+2)}));
   const thin={style:'thin',color:{argb:'FFBFCAD0'}};
   const allBorder={top:thin,left:thin,bottom:thin,right:thin};
   const headRow=ws.getRow(1); headRow.height=32;
   for(let c=1;c<=COLS.length;c++){ const cell=ws.getCell(1,c); cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0E7C86'}}; cell.font={bold:true,color:{argb:'FFFFFFFF'},size:11}; cell.alignment={wrapText:true,vertical:'middle',horizontal:'center'}; cell.border=allBorder; }
-  for(let r=2;r<=rows.length+1;r++){ for(let c=1;c<=COLS.length;c++){ const cell=ws.getCell(r,c); cell.border=allBorder; cell.alignment={vertical:'middle'}; if(COLS[c-1].type==='num' && typeof cell.value==='number') cell.numFmt='#,##0'; if(r%2===1) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F7F8'}}; } }
+  for(let r=2;r<=rows.length+1;r++){ for(let c=1;c<=COLS.length;c++){ const cell=ws.getCell(r,c); cell.border=allBorder; cell.alignment={vertical:'middle'}; if(COLS[c-1].type==='num' && typeof cell.value==='number') cell.numFmt=/_total_tanpa_ppn$/.test(COLS[c-1].key)?'"Rp"#,##0':'#,##0'; if(r%2===1) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F7F8'}}; } }
   try{
     const buf=await wb.xlsx.writeBuffer();
     const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
@@ -4993,9 +4958,9 @@ async function downloadTemplateTender(){
     if(f.type==='date'){ for(let r=2;r<=151;r++) wsD.getCell(r,c).numFmt='dd-mm-yyyy'; }
     if(f.type==='num'){ for(let r=2;r<=151;r++){ wsD.getCell(r,c).numFmt='"Rp"#,##0'; wsD.getCell(r,c).alignment={vertical:'middle',horizontal:'right'}; } }
   });
-  // #12: Harga Total (Tanpa PPN) otomatis = Barang + Jasa (khusus total flat: HPE/RAB/HPS)
+  // #12: Harga Total (Tanpa PPN) diisi manual sebagai nilai (tanpa rumus). Format currency Rupiah tanpa desimal.
   const colMapTdT=fieldColMap(COLS);
-  ['hpe','rab','hps'].forEach(p=>{ const bC=colMapTdT[p+'_harga_barang'],jC=colMapTdT[p+'_harga_jasa'],tC=colMapTdT[p+'_total_tanpa_ppn']; if(bC&&jC&&tC){ for(let r=2;r<=151;r++){ const cell=wsD.getCell(r,tC); cell.value={formula:`${colLetter(bC)}${r}+${colLetter(jC)}${r}`}; cell.numFmt='"Rp"#,##0'; cell.alignment={vertical:'middle',horizontal:'right'}; } } });
+  ['hpe','rab','hps'].forEach(p=>{ const tC=colMapTdT[p+'_total_tanpa_ppn']; if(tC){ for(let r=2;r<=151;r++){ const cell=wsD.getCell(r,tC); cell.numFmt='"Rp"#,##0'; cell.alignment={vertical:'middle',horizontal:'right'}; } } });
 
   const wsO=wb.addWorksheet('Opsi');
   dropKeys.forEach((k,ci)=>{ const f=COLS.find(x=>x.key===k); wsO.getCell(1,ci+1).value=f.label; OPSI[k].forEach((v,ri)=>wsO.getCell(ri+2,ci+1).value=v); });
@@ -5051,20 +5016,18 @@ async function exportExcelTender(){
   const FLAT_AUTO=['hpe','rab','hps'];
   const isFlatAutoTotal=(k)=>FLAT_AUTO.some(p=>k===p+'_total_tanpa_ppn');
   rows.forEach((r,ri)=>{ ws.addRow(COLS.map(f=>{
-    if(isFlatAutoTotal(f.key)) return null; // diisi rumus di bawah
+    if(isFlatAutoTotal(f.key)){ const p=f.key.replace(/_total_tanpa_ppn$/,''); const b=Number(r[p+'_harga_barang'])||0, j=Number(r[p+'_harga_jasa'])||0; const t=b+j; return t>0?t:''; }
     if(PENYEDIA_KEYS.includes(f.key)) return penyediaCellValue(r,f.key,f.type);
     if(INDEP_MULTI_KEYS.includes(f.key)) return indepCellValue(r,f.key);
     let v=r[f.key]; if(v===''||v==null) return ''; if(f.type==='num') return Number(v); return v;
   }));
-    // Rumus otomatis hanya untuk total flat (HPE/RAB/HPS); tawar & kontrak per-penyedia sudah dihitung
-    COLS.forEach(f=>{ if(isFlatAutoTotal(f.key)){ const p=f.key.replace(/_total_tanpa_ppn$/,''); const bC=colMapTd[p+'_harga_barang'],jC=colMapTd[p+'_harga_jasa'],tC=colMapTd[f.key]; if(bC&&jC&&tC){ const cell=ws.getCell(ri+2,tC); cell.value={formula:`${xlsxCol(bC)}${ri+2}+${xlsxCol(jC)}${ri+2}`}; cell.numFmt='#,##0'; } } });
   });
   ws.columns=COLS.map(f=>({width:Math.max(16,f.label.length+2)}));
   const thin={style:'thin',color:{argb:'FFBFCAD0'}};
   const allBorder={top:thin,left:thin,bottom:thin,right:thin};
   const headRow=ws.getRow(1); headRow.height=34;
   for(let c=1;c<=COLS.length;c++){ const cell=ws.getCell(1,c); const fld=COLS[c-1]; const pp=isStackKey(fld.key); cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:pp?'FF0E9E8E':'FF0E7C86'}}; cell.font={bold:true,color:{argb:'FFFFFFFF'},size:11}; cell.alignment={wrapText:true,vertical:'middle',horizontal:'center'}; cell.border=allBorder; }
-  for(let r=2;r<=rows.length+1;r++){ for(let c=1;c<=COLS.length;c++){ const cell=ws.getCell(r,c); const fld=COLS[c-1]; const pp=isStackKey(fld.key); cell.border=allBorder; cell.alignment=pp?{wrapText:true,vertical:'top'}:{vertical:'middle'}; if(fld.type==='num' && typeof cell.value==='number') cell.numFmt='#,##0'; if(r%2===1) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F7F8'}}; } }
+  for(let r=2;r<=rows.length+1;r++){ for(let c=1;c<=COLS.length;c++){ const cell=ws.getCell(r,c); const fld=COLS[c-1]; const pp=isStackKey(fld.key); cell.border=allBorder; cell.alignment=pp?{wrapText:true,vertical:'top'}:{vertical:'middle'}; if(fld.type==='num' && typeof cell.value==='number') cell.numFmt=/_total_tanpa_ppn$/.test(fld.key)?'"Rp"#,##0':'#,##0'; if(r%2===1) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F7F8'}}; } }
   try{
     const buf=await wb.xlsx.writeBuffer();
     const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
