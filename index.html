@@ -77,7 +77,20 @@ a{color:inherit}
 .sidebar-overlay{display:none}
 .wrap{max-width:1180px;width:100%;margin:0 auto;padding:24px}
 .view{display:none}
-.view.active{display:block;animation:fade .25s ease}
+/* #11: Transisi perpindahan halaman yang lebih memukau — reveal halus
+   (fade + naik + skala + blur mengurai) disertai stagger pada judul & konten. */
+.view.active{display:block;animation:pageReveal .62s cubic-bezier(.16,1,.3,1) both;will-change:opacity,transform,filter}
+@keyframes pageReveal{
+  0%{opacity:0;transform:translateY(22px) scale(.985);filter:blur(6px)}
+  55%{filter:blur(0)}
+  100%{opacity:1;transform:none;filter:blur(0)}
+}
+.view.active>.page-head{animation:pageRise .6s .06s cubic-bezier(.16,1,.3,1) both}
+.view.active>.page-head+*{animation:pageRise .6s .14s cubic-bezier(.16,1,.3,1) both}
+@keyframes pageRise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){
+  .view.active,.view.active>.page-head,.view.active>.page-head+*{animation:fade .2s ease both}
+}
 @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .page-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:18px;flex-wrap:wrap}
 .page-head h2{font-size:19px;font-weight:800;position:relative;padding-left:14px}
@@ -219,8 +232,10 @@ td.cell-center{text-align:center}
 .table-wrap thead th:first-child{position:sticky;left:0;z-index:5;background:linear-gradient(180deg,var(--teal),var(--teal-dark))}
 /* #4: Kolom No. dipersempit agar pas dengan angka baris (mis. 1–2 digit) */
 .table-wrap th.col-no,.table-wrap td.col-no{width:34px;min-width:34px;max-width:40px;text-align:center;padding-left:6px;padding-right:6px;white-space:nowrap}
-/* Kolom Tgl. Terbit & Berakhir Kontrak — dilebarkan agar judul muat 2 baris */
-.table-wrap th.col-date,.table-wrap td.col-date{min-width:112px!important;width:112px!important;max-width:112px!important;padding-left:10px;padding-right:10px}
+/* Kolom Tgl. Terbit & Berakhir Kontrak — dilebarkan & judul dibungkus agar muat 2 baris */
+.table-wrap th.col-date,.table-wrap td.col-date{min-width:92px!important;width:92px!important;max-width:96px!important;padding-left:8px;padding-right:8px}
+.table-wrap th.col-date{white-space:normal;line-height:1.28;text-align:center;vertical-align:middle}
+.table-wrap td.col-date{white-space:nowrap;text-align:center}
 /* Kolom No. Kontrak/SPBJ — menyesuaikan lebar isi data (tampil utuh, tidak terpotong) */
 .table-wrap th.col-kontrak,.table-wrap td.col-kontrak{white-space:nowrap;min-width:150px;width:1%}
 .table-wrap td.col-kontrak.wrap-penyedia{white-space:normal}
@@ -367,6 +382,11 @@ td.cell-center{text-align:center}
 .modal-icon::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid var(--teal);opacity:.12;animation:iconRing 1.8s ease-out infinite}
 @keyframes iconPop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
 @keyframes iconRing{0%{transform:scale(.85);opacity:.35}70%{opacity:0}100%{transform:scale(1.35);opacity:0}}
+/* Field pada modal Ganti Kata Sandi */
+.cp-field{text-align:left;margin-bottom:12px}
+.cp-field label{display:block;font-size:11px;font-weight:700;color:var(--ink);margin-bottom:6px;letter-spacing:.2px}
+.cp-field input{width:100%;border:1px solid var(--line);border-radius:11px;padding:11px 13px;font-family:'Plus Jakarta Sans';font-size:13px;color:var(--ink);background:#fff;transition:border-color .18s,box-shadow .18s}
+.cp-field input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 4px rgba(14,124,134,.14)}
 .modal-icon svg{width:30px;height:30px}
 .modal-body{padding:20px 32px 8px;text-align:center;animation:fade .4s .12s both}
 .modal-body h3{font-family:'Plus Jakarta Sans',sans-serif;font-size:21px;font-weight:800;letter-spacing:-.4px;line-height:1.2;margin-bottom:10px;color:var(--teal-dark);background:linear-gradient(120deg,var(--teal-dark),var(--teal) 55%,var(--cyan));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
@@ -623,6 +643,9 @@ td.cell-center{text-align:center}
   display:flex;flex-direction:column;justify-content:center}
 .login-logo{display:none} /* logo lama tak dipakai di layout baru */
 .login-title{text-align:left;font-family:'Plus Jakarta Sans';font-weight:800;font-size:19px;color:var(--ink);letter-spacing:.1px;line-height:1.25}
+/* #2: Judul "Halaman Login" — font sama seperti teks lain, tegak, ukuran ringkas */
+.login-title-hero{font-style:normal;font-weight:800;font-size:22px;letter-spacing:.1px;line-height:1.2;margin-bottom:12px;color:var(--teal-dark);display:block}
+@media(max-width:760px){.login-title-hero{font-size:20px}}
 .login-sub{text-align:left;color:var(--teal-dark);font-size:10.5px;margin-top:6px;letter-spacing:1.4px;text-transform:uppercase;font-weight:700}
 .login-divider{display:flex;align-items:center;gap:10px;margin:22px 0 16px;color:var(--muted);font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
 .login-divider::before,.login-divider::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--line),transparent)}
@@ -643,6 +666,10 @@ td.cell-center{text-align:center}
 .login-field{margin-bottom:14px}
 .login-field label{display:block;font-size:11px;font-weight:700;color:var(--ink);margin-bottom:7px;letter-spacing:.2px}
 .login-pass-wrap{position:relative}
+.login-lead-ic{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--muted);pointer-events:none;display:grid;place-items:center}
+.login-lead-ic svg{width:18px;height:18px}
+.login-pass-wrap input.has-lead{padding-left:40px}
+.login-pass-wrap input:focus + .login-eye,.login-pass-wrap input.has-lead:focus ~ .login-lead-ic{color:var(--teal)}
 .login-pass-wrap input{padding-right:44px;transition:border-color .18s,box-shadow .18s,background .18s}
 .login-pass-wrap input:focus{border-color:var(--teal);box-shadow:0 0 0 4px rgba(14,124,134,.14);background:#fff}
 .login-eye{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);width:32px;height:32px;display:grid;place-items:center;border-radius:8px;cursor:pointer;transition:.15s}
@@ -707,16 +734,21 @@ td.cell-center{text-align:center}
 .topnav-link.active svg{color:#073f45}
 
 .topnav-group{position:relative}
-.topnav-trigger{appearance:none;border:1px solid rgba(255,255,255,.18);padding:8px 15px;font-family:'Plus Jakarta Sans';font-size:12.5px;font-weight:700;color:#eafcff;display:flex;align-items:center;gap:8px;border-radius:11px;cursor:pointer;transition:background .2s ease,color .2s ease,border-color .2s ease,transform .16s cubic-bezier(.16,1,.3,1),box-shadow .2s ease;white-space:nowrap;background:linear-gradient(160deg,rgba(255,255,255,.16),rgba(255,255,255,.05));box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 2px 8px rgba(3,30,34,.18);backdrop-filter:blur(4px)}
-.topnav-trigger svg:first-of-type{width:17px;height:17px;flex:0 0 auto;transition:transform .2s ease;color:#8ff0e4}
-.topnav-trigger .caret{width:13px;height:13px;margin-left:1px;transition:transform .22s;opacity:.8}
-.topnav-trigger:hover{background:linear-gradient(160deg,rgba(255,255,255,.26),rgba(255,255,255,.1));border-color:rgba(255,255,255,.32);color:#fff;transform:translateY(-1px);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 6px 16px rgba(3,30,34,.28)}
+/* #1: Tombol Input Pekerjaan & Monitoring dibuat polos (tanpa border/kotak) seperti
+   Dashboard; saat dipilih/dibuka berubah kuning sama seperti Dashboard aktif. */
+.topnav-trigger{appearance:none;border:none;padding:9px 16px;font-family:'Plus Jakarta Sans';font-size:12.5px;font-weight:600;color:rgba(255,255,255,.85);display:flex;align-items:center;gap:8px;border-radius:11px;cursor:pointer;transition:background .2s ease,color .2s ease,transform .16s cubic-bezier(.16,1,.3,1),box-shadow .2s ease;white-space:nowrap;background:none;position:relative}
+.topnav-trigger svg:first-of-type{width:17px;height:17px;flex:0 0 auto;transition:transform .2s ease}
+.topnav-trigger .caret{width:13px;height:13px;margin-left:1px;transition:transform .22s;opacity:.85}
+.topnav-trigger:hover{background:rgba(255,255,255,.14);color:#fff;transform:translateY(-1px)}
 .topnav-trigger:hover svg:first-of-type{transform:scale(1.08)}
-.topnav-group.open .topnav-trigger{background:linear-gradient(135deg,var(--cyan),#3fd0dc);border-color:transparent;color:#04343a;box-shadow:0 5px 16px rgba(22,169,181,.5),inset 0 1px 0 rgba(255,255,255,.4)}
-.topnav-group.open .topnav-trigger svg:first-of-type{color:#04343a}
+/* Kuning HANYA menandai HALAMAN yang sedang aktif (bukan menu yang diklik/dibuka).
+   Grup menjadi kuning bila salah satu sub-menunya adalah view yang aktif (has-active). */
+.topnav-group.has-active .topnav-trigger{background:linear-gradient(135deg,var(--yellow),#ffd35a);color:#073f45;font-weight:800;box-shadow:0 5px 16px rgba(246,180,14,.4),inset 0 1px 0 rgba(255,255,255,.4)}
+.topnav-group.has-active .topnav-trigger svg:first-of-type{color:#073f45}
+/* Saat dropdown dibuka tetapi halaman aktif bukan di grup ini → umpan balik halus (bukan kuning) */
+.topnav-group.open:not(.has-active) .topnav-trigger{background:rgba(255,255,255,.14);color:#fff}
+.topnav-group.open:not(.has-active) .topnav-trigger svg:first-of-type{color:currentColor}
 .topnav-group.open .topnav-trigger .caret{transform:rotate(180deg)}
-.topnav-group.has-active .topnav-trigger{color:#fff}
-.topnav-group.has-active .topnav-trigger::after{content:"";position:absolute;left:14px;right:14px;bottom:2px;height:2.5px;border-radius:2px;background:linear-gradient(90deg,var(--yellow),#ffd35a);box-shadow:0 1px 4px rgba(246,180,14,.5)}
 
 .topnav-dropdown{position:absolute;top:calc(100% + 9px);left:0;min-width:232px;background:linear-gradient(180deg,#ffffff,#fbfdfe);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-lg);padding:8px;display:none;flex-direction:column;gap:3px;z-index:80;animation:dropIn .2s cubic-bezier(.16,1,.3,1)}
 @keyframes dropIn{from{opacity:0;transform:translateY(-8px) scale(.98)}to{opacity:1;transform:none}}
@@ -1057,7 +1089,7 @@ body.nav-open{overflow:hidden}
 /* Bintang wajib jadi lebih halus */
 .field label .req{margin-left:3px;font-weight:800}
 
-/* Header "Template pengisian data" (io-row) lebih elegan bila ada */
+/* Header "Template Pengisian Data" (io-row) lebih elegan bila ada */
 .io-row{border-radius:16px}
 
 /* ---------- Toolbar filter Monitoring ---------- */
@@ -1181,6 +1213,10 @@ tbody tr{animation:rowIn .3s ease both}
           <span class="user-role-ic" id="user-role-ic"></span>
           <span id="user-label">—</span>
         </div>
+        <button class="logout-btn" id="btn-change-pass" onclick="openChangePass()" title="Ganti Kata Sandi" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/><circle cx="12" cy="16" r="1"/></svg>
+          Kata Sandi
+        </button>
         <button class="logout-btn" onclick="logout()" title="Keluar">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>
           Keluar
@@ -1274,7 +1310,7 @@ tbody tr{animation:rowIn .3s ease both}
     <div class="io-row">
       <svg viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2" style="width:26px;height:26px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       <div class="io-txt">
-        <b>Template pengisian data</b>
+        <b>Template Pengisian Data</b>
       </div>
       <button class="btn btn-amber" onclick="downloadTemplate()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -1363,8 +1399,8 @@ tbody tr{animation:rowIn .3s ease both}
             <tr>
               <th class="col-no">No.</th>
               <th class="col-kontrak">No. SPBJ / Kontrak Rinci</th>
-              <th class="col-date">Tanggal Terbit Kontrak</th>
-              <th class="col-date">Tanggal Berakhir Kontrak</th>
+              <th class="col-date">Tgl. Terbit Kontrak</th>
+              <th class="col-date">Tgl. Berakhir Kontrak</th>
               <th>Nama Pekerjaan</th>
               <th>Bidang Pelaksana</th>
               <th>Penyedia</th>
@@ -1398,7 +1434,7 @@ tbody tr{animation:rowIn .3s ease both}
     <div class="io-row">
       <svg viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2" style="width:26px;height:26px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       <div class="io-txt">
-        <b>Template pengisian data</b>
+        <b>Template Pengisian Data</b>
       </div>
       <button class="btn btn-amber" onclick="downloadTemplatePl()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -1488,8 +1524,8 @@ tbody tr{animation:rowIn .3s ease both}
             <tr>
               <th class="col-no">No.</th>
               <th class="col-kontrak">No. Kontrak</th>
-              <th class="col-date">Tanggal Terbit Kontrak</th>
-              <th class="col-date">Tanggal Berakhir Kontrak</th>
+              <th class="col-date">Tgl. Terbit Kontrak</th>
+              <th class="col-date">Tgl. Berakhir Kontrak</th>
               <th>Nama Pekerjaan</th>
               <th>Bidang Pelaksana</th>
               <th>Penyedia</th>
@@ -1524,7 +1560,7 @@ tbody tr{animation:rowIn .3s ease both}
     <div class="io-row">
       <svg viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2" style="width:26px;height:26px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       <div class="io-txt">
-        <b>Template pengisian data</b>
+        <b>Template Pengisian Data</b>
       </div>
       <button class="btn btn-amber" onclick="downloadTemplateTender()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -1614,8 +1650,8 @@ tbody tr{animation:rowIn .3s ease both}
             <tr>
               <th class="col-no">No.</th>
               <th class="col-kontrak">No. Kontrak</th>
-              <th class="col-date">Tanggal Terbit Kontrak</th>
-              <th class="col-date">Tanggal Berakhir Kontrak</th>
+              <th class="col-date">Tgl. Terbit Kontrak</th>
+              <th class="col-date">Tgl. Berakhir Kontrak</th>
               <th>Nama Pekerjaan</th>
               <th>Bidang Pelaksana</th>
               <th>Penyedia</th>
@@ -1647,6 +1683,36 @@ tbody tr{animation:rowIn .3s ease both}
     <div class="modal-actions">
       <button class="btn btn-green" id="confirm-yes">Ya</button>
       <button class="btn btn-red" onclick="closeConfirm()">Tidak</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== MODAL GANTI KATA SANDI ====== -->
+<div class="overlay" id="cp-overlay">
+  <div class="modal">
+    <div class="modal-icon" style="background:#d8f0e3">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#1E9E5A" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/><circle cx="12" cy="16.5" r="1.3"/></svg>
+    </div>
+    <div class="modal-body">
+      <h3>Ganti Kata Sandi</h3>
+      <p id="cp-sub" style="margin-bottom:14px">Perbarui kata sandi akun Anda.</p>
+      <div class="cp-field">
+        <label for="cp-old">Kata Sandi Lama</label>
+        <input id="cp-old" type="password" placeholder="Masukkan kata sandi lama" autocomplete="current-password">
+      </div>
+      <div class="cp-field">
+        <label for="cp-new">Kata Sandi Baru</label>
+        <input id="cp-new" type="password" placeholder="Minimal 6 karakter" autocomplete="new-password">
+      </div>
+      <div class="cp-field">
+        <label for="cp-new2">Ulangi Kata Sandi Baru</label>
+        <input id="cp-new2" type="password" placeholder="Ketik ulang kata sandi baru" autocomplete="new-password" onkeydown="if(event.key==='Enter')submitChangePass()">
+      </div>
+      <div class="login-error" id="cp-error" style="margin:2px 0 0"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-green" id="cp-submit" onclick="submitChangePass()">Simpan</button>
+      <button class="btn btn-red" onclick="closeChangePass()">Batal</button>
     </div>
   </div>
 </div>
@@ -1692,71 +1758,42 @@ tbody tr{animation:rowIn .3s ease both}
 
     <!-- Panel kanan: form -->
     <div class="login-formside">
-      <div class="login-title">Masuk ke Akun Anda</div>
+      <div class="login-title login-title-hero">Halaman Login</div>
 
-      <div class="login-divider">Masuk sebagai</div>
-
-      <div class="role-tabs">
-        <span class="role-pill" id="role-pill"></span>
-        <button class="role-tab active" id="tab-admin" onclick="selectRole('admin')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 5v6c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V5l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg>
-          Admin
-        </button>
-        <button class="role-tab" id="tab-user" onclick="selectRole('user')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
-          User
-        </button>
-        <button class="role-tab" id="tab-guest" onclick="selectRole('guest')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-          Tamu
-        </button>
-      </div>
-
-      <!-- Admin pane -->
-      <div class="role-pane active" id="pane-admin">
-        <div class="login-field">
-          <label for="login-pass">Kata Sandi Admin</label>
-          <div class="login-pass-wrap">
-            <input id="login-pass" type="password" placeholder="Masukkan kata sandi" onkeydown="if(event.key==='Enter')doLogin('admin')">
-            <button class="login-eye" type="button" onclick="togglePass('login-pass','eye-icon')" title="Lihat/sembunyikan">
-              <svg id="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-            </button>
-          </div>
+      <div class="login-field" style="margin-top:11px">
+        <label for="login-user">Username</label>
+        <div class="login-pass-wrap">
+          <span class="login-lead-ic">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
+          </span>
+          <input id="login-user" class="has-lead" type="text" placeholder="Masukkan username" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()">
         </div>
-        <div class="login-error" id="login-error"></div>
-        <button class="login-btn" onclick="doLogin('admin')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5M15 12H3"/></svg>
-          Masuk sebagai Admin
-        </button>
       </div>
 
-      <!-- User pane -->
-      <div class="role-pane" id="pane-user">
-        <div class="login-field">
-          <label for="login-pass-user">Kata Sandi User</label>
-          <div class="login-pass-wrap">
-            <input id="login-pass-user" type="password" placeholder="Masukkan kata sandi" onkeydown="if(event.key==='Enter')doLogin('user')">
-            <button class="login-eye" type="button" onclick="togglePass('login-pass-user','eye-icon-user')" title="Lihat/sembunyikan">
-              <svg id="eye-icon-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-            </button>
-          </div>
+      <div class="login-field">
+        <label for="login-pass">Kata Sandi</label>
+        <div class="login-pass-wrap">
+          <span class="login-lead-ic">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </span>
+          <input id="login-pass" class="has-lead" type="password" placeholder="Masukkan kata sandi" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+          <button class="login-eye" type="button" onclick="togglePass('login-pass','eye-icon')" title="Lihat/sembunyikan">
+            <svg id="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
         </div>
-        <div class="login-guest-note" style="margin:-2px 0 12px">Sebagai User, Anda dapat menambah, mengubah atau menghapus data SPBJ / Kontrak Rinci.</div>
-        <div class="login-error" id="login-error-user"></div>
-        <button class="login-btn" onclick="doLogin('user')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5M15 12H3"/></svg>
-          Masuk sebagai User
-        </button>
       </div>
 
-      <!-- Guest pane -->
-      <div class="role-pane" id="pane-guest">
-        <div class="login-guest-note">Sebagai Tamu, Anda dapat melihat Daftar Pekerjaan, namun tidak dapat menambah, mengubah, atau menghapus data.</div>
-        <button class="login-btn guest" style="margin-top:16px" onclick="doLogin('guest')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-          Masuk sebagai Tamu
-        </button>
-      </div>
+      <div class="login-error" id="login-error"></div>
+
+      <button class="login-btn" onclick="doLogin()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5M15 12H3"/></svg>
+        Masuk Sebagai Admin / User
+      </button>
+
+      <button class="login-btn guest" style="margin-top:12px" onclick="doLoginGuest()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+        Masuk sebagai Tamu
+      </button>
 
       <div class="login-foot">PT PLN (Persero) · UP3 Masohi</div>
     </div>
@@ -1970,8 +2007,8 @@ const PL_SCHEMA_BASE = { fields: JSON.parse(JSON.stringify(FIELDS_PL)), groups: 
    KONFIGURASI SUPABASE  ← ISI DUA NILAI DI BAWAH INI
    Ambil dari Supabase: Settings → API
    ============================================================ */
-const SUPABASE_URL = 'https://jhgpihshvxujtlpztkas.supabase.co';   // contoh: https://abcd1234.supabase.co
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpoZ3BpaHNodnh1anRscHp0a2FzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3MjQ5ODYsImV4cCI6MjA5ODMwMDk4Nn0.lS2ILyUJylxZ3KzHlnGYBNsYo1dcve6_z4kFEVCiL2Y';    // anon public key (panjang, diawali eyJ...)
+const SUPABASE_URL = 'https://jpqfzbubrnznyqaniskm.supabase.co';   // contoh: https://abcd1234.supabase.co
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpwcWZ6YnVicm56bnlxYW5pc2ttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4MDUzNjEsImV4cCI6MjA5ODM4MTM2MX0.VfRB3H7zjhw0cHcQgFTqQYir1wtGaRmGIk709FaFBXs';    // anon public key (panjang, diawali eyJ...)
 const TABLE = 'pekerjaan';
 
 // Aktif otomatis bila kedua nilai sudah diisi (bukan placeholder)
@@ -2099,47 +2136,101 @@ function fillYearFilters(){
 }
 
 /* ============ AUTH / LOGIN ============ */
-const ADMIN_PASSWORD = 'admin123';   // ← kata sandi admin awal (default)
-const USER_PASSWORD  = 'user123';    // ← ganti kata sandi user di sini
+/* Username & kata sandi disimpan sepenuhnya di Supabase (tabel "app_users",
+   lihat supabase_auth.sql). Verifikasi lewat function verify_login(); tidak ada
+   kredensial yang disimpan di file ini. */
 let currentRole = null;
+let currentUsername = null;
 const ROLE_KEY = 'mon_role';
+const USER_KEY = 'mon_user';
 function isAdmin(){ return currentRole==='admin'; }
 function canInput(){ return currentRole==='admin' || currentRole==='user'; }
 function requireAdmin(){ if(!isAdmin()){ toast('Hanya admin yang dapat melakukan tindakan ini','warn'); return false; } return true; }
 function requireInput(){ if(!canInput()){ toast('Anda tidak memiliki akses untuk menambah data','warn'); return false; } return true; }
 
-function selectRole(role){
-  ['admin','user','guest'].forEach(r=>{
-    document.getElementById('tab-'+r).classList.toggle('active', r===role);
-    document.getElementById('pane-'+r).classList.toggle('active', r===role);
-  });
-  document.getElementById('login-error').textContent='';
-  const eu=document.getElementById('login-error-user'); if(eu) eu.textContent='';
-  positionRolePill();
+/* #12: Login satu halaman — username + kata sandi. Dua akun: Admin & User.
+   Peran ditentukan otomatis dari kombinasi username + kata sandi yang cocok. */
+function resetLoginForm(){
+  ['login-user','login-pass'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  const e=document.getElementById('login-error'); if(e) e.textContent='';
 }
-/* Geser pil ke tab peran yang aktif */
-function positionRolePill(){
-  const pill=document.getElementById('role-pill'); if(!pill) return;
-  const active=document.querySelector('.role-tabs .role-tab.active'); if(!active) return;
-  pill.style.width=active.offsetWidth+'px';
-  pill.style.transform='translateX('+(active.offsetLeft - 5)+'px)';
-}
-window.addEventListener('resize', positionRolePill);
 function togglePass(inputId,iconId){
   const i=document.getElementById(inputId); const ic=document.getElementById(iconId);
   if(i.type==='password'){ i.type='text'; ic.innerHTML='<path d="M9.9 4.2A9.1 9.1 0 0 1 12 4c6.5 0 10 7 10 7a18 18 0 0 1-2.2 3.2M6.3 6.3A18 18 0 0 0 2 11s3.5 7 10 7a9 9 0 0 0 4.5-1.2"/><path d="m2 2 20 20"/>'; }
   else{ i.type='password'; ic.innerHTML='<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>'; }
 }
-function doLogin(role){
-  if(role==='admin'){
-    if(document.getElementById('login-pass').value!==ADMIN_PASSWORD){ document.getElementById('login-error').textContent='Kata sandi salah. Silakan coba lagi.'; return; }
-  }else if(role==='user'){
-    if(document.getElementById('login-pass-user').value!==USER_PASSWORD){ document.getElementById('login-error-user').textContent='Kata sandi salah. Silakan coba lagi.'; return; }
+function showLoginError(msg){ const e=document.getElementById('login-error'); if(e) e.textContent=msg; }
+async function doLogin(){
+  const u=(document.getElementById('login-user').value||'').trim();
+  const p=document.getElementById('login-pass').value||'';
+  if(!u || !p){ showLoginError('Username dan kata sandi wajib diisi.'); return; }
+  const uname=u.toLowerCase();
+  showLoginError('');
+  if(!(USE_SUPABASE && db)){ showLoginError('Koneksi Supabase belum siap. Coba lagi sesaat.'); return; }
+  // Verifikasi ke Supabase: function verify_login mengembalikan 'admin'/'user' atau NULL.
+  // Kata sandi TIDAK pernah diunduh ke browser & tidak ada kredensial di file HTML.
+  let role=null;
+  try{
+    const {data,error}=await db.rpc('verify_login',{ p_username:uname, p_password:p });
+    if(error) throw error;
+    role = data || null;
+  }catch(err){
+    console.error(err);
+    showLoginError('Gagal terhubung ke server. Periksa koneksi lalu coba lagi.');
+    return;
   }
-  try{ sessionStorage.setItem(ROLE_KEY, role); }catch(e){}
+  if(!role){ showLoginError('Username atau kata sandi salah.'); return; }
+  currentUsername = uname;
+  try{ sessionStorage.setItem(ROLE_KEY, role); sessionStorage.setItem(USER_KEY, uname); }catch(e){}
   playLoginAnim(role, ()=>enterApp(role));
 }
-/* #12: Animasi sambutan saat login (mirror animasi logout) */
+/* Masuk sebagai Tamu (tanpa kata sandi) */
+function doLoginGuest(){
+  showLoginError('');
+  currentUsername = null;
+  try{ sessionStorage.setItem(ROLE_KEY, 'guest'); sessionStorage.removeItem(USER_KEY); }catch(e){}
+  playLoginAnim('guest', ()=>enterApp('guest'));
+}
+/* ====== GANTI KATA SANDI (via Supabase) ====== */
+function openChangePass(){
+  if(currentRole==='guest' || !currentUsername){ toast('Fitur ini hanya untuk akun admin/user','warn'); return; }
+  ['cp-old','cp-new','cp-new2'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  const err=document.getElementById('cp-error'); if(err) err.textContent='';
+  const sub=document.getElementById('cp-sub'); if(sub) sub.textContent='Perbarui kata sandi untuk akun "'+currentUsername+'".';
+  document.getElementById('cp-overlay').classList.add('show');
+  setTimeout(()=>{ const f=document.getElementById('cp-old'); if(f) f.focus(); }, 60);
+}
+function closeChangePass(){ document.getElementById('cp-overlay').classList.remove('show'); }
+async function submitChangePass(){
+  const err=document.getElementById('cp-error');
+  const setErr=m=>{ if(err) err.textContent=m; };
+  if(!currentUsername){ setErr('Sesi tidak dikenali, silakan login ulang.'); return; }
+  const oldP=document.getElementById('cp-old').value||'';
+  const newP=document.getElementById('cp-new').value||'';
+  const new2=document.getElementById('cp-new2').value||'';
+  if(!oldP || !newP || !new2){ setErr('Semua kolom wajib diisi.'); return; }
+  if(newP.length<6){ setErr('Kata sandi baru minimal 6 karakter.'); return; }
+  if(newP!==new2){ setErr('Konfirmasi kata sandi baru tidak sama.'); return; }
+  if(newP===oldP){ setErr('Kata sandi baru harus berbeda dari yang lama.'); return; }
+  if(!(USE_SUPABASE && db)){ setErr('Ganti kata sandi memerlukan koneksi Supabase.'); return; }
+  const btn=document.getElementById('cp-submit');
+  if(btn){ btn.disabled=true; btn.textContent='Menyimpan…'; }
+  try{
+    const {data,error}=await db.rpc('change_password',{ p_username:currentUsername, p_old:oldP, p_new:newP });
+    if(error) throw error;
+    if(data===true){
+      closeChangePass();
+      toast('Kata sandi berhasil diperbarui','ok');
+    }else{
+      setErr('Kata sandi lama salah.');
+    }
+  }catch(e){
+    console.error(e);
+    setErr('Gagal menghubungi server. Coba lagi.');
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent='Simpan'; }
+  }
+}
 function playLoginAnim(role, done){
   const anim=document.getElementById('login-anim');
   if(!anim){ done&&done(); return; }
@@ -2164,9 +2255,7 @@ function enterApp(role){
   applyRole(role);
   document.getElementById('login-screen').style.display='none';
   document.getElementById('topbar-user').style.display='flex';
-  ['login-pass','login-pass-user'].forEach(id=>{ const p=document.getElementById(id); if(p)p.value=''; });
-  document.getElementById('login-error').textContent='';
-  const eu=document.getElementById('login-error-user'); if(eu) eu.textContent='';
+  resetLoginForm();
   showView('dashboard');
 }
 function applyRole(role){
@@ -2190,6 +2279,9 @@ function applyRole(role){
   };
   const ic=document.getElementById('user-role-ic');
   if(ic){ ic.className='user-role-ic '+(role||''); ic.innerHTML=ROLE_ICONS[role]||''; }
+  // Tombol Ganti Kata Sandi hanya untuk admin/user (punya akun) & saat Supabase aktif
+  const cpBtn=document.getElementById('btn-change-pass');
+  if(cpBtn) cpBtn.style.display = (role!=='guest' && USE_SUPABASE) ? '' : 'none';
   renderTable();
   renderTablePl();
   renderTableTender();
@@ -2197,11 +2289,11 @@ function applyRole(role){
 function performLogout(){
   const anim=document.getElementById('logout-anim');
   const finish=()=>{
-    try{ sessionStorage.removeItem(ROLE_KEY); }catch(e){}
-    currentRole=null;
+    try{ sessionStorage.removeItem(ROLE_KEY); sessionStorage.removeItem(USER_KEY); }catch(e){}
+    currentRole=null; currentUsername=null;
     document.getElementById('topbar-user').style.display='none';
     document.getElementById('login-screen').style.display='flex';
-    selectRole('admin');
+    resetLoginForm();
     if(anim){
       anim.classList.add('fade-out');
       setTimeout(()=>{ anim.classList.remove('show','fade-out'); }, 450);
@@ -2363,13 +2455,13 @@ function editRecord(rid){
   document.getElementById('input-title').textContent='Ubah Data Pekerjaan';
   const b=document.getElementById('edit-banner'); b.style.display='flex';
   document.getElementById('edit-banner-text').textContent='Mode Ubah Data';
-  showView('input','Memuat data');
+  showView('input','Memuat');
 }
 
 /* ============ CONFIRM MODAL ============ */
 const ICONS={
   save:`<svg viewBox="0 0 24 24" fill="none" stroke="#1E9E5A" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>`,
-  back:`<svg viewBox="0 0 24 24" fill="none" stroke="#D33A3A" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>`,
+  back:`<svg viewBox="0 0 24 24" fill="none" stroke="#D33A3A" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>`,
   del:`<svg viewBox="0 0 24 24" fill="none" stroke="#D33A3A" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`
 };
 const ICON_BG={save:'#d8f0e3',back:'#fbe0e0',del:'#fbe0e0'};
@@ -2449,7 +2541,7 @@ function askCancel(){
   const back = editingId ? krReturnView : 'dashboard';
   openConfirm({
     icon:'back', title:'Batalkan',
-    text:'Apakah anda yakin akan membatalkan data pekerjaan?',
+    text:'Apakah anda yakin ingin membatalkan data pekerjaan?',
     onYes:()=>{ editingId=null; clearForm(); showView(back); }
   });
 }
@@ -2460,7 +2552,7 @@ function askDelete(rid){
   const rec=records.find(r=>r.id===rid);
   openConfirm({
     icon:'del', title:'Hapus Data',
-    text:'Apakah anda yakin akan menghapus data pekerjaan?',
+    text:'Apakah anda yakin ingin menghapus data pekerjaan?',
     onYes:async()=>{
       try{
         await withActionLoader('Menghapus', async()=>{ await Store.remove(rid); await refreshData(); });
@@ -2484,7 +2576,7 @@ function viewRecord(rid){
   });
   document.getElementById('detail-title').textContent='Detail Pekerjaan';
   document.getElementById('detail-body').innerHTML=html;
-  withQuickLoader('Memuat data', ()=>document.getElementById('detail-overlay').classList.add('show'));
+  withQuickLoader('Memuat', ()=>document.getElementById('detail-overlay').classList.add('show'));
 }
 /* #5: Bungkus judul + baris dalam satu kartu tabel ber-border */
 function detailGroupHTML(title, rowsHtml){
@@ -2683,7 +2775,7 @@ function renderPagination(page,totalPages){
 }
 function goToPage(p){
   currentPage=p;
-  withQuickLoader('Memuat data', ()=>{
+  withQuickLoader('Memuat', ()=>{
     renderTable();
     document.querySelector('#view-list .panel').scrollIntoView({behavior:'smooth',block:'nearest'});
   }, 380);
@@ -2969,11 +3061,10 @@ async function downloadTemplate(){
   if(!window.ExcelJS){ toast('Library Excel belum termuat, coba lagi','warn'); return; }
   const COLS = orderedFields(FIELDS, GROUPS);
 
-  const OPSI = {
-    jenis_anggaran:   ['Operasi','Investasi'],
-    bidang_pelaksana: ['Jaringan dan Konstruksi','Transaksi Energi Listrik','Niaga dan Pemasaran','Perencanaan','Keuangan dan Umum','Keselamatan, Kesehatan Kerja, Lingkungan dan Keamanan'],
-    status:           ['On Progress','Selesai'],
-  };
+  // Opsi dropdown template diambil LANGSUNG dari definisi field input (satu sumber),
+  // sehinga dropdown pada Template selalu sama dengan dropdown pada form Input.
+  const OPSI = {};
+  FIELDS.forEach(f=>{ if(f.type==='select' && Array.isArray(f.options) && f.options.length) OPSI[f.key]=f.options; });
 
   const wb = new ExcelJS.Workbook();
   const dropKeys = Object.keys(OPSI);
@@ -3124,7 +3215,6 @@ async function exportExcel(){
     a.href=url; a.download='Daftar_Pekerjaan_SPBJ_UP3_Masohi.xlsx';
     document.body.appendChild(a); a.click(); a.remove();
     URL.revokeObjectURL(url);
-    toast(rows.length+' baris diekspor ke Excel','ok');
   }catch(err){ console.error(err); toast('Gagal export Excel: '+errMsg(err),'warn'); }
 }
 
@@ -3369,7 +3459,7 @@ function editRecordPl(rid){
   document.getElementById('input-pl-title').textContent='Ubah Data Pekerjaan';
   const b=document.getElementById('edit-banner-pl'); b.style.display='flex';
   document.getElementById('edit-banner-pl-text').textContent='Mode Ubah Data';
-  showView('input-pl','Memuat data');
+  showView('input-pl','Memuat');
 }
 
 /* ---- Validasi field wajib PL ---- */
@@ -3420,12 +3510,12 @@ async function doSavePl(){
 }
 function askCancelPl(){
   const back = editingIdPl ? plReturnView : 'dashboard';
-  openConfirm({icon:'back',title:'Batalkan',text:'Apakah anda yakin akan membatalkan data pekerjaan?',
+  openConfirm({icon:'back',title:'Batalkan',text:'Apakah anda yakin ingin membatalkan data pekerjaan?',
     onYes:()=>{ editingIdPl=null; clearFormPl(); showView(back); }});
 }
 function askDeletePl(rid){
   if(!requireAdmin()) return;
-  openConfirm({icon:'del',title:'Hapus Data',text:'Apakah anda yakin akan menghapus data pekerjaan?',
+  openConfirm({icon:'del',title:'Hapus Data',text:'Apakah anda yakin ingin menghapus data pekerjaan?',
     onYes:async()=>{
       try{ await withActionLoader('Menghapus', async()=>{ await Store_PL.remove(rid); await refreshDataPl(); }); }
       catch(err){ console.error(err); toast('Gagal menghapus: '+errMsg(err),'warn'); return; }
@@ -3775,7 +3865,7 @@ function viewRecordPl(rid){
   });
   document.getElementById('detail-title').textContent='Detail Pekerjaan';
   document.getElementById('detail-body').innerHTML=html;
-  withQuickLoader('Memuat data', ()=>document.getElementById('detail-overlay').classList.add('show'));
+  withQuickLoader('Memuat', ()=>document.getElementById('detail-overlay').classList.add('show'));
 }
 
 /* ---- Pills status PL ---- */
@@ -3878,7 +3968,7 @@ function renderPaginationPl(page,totalPages){
   html+=`<button class="pg-btn" ${page===totalPages?'disabled':''} onclick="goToPagePl(${page+1})">Berikutnya ›</button>`;
   el.innerHTML=html;
 }
-function goToPagePl(p){ currentPagePl=p; withQuickLoader('Memuat data', ()=>{ renderTablePl(); document.querySelector('#view-list-pl .panel').scrollIntoView({behavior:'smooth',block:'nearest'}); }, 380); }
+function goToPagePl(p){ currentPagePl=p; withQuickLoader('Memuat', ()=>{ renderTablePl(); document.querySelector('#view-list-pl .panel').scrollIntoView({behavior:'smooth',block:'nearest'}); }, 380); }
 function resetFiltersPl(){
   ['filter-pl-bidang','filter-pl-tahapan','filter-pl-tahun','filter-pl-search'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   currentPagePl=1; renderTablePl();
@@ -3888,7 +3978,8 @@ function resetFiltersPl(){
 async function downloadTemplatePl(){
   if(!requireInput()) return;
   if(!window.ExcelJS){ toast('Library Excel belum termuat, coba lagi','warn'); return; }
-  const OPSI={}; FIELDS_PL.forEach(f=>{ if(f.type==='select') OPSI[f.key]=f.options; });
+  const COLS = orderedFields(FIELDS_PL, GROUPS_PL);
+  const OPSI={}; COLS.forEach(f=>{ if(f.type==='select') OPSI[f.key]=f.options; });
 
   const wb=new ExcelJS.Workbook();
   const dropKeys=Object.keys(OPSI);
@@ -3897,33 +3988,33 @@ async function downloadTemplatePl(){
   dropKeys.forEach((k,ci)=>{ const L=colLetter(ci+1); opsiRange[k]=`Opsi!$${L}$2:$${L}$${OPSI[k].length+1}`; });
 
   const wsD=wb.addWorksheet('Data');
-  wsD.addRow(FIELDS_PL.map(f=>f.label));
-  wsD.columns=FIELDS_PL.map(f=>({width:Math.max(16,f.label.length+2)}));
+  wsD.addRow(COLS.map(f=>f.label));
+  wsD.columns=COLS.map(f=>({width:Math.max(16,f.label.length+2)}));
   const thin={style:'thin',color:{argb:'FFBFCAD0'}};
   const allBorder={top:thin,left:thin,bottom:thin,right:thin};
   const headRow=wsD.getRow(1); headRow.height=32;
-  for(let c=1;c<=FIELDS_PL.length;c++){
+  for(let c=1;c<=COLS.length;c++){
     const cell=wsD.getCell(1,c);
     cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0E7C86'}};
     cell.font={bold:true,color:{argb:'FFFFFFFF'},size:11};
     cell.alignment={wrapText:true,vertical:'middle',horizontal:'center'};
     cell.border=allBorder;
   }
-  for(let r=2;r<=151;r++){ for(let c=1;c<=FIELDS_PL.length;c++){ const cell=wsD.getCell(r,c); cell.border=allBorder; cell.alignment={vertical:'middle'}; if(r%2===1) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F7F8'}}; } }
-  FIELDS_PL.forEach((f,idx)=>{ const c=idx+1;
+  for(let r=2;r<=151;r++){ for(let c=1;c<=COLS.length;c++){ const cell=wsD.getCell(r,c); cell.border=allBorder; cell.alignment={vertical:'middle'}; if(r%2===1) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F7F8'}}; } }
+  COLS.forEach((f,idx)=>{ const c=idx+1;
     if(f.type==='date'){ for(let r=2;r<=151;r++) wsD.getCell(r,c).numFmt='dd-mm-yyyy'; }
     if(f.type==='num'){ for(let r=2;r<=151;r++){ wsD.getCell(r,c).numFmt='"Rp"#,##0'; wsD.getCell(r,c).alignment={vertical:'middle',horizontal:'right'}; } }
   });
   // #12: Harga Total (Tanpa PPN) = Harga Barang + Harga Jasa (rumus otomatis di seluruh baris)
-  const colMapPlT=fieldColMap(FIELDS_PL);
-  for(let r=2;r<=151;r++){ applyExcelAutoFormula(wsD, FIELDS_PL, colMapPlT, r); }
+  const colMapPlT=fieldColMap(COLS);
+  for(let r=2;r<=151;r++){ applyExcelAutoFormula(wsD, COLS, colMapPlT, r); }
 
   const wsO=wb.addWorksheet('Opsi');
-  dropKeys.forEach((k,ci)=>{ const f=FIELDS_PL.find(x=>x.key===k); wsO.getCell(1,ci+1).value=f.label; OPSI[k].forEach((v,ri)=>wsO.getCell(ri+2,ci+1).value=v); });
+  dropKeys.forEach((k,ci)=>{ const f=COLS.find(x=>x.key===k); wsO.getCell(1,ci+1).value=f.label; OPSI[k].forEach((v,ri)=>wsO.getCell(ri+2,ci+1).value=v); });
   wsO.state='hidden';
 
   const ROWS=150;
-  FIELDS_PL.forEach((f,idx)=>{ if(!OPSI[f.key]) return; const L=colLetter(idx+1);
+  COLS.forEach((f,idx)=>{ if(!OPSI[f.key]) return; const L=colLetter(idx+1);
     for(let r=2;r<=ROWS+1;r++){ wsD.getCell(`${L}${r}`).dataValidation={type:'list',allowBlank:true,formulae:[opsiRange[f.key]],showErrorMessage:true,errorTitle:'Pilihan tidak valid',error:'Silakan pilih salah satu nilai dari daftar dropdown.'}; }
   });
 
@@ -3959,26 +4050,26 @@ async function downloadTemplatePl(){
 
 async function exportExcelPl(){
   if(!window.ExcelJS){ toast('Library Excel belum termuat, coba lagi','warn'); return; }
+  const COLS = orderedFields(FIELDS_PL, GROUPS_PL);
   const rows=getFilteredRecordsPl();
   if(rows.length===0){ toast('Tidak ada data untuk diekspor','warn'); return; }
   const wb=new ExcelJS.Workbook();
   const ws=wb.addWorksheet('Daftar Pengadaan Langsung');
-  ws.addRow(FIELDS_PL.map(f=>f.label));
-  const colMapPl=fieldColMap(FIELDS_PL);
-  rows.forEach((r,ri)=>{ ws.addRow(FIELDS_PL.map(f=>{ let v=r[f.key]; if(f.auto==='sum') return null; if(v===''||v==null) return ''; if(f.type==='num') return Number(v); return v; })); applyExcelAutoFormula(ws, FIELDS_PL, colMapPl, ri+2); });
-  ws.columns=FIELDS_PL.map(f=>({width:Math.max(16,f.label.length+2)}));
+  ws.addRow(COLS.map(f=>f.label));
+  const colMapPl=fieldColMap(COLS);
+  rows.forEach((r,ri)=>{ ws.addRow(COLS.map(f=>{ let v=r[f.key]; if(f.auto==='sum') return null; if(v===''||v==null) return ''; if(f.type==='num') return Number(v); return v; })); applyExcelAutoFormula(ws, COLS, colMapPl, ri+2); });
+  ws.columns=COLS.map(f=>({width:Math.max(16,f.label.length+2)}));
   const thin={style:'thin',color:{argb:'FFBFCAD0'}};
   const allBorder={top:thin,left:thin,bottom:thin,right:thin};
   const headRow=ws.getRow(1); headRow.height=32;
-  for(let c=1;c<=FIELDS_PL.length;c++){ const cell=ws.getCell(1,c); cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0E7C86'}}; cell.font={bold:true,color:{argb:'FFFFFFFF'},size:11}; cell.alignment={wrapText:true,vertical:'middle',horizontal:'center'}; cell.border=allBorder; }
-  for(let r=2;r<=rows.length+1;r++){ for(let c=1;c<=FIELDS_PL.length;c++){ const cell=ws.getCell(r,c); cell.border=allBorder; cell.alignment={vertical:'middle'}; if(FIELDS_PL[c-1].type==='num' && typeof cell.value==='number') cell.numFmt='#,##0'; if(r%2===1) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F7F8'}}; } }
+  for(let c=1;c<=COLS.length;c++){ const cell=ws.getCell(1,c); cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0E7C86'}}; cell.font={bold:true,color:{argb:'FFFFFFFF'},size:11}; cell.alignment={wrapText:true,vertical:'middle',horizontal:'center'}; cell.border=allBorder; }
+  for(let r=2;r<=rows.length+1;r++){ for(let c=1;c<=COLS.length;c++){ const cell=ws.getCell(r,c); cell.border=allBorder; cell.alignment={vertical:'middle'}; if(COLS[c-1].type==='num' && typeof cell.value==='number') cell.numFmt='#,##0'; if(r%2===1) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F7F8'}}; } }
   try{
     const buf=await wb.xlsx.writeBuffer();
     const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a'); a.href=url; a.download='Daftar_Pengadaan_Langsung_UP3_Masohi.xlsx';
     document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-    toast(rows.length+' baris diekspor ke Excel','ok');
   }catch(err){ console.error(err); toast('Gagal export Excel: '+errMsg(err),'warn'); }
 }
 
@@ -4155,9 +4246,9 @@ const FIELDS_TENDER = [
   {key:'status_sanggah', label:'Status Sanggah', type:'select', options:['Ada','Tidak Ada']},
   {key:'no_sppbj', label:'No. Penunjukan Penyedia', type:'text'},
   {key:'tgl_sppbj', label:'Tgl. Penunjukan Penyedia', type:'date'},
-  {key:'no_cda', label:'No. CDA', type:'text', lock:'cda_tidak_ada'},
-  {key:'tgl_cda', label:'Tgl. CDA', type:'date', lock:'cda_tidak_ada'},
-  {key:'status_cda', label:'Status CDA', type:'select', options:['Ada','Tidak Ada'], ctrl:true},
+  {key:'no_cda', label:'No. Contract Discussion Agreement', type:'text', lock:'cda_tidak_ada'},
+  {key:'tgl_cda', label:'Tgl. Contract Discussion Agreement', type:'date', lock:'cda_tidak_ada'},
+  {key:'status_cda', label:'Status Contract Discussion Agreement', type:'select', options:['Ada','Tidak Ada'], ctrl:true},
   // X. Penawaran Harga
   {key:'no_penawaran', label:'No. Penawaran', type:'text'},
   {key:'tgl_penawaran', label:'Tgl. Penawaran', type:'date'},
@@ -4190,7 +4281,7 @@ const FIELDS_TENDER = [
   {key:'no_rekening', label:'No. Rekening', type:'text'},
   {key:'pemilik_rekening', label:'Pemilik Rekening', type:'text'},
   // XIV. Jaminan Penawaran
-  {key:'jp_dipersyaratkan', label:'Jaminan Penawaran Dipersyaratkan', type:'select', options:['Iya','Tidak'], ctrl:true},
+  {key:'jp_dipersyaratkan', label:'Jaminan Penawaran Dipersyaratkan', type:'select', options:['Ada','Tidak Ada'], ctrl:true},
   {key:'jp_no', label:'No. Jaminan Penawaran', type:'text', lock:'jaminan_penawaran'},
   {key:'jp_tgl_terbit', label:'Tgl. Terbit Jaminan Penawaran', type:'date', lock:'jaminan_penawaran'},
   {key:'jp_tgl_berlaku', label:'Tgl. Berlaku Jaminan Penawaran', type:'date', lock:'jaminan_penawaran'},
@@ -4199,7 +4290,7 @@ const FIELDS_TENDER = [
   {key:'jp_eguarantee', label:'Input E-Guarantee (Penawaran)', type:'select', options:['Sudah','Belum'], lock:'jaminan_penawaran'},
   {key:'jp_tindak_lanjut', label:'Tindak Lanjut (Penawaran)', type:'select', options:TINDAK_LANJUT_OPTS, lock:'jaminan_penawaran'},
   // XV. Jaminan Pelaksanaan
-  {key:'jl_dipersyaratkan', label:'Jaminan Pelaksanaan Dipersyaratkan', type:'select', options:['Iya','Tidak'], ctrl:true},
+  {key:'jl_dipersyaratkan', label:'Jaminan Pelaksanaan Dipersyaratkan', type:'select', options:['Ada','Tidak Ada'], ctrl:true},
   {key:'jl_no', label:'No. Jaminan Pelaksanaan', type:'text', lock:'jaminan_pelaksanaan'},
   {key:'jl_tgl_terbit', label:'Tgl. Terbit Jaminan Pelaksanaan', type:'date', lock:'jaminan_pelaksanaan'},
   {key:'jl_tgl_berlaku', label:'Tgl. Berlaku Jaminan Pelaksanaan', type:'date', lock:'jaminan_pelaksanaan'},
@@ -4209,12 +4300,12 @@ const FIELDS_TENDER = [
   {key:'jl_tindak_lanjut', label:'Tindak Lanjut (Pelaksanaan)', type:'select', options:TINDAK_LANJUT_OPTS, lock:'jaminan_pelaksanaan'},
   // XVI. Proses Prakualifikasi
   {key:'pk_undangan', label:'Undangan Kualifikasi', type:'date', lock:'prakualifikasi'},
-  {key:'pk_download', label:'Download Dokumen (Kualifikasi)', type:'date', lock:'prakualifikasi'},
-  {key:'pk_upload', label:'Upload Dokumen (Kualifikasi)', type:'date', lock:'prakualifikasi'},
+  {key:'pk_download', label:'Download Dokumen Kualifikasi', type:'date', lock:'prakualifikasi'},
+  {key:'pk_upload', label:'Upload Dokumen Aplikasi Kualifikasi', type:'date', lock:'prakualifikasi'},
   {key:'pk_no_ba_eval', label:'No. BA Evaluasi Dokumen', type:'text', lock:'prakualifikasi'},
   {key:'pk_tgl_ba_eval', label:'Tgl. BA Evaluasi Dokumen', type:'date', lock:'prakualifikasi'},
-  {key:'pk_no_ba_bukti', label:'No. BA Pembuktian Kualifikasi (Pra)', type:'text', lock:'prakualifikasi'},
-  {key:'pk_tgl_ba_bukti', label:'Tgl. BA Pembuktian Kualifikasi (Pra)', type:'date', lock:'prakualifikasi'},
+  {key:'pk_no_ba_bukti', label:'No. BA Pembuktian Kualifikasi', type:'text', lock:'prakualifikasi'},
+  {key:'pk_tgl_ba_bukti', label:'Tgl. BA Pembuktian Kualifikasi', type:'date', lock:'prakualifikasi'},
   {key:'pk_no_penetapan', label:'No. Penetapan Kualifikasi', type:'text', lock:'prakualifikasi'},
   {key:'pk_tgl_penetapan', label:'Tgl. Penetapan Kualifikasi', type:'date', lock:'prakualifikasi'},
   {key:'pk_status_sanggah', label:'Status Sanggah Kualifikasi', type:'select', options:['Ada','Tidak Ada'], lock:'prakualifikasi', ctrl:true},
@@ -4268,8 +4359,8 @@ const TENDER_LOCK_RULES = {
   /* #2: Evaluasi & Pembuktian Kualifikasi (Pascakualifikasi) tetap dapat diinput saat
      Penunjukan Langsung; tetap terkunci untuk metode terbatas lainnya & Tender Cepat. */
   terbatas:           r => TERBATAS_SET.includes(r.metode_pengadaan) && r.metode_pengadaan !== 'Penunjukan Langsung',
-  jaminan_penawaran:  r => r.jp_dipersyaratkan === 'Tidak',
-  jaminan_pelaksanaan:r => r.jl_dipersyaratkan === 'Tidak',
+  jaminan_penawaran:  r => r.jp_dipersyaratkan !== 'Ada',
+  jaminan_pelaksanaan:r => r.jl_dipersyaratkan !== 'Ada',
   prakualifikasi:     r => r.kualifikasi !== 'Prakualifikasi',
   /* Tgl. Sanggah Kualifikasi terkunci bila Pascakualifikasi ATAU Status Sanggah selain "Ada" */
   pk_sanggah_tidak_ada: r => r.kualifikasi !== 'Prakualifikasi' || r.pk_status_sanggah !== 'Ada',
@@ -4698,7 +4789,7 @@ function editRecordTender(rid){
   document.getElementById('input-tender-title').textContent='Ubah Data Pekerjaan';
   const b=document.getElementById('edit-banner-tender'); b.style.display='flex';
   document.getElementById('edit-banner-tender-text').textContent='Mode Ubah Data';
-  showView('input-tender','Memuat data');
+  showView('input-tender','Memuat');
 }
 
 /* ---- Validasi field wajib Tender ---- */
@@ -4749,12 +4840,12 @@ async function doSaveTender(){
 }
 function askCancelTender(){
   const back = editingIdTender ? tenderReturnView : 'dashboard';
-  openConfirm({icon:'back',title:'Batalkan',text:'Apakah anda yakin akan membatalkan data pekerjaan?',
+  openConfirm({icon:'back',title:'Batalkan',text:'Apakah anda yakin ingin membatalkan data pekerjaan?',
     onYes:()=>{ editingIdTender=null; clearFormTender(); showView(back); }});
 }
 function askDeleteTender(rid){
   if(!requireAdmin()) return;
-  openConfirm({icon:'del',title:'Hapus Data',text:'Apakah anda yakin akan menghapus data pekerjaan Tender?',
+  openConfirm({icon:'del',title:'Hapus Data',text:'Apakah anda yakin ingin menghapus data pekerjaan Tender?',
     onYes:async()=>{
       try{ await withActionLoader('Menghapus', async()=>{ await Store_TENDER.remove(rid); await refreshDataTender(); }); }
       catch(err){ console.error(err); toast('Gagal menghapus: '+errMsg(err),'warn'); return; }
@@ -4797,7 +4888,7 @@ function viewRecordTender(rid){
   });
   document.getElementById('detail-title').textContent='Detail Pekerjaan';
   document.getElementById('detail-body').innerHTML=html;
-  withQuickLoader('Memuat data', ()=>document.getElementById('detail-overlay').classList.add('show'));
+  withQuickLoader('Memuat', ()=>document.getElementById('detail-overlay').classList.add('show'));
 }
 
 /* ---- Tabel Monitoring Tender ---- */
@@ -4888,7 +4979,7 @@ function renderPaginationTender(page,totalPages){
   html+=`<button class="pg-btn" ${page===totalPages?'disabled':''} onclick="goToPageTender(${page+1})">Berikutnya ›</button>`;
   el.innerHTML=html;
 }
-function goToPageTender(p){ currentPageTender=p; withQuickLoader('Memuat data', ()=>{ renderTableTender(); document.querySelector('#view-list-tender .panel').scrollIntoView({behavior:'smooth',block:'nearest'}); }, 380); }
+function goToPageTender(p){ currentPageTender=p; withQuickLoader('Memuat', ()=>{ renderTableTender(); document.querySelector('#view-list-tender .panel').scrollIntoView({behavior:'smooth',block:'nearest'}); }, 380); }
 function resetFiltersTender(){
   ['filter-tender-bidang','filter-tender-tahapan','filter-tender-tahun','filter-tender-search'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   currentPageTender=1; renderTableTender();
@@ -4898,7 +4989,8 @@ function resetFiltersTender(){
 async function downloadTemplateTender(){
   if(!requireInput()) return;
   if(!window.ExcelJS){ toast('Library Excel belum termuat, coba lagi','warn'); return; }
-  const OPSI={}; FIELDS_TENDER.forEach(f=>{ if(f.type==='select') OPSI[f.key]=f.options; });
+  const COLS = orderedFields(FIELDS_TENDER, GROUPS_TENDER);
+  const OPSI={}; COLS.forEach(f=>{ if(f.type==='select') OPSI[f.key]=f.options; });
 
   const wb=new ExcelJS.Workbook();
   const dropKeys=Object.keys(OPSI);
@@ -4907,34 +4999,34 @@ async function downloadTemplateTender(){
   dropKeys.forEach((k,ci)=>{ const L=colLetter(ci+1); opsiRange[k]=`Opsi!$${L}$2:$${L}$${OPSI[k].length+1}`; });
 
   const wsD=wb.addWorksheet('Data');
-  wsD.addRow(FIELDS_TENDER.map(f=>f.label));
-  wsD.columns=FIELDS_TENDER.map(f=>({width:Math.max(16,f.label.length+2)}));
+  wsD.addRow(COLS.map(f=>f.label));
+  wsD.columns=COLS.map(f=>({width:Math.max(16,f.label.length+2)}));
   const thin={style:'thin',color:{argb:'FFBFCAD0'}};
   const allBorder={top:thin,left:thin,bottom:thin,right:thin};
   const headRow=wsD.getRow(1); headRow.height=34;
-  for(let c=1;c<=FIELDS_TENDER.length;c++){
+  for(let c=1;c<=COLS.length;c++){
     const cell=wsD.getCell(1,c);
-    const pp=isStackKey(FIELDS_TENDER[c-1].key);
+    const pp=isStackKey(COLS[c-1].key);
     cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:pp?'FF0E9E8E':'FF0E7C86'}};
     cell.font={bold:true,color:{argb:'FFFFFFFF'},size:11};
     cell.alignment={wrapText:true,vertical:'middle',horizontal:'center'};
     cell.border=allBorder;
   }
-  for(let r=2;r<=151;r++){ for(let c=1;c<=FIELDS_TENDER.length;c++){ const cell=wsD.getCell(r,c); const pp=isStackKey(FIELDS_TENDER[c-1].key); cell.border=allBorder; cell.alignment=pp?{wrapText:true,vertical:'top'}:{vertical:'middle'}; if(r%2===1) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F7F8'}}; } }
-  FIELDS_TENDER.forEach((f,idx)=>{ const c=idx+1;
+  for(let r=2;r<=151;r++){ for(let c=1;c<=COLS.length;c++){ const cell=wsD.getCell(r,c); const pp=isStackKey(COLS[c-1].key); cell.border=allBorder; cell.alignment=pp?{wrapText:true,vertical:'top'}:{vertical:'middle'}; if(r%2===1) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F7F8'}}; } }
+  COLS.forEach((f,idx)=>{ const c=idx+1;
     if(f.type==='date'){ for(let r=2;r<=151;r++) wsD.getCell(r,c).numFmt='dd-mm-yyyy'; }
     if(f.type==='num'){ for(let r=2;r<=151;r++){ wsD.getCell(r,c).numFmt='"Rp"#,##0'; wsD.getCell(r,c).alignment={vertical:'middle',horizontal:'right'}; } }
   });
   // #12: Harga Total (Tanpa PPN) otomatis = Barang + Jasa (khusus total flat: HPE/RAB/HPS)
-  const colMapTdT=fieldColMap(FIELDS_TENDER);
+  const colMapTdT=fieldColMap(COLS);
   ['hpe','rab','hps'].forEach(p=>{ const bC=colMapTdT[p+'_harga_barang'],jC=colMapTdT[p+'_harga_jasa'],tC=colMapTdT[p+'_total_tanpa_ppn']; if(bC&&jC&&tC){ for(let r=2;r<=151;r++){ const cell=wsD.getCell(r,tC); cell.value={formula:`${colLetter(bC)}${r}+${colLetter(jC)}${r}`}; cell.numFmt='"Rp"#,##0'; cell.alignment={vertical:'middle',horizontal:'right'}; } } });
 
   const wsO=wb.addWorksheet('Opsi');
-  dropKeys.forEach((k,ci)=>{ const f=FIELDS_TENDER.find(x=>x.key===k); wsO.getCell(1,ci+1).value=f.label; OPSI[k].forEach((v,ri)=>wsO.getCell(ri+2,ci+1).value=v); });
+  dropKeys.forEach((k,ci)=>{ const f=COLS.find(x=>x.key===k); wsO.getCell(1,ci+1).value=f.label; OPSI[k].forEach((v,ri)=>wsO.getCell(ri+2,ci+1).value=v); });
   wsO.state='hidden';
 
   const ROWS=150;
-  FIELDS_TENDER.forEach((f,idx)=>{ if(!OPSI[f.key]) return; const L=colLetter(idx+1);
+  COLS.forEach((f,idx)=>{ if(!OPSI[f.key]) return; const L=colLetter(idx+1);
     for(let r=2;r<=ROWS+1;r++){ wsD.getCell(`${L}${r}`).dataValidation={type:'list',allowBlank:true,formulae:[opsiRange[f.key]],showErrorMessage:true,errorTitle:'Pilihan tidak valid',error:'Silakan pilih salah satu nilai dari daftar dropdown.'}; }
   });
 
@@ -4946,7 +5038,7 @@ async function downloadTemplateTender(){
    ['Addendum RKS','Pilih: Ada / Tidak Ada. Bila selain "Ada", No./Tgl. Addendum RKS dikosongkan.'],
    ['Metode Pengadaan','Tender Terbatas / Tender Terbuka / Seleksi Umum / Seleksi Terbatas / Penunjukan Langsung / Tender Cepat'],
    ['Kualifikasi','Pascakualifikasi / Prakualifikasi. Bila Pascakualifikasi, bagian Proses Prakualifikasi dikosongkan.'],
-   ['Jaminan Penawaran / Pelaksanaan','Dipersyaratkan: Iya / Tidak. Bila "Tidak", detail jaminan terkait dikosongkan.'],
+   ['Jaminan Penawaran / Pelaksanaan','Dipersyaratkan: Ada / Tidak Ada. Bila selain "Ada", seluruh detail jaminan terkait terkunci & dikosongkan.'],
    ['Tahapan/Proses','Penyusunan HPS / Proses Pengadaan / Tandatangan Kontrak / Terkontrak / Gagal/Batal'],
    ['Kendala & Tindak Lanjut','Diisi hanya bila Tahapan/Proses = Gagal/Batal'],
    ['Negosiasi Jangka Waktu Pelaksanaan','Isi jangka waktu yang disepakati (hari)'],
@@ -4973,36 +5065,36 @@ async function downloadTemplateTender(){
 
 async function exportExcelTender(){
   if(!window.ExcelJS){ toast('Library Excel belum termuat, coba lagi','warn'); return; }
+  const COLS = orderedFields(FIELDS_TENDER, GROUPS_TENDER);
   const rows=getFilteredRecordsTender();
   if(rows.length===0){ toast('Tidak ada data untuk diekspor','warn'); return; }
   const wb=new ExcelJS.Workbook();
   const ws=wb.addWorksheet('Monitoring Tender');
-  ws.addRow(FIELDS_TENDER.map(f=>f.label));
-  const colMapTd=fieldColMap(FIELDS_TENDER);
+  ws.addRow(COLS.map(f=>f.label));
+  const colMapTd=fieldColMap(COLS);
   const FLAT_AUTO=['hpe','rab','hps'];
   const isFlatAutoTotal=(k)=>FLAT_AUTO.some(p=>k===p+'_total_tanpa_ppn');
-  rows.forEach((r,ri)=>{ ws.addRow(FIELDS_TENDER.map(f=>{
+  rows.forEach((r,ri)=>{ ws.addRow(COLS.map(f=>{
     if(isFlatAutoTotal(f.key)) return null; // diisi rumus di bawah
     if(PENYEDIA_KEYS.includes(f.key)) return penyediaCellValue(r,f.key,f.type);
     if(INDEP_MULTI_KEYS.includes(f.key)) return indepCellValue(r,f.key);
     let v=r[f.key]; if(v===''||v==null) return ''; if(f.type==='num') return Number(v); return v;
   }));
     // Rumus otomatis hanya untuk total flat (HPE/RAB/HPS); tawar & kontrak per-penyedia sudah dihitung
-    FIELDS_TENDER.forEach(f=>{ if(isFlatAutoTotal(f.key)){ const p=f.key.replace(/_total_tanpa_ppn$/,''); const bC=colMapTd[p+'_harga_barang'],jC=colMapTd[p+'_harga_jasa'],tC=colMapTd[f.key]; if(bC&&jC&&tC){ const cell=ws.getCell(ri+2,tC); cell.value={formula:`${xlsxCol(bC)}${ri+2}+${xlsxCol(jC)}${ri+2}`}; cell.numFmt='#,##0'; } } });
+    COLS.forEach(f=>{ if(isFlatAutoTotal(f.key)){ const p=f.key.replace(/_total_tanpa_ppn$/,''); const bC=colMapTd[p+'_harga_barang'],jC=colMapTd[p+'_harga_jasa'],tC=colMapTd[f.key]; if(bC&&jC&&tC){ const cell=ws.getCell(ri+2,tC); cell.value={formula:`${xlsxCol(bC)}${ri+2}+${xlsxCol(jC)}${ri+2}`}; cell.numFmt='#,##0'; } } });
   });
-  ws.columns=FIELDS_TENDER.map(f=>({width:Math.max(16,f.label.length+2)}));
+  ws.columns=COLS.map(f=>({width:Math.max(16,f.label.length+2)}));
   const thin={style:'thin',color:{argb:'FFBFCAD0'}};
   const allBorder={top:thin,left:thin,bottom:thin,right:thin};
   const headRow=ws.getRow(1); headRow.height=34;
-  for(let c=1;c<=FIELDS_TENDER.length;c++){ const cell=ws.getCell(1,c); const fld=FIELDS_TENDER[c-1]; const pp=isStackKey(fld.key); cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:pp?'FF0E9E8E':'FF0E7C86'}}; cell.font={bold:true,color:{argb:'FFFFFFFF'},size:11}; cell.alignment={wrapText:true,vertical:'middle',horizontal:'center'}; cell.border=allBorder; }
-  for(let r=2;r<=rows.length+1;r++){ for(let c=1;c<=FIELDS_TENDER.length;c++){ const cell=ws.getCell(r,c); const fld=FIELDS_TENDER[c-1]; const pp=isStackKey(fld.key); cell.border=allBorder; cell.alignment=pp?{wrapText:true,vertical:'top'}:{vertical:'middle'}; if(fld.type==='num' && typeof cell.value==='number') cell.numFmt='#,##0'; if(r%2===1) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F7F8'}}; } }
+  for(let c=1;c<=COLS.length;c++){ const cell=ws.getCell(1,c); const fld=COLS[c-1]; const pp=isStackKey(fld.key); cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:pp?'FF0E9E8E':'FF0E7C86'}}; cell.font={bold:true,color:{argb:'FFFFFFFF'},size:11}; cell.alignment={wrapText:true,vertical:'middle',horizontal:'center'}; cell.border=allBorder; }
+  for(let r=2;r<=rows.length+1;r++){ for(let c=1;c<=COLS.length;c++){ const cell=ws.getCell(r,c); const fld=COLS[c-1]; const pp=isStackKey(fld.key); cell.border=allBorder; cell.alignment=pp?{wrapText:true,vertical:'top'}:{vertical:'middle'}; if(fld.type==='num' && typeof cell.value==='number') cell.numFmt='#,##0'; if(r%2===1) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F7F8'}}; } }
   try{
     const buf=await wb.xlsx.writeBuffer();
     const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a'); a.href=url; a.download='Monitoring_Tender_UP3_Masohi.xlsx';
     document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-    toast(rows.length+' baris diekspor ke Excel','ok');
   }catch(err){ console.error(err); toast('Gagal export Excel: '+errMsg(err),'warn'); }
 }
 
@@ -5107,17 +5199,18 @@ refreshData();      // muat data SPBJ/Kontrak Rinci
 refreshDataPl();    // muat data Pengadaan Langsung
 refreshDataTender();// muat data Tender
 // Pulihkan sesi login bila ada; selain itu tampilkan layar login
-selectRole('admin');   // pastikan tab Admin aktif sebagai default
-requestAnimationFrame(positionRolePill);
-setTimeout(positionRolePill, 300);
-if(document.fonts && document.fonts.ready){ document.fonts.ready.then(positionRolePill); }
+resetLoginForm();
 try{
   const savedRole=sessionStorage.getItem(ROLE_KEY);
-  if(savedRole==='admin'||savedRole==='guest') enterApp(savedRole);
+  if(savedRole==='admin'||savedRole==='user'||savedRole==='guest'){
+    currentUsername = sessionStorage.getItem(USER_KEY) || null;
+    enterApp(savedRole);
+  }
 }catch(e){}
 // close modal on overlay click
 document.getElementById('confirm-overlay').addEventListener('click',e=>{ if(e.target.id==='confirm-overlay')closeConfirm(); });
 document.getElementById('detail-overlay').addEventListener('click',e=>{ if(e.target.id==='detail-overlay')closeDetail(); });
+document.getElementById('cp-overlay').addEventListener('click',e=>{ if(e.target.id==='cp-overlay')closeChangePass(); });
 </script>
 </body>
 </html>
