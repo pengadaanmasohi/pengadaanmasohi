@@ -2253,13 +2253,15 @@ let currentUsername = null;
 const ROLE_KEY = 'mon_role';
 const USER_KEY = 'mon_user';
 const VIEW_KEY = 'mon_view';   // halaman terakhir (untuk dipulihkan saat refresh)
-/* Penyimpanan sesi tahan-refresh: tulis ke sessionStorage & localStorage,
-   baca dari sessionStorage dulu lalu localStorage. Dengan begitu halaman
-   terakhir & sesi login tetap dipulihkan saat halaman di-refresh (F5),
-   bahkan setelah tab ditutup lalu dibuka kembali. */
-function ssSet(k,v){ try{ sessionStorage.setItem(k,v); }catch(e){} try{ localStorage.setItem(k,v); }catch(e){} }
-function ssGet(k){ try{ const v=sessionStorage.getItem(k); if(v!=null) return v; }catch(e){} try{ return localStorage.getItem(k); }catch(e){} return null; }
-function ssDel(k){ try{ sessionStorage.removeItem(k); }catch(e){} try{ localStorage.removeItem(k); }catch(e){} }
+/* Penyimpanan sesi HANYA di sessionStorage.
+   sessionStorage otomatis terhapus saat tab/browser ditutup, sehingga
+   pengguna otomatis logout ketika browser ditutup. Sesi tetap dipulihkan
+   saat halaman di-refresh (F5) selama tab tidak ditutup.
+   localStorage lama (jika ada) langsung dibersihkan agar tidak memulihkan sesi. */
+try{ localStorage.removeItem('mon_role'); localStorage.removeItem('mon_user'); localStorage.removeItem('mon_view'); }catch(e){}
+function ssSet(k,v){ try{ sessionStorage.setItem(k,v); }catch(e){} }
+function ssGet(k){ try{ return sessionStorage.getItem(k); }catch(e){ return null; } }
+function ssDel(k){ try{ sessionStorage.removeItem(k); }catch(e){} }
 /* Format angka "Accounting" tanpa simbol Rp & tanpa desimal (dipakai di template & export Excel) */
 const ACCT_NODEC = '_(* #,##0_);_(* (#,##0);_(* "-"_);_(@_)';
 function isAdmin(){ return currentRole==='admin'; }
