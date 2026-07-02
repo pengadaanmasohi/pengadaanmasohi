@@ -96,6 +96,9 @@ a{color:inherit}
 .page-head h2{font-size:19px;font-weight:800;position:relative;padding-left:14px}
 .page-head h2::before{content:"";position:absolute;left:0;top:3px;bottom:3px;width:5px;border-radius:3px;background:linear-gradient(180deg,var(--teal),var(--cyan))}
 .page-head p{color:var(--muted);font-size:11px;margin-top:4px}
+/* Judul + jumlah data, lalu jarak 30px, lalu tombol Export Data (dikelompokkan di kiri) */
+.head-export-row{display:flex;align-items:center;gap:30px;flex-wrap:wrap}
+.head-export-row h2{margin:0}
 
 /* ---------- Cards ---------- */
 .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
@@ -1394,13 +1397,13 @@ tbody tr{animation:rowIn .3s ease both}
   <!-- ============ DAFTAR ============ -->
   <section id="view-list" class="view">
     <div class="page-head">
-      <div>
+      <div class="head-export-row">
         <h2>Daftar Kontrak Rinci <span class="count-badge" id="list-count">0</span></h2>
+        <button class="btn btn-green" onclick="exportExcel()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9.2 12.5 4.6 5.5"/><path d="m13.8 12.5-4.6 5.5"/></svg>
+          Export Data
+        </button>
       </div>
-      <button class="btn btn-green" onclick="exportExcel()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9.2 12.5 4.6 5.5"/><path d="m13.8 12.5-4.6 5.5"/></svg>
-        Export Data
-      </button>
     </div>
 
     <!-- Filters + Export (satu baris) -->
@@ -1439,7 +1442,7 @@ tbody tr{animation:rowIn .3s ease both}
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
           Reset
         </button>
-        <button class="btn btn-danger" data-role="admin user" onclick="askDeleteAll()">
+        <button class="btn btn-danger role-keepspace" data-role="admin user" onclick="askDeleteAll()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6M14 11v6"/></svg>
           Hapus Semua
         </button>
@@ -1523,13 +1526,13 @@ tbody tr{animation:rowIn .3s ease both}
   <!-- ============ DAFTAR PENGADAAN LANGSUNG ============ -->
   <section id="view-list-pl" class="view">
     <div class="page-head">
-      <div>
+      <div class="head-export-row">
         <h2>Daftar Pengadaan Langsung <span class="count-badge" id="list-pl-count">0</span></h2>
+        <button class="btn btn-green" onclick="exportExcelPl()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9.2 12.5 4.6 5.5"/><path d="m13.8 12.5-4.6 5.5"/></svg>
+          Export Data
+        </button>
       </div>
-      <button class="btn btn-green" onclick="exportExcelPl()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9.2 12.5 4.6 5.5"/><path d="m13.8 12.5-4.6 5.5"/></svg>
-        Export Data
-      </button>
     </div>
 
     <!-- Filters + Export (satu baris) -->
@@ -1569,7 +1572,7 @@ tbody tr{animation:rowIn .3s ease both}
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
           Reset
         </button>
-        <button class="btn btn-danger" data-role="admin" onclick="askDeleteAllPl()">
+        <button class="btn btn-danger role-keepspace" data-role="admin" onclick="askDeleteAllPl()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6M14 11v6"/></svg>
           Hapus Semua
         </button>
@@ -1654,13 +1657,13 @@ tbody tr{animation:rowIn .3s ease both}
   <!-- ============ MONITORING TENDER ============ -->
   <section id="view-list-tender" class="view">
     <div class="page-head">
-      <div>
+      <div class="head-export-row">
         <h2>Daftar Tender <span class="count-badge" id="list-tender-count">0</span></h2>
+        <button class="btn btn-green" onclick="exportExcelTender()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9.2 12.5 4.6 5.5"/><path d="m13.8 12.5-4.6 5.5"/></svg>
+          Export Data
+        </button>
       </div>
-      <button class="btn btn-green" onclick="exportExcelTender()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9.2 12.5 4.6 5.5"/><path d="m13.8 12.5-4.6 5.5"/></svg>
-        Export Data
-      </button>
     </div>
 
     <!-- Filters + Export (satu baris) -->
@@ -1700,7 +1703,7 @@ tbody tr{animation:rowIn .3s ease both}
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
           Reset
         </button>
-        <button class="btn btn-danger" data-role="admin" onclick="askDeleteAllTender()">
+        <button class="btn btn-danger role-keepspace" data-role="admin" onclick="askDeleteAllTender()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6M14 11v6"/></svg>
           Hapus Semua
         </button>
@@ -2247,6 +2250,7 @@ let currentRole = null;
 let currentUsername = null;
 const ROLE_KEY = 'mon_role';
 const USER_KEY = 'mon_user';
+const VIEW_KEY = 'mon_view';   // halaman terakhir (untuk dipulihkan saat refresh)
 function isAdmin(){ return currentRole==='admin'; }
 function canInput(){ return currentRole==='admin' || currentRole==='user'; }
 function requireAdmin(){ if(!isAdmin()){ toast('Hanya admin yang dapat melakukan tindakan ini','warn'); return false; } return true; }
@@ -2359,19 +2363,25 @@ function playLoginAnim(role, done){
     finish();
   }
 }
-function enterApp(role){
+function enterApp(role, view){
   currentRole=role;
   applyRole(role);
   document.getElementById('login-screen').style.display='none';
   document.getElementById('topbar-user').style.display='flex';
   resetLoginForm();
-  showView('dashboard', null, true);   // #2: tanpa loader "Memuat" (hanya animasi selamat datang)
+  showView(view||'dashboard', null, true);   // #2: tanpa loader "Memuat" (hanya animasi selamat datang)
   startIdleTimer();   // mulai hitung mundur auto-logout 5 menit idle
 }
 function applyRole(role){
   document.querySelectorAll('.topnav-link[data-role], .topnav-item[data-role], .btn[data-role]').forEach(l=>{
     const roles=l.getAttribute('data-role').split(' ');
-    l.style.display = roles.includes(role) ? '' : 'none';
+    const ok=roles.includes(role);
+    if(l.classList.contains('role-keepspace')){
+      // Sembunyikan tanpa mengubah tata letak (mis. Hapus Semua) → tombol Reset tetap di posisinya.
+      l.style.display=''; l.style.visibility = ok ? '' : 'hidden';
+    }else{
+      l.style.visibility=''; l.style.display = ok ? '' : 'none';
+    }
   });
   // Sembunyikan grup menu (mis. Input Pekerjaan) bila tidak ada item yang tampil untuk peran ini
   document.querySelectorAll('.topnav-group').forEach(g=>{
@@ -2400,7 +2410,7 @@ function performLogout(){
   stopIdleTimer();   // hentikan pemantauan idle
   const anim=document.getElementById('logout-anim');
   const finish=()=>{
-    try{ sessionStorage.removeItem(ROLE_KEY); sessionStorage.removeItem(USER_KEY); }catch(e){}
+    try{ sessionStorage.removeItem(ROLE_KEY); sessionStorage.removeItem(USER_KEY); sessionStorage.removeItem(VIEW_KEY); }catch(e){}
     currentRole=null; currentUsername=null;
     document.getElementById('topbar-user').style.display='none';
     document.getElementById('login-screen').style.display='flex';
@@ -2530,6 +2540,7 @@ function showView(name, loaderMsg, noLoader){
     try{
         document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
         document.getElementById('view-'+name).classList.add('active');
+        try{ sessionStorage.setItem(VIEW_KEY, name); }catch(e){}   // ingat halaman aktif utk refresh
         // active state untuk Dashboard (nav-link) maupun item di dalam grup (nav-item)
         document.querySelectorAll('.topnav-link, .topnav-item').forEach(l=>{
           l.classList.toggle('active', l.dataset.view===name);
@@ -4945,7 +4956,7 @@ function indepCellValue(rec,key){
 
 /* ---- Bangun form input Tender dari FIELDS_TENDER/GROUPS_TENDER ---- */
 const TENDER_SECTION_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>';
-const LOCK_NOTE='<span class="lock-overlay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Data Terkunci</span>';
+const LOCK_NOTE='<span class="lock-overlay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Data terkunci</span>';
 const AUTO_NOTE='<span class="lock-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" style="width:10px;height:10px"><path d="M5 12h14M12 5v14"/></svg>Otomatis (Barang + Jasa)</span>';
 function buildFormTender(){
   const cont=document.getElementById('form-tender-fields'); if(!cont) return;
@@ -5477,11 +5488,14 @@ refreshDataTender();// muat data Tender
 // dan filter data setiap halaman kembali ke default (ditangani showView/resetAllFilters).
 resetLoginForm();
 (function restoreSession(){
-  let role=null, uname=null;
-  try{ role=sessionStorage.getItem(ROLE_KEY); uname=sessionStorage.getItem(USER_KEY); }catch(e){}
+  let role=null, uname=null, view=null;
+  try{ role=sessionStorage.getItem(ROLE_KEY); uname=sessionStorage.getItem(USER_KEY); view=sessionStorage.getItem(VIEW_KEY); }catch(e){}
   if(role==='admin' || role==='user' || role==='guest'){
     currentUsername = uname || null;
-    enterApp(role);   // langsung masuk aplikasi tanpa login ulang (filter default)
+    // Refresh: kembali ke halaman terakhir (data di halaman itu di-refresh), bukan ke dashboard.
+    const allowed=['dashboard','list','list-pl','list-tender'];
+    const target = allowed.includes(view) ? view : 'dashboard';
+    enterApp(role, target);   // langsung masuk aplikasi tanpa login ulang (filter default)
   }else{
     currentRole=null; currentUsername=null;   // belum ada sesi → tampilkan layar login
   }
