@@ -2636,8 +2636,8 @@ function refreshAutoTotals(fields, idOf){
 function xlsxCol(n){ let s=''; while(n>0){ const m=(n-1)%26; s=String.fromCharCode(65+m)+s; n=Math.floor((n-1)/26); } return s; }
 /* Bangun peta: index kolom (1-based) untuk tiap key field dalam sebuah daftar fields. */
 function fieldColMap(fields){ const m={}; fields.forEach((f,i)=>{ m[f.key]=i+1; }); return m; }
-/* Kolom yang WAJIB berformat teks di Excel agar angka depan (mis. 0 pada 083x) & format NPWP tidak berubah. */
-const FORCE_TEXT_KEYS = ['no_telp_pic','npwp','no_telp'];
+/* Kolom yang WAJIB berformat teks di Excel agar angka depan (mis. 0 pada 083x, no. rekening) & format NPWP tidak berubah. */
+const FORCE_TEXT_KEYS = ['no_telp_pic','npwp','no_telp','no_rekening'];
 function isForceTextKey(key){ return FORCE_TEXT_KEYS.includes(key); }
 /* Terapkan rumus otomatis (Barang + Jasa) ke sel total pada baris data Excel.
    ws: worksheet ExcelJS; fields: daftar field terurut sesuai kolom; rowNum: nomor baris data. */
