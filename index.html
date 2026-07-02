@@ -5593,8 +5593,16 @@ resetLoginForm();
     currentUsername = uname || null;
     // Refresh: kembali ke halaman terakhir (data di halaman itu di-refresh), bukan ke dashboard.
     const allowed=['dashboard','list','list-pl','list-tender'];
-    const target = allowed.includes(view) ? view : 'dashboard';
-    enterApp(role, target);   // langsung masuk aplikasi tanpa login ulang (filter default)
+    // Halaman input dipulihkan lewat function pembukanya (form disiapkan kosong = input baru).
+    const inputOpener={ 'input':newRecord, 'input-pl':newRecordPl, 'input-tender':newRecordTender };
+    if(inputOpener[view]){
+      // Masuk aplikasi dulu (tanpa pindah halaman), lalu buka form input baru.
+      enterApp(role, 'dashboard');
+      inputOpener[view]();   // requireInput() di dalamnya akan menolak guest → tetap di dashboard
+    }else{
+      const target = allowed.includes(view) ? view : 'dashboard';
+      enterApp(role, target);   // langsung masuk aplikasi tanpa login ulang (filter default)
+    }
   }else{
     currentRole=null; currentUsername=null;   // belum ada sesi → tampilkan layar login
   }
