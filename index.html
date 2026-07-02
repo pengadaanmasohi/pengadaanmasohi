@@ -1997,6 +1997,7 @@ const FIELDS_PL = [
   // V. Kriteria Pengadaan
   {key:'jenis_pengadaan', label:'Jenis Pengadaan', type:'select', options:['Barang','Jasa Lainnya','Jasa Konsultansi','Pekerjaan Konstruksi']},
   {key:'jenis_kontrak', label:'Jenis Perjanjian/Kontrak', type:'select', options:['Lumsum','Turn Key']},
+  {key:'bidang_sub_bidang', label:'Bidang / Sub Bidang', type:'text', span:2},
   // VI. Dokumen HPS
   {key:'no_hps', label:'No. HPS', type:'text'},
   {key:'tgl_hps', label:'Tgl. HPS', type:'date'},
@@ -2065,7 +2066,7 @@ const GROUPS_PL = [
   {title:'II. Nota Dinas Pengadaan', cols:3, keys:['no_nota_dinas','tgl_nota_dinas']},
   {title:'III. Dokumen Pengadaan', cols:3, keys:['tgl_terima_dok','ketersediaan_drp','no_drp','tgl_drp']},
   {title:'IV. Rencana Anggaran Biaya', cols:3, keys:['rab_harga_barang','rab_harga_jasa','rab_total_tanpa_ppn','rab_total_dengan_ppn','no_prk','no_anggaran','tgl_anggaran','jenis_anggaran']},
-  {title:'V. Kriteria Pengadaan', cols:3, keys:['jenis_pengadaan','jenis_kontrak']},
+  {title:'V. Kriteria Pengadaan', cols:3, keys:['jenis_pengadaan','jenis_kontrak','bidang_sub_bidang']},
   {title:'VI. Dokumen HPS', cols:3, keys:['no_hps','tgl_hps','hps_harga_barang','hps_harga_jasa','hps_total_tanpa_ppn','hps_total_dengan_ppn']},
   {title:'VII. Proses Pengadaan', cols:3, keys:['no_eproc','tgl_pengumuman','tgl_upload_dok_penawaran','no_ba_pembukaan','tgl_ba_pembukaan','no_ba_evaluasi','tgl_ba_evaluasi','no_ba_klarifikasi','tgl_ba_klarifikasi','negosiasi_pelaksanaan']},
   {title:'VIII. Penawaran Harga', cols:3, keys:['no_penawaran','tgl_penawaran','tawar_harga_barang','tawar_harga_jasa','tawar_total_tanpa_ppn','tawar_total_dengan_ppn']},
@@ -3567,6 +3568,8 @@ function cleanForDbPl(rec){
     if(f.type==='num' && v!=null && v!=='') v=Number(v);
     o[f.key]=v;
   });
+  // Simpan field multi-nilai independen sebagai JSON (kolom jsonb)
+  o.bidang_sub_bidang_list = Array.isArray(rec.bidang_sub_bidang_list) ? rec.bidang_sub_bidang_list : null;
   return o;
 }
 function lsListPl(){ return []; }               /* penyimpanan lokal dinonaktifkan */
@@ -3576,7 +3579,7 @@ const Store_PL = {
   async list(){
     const {data,error}=await db.from(TABLE_PL).select('*').order('created_at',{ascending:false});
     if(error) throw error;
-    return (data||[]).map(r=>{ FIELDS_PL.forEach(f=>{ if(f.type==='num'&&r[f.key]!=null)r[f.key]=Number(r[f.key]); if(r[f.key]==null)r[f.key]=''; }); return r; });
+    return (data||[]).map(r=>{ FIELDS_PL.forEach(f=>{ if(f.type==='num'&&r[f.key]!=null)r[f.key]=Number(r[f.key]); if(r[f.key]==null && !isIndepKeyPl(f.key))r[f.key]=''; }); if(r.bidang_sub_bidang_list==null) delete r.bidang_sub_bidang_list; return r; });
   },
   async create(rec){
     const {data,error}=await db.from(TABLE_PL).insert(cleanForDbPl(rec)).select(); if(error) throw error; return data[0];
@@ -3598,8 +3601,8 @@ const Store_PL = {
 function seedSamplesPl(){
   seqPl=3;
   return [
-    {id:idPl(),nama_pekerjaan:'Pengadaan Material AMR Pelanggan TM',lokasi_pekerjaan:'Masohi Kota',jangka_waktu:'60 hari kalender',bidang_pelaksana:'Transaksi Energi Listrik',level_risiko:'Rendah',no_nota_dinas:'ND-014/2025',jenis_anggaran:'Operasi',jenis_pengadaan:'Barang',jenis_kontrak:'Lumsum',no_eproc:'EP-200145',no_kontrak:'PL-014/UP3MSH/2025',tgl_awal_kontrak:'2025-03-12',tgl_akhir_kontrak:'2025-05-11',kontrak_total_dengan_ppn:185000000,perusahaan:'CV Energi Nusantara',nama_pic:'Rudi Hartono',tahapan:'Terkontrak',manajemen_kontrak:'Sudah'},
-    {id:idPl(),nama_pekerjaan:'Pengadaan Jasa Kebersihan Kantor UP3',lokasi_pekerjaan:'Masohi',jangka_waktu:'1 tahun',bidang_pelaksana:'Keuangan dan Umum',level_risiko:'Tidak Ada',no_nota_dinas:'ND-021/2025',jenis_anggaran:'Operasi',jenis_pengadaan:'Jasa Lainnya',jenis_kontrak:'Lumsum',no_eproc:'EP-200210',no_kontrak:'',tgl_awal_kontrak:'',perusahaan:'PT Bersih Maluku',tahapan:'Proses Pengadaan',manajemen_kontrak:'Belum'},
+    {id:idPl(),nama_pekerjaan:'Pengadaan Material AMR Pelanggan TM',lokasi_pekerjaan:'Masohi Kota',jangka_waktu:'60 hari kalender',bidang_pelaksana:'Transaksi Energi Listrik',level_risiko:'Rendah',no_nota_dinas:'ND-014/2025',jenis_anggaran:'Operasi',jenis_pengadaan:'Barang',jenis_kontrak:'Lumsum',bidang_sub_bidang:'Pengadaan Barang / Meter & AMR',bidang_sub_bidang_list:['Pengadaan Barang / Meter & AMR'],no_eproc:'EP-200145',no_kontrak:'PL-014/UP3MSH/2025',tgl_awal_kontrak:'2025-03-12',tgl_akhir_kontrak:'2025-05-11',kontrak_total_dengan_ppn:185000000,perusahaan:'CV Energi Nusantara',nama_pic:'Rudi Hartono',tahapan:'Terkontrak',manajemen_kontrak:'Sudah'},
+    {id:idPl(),nama_pekerjaan:'Pengadaan Jasa Kebersihan Kantor UP3',lokasi_pekerjaan:'Masohi',jangka_waktu:'1 tahun',bidang_pelaksana:'Keuangan dan Umum',level_risiko:'Tidak Ada',no_nota_dinas:'ND-021/2025',jenis_anggaran:'Operasi',jenis_pengadaan:'Jasa Lainnya',jenis_kontrak:'Lumsum',bidang_sub_bidang:'Jasa Lainnya / Kebersihan',bidang_sub_bidang_list:['Jasa Lainnya / Kebersihan'],no_eproc:'EP-200210',no_kontrak:'',tgl_awal_kontrak:'',perusahaan:'PT Bersih Maluku',tahapan:'Proses Pengadaan',manajemen_kontrak:'Belum'},
   ];
 }
 
@@ -3636,6 +3639,74 @@ const PL_LOCK_RULES = {
   gagal_batal: r => r.tahapan !== 'Gagal/Batal',
   drp_tidak_ada: r => r.ketersediaan_drp !== 'Ada',
 };
+/* ===== Field multi-nilai INDEPENDEN untuk Pengadaan Langsung =====
+   Format & ukuran mengikuti field Bidang/Sub Bidang pada Tender (tombol
+   +Tambah / Hapus sendiri, tiap isian punya baris input tersendiri). */
+const INDEP_MULTI_KEYS_PL = ['bidang_sub_bidang'];
+function isIndepKeyPl(key){ return INDEP_MULTI_KEYS_PL.includes(key); }
+function indepListElPl(key){ return document.getElementById('indeplist_pl_'+key); }
+function makeIndepRowPl(val){
+  const row=document.createElement('div'); row.className='indep-row';
+  const inp=document.createElement('input'); inp.type='text'; inp.value=(val!=null?val:'');
+  inp.placeholder='cth. nama bidang – nama sub bidang';
+  row.appendChild(inp); return row;
+}
+function setIndepValuesPl(key,arr){
+  const el=indepListElPl(key); if(!el) return;
+  el.innerHTML='';
+  const vals=(Array.isArray(arr)&&arr.length)?arr:[''];
+  vals.forEach(v=>el.appendChild(makeIndepRowPl(v)));
+  updateIndepDelStatePl(key);
+}
+function indepValuesPl(key){
+  const el=indepListElPl(key); if(!el) return [];
+  let arr=[...el.querySelectorAll('input')].map(i=>i.value.trim());
+  while(arr.length>1 && arr[arr.length-1]==='') arr.pop();
+  return arr;
+}
+function addIndepRowPl(key){
+  const el=indepListElPl(key); if(!el) return;
+  const row=makeIndepRowPl(''); el.appendChild(row);
+  updateIndepDelStatePl(key); row.querySelector('input').focus();
+}
+function removeIndepRowPl(key){
+  const el=indepListElPl(key); if(!el) return;
+  const rows=el.querySelectorAll('.indep-row');
+  if(rows.length<=1){ toast('Minimal harus ada 1 isian','warn'); return; }
+  rows[rows.length-1].remove();
+  updateIndepDelStatePl(key);
+}
+function updateIndepDelStatePl(key){
+  const btn=document.getElementById('indepdel_pl_'+key); const el=indepListElPl(key);
+  if(btn&&el) btn.disabled=el.querySelectorAll('.indep-row').length<=1;
+}
+/* HTML satu field multi-nilai independen (PL) — kelas & ukuran sama seperti Tender */
+function indepFieldHTMLPl(f){
+  const pxw=fieldPxStyle(f);
+  const req=f.req?' <span class="req">*</span>':'';
+  return `<div class="field${pxw.cls} indep-field field-wide15"${pxw.style} id="wrap_${plInputId(f.key)}">
+    <div class="indep-head">
+      <label>${f.label}${req}</label>
+      <div class="indep-actions">
+        <button type="button" class="indep-add" onclick="addIndepRowPl('${f.key}')" title="Tambah isian">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M12 5v14M5 12h14"/></svg>Tambah
+        </button>
+        <button type="button" class="indep-del-btn" id="indepdel_pl_${f.key}" onclick="removeIndepRowPl('${f.key}')" title="Hapus isian terakhir">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>Hapus
+        </button>
+      </div>
+    </div>
+    <div class="indep-list" id="indeplist_pl_${f.key}"></div>
+  </div>`;
+}
+/* Nilai sel Excel untuk field multi-nilai independen (PL) */
+function indepCellValuePl(rec,key){
+  const list=Array.isArray(rec[key+'_list'])?rec[key+'_list'].filter(x=>x!=null&&x!==''):[];
+  if(list.length>1) return list.join('\n');
+  let v=list.length?list[0]:rec[key];
+  return (v==null||v==='')?'':v;
+}
+
 function buildFormPl(){
   const cont=document.getElementById('form-pl-fields'); if(!cont) return;
   let html='';
@@ -3649,6 +3720,7 @@ function buildFormPl(){
     g.keys.forEach(k=>{
       if(gi===0 && k==='tahun') return; // Tahun sudah dipindah ke baris judul
       const f=FIELDS_PL.find(x=>x.key===k); if(!f) return;
+      if(isIndepKeyPl(k)){ html+=indepFieldHTMLPl(f); return; }
       const id=plInputId(k);
       const req=f.req?' <span class="req">*</span>':'';
       const pxw=fieldPxStyle(f);
@@ -3669,6 +3741,7 @@ function buildFormPl(){
     html+=`</div></div>`;
   });
   cont.innerHTML=html;
+  INDEP_MULTI_KEYS_PL.forEach(k=>setIndepValuesPl(k,['']));
   applyLocksPl();
 }
 function isLockedPl(field, vals){
@@ -3691,9 +3764,9 @@ function applyLocksPl(){
 }
 
 /* ---- Form helpers PL ---- */
-function clearFormPl(){ FIELDS_PL.forEach(f=>{ const el=document.getElementById(plInputId(f.key)); if(el){el.value='';if(f.auto!=='sum')el.disabled=false;} const w=document.getElementById('wrap_'+plInputId(f.key)); if(w){w.classList.remove('locked');w.classList.remove('field-error');} }); refreshAutoTotals(FIELDS_PL, plInputId); applyLocksPl(); }
-function fillFormPl(rec){ FIELDS_PL.forEach(f=>{ const el=document.getElementById(plInputId(f.key)); if(el)el.value = f.type==='num' ? rupiahInputText(rec[f.key]) : (rec[f.key]!=null ? rec[f.key] : ''); }); refreshAutoTotals(FIELDS_PL, plInputId); applyLocksPl(); }
-function readFormPl(){ const rec={}; FIELDS_PL.forEach(f=>{ const el=document.getElementById(plInputId(f.key)); let v=el?el.value.trim():''; if(f.type==='num') v=parseRupiah(v); rec[f.key]=v; }); FIELDS_PL.forEach(f=>{ if(f.auto==='sum'){ const p=f.key.replace(/_total_tanpa_ppn$/,''); const b=Number(rec[p+'_harga_barang'])||0,j=Number(rec[p+'_harga_jasa'])||0; rec[f.key]=(b+j)>0?(b+j):''; } }); return rec; }
+function clearFormPl(){ FIELDS_PL.forEach(f=>{ if(isIndepKeyPl(f.key)){ const w=document.getElementById('wrap_'+plInputId(f.key)); if(w){w.classList.remove('locked');w.classList.remove('field-error');} return; } const el=document.getElementById(plInputId(f.key)); if(el){el.value='';if(f.auto!=='sum')el.disabled=false;} const w=document.getElementById('wrap_'+plInputId(f.key)); if(w){w.classList.remove('locked');w.classList.remove('field-error');} }); INDEP_MULTI_KEYS_PL.forEach(k=>setIndepValuesPl(k,[''])); refreshAutoTotals(FIELDS_PL, plInputId); applyLocksPl(); }
+function fillFormPl(rec){ FIELDS_PL.forEach(f=>{ if(isIndepKeyPl(f.key)) return; const el=document.getElementById(plInputId(f.key)); if(el)el.value = f.type==='num' ? rupiahInputText(rec[f.key]) : (rec[f.key]!=null ? rec[f.key] : ''); }); INDEP_MULTI_KEYS_PL.forEach(k=>{ const list=(Array.isArray(rec[k+'_list'])&&rec[k+'_list'].length)?rec[k+'_list']:((rec[k]!=null&&rec[k]!=='')?[rec[k]]:['']); setIndepValuesPl(k,list); }); refreshAutoTotals(FIELDS_PL, plInputId); applyLocksPl(); }
+function readFormPl(){ const rec={}; FIELDS_PL.forEach(f=>{ if(isIndepKeyPl(f.key)) return; const el=document.getElementById(plInputId(f.key)); let v=el?el.value.trim():''; if(f.type==='num') v=parseRupiah(v); rec[f.key]=v; }); FIELDS_PL.forEach(f=>{ if(f.auto==='sum'){ const p=f.key.replace(/_total_tanpa_ppn$/,''); const b=Number(rec[p+'_harga_barang'])||0,j=Number(rec[p+'_harga_jasa'])||0; rec[f.key]=(b+j)>0?(b+j):''; } }); INDEP_MULTI_KEYS_PL.forEach(k=>{ const list=indepValuesPl(k); rec[k+'_list']=list; rec[k]=list[0]||''; }); return rec; }
 function newRecordPl(){
   if(!requireInput()) return;
   if(PYN_REG.pl.active) exitPenyesuaianPl();
@@ -4126,7 +4199,17 @@ function viewRecordPl(rid){
   let html='';
   GROUPS_PL.forEach(g=>{
     let rows='';
-    g.keys.forEach(k=>{ const f=FIELDS_PL.find(x=>x.key===k); rows+=`<div class="detail-row"><span class="dk">${f.label}</span><span class="dv">${fmt(rec[k],f.type)||'—'}</span></div>`; });
+    g.keys.forEach(k=>{
+      const f=FIELDS_PL.find(x=>x.key===k);
+      if(isIndepKeyPl(k)){
+        const list=(Array.isArray(rec[k+'_list'])&&rec[k+'_list'].length)?rec[k+'_list']:((rec[k]!=null&&rec[k]!=='')?[rec[k]]:[]);
+        const shown=list.filter(x=>x!=null&&x!=='');
+        const dv=shown.length ? (shown.length>1 ? shown.map((v,i)=>`<span class="stack-line"><b class="stack-no">${i+1}.</b> ${v}</span>`).join('') : shown[0]) : '—';
+        rows+=`<div class="detail-row"><span class="dk">${f.label}</span><span class="dv">${dv}</span></div>`;
+      }else{
+        rows+=`<div class="detail-row"><span class="dk">${f.label}</span><span class="dv">${fmt(rec[k],f.type)||'—'}</span></div>`;
+      }
+    });
     html+=detailGroupHTML(g.title, rows);
   });
   document.getElementById('detail-title').textContent='Detail Pekerjaan';
@@ -4292,6 +4375,7 @@ async function downloadTemplatePl(){
    ['Jenis Anggaran','Pilih: Operasi / Investasi'],
    ['Jenis Pengadaan','Pilih: Barang / Jasa Lainnya / Jasa Konsultansi / Pekerjaan Konstruksi'],
    ['Jenis Perjanjian/Kontrak','Pilih: Lumsum / Turn Key'],
+   ['Bidang / Sub Bidang','Isi bidang/sub bidang. Untuk lebih dari satu, pisahkan tiap isian dengan baris baru (Alt+Enter) dalam satu sel.'],
    ['Tahapan/Proses','Pilih: Penyusunan HPS / Proses Pengadaan / Tandatangan Kontrak / Terkontrak / Gagal/Batal'],
    ['Kendala & Tindak Lanjut','Diisi hanya bila Tahapan/Proses = Gagal/Batal'],
    ['Harga Total (Tanpa PPN)','Terisi otomatis = Harga Barang + Harga Jasa (jangan diedit manual)'],
@@ -4303,7 +4387,7 @@ async function downloadTemplatePl(){
    ['','Isi data mulai baris ke-2. Jangan menghapus sheet "Opsi".'],
   ].forEach(r=>wsG.addRow(r));
   wsG.getCell('A1').font={bold:true,size:14,color:{argb:'FF0E7C86'}};
-  for(let r=3;r<=13;r++){ wsG.getCell(`A${r}`).font={bold:true,color:{argb:'FF095E66'}}; }
+  for(let r=3;r<=14;r++){ wsG.getCell(`A${r}`).font={bold:true,color:{argb:'FF095E66'}}; }
 
   try{
     const buf=await wb.xlsx.writeBuffer();
@@ -4322,13 +4406,13 @@ async function exportExcelPl(){
   const wb=new ExcelJS.Workbook();
   const ws=wb.addWorksheet('Daftar Pengadaan Langsung');
   ws.addRow(COLS.map(f=>f.label));
-  rows.forEach((r,ri)=>{ ws.addRow(COLS.map(f=>{ let v=r[f.key]; if(f.auto==='sum'){ const p=f.key.replace(/_total_tanpa_ppn$/,''); const b=Number(r[p+'_harga_barang'])||0, j=Number(r[p+'_harga_jasa'])||0; const t=b+j; return t>0?t:''; } if(v===''||v==null) return ''; if(f.type==='num') return Number(v); return v; })); });
+  rows.forEach((r,ri)=>{ ws.addRow(COLS.map(f=>{ if(isIndepKeyPl(f.key)) return indepCellValuePl(r,f.key); let v=r[f.key]; if(f.auto==='sum'){ const p=f.key.replace(/_total_tanpa_ppn$/,''); const b=Number(r[p+'_harga_barang'])||0, j=Number(r[p+'_harga_jasa'])||0; const t=b+j; return t>0?t:''; } if(v===''||v==null) return ''; if(f.type==='num') return Number(v); return v; })); });
   ws.columns=COLS.map(f=>({width:Math.max(16,f.label.length+2)}));
   const thin={style:'thin',color:{argb:'FFBFCAD0'}};
   const allBorder={top:thin,left:thin,bottom:thin,right:thin};
   const headRow=ws.getRow(1); headRow.height=32;
   for(let c=1;c<=COLS.length;c++){ const cell=ws.getCell(1,c); cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0E7C86'}}; cell.font={bold:true,color:{argb:'FFFFFFFF'},size:11}; cell.alignment={wrapText:true,vertical:'middle',horizontal:'center'}; cell.border=allBorder; }
-  for(let r=2;r<=rows.length+1;r++){ for(let c=1;c<=COLS.length;c++){ const cell=ws.getCell(r,c); cell.border=allBorder; cell.alignment={vertical:'middle'}; if(COLS[c-1].type==='num' && typeof cell.value==='number') cell.numFmt=ACCT_NODEC; if(isForceTextKey(COLS[c-1].key)) cell.numFmt='@'; if(r%2===1) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F7F8'}}; } }
+  for(let r=2;r<=rows.length+1;r++){ for(let c=1;c<=COLS.length;c++){ const cell=ws.getCell(r,c); const pp=isIndepKeyPl(COLS[c-1].key); cell.border=allBorder; cell.alignment=pp?{wrapText:true,vertical:'top'}:{vertical:'middle'}; if(COLS[c-1].type==='num' && typeof cell.value==='number') cell.numFmt=ACCT_NODEC; if(isForceTextKey(COLS[c-1].key)) cell.numFmt='@'; if(r%2===1) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F7F8'}}; } }
   try{
     const buf=await wb.xlsx.writeBuffer();
     const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
@@ -4367,6 +4451,8 @@ function handleUploadPl(ev){
         if(fmtBad){ toast('Data gagal diperbarui : format tidak sesuai','err'); ev.target.value=''; return; }
         // #12: pastikan Harga Total (Tanpa PPN) = Harga Barang + Harga Jasa
         FIELDS_PL.forEach(f=>{ if(f.auto==='sum'){ const p=f.key.replace(/_total_tanpa_ppn$/,''); const b=Number(rec[p+'_harga_barang'])||0, j=Number(rec[p+'_harga_jasa'])||0; rec[f.key]=(b+j)>0?(b+j):''; } });
+        // Field multi-nilai independen: pecah baris (Alt+Enter dalam satu sel) menjadi daftar
+        INDEP_MULTI_KEYS_PL.forEach(k=>{ const raw=String(rec[k]!=null?rec[k]:''); const list=raw.split(/\r?\n/).map(s=>s.trim()).filter(Boolean); rec[k+'_list']=list; rec[k]=list[0]||''; });
         if(missingRequiredPl(rec).length){ toast('Data gagal diperbarui, lengkapi data terlebih dahulu','warn'); ev.target.value=''; return; }
         batch.push(rec);
       }
