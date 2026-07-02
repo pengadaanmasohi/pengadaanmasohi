@@ -241,8 +241,9 @@ td.cell-center{text-align:center}
 .pill-prog{background:#fff3d6;color:#9a6b00;box-shadow:inset 0 0 0 1px rgba(154,107,0,.18)}
 .pill-kontrak{background:#d8f0e3;color:#157a44;box-shadow:inset 0 0 0 1px rgba(21,122,68,.18)}
 .pill-batal{background:#fbe0e0;color:#b22a2a;box-shadow:inset 0 0 0 1px rgba(178,42,42,.18)}
-/* #5 Freeze kolom "No." (kolom pertama) secara horizontal */
-.table-wrap thead th:first-child{position:sticky;left:0;z-index:5;background:linear-gradient(180deg,var(--teal),var(--teal-dark))}
+/* #5 Freeze horizontal kolom "No." DINONAKTIFKAN — kolom No. ikut menggulir horizontal.
+   Header tetap sticky di atas (freeze vertikal) mengikuti aturan `th` umum. */
+.table-wrap thead th:first-child{position:sticky;top:0;left:auto;z-index:3;background:linear-gradient(180deg,var(--teal),var(--teal-dark))}
 /* #4: Kolom No. dipersempit agar pas dengan angka baris (mis. 1–2 digit) */
 .table-wrap th.col-no,.table-wrap td.col-no{width:34px;min-width:34px;max-width:40px;text-align:center;padding-left:6px;padding-right:6px;white-space:nowrap}
 /* Kolom Tgl. Terbit & Berakhir Kontrak — dilebarkan & judul dibungkus agar muat 2 baris */
@@ -255,7 +256,7 @@ td.cell-center{text-align:center}
 /* Kolom Nilai Pekerjaan — lebar mengikuti nilai terlebar yang ditampilkan (tampil utuh) */
 .table-wrap th.col-nilai,.table-wrap td.col-nilai{white-space:nowrap;width:1%;text-align:right}
 .table-wrap td.col-nilai.wrap-penyedia{white-space:normal;text-align:left}
-.table-wrap tbody td:first-child{position:sticky;left:0;z-index:2;background:#fff;font-weight:700;color:var(--teal-dark);box-shadow:1px 0 0 #dce6e9}
+.table-wrap tbody td:first-child{font-weight:700;color:var(--teal-dark)}
 .table-wrap tbody tr:nth-child(even) td:first-child{background:#f5f9fa}
 .table-wrap tbody tr:hover td:first-child{background:var(--teal-soft)}
 .empty{padding:48px 20px;text-align:center;color:var(--muted)}
@@ -2252,6 +2253,13 @@ let currentUsername = null;
 const ROLE_KEY = 'mon_role';
 const USER_KEY = 'mon_user';
 const VIEW_KEY = 'mon_view';   // halaman terakhir (untuk dipulihkan saat refresh)
+/* Penyimpanan sesi tahan-refresh: tulis ke sessionStorage & localStorage,
+   baca dari sessionStorage dulu lalu localStorage. Dengan begitu halaman
+   terakhir & sesi login tetap dipulihkan saat halaman di-refresh (F5),
+   bahkan setelah tab ditutup lalu dibuka kembali. */
+function ssSet(k,v){ try{ sessionStorage.setItem(k,v); }catch(e){} try{ localStorage.setItem(k,v); }catch(e){} }
+function ssGet(k){ try{ const v=sessionStorage.getItem(k); if(v!=null) return v; }catch(e){} try{ return localStorage.getItem(k); }catch(e){} return null; }
+function ssDel(k){ try{ sessionStorage.removeItem(k); }catch(e){} try{ localStorage.removeItem(k); }catch(e){} }
 /* Format angka "Accounting" tanpa simbol Rp & tanpa desimal (dipakai di template & export Excel) */
 const ACCT_NODEC = '_(* #,##0_);_(* (#,##0);_(* "-"_);_(@_)';
 function isAdmin(){ return currentRole==='admin'; }
@@ -2292,14 +2300,14 @@ async function doLogin(){
   }
   if(!role){ showLoginError('Username atau kata sandi salah.'); return; }
   currentUsername = uname;
-  try{ sessionStorage.setItem(ROLE_KEY, role); sessionStorage.setItem(USER_KEY, uname); }catch(e){}
+  ssSet(ROLE_KEY, role); ssSet(USER_KEY, uname);
   playLoginAnim(role, ()=>enterApp(role));
 }
 /* Masuk sebagai Tamu (tanpa kata sandi) */
 function doLoginGuest(){
   showLoginError('');
   currentUsername = null;
-  try{ sessionStorage.setItem(ROLE_KEY, 'guest'); sessionStorage.removeItem(USER_KEY); }catch(e){}
+  ssSet(ROLE_KEY, 'guest'); ssDel(USER_KEY);
   playLoginAnim('guest', ()=>enterApp('guest'));
 }
 /* ====== GANTI KATA SANDI (via Supabase) ====== */
@@ -2413,7 +2421,7 @@ function performLogout(){
   stopIdleTimer();   // hentikan pemantauan idle
   const anim=document.getElementById('logout-anim');
   const finish=()=>{
-    try{ sessionStorage.removeItem(ROLE_KEY); sessionStorage.removeItem(USER_KEY); sessionStorage.removeItem(VIEW_KEY); }catch(e){}
+    ssDel(ROLE_KEY); ssDel(USER_KEY); ssDel(VIEW_KEY);
     currentRole=null; currentUsername=null;
     document.getElementById('topbar-user').style.display='none';
     document.getElementById('login-screen').style.display='flex';
@@ -2543,7 +2551,7 @@ function showView(name, loaderMsg, noLoader){
     try{
         document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
         document.getElementById('view-'+name).classList.add('active');
-        try{ sessionStorage.setItem(VIEW_KEY, name); }catch(e){}   // ingat halaman aktif utk refresh
+        ssSet(VIEW_KEY, name);   // ingat halaman aktif utk refresh (sessionStorage + localStorage)
         // active state untuk Dashboard (nav-link) maupun item di dalam grup (nav-item)
         document.querySelectorAll('.topnav-link, .topnav-item').forEach(l=>{
           l.classList.toggle('active', l.dataset.view===name);
@@ -5577,7 +5585,7 @@ refreshDataTender();// muat data Tender
 resetLoginForm();
 (function restoreSession(){
   let role=null, uname=null, view=null;
-  try{ role=sessionStorage.getItem(ROLE_KEY); uname=sessionStorage.getItem(USER_KEY); view=sessionStorage.getItem(VIEW_KEY); }catch(e){}
+  role=ssGet(ROLE_KEY); uname=ssGet(USER_KEY); view=ssGet(VIEW_KEY);
   if(role==='admin' || role==='user' || role==='guest'){
     currentUsername = uname || null;
     // Refresh: kembali ke halaman terakhir (data di halaman itu di-refresh), bukan ke dashboard.
