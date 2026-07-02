@@ -2253,6 +2253,7 @@ let currentUsername = null;
 const ROLE_KEY = 'mon_role';
 const USER_KEY = 'mon_user';
 const VIEW_KEY = 'mon_view';   // halaman terakhir (untuk dipulihkan saat refresh)
+const DRAFT_KEY = 'mon_draft'; // draft form input/edit (dipulihkan saat refresh)
 /* Penyimpanan sesi HANYA di sessionStorage.
    sessionStorage otomatis terhapus saat tab/browser ditutup, sehingga
    pengguna otomatis logout ketika browser ditutup. Sesi tetap dipulihkan
@@ -2262,6 +2263,63 @@ try{ localStorage.removeItem('mon_role'); localStorage.removeItem('mon_user'); l
 function ssSet(k,v){ try{ sessionStorage.setItem(k,v); }catch(e){} }
 function ssGet(k){ try{ return sessionStorage.getItem(k); }catch(e){ return null; } }
 function ssDel(k){ try{ sessionStorage.removeItem(k); }catch(e){} }
+/* ===== Draft form (agar data tidak hilang saat refresh di halaman input/ubah) =====
+   Menyimpan isi form yang sedang diketik/diubah ke sessionStorage, lalu
+   memulihkannya kembali setelah halaman di-refresh (termasuk mode Ubah Data). */
+function saveDraft(kind){
+  try{
+    let rec, editingRef, returnRef, title;
+    if(kind==='input'){        rec=readForm();       editingRef=editingId;       returnRef=krReturnView;     title=document.getElementById('input-title').textContent; }
+    else if(kind==='input-pl'){rec=readFormPl();     editingRef=editingIdPl;     returnRef=plReturnView;     title=document.getElementById('input-pl-title').textContent; }
+    else if(kind==='input-tender'){rec=readFormTender(); editingRef=editingIdTender; returnRef=tenderReturnView; title=document.getElementById('input-tender-title').textContent; }
+    else return;
+    ssSet(DRAFT_KEY, JSON.stringify({ kind, editingId:editingRef||null, returnView:returnRef||'dashboard', title, rec }));
+  }catch(e){}
+}
+function clearDraft(){ ssDel(DRAFT_KEY); }
+function getDraft(){ try{ const s=ssGet(DRAFT_KEY); return s?JSON.parse(s):null; }catch(e){ return null; } }
+/* Pasang listener input/change pada sebuah view agar setiap perubahan tersimpan */
+function attachDraftAutosave(viewId, kind){
+  const root=document.getElementById('view-'+viewId); if(!root) return;
+  const handler=()=>saveDraft(kind);
+  root.addEventListener('input', handler, true);
+  root.addEventListener('change', handler, true);
+}
+/* Pulihkan form (input baru / ubah) dari draft setelah refresh */
+function restoreDraft(d){
+  if(!d) return false;
+  try{
+    if(d.kind==='input'){
+      editingId=d.editingId||null; krReturnView=d.returnView||'dashboard'; buildFormKr();
+      fillForm(d.rec);
+      const editing=!!editingId;
+      document.getElementById('input-title').textContent = d.title || (editing?'Ubah Data Pekerjaan':'Input Kontrak Rinci');
+      document.getElementById('edit-banner').style.display = editing?'flex':'none';
+      if(editing) document.getElementById('edit-banner-text').textContent='Mode Ubah Data';
+      document.getElementById('io-tpl-kr').style.display = editing?'none':'';
+      showView('input', null, true);
+    }else if(d.kind==='input-pl'){
+      editingIdPl=d.editingId||null; plReturnView=d.returnView||'dashboard';
+      fillFormPl(d.rec);
+      const editing=!!editingIdPl;
+      document.getElementById('input-pl-title').textContent = d.title || (editing?'Ubah Data Pekerjaan':'Input Pekerjaan');
+      document.getElementById('edit-banner-pl').style.display = editing?'flex':'none';
+      if(editing) document.getElementById('edit-banner-pl-text').textContent='Mode Ubah Data';
+      document.getElementById('io-tpl-pl').style.display = editing?'none':'';
+      showView('input-pl', null, true);
+    }else if(d.kind==='input-tender'){
+      editingIdTender=d.editingId||null; tenderReturnView=d.returnView||'dashboard';
+      fillFormTender(d.rec);
+      const editing=!!editingIdTender;
+      document.getElementById('input-tender-title').textContent = d.title || (editing?'Ubah Data Pekerjaan':'Input Pekerjaan Tender');
+      document.getElementById('edit-banner-tender').style.display = editing?'flex':'none';
+      if(editing) document.getElementById('edit-banner-tender-text').textContent='Mode Ubah Data';
+      document.getElementById('io-tpl-tender').style.display = editing?'none':'';
+      showView('input-tender', null, true);
+    }else return false;
+    return true;
+  }catch(e){ return false; }
+}
 /* Format angka "Accounting" tanpa simbol Rp & tanpa desimal (dipakai di template & export Excel) */
 const ACCT_NODEC = '_(* #,##0_);_(* (#,##0);_(* "-"_);_(@_)';
 function isAdmin(){ return currentRole==='admin'; }
@@ -2423,7 +2481,7 @@ function performLogout(){
   stopIdleTimer();   // hentikan pemantauan idle
   const anim=document.getElementById('logout-anim');
   const finish=()=>{
-    ssDel(ROLE_KEY); ssDel(USER_KEY); ssDel(VIEW_KEY);
+    ssDel(ROLE_KEY); ssDel(USER_KEY); ssDel(VIEW_KEY); ssDel(DRAFT_KEY);
     currentRole=null; currentUsername=null;
     document.getElementById('topbar-user').style.display='none';
     document.getElementById('login-screen').style.display='flex';
@@ -2554,6 +2612,8 @@ function showView(name, loaderMsg, noLoader){
         document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
         document.getElementById('view-'+name).classList.add('active');
         ssSet(VIEW_KEY, name);   // ingat halaman aktif utk refresh (sessionStorage + localStorage)
+        // Draft form hanya relevan di halaman input/ubah; bersihkan bila pindah ke halaman lain
+        if(name!=='input' && name!=='input-pl' && name!=='input-tender') clearDraft();
         // active state untuk Dashboard (nav-link) maupun item di dalam grup (nav-item)
         document.querySelectorAll('.topnav-link, .topnav-item').forEach(l=>{
           l.classList.toggle('active', l.dataset.view===name);
@@ -2656,7 +2716,7 @@ function newRecord(){
   document.getElementById('input-title').textContent='Input Kontrak Rinci';
   document.getElementById('edit-banner').style.display='none';
   document.getElementById('io-tpl-kr').style.display='';
-  showView('input');
+  showView('input'); saveDraft('input');
 }
 function editRecord(rid){
   if(!requireInput()) return;
@@ -2667,7 +2727,7 @@ function editRecord(rid){
   const b=document.getElementById('edit-banner'); b.style.display='flex';
   document.getElementById('edit-banner-text').textContent='Mode Ubah Data';
   document.getElementById('io-tpl-kr').style.display='none';
-  showView('input','Memuat');
+  showView('input','Memuat'); saveDraft('input');
 }
 
 /* ============ CONFIRM MODAL ============ */
@@ -2743,7 +2803,7 @@ async function doSave(){
     }
   }catch(err){ console.error(err); toast('Gagal menyimpan: '+errMsg(err),'warn'); return; }
   const back = editingId ? krReturnView : 'dashboard';
-  editingId=null; clearForm();
+  editingId=null; clearForm(); clearDraft();
   await refreshData();
   showView(back);
 }
@@ -2754,7 +2814,7 @@ function askCancel(){
   openConfirm({
     icon:'back', title:'Batalkan',
     text:'Apakah anda yakin ingin membatalkan data pekerjaan?',
-    onYes:()=>{ editingId=null; clearForm(); showView(back); }
+    onYes:()=>{ editingId=null; clearForm(); clearDraft(); showView(back); }
   });
 }
 
@@ -3785,7 +3845,7 @@ function newRecordPl(){
   document.getElementById('input-pl-title').textContent='Input Pekerjaan';
   document.getElementById('edit-banner-pl').style.display='none';
   document.getElementById('io-tpl-pl').style.display='';
-  showView('input-pl');
+  showView('input-pl'); saveDraft('input-pl');
 }
 function editRecordPl(rid){
   if(!requireAdmin()) return;
@@ -3796,7 +3856,7 @@ function editRecordPl(rid){
   const b=document.getElementById('edit-banner-pl'); b.style.display='flex';
   document.getElementById('edit-banner-pl-text').textContent='Mode Ubah Data';
   document.getElementById('io-tpl-pl').style.display='none';
-  showView('input-pl','Memuat');
+  showView('input-pl','Memuat'); saveDraft('input-pl');
 }
 
 /* ---- Validasi field wajib PL ---- */
@@ -3841,14 +3901,14 @@ async function doSavePl(){
     if(editingIdPl){ await Store_PL.update(editingIdPl,rec); toast('Data berhasil diperbarui','ok'); }
     else{ await Store_PL.create(rec); toast('Data berhasil disimpan','ok'); }
   }catch(err){ console.error(err); toast('Gagal menyimpan: '+errMsg(err),'warn'); return; }
-  editingIdPl=null; clearFormPl();
+  editingIdPl=null; clearFormPl(); clearDraft();
   await refreshDataPl();
   showView('list-pl');
 }
 function askCancelPl(){
   const back = editingIdPl ? plReturnView : 'dashboard';
   openConfirm({icon:'back',title:'Batalkan',text:'Apakah anda yakin ingin membatalkan data pekerjaan?',
-    onYes:()=>{ editingIdPl=null; clearFormPl(); showView(back); }});
+    onYes:()=>{ editingIdPl=null; clearFormPl(); clearDraft(); showView(back); }});
 }
 function askDeletePl(rid){
   if(!requireAdmin()) return;
@@ -5145,7 +5205,7 @@ function newRecordTender(){
   document.getElementById('input-tender-title').textContent='Input Pekerjaan Tender';
   document.getElementById('edit-banner-tender').style.display='none';
   document.getElementById('io-tpl-tender').style.display='';
-  showView('input-tender');
+  showView('input-tender'); saveDraft('input-tender');
 }
 function editRecordTender(rid){
   if(!requireAdmin()) return;
@@ -5156,7 +5216,7 @@ function editRecordTender(rid){
   const b=document.getElementById('edit-banner-tender'); b.style.display='flex';
   document.getElementById('edit-banner-tender-text').textContent='Mode Ubah Data';
   document.getElementById('io-tpl-tender').style.display='none';
-  showView('input-tender','Memuat');
+  showView('input-tender','Memuat'); saveDraft('input-tender');
 }
 
 /* ---- Validasi field wajib Tender ---- */
@@ -5201,14 +5261,14 @@ async function doSaveTender(){
     if(editingIdTender){ await Store_TENDER.update(editingIdTender,rec); toast('Data berhasil diperbarui','ok'); }
     else{ await Store_TENDER.create(rec); toast('Data berhasil disimpan','ok'); }
   }catch(err){ console.error(err); toast('Gagal menyimpan: '+errMsg(err),'warn'); return; }
-  editingIdTender=null; clearFormTender();
+  editingIdTender=null; clearFormTender(); clearDraft();
   await refreshDataTender();
   showView('list-tender');
 }
 function askCancelTender(){
   const back = editingIdTender ? tenderReturnView : 'dashboard';
   openConfirm({icon:'back',title:'Batalkan',text:'Apakah anda yakin ingin membatalkan data pekerjaan?',
-    onYes:()=>{ editingIdTender=null; clearFormTender(); showView(back); }});
+    onYes:()=>{ editingIdTender=null; clearFormTender(); clearDraft(); showView(back); }});
 }
 function askDeleteTender(rid){
   if(!requireAdmin()) return;
@@ -5576,6 +5636,10 @@ buildFormKr();      // bangun form SPBJ/Kontrak Rinci dari definisi field
 buildFormPl();      // bangun form Pengadaan Langsung dari definisi field
 buildFormTender();  // bangun form Tender dari definisi field
 applyLocksTender(); // terapkan kunci awal
+// Autosave draft: setiap perubahan pada form input/ubah disimpan ke sessionStorage
+attachDraftAutosave('input','input');
+attachDraftAutosave('input-pl','input-pl');
+attachDraftAutosave('input-tender','input-tender');
 renderDashboard();
 renderTable();
 renderTablePl();
@@ -5593,12 +5657,20 @@ resetLoginForm();
     currentUsername = uname || null;
     // Refresh: kembali ke halaman terakhir (data di halaman itu di-refresh), bukan ke dashboard.
     const allowed=['dashboard','list','list-pl','list-tender'];
-    // Halaman input dipulihkan lewat function pembukanya (form disiapkan kosong = input baru).
-    const inputOpener={ 'input':newRecord, 'input-pl':newRecordPl, 'input-tender':newRecordTender };
-    if(inputOpener[view]){
-      // Masuk aplikasi dulu (tanpa pindah halaman), lalu buka form input baru.
+    const inputViews=['input','input-pl','input-tender'];
+    const draft=getDraft();
+    if(inputViews.includes(view)){
+      // Masuk aplikasi dulu (tanpa pindah halaman), lalu pulihkan form dari draft
+      // sehingga data yang sedang diketik / diubah TIDAK hilang saat refresh.
       enterApp(role, 'dashboard');
-      inputOpener[view]();   // requireInput() di dalamnya akan menolak guest → tetap di dashboard
+      const canInput = (role==='admin' || role==='user');
+      if(canInput && draft && draft.kind===view && restoreDraft(draft)){
+        // berhasil dipulihkan (termasuk mode Ubah Data)
+      }else{
+        clearDraft();
+        const inputOpener={ 'input':newRecord, 'input-pl':newRecordPl, 'input-tender':newRecordTender };
+        inputOpener[view] && inputOpener[view]();
+      }
     }else{
       const target = allowed.includes(view) ? view : 'dashboard';
       enterApp(role, target);   // langsung masuk aplikasi tanpa login ulang (filter default)
