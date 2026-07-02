@@ -1935,12 +1935,12 @@ function yearControlHTML(inputId){
 }
 const FIELDS = [
   {key:'tahun',            label:'Tahun',                           input:'f_tahun',            type:'select', options:TAHUN_OPTS},
-  {key:'no_prk',           label:'No. PRK',                         input:'f_no_prk',           type:'text', req:true},
-  {key:'no_anggaran',      label:'No. Anggaran',                    input:'f_no_anggaran',      type:'text', req:true},
-  {key:'no_pr',            label:'No. PR',                          input:'f_no_pr',            type:'text'},
+  {key:'no_prk',           label:'No. PRK',                         input:'f_no_prk',           type:'text', req:true, ph:'cth. 2025.MMU.AO-ADM.01.01'},
+  {key:'no_anggaran',      label:'No. Anggaran',                    input:'f_no_anggaran',      type:'text', req:true, ph:'cth. 001/SKKO/GM.MMU/ADM.NIAGA/MSH/2025/R1'},
+  {key:'no_pr',            label:'No. PR',                          input:'f_no_pr',            type:'text', ph:'cth. 3002518656'},
   {key:'no_po',            label:'No. PO',                          input:'f_no_po',            type:'text'},
   {key:'tgl_anggaran',     label:'Tgl. Anggaran',                   input:'f_tgl_anggaran',     type:'date', req:true},
-  {key:'no_eproc',         label:'No. Eproc',                       input:'f_no_eproc',         type:'text'},
+  {key:'no_eproc',         label:'No. Eproc',                       input:'f_no_eproc',         type:'text', ph:'cth. EPROC-4230-20250319-4230-00001'},
   {key:'jenis_anggaran',   label:'Jenis Anggaran',                  input:'f_jenis_anggaran',   type:'select', options:['Operasi','Investasi'], req:true},
   {key:'bidang_pelaksana', label:'Bidang Pelaksana',                input:'f_bidang_pelaksana', type:'select', options:['Jaringan dan Konstruksi','Pembangkitan','Transaksi Energi Listrik','Niaga dan Pemasaran','Perencanaan','Keuangan dan Umum','Keselamatan, Kesehatan Kerja, Lingkungan dan Keamanan'], req:true},
   {key:'no_kontrak_khs',   label:'No. Kontrak KHS',                 input:'f_no_kontrak_khs',   type:'text'},
@@ -2618,11 +2618,12 @@ function buildFormKr(){
       const id=krInputId(f);
       const req=f.req?' <span class="req">*</span>':'';
       const pxw=fieldPxStyle(f);
+      const ph=f.ph?` placeholder="${f.ph}"`:'';
       let ctl='';
       if(f.type==='select') ctl=`<select id="${id}"><option value="">— Pilih —</option>${(f.options||[]).map(o=>`<option>${o}</option>`).join('')}</select>`;
       else if(f.type==='num') ctl=`<input id="${id}" type="text" inputmode="numeric" placeholder="Rp" oninput="onRupiahInput(this)">`;
       else if(f.type==='date') ctl=`<input id="${id}" type="date">`;
-      else ctl=`<input id="${id}" type="text">`;
+      else ctl=`<input id="${id}" type="text"${ph}>`;
       html+=`<div class="field${pxw.cls}"${pxw.style} id="wrap_${id}"><label>${f.label}${req}</label>${ctl}</div>`;
     });
     html+=`</div></div>`;
@@ -4550,8 +4551,8 @@ const FIELDS_TENDER = [
   {key:'rab_harga_jasa', label:'RAB — Harga Jasa', type:'num', req:true},
   {key:'rab_total_tanpa_ppn', label:'RAB — Harga Total (Tanpa PPN)', type:'num', req:true, auto:'sum'},
   {key:'rab_total_dengan_ppn', label:'RAB — Harga Total (Dengan PPN)', type:'num', req:true},
-  {key:'no_prk', label:'No. PRK', type:'text', req:true},
-  {key:'no_anggaran', label:'No. Anggaran', type:'text', req:true},
+  {key:'no_prk', label:'No. PRK', type:'text', req:true, ph:'cth. 2025.MMU.AO-ADM.01.01'},
+  {key:'no_anggaran', label:'No. Anggaran', type:'text', req:true, ph:'cth. 001/SKKO/GM.MMU/ADM.NIAGA/MSH/2025/R1'},
   {key:'tgl_anggaran', label:'Tgl. Anggaran', type:'date', req:true},
   {key:'jenis_anggaran', label:'Jenis Anggaran', type:'select', options:['Operasi','Investasi'], req:true},
   // VII. Kriteria Pengadaan
@@ -4561,7 +4562,7 @@ const FIELDS_TENDER = [
   {key:'metode_penyampaian', label:'Metode Penyampaian', type:'select', options:['1 Tahap 1 Sampul','1 Tahap 2 Sampul','2 Tahap'], ctrl:true, req:true},
   {key:'metode_evaluasi', label:'Metode Evaluasi', type:'select', options:['Sistem Gugur','Sistem Nilai','Sistem Kualitas','Sistem Biaya Terendah','Sistem Kualitas dan Biaya'], req:true},
   {key:'jenis_kontrak', label:'Jenis Perjanjian/Kontrak', type:'select', options:['Lumsum','Turn Key','Gabungan','Waktu Penugasan','Kontrak Payung'], req:true},
-  {key:'bidang_sub_bidang', label:'Bidang / Sub Bidang', type:'text', span:2},
+  {key:'bidang_sub_bidang', label:'Bidang / Sub Bidang', type:'text', span:2, ph:'cth. Pengadaan Barang - Mekanikal dan Elektrikal'},
   // VIII. Dokumen HPS
   {key:'no_hps', label:'No. HPS', type:'text'},
   {key:'tgl_hps', label:'Tgl. HPS', type:'date'},
@@ -4570,7 +4571,7 @@ const FIELDS_TENDER = [
   {key:'hps_total_tanpa_ppn', label:'HPS — Harga Total (Tanpa PPN)', type:'num', auto:'sum'},
   {key:'hps_total_dengan_ppn', label:'HPS — Harga Total (Dengan PPN)', type:'num'},
   // IX. Proses Pascakualifikasi
-  {key:'no_eproc', label:'No. Eproc', type:'text'},
+  {key:'no_eproc', label:'No. Eproc', type:'text', ph:'cth. EPROC-4230-20250319-4230-00001'},
   {key:'tgl_pengumuman', label:'Tgl. Pengumuman / Undangan', type:'date'},
   {key:'peserta_mendaftar', label:'Peserta Mendaftar', type:'select', options:PENYEDIA_1_20},
   {key:'bayar_rks', label:'Bayar RKS', type:'select', options:PENYEDIA_1_20},
@@ -4682,7 +4683,7 @@ const FIELDS_TENDER = [
   // XIX. Data Lain-Lain
   {key:'norm_eproc', label:'Norm. Sistem Eproc', type:'text', ph:'cth. JASA-20160222-135'},
   {key:'nama_material_jasa', label:'Nama Material/Jasa', type:'text', span:2, ph:'cth. Komunikasi'},
-  {key:'nomor_pr', label:'No. PR', type:'text', ph:'cth. 3002615245'},
+  {key:'nomor_pr', label:'No. PR', type:'text', ph:'cth. 3002518656'},
   {key:'manajemen_kontrak', label:'Manajemen Kontrak', type:'select', options:['Sudah','Belum']},
 ];
 const GROUPS_TENDER = [
@@ -4991,7 +4992,7 @@ function indepListEl(key){ return document.getElementById('indeplist_'+key); }
 function makeIndepRow(val){
   const row=document.createElement('div'); row.className='indep-row';
   const inp=document.createElement('input'); inp.type='text'; inp.value=(val!=null?val:'');
-  inp.placeholder='cth. nama bidang – nama sub bidang';
+  inp.placeholder='cth. Pengadaan Barang - Mekanikal dan Elektrikal';
   row.appendChild(inp); return row;
 }
 function setIndepValues(key,arr){
