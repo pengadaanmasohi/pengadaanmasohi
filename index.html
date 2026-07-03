@@ -1950,17 +1950,17 @@ const FIELDS = [
   {key:'lokasi_pekerjaan_khs',label:'Lokasi Pekerjaan (KHS)',       input:'f_lokasi_pekerjaan_khs',type:'text'},
   {key:'nilai_kontrak_khs',label:'Nilai Kontrak (KHS) (+ PPN)',     input:'f_nilai_kontrak_khs',type:'num'},
   {key:'pelaksana_khs',    label:'Pelaksana KHS',                   input:'f_pelaksana_khs',    type:'select', options:['Kantor Pusat','UIW MMU','UP3 Masohi']},
-  {key:'no_spbj',          label:'No. SPBJ / Kontrak Rinci',        input:'f_no_spbj',          type:'text', req:true},
-  {key:'nama_pekerjaan_kr',label:'Nama Pekerjaan (Kontrak Rinci)',  input:'f_nama_pekerjaan_kr',type:'text', req:true},
-  {key:'lokasi_pekerjaan_kr',label:'Lokasi Pekerjaan (Kontrak Rinci)',input:'f_lokasi_pekerjaan_kr',type:'text', req:true},
-  {key:'tgl_terbit_kr',    label:'Tgl. Terbit Kontrak Rinci',       input:'f_tgl_terbit_kr_date',type:'date', req:true},
-  {key:'tgl_berakhir_kr',  label:'Tgl. Berakhir Kontrak Rinci',     input:'f_tgl_berakhir_kr',  type:'date', req:true},
-  {key:'nilai_kontrak_kr', label:'Nilai Kontrak Rinci (+ PPN)',     input:'f_nilai_kontrak_kr', type:'num', req:true},
-  {key:'nama_penyedia',    label:'Nama Penyedia',                   input:'f_nama_penyedia',    type:'text', req:true},
+  {key:'no_spbj',          label:'No. SPBJ / Kontrak Rinci',        input:'f_no_spbj',          type:'text'},
+  {key:'nama_pekerjaan_kr',label:'Nama Pekerjaan (Kontrak Rinci)',  input:'f_nama_pekerjaan_kr',type:'text'},
+  {key:'lokasi_pekerjaan_kr',label:'Lokasi Pekerjaan (Kontrak Rinci)',input:'f_lokasi_pekerjaan_kr',type:'text'},
+  {key:'tgl_terbit_kr',    label:'Tgl. Terbit Kontrak Rinci',       input:'f_tgl_terbit_kr_date',type:'date'},
+  {key:'tgl_berakhir_kr',  label:'Tgl. Berakhir Kontrak Rinci',     input:'f_tgl_berakhir_kr',  type:'date'},
+  {key:'nilai_kontrak_kr', label:'Nilai Kontrak Rinci (+ PPN)',     input:'f_nilai_kontrak_kr', type:'num'},
+  {key:'nama_penyedia',    label:'Nama Penyedia',                   input:'f_nama_penyedia',    type:'text'},
   {key:'status',           label:'Status',                          input:'f_status',           type:'select', options:['On Progress','Selesai'], req:true},
 ];
 const GROUPS = [
-  {title:'Informasi Umum', cols:4, keys:['tahun','no_prk','no_anggaran','no_pr','no_po','no_eproc','jenis_anggaran','bidang_pelaksana','status','tgl_anggaran']},
+  {title:'Informasi Umum', cols:4, keys:['tahun','no_prk','no_anggaran','tgl_anggaran','jenis_anggaran','no_pr','no_po','no_eproc','bidang_pelaksana','status']},
   {title:'Kesepakatan Harga Satuan (KHS)', cols:3, keys:['no_kontrak_khs','tgl_terbit_khs','tgl_berakhir_khs','nama_pekerjaan_khs','lokasi_pekerjaan_khs','nilai_kontrak_khs','pelaksana_khs']},
   {title:'SPBJ / Kontrak Rinci', cols:3, keys:['no_spbj','nama_pekerjaan_kr','lokasi_pekerjaan_kr','tgl_terbit_kr','tgl_berakhir_kr','nilai_kontrak_kr','nama_penyedia']},
 ];
@@ -1980,8 +1980,8 @@ const FIELDS_PL = [
   {key:'bidang_pelaksana', label:'Bidang Pelaksana', type:'select', options:BIDANG_OPTS, table:true, req:true},
   {key:'level_risiko', label:'Level Risiko Pekerjaan', type:'select', options:RISIKO_OPTS, req:true},
   // II. Nota Dinas Pengadaan
-  {key:'no_nota_dinas', label:'No. Nota Dinas', type:'text', req:true},
-  {key:'tgl_nota_dinas', label:'Tgl. Nota Dinas', type:'date', req:true},
+  {key:'no_nota_dinas', label:'No. Nota Dinas', type:'text'},
+  {key:'tgl_nota_dinas', label:'Tgl. Nota Dinas', type:'date'},
   // III. Dokumen Pengadaan
   {key:'tgl_terima_dok', label:'Tgl. Diterima Dokumen Pengadaan', type:'date'},
   {key:'ketersediaan_drp', label:'Ketersediaan DRP', type:'select', options:['Ada','Tidak Ada'], ctrl:true},
@@ -4790,12 +4790,12 @@ const GROUPS_TENDER = [
   {title:'XIX. CSMS', cols:3, pnw:true, keys:['csms_jenis_dokumen','csms_level_risiko','csms_tgl_terbit','csms_tgl_berakhir']},
   {title:'XX. Data Lain-Lain', cols:3, keys:['norm_eproc','nama_material_jasa','nomor_pr','manajemen_kontrak']},
 ];
-/* #6: Field wajib Tender hanya untuk kelompok data I–II
-   (I. Informasi Pekerjaan & II. Nota Dinas Pengadaan). Field lain tidak wajib.
+/* #6: Field wajib Tender hanya untuk kelompok data I
+   (I. Informasi Pekerjaan). Field lain tidak wajib.
    'tahun' dikecualikan karena dipindah ke baris judul (bukan field biasa). */
 (function(){
   const reqKeys=new Set();
-  [0,1].forEach(i=>{ (GROUPS_TENDER[i] && GROUPS_TENDER[i].keys || []).forEach(k=>reqKeys.add(k)); });
+  [0].forEach(i=>{ (GROUPS_TENDER[i] && GROUPS_TENDER[i].keys || []).forEach(k=>reqKeys.add(k)); });
   reqKeys.delete('tahun');
   FIELDS_TENDER.forEach(f=>{ f.req = reqKeys.has(f.key); });
 })();
