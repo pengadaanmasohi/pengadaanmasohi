@@ -1238,6 +1238,42 @@ tbody tr{animation:rowIn .3s ease both}
 .fk-hint{color:var(--muted);font-size:12px;margin:-2px 0 0}
 @media (max-width:720px){ .fk-file-chip{max-width:150px} }
 
+
+/* ================= Penetapan Nomor ================= */
+.pn-seg-wrap{display:flex;align-items:flex-end}
+.pn-col-bidang{width:170px;text-align:center}
+.pn-col-nomor{min-width:340px}
+#view-pn-lihat .table-wrap th.col-nama-freeze,#view-pn-lihat .table-wrap td.col-nama-freeze{min-width:210px;max-width:280px}
+.pn-nomor-list{display:flex;flex-direction:column;gap:7px;padding:2px 0}
+.pn-nomor-item{display:flex;align-items:flex-start;gap:8px}
+.pn-nomor-tag{flex:0 0 auto;font-family:'Plus Jakarta Sans';font-size:9px;font-weight:800;letter-spacing:.3px;color:var(--teal-dark);background:var(--teal-soft);border-radius:6px;padding:3px 8px;margin-top:1px;white-space:nowrap;min-width:64px;text-align:center}
+.pn-nomor-val{font-family:'Inter',monospace;font-weight:600;font-size:11.5px;color:var(--ink);word-break:break-all;line-height:1.5;flex:1 1 auto}
+.pn-copy{appearance:none;border:none;background:none;cursor:pointer;color:var(--muted);padding:2px;border-radius:6px;flex:0 0 auto;transition:background .15s,color .15s}
+.pn-copy:hover{color:var(--teal);background:var(--teal-soft)}
+.pn-copy.pn-copied{color:var(--green)}
+.pn-copy svg{width:13px;height:13px;display:block}
+.pn-actions{display:flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap}
+.pn-act-view{background:linear-gradient(135deg,#5a6b96,#7385ad)}
+/* Ambil Nomor — hasil */
+.pn-result{margin-top:16px;border-color:#cfe6e3;background:linear-gradient(180deg,#ffffff,#f4fbfa)}
+.pn-result-sub{font-size:11px;color:var(--muted);margin:-6px 0 16px;line-height:1.6}
+.pn-result-sub b{color:var(--ink)}
+.pn-doc-card{border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px;background:linear-gradient(180deg,#ffffff,#f8fcfc);margin-bottom:9px;box-shadow:var(--shadow)}
+.pn-doc-card:last-child{margin-bottom:0}
+.pn-doc-ic{width:34px;height:34px;flex:0 0 auto;border-radius:9px;display:grid;place-items:center;background:var(--teal-soft);color:var(--teal-dark)}
+.pn-doc-ic svg{width:17px;height:17px}
+.pn-doc-meta{flex:1 1 auto;min-width:0}
+.pn-doc-label{font-size:10.5px;font-weight:600;color:var(--muted);margin-bottom:3px}
+.pn-doc-no{font-family:'Inter',monospace;font-weight:700;font-size:13px;color:var(--teal-dark);word-break:break-all;line-height:1.4}
+.pn-pending{padding:0}
+.pn-pending .empty{padding:46px 24px}
+.pn-pending-title{font-family:'Plus Jakarta Sans';font-weight:800;color:var(--ink);margin-top:6px;font-size:13px}
+.pn-pending-desc{font-size:11px;color:var(--muted);max-width:460px;margin:8px auto 0;line-height:1.7}
+@media(max-width:640px){
+  .pn-seg-wrap{flex:1 1 100%}
+  .pn-seg-wrap .fk-seg{width:100%}
+  .pn-seg-wrap .fk-seg-btn{flex:1 1 auto;justify-content:center}
+}
 </style>
 </head>
 <body>
@@ -1371,6 +1407,53 @@ tbody tr{animation:rowIn .3s ease both}
                   Pengadaan Langsung
                 </button>
                 <button class="topnav-item" data-view="fk-view" data-modul="tender" onclick="openFkView('tender')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>
+                  Tender
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== Penetapan Nomor ===== -->
+        <div class="topnav-group" data-group="penetapan">
+          <button class="topnav-trigger" type="button" onclick="toggleTopGroup(event,'penetapan')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
+            Penetapan Nomor
+            <svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="topnav-dropdown">
+            <!-- Ambil Nomor -> submenu jenis pekerjaan -->
+            <div class="topnav-sub" data-sub="pn-ambil" data-role="admin user">
+              <button class="topnav-subtrigger" type="button" onclick="toggleFkSub(event,'pn-ambil')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                <span class="sub-label">Ambil Nomor</span>
+                <svg class="caret2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <div class="topnav-subdrop">
+                <button class="topnav-item" data-view="pn-ambil" data-modul="pl" onclick="openPnAmbil('pl')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>
+                  Pengadaan Langsung
+                </button>
+                <button class="topnav-item" data-view="pn-ambil" data-modul="tender" onclick="openPnAmbil('tender')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>
+                  Tender
+                </button>
+              </div>
+            </div>
+            <!-- Lihat Nomor -> submenu jenis pekerjaan -->
+            <div class="topnav-sub" data-sub="pn-lihat">
+              <button class="topnav-subtrigger" type="button" onclick="toggleFkSub(event,'pn-lihat')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                <span class="sub-label">Lihat Nomor</span>
+                <svg class="caret2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <div class="topnav-subdrop">
+                <button class="topnav-item" data-view="pn-lihat" data-modul="pl" onclick="openPnLihat('pl')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>
+                  Pengadaan Langsung
+                </button>
+                <button class="topnav-item" data-view="pn-lihat" data-modul="tender" onclick="openPnLihat('tender')">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>
                   Tender
                 </button>
@@ -1963,6 +2046,80 @@ tbody tr{animation:rowIn .3s ease both}
     </div>
   </section>
 
+  <!-- ============ PENETAPAN NOMOR — AMBIL NOMOR ============ -->
+  <section id="view-pn-ambil" class="view">
+    <div class="page-head">
+      <div>
+        <h2>Penetapan Nomor — Ambil Nomor</h2>
+        <p class="fk-hint">Tanggal terbit terisi otomatis sesuai tanggal saat penetapan. Nomor yang dihapus akan tersedia kembali.</p>
+      </div>
+      <div class="pn-seg-wrap">
+        <div class="fk-seg" id="pn-ambil-seg">
+          <button class="fk-seg-btn" data-modul="pl" onclick="openPnAmbil('pl')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>Pengadaan Langsung</button>
+          <button class="fk-seg-btn" data-modul="tender" onclick="openPnAmbil('tender')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>Tender</button>
+        </div>
+      </div>
+    </div>
+    <div id="pn-ambil-content"></div>
+  </section>
+
+  <!-- ============ PENETAPAN NOMOR — LIHAT NOMOR ============ -->
+  <section id="view-pn-lihat" class="view">
+    <div class="page-head">
+      <div>
+        <h2>Penetapan Nomor — Lihat Nomor <span class="count-badge" id="pn-lihat-count">0</span></h2>
+        <p class="fk-hint">Daftar nomor yang telah ditetapkan. Menghapus data akan mengembalikan nomor agar dapat dipakai lagi.</p>
+      </div>
+      <div class="pn-seg-wrap">
+        <div class="fk-seg" id="pn-lihat-seg">
+          <button class="fk-seg-btn" data-modul="pl" onclick="openPnLihat('pl')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>Pengadaan Langsung</button>
+          <button class="fk-seg-btn" data-modul="tender" onclick="openPnLihat('tender')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>Tender</button>
+        </div>
+      </div>
+    </div>
+    <div class="toolbar">
+      <div class="filter-field">
+        <label>Bidang Pelaksana</label>
+        <select id="pn-lihat-bidang" onchange="pnFilterLihat()">
+          <option value="">Semua Bidang</option>
+          <option>Jaringan dan Konstruksi</option><option>Pembangkitan</option><option>Transaksi Energi Listrik</option><option>Niaga dan Pemasaran</option><option>Perencanaan</option><option>Keuangan dan Umum</option><option>Keselamatan, Kesehatan Kerja, Lingkungan dan Keamanan</option>
+        </select>
+      </div>
+      <div class="filter-field toolbar-search">
+        <label>Cari</label>
+        <input id="pn-lihat-search" type="text" placeholder="Cari Nama Pekerjaan" oninput="pnFilterLihat()">
+      </div>
+      <div class="toolbar-actions">
+        <button class="btn btn-red" onclick="pnResetLihat()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          Reset
+        </button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="col-no">No.</th>
+              <th class="col-nama-freeze">Nama Pekerjaan</th>
+              <th class="pn-col-bidang">Bidang Pelaksana</th>
+              <th class="pn-col-nomor">Nomor Dokumen</th>
+              <th class="col-date">Tgl. Terbit</th>
+              <th style="text-align:center">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="pn-lihat-body"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="pn-lihat-pagination"></div>
+    </div>
+  </section>
+
+  <!-- Input file tersembunyi untuk unggah lampiran Penetapan Nomor -->
+  <input type="file" id="pn-file-input" style="display:none"
+    accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.zip,.rar">
+
   <!-- Input file tersembunyi untuk unggah File Kontrak -->
   <input type="file" id="fk-file-input" style="display:none"
     accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.zip,.rar">
@@ -2024,6 +2181,21 @@ tbody tr{animation:rowIn .3s ease both}
       <button class="detail-close" onclick="closeDetail()">&times;</button>
     </div>
     <div class="detail-body" id="detail-body"></div>
+  </div>
+</div>
+
+<!-- ====== MODAL ATUR NOMOR AWAL (Penetapan Nomor) ====== -->
+<div class="overlay" id="pn-cfg-overlay">
+  <div class="modal wide">
+    <div class="detail-head">
+      <h3>Atur Nomor Awal</h3>
+      <button class="detail-close" onclick="closePnCfg()">&times;</button>
+    </div>
+    <div class="detail-body" id="pn-cfg-body" style="padding-bottom:8px"></div>
+    <div class="modal-actions" style="padding:4px 24px 22px">
+      <button class="btn btn-green" onclick="savePnCfg()">Simpan</button>
+      <button class="btn btn-red" onclick="closePnCfg()">Batal</button>
+    </div>
   </div>
 </div>
 
@@ -2891,6 +3063,8 @@ function showView(name, loaderMsg, noLoader){
         if(name==='list-tender') renderTableTender();
         if(name==='fk-input') renderFkInput();
         if(name==='fk-view') renderFkView();
+        if(name==='pn-ambil') renderPnAmbil();
+        if(name==='pn-lihat') renderPnLihat();
     }catch(err){ console.error('showView error:', err); }
     if(!noLoader){ const wait=Math.max(0, 460-(Date.now()-t0)); setTimeout(hideLoader, wait); }
   };
@@ -6263,9 +6437,494 @@ function fkDelete(modul, recordId, btn){
   if(inp) inp.addEventListener('change', e=>{ const f=e.target.files&&e.target.files[0]; fkHandleFileSelected(f); });
 })();
 
+/* ============================================================
+   ==================  PENETAPAN NOMOR  =======================
+   Ambil & Lihat nomor dokumen pengadaan (Pengadaan Langsung / Tender).
+   - Tanggal terbit otomatis = tanggal saat penetapan.
+   - Penomoran berjalan dengan "gap-fill": nomor yang DIHAPUS akan
+     tersedia lagi (dipakai ulang oleh penetapan berikutnya).
+   - Dokumen utama (HPS, BA Pembukaan, BA Evaluasi, BA Klarifikasi)
+     berbagi satu urutan (default lanjut dari 0019 -> 0020).
+     Berita Acara Penjelasan punya urutan sendiri (opsional).
+   - Disimpan di Supabase tabel `penetapan_nomor` (+ file base64) dan
+     `penetapan_config` (nomor awal per modul & tahun).
+   Jalankan skrip: penetapan_nomor_supabase_up3masohi.sql
+   ============================================================ */
+const PN_TABLE = 'penetapan_nomor';
+const PN_CFG_TABLE = 'penetapan_config';
+const PN_MAX_MB = 15;
+const PN_UNIT = 'F17060000';   // kode unit UP3 Masohi (paten)
+
+const PN_BIDANG_OPTS = [
+  'Jaringan dan Konstruksi','Pembangkitan','Transaksi Energi Listrik',
+  'Niaga dan Pemasaran','Perencanaan','Keuangan dan Umum',
+  'Keselamatan, Kesehatan Kerja, Lingkungan dan Keamanan'
+];
+const PN_KLAS_OPTS = [
+  {kode:'DAN.01.01', label:'DAN.01.01 — Pengadaan Barang'},
+  {kode:'DAN.01.02', label:'DAN.01.02 — Pengadaan Jasa'},
+  {kode:'DAN.01.03', label:'DAN.01.03 — Pengadaan Barang dan Jasa'}
+];
+
+/* Definisi dokumen per modul.
+   counter:'main' -> berbagi satu urutan | 'bap' -> urutan tersendiri.
+   optional:true   -> hanya digenerate bila dipilih (Menggunakan Penjelasan = Ya). */
+const PN_DOCS = {
+  pl: [
+    {key:'HPS',  code:'HPS',     label:'Harga Perkiraan Sendiri (HPS)',          counter:'main'},
+    {key:'BAP',  code:'BAP.PL',  label:'Berita Acara Penjelasan',                counter:'bap', optional:true},
+    {key:'BAPP', code:'BAPP.PL', label:'Berita Acara Pembukaan Penawaran',       counter:'main'},
+    {key:'BAE',  code:'BAE.PL',  label:'Berita Acara Evaluasi Penawaran',        counter:'main'},
+    {key:'BAKN', code:'BAKN.PL', label:'Berita Acara Klarifikasi dan Negosiasi', counter:'main'}
+  ],
+  tender: []   // menunggu daftar jenis dokumen & kode dari pengguna
+};
+/* Nomor terakhir terpakai (base) default -> nomor berikut = base + 1.
+   Dokumen utama melanjutkan dari 0019; Penjelasan mulai dari 0. */
+const PN_BASE_DEFAULT = { main:19, bap:0 };
+let pnConfig = {};   // { 'pl|2026': {main:19, bap:0}, ... }
+
+const PN_MODULES = {
+  pl:     {label:'Pengadaan Langsung'},
+  tender: {label:'Tender'}
+};
+
+let records_penetapan = [];
+const pnState = { ambil:{modul:'pl'}, lihat:{modul:'pl', page:1}, lastResult:null };
+
+/* Ikon */
+const PN_DOC_ICON  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/></svg>';
+const PN_COPY_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+const PN_CHECK_ICON= '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg>';
+const PN_WARN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4M12 17h.01"/></svg>';
+const PN_HASH_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>';
+
+/* ---- Store Supabase ---- */
+const StorePenetapan = {
+  async list(){
+    if(!(USE_SUPABASE && db)) return [];
+    const {data,error} = await db.from(PN_TABLE)
+      .select('id,modul,tahun,tgl_terbit,nama_pekerjaan,bidang_pelaksana,kode_klasifikasi,unit,menggunakan_penjelasan,dokumen,nama_file,ukuran,mime,created_at')
+      .order('created_at',{ascending:false});
+    if(error) throw error; return data||[];
+  },
+  async insert(row){
+    const {data,error} = await db.from(PN_TABLE).insert(row).select();
+    if(error) throw error; return data && data[0];
+  },
+  async getFile(id){
+    const {data,error} = await db.from(PN_TABLE).select('nama_file,mime,data_base64').eq('id',id).limit(1);
+    if(error) throw error; return (data && data[0]) || null;
+  },
+  async setFile(id, file){
+    const {error} = await db.from(PN_TABLE).update(file).eq('id',id);
+    if(error) throw error;
+  },
+  async remove(id){
+    const {error} = await db.from(PN_TABLE).delete().eq('id',id);
+    if(error) throw error;
+  }
+};
+
+async function refreshDataPenetapan(){
+  try{ records_penetapan = await StorePenetapan.list(); }
+  catch(err){ console.error(err); records_penetapan = records_penetapan||[]; toast('Gagal memuat data Penetapan Nomor: '+errMsg(err),'err'); }
+  if(document.getElementById('view-pn-lihat')?.classList.contains('active')) renderPnLihat();
+}
+async function pnLoadConfig(){
+  pnConfig = {};
+  if(!(USE_SUPABASE && db)) return;
+  try{
+    const {data,error} = await db.from(PN_CFG_TABLE).select('modul,tahun,base');
+    if(error) throw error;
+    (data||[]).forEach(r=>{ pnConfig[r.modul+'|'+r.tahun] = r.base || {}; });
+  }catch(err){ /* tabel opsional; abaikan bila belum dibuat */ }
+}
+
+/* ---- Util nomor ---- */
+function pnYear(){ return new Date().getFullYear(); }
+function pnTodayISO(){ const d=new Date(); const m=String(d.getMonth()+1).padStart(2,'0'); const day=String(d.getDate()).padStart(2,'0'); return d.getFullYear()+'-'+m+'-'+day; }
+function pnPad4(n){ return String(n).padStart(4,'0'); }
+function pnFormatNo(seq, code, klas, unit, year){ return pnPad4(seq)+'.'+code+'/'+klas+'/'+unit+'/'+year; }
+function pnBase(modul, counter, year){
+  const c = pnConfig[modul+'|'+year];
+  if(c && c[counter]!=null && !isNaN(c[counter])) return parseInt(c[counter],10);
+  return PN_BASE_DEFAULT[counter]!=null ? PN_BASE_DEFAULT[counter] : 0;
+}
+/* Kumpulan nomor urut yang sudah dipakai untuk (modul, counter, tahun) */
+function pnUsedSeqs(modul, counter, year){
+  const set = new Set();
+  const keys = (PN_DOCS[modul]||[]).filter(d=>d.counter===counter).map(d=>d.key);
+  records_penetapan.forEach(r=>{
+    if(r.modul!==modul) return;
+    if(Number(r.tahun)!==Number(year)) return;
+    const arr = Array.isArray(r.dokumen)?r.dokumen:[];
+    arr.forEach(d=>{ if(keys.includes(d.key) && d.seq!=null) set.add(Number(d.seq)); });
+  });
+  return set;
+}
+/* Nomor berikutnya = terkecil > base yang belum terpakai (mengisi celah bekas hapus) */
+function pnNextSeq(modul, counter, year){
+  const base = pnBase(modul,counter,year);
+  const used = pnUsedSeqs(modul,counter,year);
+  let n = base + 1;
+  while(used.has(n)) n++;
+  return n;
+}
+
+/* ---- Navigasi ---- */
+function openPnAmbil(modul){
+  if(!PN_MODULES[modul]) modul='pl';
+  if(pnState.ambil.modul!==modul) pnState.lastResult=null;
+  pnState.ambil.modul=modul; showView('pn-ambil');
+}
+function openPnLihat(modul){
+  if(!PN_MODULES[modul]) modul='pl';
+  if(pnState.lihat.modul!==modul){ pnState.lihat.page=1; pnClearLihatFilters(); }
+  pnState.lihat.modul=modul; showView('pn-lihat');
+}
+function pnMarkActive(mode, modul){
+  document.querySelectorAll('.topnav-item[data-view="pn-'+mode+'"]').forEach(b=>{
+    b.classList.toggle('active', b.dataset.modul===modul);
+  });
+  const seg=document.getElementById('pn-'+mode+'-seg');
+  if(seg) seg.querySelectorAll('.fk-seg-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.modul===modul);
+  });
+}
+
+/* ---- Render halaman Ambil Nomor ---- */
+function renderPnAmbil(){
+  const modul=pnState.ambil.modul;
+  pnMarkActive('ambil', modul);
+  const cont=document.getElementById('pn-ambil-content'); if(!cont) return;
+  if(modul==='pl' && (PN_DOCS.pl && PN_DOCS.pl.length)){
+    cont.innerHTML = pnAmbilPlFormHtml();
+    if(pnState.lastResult && pnState.lastResult.modul===modul) pnRenderResult(pnState.lastResult);
+  }else{
+    cont.innerHTML = pnPendingHtml(PN_MODULES[modul] ? PN_MODULES[modul].label : modul);
+  }
+}
+function pnAmbilPlFormHtml(){
+  const bidangOpts = PN_BIDANG_OPTS.map(o=>'<option>'+o+'</option>').join('');
+  const klasOpts   = PN_KLAS_OPTS.map(o=>'<option value="'+o.kode+'">'+o.label+'</option>').join('');
+  const cfgBtn = isAdmin()
+    ? '<button class="btn btn-amber" type="button" onclick="openPnCfg()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>Atur Nomor Awal</button>'
+    : '';
+  return '' +
+  '<div class="form-card">' +
+    '<div class="form-section-title">'+KR_SECTION_ICON+'Data Pengadaan Langsung</div>' +
+    '<div class="form-flow" style="--cols:2">' +
+      '<div class="field"><label>Nama Pekerjaan <span class="req">*</span></label><input id="pn-pl-nama" type="text" placeholder="cth. Pengadaan Material Distribusi"></div>' +
+      '<div class="field"><label>Bidang Pelaksana <span class="req">*</span></label><select id="pn-pl-bidang"><option value="">— Pilih —</option>'+bidangOpts+'</select></div>' +
+      '<div class="field"><label>Kode Klasifikasi <span class="req">*</span></label><select id="pn-pl-klas"><option value="">— Pilih —</option>'+klasOpts+'</select></div>' +
+      '<div class="field"><label>Menggunakan Penjelasan <span class="req">*</span></label><select id="pn-pl-penjelasan"><option value="Tidak">Tidak</option><option value="Ya">Ya</option></select></div>' +
+    '</div>' +
+    '<div class="form-actions">' +
+      cfgBtn +
+      '<button class="btn btn-teal" type="button" onclick="pnAmbilPl()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Ambil No Pengadaan</button>' +
+    '</div>' +
+  '</div>' +
+  '<div id="pn-ambil-result"></div>';
+}
+function pnPendingHtml(label){
+  return '<div class="panel pn-pending"><div class="empty">' + PN_WARN_ICON +
+    '<div class="pn-pending-title">Penomoran ' + fkEsc(label) + ' belum dikonfigurasi</div>' +
+    '<div class="pn-pending-desc">Daftar jenis dokumen dan kode penomoran untuk ' + fkEsc(label) +
+    ' belum ditentukan. Silakan beri tahu daftar dokumen beserta kodenya (seperti HPS, BAP.PL, BAPP.PL, dst pada Pengadaan Langsung) agar menu ini dapat diaktifkan.</div>' +
+    '</div></div>';
+}
+
+/* ---- Ambil nomor (Pengadaan Langsung) ---- */
+async function pnAmbilPl(){
+  if(!requireInput()) return;
+  const modul='pl';
+  const el = id => document.getElementById(id);
+  const nama  = (el('pn-pl-nama') ? el('pn-pl-nama').value : '').trim();
+  const bidang= el('pn-pl-bidang') ? el('pn-pl-bidang').value : '';
+  const klas  = el('pn-pl-klas') ? el('pn-pl-klas').value : '';
+  const usePj = (el('pn-pl-penjelasan') ? el('pn-pl-penjelasan').value : 'Tidak') === 'Ya';
+  if(!nama){ toast('Nama Pekerjaan wajib diisi','warn'); el('pn-pl-nama') && el('pn-pl-nama').focus(); return; }
+  if(!bidang){ toast('Bidang Pelaksana wajib dipilih','warn'); return; }
+  if(!klas){ toast('Kode Klasifikasi wajib dipilih','warn'); return; }
+
+  let ok=false;
+  try{
+    await withActionLoader('Menetapkan nomor', async()=>{
+      await refreshDataPenetapan();           // sinkron dulu agar nomor tidak bentrok
+      const year=pnYear(), unit=PN_UNIT;
+      const mainSeq=pnNextSeq(modul,'main',year);
+      const bapSeq =usePj ? pnNextSeq(modul,'bap',year) : null;
+      const dokumen=(PN_DOCS[modul]||[])
+        .filter(d=> !d.optional || (d.key==='BAP' && usePj))
+        .map(d=>{
+          const seq = d.counter==='bap' ? bapSeq : mainSeq;
+          return {key:d.key, code:d.code, label:d.label, seq, no:pnFormatNo(seq,d.code,klas,unit,year)};
+        });
+      const row={ modul, tahun:year, tgl_terbit:pnTodayISO(),
+        nama_pekerjaan:nama, bidang_pelaksana:bidang, kode_klasifikasi:klas, unit,
+        menggunakan_penjelasan:usePj, dokumen };
+      const saved=await StorePenetapan.insert(row);
+      if(saved) records_penetapan.unshift(saved); else records_penetapan.unshift(row);
+      pnState.lastResult = saved ? Object.assign({modul}, saved) : Object.assign({modul}, row);
+    });
+    ok=true;
+  }catch(err){ console.error(err); toast('Gagal menetapkan nomor: '+errMsg(err),'err'); return; }
+  if(!ok) return;
+  toast('Nomor berhasil ditetapkan','ok');
+  // kosongkan isian agar siap penetapan berikutnya
+  if(el('pn-pl-nama')) el('pn-pl-nama').value='';
+  if(el('pn-pl-bidang')) el('pn-pl-bidang').value='';
+  if(el('pn-pl-klas')) el('pn-pl-klas').value='';
+  if(el('pn-pl-penjelasan')) el('pn-pl-penjelasan').value='Tidak';
+  pnRenderResult(pnState.lastResult);
+}
+function pnRenderResult(res){
+  const box=document.getElementById('pn-ambil-result'); if(!box || !res) return;
+  const docs=Array.isArray(res.dokumen)?res.dokumen:[];
+  const items=docs.map(d=>
+    '<div class="pn-doc-card">' +
+      '<div class="pn-doc-ic">'+PN_DOC_ICON+'</div>' +
+      '<div class="pn-doc-meta"><div class="pn-doc-label">'+fkEsc(d.label)+'</div><div class="pn-doc-no">'+fkEsc(d.no)+'</div></div>' +
+      '<button class="pn-copy" title="Salin" onclick="pnCopy(this,\''+fkEsc(d.no)+'\')">'+PN_COPY_ICON+'</button>' +
+    '</div>').join('');
+  box.innerHTML =
+    '<div class="form-card pn-result">' +
+      '<div class="form-section-title">'+PN_CHECK_ICON+'Nomor Ditetapkan — '+fkEsc(res.nama_pekerjaan||'')+'</div>' +
+      '<div class="pn-result-sub">Tanggal terbit: <b>'+fmtDate(res.tgl_terbit)+'</b> &nbsp;•&nbsp; Bidang: <b>'+fkEsc(res.bidang_pelaksana||'—')+'</b> &nbsp;•&nbsp; Klasifikasi: <b>'+fkEsc(res.kode_klasifikasi||'—')+'</b></div>' +
+      items +
+    '</div>';
+  box.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+function pnCopy(btn, text){
+  const done=()=>{ if(btn){ btn.classList.add('pn-copied'); setTimeout(()=>btn.classList.remove('pn-copied'),1200); } toast('Nomor disalin','ok'); };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(()=>pnFallbackCopy(text,done));
+  }else pnFallbackCopy(text,done);
+}
+function pnFallbackCopy(text, cb){
+  try{ const ta=document.createElement('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.focus(); ta.select(); document.execCommand('copy'); ta.remove(); cb&&cb(); }catch(e){}
+}
+
+/* ---- Halaman Lihat Nomor ---- */
+function pnClearLihatFilters(){
+  const b=document.getElementById('pn-lihat-bidang'); if(b) b.value='';
+  const s=document.getElementById('pn-lihat-search'); if(s) s.value='';
+}
+function pnFilterLihat(){ pnState.lihat.page=1; renderPnLihat(); }
+function pnResetLihat(){ pnClearLihatFilters(); pnState.lihat.page=1; renderPnLihat(); }
+function pnLihatRows(){
+  const modul=pnState.lihat.modul;
+  let rows=records_penetapan.filter(r=>r.modul===modul);
+  const fb=document.getElementById('pn-lihat-bidang')?.value||'';
+  const fs=(document.getElementById('pn-lihat-search')?.value||'').toLowerCase().trim();
+  if(fb) rows=rows.filter(r=>String(r.bidang_pelaksana||'')===fb);
+  if(fs) rows=rows.filter(r=>String(r.nama_pekerjaan||'').toLowerCase().includes(fs));
+  return rows;
+}
+function renderPnLihat(){
+  const modul=pnState.lihat.modul;
+  pnMarkActive('lihat', modul);
+  const tb=document.getElementById('pn-lihat-body');
+  const pg=document.getElementById('pn-lihat-pagination');
+  const cEl=document.getElementById('pn-lihat-count');
+  if(!tb) return;
+  const rows=pnLihatRows();
+  if(cEl) cEl.textContent=rows.length;
+  const total=rows.length;
+  if(total===0){ tb.innerHTML=pnEmptyRow(); if(pg) pg.innerHTML=''; return; }
+  const st=pnState.lihat;
+  const totalPages=Math.max(1,Math.ceil(total/PAGE_SIZE));
+  if(st.page>totalPages) st.page=totalPages;
+  if(st.page<1) st.page=1;
+  const start=(st.page-1)*PAGE_SIZE;
+  const pageRows=rows.slice(start,start+PAGE_SIZE);
+  tb.innerHTML=pageRows.map((r,i)=>{
+    const nama=r.nama_pekerjaan||'—';
+    const bidang=r.bidang_pelaksana||'—';
+    const tgl=fmtDate(r.tgl_terbit)||'—';
+    return '<tr>' +
+      '<td class="col-no">'+(start+i+1)+'</td>' +
+      '<td class="wrap-cell col-nama-freeze">'+fkEsc(nama)+'</td>' +
+      '<td class="pn-col-bidang wrap-cell">'+fkEsc(bidang)+'</td>' +
+      '<td class="pn-col-nomor">'+pnNomorCellHtml(r)+'</td>' +
+      '<td class="cell-center col-date">'+tgl+'</td>' +
+      '<td><div class="pn-actions">'+pnActionHtml(r)+'</div></td>' +
+    '</tr>';
+  }).join('');
+  revealTbody(tb);
+  pnRenderPagination(st.page, totalPages, pg);
+}
+function pnEmptyRow(){
+  return '<tr><td colspan="6"><div class="empty">'+PN_HASH_ICON+'<div>Belum ada nomor yang ditetapkan</div></div></td></tr>';
+}
+function pnNomorCellHtml(r){
+  const docs=Array.isArray(r.dokumen)?r.dokumen:[];
+  if(!docs.length) return '—';
+  return '<div class="pn-nomor-list">'+docs.map(d=>
+    '<div class="pn-nomor-item">' +
+      '<span class="pn-nomor-tag">'+fkEsc(d.code)+'</span>' +
+      '<span class="pn-nomor-val">'+fkEsc(d.no)+'</span>' +
+      '<button class="pn-copy" title="Salin" onclick="pnCopy(this,\''+fkEsc(d.no)+'\')">'+PN_COPY_ICON+'</button>' +
+    '</div>').join('')+'</div>';
+}
+function pnActionHtml(r){
+  const rid=r.id;
+  const hasFile=!!(r.nama_file);
+  const allow=canInput();
+  const upIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v13"/></svg>';
+  const eyeIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+  const dlIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>';
+  const delIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+  const up  = allow ? '<button class="fk-act '+(hasFile?'fk-act-replace':'fk-act-up')+'" onclick="pnUpload(\''+rid+'\',this)">'+upIcon+(hasFile?'Ganti':'Upload')+'</button>' : '';
+  const lihat = '<button class="fk-act pn-act-view" onclick="pnViewDetail(\''+rid+'\')">'+eyeIcon+'Lihat</button>';
+  const dl  = hasFile
+    ? '<button class="fk-act fk-act-dl" onclick="pnDownload(\''+rid+'\',this)">'+dlIcon+'Download</button>'
+    : '<button class="fk-act" disabled title="Belum ada file">'+dlIcon+'Download</button>';
+  const del = allow ? '<button class="fk-act fk-act-del" onclick="pnDelete(\''+rid+'\',this)">'+delIcon+'Hapus</button>' : '';
+  return up + lihat + dl + del;
+}
+function pnRenderPagination(page, totalPages, el){
+  if(!el) return;
+  if(totalPages<=1){ el.innerHTML=''; return; }
+  const want=new Set([1,totalPages,page-1,page,page+1]);
+  const list=[...want].filter(p=>p>=1&&p<=totalPages).sort((a,b)=>a-b);
+  let html='<button class="pg-btn" '+(page===1?'disabled':'')+' onclick="pnGoToLihatPage('+(page-1)+')">‹ Sebelumnya</button>';
+  let prev=0;
+  list.forEach(p=>{
+    if(p-prev>1) html+='<span class="pg-ellipsis">…</span>';
+    html+='<button class="pg-btn pg-num '+(p===page?'active':'')+'" onclick="pnGoToLihatPage('+p+')">'+p+'</button>';
+    prev=p;
+  });
+  html+='<button class="pg-btn" '+(page===totalPages?'disabled':'')+' onclick="pnGoToLihatPage('+(page+1)+')">Berikutnya ›</button>';
+  el.innerHTML=html;
+}
+function pnGoToLihatPage(p){
+  pnState.lihat.page=p;
+  withQuickLoader('Memuat', ()=>{ renderPnLihat(); document.querySelector('#view-pn-lihat .panel')?.scrollIntoView({behavior:'smooth',block:'nearest'}); }, 480);
+}
+
+/* ---- Lihat detail (modal) ---- */
+function pnViewDetail(id){
+  const r=records_penetapan.find(x=>String(x.id)===String(id)); if(!r) return;
+  const docs=Array.isArray(r.dokumen)?r.dokumen:[];
+  const info='<div class="detail-group"><div class="detail-grp-title">Informasi</div>' +
+    '<div class="detail-row"><span class="dk">Nama Pekerjaan</span><span class="dv">'+fkEsc(r.nama_pekerjaan||'—')+'</span></div>' +
+    '<div class="detail-row"><span class="dk">Bidang Pelaksana</span><span class="dv">'+fkEsc(r.bidang_pelaksana||'—')+'</span></div>' +
+    '<div class="detail-row"><span class="dk">Kode Klasifikasi</span><span class="dv">'+fkEsc(r.kode_klasifikasi||'—')+'</span></div>' +
+    '<div class="detail-row"><span class="dk">Menggunakan Penjelasan</span><span class="dv">'+(r.menggunakan_penjelasan?'Ya':'Tidak')+'</span></div>' +
+    '<div class="detail-row"><span class="dk">Tanggal Terbit</span><span class="dv">'+(fmtDate(r.tgl_terbit)||'—')+'</span></div>' +
+    '<div class="detail-row"><span class="dk">Tahun</span><span class="dv">'+(r.tahun||'—')+'</span></div>' +
+    (r.nama_file?'<div class="detail-row"><span class="dk">Lampiran</span><span class="dv">'+fkEsc(r.nama_file)+' ('+fkFmtSize(r.ukuran)+')</span></div>':'') +
+    '</div>';
+  const nomor='<div class="detail-group"><div class="detail-grp-title">Nomor Dokumen</div>' +
+    (docs.length ? docs.map(d=>
+      '<div class="detail-row"><span class="dk">'+fkEsc(d.label)+'</span><span class="dv" style="font-weight:600">'+fkEsc(d.no)+' <button class="pn-copy" title="Salin" onclick="pnCopy(this,\''+fkEsc(d.no)+'\')">'+PN_COPY_ICON+'</button></span></div>'
+    ).join('') : '<div class="detail-row"><span class="dv">—</span></div>') +
+    '</div>';
+  document.getElementById('detail-title').textContent='Detail Penetapan Nomor';
+  document.getElementById('detail-body').innerHTML=info+nomor;
+  withQuickLoader('Memuat', ()=>document.getElementById('detail-overlay').classList.add('show'));
+}
+
+/* ---- Upload / Download / Hapus lampiran ---- */
+let pnUploadCtx=null;
+function pnUpload(id, btn){
+  if(!requireInput()) return;
+  const inp=document.getElementById('pn-file-input'); if(!inp) return;
+  pnUploadCtx={id, btn}; inp.value=''; inp.click();
+}
+async function pnHandleFileSelected(file){
+  const ctx=pnUploadCtx; pnUploadCtx=null;
+  if(!ctx || !file) return;
+  const {id, btn}=ctx;
+  if(file.size > PN_MAX_MB*1048576){ toast('Ukuran file melebihi batas '+PN_MAX_MB+' MB','warn'); return; }
+  if(btn) btn.classList.add('is-busy');
+  try{
+    const b64=await fkFileToBase64(file);
+    const fileRow={ nama_file:file.name, mime:file.type||'application/octet-stream', ukuran:file.size, data_base64:b64 };
+    await withActionLoader('Mengunggah', async()=>{ await StorePenetapan.setFile(id, fileRow); });
+    const r=records_penetapan.find(x=>String(x.id)===String(id));
+    if(r){ r.nama_file=file.name; r.mime=fileRow.mime; r.ukuran=file.size; }
+    toast('File berhasil diunggah','ok');
+    renderPnLihat();
+  }catch(err){ console.error(err); toast('Gagal mengunggah file: '+errMsg(err),'err'); if(btn) btn.classList.remove('is-busy'); }
+}
+async function pnDownload(id, btn){
+  if(btn) btn.classList.add('is-busy');
+  try{
+    const row=await StorePenetapan.getFile(id);
+    if(!row || !row.data_base64){ toast('File tidak tersedia','warn'); return; }
+    const blob=fkB64ToBlob(row.data_base64, row.mime);
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=row.nama_file||'lampiran-penetapan';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 2000);
+  }catch(err){ console.error('pnDownload:', err); toast('Gagal mengunduh file: '+errMsg(err),'warn'); }
+  finally{ if(btn) btn.classList.remove('is-busy'); }
+}
+function pnDelete(id, btn){
+  if(!requireInput()) return;
+  openConfirm({
+    icon:'del', title:'Hapus Nomor',
+    text:'Menghapus data ini akan mengembalikan nomornya agar dapat dipakai lagi. Lanjutkan?',
+    onYes:async()=>{
+      try{ await withActionLoader('Menghapus', async()=>{ await StorePenetapan.remove(id); }); }
+      catch(err){ console.error(err); toast('Gagal menghapus: '+errMsg(err),'warn'); return; }
+      records_penetapan=records_penetapan.filter(x=>String(x.id)!==String(id));
+      toast('Data berhasil dihapus','ok');
+      renderPnLihat();
+    }
+  });
+}
+(function(){
+  const inp=document.getElementById('pn-file-input');
+  if(inp) inp.addEventListener('change', e=>{ const f=e.target.files&&e.target.files[0]; pnHandleFileSelected(f); });
+})();
+
+/* ---- Atur Nomor Awal (admin) ---- */
+function openPnCfg(){
+  if(!isAdmin()){ toast('Hanya admin yang dapat mengatur nomor awal','warn'); return; }
+  const modul=pnState.ambil.modul, year=pnYear();
+  const cur=pnConfig[modul+'|'+year]||{};
+  const mainV=(cur.main!=null?cur.main:PN_BASE_DEFAULT.main);
+  const bapV =(cur.bap!=null?cur.bap:PN_BASE_DEFAULT.bap);
+  const body=document.getElementById('pn-cfg-body');
+  body.innerHTML=
+    '<p style="font-size:11.5px;color:var(--muted);margin-bottom:16px;line-height:1.7">' +
+      'Atur <b>nomor terakhir yang sudah terpakai</b> untuk <b>'+fkEsc(PN_MODULES[modul]?PN_MODULES[modul].label:modul)+'</b> tahun <b>'+year+'</b>. ' +
+      'Nomor berikutnya = nomor terakhir + 1. Nomor yang dihapus otomatis dipakai ulang.' +
+    '</p>' +
+    '<div class="cp-field"><label>Nomor Terakhir — Dokumen Utama (HPS / BA Pembukaan / Evaluasi / Klarifikasi)</label>' +
+      '<input id="pn-cfg-main" type="number" min="0" step="1" value="'+mainV+'"></div>' +
+    '<div class="cp-field"><label>Nomor Terakhir — Berita Acara Penjelasan</label>' +
+      '<input id="pn-cfg-bap" type="number" min="0" step="1" value="'+bapV+'"></div>';
+  document.getElementById('pn-cfg-overlay').classList.add('show');
+}
+function closePnCfg(){ document.getElementById('pn-cfg-overlay').classList.remove('show'); }
+async function savePnCfg(){
+  if(!isAdmin()){ toast('Hanya admin yang dapat mengatur nomor awal','warn'); return; }
+  const modul=pnState.ambil.modul, year=pnYear();
+  const mainN=parseInt(document.getElementById('pn-cfg-main')?.value,10);
+  const bapN =parseInt(document.getElementById('pn-cfg-bap')?.value,10);
+  const base={ main:isNaN(mainN)?PN_BASE_DEFAULT.main:Math.max(0,mainN), bap:isNaN(bapN)?PN_BASE_DEFAULT.bap:Math.max(0,bapN) };
+  try{
+    if(USE_SUPABASE && db){
+      const {error}=await db.from(PN_CFG_TABLE).upsert({modul, tahun:year, base},{onConflict:'modul,tahun'});
+      if(error) throw error;
+    }
+    pnConfig[modul+'|'+year]=base;
+    toast('Nomor awal disimpan','ok');
+    closePnCfg();
+  }catch(err){ console.error(err); toast('Gagal menyimpan: '+errMsg(err),'warn'); }
+}
+
 refreshData();      // muat data SPBJ/Kontrak Rinci
 refreshDataPl();    // muat data Pengadaan Langsung
 refreshDataTender();// muat data Tender
+refreshDataPenetapan(); // muat data Penetapan Nomor
+pnLoadConfig();         // muat konfigurasi nomor awal
 // #3: Refresh TIDAK lagi memaksa logout. Sesi dipulihkan dari sessionStorage,
 // dan filter data setiap halaman kembali ke default (ditangani showView/resetAllFilters).
 resetLoginForm();
@@ -6275,7 +6934,7 @@ resetLoginForm();
   if(role==='admin' || role==='user' || role==='guest'){
     currentUsername = uname || null;
     // Refresh: kembali ke halaman terakhir (data di halaman itu di-refresh), bukan ke dashboard.
-    const allowed=['dashboard','list','list-pl','list-tender'];
+    const allowed=['dashboard','list','list-pl','list-tender','pn-lihat','pn-ambil'];
     const inputViews=['input','input-pl','input-tender'];
     const draft=getDraft();
     if(inputViews.includes(view)){
@@ -6302,6 +6961,7 @@ resetLoginForm();
 document.getElementById('confirm-overlay').addEventListener('click',e=>{ if(e.target.id==='confirm-overlay')closeConfirm(); });
 document.getElementById('detail-overlay').addEventListener('click',e=>{ if(e.target.id==='detail-overlay')closeDetail(); });
 document.getElementById('cp-overlay').addEventListener('click',e=>{ if(e.target.id==='cp-overlay')closeChangePass(); });
+document.getElementById('pn-cfg-overlay').addEventListener('click',e=>{ if(e.target.id==='pn-cfg-overlay')closePnCfg(); });
 </script>
 </body>
 </html>
