@@ -1213,6 +1213,8 @@ tbody tr{animation:rowIn .3s ease both}
 .fk-seg-btn.active:hover{color:#fff}
 /* Toggle modul di kanan atas tabel */
 .head-right-tools{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end}
+.head-left-tools{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.head-left-tools h2{margin:0}
 .mod-seg{padding:4px;border-radius:12px}
 .mod-seg .fk-seg-btn{font-size:11px;padding:7px 12px}
 .mod-seg .fk-seg-btn svg{width:14px;height:14px}
@@ -1324,10 +1326,19 @@ tbody tr{animation:rowIn .3s ease both}
 /* Ambil Nomor — hasil */
 .pn-result{margin-top:16px;border-color:#cfe6e3;background:linear-gradient(180deg,#ffffff,#f4fbfa)}
 /* Checklist dokumen Tender */
-.pn-check-head{display:flex;align-items:center;gap:10px;margin:20px 0 12px;padding-top:16px;border-top:1px solid var(--line)}
-.pn-check-head svg{width:18px;height:18px;color:var(--teal)}
-.pn-check-head>span{font-family:'Plus Jakarta Sans';font-weight:700;font-size:13px;color:var(--ink)}
-.pn-check-head small{color:var(--muted);font-size:11px;font-weight:500}
+.pn-doc-bar{display:flex;align-items:center;gap:12px;margin-top:20px;padding-top:16px;border-top:1px solid var(--line);flex-wrap:wrap}
+.pn-doc-toggle{position:relative}
+.pn-doc-toggle svg:first-child{width:16px;height:16px}
+.pn-doc-caret{width:15px!important;height:15px!important;transition:transform .3s cubic-bezier(.16,1,.3,1)}
+.pn-doc-toggle.open .pn-doc-caret{transform:rotate(180deg)}
+.pn-doc-count{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:20px;background:rgba(255,255,255,.28);font-size:11px;font-weight:800}
+.pn-doc-save{margin-left:auto}
+/* Kolaps daftar dokumen */
+.pn-doc-collapse{height:0;overflow:hidden;opacity:0;transform:translateY(-4px);transition:height .34s cubic-bezier(.16,1,.3,1),opacity .28s ease,transform .34s cubic-bezier(.16,1,.3,1)}
+.pn-doc-collapse.open{opacity:1;transform:none}
+.pn-doc-collapse-inner{padding-top:16px}
+.pn-check-head{display:flex;align-items:center;gap:10px;margin:0 0 12px}
+.pn-check-head small{color:var(--muted);font-size:11.5px;font-weight:500}
 .pn-check-all{margin-left:auto;appearance:none;border:1px solid var(--teal);background:#fff;color:var(--teal-dark);font-family:'Plus Jakarta Sans';font-weight:700;font-size:11px;padding:6px 14px;border-radius:9px;cursor:pointer;transition:background .16s,color .16s}
 .pn-check-all:hover{background:var(--teal);color:#fff}
 .pn-check-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 22px}
@@ -1633,17 +1644,19 @@ tbody tr{animation:rowIn .3s ease both}
   <section id="view-list" class="view">
     <div class="page-head">
       <div class="head-export-row">
-        <h2>Daftar Kontrak Rinci <span class="count-badge" id="list-count">0</span></h2>
+        <div class="head-left-tools">
+          <h2>Daftar Kontrak Rinci <span class="count-badge" id="list-count">0</span></h2>
+          <button class="btn btn-green" onclick="exportExcel()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9.2 12.5 4.6 5.5"/><path d="m13.8 12.5-4.6 5.5"/></svg>
+            Export Data
+          </button>
+        </div>
         <div class="head-right-tools">
           <div class="fk-seg mod-seg">
             <button class="fk-seg-btn active" onclick="showView('list')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 5c0 1.66 4 3 9 3s9-1.34 9-3-4-3-9-3-9 1.34-9 3"/></svg>SPBJ / Kontrak Rinci</button>
             <button class="fk-seg-btn" onclick="showView('list-pl')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>Pengadaan Langsung</button>
             <button class="fk-seg-btn" onclick="showView('list-tender')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>Tender</button>
           </div>
-          <button class="btn btn-green" onclick="exportExcel()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9.2 12.5 4.6 5.5"/><path d="m13.8 12.5-4.6 5.5"/></svg>
-            Export Data
-          </button>
         </div>
       </div>
     </div>
@@ -1769,17 +1782,19 @@ tbody tr{animation:rowIn .3s ease both}
   <section id="view-list-pl" class="view">
     <div class="page-head">
       <div class="head-export-row">
-        <h2>Daftar Pengadaan Langsung <span class="count-badge" id="list-pl-count">0</span></h2>
+        <div class="head-left-tools">
+          <h2>Daftar Pengadaan Langsung <span class="count-badge" id="list-pl-count">0</span></h2>
+          <button class="btn btn-green" onclick="exportExcelPl()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9.2 12.5 4.6 5.5"/><path d="m13.8 12.5-4.6 5.5"/></svg>
+            Export Data
+          </button>
+        </div>
         <div class="head-right-tools">
           <div class="fk-seg mod-seg">
             <button class="fk-seg-btn" onclick="showView('list')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 5c0 1.66 4 3 9 3s9-1.34 9-3-4-3-9-3-9 1.34-9 3"/></svg>SPBJ / Kontrak Rinci</button>
             <button class="fk-seg-btn active" onclick="showView('list-pl')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>Pengadaan Langsung</button>
             <button class="fk-seg-btn" onclick="showView('list-tender')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>Tender</button>
           </div>
-          <button class="btn btn-green" onclick="exportExcelPl()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9.2 12.5 4.6 5.5"/><path d="m13.8 12.5-4.6 5.5"/></svg>
-            Export Data
-          </button>
         </div>
       </div>
     </div>
@@ -1907,17 +1922,19 @@ tbody tr{animation:rowIn .3s ease both}
   <section id="view-list-tender" class="view">
     <div class="page-head">
       <div class="head-export-row">
-        <h2>Daftar Tender <span class="count-badge" id="list-tender-count">0</span></h2>
+        <div class="head-left-tools">
+          <h2>Daftar Tender <span class="count-badge" id="list-tender-count">0</span></h2>
+          <button class="btn btn-green" onclick="exportExcelTender()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9.2 12.5 4.6 5.5"/><path d="m13.8 12.5-4.6 5.5"/></svg>
+            Export Data
+          </button>
+        </div>
         <div class="head-right-tools">
           <div class="fk-seg mod-seg">
             <button class="fk-seg-btn" onclick="showView('list')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 5c0 1.66 4 3 9 3s9-1.34 9-3-4-3-9-3-9 1.34-9 3"/></svg>SPBJ / Kontrak Rinci</button>
             <button class="fk-seg-btn" onclick="showView('list-pl')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>Pengadaan Langsung</button>
             <button class="fk-seg-btn active" onclick="showView('list-tender')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>Tender</button>
           </div>
-          <button class="btn btn-green" onclick="exportExcelTender()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9.2 12.5 4.6 5.5"/><path d="m13.8 12.5-4.6 5.5"/></svg>
-            Export Data
-          </button>
         </div>
       </div>
     </div>
@@ -6777,7 +6794,7 @@ function pnAmbilTenderFormHtml(){
   const klasOpts   = PN_KLAS_OPTS.map(o=>'<option value="'+o.kode+'">'+o.label+'</option>').join('');
   const checklist = (PN_DOCS.tender||[]).map((d,i)=>
     '<label class="pn-check-item">' +
-      '<input type="checkbox" class="pn-tender-doc" value="'+fkEsc(d.key)+'">' +
+      '<input type="checkbox" class="pn-doc-check" value="'+fkEsc(d.key)+'" onchange="pnDocUpdateCount()">' +
       '<span class="pn-check-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></span>' +
       '<span class="pn-check-label">'+(i+1)+'. '+fkEsc(d.label)+' <em>('+fkEsc(d.code)+')</em></span>' +
     '</label>').join('');
@@ -6789,36 +6806,92 @@ function pnAmbilTenderFormHtml(){
       '<div class="field"><label>Bidang Pelaksana <span class="req">*</span></label><select id="pn-tn-bidang"><option value="">— Pilih —</option>'+bidangOpts+'</select></div>' +
       '<div class="field"><label>Kode Klasifikasi <span class="req">*</span></label><select id="pn-tn-klas"><option value="">— Pilih —</option>'+klasOpts+'</select></div>' +
     '</div>' +
-    '<div class="pn-check-head">'+PN_DOC_ICON+'<span>Dokumen</span><small>Centang dokumen yang akan diterbitkan nomornya</small>' +
-      '<button type="button" class="pn-check-all" onclick="pnTenderToggleAll()">Pilih Semua</button>' +
+    '<div class="pn-doc-bar">' +
+      '<button type="button" class="btn btn-teal pn-doc-toggle" id="pn-doc-toggle" aria-expanded="false" onclick="pnDocToggle()">' +
+        PN_DOC_ICON+'<span>Dokumen</span>' +
+        '<span class="pn-doc-count" id="pn-doc-count" style="display:none">0</span>' +
+        '<svg class="pn-doc-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>' +
+      '</button>' +
+      '<button class="btn btn-green pn-doc-save" type="button" onclick="pnAmbilTender()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Simpan</button>' +
     '</div>' +
-    '<div class="pn-check-grid">'+checklist+'</div>' +
-    '<div class="form-actions">' +
-      '<button class="btn btn-teal" type="button" onclick="pnAmbilTender()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Ambil Nomor</button>' +
+    '<div class="pn-doc-collapse" id="pn-doc-collapse">' +
+      '<div class="pn-doc-collapse-inner">' +
+        '<div class="pn-check-head"><small>Centang dokumen yang akan diterbitkan nomornya</small>' +
+          '<button type="button" class="pn-check-all" onclick="pnDocToggleAll()">Pilih Semua</button>' +
+        '</div>' +
+        '<div class="pn-check-grid">'+checklist+'</div>' +
+      '</div>' +
     '</div>' +
   '</div>' +
   '<div id="pn-ambil-result"></div>';
 }
-function pnTenderToggleAll(){
-  const boxes=[...document.querySelectorAll('.pn-tender-doc')];
-  const allOn=boxes.every(b=>b.checked);
+/* Buka/tutup daftar dokumen dengan transisi tinggi + fade (dipakai PL & Tender) */
+function pnDocToggle(force){
+  const wrap=document.getElementById('pn-doc-collapse');
+  const btn=document.getElementById('pn-doc-toggle');
+  if(!wrap||!btn) return;
+  const willOpen = (typeof force==='boolean') ? force : !wrap.classList.contains('open');
+  if(willOpen){
+    wrap.classList.add('open');
+    wrap.style.height='auto';
+    const h=wrap.scrollHeight;
+    wrap.style.height='0px';
+    void wrap.offsetHeight;               // paksa reflow agar transisi berjalan
+    wrap.style.height=h+'px';
+    wrap.addEventListener('transitionend', function te(e){ if(e.propertyName==='height'){ wrap.style.height='auto'; wrap.removeEventListener('transitionend', te); } });
+  }else{
+    wrap.style.height=wrap.scrollHeight+'px';
+    void wrap.offsetHeight;
+    wrap.style.height='0px';
+    wrap.classList.remove('open');
+  }
+  btn.classList.toggle('open', willOpen);
+  btn.setAttribute('aria-expanded', willOpen?'true':'false');
+}
+function pnDocUpdateCount(){
+  const n=document.querySelectorAll('.pn-doc-check:checked').length;
+  const c=document.getElementById('pn-doc-count');
+  if(c){ c.textContent=n; c.style.display = n>0 ? '' : 'none'; }
+}
+function pnDocToggleAll(){
+  const boxes=[...document.querySelectorAll('.pn-doc-check')];
+  const allOn=boxes.length>0 && boxes.every(b=>b.checked);
   boxes.forEach(b=>{ b.checked=!allOn; });
   const btn=document.querySelector('.pn-check-all'); if(btn) btn.textContent=allOn?'Pilih Semua':'Kosongkan';
+  pnDocUpdateCount();
 }
 function pnAmbilPlFormHtml(){
   const bidangOpts = PN_BIDANG_OPTS.map(o=>'<option>'+o+'</option>').join('');
   const klasOpts   = PN_KLAS_OPTS.map(o=>'<option value="'+o.kode+'">'+o.label+'</option>').join('');
+  const checklist = (PN_DOCS.pl||[]).map((d,i)=>
+    '<label class="pn-check-item">' +
+      '<input type="checkbox" class="pn-doc-check" value="'+fkEsc(d.key)+'" onchange="pnDocUpdateCount()">' +
+      '<span class="pn-check-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></span>' +
+      '<span class="pn-check-label">'+(i+1)+'. '+fkEsc(PN_JENIS[d.key]||d.label)+' <em>('+fkEsc(d.code)+')</em></span>' +
+    '</label>').join('');
   return '' +
   '<div class="form-card">' +
     '<div class="form-section-title">'+KR_SECTION_ICON+'Data Pengadaan Langsung</div>' +
-    '<div class="form-flow" style="--cols:4">' +
+    '<div class="form-flow" style="--cols:3">' +
       '<div class="field"><label>Nama Pekerjaan <span class="req">*</span></label><input id="pn-pl-nama" type="text" placeholder="cth. Pengadaan Material Distribusi"></div>' +
       '<div class="field"><label>Bidang Pelaksana <span class="req">*</span></label><select id="pn-pl-bidang"><option value="">— Pilih —</option>'+bidangOpts+'</select></div>' +
       '<div class="field"><label>Kode Klasifikasi <span class="req">*</span></label><select id="pn-pl-klas"><option value="">— Pilih —</option>'+klasOpts+'</select></div>' +
-      '<div class="field"><label>Menggunakan Penjelasan <span class="req">*</span></label><select id="pn-pl-penjelasan"><option value="Tidak">Tidak</option><option value="Ya">Ya</option></select></div>' +
     '</div>' +
-    '<div class="form-actions">' +
-      '<button class="btn btn-teal" type="button" onclick="pnAmbilPl()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Ambil Nomor</button>' +
+    '<div class="pn-doc-bar">' +
+      '<button type="button" class="btn btn-teal pn-doc-toggle" id="pn-doc-toggle" aria-expanded="false" onclick="pnDocToggle()">' +
+        PN_DOC_ICON+'<span>Dokumen</span>' +
+        '<span class="pn-doc-count" id="pn-doc-count" style="display:none">0</span>' +
+        '<svg class="pn-doc-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>' +
+      '</button>' +
+      '<button class="btn btn-green pn-doc-save" type="button" onclick="pnAmbilPl()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Simpan</button>' +
+    '</div>' +
+    '<div class="pn-doc-collapse" id="pn-doc-collapse">' +
+      '<div class="pn-doc-collapse-inner">' +
+        '<div class="pn-check-head"><small>Centang jenis dokumen yang akan diterbitkan nomornya</small>' +
+          '<button type="button" class="pn-check-all" onclick="pnDocToggleAll()">Pilih Semua</button>' +
+        '</div>' +
+        '<div class="pn-check-grid">'+checklist+'</div>' +
+      '</div>' +
     '</div>' +
   '</div>' +
   '<div id="pn-ambil-result"></div>';
@@ -6831,7 +6904,7 @@ function pnPendingHtml(label){
     '</div></div>';
 }
 
-/* ---- Ambil nomor (Pengadaan Langsung) ---- */
+/* ---- Ambil nomor (Pengadaan Langsung) — hanya dokumen yang dicentang ---- */
 async function pnAmbilPl(){
   if(!requireInput()) return;
   const modul='pl';
@@ -6839,23 +6912,25 @@ async function pnAmbilPl(){
   const nama  = (el('pn-pl-nama') ? el('pn-pl-nama').value : '').trim();
   const bidang= el('pn-pl-bidang') ? el('pn-pl-bidang').value : '';
   const klas  = el('pn-pl-klas') ? el('pn-pl-klas').value : '';
-  const usePj = (el('pn-pl-penjelasan') ? el('pn-pl-penjelasan').value : 'Tidak') === 'Ya';
+  const checkedKeys = [...document.querySelectorAll('.pn-doc-check:checked')].map(b=>b.value);
   if(!nama){ toast('Nama Pekerjaan wajib diisi','warn'); el('pn-pl-nama') && el('pn-pl-nama').focus(); return; }
   if(!bidang){ toast('Bidang Pelaksana wajib dipilih','warn'); return; }
   if(!klas){ toast('Kode Klasifikasi wajib dipilih','warn'); return; }
+  if(!checkedKeys.length){ toast('Pilih minimal satu dokumen untuk diterbitkan nomornya','warn'); return; }
+  const usePj = checkedKeys.includes('BAP');
 
   let ok=false;
   try{
     await withActionLoader('Menetapkan nomor', async()=>{
       await refreshDataPenetapan();           // sinkron dulu agar nomor tidak bentrok
       const year=pnYear(), unit=PN_UNIT;
-      const mainSeq=pnNextSeq(modul,'main',year);
-      const bapSeq =usePj ? pnNextSeq(modul,'bap',year) : null;
       const today=pnTodayISO();
+      const seqCache={};
+      const getSeq=(counter)=>{ if(seqCache[counter]==null) seqCache[counter]=pnNextSeq(modul,counter,year); return seqCache[counter]; };
       const dokumen=(PN_DOCS[modul]||[])
-        .filter(d=> !d.optional || (d.key==='BAP' && usePj))
+        .filter(d=> checkedKeys.includes(d.key))
         .map(d=>{
-          const seq = d.counter==='bap' ? bapSeq : mainSeq;
+          const seq = getSeq(d.counter);
           return {key:d.key, code:d.code, label:d.label, seq, no:pnFormatNo(seq,d.code,klas,unit,year),
                   tgl_terbit:today, file:null};
         });
@@ -6874,7 +6949,10 @@ async function pnAmbilPl(){
   if(el('pn-pl-nama')) el('pn-pl-nama').value='';
   if(el('pn-pl-bidang')) el('pn-pl-bidang').value='';
   if(el('pn-pl-klas')) el('pn-pl-klas').value='';
-  if(el('pn-pl-penjelasan')) el('pn-pl-penjelasan').value='Tidak';
+  document.querySelectorAll('.pn-doc-check').forEach(b=>b.checked=false);
+  const allBtn=document.querySelector('.pn-check-all'); if(allBtn) allBtn.textContent='Pilih Semua';
+  pnDocUpdateCount();
+  pnDocToggle(false);
   pnRenderResult(pnState.lastResult);
 }
 /* ---- Ambil nomor (Tender) — hanya dokumen yang dicentang ---- */
@@ -6885,7 +6963,7 @@ async function pnAmbilTender(){
   const nama  = (el('pn-tn-nama') ? el('pn-tn-nama').value : '').trim();
   const bidang= el('pn-tn-bidang') ? el('pn-tn-bidang').value : '';
   const klas  = el('pn-tn-klas') ? el('pn-tn-klas').value : '';
-  const checkedKeys = [...document.querySelectorAll('.pn-tender-doc:checked')].map(b=>b.value);
+  const checkedKeys = [...document.querySelectorAll('.pn-doc-check:checked')].map(b=>b.value);
   if(!nama){ toast('Nama Pekerjaan wajib diisi','warn'); el('pn-tn-nama') && el('pn-tn-nama').focus(); return; }
   if(!bidang){ toast('Bidang Pelaksana wajib dipilih','warn'); return; }
   if(!klas){ toast('Kode Klasifikasi wajib dipilih','warn'); return; }
@@ -6922,8 +7000,10 @@ async function pnAmbilTender(){
   if(el('pn-tn-nama')) el('pn-tn-nama').value='';
   if(el('pn-tn-bidang')) el('pn-tn-bidang').value='';
   if(el('pn-tn-klas')) el('pn-tn-klas').value='';
-  document.querySelectorAll('.pn-tender-doc').forEach(b=>b.checked=false);
+  document.querySelectorAll('.pn-doc-check').forEach(b=>b.checked=false);
   const allBtn=document.querySelector('.pn-check-all'); if(allBtn) allBtn.textContent='Pilih Semua';
+  pnDocUpdateCount();
+  pnDocToggle(false);
   pnRenderResult(pnState.lastResult);
 }
 function pnRenderResult(res){
