@@ -212,6 +212,7 @@ select:disabled,input:disabled,textarea:disabled,input[readonly]{background:line
 .btn-danger{background:linear-gradient(135deg,var(--red-dark),#c23636);color:#fff;box-shadow:0 4px 14px rgba(178,42,42,.34),inset 0 1px 0 rgba(255,255,255,.18)}.btn-danger:hover{box-shadow:0 8px 22px rgba(178,42,42,.5),inset 0 1px 0 rgba(255,255,255,.24);filter:brightness(1.05)}
 .btn-ghost{background:linear-gradient(180deg,#fff,#f7fafb);color:var(--ink);border:1px solid var(--line);box-shadow:0 2px 6px rgba(16,40,50,.06)}.btn-ghost:hover{border-color:var(--teal);color:var(--teal);box-shadow:0 4px 14px rgba(14,124,134,.16)}
 .btn-amber{background:linear-gradient(135deg,var(--yellow),#ffca3a);color:#5a3d00;box-shadow:0 4px 14px rgba(246,180,14,.32),inset 0 1px 0 rgba(255,255,255,.4)}.btn-amber:hover{box-shadow:0 8px 22px rgba(246,180,14,.48),inset 0 1px 0 rgba(255,255,255,.5);filter:brightness(1.04)}
+.btn-indigo{background:linear-gradient(135deg,#3a56d4,#5b8def);color:#fff;box-shadow:0 4px 14px rgba(58,86,212,.30),inset 0 1px 0 rgba(255,255,255,.25)}.btn-indigo:hover{box-shadow:0 8px 22px rgba(58,86,212,.46),inset 0 1px 0 rgba(255,255,255,.3);filter:brightness(1.05)}
 .btn-sm{padding:7px 12px;font-size:10.5px;border-radius:9px}
 
 /* ---------- Table ---------- */
@@ -6868,7 +6869,7 @@ function pnAmbilTenderFormHtml(){
         '<span class="pn-doc-count" id="pn-doc-count" style="display:none">0</span>' +
         '<svg class="pn-doc-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>' +
       '</button>' +
-      '<button class="btn btn-green pn-doc-save" type="button" onclick="pnAmbilTender()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Ambil Nomor</button>' +
+      '<button class="btn btn-indigo pn-doc-save" type="button" onclick="pnAmbilTender()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>Ambil Nomor</button>' +
     '</div>' +
   '</div>' +
   '<div id="pn-ambil-result"></div>';
@@ -6880,7 +6881,7 @@ function pnDocChecklistHtml(modul){
     return '<label class="pn-check-item">' +
       '<input type="checkbox" class="pn-doc-check" value="'+fkEsc(d.key)+'" onchange="pnDocUpdateCount()">' +
       '<span class="pn-check-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></span>' +
-      '<span class="pn-check-label">'+(i+1)+'. '+fkEsc(nama)+' <em>('+fkEsc(d.code)+')</em></span>' +
+      '<span class="pn-check-label">'+(i+1)+'. '+fkEsc(nama)+'</span>' +
     '</label>';
   }).join('');
 }
@@ -6944,7 +6945,7 @@ function pnAmbilPlFormHtml(){
         '<span class="pn-doc-count" id="pn-doc-count" style="display:none">0</span>' +
         '<svg class="pn-doc-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>' +
       '</button>' +
-      '<button class="btn btn-green pn-doc-save" type="button" onclick="pnAmbilPl()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Ambil Nomor</button>' +
+      '<button class="btn btn-indigo pn-doc-save" type="button" onclick="pnAmbilPl()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>Ambil Nomor</button>' +
     '</div>' +
   '</div>' +
   '<div id="pn-ambil-result"></div>';
