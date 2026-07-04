@@ -1247,10 +1247,10 @@ tbody tr{animation:rowIn .3s ease both}
 .pn-col-tgl{width:104px;min-width:98px;max-width:112px;vertical-align:top;text-align:center}
 .pn-col-aksi{width:164px;min-width:154px;max-width:184px;vertical-align:top}
 #view-pn-lihat .table-wrap th.col-nama-freeze,#view-pn-lihat .table-wrap td.col-nama-freeze{min-width:240px;max-width:310px}
-/* Daftar per masing-masing nomor dokumen — tinggi baris disamakan (56px) antar kolom
-   agar Jenis / No. Dokumen / Tgl. Terbit / Aksi sejajar per nomor. */
+/* Daftar per masing-masing nomor dokumen — tinggi baris menyesuaikan tinggi konten
+   (huruf / tombol aksi) dengan padding tipis; tetap sejajar antar kolom. */
 .pn-nomor-list{display:flex;flex-direction:column;gap:0;padding:0}
-.pn-nomor-item{display:flex;align-items:center;gap:8px;min-height:56px;padding:7px 0;position:relative;box-sizing:border-box}
+.pn-nomor-item{display:flex;align-items:center;gap:8px;min-height:33px;padding:4px 0;position:relative;box-sizing:border-box}
 /* Garis pemisah elegan antar No. Dokumen */
 .pn-nomor-item:not(:last-child)::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:linear-gradient(90deg,transparent,rgba(14,124,134,.28) 18%,rgba(14,124,134,.28) 82%,transparent)}
 .pn-jenis-item{align-items:center}
