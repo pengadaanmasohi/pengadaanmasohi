@@ -1440,28 +1440,11 @@ tbody tr{animation:rowIn .3s ease both}
             <svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
           </button>
           <div class="topnav-dropdown">
-            <!-- Input Pekerjaan -> submenu jenis pekerjaan -->
-            <div class="topnav-sub" data-sub="input-pekerjaan" data-role="admin user">
-              <button class="topnav-subtrigger" type="button" onclick="toggleFkSub(event,'input-pekerjaan')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                <span class="sub-label">Input Pekerjaan</span>
-                <svg class="caret2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
-              </button>
-              <div class="topnav-subdrop">
-                <button class="topnav-item" data-view="input" data-role="admin user" onclick="newRecord()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 5c0 1.66 4 3 9 3s9-1.34 9-3-4-3-9-3-9 1.34-9 3"/></svg>
-                  SPBJ / Kontrak Rinci
-                </button>
-                <button class="topnav-item" data-view="input-pl" data-role="admin" onclick="newRecordPl()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>
-                  Pengadaan Langsung
-                </button>
-                <button class="topnav-item" data-view="input-tender" data-role="admin" onclick="newRecordTender()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>
-                  Tender
-                </button>
-              </div>
-            </div>
+            <!-- Input Pekerjaan -> buka form input (toggle modul ada di dalam halaman) -->
+            <button class="topnav-item" data-view="input" data-role="admin user" onclick="newRecord()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+              Input Pekerjaan
+            </button>
             <!-- Daftar Pekerjaan -> buka tabel (toggle modul ada di dalam tabel) -->
             <button class="topnav-item" data-view="list" onclick="showView('list')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/></svg>
@@ -1596,9 +1579,18 @@ tbody tr{animation:rowIn .3s ease both}
   <!-- ============ INPUT ============ -->
   <section id="view-input" class="view">
     <div class="page-head">
-      <div>
-        <h2 id="input-title">Input Kontrak Rinci</h2>
-        <p>Lengkapi data SPBJ / Kontrak Rinci di bawah ini</p>
+      <div class="head-export-row">
+        <div>
+          <h2 id="input-title">Input Kontrak Rinci</h2>
+          <p>Lengkapi data SPBJ / Kontrak Rinci di bawah ini</p>
+        </div>
+        <div class="head-right-tools">
+          <div class="fk-seg mod-seg">
+            <button class="fk-seg-btn active" data-role="admin user" onclick="newRecord()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 5c0 1.66 4 3 9 3s9-1.34 9-3-4-3-9-3-9 1.34-9 3"/></svg>SPBJ / Kontrak Rinci</button>
+            <button class="fk-seg-btn" data-role="admin" onclick="newRecordPl()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>Pengadaan Langsung</button>
+            <button class="fk-seg-btn" data-role="admin" onclick="newRecordTender()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>Tender</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1734,9 +1726,18 @@ tbody tr{animation:rowIn .3s ease both}
   <!-- ============ INPUT PENGADAAN LANGSUNG ============ -->
   <section id="view-input-pl" class="view">
     <div class="page-head">
-      <div>
-        <h2 id="input-pl-title">Input Pekerjaan</h2>
-        <p>Lengkapi data Pengadaan Langsung di bawah ini</p>
+      <div class="head-export-row">
+        <div>
+          <h2 id="input-pl-title">Input Pekerjaan</h2>
+          <p>Lengkapi data Pengadaan Langsung di bawah ini</p>
+        </div>
+        <div class="head-right-tools">
+          <div class="fk-seg mod-seg">
+            <button class="fk-seg-btn" data-role="admin user" onclick="newRecord()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 5c0 1.66 4 3 9 3s9-1.34 9-3-4-3-9-3-9 1.34-9 3"/></svg>SPBJ / Kontrak Rinci</button>
+            <button class="fk-seg-btn active" data-role="admin" onclick="newRecordPl()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>Pengadaan Langsung</button>
+            <button class="fk-seg-btn" data-role="admin" onclick="newRecordTender()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>Tender</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1874,9 +1875,18 @@ tbody tr{animation:rowIn .3s ease both}
   <!-- ============ INPUT PEKERJAAN TENDER ============ -->
   <section id="view-input-tender" class="view">
     <div class="page-head">
-      <div>
-        <h2 id="input-tender-title">Input Pekerjaan Tender</h2>
-        <p>Lengkapi data pekerjaan Tender di bawah ini</p>
+      <div class="head-export-row">
+        <div>
+          <h2 id="input-tender-title">Input Pekerjaan Tender</h2>
+          <p>Lengkapi data pekerjaan Tender di bawah ini</p>
+        </div>
+        <div class="head-right-tools">
+          <div class="fk-seg mod-seg">
+            <button class="fk-seg-btn" data-role="admin user" onclick="newRecord()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 5c0 1.66 4 3 9 3s9-1.34 9-3-4-3-9-3-9 1.34-9 3"/></svg>SPBJ / Kontrak Rinci</button>
+            <button class="fk-seg-btn" data-role="admin" onclick="newRecordPl()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>Pengadaan Langsung</button>
+            <button class="fk-seg-btn active" data-role="admin" onclick="newRecordTender()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>Tender</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -2964,7 +2974,7 @@ function enterApp(role, view){
   startIdleTimer();   // mulai hitung mundur auto-logout 5 menit idle
 }
 function applyRole(role){
-  document.querySelectorAll('.topnav-link[data-role], .topnav-item[data-role], .topnav-sub[data-role], .btn[data-role]').forEach(l=>{
+  document.querySelectorAll('.topnav-link[data-role], .topnav-item[data-role], .topnav-sub[data-role], .btn[data-role], .fk-seg-btn[data-role]').forEach(l=>{
     const roles=l.getAttribute('data-role').split(' ');
     const ok=roles.includes(role);
     if(l.classList.contains('role-keepspace')){
@@ -3138,9 +3148,11 @@ function showView(name, loaderMsg, noLoader){
         if(name!=='input' && name!=='input-pl' && name!=='input-tender') clearDraft();
         // active state untuk Dashboard (nav-link) maupun item di dalam grup (nav-item)
         const monitorViews=['list','list-pl','list-tender'];
+        const inputViews=['input','input-pl','input-tender'];
         document.querySelectorAll('.topnav-link, .topnav-item').forEach(l=>{
           let on = l.dataset.view===name;
           if(l.dataset.view==='list' && monitorViews.includes(name)) on=true; // Monitoring induk tetap aktif
+          if(l.dataset.view==='input' && inputViews.includes(name)) on=true;  // Input Pekerjaan induk tetap aktif
           l.classList.toggle('active', on);
         });
         // tandai & buka grup yang memuat view aktif (akordeon tetap terbuka)
