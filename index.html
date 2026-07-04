@@ -1212,7 +1212,10 @@ tbody tr{animation:rowIn .3s ease both}
 .fk-seg-btn.active{background:linear-gradient(135deg,var(--teal),var(--cyan));color:#fff;box-shadow:0 5px 14px rgba(14,124,134,.32)}
 .fk-seg-btn.active:hover{color:#fff}
 /* Kolom & sel File Kontrak */
-.fk-col-bidang{width:230px;text-align:center}
+.fk-col-bidang{width:170px;text-align:center}
+/* Nama Pekerjaan pada File Kontrak dilebarkan +60px (tanpa mengubah tabel Monitoring) */
+#view-fk-input .table-wrap th.col-nama-freeze,#view-fk-input .table-wrap td.col-nama-freeze,
+#view-fk-view .table-wrap th.col-nama-freeze,#view-fk-view .table-wrap td.col-nama-freeze{min-width:300px;max-width:360px}
 .fk-actions{display:flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap}
 .fk-act{border:none;border-radius:10px;padding:8px 14px;font-family:'Plus Jakarta Sans';font-size:11px;font-weight:700;letter-spacing:.2px;display:inline-flex;align-items:center;gap:7px;cursor:pointer;color:#fff;transition:transform .16s cubic-bezier(.16,1,.3,1),box-shadow .22s ease,filter .2s ease;white-space:nowrap;box-shadow:0 3px 9px rgba(16,40,50,.14)}
 .fk-act svg{width:14px;height:14px;flex:0 0 auto}
@@ -1860,6 +1863,31 @@ tbody tr{animation:rowIn .3s ease both}
         <p class="fk-hint">Unggah file kontrak untuk setiap pekerjaan. Urutan daftar mengikuti tabel Monitoring.</p>
       </div>
     </div>
+    <div class="toolbar">
+      <div class="filter-field">
+        <label>Bidang Pelaksana</label>
+        <select id="fk-input-bidang" onchange="fkFilterInput()">
+          <option value="">Semua Bidang</option>
+          <option>Jaringan dan Konstruksi</option>
+          <option>Pembangkitan</option>
+          <option>Transaksi Energi Listrik</option>
+          <option>Niaga dan Pemasaran</option>
+          <option>Perencanaan</option>
+          <option>Keuangan dan Umum</option>
+          <option>Keselamatan, Kesehatan Kerja, Lingkungan dan Keamanan</option>
+        </select>
+      </div>
+      <div class="filter-field toolbar-search">
+        <label>Cari</label>
+        <input id="fk-input-search" type="text" placeholder="Cari Nama Pekerjaan" oninput="fkFilterInput()">
+      </div>
+      <div class="toolbar-actions">
+        <button class="btn btn-red" onclick="fkResetInput()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          Reset
+        </button>
+      </div>
+    </div>
     <div class="panel">
       <div class="table-wrap">
         <table>
@@ -1869,8 +1897,8 @@ tbody tr{animation:rowIn .3s ease both}
               <th class="col-nama-freeze">Nama Pekerjaan</th>
               <th class="col-kontrak" style="text-align:center" id="fk-input-th-nok">No. Kontrak</th>
               <th class="col-date">Tgl. Terbit Kontrak</th>
-              <th class="col-nilai" style="text-align:center">Nilai Pekerjaan</th>
               <th class="fk-col-bidang">Bidang Pelaksana</th>
+              <th class="col-nilai" style="text-align:center">Nilai Pekerjaan</th>
               <th style="text-align:center">Aksi</th>
             </tr>
           </thead>
@@ -1889,6 +1917,31 @@ tbody tr{animation:rowIn .3s ease both}
         <p class="fk-hint">Unduh atau hapus file kontrak yang telah diunggah. Urutan daftar mengikuti tabel Monitoring.</p>
       </div>
     </div>
+    <div class="toolbar">
+      <div class="filter-field">
+        <label>Bidang Pelaksana</label>
+        <select id="fk-view-bidang" onchange="fkFilterView()">
+          <option value="">Semua Bidang</option>
+          <option>Jaringan dan Konstruksi</option>
+          <option>Pembangkitan</option>
+          <option>Transaksi Energi Listrik</option>
+          <option>Niaga dan Pemasaran</option>
+          <option>Perencanaan</option>
+          <option>Keuangan dan Umum</option>
+          <option>Keselamatan, Kesehatan Kerja, Lingkungan dan Keamanan</option>
+        </select>
+      </div>
+      <div class="filter-field toolbar-search">
+        <label>Cari</label>
+        <input id="fk-view-search" type="text" placeholder="Cari Nama Pekerjaan" oninput="fkFilterView()">
+      </div>
+      <div class="toolbar-actions">
+        <button class="btn btn-red" onclick="fkResetView()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          Reset
+        </button>
+      </div>
+    </div>
     <div class="panel">
       <div class="table-wrap">
         <table>
@@ -1898,8 +1951,8 @@ tbody tr{animation:rowIn .3s ease both}
               <th class="col-nama-freeze">Nama Pekerjaan</th>
               <th class="col-kontrak" style="text-align:center" id="fk-view-th-nok">No. Kontrak</th>
               <th class="col-date">Tgl. Terbit Kontrak</th>
-              <th class="col-nilai" style="text-align:center">Nilai Pekerjaan</th>
               <th class="fk-col-bidang">Bidang Pelaksana</th>
+              <th class="col-nilai" style="text-align:center">Nilai Pekerjaan</th>
               <th style="text-align:center">Aksi</th>
             </tr>
           </thead>
@@ -2796,11 +2849,13 @@ let routeTimer=null;
 function resetAllFilters(){
   ['filter-bidang','filter-status','filter-tahun','filter-search',
    'filter-pl-bidang','filter-pl-tahapan','filter-pl-tahun','filter-pl-search',
-   'filter-tender-bidang','filter-tender-tahapan','filter-tender-tahun','filter-tender-search'
+   'filter-tender-bidang','filter-tender-tahapan','filter-tender-tahun','filter-tender-search',
+   'fk-input-bidang','fk-input-search','fk-view-bidang','fk-view-search'
   ].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   if(typeof currentPage!=='undefined') currentPage=1;
   if(typeof currentPagePl!=='undefined') currentPagePl=1;
   if(typeof currentPageTender!=='undefined') currentPageTender=1;
+  if(typeof fkState!=='undefined'){ fkState.input.page=1; fkState.view.page=1; }
 }
 
 function showView(name, loaderMsg, noLoader){
@@ -5972,14 +6027,33 @@ function fkEsc(s){ return String(s==null?'':s).replace(/[&<>"']/g,m=>({'&':'&amp
 /* ---- Navigasi ---- */
 function openFkInput(modul){
   if(!FK_MODULES[modul]) modul='kr';
-  if(fkState.input.modul!==modul) fkState.input.page=1;
+  if(fkState.input.modul!==modul){ fkState.input.page=1; fkClearFilters('input'); }
   fkState.input.modul=modul; showView('fk-input');
 }
 function openFkView(modul){
   if(!FK_MODULES[modul]) modul='kr';
-  if(fkState.view.modul!==modul) fkState.view.page=1;
+  if(fkState.view.modul!==modul){ fkState.view.page=1; fkClearFilters('view'); }
   fkState.view.modul=modul; showView('fk-view');
 }
+/* ---- Filter (Bidang Pelaksana) & Cari (Nama Pekerjaan) ---- */
+function fkApplyFilters(mode, cfg, rows){
+  const fb=document.getElementById('fk-'+mode+'-bidang')?.value||'';
+  const fs=(document.getElementById('fk-'+mode+'-search')?.value||'').toLowerCase().trim();
+  if(!fb && !fs) return rows;
+  return rows.filter(r=>{
+    if(fb && String(cfg.bidang(r)||'')!==fb) return false;
+    if(fs && !String(cfg.nama(r)||'').toLowerCase().includes(fs)) return false;
+    return true;
+  });
+}
+function fkClearFilters(mode){
+  const b=document.getElementById('fk-'+mode+'-bidang'); if(b) b.value='';
+  const s=document.getElementById('fk-'+mode+'-search'); if(s) s.value='';
+}
+function fkFilterInput(){ fkState.input.page=1; renderFkInput(); }
+function fkFilterView(){ fkState.view.page=1; renderFkView(); }
+function fkResetInput(){ fkClearFilters('input'); fkState.input.page=1; renderFkInput(); }
+function fkResetView(){ fkClearFilters('view'); fkState.view.page=1; renderFkView(); }
 /* Tandai item nav + segmented control yang aktif sesuai modul terpilih */
 function fkMarkActive(mode, modul){
   document.querySelectorAll('.topnav-item[data-view="fk-'+mode+'"]').forEach(b=>{
@@ -6009,7 +6083,8 @@ async function renderFkInput(){
   const pg=document.getElementById('fk-input-pagination');
   const cEl=document.getElementById('fk-input-count');
   if(!tb) return;
-  const rows=cfg.list();
+  let rows=cfg.list();
+  rows=fkApplyFilters('input', cfg, rows);
   if(cEl) cEl.textContent=rows.length;
   const meta=await fkEnsureMeta(modul);
   if(fkState.input.modul!==modul) return;    // modul berubah saat menunggu
@@ -6025,7 +6100,8 @@ async function renderFkView(){
   const pg=document.getElementById('fk-view-pagination');
   const cEl=document.getElementById('fk-view-count');
   if(!tb) return;
-  const rows=cfg.list();
+  let rows=cfg.list();
+  rows=fkApplyFilters('view', cfg, rows);
   if(cEl) cEl.textContent=rows.length;
   const meta=await fkEnsureMeta(modul);
   if(fkState.view.modul!==modul) return;
@@ -6035,7 +6111,7 @@ async function renderFkView(){
 function fkEmptyRow(){
   return `<tr><td colspan="7"><div class="empty">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
-    <div>Belum ada pekerjaan berstatus Terkontrak / Selesai pada jenis ini</div>
+    <div>Data tidak tersedia</div>
   </div></td></tr>`;
 }
 function fkRenderRows(mode, modul, cfg, rows, meta, tb, pg){
@@ -6065,8 +6141,8 @@ function fkRenderRows(mode, modul, cfg, rows, meta, tb, pg){
       <td class="wrap-cell col-nama-freeze fk-namecell">${fkEsc(nama)}</td>
       <td class="${kontrakCls}">${noKontrak}</td>
       <td class="cell-center col-date">${tgl}</td>
-      <td class="${nilaiCls}">${nilai}</td>
       <td class="fk-col-bidang wrap-cell">${fkEsc(bidang)}</td>
+      <td class="${nilaiCls}">${nilai}</td>
       <td><div class="fk-actions">${aksi}</div></td>
     </tr>`;
   }).join('');
