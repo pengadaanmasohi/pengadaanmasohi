@@ -1252,14 +1252,15 @@ tbody tr{animation:rowIn .3s ease both}
 /* Daftar per masing-masing nomor dokumen — tinggi tiap baris nomor DIBUAT SAMA
    (seragam seperti baris Evaluasi Penawaran) dan data diposisikan di tengah baris. */
 .pn-nomor-list{display:flex;flex-direction:column;gap:0;padding:0}
-.pn-nomor-item{display:flex;align-items:center;justify-content:flex-start;gap:8px;height:44px;min-height:44px;padding:0;position:relative;box-sizing:border-box}
+.pn-nomor-item{display:flex;align-items:center;justify-content:flex-start;gap:8px;height:44px;min-height:44px;max-height:44px;flex:0 0 44px;padding:0;position:relative;box-sizing:border-box;overflow:hidden}
 /* Garis pemisah elegan antar No. Dokumen */
 .pn-nomor-item:not(:last-child)::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:linear-gradient(90deg,transparent,rgba(14,124,134,.28) 18%,rgba(14,124,134,.28) 82%,transparent)}
 .pn-jenis-item{align-items:center}
 .pn-tgl-item{justify-content:center}
 .pn-aksi-item{align-items:center;justify-content:center}
-.pn-nomor-jenis{flex:1 1 auto;width:100%;font-family:'Plus Jakarta Sans';font-size:11px;font-weight:700;color:var(--teal-dark);white-space:normal;word-break:break-word;line-height:1.3}
-.pn-nomor-val{font-family:'Inter',monospace;font-weight:600;font-size:11px;color:var(--ink);word-break:break-all;line-height:1.35;flex:1 1 auto}
+/* Jenis & No. Dokumen dibatasi 2 baris agar tinggi baris tetap seragam */
+.pn-nomor-jenis{flex:1 1 auto;width:100%;font-family:'Plus Jakarta Sans';font-size:10.5px;font-weight:700;color:var(--teal-dark);line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
+.pn-nomor-val{font-family:'Inter',monospace;font-weight:600;font-size:10.5px;color:var(--ink);line-height:1.25;flex:1 1 auto;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-all}
 .pn-tgl-val{font-family:'Inter';font-size:11px;color:var(--ink);white-space:nowrap}
 .pn-copy{appearance:none;border:none;background:none;cursor:pointer;color:var(--muted);padding:2px;border-radius:6px;flex:0 0 auto;transition:background .15s,color .15s}
 .pn-copy:hover{color:var(--teal);background:var(--teal-soft)}
