@@ -1423,6 +1423,7 @@ tbody tr{animation:rowIn .3s ease both}
 .kt-form-group>h4 svg{width:16px;height:16px}
 .kt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px 16px}
 .kt-grid.two{grid-template-columns:repeat(2,1fr)}
+.kt-grid.four{grid-template-columns:repeat(4,1fr)}
 .kt-field{display:flex;flex-direction:column;gap:5px;min-width:0}
 .kt-field.span2{grid-column:span 2}
 .kt-field.span3{grid-column:1/-1}
@@ -1433,7 +1434,8 @@ tbody tr{animation:rowIn .3s ease both}
 .kt-field .kt-auto-tag{font-size:10px;font-weight:700;color:var(--green-dark);background:#e2f4ea;border-radius:5px;padding:1px 6px;margin-left:6px}
 .kt-hint{font-size:12px;color:var(--muted);margin:2px 0 0}
 .kt-actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end;margin-top:8px}
-@media (max-width:820px){.kt-grid,.kt-grid.two{grid-template-columns:1fr}.kt-field.span2,.kt-field.span3{grid-column:auto}}
+@media (max-width:1100px) and (min-width:821px){.kt-grid.four{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:820px){.kt-grid,.kt-grid.two,.kt-grid.four{grid-template-columns:1fr}.kt-field.span2,.kt-field.span3{grid-column:auto}}
 
 /* ---- Preview overlay ---- */
 #kt-preview-overlay{position:fixed;inset:0;z-index:1200;background:rgba(16,40,50,.55);backdrop-filter:blur(3px);display:none;flex-direction:column}
@@ -1449,40 +1451,58 @@ tbody tr{animation:rowIn .3s ease both}
 /* ---- Dokumen SPK (A4, Times New Roman) ---- */
 .spk-print-area{max-width:794px;margin:0 auto}
 .spk-doc{background:#fff;color:#000;font-family:'Times New Roman',Times,serif;font-size:12pt;line-height:1.5;text-align:justify}
-.spk-page{background:#fff;width:794px;max-width:100%;box-sizing:border-box;margin:0 auto 20px;padding:96px 76px;box-shadow:0 6px 24px rgba(0,0,0,.22)}
+.spk-page{background:#fff;width:794px;max-width:100%;box-sizing:border-box;margin:0 auto 20px;padding:74px 76px 64px;box-shadow:0 6px 24px rgba(0,0,0,.22);position:relative}
 .spk-doc p{margin:0 0 8pt;text-align:justify}
 .spk-doc .center{text-align:center}
 .spk-doc .b{font-weight:bold}
 .spk-doc .u{text-decoration:underline}
-.spk-cover-title{text-align:center;font-weight:bold;line-height:1.7;margin-bottom:30px}
-.spk-cover-title .t1{font-size:15pt;letter-spacing:.5px}
-.spk-cover-title .t2{font-size:13pt}
-.spk-info{width:100%;border-collapse:collapse;margin:10px 0 0;font-size:12pt}
-.spk-info td{border:1px solid #000;padding:5px 9px;vertical-align:top}
-.spk-info td.k{width:150px;font-weight:bold}
-.spk-info td.s{width:16px;text-align:center}
-.spk-pasal-title{text-align:center;font-weight:bold;margin:20px 0 12px;text-transform:uppercase}
-.spk-pasal-title .pn{display:block;font-size:12pt;font-weight:bold}
-.spk-toc-item{display:flex;justify-content:space-between;gap:10px;margin:0 0 4pt}
-.spk-toc-item .tt{flex:1 1 auto}
-.spk-doc ol{margin:0 0 8pt;padding-left:26px}
-.spk-doc ol>li{margin-bottom:6pt;text-align:justify}
+.spk-doc .i{font-style:italic}
+
+/* ---- Kop / Header berjalan (UP3 MASOHI + logo PLN) ---- */
+.spk-head{display:flex;align-items:flex-start;justify-content:flex-end;gap:10px;height:52px;margin-bottom:6px}
+.spk-head .pln-logo{display:inline-flex;align-items:center;gap:6px;font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:15pt;letter-spacing:3px;color:#009ee0}
+.spk-head .pln-logo .box{display:inline-flex;align-items:center;justify-content:center;width:26px;height:18px;background:#ffe100;border-radius:2px;color:#009ee0;font-size:12pt;line-height:1}
+.spk-head .up3-badge{position:absolute;right:76px;top:58px;background:#c9f0fb;color:#0089c7;font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:8.5pt;letter-spacing:.5px;padding:3px 12px 3px 9px}
+.spk-foot{position:absolute;left:0;right:0;bottom:26px;text-align:center;font-size:11pt}
+.spk-foot .pg{font-weight:bold}
+.spk-cover-title{text-align:center;font-weight:bold;line-height:1.9;margin:150px 0 26px}
+.spk-cover-title .t1{font-size:14pt;letter-spacing:.3px}
+.spk-cover-title .t2{font-size:12pt}
+.spk-cover-rule{border:0;border-top:1.4px solid #000;margin:0 0 4px}
+.spk-info{width:100%;border-collapse:collapse;margin:0;font-size:12pt}
+.spk-info td{padding:6px 6px;vertical-align:top}
+.spk-info td.k{width:140px}
+.spk-info td.s{width:14px;text-align:left}
+.spk-pasal-title{text-align:left;font-weight:bold;margin:16px 0 8px;page-break-after:avoid}
+.spk-toc-item{display:flex;align-items:baseline;gap:6px;margin:0 0 10pt}
+.spk-toc-item .tn{flex:0 0 auto}
+.spk-toc-item .tt{flex:0 1 auto}
+.spk-toc-item .dots{flex:1 1 auto;border-bottom:1.5px dotted #000;transform:translateY(-3px);margin:0 2px}
+.spk-toc-item .pg{flex:0 0 auto}
+.spk-doc ol{margin:0 0 8pt;padding-left:24px}
+.spk-doc ol>li{margin-bottom:6pt;text-align:justify;padding-left:4px}
 .spk-doc ol.lower-alpha{list-style-type:lower-alpha}
 .spk-doc ol.decimal{list-style-type:decimal}
 .spk-doc ol.lower-roman{list-style-type:lower-roman}
 .spk-doc ol.upper-roman{list-style-type:upper-roman}
+.spk-doc ol.tight>li{margin-bottom:3pt}
+.spk-doc .ind{text-indent:28px}
 .spk-party{width:100%;border-collapse:collapse;margin:6px 0}
 .spk-party td{vertical-align:top;padding:2px 4px}
 .spk-party td.rn{width:26px;font-weight:bold}
-.spk-sign{width:100%;border-collapse:collapse;margin-top:26px;text-align:center}
+.spk-sign{width:100%;border-collapse:collapse;margin-top:22px;text-align:center;page-break-inside:avoid}
 .spk-sign td{width:50%;padding:6px 10px;vertical-align:top}
 .spk-sign .role{font-weight:bold}
-.spk-sign .space{height:88px}
+.spk-sign .space{height:80px}
 .spk-sign .name{font-weight:bold;text-decoration:underline}
-.spk-tbl2{width:100%;border-collapse:collapse;margin:6px 0}
-.spk-tbl2 td{border:1px solid #000;padding:4px 8px;vertical-align:top}
-.spk-tbl2 td.k{width:150px}
-.spk-tbl2 td.s{width:14px;text-align:center}
+.spk-tbl2{width:100%;border-collapse:collapse;margin:4px 0 8px}
+.spk-tbl2 td{padding:2px 6px;vertical-align:top}
+.spk-tbl2 td.k{width:130px}
+.spk-tbl2 td.s{width:14px;text-align:left}
+
+/* Header/footer per-halaman (dipakai layar & html2pdf). Disembunyikan saat cetak
+   browser karena diganti header/footer berjalan (running) yang muncul di tiap lembar. */
+.spk-running-header,.spk-running-footer{display:none}
 
 /* ---- Saat mencetak dari pratinjau: tampilkan hanya dokumen ---- */
 @media print{
@@ -1493,9 +1513,24 @@ tbody tr{animation:rowIn .3s ease both}
   body.kt-preview-open #kt-preview-overlay .kt-preview-bar{display:none!important}
   body.kt-preview-open #kt-preview-overlay .kt-preview-scroll{overflow:visible!important;padding:0!important}
   body.kt-preview-open .spk-print-area{max-width:none;margin:0}
-  body.kt-preview-open .spk-page{width:auto;margin:0;padding:20mm 18mm;box-shadow:none;page-break-after:always}
+  /* Padding kiri/kanan = margin naskah; atas/bawah beri ruang utk header & footer berjalan */
+  body.kt-preview-open .spk-page{width:auto;margin:0;box-shadow:none;page-break-after:always;position:static;padding:26mm 18mm 20mm}
   body.kt-preview-open .spk-page:last-child{page-break-after:auto}
-  body.kt-preview-open .spk-doc{font-size:11.5pt}
+  body.kt-preview-open .spk-doc{font-size:12pt;counter-reset:spkpage}
+
+  /* Header/footer versi per-halaman (layar) disembunyikan saat cetak */
+  body.kt-preview-open .spk-head,body.kt-preview-open .spk-foot{display:none!important}
+
+  /* ===== Header berjalan: tampil di tepi atas SETIAP lembar cetak ===== */
+  body.kt-preview-open .spk-running-header{display:block;position:fixed;top:12mm;left:18mm;right:18mm;height:14mm;background:#fff}
+  body.kt-preview-open .spk-running-header .pln-logo{position:absolute;right:0;top:0;display:inline-flex;align-items:center;gap:6px;font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:15pt;letter-spacing:3px;color:#009ee0}
+  body.kt-preview-open .spk-running-header .pln-logo .box{display:inline-flex;align-items:center;justify-content:center;width:26px;height:18px;background:#ffe100;color:#009ee0;font-size:12pt;line-height:1}
+  body.kt-preview-open .spk-running-header .up3-badge{position:absolute;right:0;top:22px;background:#c9f0fb;color:#0089c7;font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:8.5pt;letter-spacing:.5px;padding:3px 12px 3px 9px}
+
+  /* ===== Footer berjalan: "N dari 17" di tepi bawah SETIAP lembar cetak ===== */
+  body.kt-preview-open .spk-running-footer{display:block;position:fixed;bottom:10mm;left:0;right:0;text-align:center;font-family:'Times New Roman',Times,serif;font-size:11pt;background:#fff}
+  body.kt-preview-open .spk-running-footer::before{counter-increment:spkpage;content:counter(spkpage);font-weight:bold}
+  body.kt-preview-open .spk-running-footer::after{content:" dari 17"}
 }
 </style>
 </head>
@@ -7608,7 +7643,7 @@ const KT_URAIAN_TEMPLATE = {
 /* ---- Definisi kolom form (dikelompokkan) ----
    auto:true  = terisi otomatis dari record (ditandai lencana)          */
 const KT_GROUPS = [
-  { title:'A. Data Kontrak', icon:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>', cols:3, fields:[
+  { title:'A. Data Kontrak', icon:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>', cols:4, fields:[
     {k:'no_kontrak', label:'No. Kontrak', auto:1, span:2},
     {k:'tgl_kontrak', label:'Tanggal Kontrak', type:'date', auto:1},
     {k:'nama_pekerjaan', label:'Nama Pekerjaan', auto:1, span:3},
@@ -7621,13 +7656,13 @@ const KT_GROUPS = [
     {k:'sd_no', label:'No. Sumber Dana / Anggaran', auto:1, span:2},
     {k:'sd_tgl', label:'Tgl. Sumber Dana', type:'date', auto:1},
   ]},
-  { title:'B. PIHAK PERTAMA (PT PLN)', icon:'<path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01"/>', cols:2, fields:[
+  { title:'B. PIHAK PERTAMA (PT PLN)', icon:'<path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01"/>', cols:4, fields:[
     {k:'p1_nama', label:'Nama Wakil (Manager)'},
     {k:'p1_jabatan', label:'Jabatan'},
     {k:'p1_sk_no', label:'No. SK Direksi'},
     {k:'p1_sk_tgl', label:'Tgl. SK Direksi', type:'date'},
   ]},
-  { title:'C. PIHAK KEDUA (Penyedia)', icon:'<path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/>', cols:2, fields:[
+  { title:'C. PIHAK KEDUA (Penyedia)', icon:'<path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/>', cols:4, fields:[
     {k:'p2_nama', label:'Nama Perusahaan', auto:1, span:2},
     {k:'p2_alamat', label:'Alamat', auto:1, span:2},
     {k:'p2_wakil', label:'Nama Wakil/Pimpinan', auto:1},
@@ -7643,7 +7678,7 @@ const KT_GROUPS = [
     {k:'p2_menkumham_wakil_no', label:'No. SK Menkumham (Wakil/Perubahan)'},
     {k:'p2_menkumham_wakil_tgl', label:'Tgl. SK Menkumham (Wakil/Perubahan)', type:'date'},
   ]},
-  { title:'D. Dasar Pengadaan (Berdasarkan)', icon:'<path d="M9 12l2 2 4-4"/><path d="M21 12c-1 0-3-1-3-3s2-3 3-3-1 6-3 6"/><path d="M3 12c1 0 3-1 3-3S4 6 3 6s1 6 3 6"/>', cols:2, fields:[
+  { title:'D. Dasar Pengadaan (Berdasarkan)', icon:'<path d="M9 12l2 2 4-4"/><path d="M21 12c-1 0-3-1-3-3s2-3 3-3-1 6-3 6"/><path d="M3 12c1 0 3-1 3-3S4 6 3 6s1 6 3 6"/>', cols:4, fields:[
     {k:'eproc_no', label:'No. Undangan e-Proc', auto:1, span:2},
     {k:'eproc_tgl_awal', label:'Tgl. Undangan (Awal)', type:'date', auto:1},
     {k:'eproc_tgl_akhir', label:'Tgl. Undangan (Akhir)', type:'date'},
@@ -7656,7 +7691,7 @@ const KT_GROUPS = [
     {k:'bakn_no', label:'No. BA Klarifikasi & Negosiasi', auto:1},
     {k:'bakn_tgl', label:'Tgl. BA Klarifikasi & Negosiasi', type:'date', auto:1},
   ]},
-  { title:'E. Pembayaran', icon:'<rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>', cols:3, fields:[
+  { title:'E. Pembayaran', icon:'<rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>', cols:4, fields:[
     {k:'p2_bank', label:'Bank', auto:1},
     {k:'p2_rek_no', label:'No. Rekening', auto:1},
     {k:'p2_rek_nama', label:'Nama Pemilik Rekening', auto:1},
@@ -7770,7 +7805,7 @@ function renderKtForm(data){
   const d=data||{};
   const host=document.getElementById('kt-form'); if(!host) return;
   host.innerHTML=KT_GROUPS.map(g=>{
-    const grid = g.cols===1?'':(g.cols===2?' two':'');
+    const grid = g.cols===1?'':(g.cols===2?' two':(g.cols===4?' four':''));
     const body=g.fields.map(f=>ktInputHtml(f, d[f.k]!==undefined?d[f.k]:'')).join('');
     return `<div class="kt-form-group"><h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${g.icon}</svg>${ktEsc(g.title)}</h4><div class="kt-grid${grid}">${body}</div></div>`;
   }).join('');
@@ -7840,7 +7875,14 @@ function ktResetForm(){
 /* ============================================================
    RENDER DOKUMEN SPK (HTML siap cetak/PDF)
    ============================================================ */
-function ktPasalTitle(n,t){ return `<div class="spk-pasal-title"><span class="pn">PASAL ${n}</span>${ktEsc(t)}</div>`; }
+function ktPasalTitle(n,t){ return `<div class="spk-pasal-title">${n}.&nbsp;&nbsp;${ktEsc(t)}</div>`; }
+
+/* Kop PLN + badge unit — dipakai di header berjalan & tiap halaman (layar) */
+const KT_PLN_LOGO = `<span class="pln-logo"><span class="box">&#8592;</span>P L N</span>`;
+function ktHeadBand(){
+  return `<div class="spk-head">${KT_PLN_LOGO}<span class="up3-badge">UP3 MASOHI</span></div>`;
+}
+function ktFootBand(){ return ''; }
 
 function ktRenderDoc(k){
   const B=s=>`<span class="b">${s}</span>`;
@@ -7851,17 +7893,23 @@ function ktRenderDoc(k){
   const bidang = k.bidang||'Jaringan dan Konstruksi';
   const tujuanList = String(k.ur_tujuan||'').split('\n').map(s=>s.trim()).filter(Boolean);
 
+  /* Header/footer yang berulang di SETIAP lembar saat dicetak (browser print) */
+  const runningHF = `
+    <div class="spk-running-header">${KT_PLN_LOGO}<span class="up3-badge">UP3 MASOHI</span></div>
+    <div class="spk-running-footer"><span class="lbl-b">&nbsp;</span></div>`;
+
   /* ---------- HALAMAN SAMPUL ---------- */
   const cover = `
   <div class="spk-page">
     <div class="spk-cover-title">
       <div class="t1">SURAT PERINTAH KERJA</div>
       <div class="t1">PENGADAAN LANGSUNG</div>
-      <div class="t2" style="margin-top:14px">DARI</div>
-      <div class="t2">PT PLN (PERSERO) UNIT PELAKSANA PELAYANAN PELANGGAN MASOHI</div>
-      <div class="t2" style="margin-top:10px">KEPADA</div>
+      <div class="t1" style="margin-top:14px">DARI</div>
+      <div class="t1">PT PLN (PERSERO) UNIT PELAKSANA PELAYANAN PELANGGAN MASOHI</div>
+      <div class="t1" style="margin-top:14px">KEPADA</div>
       <div class="t1">${ktEsc((k.p2_nama||'').toUpperCase())}</div>
     </div>
+    <hr class="spk-cover-rule">
     <table class="spk-info">
       <tr><td class="k">Nomor Kontrak</td><td class="s">:</td><td>${ktEsc(k.no_kontrak)}</td></tr>
       <tr><td class="k">Tanggal</td><td class="s">:</td><td>${ktEsc(ktTglIndo(k.tgl_kontrak))}</td></tr>
@@ -7876,15 +7924,24 @@ function ktRenderDoc(k){
 
   /* ---------- DAFTAR ISI ---------- */
   const titles=['URAIAN PEKERJAAN','HAK DAN KEWAJIBAN','PENGENDALIAN PEKERJAAN','WAKTU DAN TEMPAT PENYERAHAN PEKERJAAN','SANKSI DAN DENDA KETERLAMBATAN PELAKSANAAN PEKERJAAN','HARGA PEKERJAAN','TATA CARA PEMBAYARAN','KEADAAN KAHAR (FORCE MAJEURE)','MASA GARANSI','KESELAMATAN DAN KESEHATAN KERJA','TERMINASI DALAM KONTRAK','INTEGRITAS DAN GOOD CORPORATE GOVERNANCE','BIAYA PENYUSUNAN KONTRAK','PERUBAHAN','PENUTUP'];
+  const tocPages=[2,5,5,7,7,8,8,9,10,11,12,14,16,17,17];
+  const tocItalic={7:'FORCE MAJEURE',11:'GOOD CORPORATE GOVERNANCE'};
   const toc = `
   <div class="spk-page">
-    <p class="center b u" style="font-size:13pt;margin-bottom:16px">DAFTAR ISI</p>
-    ${titles.map((t,i)=>`<div class="spk-toc-item"><span class="tt">${i+1}. ${ktEsc(t)}</span></div>`).join('')}
+    ${ktHeadBand()}
+    <p class="center b u" style="font-size:12pt;margin:0 0 20px">DAFTAR ISI</p>
+    ${titles.map((t,i)=>{
+      let disp=ktEsc(t);
+      if(tocItalic[i]){ disp=disp.replace(tocItalic[i], `<span class="i">${tocItalic[i]}</span>`); }
+      return `<div class="spk-toc-item"><span class="tn">${i+1}.</span><span class="tt">${disp}</span><span class="dots"></span><span class="pg">${tocPages[i]}</span></div>`;
+    }).join('')}
+    ${ktFootBand()}
   </div>`;
 
   /* ---------- PEMBUKAAN ---------- */
   const pembukaan = `
-    <p class="center b u" style="font-size:13pt">SURAT PERINTAH KERJA</p>
+    ${ktHeadBand()}
+    <p class="center b u" style="font-size:12pt;margin-bottom:2px">SURAT PERINTAH KERJA</p>
     <p class="center b" style="margin-bottom:14px">${ktEsc(k.no_kontrak)}</p>
     <p>Pada hari ini ${B(ktHari(k.tgl_kontrak)+', tanggal '+ktTglPanjang(k.tgl_kontrak))}, kami yang bertanda tangan dibawah ini :</p>
     <table class="spk-party">
@@ -8213,9 +8270,9 @@ function ktRenderDoc(k){
       <tr><td><span class="name">${ktEsc(k.p2_wakil)}</span><br>${B(k.p2_jabatan)}</td><td><span class="name">${ktEsc(k.p1_nama)}</span><br>${B(k.p1_jabatan)}</td></tr>
     </table>`;
 
-  const body = `<div class="spk-page">${pembukaan}${pasal1}${pasal2}${pasal3}${pasal4}${pasal5}${pasal6}${pasal7}${pasal8}${pasal9}${pasal10}${pasal11}${pasal12}${pasal13}${pasal14}${pasal15}</div>`;
+  const body = `<div class="spk-page">${pembukaan}${pasal1}${pasal2}${pasal3}${pasal4}${pasal5}${pasal6}${pasal7}${pasal8}${pasal9}${pasal10}${pasal11}${pasal12}${pasal13}${pasal14}${pasal15}${ktFootBand()}</div>`;
 
-  return `<div class="spk-doc">${cover}${toc}${body}</div>`;
+  return `<div class="spk-doc">${runningHF}${cover}${toc}${body}</div>`;
 }
 
 /* ============================================================
@@ -8417,11 +8474,11 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ const ov=document
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
         Pratinjau Surat Perintah Kerja
       </span>
-      <button class="btn btn-teal" type="button" onclick="ktPrint()">
+      <button class="btn btn-teal" type="button" onclick="ktPrint()" title="Cetak / Simpan PDF lewat dialog browser — termasuk kop UP3 MASOHI &amp; nomor halaman di tiap lembar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
         Cetak / Simpan PDF
       </button>
-      <button class="btn btn-green" type="button" onclick="ktDownloadPdf()">
+      <button class="btn btn-green" type="button" onclick="ktDownloadPdf()" title="Unduh PDF langsung (tanpa dialog). Kop &amp; nomor halaman berjalan hanya muncul lewat &quot;Cetak / Simpan PDF&quot;.">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
         Unduh PDF
       </button>
