@@ -2125,7 +2125,6 @@ tbody tr{animation:rowIn .3s ease both}
     <div class="page-head">
       <div>
         <h2>Penetapan Nomor — Lihat Nomor <span class="count-badge" id="pn-lihat-count">0</span></h2>
-        <p class="fk-hint">Daftar nomor yang telah ditetapkan. Menghapus data akan mengembalikan nomor agar dapat dipakai lagi.</p>
       </div>
       <div class="pn-seg-wrap">
         <div class="fk-seg" id="pn-lihat-seg">
@@ -2138,12 +2137,6 @@ tbody tr{animation:rowIn .3s ease both}
       <div class="filter-field toolbar-search">
         <label>Cari</label>
         <input id="pn-lihat-search" type="text" placeholder="Cari Nama Pekerjaan" oninput="pnFilterLihat()">
-      </div>
-      <div class="toolbar-actions">
-        <button class="btn btn-red" onclick="pnResetLihat()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-          Reset
-        </button>
       </div>
     </div>
     <div class="panel">
@@ -6677,14 +6670,14 @@ function pnAmbilPlFormHtml(){
   return '' +
   '<div class="form-card">' +
     '<div class="form-section-title">'+KR_SECTION_ICON+'Data Pengadaan Langsung</div>' +
-    '<div class="form-flow" style="--cols:2">' +
+    '<div class="form-flow" style="--cols:4">' +
       '<div class="field"><label>Nama Pekerjaan <span class="req">*</span></label><input id="pn-pl-nama" type="text" placeholder="cth. Pengadaan Material Distribusi"></div>' +
       '<div class="field"><label>Bidang Pelaksana <span class="req">*</span></label><select id="pn-pl-bidang"><option value="">— Pilih —</option>'+bidangOpts+'</select></div>' +
       '<div class="field"><label>Kode Klasifikasi <span class="req">*</span></label><select id="pn-pl-klas"><option value="">— Pilih —</option>'+klasOpts+'</select></div>' +
       '<div class="field"><label>Menggunakan Penjelasan <span class="req">*</span></label><select id="pn-pl-penjelasan"><option value="Tidak">Tidak</option><option value="Ya">Ya</option></select></div>' +
     '</div>' +
     '<div class="form-actions">' +
-      '<button class="btn btn-teal" type="button" onclick="pnAmbilPl()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Ambil No Pengadaan</button>' +
+      '<button class="btn btn-teal" type="button" onclick="pnAmbilPl()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Ambil Nomor</button>' +
     '</div>' +
   '</div>' +
   '<div id="pn-ambil-result"></div>';
