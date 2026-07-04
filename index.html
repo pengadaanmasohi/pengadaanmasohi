@@ -1247,17 +1247,19 @@ tbody tr{animation:rowIn .3s ease both}
 .pn-col-tgl{width:104px;min-width:98px;max-width:112px;vertical-align:top;text-align:center}
 .pn-col-aksi{width:164px;min-width:154px;max-width:184px;vertical-align:top}
 #view-pn-lihat .table-wrap th.col-nama-freeze,#view-pn-lihat .table-wrap td.col-nama-freeze{min-width:240px;max-width:310px}
-/* Daftar per masing-masing nomor dokumen — tinggi baris menyesuaikan tinggi konten
-   (huruf / tombol aksi) dengan padding tipis; tetap sejajar antar kolom. */
+/* Nama Pekerjaan & No. — data tunggal diposisikan di tengah tinggi baris */
+#view-pn-lihat .table-wrap td.col-no,#view-pn-lihat .table-wrap td.col-nama-freeze{vertical-align:middle}
+/* Daftar per masing-masing nomor dokumen — tinggi tiap baris nomor DIBUAT SAMA
+   (seragam seperti baris Evaluasi Penawaran) dan data diposisikan di tengah baris. */
 .pn-nomor-list{display:flex;flex-direction:column;gap:0;padding:0}
-.pn-nomor-item{display:flex;align-items:center;gap:8px;min-height:33px;padding:4px 0;position:relative;box-sizing:border-box}
+.pn-nomor-item{display:flex;align-items:center;justify-content:flex-start;gap:8px;height:44px;min-height:44px;padding:0;position:relative;box-sizing:border-box}
 /* Garis pemisah elegan antar No. Dokumen */
 .pn-nomor-item:not(:last-child)::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:linear-gradient(90deg,transparent,rgba(14,124,134,.28) 18%,rgba(14,124,134,.28) 82%,transparent)}
 .pn-jenis-item{align-items:center}
 .pn-tgl-item{justify-content:center}
-.pn-aksi-item{align-items:center}
-.pn-nomor-jenis{flex:1 1 auto;width:100%;font-family:'Plus Jakarta Sans';font-size:11px;font-weight:700;color:var(--teal-dark);white-space:normal;word-break:break-word;line-height:1.35}
-.pn-nomor-val{font-family:'Inter',monospace;font-weight:600;font-size:11px;color:var(--ink);word-break:break-all;line-height:1.5;flex:1 1 auto}
+.pn-aksi-item{align-items:center;justify-content:center}
+.pn-nomor-jenis{flex:1 1 auto;width:100%;font-family:'Plus Jakarta Sans';font-size:11px;font-weight:700;color:var(--teal-dark);white-space:normal;word-break:break-word;line-height:1.3}
+.pn-nomor-val{font-family:'Inter',monospace;font-weight:600;font-size:11px;color:var(--ink);word-break:break-all;line-height:1.35;flex:1 1 auto}
 .pn-tgl-val{font-family:'Inter';font-size:11px;color:var(--ink);white-space:nowrap}
 .pn-copy{appearance:none;border:none;background:none;cursor:pointer;color:var(--muted);padding:2px;border-radius:6px;flex:0 0 auto;transition:background .15s,color .15s}
 .pn-copy:hover{color:var(--teal);background:var(--teal-soft)}
