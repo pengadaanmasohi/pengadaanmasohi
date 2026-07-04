@@ -1184,6 +1184,44 @@ tbody tr{animation:rowIn .3s ease both}
 @keyframes rowIn{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){tbody tr{animation:none}}
 
+/* ================= FILE KONTRAK ================= */
+.topnav-subhead{padding:9px 12px 4px;font-size:9.5px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted)}
+.topnav-sep{height:1px;margin:6px 8px;background:linear-gradient(90deg,transparent,var(--line),transparent)}
+@media (max-width:1024px){
+  .topnav-subhead{color:rgba(255,255,255,.55)}
+  .topnav-sep{background:rgba(255,255,255,.14)}
+}
+/* Segmented switcher (Jenis Pekerjaan) */
+.fk-seg{display:inline-flex;gap:4px;padding:5px;background:linear-gradient(180deg,#ffffff,#f3f8f9);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);flex-wrap:wrap}
+.fk-seg-btn{appearance:none;border:none;background:none;font-family:'Plus Jakarta Sans';font-size:11.5px;font-weight:700;color:var(--muted);padding:9px 16px;border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:background .18s ease,color .18s ease,transform .16s cubic-bezier(.16,1,.3,1),box-shadow .2s ease;white-space:nowrap}
+.fk-seg-btn svg{width:15px;height:15px;flex:0 0 auto}
+.fk-seg-btn:hover{background:var(--teal-soft);color:var(--teal-dark)}
+.fk-seg-btn.active{background:linear-gradient(135deg,var(--teal),var(--cyan));color:#fff;box-shadow:0 5px 14px rgba(14,124,134,.32)}
+.fk-seg-btn.active:hover{color:#fff}
+/* Kolom & sel File Kontrak */
+.fk-col-bidang{width:230px}
+.fk-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.fk-act{border:none;border-radius:10px;padding:8px 14px;font-family:'Plus Jakarta Sans';font-size:11px;font-weight:700;letter-spacing:.2px;display:inline-flex;align-items:center;gap:7px;cursor:pointer;color:#fff;transition:transform .16s cubic-bezier(.16,1,.3,1),box-shadow .22s ease,filter .2s ease;white-space:nowrap;box-shadow:0 3px 9px rgba(16,40,50,.14)}
+.fk-act svg{width:14px;height:14px;flex:0 0 auto}
+.fk-act:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(16,40,50,.22)}
+.fk-act:active{transform:translateY(0) scale(.98)}
+.fk-act-up{background:linear-gradient(135deg,var(--teal),var(--cyan))}
+.fk-act-replace{background:linear-gradient(135deg,var(--yellow),#ffca3a);color:#5a3d00;box-shadow:0 3px 9px rgba(246,180,14,.3)}
+.fk-act-dl{background:linear-gradient(135deg,var(--green),#28b466)}
+.fk-act-del{background:linear-gradient(135deg,var(--red),#e25151)}
+.fk-act[disabled]{background:linear-gradient(135deg,#c3ced4,#d6dee2);color:#fff;cursor:not-allowed;box-shadow:none;transform:none;filter:none;opacity:.85}
+.fk-act.is-busy{cursor:progress;opacity:.75;pointer-events:none}
+/* Chip nama file terunggah */
+.fk-file-chip{display:inline-flex;align-items:center;gap:7px;max-width:260px;padding:6px 11px;border-radius:9px;background:linear-gradient(180deg,#eef8f9,#e2f2f3);border:1px solid #bfe2e5;color:var(--teal-dark);font-size:11px;font-weight:700}
+.fk-file-chip svg{width:14px;height:14px;flex:0 0 auto;color:var(--teal)}
+.fk-file-chip .fk-file-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fk-file-chip .fk-file-size{font-weight:600;color:var(--muted);flex:0 0 auto}
+.fk-none{display:inline-flex;align-items:center;gap:7px;color:var(--muted);font-size:11.5px;font-weight:600;font-style:italic}
+.fk-none svg{width:14px;height:14px;opacity:.7}
+.fk-namecell{font-weight:600;color:var(--ink)}
+.fk-hint{color:var(--muted);font-size:12px;margin:-2px 0 0}
+@media (max-width:720px){ .fk-file-chip{max-width:150px} }
+
 </style>
 </head>
 <body>
@@ -1264,6 +1302,44 @@ tbody tr{animation:rowIn .3s ease both}
               Pengadaan Langsung
             </button>
             <button class="topnav-item" data-view="list-tender" onclick="showView('list-tender')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>
+              Tender
+            </button>
+          </div>
+        </div>
+
+        <!-- ===== File Kontrak ===== -->
+        <div class="topnav-group" data-group="filekontrak">
+          <button class="topnav-trigger" type="button" onclick="toggleTopGroup(event,'filekontrak')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/><path d="M12 11v6M9 14h6"/></svg>
+            File Kontrak
+            <svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="topnav-dropdown">
+            <div class="topnav-subhead" data-role="admin user">Input Data</div>
+            <button class="topnav-item" data-view="fk-input" data-modul="kr" data-role="admin user" onclick="openFkInput('kr')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 5c0 1.66 4 3 9 3s9-1.34 9-3-4-3-9-3-9 1.34-9 3"/></svg>
+              SPBJ / Kontrak Rinci
+            </button>
+            <button class="topnav-item" data-view="fk-input" data-modul="pl" data-role="admin user" onclick="openFkInput('pl')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>
+              Pengadaan Langsung
+            </button>
+            <button class="topnav-item" data-view="fk-input" data-modul="tender" data-role="admin user" onclick="openFkInput('tender')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>
+              Tender
+            </button>
+            <div class="topnav-sep" data-role="admin user"></div>
+            <div class="topnav-subhead">Lihat Data</div>
+            <button class="topnav-item" data-view="fk-view" data-modul="kr" onclick="openFkView('kr')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 5c0 1.66 4 3 9 3s9-1.34 9-3-4-3-9-3-9 1.34-9 3"/></svg>
+              SPBJ / Kontrak Rinci
+            </button>
+            <button class="topnav-item" data-view="fk-view" data-modul="pl" onclick="openFkView('pl')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>
+              Pengadaan Langsung
+            </button>
+            <button class="topnav-item" data-view="fk-view" data-modul="tender" onclick="openFkView('tender')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>
               Tender
             </button>
@@ -1745,6 +1821,100 @@ tbody tr{animation:rowIn .3s ease both}
       <div class="pagination" id="pagination-tender"></div>
     </div>
   </section>
+
+  <!-- ============ FILE KONTRAK — INPUT DATA ============ -->
+  <section id="view-fk-input" class="view">
+    <div class="page-head">
+      <div>
+        <h2>File Kontrak — Input Data <span class="count-badge" id="fk-input-count">0</span></h2>
+        <p class="fk-hint">Unggah file kontrak untuk setiap pekerjaan. Urutan daftar mengikuti tabel Monitoring.</p>
+      </div>
+    </div>
+    <div class="toolbar" style="justify-content:flex-start">
+      <div class="filter-field" style="flex:0 0 auto">
+        <label>Jenis Pekerjaan</label>
+        <div class="fk-seg" id="fk-input-seg">
+          <button type="button" class="fk-seg-btn" data-modul="kr" onclick="openFkInput('kr')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 5c0 1.66 4 3 9 3s9-1.34 9-3-4-3-9-3-9 1.34-9 3"/></svg>
+            SPBJ / Kontrak Rinci
+          </button>
+          <button type="button" class="fk-seg-btn" data-modul="pl" onclick="openFkInput('pl')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>
+            Pengadaan Langsung
+          </button>
+          <button type="button" class="fk-seg-btn" data-modul="tender" onclick="openFkInput('tender')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>
+            Tender
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="col-no">No.</th>
+              <th class="col-nama-freeze">Nama Pekerjaan</th>
+              <th class="fk-col-bidang">Bidang Pelaksana</th>
+              <th style="text-align:center">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="fk-input-body"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="fk-input-pagination"></div>
+    </div>
+  </section>
+
+  <!-- ============ FILE KONTRAK — LIHAT DATA ============ -->
+  <section id="view-fk-view" class="view">
+    <div class="page-head">
+      <div>
+        <h2>File Kontrak — Lihat Data <span class="count-badge" id="fk-view-count">0</span></h2>
+        <p class="fk-hint">Unduh atau hapus file kontrak yang telah diunggah. Urutan daftar mengikuti tabel Monitoring.</p>
+      </div>
+    </div>
+    <div class="toolbar" style="justify-content:flex-start">
+      <div class="filter-field" style="flex:0 0 auto">
+        <label>Jenis Pekerjaan</label>
+        <div class="fk-seg" id="fk-view-seg">
+          <button type="button" class="fk-seg-btn" data-modul="kr" onclick="openFkView('kr')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 5c0 1.66 4 3 9 3s9-1.34 9-3-4-3-9-3-9 1.34-9 3"/></svg>
+            SPBJ / Kontrak Rinci
+          </button>
+          <button type="button" class="fk-seg-btn" data-modul="pl" onclick="openFkView('pl')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>
+            Pengadaan Langsung
+          </button>
+          <button type="button" class="fk-seg-btn" data-modul="tender" onclick="openFkView('tender')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>
+            Tender
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="col-no">No.</th>
+              <th class="col-nama-freeze">Nama Pekerjaan</th>
+              <th class="fk-col-bidang">Bidang Pelaksana</th>
+              <th style="text-align:center">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="fk-view-body"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="fk-view-pagination"></div>
+    </div>
+  </section>
+
+  <!-- Input file tersembunyi untuk unggah File Kontrak -->
+  <input type="file" id="fk-file-input" style="display:none"
+    accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.zip,.rar">
 
 </main>
   </div><!-- /.app-main -->
@@ -2470,6 +2640,7 @@ function playLoginAnim(role, done){
 }
 function enterApp(role, view){
   currentRole=role;
+  if(typeof fkResetCache==='function') fkResetCache();
   applyRole(role);
   document.getElementById('login-screen').style.display='none';
   document.getElementById('topbar-user').style.display='flex';
@@ -2478,7 +2649,7 @@ function enterApp(role, view){
   startIdleTimer();   // mulai hitung mundur auto-logout 5 menit idle
 }
 function applyRole(role){
-  document.querySelectorAll('.topnav-link[data-role], .topnav-item[data-role], .btn[data-role]').forEach(l=>{
+  document.querySelectorAll('.topnav-link[data-role], .topnav-item[data-role], .topnav-subhead[data-role], .topnav-sep[data-role], .btn[data-role]').forEach(l=>{
     const roles=l.getAttribute('data-role').split(' ');
     const ok=roles.includes(role);
     if(l.classList.contains('role-keepspace')){
@@ -2664,6 +2835,8 @@ function showView(name, loaderMsg, noLoader){
         if(name==='list') renderTable();
         if(name==='list-pl') renderTablePl();
         if(name==='list-tender') renderTableTender();
+        if(name==='fk-input') renderFkInput();
+        if(name==='fk-view') renderFkView();
     }catch(err){ console.error('showView error:', err); }
     if(!noLoader){ const wait=Math.max(0, 460-(Date.now()-t0)); setTimeout(hideLoader, wait); }
   };
@@ -5671,6 +5844,307 @@ renderDashboard();
 renderTable();
 renderTablePl();
 renderTableTender();
+/* ============================================================
+   ====================  FILE KONTRAK  ========================
+   Lampiran file kontrak per pekerjaan (KR / PL / Tender).
+   Satu file per pekerjaan; unggah ulang akan mengganti file lama.
+   Disimpan di Supabase tabel `file_kontrak` (base64).
+   Jalankan skrip: file_kontrak_supabase_up3masohi.sql
+   ============================================================ */
+const FK_TABLE = 'file_kontrak';
+const FK_MAX_MB = 15;   // batas ukuran file (aman untuk payload Supabase)
+
+/* Konfigurasi tiap modul: daftar (urut = Monitoring), nama & bidang pekerjaan */
+const FK_MODULES = {
+  kr: {
+    label:'SPBJ / Kontrak Rinci',
+    list: ()=> [...records].sort(makeWorkComparator(
+      r=>contractYear(r), r=>!!String(r.no_spbj||'').trim(), r=>r.tgl_terbit_kr)),
+    nama: r=> r.nama_pekerjaan_kr || '',
+    bidang: r=> r.bidang_pelaksana || ''
+  },
+  pl: {
+    label:'Pengadaan Langsung',
+    list: ()=> [...records_pl].sort(makeWorkComparator(
+      r=>yearOf(r, r.tgl_awal_kontrak), r=>!!String(r.no_kontrak||'').trim(), r=>r.tgl_awal_kontrak)),
+    nama: r=> r.nama_pekerjaan || '',
+    bidang: r=> r.bidang_pelaksana || ''
+  },
+  tender: {
+    label:'Tender',
+    list: ()=> [...records_tender].sort(makeWorkComparator(
+      r=>yearOf(r, r.tgl_awal_kontrak),
+      r=>{ if(String(r.no_kontrak||'').trim()) return true;
+           const L=Array.isArray(r.penyedia_layers)?r.penyedia_layers:[];
+           return L.some(x=>String((x&&x.no_kontrak)||'').trim()); },
+      r=>r.tgl_awal_kontrak)),
+    nama: r=> r.nama_pekerjaan || '',
+    bidang: r=> r.bidang_pelaksana || ''
+  }
+};
+
+/* State tampilan */
+const fkState = { input:{modul:'kr',page:1}, view:{modul:'kr',page:1} };
+/* Cache metadata file per modul: { [record_id]: {id,nama_file,ukuran,mime} } */
+const fkMetaMap = { kr:null, pl:null, tender:null };
+function fkResetCache(){ fkMetaMap.kr=null; fkMetaMap.pl=null; fkMetaMap.tender=null; }
+
+/* ---- Store Supabase (tabel file_kontrak) ---- */
+const FileKontrak = {
+  async listMeta(modul){
+    if(!(USE_SUPABASE && db)) return {};
+    const {data,error}=await db.from(FK_TABLE)
+      .select('id,record_id,nama_file,ukuran,mime').eq('modul',modul);
+    if(error) throw error;
+    const map={}; (data||[]).forEach(r=>{ map[String(r.record_id)]=r; });
+    return map;
+  },
+  async getOne(modul, recordId){
+    const {data,error}=await db.from(FK_TABLE)
+      .select('nama_file,mime,data_base64')
+      .eq('modul',modul).eq('record_id',String(recordId)).limit(1);
+    if(error) throw error; return (data&&data[0])||null;
+  },
+  async upsert(row){
+    const {error}=await db.from(FK_TABLE).upsert(row,{onConflict:'modul,record_id'});
+    if(error) throw error;
+  },
+  async remove(modul, recordId){
+    const {error}=await db.from(FK_TABLE).delete()
+      .eq('modul',modul).eq('record_id',String(recordId));
+    if(error) throw error;
+  }
+};
+
+/* ---- Util file <-> base64 ---- */
+function fkFileToBase64(file){
+  return new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onload=()=>{ const s=String(r.result||''); const i=s.indexOf(','); res(i>=0?s.slice(i+1):s); };
+    r.onerror=()=>rej(r.error||new Error('Gagal membaca file'));
+    r.readAsDataURL(file);
+  });
+}
+function fkB64ToBlob(b64, mime){
+  const bin=atob(b64||''); const len=bin.length; const bytes=new Uint8Array(len);
+  for(let i=0;i<len;i++) bytes[i]=bin.charCodeAt(i);
+  return new Blob([bytes],{type:mime||'application/octet-stream'});
+}
+function fkFmtSize(n){
+  n=Number(n)||0;
+  if(n<1024) return n+' B';
+  if(n<1048576) return (n/1024).toFixed(1)+' KB';
+  return (n/1048576).toFixed(2)+' MB';
+}
+function fkEsc(s){ return String(s==null?'':s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+/* ---- Navigasi ---- */
+function openFkInput(modul){
+  if(!FK_MODULES[modul]) modul='kr';
+  if(fkState.input.modul!==modul) fkState.input.page=1;
+  fkState.input.modul=modul; showView('fk-input');
+}
+function openFkView(modul){
+  if(!FK_MODULES[modul]) modul='kr';
+  if(fkState.view.modul!==modul) fkState.view.page=1;
+  fkState.view.modul=modul; showView('fk-view');
+}
+/* Tandai item nav + segmented control yang aktif sesuai modul terpilih */
+function fkMarkActive(mode, modul){
+  document.querySelectorAll('.topnav-item[data-view="fk-'+mode+'"]').forEach(b=>{
+    b.classList.toggle('active', b.dataset.modul===modul);
+  });
+  const seg=document.getElementById('fk-'+mode+'-seg');
+  if(seg) seg.querySelectorAll('.fk-seg-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.modul===modul);
+  });
+}
+
+/* Muat metadata modul (dengan cache); force=true untuk ambil ulang dari server */
+async function fkEnsureMeta(modul, force){
+  if(!force && fkMetaMap[modul]) return fkMetaMap[modul];
+  try{ fkMetaMap[modul]=await FileKontrak.listMeta(modul); }
+  catch(err){ console.error(err); toast('Gagal memuat data file: '+errMsg(err),'warn'); fkMetaMap[modul]=fkMetaMap[modul]||{}; }
+  return fkMetaMap[modul];
+}
+
+/* ---- Render tabel Input Data ---- */
+async function renderFkInput(){
+  const modul=fkState.input.modul;
+  fkMarkActive('input', modul);
+  const cfg=FK_MODULES[modul];
+  const tb=document.getElementById('fk-input-body');
+  const pg=document.getElementById('fk-input-pagination');
+  const cEl=document.getElementById('fk-input-count');
+  if(!tb) return;
+  const rows=cfg.list();
+  if(cEl) cEl.textContent=rows.length;
+  const meta=await fkEnsureMeta(modul);
+  if(fkState.input.modul!==modul) return;    // modul berubah saat menunggu
+  fkRenderRows('input', modul, cfg, rows, meta, tb, pg);
+}
+/* ---- Render tabel Lihat Data ---- */
+async function renderFkView(){
+  const modul=fkState.view.modul;
+  fkMarkActive('view', modul);
+  const cfg=FK_MODULES[modul];
+  const tb=document.getElementById('fk-view-body');
+  const pg=document.getElementById('fk-view-pagination');
+  const cEl=document.getElementById('fk-view-count');
+  if(!tb) return;
+  const rows=cfg.list();
+  if(cEl) cEl.textContent=rows.length;
+  const meta=await fkEnsureMeta(modul);
+  if(fkState.view.modul!==modul) return;
+  fkRenderRows('view', modul, cfg, rows, meta, tb, pg);
+}
+
+function fkEmptyRow(){
+  return `<tr><td colspan="4"><div class="empty">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+    <div>Belum ada pekerjaan pada jenis ini</div>
+  </div></td></tr>`;
+}
+function fkRenderRows(mode, modul, cfg, rows, meta, tb, pg){
+  const total=rows.length;
+  if(total===0){ tb.innerHTML=fkEmptyRow(); if(pg) pg.innerHTML=''; return; }
+  const st=fkState[mode];
+  const totalPages=Math.max(1,Math.ceil(total/PAGE_SIZE));
+  if(st.page>totalPages) st.page=totalPages;
+  if(st.page<1) st.page=1;
+  const start=(st.page-1)*PAGE_SIZE;
+  const pageRows=rows.slice(start,start+PAGE_SIZE);
+
+  tb.innerHTML=pageRows.map((r,i)=>{
+    const rid=String(r.id);
+    const nama=cfg.nama(r)||'—';
+    const bidang=cfg.bidang(r)||'—';
+    const f=meta[rid];
+    const aksi = (mode==='input') ? fkInputActionHtml(modul, rid, f) : fkViewActionHtml(modul, rid, f);
+    return `<tr>
+      <td class="col-no">${start+i+1}</td>
+      <td class="wrap-cell col-nama-freeze fk-namecell">${fkEsc(nama)}</td>
+      <td class="fk-col-bidang wrap-cell">${fkEsc(bidang)}</td>
+      <td><div class="fk-actions">${aksi}</div></td>
+    </tr>`;
+  }).join('');
+  revealTbody(tb);
+  fkRenderPagination(mode, st.page, totalPages, pg);
+}
+
+/* Aksi kolom Input Data: Unggah / Ganti File + chip nama file */
+function fkInputActionHtml(modul, rid, f){
+  const allow=canInput();
+  const chip = f ? `<span class="fk-file-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="fk-file-name">${fkEsc(f.nama_file)}</span><span class="fk-file-size">${fkFmtSize(f.ukuran)}</span></span>` : '';
+  const upIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v13"/></svg>';
+  if(f){
+    const btn=allow?`<button class="fk-act fk-act-replace" onclick="fkUpload('${modul}','${rid}',this)">${upIcon}Ganti File</button>`:'';
+    return chip+btn;
+  }
+  return allow
+    ? `<button class="fk-act fk-act-up" onclick="fkUpload('${modul}','${rid}',this)">${upIcon}Unggah File</button>`
+    : `<span class="fk-none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>Belum ada file</span>`;
+}
+/* Aksi kolom Lihat Data: Unduh + Hapus */
+function fkViewActionHtml(modul, rid, f){
+  if(!f){
+    return `<span class="fk-none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>Belum ada file</span>`;
+  }
+  const chip=`<span class="fk-file-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="fk-file-name">${fkEsc(f.nama_file)}</span><span class="fk-file-size">${fkFmtSize(f.ukuran)}</span></span>`;
+  const dl=`<button class="fk-act fk-act-dl" onclick="fkDownload('${modul}','${rid}',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>Unduh</button>`;
+  const del=canInput()?`<button class="fk-act fk-act-del" onclick="fkDelete('${modul}','${rid}',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Hapus</button>`:'';
+  return chip+dl+del;
+}
+
+function fkRenderPagination(mode, page, totalPages, el){
+  if(!el) return;
+  if(totalPages<=1){ el.innerHTML=''; return; }
+  const fn = mode==='input' ? 'fkGoToInputPage' : 'fkGoToViewPage';
+  const want=new Set([1,totalPages,page-1,page,page+1]);
+  const list=[...want].filter(p=>p>=1&&p<=totalPages).sort((a,b)=>a-b);
+  let html=`<button class="pg-btn" ${page===1?'disabled':''} onclick="${fn}(${page-1})">‹ Sebelumnya</button>`;
+  let prev=0;
+  list.forEach(p=>{
+    if(p-prev>1) html+=`<span class="pg-ellipsis">…</span>`;
+    html+=`<button class="pg-btn pg-num ${p===page?'active':''}" onclick="${fn}(${p})">${p}</button>`;
+    prev=p;
+  });
+  html+=`<button class="pg-btn" ${page===totalPages?'disabled':''} onclick="${fn}(${page+1})">Berikutnya ›</button>`;
+  el.innerHTML=html;
+}
+function fkGoToInputPage(p){ fkState.input.page=p; withQuickLoader('Memuat', ()=>{ renderFkInput(); document.querySelector('#view-fk-input .panel')?.scrollIntoView({behavior:'smooth',block:'nearest'}); }, 480); }
+function fkGoToViewPage(p){ fkState.view.page=p; withQuickLoader('Memuat', ()=>{ renderFkView(); document.querySelector('#view-fk-view .panel')?.scrollIntoView({behavior:'smooth',block:'nearest'}); }, 480); }
+
+/* ---- Unggah file ---- */
+let fkUploadCtx=null;
+function fkUpload(modul, recordId, btn){
+  if(!requireInput()) return;
+  const inp=document.getElementById('fk-file-input'); if(!inp) return;
+  fkUploadCtx={modul, recordId, btn}; inp.value=''; inp.click();
+}
+async function fkHandleFileSelected(file){
+  const ctx=fkUploadCtx; fkUploadCtx=null;
+  if(!ctx || !file) return;
+  const {modul, recordId, btn}=ctx;
+  if(file.size > FK_MAX_MB*1048576){ toast(`Ukuran file melebihi batas ${FK_MAX_MB} MB`,'warn'); return; }
+  if(btn) btn.classList.add('is-busy');
+  try{
+    const b64=await fkFileToBase64(file);
+    const rec=FK_MODULES[modul].list().find(r=>String(r.id)===String(recordId));
+    const row={
+      modul, record_id:String(recordId),
+      nama_pekerjaan: rec?(FK_MODULES[modul].nama(rec)||null):null,
+      bidang_pelaksana: rec?(FK_MODULES[modul].bidang(rec)||null):null,
+      nama_file:file.name, mime:file.type||'application/octet-stream',
+      ukuran:file.size, data_base64:b64
+    };
+    await withActionLoader('Mengunggah', async()=>{ await FileKontrak.upsert(row); await fkEnsureMeta(modul, true); });
+    toast('File berhasil diunggah','ok');
+    renderFkInput();
+  }catch(err){
+    console.error(err);
+    toast('Gagal mengunggah file: '+errMsg(err),'err');
+    if(btn) btn.classList.remove('is-busy');
+  }
+}
+
+/* ---- Unduh file (TANPA notifikasi apa pun, sesuai permintaan) ---- */
+async function fkDownload(modul, recordId, btn){
+  if(btn) btn.classList.add('is-busy');
+  try{
+    const row=await FileKontrak.getOne(modul, recordId);
+    if(!row || !row.data_base64) return;               // diam-diam
+    const blob=fkB64ToBlob(row.data_base64, row.mime);
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=row.nama_file||'file-kontrak';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 2000);
+  }catch(err){ console.error('fkDownload:', err); }     // tanpa notifikasi
+  finally{ if(btn) btn.classList.remove('is-busy'); }
+}
+
+/* ---- Hapus file ---- */
+function fkDelete(modul, recordId, btn){
+  if(!requireInput()) return;
+  openConfirm({
+    icon:'del', title:'Hapus File', text:'Apakah anda yakin ingin menghapus file kontrak ini?',
+    onYes:async()=>{
+      try{
+        await withActionLoader('Menghapus', async()=>{ await FileKontrak.remove(modul, recordId); await fkEnsureMeta(modul, true); });
+      }catch(err){ console.error(err); toast('Gagal menghapus file: '+errMsg(err),'warn'); return; }
+      toast('File berhasil dihapus','ok');
+      renderFkView();
+    }
+  });
+}
+
+/* Pasang listener input file (sekali) */
+(function(){
+  const inp=document.getElementById('fk-file-input');
+  if(inp) inp.addEventListener('change', e=>{ const f=e.target.files&&e.target.files[0]; fkHandleFileSelected(f); });
+})();
+
 refreshData();      // muat data SPBJ/Kontrak Rinci
 refreshDataPl();    // muat data Pengadaan Langsung
 refreshDataTender();// muat data Tender
