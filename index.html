@@ -1329,13 +1329,13 @@ tbody tr{animation:rowIn .3s ease both}
 /* Ambil Nomor — hasil */
 .pn-result{margin-top:16px;border-color:#cfe6e3;background:linear-gradient(180deg,#ffffff,#f4fbfa)}
 /* Checklist dokumen Tender */
-.pn-doc-bar{display:flex;align-items:center;gap:12px;margin-top:20px;padding-top:16px;border-top:1px solid var(--line);flex-wrap:wrap}
+.pn-doc-bar{display:flex;align-items:center;justify-content:flex-end;gap:12px;margin-top:20px;padding-top:16px;border-top:1px solid var(--line);flex-wrap:wrap}
 .pn-doc-toggle{position:relative}
 .pn-doc-toggle svg:first-child{width:16px;height:16px}
 .pn-doc-caret{width:15px!important;height:15px!important;transition:transform .3s cubic-bezier(.16,1,.3,1)}
 .pn-doc-toggle.open .pn-doc-caret{transform:rotate(180deg)}
 .pn-doc-count{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:20px;background:rgba(255,255,255,.28);font-size:11px;font-weight:800}
-.pn-doc-save{margin-left:auto}
+.pn-doc-save{margin-left:0}
 /* Kolaps daftar dokumen */
 .pn-doc-collapse{height:0;overflow:hidden;opacity:0;transform:translateY(-4px);transition:height .34s cubic-bezier(.16,1,.3,1),opacity .28s ease,transform .34s cubic-bezier(.16,1,.3,1)}
 .pn-doc-collapse.open{opacity:1;transform:none}
@@ -6868,7 +6868,7 @@ function pnAmbilTenderFormHtml(){
         '<span class="pn-doc-count" id="pn-doc-count" style="display:none">0</span>' +
         '<svg class="pn-doc-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>' +
       '</button>' +
-      '<button class="btn btn-green pn-doc-save" type="button" onclick="pnAmbilTender()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Simpan</button>' +
+      '<button class="btn btn-green pn-doc-save" type="button" onclick="pnAmbilTender()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Ambil Nomor</button>' +
     '</div>' +
   '</div>' +
   '<div id="pn-ambil-result"></div>';
@@ -6944,7 +6944,7 @@ function pnAmbilPlFormHtml(){
         '<span class="pn-doc-count" id="pn-doc-count" style="display:none">0</span>' +
         '<svg class="pn-doc-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>' +
       '</button>' +
-      '<button class="btn btn-green pn-doc-save" type="button" onclick="pnAmbilPl()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Simpan</button>' +
+      '<button class="btn btn-green pn-doc-save" type="button" onclick="pnAmbilPl()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Ambil Nomor</button>' +
     '</div>' +
   '</div>' +
   '<div id="pn-ambil-result"></div>';
