@@ -1356,6 +1356,23 @@ tbody tr{animation:rowIn .3s ease both}
 .pn-check-item input:checked~.pn-check-label{color:var(--ink)}
 .pn-check-label{font-family:'Plus Jakarta Sans';font-size:12px;font-weight:600;color:#4b5b60;line-height:1.35}
 .pn-check-label em{font-style:normal;font-weight:700;color:var(--teal-dark);font-size:11px}
+/* ===== Modal pemilihan Dokumen (Ambil Nomor) ===== */
+.pn-doc-modal{max-width:680px;text-align:left}
+.pn-doc-modal-head{display:flex;align-items:center;gap:12px;padding:22px 26px 4px}
+.pn-doc-modal-title{display:flex;align-items:center;gap:10px;font-family:'Plus Jakarta Sans';font-size:17px;font-weight:800;letter-spacing:-.2px;color:var(--teal-dark)}
+.pn-doc-modal-title svg{width:20px;height:20px;color:var(--teal);flex:0 0 auto}
+.pn-doc-modal-head .pn-check-all{margin-left:auto}
+.pn-doc-modal-sub{padding:0 26px;margin:4px 0 0;color:var(--muted);font-size:12px;font-weight:500}
+.pn-doc-modal-body{padding:16px 26px 4px;max-height:56vh;overflow:auto}
+.pn-doc-modal-foot{display:flex;justify-content:flex-end;gap:10px;padding:16px 26px 22px}
+.pn-doc-modal-foot .btn{flex:0 0 auto;padding:10px 22px;border-radius:11px;font-size:13px;font-weight:700;letter-spacing:.3px;transition:transform .14s ease,box-shadow .18s ease,filter .18s ease}
+.pn-doc-modal-foot .btn:hover{transform:translateY(-1px);filter:brightness(1.03)}
+.pn-doc-modal-foot .btn:active{transform:translateY(0) scale(.99)}
+.pn-doc-modal-foot .btn svg{width:16px;height:16px}
+/* Checkbox berada di sebelah kanan nama dokumen */
+#pn-doc-modal-list .pn-check-item{align-items:center}
+#pn-doc-modal-list .pn-check-label{order:0;flex:1 1 auto}
+#pn-doc-modal-list .pn-check-box{order:1;margin-top:0}
 /* Overlay progres unggah file */
 .pn-upload-overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(7,63,69,.42);backdrop-filter:blur(3px);align-items:center;justify-content:center}
 .pn-upload-overlay.show{display:flex}
@@ -2226,6 +2243,33 @@ tbody tr{animation:rowIn .3s ease both}
   </div>
 </div>
 
+<!-- ====== MODAL PEMILIHAN DOKUMEN (Ambil Nomor) ====== -->
+<div class="overlay" id="pn-doc-overlay">
+  <div class="modal pn-doc-modal">
+    <div class="pn-doc-modal-head">
+      <div class="pn-doc-modal-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/></svg>
+        <span>Pilih Dokumen</span>
+      </div>
+      <button type="button" class="pn-check-all" onclick="pnDocToggleAll()">Pilih Semua</button>
+    </div>
+    <p class="pn-doc-modal-sub" id="pn-doc-modal-sub">Centang jenis dokumen yang akan diterbitkan nomornya</p>
+    <div class="pn-doc-modal-body">
+      <div class="pn-check-grid" id="pn-doc-modal-list"></div>
+    </div>
+    <div class="pn-doc-modal-foot">
+      <button type="button" class="btn btn-red" onclick="pnDocModalCancel()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        Batal
+      </button>
+      <button type="button" class="btn btn-green" onclick="pnDocModalSave()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+        Simpan
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- ====== MODAL GANTI KATA SANDI ====== -->
 <div class="overlay" id="cp-overlay">
   <div class="modal">
@@ -2462,12 +2506,13 @@ const FIELDS = [
   {key:'tgl_berakhir_kr',  label:'Tgl. Berakhir Kontrak Rinci',     input:'f_tgl_berakhir_kr',  type:'date', req:true},
   {key:'nilai_kontrak_kr', label:'Nilai Kontrak Rinci (+ PPN)',     input:'f_nilai_kontrak_kr', type:'num', req:true},
   {key:'nama_penyedia',    label:'Nama Penyedia',                   input:'f_nama_penyedia',    type:'text', req:true},
+  {key:'alamat_penyedia',  label:'Alamat Penyedia',                 input:'f_alamat_penyedia',  type:'text', ph:'Alamat perusahaan penyedia'},
   {key:'status',           label:'Status',                          input:'f_status',           type:'select', options:['On Progress','Selesai'], req:true},
 ];
 const GROUPS = [
   {title:'Informasi Umum', cols:4, keys:['tahun','no_prk','no_anggaran','tgl_anggaran','jenis_anggaran','no_eproc','no_pr','no_po','bidang_pelaksana','status']},
   {title:'Kesepakatan Harga Satuan (KHS)', cols:3, keys:['no_kontrak_khs','nama_pekerjaan_khs','lokasi_pekerjaan_khs','tgl_terbit_khs','tgl_berakhir_khs','nilai_kontrak_khs','pelaksana_khs']},
-  {title:'SPBJ / Kontrak Rinci', cols:3, keys:['no_spbj','nama_pekerjaan_kr','lokasi_pekerjaan_kr','tgl_terbit_kr','tgl_berakhir_kr','nilai_kontrak_kr','nama_penyedia']},
+  {title:'SPBJ / Kontrak Rinci', cols:3, keys:['no_spbj','nama_pekerjaan_kr','lokasi_pekerjaan_kr','tgl_terbit_kr','tgl_berakhir_kr','nilai_kontrak_kr','nama_penyedia','alamat_penyedia']},
 ];
 /* Snapshot tata letak awal KR (untuk "Kembalikan ke Default" pada Penyesuaian) */
 const KR_SCHEMA_BASE = { fields: JSON.parse(JSON.stringify(FIELDS)), groups: JSON.parse(JSON.stringify(GROUPS)) };
@@ -6796,9 +6841,11 @@ function renderPnAmbil(){
   const cont=document.getElementById('pn-ambil-content'); if(!cont) return;
   if(modul==='pl' && (PN_DOCS.pl && PN_DOCS.pl.length)){
     cont.innerHTML = pnAmbilPlFormHtml();
+    pnBuildDocModal(modul);
     if(pnState.lastResult && pnState.lastResult.modul===modul) pnRenderResult(pnState.lastResult);
   }else if(modul==='tender' && (PN_DOCS.tender && PN_DOCS.tender.length)){
     cont.innerHTML = pnAmbilTenderFormHtml();
+    pnBuildDocModal(modul);
     if(pnState.lastResult && pnState.lastResult.modul===modul) pnRenderResult(pnState.lastResult);
   }else{
     cont.innerHTML = pnPendingHtml(PN_MODULES[modul] ? PN_MODULES[modul].label : modul);
@@ -6807,12 +6854,6 @@ function renderPnAmbil(){
 function pnAmbilTenderFormHtml(){
   const bidangOpts = PN_BIDANG_OPTS.map(o=>'<option>'+o+'</option>').join('');
   const klasOpts   = PN_KLAS_OPTS.map(o=>'<option value="'+o.kode+'">'+o.label+'</option>').join('');
-  const checklist = (PN_DOCS.tender||[]).map((d,i)=>
-    '<label class="pn-check-item">' +
-      '<input type="checkbox" class="pn-doc-check" value="'+fkEsc(d.key)+'" onchange="pnDocUpdateCount()">' +
-      '<span class="pn-check-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></span>' +
-      '<span class="pn-check-label">'+(i+1)+'. '+fkEsc(d.label)+' <em>('+fkEsc(d.code)+')</em></span>' +
-    '</label>').join('');
   return '' +
   '<div class="form-card">' +
     '<div class="form-section-title">'+KR_SECTION_ICON+'Data Tender</div>' +
@@ -6822,47 +6863,58 @@ function pnAmbilTenderFormHtml(){
       '<div class="field"><label>Kode Klasifikasi <span class="req">*</span></label><select id="pn-tn-klas"><option value="">— Pilih —</option>'+klasOpts+'</select></div>' +
     '</div>' +
     '<div class="pn-doc-bar">' +
-      '<button type="button" class="btn btn-teal pn-doc-toggle" id="pn-doc-toggle" aria-expanded="false" onclick="pnDocToggle()">' +
+      '<button type="button" class="btn btn-teal pn-doc-toggle" id="pn-doc-toggle" onclick="pnDocModalOpen()">' +
         PN_DOC_ICON+'<span>Dokumen</span>' +
         '<span class="pn-doc-count" id="pn-doc-count" style="display:none">0</span>' +
         '<svg class="pn-doc-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>' +
       '</button>' +
       '<button class="btn btn-green pn-doc-save" type="button" onclick="pnAmbilTender()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Simpan</button>' +
     '</div>' +
-    '<div class="pn-doc-collapse" id="pn-doc-collapse">' +
-      '<div class="pn-doc-collapse-inner">' +
-        '<div class="pn-check-head"><small>Centang dokumen yang akan diterbitkan nomornya</small>' +
-          '<button type="button" class="pn-check-all" onclick="pnDocToggleAll()">Pilih Semua</button>' +
-        '</div>' +
-        '<div class="pn-check-grid">'+checklist+'</div>' +
-      '</div>' +
-    '</div>' +
   '</div>' +
   '<div id="pn-ambil-result"></div>';
 }
-/* Buka/tutup daftar dokumen dengan transisi tinggi + fade (dipakai PL & Tender) */
-function pnDocToggle(force){
-  const wrap=document.getElementById('pn-doc-collapse');
-  const btn=document.getElementById('pn-doc-toggle');
-  if(!wrap||!btn) return;
-  const willOpen = (typeof force==='boolean') ? force : !wrap.classList.contains('open');
-  if(willOpen){
-    wrap.classList.add('open');
-    wrap.style.height='auto';
-    const h=wrap.scrollHeight;
-    wrap.style.height='0px';
-    void wrap.offsetHeight;               // paksa reflow agar transisi berjalan
-    wrap.style.height=h+'px';
-    wrap.addEventListener('transitionend', function te(e){ if(e.propertyName==='height'){ wrap.style.height='auto'; wrap.removeEventListener('transitionend', te); } });
-  }else{
-    wrap.style.height=wrap.scrollHeight+'px';
-    void wrap.offsetHeight;
-    wrap.style.height='0px';
-    wrap.classList.remove('open');
-  }
-  btn.classList.toggle('open', willOpen);
-  btn.setAttribute('aria-expanded', willOpen?'true':'false');
+/* Bangun daftar dokumen ke dalam modal (checkbox di sebelah kanan nama) */
+function pnDocChecklistHtml(modul){
+  return (PN_DOCS[modul]||[]).map((d,i)=>{
+    const nama = (modul==='pl') ? (PN_JENIS[d.key]||d.label) : d.label;
+    return '<label class="pn-check-item">' +
+      '<input type="checkbox" class="pn-doc-check" value="'+fkEsc(d.key)+'" onchange="pnDocUpdateCount()">' +
+      '<span class="pn-check-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></span>' +
+      '<span class="pn-check-label">'+(i+1)+'. '+fkEsc(nama)+' <em>('+fkEsc(d.code)+')</em></span>' +
+    '</label>';
+  }).join('');
 }
+function pnBuildDocModal(modul){
+  const list=document.getElementById('pn-doc-modal-list'); if(!list) return;
+  list.innerHTML = pnDocChecklistHtml(modul);
+  const sub=document.getElementById('pn-doc-modal-sub');
+  if(sub) sub.textContent = (modul==='pl')
+    ? 'Centang jenis dokumen yang akan diterbitkan nomornya'
+    : 'Centang dokumen yang akan diterbitkan nomornya';
+  const allBtn=document.querySelector('#pn-doc-overlay .pn-check-all'); if(allBtn) allBtn.textContent='Pilih Semua';
+  pnDocUpdateCount();
+}
+/* Snapshot centang saat modal dibuka (untuk fungsi Batal) */
+let pnDocSnapshot=null;
+function pnDocModalOpen(){
+  pnDocSnapshot=[...document.querySelectorAll('.pn-doc-check')].map(b=>b.checked);
+  const ov=document.getElementById('pn-doc-overlay'); if(ov) ov.classList.add('show');
+}
+/* Simpan: cukup tutup modal (tanpa notifikasi/popup tambahan) */
+function pnDocModalSave(){
+  pnDocUpdateCount();
+  const ov=document.getElementById('pn-doc-overlay'); if(ov) ov.classList.remove('show');
+}
+/* Batal: kembalikan centang ke kondisi saat modal dibuka, lalu tutup (tanpa notifikasi) */
+function pnDocModalCancel(){
+  const boxes=[...document.querySelectorAll('.pn-doc-check')];
+  if(pnDocSnapshot) boxes.forEach((b,i)=>{ if(i<pnDocSnapshot.length) b.checked=pnDocSnapshot[i]; });
+  const allOn=boxes.length>0 && boxes.every(b=>b.checked);
+  const allBtn=document.querySelector('#pn-doc-overlay .pn-check-all'); if(allBtn) allBtn.textContent=allOn?'Kosongkan':'Pilih Semua';
+  pnDocUpdateCount();
+  const ov=document.getElementById('pn-doc-overlay'); if(ov) ov.classList.remove('show');
+}
+function pnDocModalHide(){ const ov=document.getElementById('pn-doc-overlay'); if(ov) ov.classList.remove('show'); }
 function pnDocUpdateCount(){
   const n=document.querySelectorAll('.pn-doc-check:checked').length;
   const c=document.getElementById('pn-doc-count');
@@ -6878,12 +6930,6 @@ function pnDocToggleAll(){
 function pnAmbilPlFormHtml(){
   const bidangOpts = PN_BIDANG_OPTS.map(o=>'<option>'+o+'</option>').join('');
   const klasOpts   = PN_KLAS_OPTS.map(o=>'<option value="'+o.kode+'">'+o.label+'</option>').join('');
-  const checklist = (PN_DOCS.pl||[]).map((d,i)=>
-    '<label class="pn-check-item">' +
-      '<input type="checkbox" class="pn-doc-check" value="'+fkEsc(d.key)+'" onchange="pnDocUpdateCount()">' +
-      '<span class="pn-check-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></span>' +
-      '<span class="pn-check-label">'+(i+1)+'. '+fkEsc(PN_JENIS[d.key]||d.label)+' <em>('+fkEsc(d.code)+')</em></span>' +
-    '</label>').join('');
   return '' +
   '<div class="form-card">' +
     '<div class="form-section-title">'+KR_SECTION_ICON+'Data Pengadaan Langsung</div>' +
@@ -6893,20 +6939,12 @@ function pnAmbilPlFormHtml(){
       '<div class="field"><label>Kode Klasifikasi <span class="req">*</span></label><select id="pn-pl-klas"><option value="">— Pilih —</option>'+klasOpts+'</select></div>' +
     '</div>' +
     '<div class="pn-doc-bar">' +
-      '<button type="button" class="btn btn-teal pn-doc-toggle" id="pn-doc-toggle" aria-expanded="false" onclick="pnDocToggle()">' +
+      '<button type="button" class="btn btn-teal pn-doc-toggle" id="pn-doc-toggle" onclick="pnDocModalOpen()">' +
         PN_DOC_ICON+'<span>Dokumen</span>' +
         '<span class="pn-doc-count" id="pn-doc-count" style="display:none">0</span>' +
         '<svg class="pn-doc-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>' +
       '</button>' +
       '<button class="btn btn-green pn-doc-save" type="button" onclick="pnAmbilPl()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Simpan</button>' +
-    '</div>' +
-    '<div class="pn-doc-collapse" id="pn-doc-collapse">' +
-      '<div class="pn-doc-collapse-inner">' +
-        '<div class="pn-check-head"><small>Centang jenis dokumen yang akan diterbitkan nomornya</small>' +
-          '<button type="button" class="pn-check-all" onclick="pnDocToggleAll()">Pilih Semua</button>' +
-        '</div>' +
-        '<div class="pn-check-grid">'+checklist+'</div>' +
-      '</div>' +
     '</div>' +
   '</div>' +
   '<div id="pn-ambil-result"></div>';
@@ -6967,7 +7005,7 @@ async function pnAmbilPl(){
   document.querySelectorAll('.pn-doc-check').forEach(b=>b.checked=false);
   const allBtn=document.querySelector('.pn-check-all'); if(allBtn) allBtn.textContent='Pilih Semua';
   pnDocUpdateCount();
-  pnDocToggle(false);
+  pnDocModalHide();
   pnRenderResult(pnState.lastResult);
 }
 /* ---- Ambil nomor (Tender) — hanya dokumen yang dicentang ---- */
@@ -7018,7 +7056,7 @@ async function pnAmbilTender(){
   document.querySelectorAll('.pn-doc-check').forEach(b=>b.checked=false);
   const allBtn=document.querySelector('.pn-check-all'); if(allBtn) allBtn.textContent='Pilih Semua';
   pnDocUpdateCount();
-  pnDocToggle(false);
+  pnDocModalHide();
   pnRenderResult(pnState.lastResult);
 }
 function pnRenderResult(res){
@@ -7358,6 +7396,7 @@ resetLoginForm();
 document.getElementById('confirm-overlay').addEventListener('click',e=>{ if(e.target.id==='confirm-overlay')closeConfirm(); });
 document.getElementById('detail-overlay').addEventListener('click',e=>{ if(e.target.id==='detail-overlay')closeDetail(); });
 document.getElementById('cp-overlay').addEventListener('click',e=>{ if(e.target.id==='cp-overlay')closeChangePass(); });
+document.getElementById('pn-doc-overlay').addEventListener('click',e=>{ if(e.target.id==='pn-doc-overlay')pnDocModalCancel(); });
 document.getElementById('pn-preview-overlay').addEventListener('click',e=>{ if(e.target.id==='pn-preview-overlay')closePnPreview(); });
 </script>
 </body>
