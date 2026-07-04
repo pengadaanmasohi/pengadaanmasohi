@@ -1185,11 +1185,24 @@ tbody tr{animation:rowIn .3s ease both}
 @media (prefers-reduced-motion:reduce){tbody tr{animation:none}}
 
 /* ================= FILE KONTRAK ================= */
-.topnav-subhead{padding:9px 12px 4px;font-size:9.5px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted)}
-.topnav-sep{height:1px;margin:6px 8px;background:linear-gradient(90deg,transparent,var(--line),transparent)}
+/* Submenu bertingkat di dalam dropdown File Kontrak (Input Data / Lihat Data) */
+.topnav-sub{display:flex;flex-direction:column}
+.topnav-subtrigger{appearance:none;width:100%;background:none;border:none;text-align:left;padding:10px 12px;font-family:'Plus Jakarta Sans';font-size:12px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:11px;border-radius:10px;cursor:pointer;transition:background .16s ease,color .16s ease}
+.topnav-subtrigger>svg:first-child{width:16px;height:16px;color:var(--teal);flex:0 0 auto;transition:transform .16s ease}
+.topnav-subtrigger .sub-label{flex:1 1 auto}
+.topnav-subtrigger .caret2{width:13px;height:13px;flex:0 0 auto;opacity:.8;transition:transform .22s ease}
+.topnav-subtrigger:hover{background:var(--teal-soft);color:var(--teal-dark)}
+.topnav-subtrigger:hover>svg:first-child{transform:scale(1.1)}
+.topnav-sub.open>.topnav-subtrigger{background:var(--teal-soft);color:var(--teal-dark)}
+.topnav-sub.open>.topnav-subtrigger .caret2{transform:rotate(180deg)}
+.topnav-subdrop{display:none;flex-direction:column;gap:2px;padding:3px 0 4px 10px;margin:2px 0 2px 6px;border-left:2px solid var(--teal-soft);animation:dropIn .18s cubic-bezier(.16,1,.3,1)}
+.topnav-sub.open>.topnav-subdrop{display:flex}
+.topnav-subdrop .topnav-item{font-weight:600}
 @media (max-width:1024px){
-  .topnav-subhead{color:rgba(255,255,255,.55)}
-  .topnav-sep{background:rgba(255,255,255,.14)}
+  .topnav-subtrigger{color:rgba(255,255,255,.9)}
+  .topnav-subtrigger>svg:first-child{color:rgba(255,255,255,.65)}
+  .topnav-subtrigger:hover,.topnav-sub.open>.topnav-subtrigger{background:rgba(255,255,255,.1);color:#fff}
+  .topnav-subdrop{border-left-color:rgba(255,255,255,.18)}
 }
 /* Segmented switcher (Jenis Pekerjaan) */
 .fk-seg{display:inline-flex;gap:4px;padding:5px;background:linear-gradient(180deg,#ffffff,#f3f8f9);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);flex-wrap:wrap}
@@ -1199,8 +1212,8 @@ tbody tr{animation:rowIn .3s ease both}
 .fk-seg-btn.active{background:linear-gradient(135deg,var(--teal),var(--cyan));color:#fff;box-shadow:0 5px 14px rgba(14,124,134,.32)}
 .fk-seg-btn.active:hover{color:#fff}
 /* Kolom & sel File Kontrak */
-.fk-col-bidang{width:230px}
-.fk-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.fk-col-bidang{width:230px;text-align:center}
+.fk-actions{display:flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap}
 .fk-act{border:none;border-radius:10px;padding:8px 14px;font-family:'Plus Jakarta Sans';font-size:11px;font-weight:700;letter-spacing:.2px;display:inline-flex;align-items:center;gap:7px;cursor:pointer;color:#fff;transition:transform .16s cubic-bezier(.16,1,.3,1),box-shadow .22s ease,filter .2s ease;white-space:nowrap;box-shadow:0 3px 9px rgba(16,40,50,.14)}
 .fk-act svg{width:14px;height:14px;flex:0 0 auto}
 .fk-act:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(16,40,50,.22)}
@@ -1316,33 +1329,50 @@ tbody tr{animation:rowIn .3s ease both}
             <svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
           </button>
           <div class="topnav-dropdown">
-            <div class="topnav-subhead" data-role="admin user">Input Data</div>
-            <button class="topnav-item" data-view="fk-input" data-modul="kr" data-role="admin user" onclick="openFkInput('kr')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 5c0 1.66 4 3 9 3s9-1.34 9-3-4-3-9-3-9 1.34-9 3"/></svg>
-              SPBJ / Kontrak Rinci
-            </button>
-            <button class="topnav-item" data-view="fk-input" data-modul="pl" data-role="admin user" onclick="openFkInput('pl')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>
-              Pengadaan Langsung
-            </button>
-            <button class="topnav-item" data-view="fk-input" data-modul="tender" data-role="admin user" onclick="openFkInput('tender')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>
-              Tender
-            </button>
-            <div class="topnav-sep" data-role="admin user"></div>
-            <div class="topnav-subhead">Lihat Data</div>
-            <button class="topnav-item" data-view="fk-view" data-modul="kr" onclick="openFkView('kr')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 5c0 1.66 4 3 9 3s9-1.34 9-3-4-3-9-3-9 1.34-9 3"/></svg>
-              SPBJ / Kontrak Rinci
-            </button>
-            <button class="topnav-item" data-view="fk-view" data-modul="pl" onclick="openFkView('pl')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>
-              Pengadaan Langsung
-            </button>
-            <button class="topnav-item" data-view="fk-view" data-modul="tender" onclick="openFkView('tender')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>
-              Tender
-            </button>
+            <!-- Input Data -> submenu jenis pekerjaan -->
+            <div class="topnav-sub" data-sub="fk-input" data-role="admin user">
+              <button class="topnav-subtrigger" type="button" onclick="toggleFkSub(event,'fk-input')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                <span class="sub-label">Input Kontrak</span>
+                <svg class="caret2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <div class="topnav-subdrop">
+                <button class="topnav-item" data-view="fk-input" data-modul="kr" onclick="openFkInput('kr')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 5c0 1.66 4 3 9 3s9-1.34 9-3-4-3-9-3-9 1.34-9 3"/></svg>
+                  SPBJ / Kontrak Rinci
+                </button>
+                <button class="topnav-item" data-view="fk-input" data-modul="pl" onclick="openFkInput('pl')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>
+                  Pengadaan Langsung
+                </button>
+                <button class="topnav-item" data-view="fk-input" data-modul="tender" onclick="openFkInput('tender')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>
+                  Tender
+                </button>
+              </div>
+            </div>
+            <!-- Lihat Data -> submenu jenis pekerjaan -->
+            <div class="topnav-sub" data-sub="fk-view">
+              <button class="topnav-subtrigger" type="button" onclick="toggleFkSub(event,'fk-view')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                <span class="sub-label">Lihat Kontrak</span>
+                <svg class="caret2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <div class="topnav-subdrop">
+                <button class="topnav-item" data-view="fk-view" data-modul="kr" onclick="openFkView('kr')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 5c0 1.66 4 3 9 3s9-1.34 9-3-4-3-9-3-9 1.34-9 3"/></svg>
+                  SPBJ / Kontrak Rinci
+                </button>
+                <button class="topnav-item" data-view="fk-view" data-modul="pl" onclick="openFkView('pl')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>
+                  Pengadaan Langsung
+                </button>
+                <button class="topnav-item" data-view="fk-view" data-modul="tender" onclick="openFkView('tender')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>
+                  Tender
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </nav>
@@ -1826,27 +1856,8 @@ tbody tr{animation:rowIn .3s ease both}
   <section id="view-fk-input" class="view">
     <div class="page-head">
       <div>
-        <h2>File Kontrak — Input Data <span class="count-badge" id="fk-input-count">0</span></h2>
+        <h2>File Kontrak — Input Kontrak <span class="count-badge" id="fk-input-count">0</span></h2>
         <p class="fk-hint">Unggah file kontrak untuk setiap pekerjaan. Urutan daftar mengikuti tabel Monitoring.</p>
-      </div>
-    </div>
-    <div class="toolbar" style="justify-content:flex-start">
-      <div class="filter-field" style="flex:0 0 auto">
-        <label>Jenis Pekerjaan</label>
-        <div class="fk-seg" id="fk-input-seg">
-          <button type="button" class="fk-seg-btn" data-modul="kr" onclick="openFkInput('kr')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 5c0 1.66 4 3 9 3s9-1.34 9-3-4-3-9-3-9 1.34-9 3"/></svg>
-            SPBJ / Kontrak Rinci
-          </button>
-          <button type="button" class="fk-seg-btn" data-modul="pl" onclick="openFkInput('pl')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>
-            Pengadaan Langsung
-          </button>
-          <button type="button" class="fk-seg-btn" data-modul="tender" onclick="openFkInput('tender')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>
-            Tender
-          </button>
-        </div>
       </div>
     </div>
     <div class="panel">
@@ -1856,6 +1867,9 @@ tbody tr{animation:rowIn .3s ease both}
             <tr>
               <th class="col-no">No.</th>
               <th class="col-nama-freeze">Nama Pekerjaan</th>
+              <th class="col-kontrak" style="text-align:center" id="fk-input-th-nok">No. Kontrak</th>
+              <th class="col-date">Tgl. Terbit Kontrak</th>
+              <th class="col-nilai" style="text-align:center">Nilai Pekerjaan</th>
               <th class="fk-col-bidang">Bidang Pelaksana</th>
               <th style="text-align:center">Aksi</th>
             </tr>
@@ -1871,27 +1885,8 @@ tbody tr{animation:rowIn .3s ease both}
   <section id="view-fk-view" class="view">
     <div class="page-head">
       <div>
-        <h2>File Kontrak — Lihat Data <span class="count-badge" id="fk-view-count">0</span></h2>
+        <h2>File Kontrak — Lihat Kontrak <span class="count-badge" id="fk-view-count">0</span></h2>
         <p class="fk-hint">Unduh atau hapus file kontrak yang telah diunggah. Urutan daftar mengikuti tabel Monitoring.</p>
-      </div>
-    </div>
-    <div class="toolbar" style="justify-content:flex-start">
-      <div class="filter-field" style="flex:0 0 auto">
-        <label>Jenis Pekerjaan</label>
-        <div class="fk-seg" id="fk-view-seg">
-          <button type="button" class="fk-seg-btn" data-modul="kr" onclick="openFkView('kr')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 5c0 1.66 4 3 9 3s9-1.34 9-3-4-3-9-3-9 1.34-9 3"/></svg>
-            SPBJ / Kontrak Rinci
-          </button>
-          <button type="button" class="fk-seg-btn" data-modul="pl" onclick="openFkView('pl')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>
-            Pengadaan Langsung
-          </button>
-          <button type="button" class="fk-seg-btn" data-modul="tender" onclick="openFkView('tender')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>
-            Tender
-          </button>
-        </div>
       </div>
     </div>
     <div class="panel">
@@ -1901,6 +1896,9 @@ tbody tr{animation:rowIn .3s ease both}
             <tr>
               <th class="col-no">No.</th>
               <th class="col-nama-freeze">Nama Pekerjaan</th>
+              <th class="col-kontrak" style="text-align:center" id="fk-view-th-nok">No. Kontrak</th>
+              <th class="col-date">Tgl. Terbit Kontrak</th>
+              <th class="col-nilai" style="text-align:center">Nilai Pekerjaan</th>
               <th class="fk-col-bidang">Bidang Pelaksana</th>
               <th style="text-align:center">Aksi</th>
             </tr>
@@ -2649,7 +2647,7 @@ function enterApp(role, view){
   startIdleTimer();   // mulai hitung mundur auto-logout 5 menit idle
 }
 function applyRole(role){
-  document.querySelectorAll('.topnav-link[data-role], .topnav-item[data-role], .topnav-subhead[data-role], .topnav-sep[data-role], .btn[data-role]').forEach(l=>{
+  document.querySelectorAll('.topnav-link[data-role], .topnav-item[data-role], .topnav-sub[data-role], .btn[data-role]').forEach(l=>{
     const roles=l.getAttribute('data-role').split(' ');
     const ok=roles.includes(role);
     if(l.classList.contains('role-keepspace')){
@@ -2829,6 +2827,7 @@ function showView(name, loaderMsg, noLoader){
           grp.classList.toggle('has-active', has);
           grp.classList.remove('open');
         });
+        if(typeof closeFkSubs==='function') closeFkSubs();
         window.scrollTo({top:0,left:0,behavior:'smooth'});
         resetAllFilters();   // #5: filter di-reset ke default setiap pindah halaman
         if(name==='dashboard') renderDashboard();
@@ -2850,9 +2849,19 @@ function toggleTopGroup(ev,g){
     if(el.dataset.group===g) el.classList.toggle('open');
     else el.classList.remove('open');
   });
+  closeFkSubs();   // setiap kali membuka/menutup grup, submenu bertingkat direset
 }
+/* Buka/tutup submenu bertingkat (Input Data / Lihat Data) di dalam File Kontrak */
+function toggleFkSub(ev, sub){
+  if(ev) ev.stopPropagation();
+  document.querySelectorAll('.topnav-sub').forEach(el=>{
+    if(el.dataset.sub===sub) el.classList.toggle('open');
+    else el.classList.remove('open');
+  });
+}
+function closeFkSubs(){ document.querySelectorAll('.topnav-sub.open').forEach(el=>el.classList.remove('open')); }
 document.addEventListener('click',e=>{
-  if(!e.target.closest('.topnav-group')) document.querySelectorAll('.topnav-group.open').forEach(el=>el.classList.remove('open'));
+  if(!e.target.closest('.topnav-group')){ document.querySelectorAll('.topnav-group.open').forEach(el=>el.classList.remove('open')); closeFkSubs(); }
 });
 /* ============ MENU MOBILE ============ */
 function toggleMobileNav(){
@@ -5854,32 +5863,54 @@ renderTableTender();
 const FK_TABLE = 'file_kontrak';
 const FK_MAX_MB = 15;   // batas ukuran file (aman untuk payload Supabase)
 
-/* Konfigurasi tiap modul: daftar (urut = Monitoring), nama & bidang pekerjaan */
+/* Hanya pekerjaan berstatus "Terkontrak" atau "Selesai" yang masuk daftar File Kontrak.
+   (On Progress / Gagal-Batal / tahapan proses lain dikecualikan.) */
+function fkStatusOk(modul, r){
+  const s=String((modul==='kr' ? r.status : r.tahapan)||'').trim();
+  return s==='Terkontrak' || s==='Selesai';
+}
+
+/* Konfigurasi tiap modul: daftar (urut = Monitoring), kolom & aksesornya */
 const FK_MODULES = {
   kr: {
     label:'SPBJ / Kontrak Rinci',
-    list: ()=> [...records].sort(makeWorkComparator(
+    noKontrakLabel:'No. SPBJ / Kontrak Rinci',
+    stacked:false,
+    list: ()=> [...records].filter(r=>fkStatusOk('kr',r)).sort(makeWorkComparator(
       r=>contractYear(r), r=>!!String(r.no_spbj||'').trim(), r=>r.tgl_terbit_kr)),
     nama: r=> r.nama_pekerjaan_kr || '',
-    bidang: r=> r.bidang_pelaksana || ''
+    bidang: r=> r.bidang_pelaksana || '',
+    noKontrak: r=> fkEsc(r.no_spbj||'—'),
+    tgl: r=> r.tgl_terbit_kr,
+    nilai: r=> rupiah(r.nilai_kontrak_kr)||'—'
   },
   pl: {
     label:'Pengadaan Langsung',
-    list: ()=> [...records_pl].sort(makeWorkComparator(
+    noKontrakLabel:'No. Kontrak',
+    stacked:false,
+    list: ()=> [...records_pl].filter(r=>fkStatusOk('pl',r)).sort(makeWorkComparator(
       r=>yearOf(r, r.tgl_awal_kontrak), r=>!!String(r.no_kontrak||'').trim(), r=>r.tgl_awal_kontrak)),
     nama: r=> r.nama_pekerjaan || '',
-    bidang: r=> r.bidang_pelaksana || ''
+    bidang: r=> r.bidang_pelaksana || '',
+    noKontrak: r=> fkEsc(r.no_kontrak||'—'),
+    tgl: r=> r.tgl_awal_kontrak,
+    nilai: r=> rupiah(r.kontrak_total_dengan_ppn)||'—'
   },
   tender: {
     label:'Tender',
-    list: ()=> [...records_tender].sort(makeWorkComparator(
+    noKontrakLabel:'No. Kontrak',
+    stacked:true,
+    list: ()=> [...records_tender].filter(r=>fkStatusOk('tender',r)).sort(makeWorkComparator(
       r=>yearOf(r, r.tgl_awal_kontrak),
       r=>{ if(String(r.no_kontrak||'').trim()) return true;
            const L=Array.isArray(r.penyedia_layers)?r.penyedia_layers:[];
            return L.some(x=>String((x&&x.no_kontrak)||'').trim()); },
       r=>r.tgl_awal_kontrak)),
     nama: r=> r.nama_pekerjaan || '',
-    bidang: r=> r.bidang_pelaksana || ''
+    bidang: r=> r.bidang_pelaksana || '',
+    noKontrak: r=> stackPenyediaHtml(r,'no_kontrak'),
+    tgl: r=> r.tgl_awal_kontrak,
+    nilai: r=> stackPenyediaRupiah(r,'kontrak_total_dengan_ppn')
   }
 };
 
@@ -5973,6 +6004,7 @@ async function renderFkInput(){
   const modul=fkState.input.modul;
   fkMarkActive('input', modul);
   const cfg=FK_MODULES[modul];
+  const thNok=document.getElementById('fk-input-th-nok'); if(thNok) thNok.textContent=cfg.noKontrakLabel;
   const tb=document.getElementById('fk-input-body');
   const pg=document.getElementById('fk-input-pagination');
   const cEl=document.getElementById('fk-input-count');
@@ -5988,6 +6020,7 @@ async function renderFkView(){
   const modul=fkState.view.modul;
   fkMarkActive('view', modul);
   const cfg=FK_MODULES[modul];
+  const thNok=document.getElementById('fk-view-th-nok'); if(thNok) thNok.textContent=cfg.noKontrakLabel;
   const tb=document.getElementById('fk-view-body');
   const pg=document.getElementById('fk-view-pagination');
   const cEl=document.getElementById('fk-view-count');
@@ -6000,9 +6033,9 @@ async function renderFkView(){
 }
 
 function fkEmptyRow(){
-  return `<tr><td colspan="4"><div class="empty">
+  return `<tr><td colspan="7"><div class="empty">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
-    <div>Belum ada pekerjaan pada jenis ini</div>
+    <div>Belum ada pekerjaan berstatus Terkontrak / Selesai pada jenis ini</div>
   </div></td></tr>`;
 }
 function fkRenderRows(mode, modul, cfg, rows, meta, tb, pg){
@@ -6014,16 +6047,25 @@ function fkRenderRows(mode, modul, cfg, rows, meta, tb, pg){
   if(st.page<1) st.page=1;
   const start=(st.page-1)*PAGE_SIZE;
   const pageRows=rows.slice(start,start+PAGE_SIZE);
+  const stacked=!!cfg.stacked;
+  const kontrakCls = stacked ? 'wrap-penyedia col-kontrak' : 'col-kontrak cell-center';
+  const nilaiCls   = stacked ? 'wrap-penyedia col-nilai'   : 'col-nilai';
 
   tb.innerHTML=pageRows.map((r,i)=>{
     const rid=String(r.id);
     const nama=cfg.nama(r)||'—';
     const bidang=cfg.bidang(r)||'—';
+    const noKontrak=cfg.noKontrak(r)||'—';
+    const tgl=fmtDate(cfg.tgl(r))||'—';
+    const nilai=cfg.nilai(r)||'—';
     const f=meta[rid];
     const aksi = (mode==='input') ? fkInputActionHtml(modul, rid, f) : fkViewActionHtml(modul, rid, f);
     return `<tr>
       <td class="col-no">${start+i+1}</td>
       <td class="wrap-cell col-nama-freeze fk-namecell">${fkEsc(nama)}</td>
+      <td class="${kontrakCls}">${noKontrak}</td>
+      <td class="cell-center col-date">${tgl}</td>
+      <td class="${nilaiCls}">${nilai}</td>
       <td class="fk-col-bidang wrap-cell">${fkEsc(bidang)}</td>
       <td><div class="fk-actions">${aksi}</div></td>
     </tr>`;
