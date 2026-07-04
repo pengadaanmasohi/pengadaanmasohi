@@ -1246,13 +1246,18 @@ tbody tr{animation:rowIn .3s ease both}
 .pn-col-nomor{width:300px;min-width:300px;max-width:300px;vertical-align:top;padding-top:0;padding-bottom:0}
 .pn-col-tgl{width:104px;min-width:98px;max-width:112px;vertical-align:top;text-align:center;padding-top:0;padding-bottom:0}
 .pn-col-aksi{width:164px;min-width:154px;max-width:184px;vertical-align:top;padding-top:0;padding-bottom:0}
+/* Header kolom per-nomor tetap rata tengah (vertikal & horizontal) */
+#view-pn-lihat .table-wrap thead th.pn-col-jenis,
+#view-pn-lihat .table-wrap thead th.pn-col-nomor,
+#view-pn-lihat .table-wrap thead th.pn-col-tgl,
+#view-pn-lihat .table-wrap thead th.pn-col-aksi{vertical-align:middle;text-align:center;padding-top:11px;padding-bottom:11px}
 #view-pn-lihat .table-wrap th.col-nama-freeze,#view-pn-lihat .table-wrap td.col-nama-freeze{min-width:240px;max-width:310px}
 /* Nama Pekerjaan & No. — data tunggal diposisikan di tengah tinggi baris */
 #view-pn-lihat .table-wrap td.col-no,#view-pn-lihat .table-wrap td.col-nama-freeze{vertical-align:middle}
 /* Daftar per masing-masing nomor dokumen — SATU BARIS per nomor (tanpa wrap),
    tinggi seragam & ringkas, data di tengah baris. */
 .pn-nomor-list{display:flex;flex-direction:column;gap:0;padding:0}
-.pn-nomor-item{display:flex;align-items:center;justify-content:flex-start;gap:8px;height:29px;min-height:29px;max-height:29px;flex:0 0 29px;padding:0;position:relative;box-sizing:border-box;overflow:hidden}
+.pn-nomor-item{display:flex;align-items:center;justify-content:flex-start;gap:8px;height:35px;min-height:35px;max-height:35px;flex:0 0 35px;padding:0;position:relative;box-sizing:border-box;overflow:hidden}
 /* Garis pemisah elegan antar No. Dokumen */
 .pn-nomor-item:not(:last-child)::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:linear-gradient(90deg,transparent,rgba(14,124,134,.28) 18%,rgba(14,124,134,.28) 82%,transparent)}
 .pn-jenis-item{align-items:center}
