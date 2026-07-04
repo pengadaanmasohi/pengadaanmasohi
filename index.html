@@ -1243,24 +1243,24 @@ tbody tr{animation:rowIn .3s ease both}
 .pn-seg-wrap{display:flex;align-items:flex-end}
 .pn-col-bidang{width:110px;min-width:110px;max-width:120px;text-align:center;white-space:normal;word-break:break-word}
 .pn-col-jenis{width:210px;min-width:200px;max-width:230px;vertical-align:top}
-.pn-col-nomor{min-width:130px;vertical-align:top}
+.pn-col-nomor{width:250px;min-width:240px;max-width:270px;vertical-align:top}
 .pn-col-tgl{width:104px;min-width:98px;max-width:112px;vertical-align:top;text-align:center}
 .pn-col-aksi{width:164px;min-width:154px;max-width:184px;vertical-align:top}
 #view-pn-lihat .table-wrap th.col-nama-freeze,#view-pn-lihat .table-wrap td.col-nama-freeze{min-width:240px;max-width:310px}
 /* Nama Pekerjaan & No. — data tunggal diposisikan di tengah tinggi baris */
 #view-pn-lihat .table-wrap td.col-no,#view-pn-lihat .table-wrap td.col-nama-freeze{vertical-align:middle}
-/* Daftar per masing-masing nomor dokumen — tinggi tiap baris nomor DIBUAT SAMA
-   (seragam seperti baris Evaluasi Penawaran) dan data diposisikan di tengah baris. */
+/* Daftar per masing-masing nomor dokumen — SATU BARIS per nomor (tanpa wrap),
+   tinggi seragam & ringkas, data di tengah baris. */
 .pn-nomor-list{display:flex;flex-direction:column;gap:0;padding:0}
-.pn-nomor-item{display:flex;align-items:center;justify-content:flex-start;gap:8px;height:44px;min-height:44px;max-height:44px;flex:0 0 44px;padding:0;position:relative;box-sizing:border-box;overflow:hidden}
+.pn-nomor-item{display:flex;align-items:center;justify-content:flex-start;gap:8px;height:34px;min-height:34px;max-height:34px;flex:0 0 34px;padding:0;position:relative;box-sizing:border-box;overflow:hidden}
 /* Garis pemisah elegan antar No. Dokumen */
 .pn-nomor-item:not(:last-child)::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:linear-gradient(90deg,transparent,rgba(14,124,134,.28) 18%,rgba(14,124,134,.28) 82%,transparent)}
 .pn-jenis-item{align-items:center}
 .pn-tgl-item{justify-content:center}
 .pn-aksi-item{align-items:center;justify-content:center}
-/* Jenis & No. Dokumen dibatasi 2 baris agar tinggi baris tetap seragam */
-.pn-nomor-jenis{flex:1 1 auto;width:100%;font-family:'Plus Jakarta Sans';font-size:10.5px;font-weight:700;color:var(--teal-dark);line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
-.pn-nomor-val{font-family:'Inter',monospace;font-weight:600;font-size:10.5px;color:var(--ink);line-height:1.25;flex:1 1 auto;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-all}
+/* Jenis & No. Dokumen — satu baris, dipotong halus (…) bila terlalu panjang */
+.pn-nomor-jenis{flex:1 1 auto;width:100%;font-family:'Plus Jakarta Sans';font-size:11px;font-weight:700;color:var(--teal-dark);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pn-nomor-val{font-family:'Inter',monospace;font-weight:600;font-size:11px;color:var(--ink);line-height:1.3;flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pn-tgl-val{font-family:'Inter';font-size:11px;color:var(--ink);white-space:nowrap}
 .pn-copy{appearance:none;border:none;background:none;cursor:pointer;color:var(--muted);padding:2px;border-radius:6px;flex:0 0 auto;transition:background .15s,color .15s}
 .pn-copy:hover{color:var(--teal);background:var(--teal-soft)}
