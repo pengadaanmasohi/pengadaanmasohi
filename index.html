@@ -1242,12 +1242,18 @@ tbody tr{animation:rowIn .3s ease both}
 /* ================= Penetapan Nomor ================= */
 .pn-seg-wrap{display:flex;align-items:flex-end}
 .pn-col-bidang{width:110px;min-width:110px;max-width:120px;text-align:center;white-space:normal;word-break:break-word}
-.pn-col-nomor{min-width:360px}
+.pn-col-jenis{width:170px;min-width:160px;max-width:190px;vertical-align:top}
+.pn-col-nomor{min-width:230px;vertical-align:top}
 #view-pn-lihat .table-wrap th.col-nama-freeze,#view-pn-lihat .table-wrap td.col-nama-freeze{min-width:210px;max-width:280px}
-.pn-nomor-list{display:flex;flex-direction:column;gap:7px;padding:2px 0}
-.pn-nomor-item{display:flex;align-items:flex-start;gap:8px}
-.pn-nomor-jenis{flex:0 0 150px;width:150px;max-width:150px;font-family:'Plus Jakarta Sans';font-size:10px;font-weight:700;color:var(--teal-dark);white-space:normal;word-break:break-word;line-height:1.35;padding-top:1px}
-.pn-nomor-val{font-family:'Inter',monospace;font-weight:600;font-size:11.5px;color:var(--ink);word-break:break-all;line-height:1.5;flex:1 1 auto}
+.pn-nomor-list{display:flex;flex-direction:column;gap:0;padding:2px 0}
+.pn-nomor-item{display:flex;align-items:flex-start;gap:8px;padding:8px 0;position:relative}
+.pn-nomor-item:first-child{padding-top:2px}
+.pn-nomor-item:last-child{padding-bottom:2px}
+/* Garis pemisah elegan antar No. Dokumen */
+.pn-nomor-item:not(:last-child)::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:linear-gradient(90deg,transparent,rgba(14,124,134,.28) 18%,rgba(14,124,134,.28) 82%,transparent)}
+.pn-jenis-item{align-items:center}
+.pn-nomor-jenis{flex:1 1 auto;width:100%;font-family:'Plus Jakarta Sans';font-size:11px;font-weight:700;color:var(--teal-dark);white-space:normal;word-break:break-word;line-height:1.35;padding-top:1px}
+.pn-nomor-val{font-family:'Inter',monospace;font-weight:600;font-size:11px;color:var(--ink);word-break:break-all;line-height:1.5;flex:1 1 auto}
 .pn-copy{appearance:none;border:none;background:none;cursor:pointer;color:var(--muted);padding:2px;border-radius:6px;flex:0 0 auto;transition:background .15s,color .15s}
 .pn-copy:hover{color:var(--teal);background:var(--teal-soft)}
 .pn-copy.pn-copied{color:var(--green)}
@@ -2123,7 +2129,8 @@ tbody tr{animation:rowIn .3s ease both}
               <th class="col-no">No.</th>
               <th class="col-nama-freeze">Nama Pekerjaan</th>
               <th class="pn-col-bidang">Bidang Pelaksana</th>
-              <th class="pn-col-nomor">Nomor Dokumen</th>
+              <th class="pn-col-jenis">Jenis Dokumen</th>
+              <th class="pn-col-nomor">No. Dokumen</th>
               <th class="col-date">Tgl. Terbit</th>
               <th style="text-align:center">Aksi</th>
             </tr>
@@ -2135,9 +2142,9 @@ tbody tr{animation:rowIn .3s ease both}
     </div>
   </section>
 
-  <!-- Input file tersembunyi untuk unggah lampiran Penetapan Nomor -->
+  <!-- Input file tersembunyi untuk unggah lampiran Penetapan Nomor (khusus PDF) -->
   <input type="file" id="pn-file-input" style="display:none"
-    accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.zip,.rar">
+    accept="application/pdf,.pdf">
 
   <!-- Input file tersembunyi untuk unggah File Kontrak -->
   <input type="file" id="fk-file-input" style="display:none"
@@ -6766,6 +6773,7 @@ function renderPnLihat(){
       '<td class="col-no">'+(start+i+1)+'</td>' +
       '<td class="wrap-cell col-nama-freeze">'+fkEsc(nama)+'</td>' +
       '<td class="pn-col-bidang wrap-cell">'+fkEsc(bidang)+'</td>' +
+      '<td class="pn-col-jenis">'+pnJenisCellHtml(r)+'</td>' +
       '<td class="pn-col-nomor">'+pnNomorCellHtml(r)+'</td>' +
       '<td class="cell-center col-date">'+tgl+'</td>' +
       '<td><div class="pn-actions">'+pnActionHtml(r)+'</div></td>' +
@@ -6775,14 +6783,21 @@ function renderPnLihat(){
   pnRenderPagination(st.page, totalPages, pg);
 }
 function pnEmptyRow(){
-  return '<tr><td colspan="6"><div class="empty">'+PN_HASH_ICON+'<div>Belum ada nomor yang ditetapkan</div></div></td></tr>';
+  return '<tr><td colspan="7"><div class="empty">'+PN_HASH_ICON+'<div>Belum ada nomor yang ditetapkan</div></div></td></tr>';
+}
+function pnJenisCellHtml(r){
+  const docs=Array.isArray(r.dokumen)?r.dokumen:[];
+  if(!docs.length) return '—';
+  return '<div class="pn-nomor-list">'+docs.map(d=>
+    '<div class="pn-nomor-item pn-jenis-item">' +
+      '<span class="pn-nomor-jenis">'+fkEsc(PN_JENIS[d.key]||d.label||'')+'</span>' +
+    '</div>').join('')+'</div>';
 }
 function pnNomorCellHtml(r){
   const docs=Array.isArray(r.dokumen)?r.dokumen:[];
   if(!docs.length) return '—';
   return '<div class="pn-nomor-list">'+docs.map(d=>
     '<div class="pn-nomor-item">' +
-      '<span class="pn-nomor-jenis">'+fkEsc(PN_JENIS[d.key]||d.label||'')+'</span>' +
       '<span class="pn-nomor-val">'+fkEsc(d.no)+'</span>' +
       '<button class="pn-copy" title="Salin" onclick="pnCopy(this,\''+fkEsc(d.no)+'\')">'+PN_COPY_ICON+'</button>' +
     '</div>').join('')+'</div>';
@@ -6873,6 +6888,8 @@ async function pnHandleFileSelected(file){
   const ctx=pnUploadCtx; pnUploadCtx=null;
   if(!ctx || !file) return;
   const {id, btn}=ctx;
+  const isPdf = (file.type==='application/pdf') || /\.pdf$/i.test(file.name||'');
+  if(!isPdf){ toast('File harus dalam bentuk PDF','warn'); return; }
   if(file.size > PN_MAX_MB*1048576){ toast('Ukuran file melebihi batas '+PN_MAX_MB+' MB','warn'); return; }
   if(btn) btn.classList.add('is-busy');
   try{
