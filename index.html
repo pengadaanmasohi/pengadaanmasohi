@@ -195,6 +195,15 @@ a{color:inherit}
 .toolbar .toolbar-actions>.btn{margin:0;flex:0 0 auto}
 /* Samakan ukuran tombol Reset & Hapus Semua */
 .toolbar .toolbar-actions>.btn-red,.toolbar .toolbar-actions>.btn-danger{min-width:118px;justify-content:center}
+/* ===== File Kontrak — toolbar: Cari 2× lebar tombol Reset, dan Reset menempel di kanan Cari ===== */
+.toolbar.fk-toolbar .fk-search{flex:0 0 auto}
+.toolbar.fk-toolbar .fk-search input{min-width:236px!important;max-width:236px!important;width:236px!important}
+.toolbar.fk-toolbar .fk-actions-inline{margin-left:0}
+@media(max-width:640px){
+  .toolbar.fk-toolbar .fk-search{flex:1 1 100%}
+  .toolbar.fk-toolbar .fk-search input{min-width:0!important;max-width:none!important;width:100%!important}
+  .toolbar.fk-toolbar .fk-actions-inline{flex:1 1 100%;margin-left:0}
+}
 select,input,textarea{font-family:'Inter';font-size:12px;padding:9px 11px;border:1px solid #cdd9de;border-radius:10px;background:linear-gradient(180deg,#ffffff,#fbfdfe);color:var(--ink);width:100%;transition:border .15s,box-shadow .15s,background .15s;box-shadow:0 1px 2px rgba(16,40,50,.05),inset 0 1px 0 rgba(255,255,255,.6)}
 select:hover,input:hover{border-color:#a7bec5;box-shadow:0 2px 6px rgba(16,40,50,.08),inset 0 1px 0 rgba(255,255,255,.6)}
 select:focus,input:focus,textarea:focus{outline:none;border-color:var(--teal);background:#fff;box-shadow:0 0 0 3px var(--teal-soft),0 3px 10px rgba(14,124,134,.16)}
@@ -2057,7 +2066,7 @@ tbody tr{animation:rowIn .3s ease both}
         </div>
       </div>
     </div>
-    <div class="toolbar">
+    <div class="toolbar fk-toolbar">
       <div class="filter-field">
         <label>Bidang Pelaksana</label>
         <select id="fk-input-bidang" onchange="fkFilterInput()">
@@ -2071,11 +2080,15 @@ tbody tr{animation:rowIn .3s ease both}
           <option>Keselamatan, Kesehatan Kerja, Lingkungan dan Keamanan</option>
         </select>
       </div>
-      <div class="filter-field toolbar-search">
+      <div class="filter-field">
+        <label>Tahun</label>
+        <select id="fk-input-tahun" onchange="fkFilterInput()"><option value="">Semua Tahun</option></select>
+      </div>
+      <div class="filter-field toolbar-search fk-search">
         <label>Cari</label>
         <input id="fk-input-search" type="text" placeholder="Cari Nama Pekerjaan" oninput="fkFilterInput()">
       </div>
-      <div class="toolbar-actions">
+      <div class="toolbar-actions fk-actions-inline">
         <button class="btn btn-red" onclick="fkResetInput()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
           Reset
@@ -2092,7 +2105,6 @@ tbody tr{animation:rowIn .3s ease both}
               <th class="col-kontrak" style="text-align:center" id="fk-input-th-nok">No. Kontrak</th>
               <th class="col-date">Tgl. Terbit Kontrak</th>
               <th class="fk-col-bidang">Bidang Pelaksana</th>
-              <th class="col-nilai" style="text-align:center">Nilai Pekerjaan</th>
               <th style="text-align:center">Aksi</th>
             </tr>
           </thead>
@@ -2118,7 +2130,7 @@ tbody tr{animation:rowIn .3s ease both}
         </div>
       </div>
     </div>
-    <div class="toolbar">
+    <div class="toolbar fk-toolbar">
       <div class="filter-field">
         <label>Bidang Pelaksana</label>
         <select id="fk-view-bidang" onchange="fkFilterView()">
@@ -2132,11 +2144,15 @@ tbody tr{animation:rowIn .3s ease both}
           <option>Keselamatan, Kesehatan Kerja, Lingkungan dan Keamanan</option>
         </select>
       </div>
-      <div class="filter-field toolbar-search">
+      <div class="filter-field">
+        <label>Tahun</label>
+        <select id="fk-view-tahun" onchange="fkFilterView()"><option value="">Semua Tahun</option></select>
+      </div>
+      <div class="filter-field toolbar-search fk-search">
         <label>Cari</label>
         <input id="fk-view-search" type="text" placeholder="Cari Nama Pekerjaan" oninput="fkFilterView()">
       </div>
-      <div class="toolbar-actions">
+      <div class="toolbar-actions fk-actions-inline">
         <button class="btn btn-red" onclick="fkResetView()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
           Reset
@@ -2153,7 +2169,6 @@ tbody tr{animation:rowIn .3s ease both}
               <th class="col-kontrak" style="text-align:center" id="fk-view-th-nok">No. Kontrak</th>
               <th class="col-date">Tgl. Terbit Kontrak</th>
               <th class="fk-col-bidang">Bidang Pelaksana</th>
-              <th class="col-nilai" style="text-align:center">Nilai Pekerjaan</th>
               <th style="text-align:center">Aksi</th>
             </tr>
           </thead>
@@ -2816,7 +2831,7 @@ function makeWorkComparator(getYear, hasKontrak, getDate){
 /* Isi opsi filter Tahun (Dashboard + Monitoring) dengan rentang tetap 2024–2034, pertahankan pilihan */
 function fillYearFilters(){
   const years=Array.from({length:11},(_,i)=>String(2024+i)); // 2024..2034
-  ['filter-tahun','dash-filter-tahun','filter-pl-tahun','filter-tender-tahun'].forEach(id=>{
+  ['filter-tahun','dash-filter-tahun','filter-pl-tahun','filter-tender-tahun','fk-input-tahun','fk-view-tahun'].forEach(id=>{
     const sel=document.getElementById(id); if(!sel) return;
     const cur=sel.value;
     sel.innerHTML='<option value="">Semua Tahun</option>'+years.map(y=>`<option>${y}</option>`).join('');
@@ -6272,6 +6287,7 @@ const FK_MODULES = {
     bidang: r=> r.bidang_pelaksana || '',
     noKontrak: r=> fkEsc(r.no_spbj||'—'),
     tgl: r=> r.tgl_terbit_kr,
+    year: r=> contractYear(r),
     nilai: r=> rupiah(r.nilai_kontrak_kr)||'—'
   },
   pl: {
@@ -6284,6 +6300,7 @@ const FK_MODULES = {
     bidang: r=> r.bidang_pelaksana || '',
     noKontrak: r=> fkEsc(r.no_kontrak||'—'),
     tgl: r=> r.tgl_awal_kontrak,
+    year: r=> yearOf(r, r.tgl_awal_kontrak),
     nilai: r=> rupiah(r.kontrak_total_dengan_ppn)||'—'
   },
   tender: {
@@ -6300,6 +6317,7 @@ const FK_MODULES = {
     bidang: r=> r.bidang_pelaksana || '',
     noKontrak: r=> stackPenyediaHtml(r,'no_kontrak'),
     tgl: r=> r.tgl_awal_kontrak,
+    year: r=> yearOf(r, r.tgl_awal_kontrak),
     nilai: r=> stackPenyediaRupiah(r,'kontrak_total_dengan_ppn')
   }
 };
@@ -6402,16 +6420,19 @@ function openFkView(modul){
 /* ---- Filter (Bidang Pelaksana) & Cari (Nama Pekerjaan) ---- */
 function fkApplyFilters(mode, cfg, rows){
   const fb=document.getElementById('fk-'+mode+'-bidang')?.value||'';
+  const ft=document.getElementById('fk-'+mode+'-tahun')?.value||'';
   const fs=(document.getElementById('fk-'+mode+'-search')?.value||'').toLowerCase().trim();
-  if(!fb && !fs) return rows;
+  if(!fb && !ft && !fs) return rows;
   return rows.filter(r=>{
     if(fb && String(cfg.bidang(r)||'')!==fb) return false;
+    if(ft && String((cfg.year?cfg.year(r):'')||'')!==ft) return false;
     if(fs && !String(cfg.nama(r)||'').toLowerCase().includes(fs)) return false;
     return true;
   });
 }
 function fkClearFilters(mode){
   const b=document.getElementById('fk-'+mode+'-bidang'); if(b) b.value='';
+  const t=document.getElementById('fk-'+mode+'-tahun'); if(t) t.value='';
   const s=document.getElementById('fk-'+mode+'-search'); if(s) s.value='';
 }
 function fkFilterInput(){ fkState.input.page=1; renderFkInput(); }
@@ -6473,7 +6494,7 @@ async function renderFkView(){
 }
 
 function fkEmptyRow(){
-  return `<tr><td colspan="7"><div class="empty">
+  return `<tr><td colspan="6"><div class="empty">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
     <div>Data tidak tersedia</div>
   </div></td></tr>`;
@@ -6489,7 +6510,6 @@ function fkRenderRows(mode, modul, cfg, rows, meta, tb, pg){
   const pageRows=rows.slice(start,start+PAGE_SIZE);
   const stacked=!!cfg.stacked;
   const kontrakCls = stacked ? 'wrap-penyedia col-kontrak' : 'col-kontrak cell-center';
-  const nilaiCls   = stacked ? 'wrap-penyedia col-nilai'   : 'col-nilai';
 
   tb.innerHTML=pageRows.map((r,i)=>{
     const rid=String(r.id);
@@ -6497,7 +6517,6 @@ function fkRenderRows(mode, modul, cfg, rows, meta, tb, pg){
     const bidang=cfg.bidang(r)||'—';
     const noKontrak=cfg.noKontrak(r)||'—';
     const tgl=fmtDate(cfg.tgl(r))||'—';
-    const nilai=cfg.nilai(r)||'—';
     const f=meta[rid];
     const aksi = (mode==='input') ? fkInputActionHtml(modul, rid, f) : fkViewActionHtml(modul, rid, f);
     return `<tr>
@@ -6506,7 +6525,6 @@ function fkRenderRows(mode, modul, cfg, rows, meta, tb, pg){
       <td class="${kontrakCls}">${noKontrak}</td>
       <td class="cell-center col-date">${tgl}</td>
       <td class="fk-col-bidang wrap-cell">${fkEsc(bidang)}</td>
-      <td class="${nilaiCls}">${nilai}</td>
       <td><div class="fk-actions">${aksi}</div></td>
     </tr>`;
   }).join('');
@@ -7340,7 +7358,7 @@ function pnDelete(id, key, btn){
   const isLast=docs.length<=1;
   openConfirm({
     icon:'del', title:'Hapus Nomor',
-    text:'Menghapus nomor '+(jenis?('“'+jenis+'” '):'')+'ini akan mengembalikan nomornya agar dapat dipakai lagi.'+(isLast?' Ini adalah dokumen terakhir, sehingga seluruh baris akan dihapus.':'')+' Lanjutkan?',
+    text:'Apakah anda yakin ingin menghapus nomor dokumen?',
     onYes:async()=>{
       try{
         if(isLast){
