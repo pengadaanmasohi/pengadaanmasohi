@@ -1282,6 +1282,20 @@ tbody tr{animation:rowIn .3s ease both}
 #view-pn-lihat .table-wrap th.col-nama-freeze,#view-pn-lihat .table-wrap td.col-nama-freeze{min-width:210px;max-width:280px}
 /* Nama Pekerjaan & No. — data tunggal diposisikan di tengah tinggi baris */
 #view-pn-lihat .table-wrap td.col-no,#view-pn-lihat .table-wrap td.col-nama-freeze{vertical-align:middle}
+/* ---- Lihat Nomor TENDER: kunci ukuran tabel & sesuaikan kolom ---- */
+/* Tabel dikunci (fixed) agar lebar kolom tidak berubah-ubah */
+#view-pn-lihat.pn-modul-tender .table-wrap table{table-layout:fixed;width:1208px;min-width:1208px}
+/* Nama Pekerjaan: rata kiri, vertikal tengah, teks membungkus */
+#view-pn-lihat.pn-modul-tender .table-wrap th.col-nama-freeze,
+#view-pn-lihat.pn-modul-tender .table-wrap td.col-nama-freeze{
+  text-align:left;vertical-align:middle;white-space:normal;
+  word-break:break-word;overflow-wrap:break-word;
+  width:260px;min-width:260px;max-width:260px}
+/* Jenis Dokumen: lebar mengikuti nama dokumen terpanjang (tidak membungkus) */
+#view-pn-lihat.pn-modul-tender .table-wrap th.pn-col-jenis,
+#view-pn-lihat.pn-modul-tender .table-wrap td.pn-col-jenis{
+  width:360px;min-width:360px;max-width:360px}
+#view-pn-lihat.pn-modul-tender .pn-nomor-jenis{white-space:nowrap}
 /* Pertegas border vertikal antar kolom pada tabel Lihat Nomor */
 #view-pn-lihat .table-wrap table{border-collapse:collapse}
 #view-pn-lihat .table-wrap th,#view-pn-lihat .table-wrap td{border-left:1.5px solid #b7c9cf;border-right:1.5px solid #b7c9cf}
@@ -7224,6 +7238,8 @@ function pnLihatRows(){
 function renderPnLihat(){
   const modul=pnState.lihat.modul;
   pnMarkActive('lihat', modul);
+  const sec=document.getElementById('view-pn-lihat');
+  if(sec){ sec.classList.toggle('pn-modul-tender', modul==='tender'); sec.classList.toggle('pn-modul-pl', modul==='pl'); }
   const tb=document.getElementById('pn-lihat-body');
   const pg=document.getElementById('pn-lihat-pagination');
   const cEl=document.getElementById('pn-lihat-count');
