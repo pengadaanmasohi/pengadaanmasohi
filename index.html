@@ -1561,7 +1561,7 @@ tbody tr{animation:rowIn .3s ease both}
 /* ================== PRATINJAU & CETAK DOKUMEN (ELEGAN) ================== */
 #fkl-print-root{display:none}
 /* Wadah pratinjau di dalam modal */
-.pn-preview-body.fkl-preview-body{background:#d9e2e6;padding:24px;display:block}
+.pn-preview-body.fkl-preview-body{background:#d9e2e6;padding:24px;display:block;overflow:auto;-webkit-overflow-scrolling:touch;align-items:flex-start}
 .fkl-doc-scroll{max-width:820px;margin:0 auto}
 .fkl-preview-body .fkl-doc{background:#fff;box-shadow:0 18px 50px rgba(20,50,60,.22);border-radius:6px}
 /* Dokumen */
@@ -1623,12 +1623,17 @@ tbody tr{animation:rowIn .3s ease both}
 .fkl-doc-foot .ttd .sub{font-size:10px;color:#7c8a8f;margin-top:2px}
 /* ===== Print ===== */
 @media print{
-  body *{visibility:hidden !important}
-  #fkl-print-root,#fkl-print-root *{visibility:visible !important}
-  #fkl-print-root{display:block !important;position:absolute;inset:0;margin:0;padding:0;width:100%;background:#fff}
-  #fkl-print-root .fkl-doc{box-shadow:none;border-radius:0;padding:4mm 6mm}
-  .fkl-chk thead th{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  .fkl-sec-h .rn,.fkl-doc-band,.fkl-doc .hasil,.fkl-chk .pill,.fkl-doc-logo img{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  html,body{background:#fff !important;margin:0 !important;padding:0 !important}
+  /* Sembunyikan seluruh aplikasi & overlay, tampilkan hanya wadah cetak */
+  body>*{display:none !important}
+  body>#fkl-print-root{display:block !important;visibility:visible !important;position:static !important;margin:0 !important;padding:0 !important;width:auto !important;background:#fff !important}
+  #fkl-print-root *{visibility:visible !important}
+  #fkl-print-root .fkl-doc{box-shadow:none !important;border-radius:0 !important;overflow:visible !important;padding:0 !important}
+  #fkl-print-root .fkl-doc-scroll{max-width:none !important;margin:0 !important}
+  .fkl-chk{break-inside:auto}
+  .fkl-chk tr{break-inside:avoid}
+  .fkl-doc-foot{break-inside:avoid}
+  .fkl-chk thead th,.fkl-sec-h .rn,.fkl-doc-band,.fkl-doc .hasil,.fkl-chk .pill,.fkl-doc-logo img,.fkl-chk tbody tr:nth-child(even) td,.fkl-doc-org .l1,.fkl-doc-org .l2{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important}
   @page{size:A4;margin:14mm 14mm}
 }
 </style>
@@ -8204,9 +8209,18 @@ function fklOpenPreview(){
 function fklPrint(){
   const root=document.getElementById('fkl-print-root'); if(!root) return;
   root.innerHTML=fklBuildDocHtml();
-  const done=()=>{ root.innerHTML=''; window.removeEventListener('afterprint',done); };
-  window.addEventListener('afterprint',done);
-  setTimeout(()=>{ window.print(); }, 80);
+  // Pindahkan wadah cetak menjadi anak langsung <body> agar tidak ikut disembunyikan saat print
+  const origParent=root.parentNode, origNext=root.nextSibling;
+  document.body.appendChild(root);
+  const restore=()=>{
+    if(origParent){ origParent.insertBefore(root, origNext); }
+    root.innerHTML='';
+    window.removeEventListener('afterprint',restore);
+  };
+  window.addEventListener('afterprint',restore);
+  // Jaring pengaman bila afterprint tidak terpicu
+  setTimeout(()=>{ try{ window.print(); }catch(e){} }, 120);
+  setTimeout(()=>{ if(root.parentNode===document.body) restore(); }, 3000);
 }
 
 refreshData();      // muat data SPBJ/Kontrak Rinci
