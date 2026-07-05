@@ -196,6 +196,8 @@ a{color:inherit}
 /* Penetapan Nomor: kolom Cari dipindah ke kanan & diperbesar 2x (158px → 316px) */
 .toolbar .toolbar-search.pn-search-right{margin-left:auto}
 .toolbar #pn-lihat-search{min-width:316px;max-width:316px}
+/* Toolbar tanpa kotak putih (hanya menyisakan field Cari) */
+.toolbar.pn-toolbar-bare{background:none;border:none;box-shadow:none;padding:0;margin-bottom:16px}
 /* Samakan ukuran tombol Reset & Hapus Semua */
 .toolbar .toolbar-actions>.btn-red,.toolbar .toolbar-actions>.btn-danger{min-width:118px;justify-content:center}
 /* ===== File Kontrak — toolbar: Cari 2× lebar tombol Reset, dan Reset menempel di kanan Cari ===== */
@@ -2216,9 +2218,8 @@ tbody tr{animation:rowIn .3s ease both}
         </div>
       </div>
     </div>
-    <div class="toolbar">
+    <div class="toolbar pn-toolbar-bare">
       <div class="filter-field toolbar-search pn-search-right">
-        <label>Cari</label>
         <input id="pn-lihat-search" type="text" placeholder="Cari Nama Pekerjaan" oninput="pnFilterLihat()">
       </div>
     </div>
