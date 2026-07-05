@@ -232,7 +232,7 @@ select:disabled,input:disabled,textarea:disabled,input[readonly]{background:line
 /* ---------- Table ---------- */
 .table-wrap{overflow:auto;max-height:calc(100vh - 250px);min-height:300px;border-radius:12px;border:1px solid #cfe0e2;box-shadow:inset 0 0 0 1px rgba(255,255,255,.5)}
 table{border-collapse:collapse;width:100%;min-width:980px}
-th,td{padding:11px 14px;text-align:left;font-size:11px;border:1px solid #dce6e9;white-space:nowrap}
+th,td{padding:2px 4px;text-align:left;font-size:11px;border:1px solid #dce6e9;white-space:nowrap}
 th{background:linear-gradient(180deg,var(--teal),var(--teal-dark));font-weight:700;color:#fff;font-size:9.5px;text-transform:uppercase;letter-spacing:.5px;text-align:center;position:sticky;top:0;z-index:3;border-color:#0b6b74;white-space:normal;line-height:1.28;vertical-align:middle;min-width:82px}
 tbody tr{transition:background .15s}
 tbody tr:nth-child(even){background:#f5f9fa}
@@ -260,7 +260,7 @@ td.cell-center{text-align:center}
    sehingga tetap terlihat saat tabel digulir ke kanan. */
 .table-wrap thead th:first-child{position:sticky;top:0;left:0;z-index:5;background:linear-gradient(180deg,var(--teal),var(--teal-dark))}
 /* #4: Kolom No. dipersempit agar pas dengan angka baris (mis. 1–2 digit) — dibekukan di kiri (left:0) */
-.table-wrap th.col-no,.table-wrap td.col-no{width:34px;min-width:34px;max-width:40px;text-align:center;padding-left:6px;padding-right:6px;white-space:nowrap;position:sticky;left:0;z-index:2}
+.table-wrap th.col-no,.table-wrap td.col-no{width:34px;min-width:34px;max-width:40px;text-align:center;padding-left:4px;padding-right:4px;white-space:nowrap;position:sticky;left:0;z-index:2}
 .table-wrap thead th.col-no{z-index:5}
 .table-wrap tbody td.col-no{background:#ffffff}
 .table-wrap tbody tr:nth-child(even) td.col-no{background:#f5f9fa}
@@ -272,7 +272,7 @@ td.cell-center{text-align:center}
 .table-wrap tbody tr:nth-child(even) td.col-nama-freeze{background:#f5f9fa}
 .table-wrap tbody tr:hover td.col-nama-freeze{background:var(--teal-soft)}
 /* Kolom Tgl. Terbit & Berakhir Kontrak — dilebarkan & judul dibungkus agar muat 2 baris */
-.table-wrap th.col-date,.table-wrap td.col-date{min-width:118px!important;width:118px!important;max-width:124px!important;padding-left:8px;padding-right:8px}
+.table-wrap th.col-date,.table-wrap td.col-date{min-width:118px!important;width:118px!important;max-width:124px!important;padding-left:4px;padding-right:4px}
 .table-wrap th.col-date{white-space:normal;line-height:1.28;text-align:center;vertical-align:middle}
 .table-wrap td.col-date{white-space:nowrap;text-align:center}
 /* Kolom No. Kontrak/SPBJ — menyesuaikan lebar isi data (tampil utuh, tidak terpotong) */
@@ -961,7 +961,7 @@ th{font-size:9.5px;letter-spacing:.7px;background:linear-gradient(180deg,#0f8790
 th:first-child{border-top-left-radius:2px}
 tbody tr{transition:background .18s ease,box-shadow .18s ease}
 tbody tr:hover{background:linear-gradient(180deg,var(--teal-soft),#eaf6f7)}
-td{padding:12px 14px}
+td{padding:2px 4px}
 
 /* Pil status: lebih halus & modern */
 .pill{padding:5px 12px;border-radius:20px;font-weight:800;letter-spacing:.3px;font-size:9.5px}
@@ -1283,19 +1283,22 @@ tbody tr{animation:rowIn .3s ease both}
 /* Nama Pekerjaan & No. — data tunggal diposisikan di tengah tinggi baris */
 #view-pn-lihat .table-wrap td.col-no,#view-pn-lihat .table-wrap td.col-nama-freeze{vertical-align:middle}
 /* ---- Lihat Nomor TENDER: kunci ukuran tabel & sesuaikan kolom ---- */
-/* Tabel dikunci (fixed) agar lebar kolom tidak berubah-ubah */
-#view-pn-lihat.pn-modul-tender .table-wrap table{table-layout:fixed;width:1208px;min-width:1208px}
+/* Layout auto agar kolom Jenis Dokumen menyusut PAS ke label terpanjang
+   (tanpa sisa ruang). Kolom lain tetap terkunci lewat min/max-width. */
+#view-pn-lihat.pn-modul-tender .table-wrap table{table-layout:auto;width:auto;min-width:100%}
 /* Nama Pekerjaan: rata kiri, vertikal tengah, teks membungkus */
 #view-pn-lihat.pn-modul-tender .table-wrap th.col-nama-freeze,
 #view-pn-lihat.pn-modul-tender .table-wrap td.col-nama-freeze{
   text-align:left;vertical-align:middle;white-space:normal;
   word-break:break-word;overflow-wrap:break-word;
   width:260px;min-width:260px;max-width:260px}
-/* Jenis Dokumen: lebar mengikuti nama dokumen terpanjang (tidak membungkus) */
+/* Jenis Dokumen: lebar mengikuti nama dokumen terpanjang (satu baris, pas ke isi) */
 #view-pn-lihat.pn-modul-tender .table-wrap th.pn-col-jenis,
 #view-pn-lihat.pn-modul-tender .table-wrap td.pn-col-jenis{
-  width:360px;min-width:360px;max-width:360px}
-#view-pn-lihat.pn-modul-tender .pn-nomor-jenis{white-space:nowrap}
+  width:1px;min-width:0;max-width:none;white-space:nowrap}
+#view-pn-lihat.pn-modul-tender td.pn-col-jenis .pn-nomor-list{width:max-content}
+#view-pn-lihat.pn-modul-tender td.pn-col-jenis .pn-nomor-item{width:100%;overflow:visible}
+#view-pn-lihat.pn-modul-tender .pn-nomor-jenis{flex:0 0 auto;width:auto;white-space:nowrap;overflow:visible;text-overflow:clip}
 /* Pertegas border vertikal antar kolom pada tabel Lihat Nomor */
 #view-pn-lihat .table-wrap table{border-collapse:collapse}
 #view-pn-lihat .table-wrap th,#view-pn-lihat .table-wrap td{border-left:1.5px solid #b7c9cf;border-right:1.5px solid #b7c9cf}
