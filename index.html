@@ -1348,6 +1348,10 @@ tbody tr{animation:rowIn .3s ease both}
 .pn-doc-toggle.open .pn-doc-caret{transform:rotate(180deg)}
 .pn-doc-count{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:20px;background:rgba(255,255,255,.28);font-size:11px;font-weight:800}
 .pn-doc-save{margin-left:0}
+/* Doc-bar dipindah ke dalam baris grid (menggantikan posisi Bidang Pelaksana) */
+.pn-doc-bar-field{display:flex;flex-direction:column}
+.pn-doc-bar-field .pn-doc-bar{margin-top:0;padding-top:0;border-top:none;justify-content:flex-start;flex-wrap:nowrap;gap:10px}
+.pn-doc-bar-field .pn-doc-toggle,.pn-doc-bar-field .pn-doc-save{flex:1 1 0;min-width:0;justify-content:center}
 /* Kolaps daftar dokumen */
 .pn-doc-collapse{height:0;overflow:hidden;opacity:0;transform:translateY(-4px);transition:height .34s cubic-bezier(.16,1,.3,1),opacity .28s ease,transform .34s cubic-bezier(.16,1,.3,1)}
 .pn-doc-collapse.open{opacity:1;transform:none}
@@ -6823,9 +6827,16 @@ function pnUsedSeqs(modul, counter, year){
   addFrom(modul, keys);
   return set;
 }
-/* Base untuk counter 'hps' = base 'main' Pengadaan Langsung (agar lanjut-menerus). */
+/* Base untuk counter 'hps' = base 'main' Pengadaan Langsung (agar lanjut-menerus).
+   Untuk Tender, seluruh dokumen (selain HPS) dimulai dari urutan 1 (base 0),
+   kecuali bila dikonfigurasi manual lewat pnConfig. */
 function pnBaseFor(modul, counter, year){
   if(counter==='hps') return pnBase('pl','main',year);
+  if(modul==='tender'){
+    const c = pnConfig[modul+'|'+year];
+    if(c && c[counter]!=null && !isNaN(c[counter])) return parseInt(c[counter],10);
+    return 0; // Tender mulai dari nomor 1
+  }
   return pnBase(modul,counter,year);
 }
 /* Nomor berikutnya = terkecil > base yang belum terpakai (mengisi celah bekas hapus) */
@@ -6876,23 +6887,23 @@ function renderPnAmbil(){
   }
 }
 function pnAmbilTenderFormHtml(){
-  const bidangOpts = PN_BIDANG_OPTS.map(o=>'<option>'+o+'</option>').join('');
   const klasOpts   = PN_KLAS_OPTS.map(o=>'<option value="'+o.kode+'">'+o.label+'</option>').join('');
   return '' +
   '<div class="form-card">' +
     '<div class="form-section-title">'+KR_SECTION_ICON+'Data Tender</div>' +
     '<div class="form-flow" style="--cols:3">' +
       '<div class="field"><label>Nama Pekerjaan <span class="req">*</span></label><input id="pn-tn-nama" type="text" placeholder="cth. Pembangunan Gardu Hubung"></div>' +
-      '<div class="field"><label>Bidang Pelaksana <span class="req">*</span></label><select id="pn-tn-bidang"><option value="">— Pilih —</option>'+bidangOpts+'</select></div>' +
       '<div class="field"><label>Kode Klasifikasi <span class="req">*</span></label><select id="pn-tn-klas"><option value="">— Pilih —</option>'+klasOpts+'</select></div>' +
-    '</div>' +
-    '<div class="pn-doc-bar">' +
-      '<button type="button" class="btn btn-teal pn-doc-toggle" id="pn-doc-toggle" onclick="pnDocModalOpen()">' +
-        PN_DOC_ICON+'<span>Dokumen</span>' +
-        '<span class="pn-doc-count" id="pn-doc-count" style="display:none">0</span>' +
-        '<svg class="pn-doc-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>' +
-      '</button>' +
-      '<button class="btn btn-indigo pn-doc-save" type="button" onclick="pnAmbilTender()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>Ambil Nomor</button>' +
+      '<div class="field pn-doc-bar-field"><label>&nbsp;</label>' +
+        '<div class="pn-doc-bar">' +
+          '<button type="button" class="btn btn-teal pn-doc-toggle" id="pn-doc-toggle" onclick="pnDocModalOpen()">' +
+            PN_DOC_ICON+'<span>Dokumen</span>' +
+            '<span class="pn-doc-count" id="pn-doc-count" style="display:none">0</span>' +
+            '<svg class="pn-doc-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>' +
+          '</button>' +
+          '<button class="btn btn-indigo pn-doc-save" type="button" onclick="pnAmbilTender()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>Ambil Nomor</button>' +
+        '</div>' +
+      '</div>' +
     '</div>' +
   '</div>' +
   '<div id="pn-ambil-result"></div>';
@@ -6952,23 +6963,23 @@ function pnDocToggleAll(){
   pnDocUpdateCount();
 }
 function pnAmbilPlFormHtml(){
-  const bidangOpts = PN_BIDANG_OPTS.map(o=>'<option>'+o+'</option>').join('');
   const klasOpts   = PN_KLAS_OPTS.map(o=>'<option value="'+o.kode+'">'+o.label+'</option>').join('');
   return '' +
   '<div class="form-card">' +
     '<div class="form-section-title">'+KR_SECTION_ICON+'Data Pengadaan Langsung</div>' +
     '<div class="form-flow" style="--cols:3">' +
       '<div class="field"><label>Nama Pekerjaan <span class="req">*</span></label><input id="pn-pl-nama" type="text" placeholder="cth. Pengadaan Material Distribusi"></div>' +
-      '<div class="field"><label>Bidang Pelaksana <span class="req">*</span></label><select id="pn-pl-bidang"><option value="">— Pilih —</option>'+bidangOpts+'</select></div>' +
       '<div class="field"><label>Kode Klasifikasi <span class="req">*</span></label><select id="pn-pl-klas"><option value="">— Pilih —</option>'+klasOpts+'</select></div>' +
-    '</div>' +
-    '<div class="pn-doc-bar">' +
-      '<button type="button" class="btn btn-teal pn-doc-toggle" id="pn-doc-toggle" onclick="pnDocModalOpen()">' +
-        PN_DOC_ICON+'<span>Dokumen</span>' +
-        '<span class="pn-doc-count" id="pn-doc-count" style="display:none">0</span>' +
-        '<svg class="pn-doc-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>' +
-      '</button>' +
-      '<button class="btn btn-indigo pn-doc-save" type="button" onclick="pnAmbilPl()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>Ambil Nomor</button>' +
+      '<div class="field pn-doc-bar-field"><label>&nbsp;</label>' +
+        '<div class="pn-doc-bar">' +
+          '<button type="button" class="btn btn-teal pn-doc-toggle" id="pn-doc-toggle" onclick="pnDocModalOpen()">' +
+            PN_DOC_ICON+'<span>Dokumen</span>' +
+            '<span class="pn-doc-count" id="pn-doc-count" style="display:none">0</span>' +
+            '<svg class="pn-doc-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>' +
+          '</button>' +
+          '<button class="btn btn-indigo pn-doc-save" type="button" onclick="pnAmbilPl()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>Ambil Nomor</button>' +
+        '</div>' +
+      '</div>' +
     '</div>' +
   '</div>' +
   '<div id="pn-ambil-result"></div>';
@@ -6981,17 +6992,25 @@ function pnPendingHtml(label){
     '</div></div>';
 }
 
+/* Cari record pekerjaan yang sudah ada (berdasarkan nama pekerjaan, modul & tahun).
+   Nomor dokumen untuk nama pekerjaan yang sama akan ditumpuk pada baris tersebut. */
+function pnFindWork(modul, nama, year){
+  const key=String(nama||'').trim().toLowerCase();
+  return records_penetapan.find(r=>
+    r.modul===modul &&
+    Number(r.tahun)===Number(year) &&
+    String(r.nama_pekerjaan||'').trim().toLowerCase()===key
+  );
+}
 /* ---- Ambil nomor (Pengadaan Langsung) — hanya dokumen yang dicentang ---- */
 async function pnAmbilPl(){
   if(!requireInput()) return;
   const modul='pl';
   const el = id => document.getElementById(id);
   const nama  = (el('pn-pl-nama') ? el('pn-pl-nama').value : '').trim();
-  const bidang= el('pn-pl-bidang') ? el('pn-pl-bidang').value : '';
   const klas  = el('pn-pl-klas') ? el('pn-pl-klas').value : '';
   const checkedKeys = [...document.querySelectorAll('.pn-doc-check:checked')].map(b=>b.value);
   if(!nama){ toast('Nama Pekerjaan wajib diisi','warn'); el('pn-pl-nama') && el('pn-pl-nama').focus(); return; }
-  if(!bidang){ toast('Bidang Pelaksana wajib dipilih','warn'); return; }
   if(!klas){ toast('Kode Klasifikasi wajib dipilih','warn'); return; }
   if(!checkedKeys.length){ toast('Pilih minimal satu dokumen untuk diterbitkan nomornya','warn'); return; }
   const usePj = checkedKeys.includes('BAP');
@@ -7002,29 +7021,47 @@ async function pnAmbilPl(){
       await refreshDataPenetapan();           // sinkron dulu agar nomor tidak bentrok
       const year=pnYear(), unit=PN_UNIT;
       const today=pnTodayISO();
+      const existing=pnFindWork(modul, nama, year);
+      // Tolak bila ada dokumen yang sudah pernah diambil untuk pekerjaan ini
+      if(existing){
+        const existingKeys=new Set((Array.isArray(existing.dokumen)?existing.dokumen:[]).map(d=>String(d.key)));
+        const dup=checkedKeys.some(k=>existingKeys.has(String(k)));
+        if(dup){ const e=new Error('dokumen sudah ada'); e.pnDup=true; throw e; }
+      }
       const seqCache={};
       const getSeq=(counter)=>{ if(seqCache[counter]==null) seqCache[counter]=pnNextSeq(modul,counter,year); return seqCache[counter]; };
-      const dokumen=(PN_DOCS[modul]||[])
+      const newDocs=(PN_DOCS[modul]||[])
         .filter(d=> checkedKeys.includes(d.key))
         .map(d=>{
           const seq = getSeq(d.counter);
           return {key:d.key, code:d.code, label:d.label, seq, no:pnFormatNo(seq,d.code,klas,unit,year),
                   tgl_terbit:today, file:null};
         });
-      const row={ modul, tahun:year, tgl_terbit:today,
-        nama_pekerjaan:nama, bidang_pelaksana:bidang, kode_klasifikasi:klas, unit,
-        menggunakan_penjelasan:usePj, dokumen };
-      const saved=await StorePenetapan.insert(row);
-      if(saved) records_penetapan.unshift(saved); else records_penetapan.unshift(row);
-      pnState.lastResult = saved ? Object.assign({modul}, saved) : Object.assign({modul}, row);
+      if(existing){
+        // Tumpuk nomor baru pada baris pekerjaan yang sama
+        const merged=(Array.isArray(existing.dokumen)?existing.dokumen.slice():[]).concat(newDocs);
+        if(usePj) existing.menggunakan_penjelasan=true;
+        await StorePenetapan.setDokumen(existing.id, merged);
+        existing.dokumen=merged;
+        pnState.lastResult = Object.assign({modul}, existing);
+      }else{
+        const row={ modul, tahun:year, tgl_terbit:today,
+          nama_pekerjaan:nama, kode_klasifikasi:klas, unit,
+          menggunakan_penjelasan:usePj, dokumen:newDocs };
+        const saved=await StorePenetapan.insert(row);
+        if(saved) records_penetapan.unshift(saved); else records_penetapan.unshift(row);
+        pnState.lastResult = saved ? Object.assign({modul}, saved) : Object.assign({modul}, row);
+      }
     });
     ok=true;
-  }catch(err){ console.error(err); toast('Gagal menetapkan nomor: '+errMsg(err),'err'); return; }
+  }catch(err){
+    if(err && err.pnDup){ toast('Gagal mengambil nomor dokumen ; dokumen sudah ada','err'); return; }
+    console.error(err); toast('Gagal menetapkan nomor: '+errMsg(err),'err'); return;
+  }
   if(!ok) return;
   toast('Nomor berhasil ditetapkan','ok');
   // kosongkan isian agar siap penetapan berikutnya
   if(el('pn-pl-nama')) el('pn-pl-nama').value='';
-  if(el('pn-pl-bidang')) el('pn-pl-bidang').value='';
   if(el('pn-pl-klas')) el('pn-pl-klas').value='';
   document.querySelectorAll('.pn-doc-check').forEach(b=>b.checked=false);
   const allBtn=document.querySelector('.pn-check-all'); if(allBtn) allBtn.textContent='Pilih Semua';
@@ -7038,11 +7075,9 @@ async function pnAmbilTender(){
   const modul='tender';
   const el = id => document.getElementById(id);
   const nama  = (el('pn-tn-nama') ? el('pn-tn-nama').value : '').trim();
-  const bidang= el('pn-tn-bidang') ? el('pn-tn-bidang').value : '';
   const klas  = el('pn-tn-klas') ? el('pn-tn-klas').value : '';
   const checkedKeys = [...document.querySelectorAll('.pn-doc-check:checked')].map(b=>b.value);
   if(!nama){ toast('Nama Pekerjaan wajib diisi','warn'); el('pn-tn-nama') && el('pn-tn-nama').focus(); return; }
-  if(!bidang){ toast('Bidang Pelaksana wajib dipilih','warn'); return; }
   if(!klas){ toast('Kode Klasifikasi wajib dipilih','warn'); return; }
   if(!checkedKeys.length){ toast('Pilih minimal satu dokumen untuk diterbitkan nomornya','warn'); return; }
 
@@ -7052,30 +7087,47 @@ async function pnAmbilTender(){
       await refreshDataPenetapan();           // sinkron dulu agar nomor tidak bentrok
       const year=pnYear(), unit=PN_UNIT;
       const today=pnTodayISO();
+      const existing=pnFindWork(modul, nama, year);
+      // Tolak bila ada dokumen yang sudah pernah diambil untuk pekerjaan ini
+      if(existing){
+        const existingKeys=new Set((Array.isArray(existing.dokumen)?existing.dokumen:[]).map(d=>String(d.key)));
+        const dup=checkedKeys.some(k=>existingKeys.has(String(k)));
+        if(dup){ const e=new Error('dokumen sudah ada'); e.pnDup=true; throw e; }
+      }
       // seq per counter (dihitung sekali; dokumen ber-counter sama berbagi nomor pekerjaan)
       const seqCache={};
       const getSeq=(counter)=>{ if(seqCache[counter]==null) seqCache[counter]=pnNextSeq(modul,counter,year); return seqCache[counter]; };
       // pertahankan urutan sesuai definisi PN_DOCS.tender; dokumen terbaru muncul di akhir daftar
-      const dokumen=(PN_DOCS.tender||[])
+      const newDocs=(PN_DOCS.tender||[])
         .filter(d=> checkedKeys.includes(d.key))
         .map(d=>{
           const seq=getSeq(d.counter);
           return {key:d.key, code:d.code, label:d.label, seq, no:pnFormatNo(seq,d.code,klas,unit,year),
                   tgl_terbit:today, file:null};
         });
-      const row={ modul, tahun:year, tgl_terbit:today,
-        nama_pekerjaan:nama, bidang_pelaksana:bidang, kode_klasifikasi:klas, unit,
-        menggunakan_penjelasan:false, dokumen };
-      const saved=await StorePenetapan.insert(row);
-      if(saved) records_penetapan.unshift(saved); else records_penetapan.unshift(row);
-      pnState.lastResult = saved ? Object.assign({modul}, saved) : Object.assign({modul}, row);
+      if(existing){
+        // Tumpuk nomor baru pada baris pekerjaan yang sama
+        const merged=(Array.isArray(existing.dokumen)?existing.dokumen.slice():[]).concat(newDocs);
+        await StorePenetapan.setDokumen(existing.id, merged);
+        existing.dokumen=merged;
+        pnState.lastResult = Object.assign({modul}, existing);
+      }else{
+        const row={ modul, tahun:year, tgl_terbit:today,
+          nama_pekerjaan:nama, kode_klasifikasi:klas, unit,
+          menggunakan_penjelasan:false, dokumen:newDocs };
+        const saved=await StorePenetapan.insert(row);
+        if(saved) records_penetapan.unshift(saved); else records_penetapan.unshift(row);
+        pnState.lastResult = saved ? Object.assign({modul}, saved) : Object.assign({modul}, row);
+      }
     });
     ok=true;
-  }catch(err){ console.error(err); toast('Gagal menetapkan nomor: '+errMsg(err),'err'); return; }
+  }catch(err){
+    if(err && err.pnDup){ toast('Gagal mengambil nomor dokumen ; dokumen sudah ada','err'); return; }
+    console.error(err); toast('Gagal menetapkan nomor: '+errMsg(err),'err'); return;
+  }
   if(!ok) return;
   toast('Nomor berhasil ditetapkan','ok');
   if(el('pn-tn-nama')) el('pn-tn-nama').value='';
-  if(el('pn-tn-bidang')) el('pn-tn-bidang').value='';
   if(el('pn-tn-klas')) el('pn-tn-klas').value='';
   document.querySelectorAll('.pn-doc-check').forEach(b=>b.checked=false);
   const allBtn=document.querySelector('.pn-check-all'); if(allBtn) allBtn.textContent='Pilih Semua';
