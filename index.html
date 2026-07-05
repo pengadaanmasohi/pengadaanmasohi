@@ -6802,9 +6802,17 @@ function pnBase(modul, counter, year){
   if(c && c[counter]!=null && !isNaN(c[counter])) return parseInt(c[counter],10);
   return PN_BASE_DEFAULT[counter]!=null ? PN_BASE_DEFAULT[counter] : 0;
 }
+/* Penentu "counter" untuk penomoran:
+   - Dokumen HPS (counter asli 'hps') -> tetap 'hps' (pool bersama PL + Tender).
+   - Dokumen lain -> memakai KEY-nya sendiri, sehingga setiap jenis dokumen
+     memiliki urutan nomor yang terpisah (tidak saling menumpuk). */
+function pnSeqCounter(d){
+  if(!d) return 'main';
+  return d.counter==='hps' ? 'hps' : ('k:'+d.key);
+}
 /* Kumpulan nomor urut yang sudah dipakai untuk (modul, counter, tahun).
    counter 'hps' bersifat lintas modul: berbagi satu urutan antara HPS Pengadaan
-   Langsung dan HPS Tender. Counter lain (mis. 'main') berdiri sendiri per modul. */
+   Langsung dan HPS Tender. Counter 'k:<key>' -> hanya dokumen dengan key tersebut. */
 function pnUsedSeqs(modul, counter, year){
   const set = new Set();
   const addFrom=(mod, keys)=>{
@@ -6823,28 +6831,40 @@ function pnUsedSeqs(modul, counter, year){
     addFrom('tender', tHpsKeys);
     return set;
   }
+  if(counter && counter.indexOf('k:')===0){
+    // Urutan terpisah per jenis dokumen (berdasarkan key).
+    const key=counter.slice(2);
+    addFrom(modul, [key]);
+    return set;
+  }
   const keys = (PN_DOCS[modul]||[]).filter(d=>d.counter===counter).map(d=>d.key);
   addFrom(modul, keys);
   return set;
 }
 /* Base per counter:
-   - 'hps'  -> pool bersama PL+Tender, mulai dari 20 (base 19).
-   - Tender selain HPS -> mulai dari 1 (base 0).
-   - PL 'main' (Pembukaan/Evaluasi/Klarifikasi) -> mulai dari 20 (base 19).
-   - 'bap' (Penjelasan) -> mulai dari 1 (base 0).
+   - 'hps'        -> pool bersama PL+Tender, mulai dari 20 (base 19).
+   - 'k:<key>' PL -> setiap dokumen PL mulai dari 20 (base 19), kecuali Penjelasan mulai 1.
+   - 'k:<key>' Tender -> setiap dokumen Tender mulai dari 1 (base 0).
    Semua dapat di-override manual lewat pnConfig, dan reset per tahun otomatis. */
 function pnBaseFor(modul, counter, year){
   if(counter==='hps'){
-    // Gunakan konfigurasi manual bila ada (dari PL atau Tender), selain itu default 19.
     const cPl=pnConfig['pl|'+year], cTn=pnConfig['tender|'+year];
     if(cPl && cPl.hps!=null && !isNaN(cPl.hps)) return parseInt(cPl.hps,10);
     if(cTn && cTn.hps!=null && !isNaN(cTn.hps)) return parseInt(cTn.hps,10);
     return PN_BASE_DEFAULT.hps!=null ? PN_BASE_DEFAULT.hps : 19;
   }
+  if(counter && counter.indexOf('k:')===0){
+    const key=counter.slice(2);
+    const c = pnConfig[modul+'|'+year];
+    if(c && c[counter]!=null && !isNaN(c[counter])) return parseInt(c[counter],10);
+    if(modul==='tender') return 0;                 // Tender mulai dari 1
+    if(key==='BAP') return 0;                       // Penjelasan (PL) mulai dari 1
+    return 19;                                      // Dokumen PL lain mulai dari 20
+  }
   if(modul==='tender'){
     const c = pnConfig[modul+'|'+year];
     if(c && c[counter]!=null && !isNaN(c[counter])) return parseInt(c[counter],10);
-    return 0; // Tender (selain HPS) mulai dari nomor 1
+    return 0;
   }
   return pnBase(modul,counter,year);
 }
@@ -7042,7 +7062,7 @@ async function pnAmbilPl(){
       const newDocs=(PN_DOCS[modul]||[])
         .filter(d=> checkedKeys.includes(d.key))
         .map(d=>{
-          const seq = getSeq(d.counter);
+          const seq = getSeq(pnSeqCounter(d));
           return {key:d.key, code:d.code, label:d.label, seq, no:pnFormatNo(seq,d.code,klas,unit,year),
                   tgl_terbit:today, file:null};
         });
@@ -7103,14 +7123,14 @@ async function pnAmbilTender(){
         const dup=checkedKeys.some(k=>existingKeys.has(String(k)));
         if(dup){ const e=new Error('dokumen sudah ada'); e.pnDup=true; throw e; }
       }
-      // seq per counter (dihitung sekali; dokumen ber-counter sama berbagi nomor pekerjaan)
+      // seq per jenis dokumen (setiap key punya urutan sendiri; HPS berbagi pool PL+Tender)
       const seqCache={};
       const getSeq=(counter)=>{ if(seqCache[counter]==null) seqCache[counter]=pnNextSeq(modul,counter,year); return seqCache[counter]; };
       // pertahankan urutan sesuai definisi PN_DOCS.tender; dokumen terbaru muncul di akhir daftar
       const newDocs=(PN_DOCS.tender||[])
         .filter(d=> checkedKeys.includes(d.key))
         .map(d=>{
-          const seq=getSeq(d.counter);
+          const seq=getSeq(pnSeqCounter(d));
           return {key:d.key, code:d.code, label:d.label, seq, no:pnFormatNo(seq,d.code,klas,unit,year),
                   tgl_terbit:today, file:null};
         });
