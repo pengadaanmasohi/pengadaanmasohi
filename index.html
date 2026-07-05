@@ -263,19 +263,23 @@ td.cell-center{text-align:center}
 .table-wrap thead th:first-child{position:sticky;top:0;left:0;z-index:8;background:linear-gradient(180deg,var(--teal),var(--teal-dark))}
 /* #4: Kolom No. dipersempit agar pas dengan angka baris (mis. 1–2 digit) — dibekukan di kiri (left:0) */
 .table-wrap th.col-no,.table-wrap td.col-no{width:34px;min-width:34px;max-width:40px;text-align:center;padding-left:4px;padding-right:4px;white-space:nowrap;position:sticky;left:0;z-index:4}
-.table-wrap thead th.col-no{z-index:8;box-shadow:inset -1px 0 0 rgba(255,255,255,.3)}
-/* Garis tabel yang ikut menempel saat freeze: kiri (tepi) + kanan (pembatas kolom).
-   Dipakai box-shadow agar garis selalu solid & tidak tergulir (border-collapse). */
-.table-wrap tbody td.col-no{background:#ffffff!important;box-shadow:inset 1px 0 0 #cfdde1, inset -1px 0 0 #cfdde1, inset 0 -1px 0 #dce6e9}
+.table-wrap thead th.col-no{z-index:8}
+.table-wrap tbody td.col-no{background:#ffffff!important}
 .table-wrap tbody tr:nth-child(even) td.col-no{background:#f5f9fa!important}
 .table-wrap tbody tr:hover td.col-no{background:#dbeff1!important}
 /* #3: Kolom "Nama Pekerjaan" — freeze pane horizontal, menempel tepat setelah kolom No. (left:34px) */
 .table-wrap th.col-nama-freeze,.table-wrap td.col-nama-freeze{position:sticky;left:34px;z-index:4;white-space:normal;min-width:240px;max-width:300px;word-break:break-word;overflow-wrap:break-word;line-height:1.3}
-.table-wrap thead th.col-nama-freeze{z-index:8;background:linear-gradient(180deg,var(--teal),var(--teal-dark));box-shadow:inset -2px 0 0 rgba(255,255,255,.35)}
-/* Garis kanan solid pada batas kolom freeze + garis kiri pembatas dari kolom No. */
-.table-wrap tbody td.col-nama-freeze{background:#ffffff!important;box-shadow:inset -2px 0 0 #9fc0c6, inset 1px 0 0 #cfdde1, inset 0 -1px 0 #dce6e9}
+.table-wrap thead th.col-nama-freeze{z-index:8;background:linear-gradient(180deg,var(--teal),var(--teal-dark))}
+.table-wrap tbody td.col-nama-freeze{background:#ffffff!important}
 .table-wrap tbody tr:nth-child(even) td.col-nama-freeze{background:#f5f9fa!important}
 .table-wrap tbody tr:hover td.col-nama-freeze{background:#dbeff1!important}
+/* Isi latar penuh via pseudo-element agar tidak ada celah tembus (bug border-collapse
+   pada sel sticky). Pseudo menutup seluruh area sel termasuk tepi border. */
+.table-wrap td.col-no,.table-wrap td.col-nama-freeze{background-clip:padding-box;position:sticky}
+.table-wrap td.col-no::before,.table-wrap td.col-nama-freeze::before{
+  content:"";position:absolute;top:-3px;bottom:-3px;left:0;right:-2px;background:inherit;z-index:-1}
+/* pembatas kanan tipis pada kolom Nama Pekerjaan (garis tabel yang menempel saat freeze) */
+.table-wrap td.col-nama-freeze{border-right:1px solid #cfdde1}
 /* Kolom Tgl. Terbit & Berakhir Kontrak — dilebarkan & judul dibungkus agar muat 2 baris */
 .table-wrap th.col-date,.table-wrap td.col-date{min-width:118px!important;width:118px!important;max-width:124px!important;padding-left:4px;padding-right:4px}
 .table-wrap th.col-date{white-space:normal;line-height:1.28;text-align:center;vertical-align:middle}
@@ -410,10 +414,10 @@ td.cell-center{text-align:center}
 #edit-banner,#edit-banner-pl,#edit-banner-tender{display:none!important}
 
 /* upload box */
-.io-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;background:linear-gradient(135deg,#f3fbfb,#eef8f9);border:1px dashed #a9d2d5;border-radius:12px;padding:15px 18px;margin-bottom:16px}
-.io-row .io-txt{flex:1;min-width:200px}
-.io-row .io-txt b{font-family:'Plus Jakarta Sans'}
-.io-row .io-txt small{color:var(--muted);display:block;margin-top:2px}
+.io-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:flex-end;background:none;border:none;border-radius:0;padding:0;margin-bottom:16px}
+/* Sembunyikan ikon & label "Template Pengisian Data" — sisakan tombol saja */
+.io-row>svg{display:none}
+.io-row .io-txt{display:none}
 
 /* ---------- Modal ---------- */
 .overlay{position:fixed;inset:0;background:radial-gradient(1200px 600px at 50% -10%,rgba(14,124,134,.28),rgba(16,36,44,.55) 60%);display:none;align-items:center;justify-content:center;z-index:100;padding:20px;backdrop-filter:blur(6px) saturate(1.05);-webkit-backdrop-filter:blur(6px) saturate(1.05)}
@@ -1172,8 +1176,7 @@ body.nav-open{overflow:hidden}
 /* Bintang wajib jadi lebih halus */
 .field label .req{margin-left:3px;font-weight:800}
 
-/* Header "Template Pengisian Data" (io-row) lebih elegan bila ada */
-.io-row{border-radius:16px}
+/* (Bar "Template Pengisian Data" kini tanpa kotak — hanya tombol) */
 
 /* ---------- Toolbar filter Monitoring ---------- */
 .toolbar{border-radius:18px;border-color:#e0eaec;background:linear-gradient(180deg,#ffffff,#f8fbfc);
@@ -1324,18 +1327,6 @@ tbody tr{animation:rowIn .3s ease both}
 #view-list .table-wrap tbody td,
 #view-list-pl .table-wrap tbody td,
 #view-list-tender .table-wrap tbody td{border-top:2px solid #7fa5ac;border-bottom:2px solid #7fa5ac}
-/* Sel freeze (No. & Nama Pekerjaan) pada tabel bergaris tegas: samakan garis grid
-   (atas/bawah 2px + pembatas kiri/kanan) agar tetap terlihat saat freeze. */
-#view-pn-lihat .table-wrap tbody td.col-no,
-#view-list .table-wrap tbody td.col-no,
-#view-list-pl .table-wrap tbody td.col-no,
-#view-list-tender .table-wrap tbody td.col-no{
-  box-shadow:inset 1px 0 0 #b7c9cf, inset -1.5px 0 0 #b7c9cf, inset 0 2px 0 #7fa5ac, inset 0 -2px 0 #7fa5ac!important}
-#view-pn-lihat .table-wrap tbody td.col-nama-freeze,
-#view-list .table-wrap tbody td.col-nama-freeze,
-#view-list-pl .table-wrap tbody td.col-nama-freeze,
-#view-list-tender .table-wrap tbody td.col-nama-freeze{
-  box-shadow:inset -2px 0 0 #7fa5ac, inset 1px 0 0 #b7c9cf, inset 0 2px 0 #7fa5ac, inset 0 -2px 0 #7fa5ac!important}
 /* Daftar per masing-masing nomor dokumen — SATU BARIS per nomor (tanpa wrap),
    tinggi seragam & ringkas, data di tengah baris. */
 .pn-nomor-list{display:flex;flex-direction:column;gap:0;padding:0}
