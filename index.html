@@ -1281,6 +1281,7 @@ tbody tr{animation:rowIn .3s ease both}
 .fk-act-up{background:linear-gradient(135deg,var(--teal),var(--cyan))}
 .fk-act-replace{background:linear-gradient(135deg,var(--yellow),#ffca3a);color:#5a3d00;box-shadow:0 3px 9px rgba(246,180,14,.3)}
 .fk-act-dl{background:linear-gradient(135deg,var(--green),#28b466)}
+.fk-act-view{background:linear-gradient(135deg,var(--teal),var(--cyan))}
 .fk-act-del{background:linear-gradient(135deg,var(--red),#e25151)}
 .fk-act[disabled]{background:linear-gradient(135deg,#c3ced4,#d6dee2);color:#fff;cursor:not-allowed;box-shadow:none;transform:none;filter:none;opacity:.85}
 .fk-act.is-busy{cursor:progress;opacity:.75;pointer-events:none}
@@ -6665,9 +6666,10 @@ async function renderFkInput(){
   if(!tb) return;
   let rows=cfg.list();
   rows=fkApplyFilters('input', cfg, rows);
-  if(cEl) cEl.textContent=rows.length;
   const meta=await fkEnsureMeta(modul);
   if(fkState.input.modul!==modul) return;    // modul berubah saat menunggu
+  rows=rows.filter(r=>!meta[String(r.id)]);  // hanya kontrak yang BELUM diunggah
+  if(cEl) cEl.textContent=rows.length;
   fkRenderRows('input', modul, cfg, rows, meta, tb, pg);
 }
 /* ---- Render tabel Lihat Data ---- */
@@ -6682,21 +6684,25 @@ async function renderFkView(){
   if(!tb) return;
   let rows=cfg.list();
   rows=fkApplyFilters('view', cfg, rows);
-  if(cEl) cEl.textContent=rows.length;
   const meta=await fkEnsureMeta(modul);
   if(fkState.view.modul!==modul) return;
+  rows=rows.filter(r=>!!meta[String(r.id)]);  // hanya kontrak yang SUDAH diunggah
+  if(cEl) cEl.textContent=rows.length;
   fkRenderRows('view', modul, cfg, rows, meta, tb, pg);
 }
 
-function fkEmptyRow(){
+function fkEmptyRow(mode){
+  const msg = mode==='input'
+    ? 'Tidak ada kontrak yang menunggu diunggah'
+    : (mode==='view' ? 'Belum ada kontrak yang diunggah' : 'Data tidak tersedia');
   return `<tr><td colspan="6"><div class="empty">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
-    <div>Data tidak tersedia</div>
+    <div>${msg}</div>
   </div></td></tr>`;
 }
 function fkRenderRows(mode, modul, cfg, rows, meta, tb, pg){
   const total=rows.length;
-  if(total===0){ tb.innerHTML=fkEmptyRow(); if(pg) pg.innerHTML=''; return; }
+  if(total===0){ tb.innerHTML=fkEmptyRow(mode); if(pg) pg.innerHTML=''; return; }
   const st=fkState[mode];
   const totalPages=Math.max(1,Math.ceil(total/PAGE_SIZE));
   if(st.page>totalPages) st.page=totalPages;
@@ -6727,29 +6733,22 @@ function fkRenderRows(mode, modul, cfg, rows, meta, tb, pg){
   fkRenderPagination(mode, st.page, totalPages, pg);
 }
 
-/* Aksi kolom Input Data: Unggah / Ganti File + Hapus + chip nama file */
+/* Aksi kolom Input Data: hanya "Unggah File" (daftar ini hanya kontrak yang BELUM diunggah) */
 function fkInputActionHtml(modul, rid, f){
-  const allow=canInput();
-  const chip = f ? `<span class="fk-file-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="fk-file-name">${fkEsc(f.nama_file)}</span><span class="fk-file-size">${fkFmtSize(f.ukuran)}</span></span>` : '';
   const upIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v13"/></svg>';
-  const delBtn = (allow && f) ? `<button class="fk-act fk-act-del" onclick="fkDelete('${modul}','${rid}',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Hapus</button>` : '';
-  if(f){
-    const btn=allow?`<button class="fk-act fk-act-replace" onclick="fkUpload('${modul}','${rid}',this)">${upIcon}Ganti File</button>`:'';
-    return chip+btn+delBtn;
-  }
-  return allow
+  return canInput()
     ? `<button class="fk-act fk-act-up" onclick="fkUpload('${modul}','${rid}',this)">${upIcon}Unggah File</button>`
-    : `<span class="fk-none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>Belum ada file</span>`;
+    : `<span class="fk-none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>Menunggu unggah</span>`;
 }
-/* Aksi kolom Lihat Data: Unduh + Hapus */
+/* Aksi kolom Lihat Data: Lihat/Preview (PDF) + Hapus */
 function fkViewActionHtml(modul, rid, f){
   if(!f){
     return `<span class="fk-none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>Belum ada file</span>`;
   }
   const chip=`<span class="fk-file-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="fk-file-name">${fkEsc(f.nama_file)}</span><span class="fk-file-size">${fkFmtSize(f.ukuran)}</span></span>`;
-  const dl=`<button class="fk-act fk-act-dl" onclick="fkDownload('${modul}','${rid}',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>Unduh</button>`;
+  const view=`<button class="fk-act fk-act-view" onclick="fkPreview('${modul}','${rid}',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>Lihat</button>`;
   const del=canInput()?`<button class="fk-act fk-act-del" onclick="fkDelete('${modul}','${rid}',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Hapus</button>`:'';
-  return chip+dl+del;
+  return chip+view+del;
 }
 
 function fkRenderPagination(mode, page, totalPages, el){
@@ -6795,7 +6794,7 @@ async function fkHandleFileSelected(file){
       ukuran:file.size, data_base64:b64
     };
     await withActionLoader('Mengunggah', async()=>{ await FileKontrak.upsert(row); await fkEnsureMeta(modul, true); });
-    toast('File berhasil diunggah','ok');
+    toast('File diunggah — kontrak dipindahkan ke Lihat Kontrak','ok');
     renderFkInput();
   }catch(err){
     console.error(err);
@@ -6820,16 +6819,44 @@ async function fkDownload(modul, recordId, btn){
   finally{ if(btn) btn.classList.remove('is-busy'); }
 }
 
+/* ---- Pratinjau file kontrak (PDF/gambar) — pakai modal pratinjau bersama ---- */
+async function fkPreview(modul, recordId, btn){
+  if(btn) btn.classList.add('is-busy');
+  const titleEl=document.getElementById('pn-preview-title');
+  const bodyEl=document.getElementById('pn-preview-body');
+  const meta=fkMetaMap[modul]||{};
+  const m=meta[String(recordId)];
+  if(titleEl) titleEl.textContent=(m&&m.nama_file)||'Pratinjau File';
+  pnCleanupPreview();
+  if(bodyEl) bodyEl.innerHTML='<div class="pn-preview-nofile">Memuat pratinjau…</div>';
+  document.getElementById('pn-preview-overlay').classList.add('show');
+  try{
+    const row=await FileKontrak.getOne(modul, recordId);
+    if(!row || !row.data_base64){ if(bodyEl) bodyEl.innerHTML=pnPreviewNoFileHtml(row&&row.nama_file,'File tidak tersedia.'); return; }
+    const mime=row.mime||'application/octet-stream';
+    const url=URL.createObjectURL(fkB64ToBlob(row.data_base64, mime));
+    pnPreviewCtx={url, name:row.nama_file||'file'};
+    const nm=(row.nama_file||'').toLowerCase();
+    const isPdf=mime.includes('pdf')||nm.endsWith('.pdf');
+    const isImg=mime.indexOf('image/')===0||/\.(png|jpe?g|gif|webp|bmp)$/.test(nm);
+    if(!bodyEl) return;
+    if(isPdf){ bodyEl.innerHTML='<iframe title="Pratinjau PDF"></iframe>'; bodyEl.querySelector('iframe').src=url; }
+    else if(isImg){ bodyEl.innerHTML='<img alt="Pratinjau gambar">'; bodyEl.querySelector('img').src=url; }
+    else{ bodyEl.innerHTML=pnPreviewNoFileHtml(pnPreviewCtx.name,'Jenis file ini tidak dapat dipratinjau. Silakan unduh untuk membukanya.'); }
+  }catch(err){ console.error('fkPreview:',err); if(bodyEl) bodyEl.innerHTML=pnPreviewNoFileHtml(m&&m.nama_file,'Gagal memuat file: '+errMsg(err)); }
+  finally{ if(btn) btn.classList.remove('is-busy'); }
+}
+
 /* ---- Hapus file ---- */
 function fkDelete(modul, recordId, btn){
   if(!requireInput()) return;
   openConfirm({
-    icon:'del', title:'Hapus File', text:'Apakah anda yakin ingin menghapus file kontrak ini?',
+    icon:'del', title:'Hapus File', text:'Hapus file kontrak ini? Kontrak akan dikembalikan ke Input Kontrak untuk diunggah kembali.',
     onYes:async()=>{
       try{
         await withActionLoader('Menghapus', async()=>{ await FileKontrak.remove(modul, recordId); await fkEnsureMeta(modul, true); });
       }catch(err){ console.error(err); toast('Gagal menghapus file: '+errMsg(err),'warn'); return; }
-      toast('File berhasil dihapus','ok');
+      toast('File dihapus — kontrak dikembalikan ke Input Kontrak','ok');
       renderFkView();
     }
   });
