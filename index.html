@@ -193,6 +193,9 @@ a{color:inherit}
 /* Reset & Hapus Semua didorong ke pojok kanan toolbar */
 .toolbar .toolbar-actions{display:flex;align-items:flex-end;gap:12px;flex-wrap:nowrap;margin-left:auto}
 .toolbar .toolbar-actions>.btn{margin:0;flex:0 0 auto}
+/* Penetapan Nomor: kolom Cari dipindah ke kanan & diperbesar 2x (158px → 316px) */
+.toolbar .toolbar-search.pn-search-right{margin-left:auto}
+.toolbar #pn-lihat-search{min-width:316px;max-width:316px}
 /* Samakan ukuran tombol Reset & Hapus Semua */
 .toolbar .toolbar-actions>.btn-red,.toolbar .toolbar-actions>.btn-danger{min-width:118px;justify-content:center}
 /* ===== File Kontrak — toolbar: Cari 2× lebar tombol Reset, dan Reset menempel di kanan Cari ===== */
@@ -2214,7 +2217,7 @@ tbody tr{animation:rowIn .3s ease both}
       </div>
     </div>
     <div class="toolbar">
-      <div class="filter-field toolbar-search">
+      <div class="filter-field toolbar-search pn-search-right">
         <label>Cari</label>
         <input id="pn-lihat-search" type="text" placeholder="Cari Nama Pekerjaan" oninput="pnFilterLihat()">
       </div>
@@ -7051,11 +7054,17 @@ async function pnAmbilPl(){
       const year=pnYear(), unit=PN_UNIT;
       const today=pnTodayISO();
       const existing=pnFindWork(modul, nama, year);
-      // Tolak bila ada dokumen yang sudah pernah diambil untuk pekerjaan ini
+      let klasUsed=klas;
       if(existing){
+        // Nama pekerjaan sama (mengabaikan besar/kecil huruf).
+        // Kode klasifikasi harus sama dengan pekerjaan yang pertama diinput.
+        const exKlas=String(existing.kode_klasifikasi||'');
+        if(exKlas && exKlas!==klas){ const e=new Error('kode klasifikasi'); e.pnKlas=true; throw e; }
+        klasUsed=exKlas || klas;
+        // Tolak bila ada dokumen yang sudah pernah diambil untuk pekerjaan ini
         const existingKeys=new Set((Array.isArray(existing.dokumen)?existing.dokumen:[]).map(d=>String(d.key)));
         const dup=checkedKeys.some(k=>existingKeys.has(String(k)));
-        if(dup){ const e=new Error('dokumen sudah ada'); e.pnDup=true; throw e; }
+        if(dup){ const e=new Error('data sudah ada'); e.pnDup=true; throw e; }
       }
       const seqCache={};
       const getSeq=(counter)=>{ if(seqCache[counter]==null) seqCache[counter]=pnNextSeq(modul,counter,year); return seqCache[counter]; };
@@ -7063,7 +7072,7 @@ async function pnAmbilPl(){
         .filter(d=> checkedKeys.includes(d.key))
         .map(d=>{
           const seq = getSeq(pnSeqCounter(d));
-          return {key:d.key, code:d.code, label:d.label, seq, no:pnFormatNo(seq,d.code,klas,unit,year),
+          return {key:d.key, code:d.code, label:d.label, seq, no:pnFormatNo(seq,d.code,klasUsed,unit,year),
                   tgl_terbit:today, file:null};
         });
       if(existing){
@@ -7084,7 +7093,8 @@ async function pnAmbilPl(){
     });
     ok=true;
   }catch(err){
-    if(err && err.pnDup){ toast('Gagal mengambil nomor dokumen ; dokumen sudah ada','err'); return; }
+    if(err && err.pnKlas){ toast('Gagal menetapkan nomor; kode klasifikasi','err'); return; }
+    if(err && err.pnDup){ toast('Gagal menetapkan nomor; data sudah ada','err'); return; }
     console.error(err); toast('Gagal menetapkan nomor: '+errMsg(err),'err'); return;
   }
   if(!ok) return;
@@ -7117,11 +7127,17 @@ async function pnAmbilTender(){
       const year=pnYear(), unit=PN_UNIT;
       const today=pnTodayISO();
       const existing=pnFindWork(modul, nama, year);
-      // Tolak bila ada dokumen yang sudah pernah diambil untuk pekerjaan ini
+      let klasUsed=klas;
       if(existing){
+        // Nama pekerjaan sama (mengabaikan besar/kecil huruf).
+        // Kode klasifikasi harus sama dengan pekerjaan yang pertama diinput.
+        const exKlas=String(existing.kode_klasifikasi||'');
+        if(exKlas && exKlas!==klas){ const e=new Error('kode klasifikasi'); e.pnKlas=true; throw e; }
+        klasUsed=exKlas || klas;
+        // Tolak bila ada dokumen yang sudah pernah diambil untuk pekerjaan ini
         const existingKeys=new Set((Array.isArray(existing.dokumen)?existing.dokumen:[]).map(d=>String(d.key)));
         const dup=checkedKeys.some(k=>existingKeys.has(String(k)));
-        if(dup){ const e=new Error('dokumen sudah ada'); e.pnDup=true; throw e; }
+        if(dup){ const e=new Error('data sudah ada'); e.pnDup=true; throw e; }
       }
       // seq per jenis dokumen (setiap key punya urutan sendiri; HPS berbagi pool PL+Tender)
       const seqCache={};
@@ -7131,7 +7147,7 @@ async function pnAmbilTender(){
         .filter(d=> checkedKeys.includes(d.key))
         .map(d=>{
           const seq=getSeq(pnSeqCounter(d));
-          return {key:d.key, code:d.code, label:d.label, seq, no:pnFormatNo(seq,d.code,klas,unit,year),
+          return {key:d.key, code:d.code, label:d.label, seq, no:pnFormatNo(seq,d.code,klasUsed,unit,year),
                   tgl_terbit:today, file:null};
         });
       if(existing){
@@ -7151,7 +7167,8 @@ async function pnAmbilTender(){
     });
     ok=true;
   }catch(err){
-    if(err && err.pnDup){ toast('Gagal mengambil nomor dokumen ; dokumen sudah ada','err'); return; }
+    if(err && err.pnKlas){ toast('Gagal menetapkan nomor; kode klasifikasi','err'); return; }
+    if(err && err.pnDup){ toast('Gagal menetapkan nomor; data sudah ada','err'); return; }
     console.error(err); toast('Gagal menetapkan nomor: '+errMsg(err),'err'); return;
   }
   if(!ok) return;
