@@ -1488,6 +1488,22 @@ tbody tr{animation:rowIn .3s ease both}
 }
 
 /* ================= FORM — KELENGKAPAN DOKUMEN PENGADAAN ================= */
+/* ----- Stepper ----- */
+.fkl-stepper{display:flex;align-items:center;gap:0;margin:2px 0 18px;flex-wrap:wrap}
+.fkl-step{display:flex;align-items:center;gap:10px}
+.fkl-step-dot{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Plus Jakarta Sans';font-weight:800;font-size:13px;background:#eef3f4;color:#9aabb0;border:1.5px solid var(--line);transition:.2s}
+.fkl-step-dot svg{width:15px;height:15px}
+.fkl-step-name{font-family:'Plus Jakarta Sans';font-size:12px;font-weight:700;color:#9aabb0;white-space:nowrap;transition:.2s}
+.fkl-step.active .fkl-step-dot{background:linear-gradient(135deg,var(--teal),var(--cyan));color:#fff;border-color:var(--teal);box-shadow:0 4px 12px rgba(14,124,134,.32)}
+.fkl-step.active .fkl-step-name{color:var(--ink)}
+.fkl-step.done .fkl-step-dot{background:var(--teal-soft);color:var(--teal-dark);border-color:var(--teal)}
+.fkl-step.done .fkl-step-name{color:var(--teal-dark)}
+.fkl-step-line{flex:1 1 26px;min-width:22px;height:2px;background:var(--line);margin:0 10px;border-radius:2px}
+.fkl-step-line.done{background:var(--teal)}
+@media(max-width:640px){.fkl-step-name{display:none}.fkl-step-line{min-width:14px}}
+/* ----- Grid pilihan dokumen ----- */
+.fkl-hint{font-size:11.5px;color:var(--muted);margin:-2px 0 12px;line-height:1.5}
+.fkl-hint b{color:var(--ink)}
 .fkl-checkgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px 20px}
 @media(max-width:820px){.fkl-checkgrid{grid-template-columns:1fr}}
 .fkl-check{display:flex;align-items:center;gap:11px;padding:10px 13px;border:1px solid var(--line);border-radius:11px;cursor:pointer;background:#fff;transition:border-color .16s,background .16s}
@@ -1500,7 +1516,28 @@ tbody tr{animation:rowIn .3s ease both}
 .fkl-check input:checked+.pn-check-box svg{opacity:1}
 .fkl-check .fkl-lbl{flex:1 1 auto;font-family:'Plus Jakarta Sans';font-size:12px;font-weight:600;color:#3d4d53;line-height:1.35}
 .fkl-check input:checked~.fkl-lbl{color:var(--ink)}
-/* Ringkasan status (Section III — otomatis) */
+.fkl-count-chip{margin-left:8px;font-family:'Plus Jakarta Sans';font-size:10.5px;font-weight:800;color:var(--teal-dark);background:var(--teal-soft);padding:3px 10px;border-radius:20px;vertical-align:middle}
+.fkl-selall{display:flex;align-items:center;gap:10px;margin-top:12px}
+.fkl-selall span{color:var(--line)}
+.fkl-linkbtn{background:none;border:none;color:var(--teal-dark);font-family:'Plus Jakarta Sans';font-weight:700;font-size:11.5px;cursor:pointer;padding:0}
+.fkl-linkbtn:hover{text-decoration:underline}
+/* ----- Langkah 3: Ada / Tidak Ada ----- */
+.fkl-empty-note{padding:16px 18px;border:1px dashed var(--line);border-radius:12px;background:#f8fbfc;color:var(--muted);font-size:12px;line-height:1.6}
+.fkl-empty-note b{color:var(--ink)}
+.fkl-ada-list{display:flex;flex-direction:column;gap:8px}
+.fkl-ada-row{display:flex;align-items:center;gap:12px;padding:9px 12px 9px 10px;border:1px solid var(--line);border-radius:11px;background:#fff}
+.fkl-ada-num{flex:0 0 auto;width:22px;height:22px;border-radius:7px;background:var(--teal-soft);color:var(--teal-dark);font-family:'Plus Jakarta Sans';font-weight:800;font-size:11px;display:flex;align-items:center;justify-content:center}
+.fkl-ada-name{flex:1 1 auto;font-family:'Plus Jakarta Sans';font-size:12px;font-weight:600;color:var(--ink);line-height:1.35}
+.fkl-ada-opts{flex:0 0 auto;display:flex;gap:7px}
+.fkl-ada-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:#7c8a8f;font-family:'Plus Jakarta Sans';font-weight:800;font-size:11px;cursor:pointer;transition:.15s}
+.fkl-ada-btn svg{width:13px;height:13px;opacity:.7}
+.fkl-ada-btn:hover{border-color:#c4d2d5}
+.fkl-ada-btn.ada.on{background:linear-gradient(180deg,#e0f5ea,#cdeedd);border-color:#69c493;color:#127a43}
+.fkl-ada-btn.ada.on svg{opacity:1}
+.fkl-ada-btn.no.on{background:linear-gradient(180deg,#fce4e4,#f7d6d6);border-color:#e79a9a;color:#b02626}
+.fkl-ada-btn.no.on svg{opacity:1}
+@media(max-width:600px){.fkl-ada-row{flex-wrap:wrap}.fkl-ada-opts{width:100%;justify-content:flex-end}}
+/* ----- Ringkasan status ----- */
 .fkl-status-card{display:flex;flex-wrap:wrap;align-items:center;gap:16px;padding:16px 18px;border-radius:14px;border:1px solid var(--line);background:linear-gradient(180deg,#ffffff,#f7fbfc)}
 .fkl-status-badge{display:inline-flex;align-items:center;gap:9px;padding:9px 18px;border-radius:30px;font-family:'Plus Jakarta Sans';font-weight:800;font-size:13px;letter-spacing:.3px}
 .fkl-status-badge svg{width:17px;height:17px}
@@ -1512,46 +1549,88 @@ tbody tr{animation:rowIn .3s ease both}
 .fkl-prog-bar{height:9px;border-radius:6px;background:#e6eff0;overflow:hidden}
 .fkl-prog-fill{height:100%;width:0;border-radius:6px;background:linear-gradient(90deg,var(--teal),var(--teal-dark));transition:width .28s ease}
 .fkl-prog-txt{font-size:10.5px;color:var(--muted);margin-top:5px;font-weight:600}
-/* Blok tanda tangan kanan bawah */
-.fkl-signwrap{display:flex;justify-content:flex-end;margin-top:6px}
-.fkl-sign{width:min(560px,100%);border:1px dashed var(--line);border-radius:14px;padding:18px 22px;background:#fff}
-.fkl-sign-date{text-align:right;font-family:'Plus Jakarta Sans';font-size:12.5px;font-weight:600;color:var(--ink);margin-bottom:14px}
-.fkl-sign-date b{font-weight:800}
-.fkl-sign-cols{display:grid;grid-template-columns:1fr 1fr;gap:20px}
-.fkl-sign-col{text-align:center}
-.fkl-sign-role{font-family:'Plus Jakarta Sans';font-size:12px;font-weight:700;color:var(--teal-dark);margin-bottom:52px}
-.fkl-sign-name{font-family:'Plus Jakarta Sans';font-size:13px;font-weight:800;color:var(--ink);border-top:1.5px solid var(--ink);padding-top:6px;min-height:20px}
-.fkl-sign-sub{font-size:10.5px;color:var(--muted);margin-top:2px}
-.fkl-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
-/* ===== Cetak / Print ===== */
+/* ----- Action bar wizard ----- */
+.fkl-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:18px;flex-wrap:wrap}
+.fkl-actions-left,.fkl-actions-right{display:flex;gap:10px;flex-wrap:wrap}
+.fkl-actions-right{margin-left:auto}
+.btn.btn-ghost{background:#fff;border:1.5px solid var(--line);color:#7c8a8f}
+.btn.btn-ghost:hover{border-color:#e79a9a;color:#b02626;background:#fdf4f4}
+.btn.btn-light{background:#f1f6f7;border:1.5px solid var(--line);color:var(--teal-dark)}
+.btn.btn-light:hover{background:var(--teal-soft);border-color:var(--teal)}
+
+/* ================== PRATINJAU & CETAK DOKUMEN (ELEGAN) ================== */
 #fkl-print-root{display:none}
+/* Wadah pratinjau di dalam modal */
+.pn-preview-body.fkl-preview-body{background:#d9e2e6;padding:24px;display:block}
+.fkl-doc-scroll{max-width:820px;margin:0 auto}
+.fkl-preview-body .fkl-doc{background:#fff;box-shadow:0 18px 50px rgba(20,50,60,.22);border-radius:6px}
+/* Dokumen */
+.fkl-doc{font-family:'Plus Jakarta Sans','Segoe UI',sans-serif;color:#22343a;padding:34px 40px 30px;position:relative;overflow:hidden}
+.fkl-doc-head{display:flex;align-items:center;gap:16px;padding-bottom:14px}
+.fkl-doc-logo{flex:0 0 auto}
+.fkl-doc-logo svg{width:52px;height:52px}
+.fkl-doc-logo img{width:52px;height:auto;display:block}
+.fkl-doc-org{flex:1 1 auto;line-height:1.3}
+.fkl-doc-org .l1{font-weight:800;font-size:16px;letter-spacing:.5px;color:#0E7C86}
+.fkl-doc-org .l2{font-weight:700;font-size:11px;color:#22343a;text-transform:uppercase;letter-spacing:.2px}
+.fkl-doc-org .l3{font-size:10px;color:#7c8a8f;margin-top:2px}
+.fkl-doc-band{height:3px;border-radius:3px;background:linear-gradient(90deg,#0E7C86,#12b3c0 55%,#F6B40E);margin-bottom:20px}
+.fkl-doc-title{text-align:center;font-weight:800;font-size:19px;line-height:1.28;letter-spacing:.6px;color:#0d2a30;margin:0 0 10px;text-transform:uppercase}
+.fkl-doc-titlegap{height:18px}
+/* Judul section berhuruf A / B / C */
+.fkl-sec-h{display:flex;align-items:center;gap:10px;font-weight:800;font-size:13px;color:#0d2a30;letter-spacing:.3px;text-transform:uppercase;margin:22px 0 10px}
+.fkl-sec-h .rn{flex:0 0 auto;width:22px;height:22px;border-radius:6px;background:linear-gradient(135deg,#0E7C86,#12b3c0);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800}
+/* Tabel uraian pekerjaan */
+.fkl-info{width:100%;border-collapse:collapse}
+.fkl-info td{padding:5px 6px;vertical-align:top;font-size:12.5px}
+.fkl-info td.k{width:34%;color:#54666c;font-weight:600}
+.fkl-info td.s{width:16px;color:#54666c}
+.fkl-info td.v{font-weight:700;color:#1a2b31}
+/* Tabel kelengkapan dokumen */
+.fkl-chk{width:100%;border-collapse:separate;border-spacing:0;margin-top:2px;border:1px solid #dbe6e8;border-radius:9px;overflow:hidden}
+.fkl-chk thead th{background:linear-gradient(180deg,#0E7C86,#0b6a73);color:#fff;font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;padding:9px 12px;text-align:left}
+.fkl-chk th.no,.fkl-chk td.no{width:44px;text-align:center}
+.fkl-chk th.ck,.fkl-chk td.ck{width:120px;text-align:center}
+.fkl-chk tbody td{padding:8px 12px;font-size:12.5px;border-top:1px solid #e7eef0;color:#22343a}
+.fkl-chk tbody tr:nth-child(even) td{background:#f6fafb}
+.fkl-chk td.nm{font-weight:600}
+.fkl-chk td.empty{text-align:center;color:#9aabb0;font-style:italic;padding:14px}
+.fkl-chk .pill{display:inline-flex;align-items:center;justify-content:center;min-width:74px;padding:3px 12px;border-radius:20px;font-size:10.5px;font-weight:800;letter-spacing:.3px}
+.fkl-chk .pill.ada{background:#e0f5ea;color:#127a43;border:1px solid #a8dcc0}
+.fkl-chk .pill.no{background:#fce4e4;color:#b02626;border:1px solid #edbcbc}
+.fkl-chk .pill.nn{background:#eef2f4;color:#98a6ab;border:1px solid #dde5e8}
+/* Hasil pemeriksaan */
+.fkl-doc .hasil{display:flex;align-items:center;gap:14px;padding:14px 18px;border-radius:11px;margin-top:2px}
+.fkl-doc .hasil .hi{flex:0 0 auto;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.fkl-doc .hasil .hi svg{width:20px;height:20px}
+.fkl-doc .hasil .ht{font-weight:800;font-size:14px;letter-spacing:.4px}
+.fkl-doc .hasil .hs{font-size:11px;margin-top:1px}
+.fkl-doc .hasil.ok{background:linear-gradient(180deg,#e6f8ee,#d5f1e0);border:1px solid #a8dcc0}
+.fkl-doc .hasil.ok .hi{background:#127a43;color:#fff}
+.fkl-doc .hasil.ok .ht{color:#0f6a3a}.fkl-doc .hasil.ok .hs{color:#3c7a58}
+.fkl-doc .hasil.no{background:linear-gradient(180deg,#fdeaea,#f9dcdc);border:1px solid #edbcbc}
+.fkl-doc .hasil.no .hi{background:#b02626;color:#fff}
+.fkl-doc .hasil.no .ht{color:#9c2222}.fkl-doc .hasil.no .hs{color:#a15353}
+/* Tanda terima */
+.fkl-doc-foot{margin-top:26px}
+.fkl-doc-foot .ttd-title{font-weight:800;font-size:12px;color:#0d2a30;text-transform:uppercase;letter-spacing:.3px;text-align:right}
+.fkl-doc-foot .ttd-date{text-align:right;font-size:12px;color:#22343a;margin:4px 0 8px;font-weight:600}
+.fkl-doc-foot .ttd{width:70%;margin-left:auto;border-collapse:collapse}
+.fkl-doc-foot .ttd td{width:50%;text-align:center;vertical-align:top;padding:0 8px}
+.fkl-doc-foot .ttd .role{font-size:12px;color:#22343a;font-weight:600}
+.fkl-doc-foot .ttd .gap{height:58px}
+.fkl-doc-foot .ttd .nm{font-weight:800;font-size:12.5px;color:#0d2a30;border-top:1.4px solid #22343a;padding-top:5px;display:inline-block;min-width:150px}
+.fkl-doc-foot .ttd .sub{font-size:10px;color:#7c8a8f;margin-top:2px}
+/* ===== Print ===== */
 @media print{
   body *{visibility:hidden !important}
   #fkl-print-root,#fkl-print-root *{visibility:visible !important}
   #fkl-print-root{display:block !important;position:absolute;inset:0;margin:0;padding:0;width:100%;background:#fff}
-  @page{size:A4;margin:16mm 15mm}
+  #fkl-print-root .fkl-doc{box-shadow:none;border-radius:0;padding:4mm 6mm}
+  .fkl-chk thead th{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .fkl-sec-h .rn,.fkl-doc-band,.fkl-doc .hasil,.fkl-chk .pill,.fkl-doc-logo img{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  @page{size:A4;margin:14mm 14mm}
 }
-.fkl-doc{font-family:'Times New Roman',serif;color:#000;font-size:12pt;line-height:1.45;padding:6mm}
-.fkl-doc h1{text-align:center;font-size:14pt;font-weight:bold;margin:0 0 2px;text-transform:uppercase;letter-spacing:.5px}
-.fkl-doc h2{text-align:center;font-size:12pt;font-weight:bold;margin:0 0 14px;text-transform:uppercase}
-.fkl-doc .fkl-doc-rule{border:0;border-top:2px solid #000;margin:6px 0 14px}
-.fkl-doc table{width:100%;border-collapse:collapse}
-.fkl-doc .info td{padding:2px 4px;vertical-align:top;font-size:11.5pt}
-.fkl-doc .info td.k{width:38%}.fkl-doc .info td.s{width:3%}
-.fkl-doc .sec{font-weight:bold;margin:14px 0 5px;font-size:12pt}
-.fkl-doc .chk{width:100%;border-collapse:collapse;margin-bottom:4px}
-.fkl-doc .chk td,.fkl-doc .chk th{border:1px solid #000;padding:4px 8px;font-size:11pt;vertical-align:middle}
-.fkl-doc .chk th{background:#e8e8e8;text-align:center;font-size:10.5pt}
-.fkl-doc .chk td.no{width:8%;text-align:center}
-.fkl-doc .chk td.ada{width:16%;text-align:center;font-weight:bold}
-.fkl-doc .fkl-doc-status{margin:12px 0;font-size:12pt}
-.fkl-doc .fkl-doc-status b{padding:2px 12px;border:1.5px solid #000;border-radius:4px}
-.fkl-doc .fkl-doc-sign{margin-top:26px;width:60%;margin-left:auto}
-.fkl-doc .fkl-doc-sign .d{text-align:center;margin-bottom:10px;font-size:11.5pt}
-.fkl-doc .fkl-doc-sign table{width:100%}
-.fkl-doc .fkl-doc-sign td{width:50%;text-align:center;vertical-align:top;font-size:11.5pt}
-.fkl-doc .fkl-doc-sign .role{margin-bottom:64px}
-.fkl-doc .fkl-doc-sign .nm{font-weight:bold;text-decoration:underline}
 </style>
 <!-- (Gaya & library Pembuatan Kontrak dihapus) -->
 </head>
@@ -1660,24 +1739,11 @@ tbody tr{animation:rowIn .3s ease both}
             <svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
           </button>
           <div class="topnav-dropdown">
-            <!-- Submenu bertingkat: Kelengkapan Dokumen Pengadaan (Pengadaan Langsung / Tender) -->
-            <div class="topnav-sub" data-sub="kelengkapan" data-role="admin user">
-              <button class="topnav-subtrigger" type="button" onclick="toggleFkSub(event,'kelengkapan')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>
-                <span class="sub-label">Kelengkapan Dokumen Pengadaan</span>
-                <svg class="caret2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
-              </button>
-              <div class="topnav-subdrop">
-                <button class="topnav-item" data-view="form-kelengkapan" data-modul="pl" data-role="admin user" onclick="openFormKelengkapan('pl')">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>
-                  Pengadaan Langsung
-                </button>
-                <button class="topnav-item" data-view="form-kelengkapan" data-modul="tender" data-role="admin user" onclick="openFormKelengkapan('tender')">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>
-                  Tender
-                </button>
-              </div>
-            </div>
+            <!-- Kelengkapan Dokumen Pengadaan (langsung tanpa pilih modul) -->
+            <button class="topnav-item" data-view="form-kelengkapan" data-role="admin user" onclick="openFormKelengkapan()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>
+              Kelengkapan Dokumen Pengadaan
+            </button>
             <!-- Pembukaan Penawaran -->
             <button class="topnav-item" data-view="form-pembukaan" data-role="admin user" onclick="openFormPembukaan()">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16a1 1 0 0 1 1 1v3H3V5a1 1 0 0 1 1-1Z"/><path d="M3 8v11a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V8"/><path d="M9 13h6"/></svg>
@@ -2402,12 +2468,6 @@ tbody tr{animation:rowIn .3s ease both}
       <div>
         <h2 id="fkl-title">Kelengkapan Dokumen Pengadaan</h2>
         <p id="fkl-sub">Checklist kelengkapan berkas &amp; tanda terima dokumen pengadaan</p>
-      </div>
-      <div class="head-right-tools">
-        <div class="fk-seg mod-seg" id="fkl-seg">
-          <button class="fk-seg-btn" data-modul="pl" onclick="openFormKelengkapan('pl')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>Pengadaan Langsung</button>
-          <button class="fk-seg-btn" data-modul="tender" onclick="openFormKelengkapan('tender')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>Tender</button>
-        </div>
       </div>
     </div>
     <div class="panel">
@@ -3558,9 +3618,10 @@ function editRecord(rid){
 const ICONS={
   save:`<svg viewBox="0 0 24 24" fill="none" stroke="#1E9E5A" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>`,
   back:`<svg viewBox="0 0 24 24" fill="none" stroke="#D33A3A" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>`,
-  del:`<svg viewBox="0 0 24 24" fill="none" stroke="#D33A3A" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`
+  del:`<svg viewBox="0 0 24 24" fill="none" stroke="#D33A3A" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,
+  warn:`<svg viewBox="0 0 24 24" fill="none" stroke="#C98A00" stroke-width="2.1"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4M12 17h.01"/></svg>`
 };
-const ICON_BG={save:'#d8f0e3',back:'#fbe0e0',del:'#fbe0e0'};
+const ICON_BG={save:'#d8f0e3',back:'#fbe0e0',del:'#fbe0e0',warn:'#fdf0d6'};
 function openConfirm({icon,title,text,onYes}){
   document.getElementById('confirm-icon').innerHTML=ICONS[icon];
   document.getElementById('confirm-icon').style.background=ICON_BG[icon];
@@ -7605,7 +7666,7 @@ function pnPreviewToggleMax(){
   }
 }
 function pnCleanupPreview(){ if(pnPreviewCtx && pnPreviewCtx.url){ try{ URL.revokeObjectURL(pnPreviewCtx.url); }catch(e){} } pnPreviewCtx=null; }
-function closePnPreview(){ const ov=document.getElementById('pn-preview-overlay'); if(ov) ov.classList.remove('show'); const modal=ov&&ov.querySelector('.pn-preview-modal'); if(modal) modal.classList.remove('is-max'); const lbl=document.getElementById('pn-preview-max-label'); if(lbl) lbl.textContent='Perbesar'; const b=document.getElementById('pn-preview-body'); if(b) b.innerHTML=''; pnCleanupPreview(); }
+function closePnPreview(){ const ov=document.getElementById('pn-preview-overlay'); if(ov) ov.classList.remove('show'); const modal=ov&&ov.querySelector('.pn-preview-modal'); if(modal) modal.classList.remove('is-max'); const lbl=document.getElementById('pn-preview-max-label'); if(lbl) lbl.textContent='Perbesar'; const b=document.getElementById('pn-preview-body'); if(b){ b.innerHTML=''; b.classList.remove('fkl-preview-body'); } const fp=document.getElementById('fkl-preview-print'); if(fp) fp.remove(); pnCleanupPreview(); }
 
 /* ---- Upload / Download / Hapus lampiran (per masing-masing nomor dokumen) ---- */
 let pnUploadCtx=null;
@@ -7708,12 +7769,15 @@ function pnDelete(id, key, btn){
 
 /* ==================================================================
    FORM — KELENGKAPAN DOKUMEN PENGADAAN (Pengadaan Langsung & Tender)
-   - Checklist berkas wajib + tambahan (bisa dicentang)
-   - Status "Lengkap/Tidak Lengkap" otomatis dari kelengkapan berkas WAJIB
-   - Tanggal terima dokumen + blok tanda tangan (menyerahkan/menerima) kanan bawah
-   - Cetak dokumen (window.print) siap tanda tangan
+   Alur wizard 3 langkah:
+     1) Data Pekerjaan  → [Batal] [Selanjutnya]
+     2) Pilih Dokumen (gabungan Wajib+Tambahan) → [Batal] [Kembali] [Selanjutnya]
+     3) Kelengkapan Dokumen (Ada / Tidak Ada) → [Batal] [Sebelumnya] [Simpan & Lihat]
+   Simpan & Lihat → Pratinjau PDF elegan:
+     "FORM PEMERIKSAAN KELENGKAPAN DOKUMEN PENGADAAN"
    ================================================================== */
 const FKL_JENIS_ANGGARAN = ['Investasi','Operasi'];
+const FKL_METODE = ['Pengadaan Langsung','Tender Terbuka','Tender Terbatas','Seleksi Umum','Seleksi Terbatas','Penunjukan Langsung','Tender Cepat'];
 const FKL_DOCS = {
   pl:{ label:'Pengadaan Langsung',
     wajib:[
@@ -7759,6 +7823,16 @@ const FKL_DOCS = {
     ]
   }
 };
+/* Gabungan dokumen (Wajib + Tambahan) untuk langkah "Pilih Dokumen".
+   Diambil dari modul Tender sesuai permintaan (superset terlengkap). */
+function fklDocPool(){
+  const t = FKL_DOCS.tender;
+  const seen = {}; const pool = [];
+  t.wajib.concat(t.tambahan).forEach(nama=>{
+    if(!seen[nama]){ seen[nama]=true; pool.push(nama); }
+  });
+  return pool;
+}
 const FKL_INFO_FIELDS=[
   {key:'nama',          label:'Nama Pekerjaan',      type:'text', span:2, ph:'cth. Pembangunan Gardu Hubung'},
   {key:'lokasi',        label:'Lokasi Pekerjaan',    type:'text', span:2, ph:'cth. ULP Kobisonta'},
@@ -7766,35 +7840,53 @@ const FKL_INFO_FIELDS=[
   {key:'no_anggaran',   label:'No. Anggaran',        type:'text'},
   {key:'tgl_anggaran',  label:'Tgl. Anggaran',       type:'date'},
   {key:'jenis_anggaran',label:'Jenis Anggaran',      type:'select', options:FKL_JENIS_ANGGARAN},
+  {key:'metode',        label:'Metode Pengadaan',    type:'select', span:2, options:FKL_METODE},
   {key:'menyerahkan',   label:'Yang Menyerahkan',    type:'text', ph:'Nama pegawai'},
   {key:'menerima',      label:'Yang Menerima',       type:'text', ph:'Nama pegawai'},
   {key:'tgl_terima',    label:'Tgl. Terima Dokumen', type:'date'}
 ];
 let fklModul='pl';
-const FKL_STATE_KEY='fkl_state_v1';
-function fklBlankState(){ return { info:{}, wajib:{}, tambahan:{} }; }
+let fklStep=1;               // 1 = Data, 2 = Pilih Dokumen, 3 = Kelengkapan
+const FKL_STATE_KEY='fkl_state_v2';
+/* State per modul:
+   info   : { key: value }
+   pilih  : { "Nama Dokumen": true|false }   (dipilih untuk diperiksa)
+   ada    : { "Nama Dokumen": true|false }   (hasil pemeriksaan: Ada / Tidak Ada) */
+function fklBlankState(){ return { info:{}, pilih:{}, ada:{} }; }
 let fklState = { pl:fklBlankState(), tender:fklBlankState() };
 (function fklLoadState(){
   try{ const raw=localStorage.getItem(FKL_STATE_KEY); if(raw){ const o=JSON.parse(raw); if(o&&o.pl&&o.tender) fklState=o; } }catch(e){}
 })();
 function fklSaveState(){ try{ localStorage.setItem(FKL_STATE_KEY, JSON.stringify(fklState)); }catch(e){} }
 
-function openFormKelengkapan(modul){
-  if(modul!=='pl' && modul!=='tender') modul='pl';
-  fklModul=modul; showView('form-kelengkapan');
+function openFormKelengkapan(){
+  fklStep=1; showView('form-kelengkapan');
 }
 function openFormPembukaan(){ showView('form-pembukaan'); }
 
 function fklMarkActive(){
   document.querySelectorAll('.topnav-item[data-view="form-kelengkapan"]').forEach(b=>{
-    b.classList.toggle('active', b.dataset.modul===fklModul);
+    b.classList.add('active');
   });
-  const seg=document.getElementById('fkl-seg');
-  if(seg) seg.querySelectorAll('.fk-seg-btn').forEach(b=> b.classList.toggle('active', b.dataset.modul===fklModul));
 }
 
 const FKL_SEC_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>';
 
+/* ---------- Stepper header ---------- */
+function fklStepperHtml(){
+  const steps=[['1','Data Pekerjaan'],['2','Pilih Dokumen'],['3','Kelengkapan']];
+  return '<div class="fkl-stepper">'+steps.map((s,i)=>{
+    const n=i+1;
+    const cls = n<fklStep ? 'done' : (n===fklStep ? 'active' : '');
+    const mark = n<fklStep
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg>'
+      : s[0];
+    const line = i<steps.length-1 ? '<div class="fkl-step-line '+(n<fklStep?'done':'')+'"></div>' : '';
+    return '<div class="fkl-step '+cls+'"><div class="fkl-step-dot">'+mark+'</div><div class="fkl-step-name">'+s[1]+'</div></div>'+line;
+  }).join('')+'</div>';
+}
+
+/* ---------- Field input ---------- */
 function fklInfoInputHtml(f){
   const id='fkl-'+f.key;
   const span=f.span?(' style="grid-column:span '+f.span+'"'):'';
@@ -7805,134 +7897,316 @@ function fklInfoInputHtml(f){
   else ctl='<input id="'+id+'" type="text"'+(f.ph?' placeholder="'+fkEsc(f.ph)+'"':'')+' oninput="fklOnInfoChange()">';
   return '<div class="field"'+span+'><label>'+fkEsc(f.label)+'</label>'+ctl+'</div>';
 }
-function fklCheckHtml(kind, list, mapp){
-  return list.map((nama,i)=>{
-    const on=!!mapp[i];
+
+/* ---------- Langkah 2: pilih dokumen ---------- */
+function fklPilihHtml(){
+  const pool=fklDocPool(), st=fklState[fklModul];
+  return pool.map((nama,i)=>{
+    const on=!!st.pilih[nama];
     return '<label class="fkl-check">'+
-      '<input type="checkbox" data-kind="'+kind+'" data-idx="'+i+'" '+(on?'checked':'')+' onchange="fklOnCheck(this)">'+
+      '<input type="checkbox" data-nama="'+fkEsc(nama)+'" '+(on?'checked':'')+' onchange="fklOnPilih(this)">'+
       '<span class="pn-check-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></span>'+
       '<span class="fkl-num">'+(i+1)+'</span>'+
       '<span class="fkl-lbl">'+fkEsc(nama)+'</span>'+
     '</label>';
   }).join('');
 }
+
+/* ---------- Langkah 3: hasil pemeriksaan (Ada / Tidak Ada) ---------- */
+function fklSelectedDocs(){
+  const st=fklState[fklModul];
+  return fklDocPool().filter(nama=>st.pilih[nama]);
+}
+function fklAdaHtml(){
+  const st=fklState[fklModul], list=fklSelectedDocs();
+  if(!list.length) return '<div class="fkl-empty-note">Belum ada dokumen yang dipilih. Kembali ke langkah <b>Pilih Dokumen</b> untuk memilih berkas yang akan diperiksa.</div>';
+  return '<div class="fkl-ada-list">'+list.map((nama,i)=>{
+    const val=st.ada[nama];                 // true=Ada, false=Tidak Ada, undefined=belum
+    const yes=val===true, no=val===false;
+    return '<div class="fkl-ada-row">'+
+      '<span class="fkl-ada-num">'+(i+1)+'</span>'+
+      '<span class="fkl-ada-name">'+fkEsc(nama)+'</span>'+
+      '<span class="fkl-ada-opts">'+
+        '<button type="button" class="fkl-ada-btn ada'+(yes?' on':'')+'" onclick="fklSetAda(\''+fkEsc(nama).replace(/'/g,"\\'")+'\',true)">'+
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M20 6 9 17l-5-5"/></svg>Ada</button>'+
+        '<button type="button" class="fkl-ada-btn no'+(no?' on':'')+'" onclick="fklSetAda(\''+fkEsc(nama).replace(/'/g,"\\'")+'\',false)">'+
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M18 6 6 18M6 6l12 12"/></svg>Tidak Ada</button>'+
+      '</span>'+
+    '</div>';
+  }).join('')+'</div>';
+}
+
+/* ---------- Render utama ---------- */
 function renderFormKelengkapan(){
   fklMarkActive();
-  const def=FKL_DOCS[fklModul], st=fklState[fklModul];
-  const tt=document.getElementById('fkl-title'); if(tt) tt.textContent='Kelengkapan Dokumen Pengadaan — '+def.label;
+  const def=FKL_DOCS[fklModul];
+  const tt=document.getElementById('fkl-title'); if(tt) tt.textContent='Kelengkapan Dokumen Pengadaan';
+  const sub=document.getElementById('fkl-sub');
   const cont=document.getElementById('fkl-content'); if(!cont) return;
-  let html='';
-  html+='<div class="form-card"><div class="form-section-title">'+KR_SECTION_ICON+'Data Pekerjaan</div><div class="form-flow" style="--cols:4">';
-  html+=FKL_INFO_FIELDS.map(fklInfoInputHtml).join('');
-  html+='</div></div>';
-  html+='<div class="form-card"><div class="form-section-title">'+FKL_SEC_ICON+'I. Kelengkapan Berkas Wajib</div>';
-  html+='<div class="fkl-checkgrid">'+fklCheckHtml('wajib', def.wajib, st.wajib)+'</div></div>';
-  html+='<div class="form-card"><div class="form-section-title">'+FKL_SEC_ICON+'II. Kelengkapan Berkas Tambahan</div>';
-  html+='<div class="fkl-checkgrid">'+fklCheckHtml('tambahan', def.tambahan, st.tambahan)+'</div></div>';
-  html+='<div class="form-card"><div class="form-section-title">'+FKL_SEC_ICON+'III. Kelengkapan Dokumen (Otomatis)</div><div id="fkl-status"></div></div>';
-  html+='<div class="form-card"><div class="form-section-title">'+KR_SECTION_ICON+'Tanda Terima Dokumen</div><div class="fkl-signwrap"><div class="fkl-sign" id="fkl-sign"></div></div></div>';
-  html+='<div class="fkl-actions">'+
-    '<button class="btn btn-teal" onclick="fklPrint()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>Cetak</button>'+
-    '<button class="btn btn-red" onclick="fklReset()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>Reset</button>'+
-  '</div>';
+  const st=fklState[fklModul];
+  let html=fklStepperHtml();
+
+  if(fklStep===1){
+    if(sub) sub.textContent='Langkah 1 dari 3 — Lengkapi data pekerjaan';
+    html+='<div class="form-card"><div class="form-section-title">'+KR_SECTION_ICON+'Data Pekerjaan</div><div class="form-flow" style="--cols:4">';
+    html+=FKL_INFO_FIELDS.map(fklInfoInputHtml).join('');
+    html+='</div></div>';
+    html+='<div class="fkl-actions"><div class="fkl-actions-left"></div><div class="fkl-actions-right">'+
+      '<button class="btn btn-ghost" onclick="fklBatal()">'+FKL_IC_X+'Batal</button>'+
+      '<button class="btn btn-teal" onclick="fklNext()">Selanjutnya'+FKL_IC_NEXT+'</button>'+
+    '</div></div>';
+  }
+  else if(fklStep===2){
+    if(sub) sub.textContent='Langkah 2 dari 3 — Pilih dokumen yang akan diperiksa';
+    const sel=fklSelectedDocs().length;
+    html+='<div class="form-card"><div class="form-section-title">'+FKL_SEC_ICON+'Pilih Dokumen '+
+      '<span class="fkl-count-chip">'+sel+' dipilih</span></div>'+
+      '<div class="fkl-hint">Centang dokumen yang perlu diperiksa kelengkapannya (gabungan Dokumen Wajib &amp; Dokumen Tambahan).</div>'+
+      '<div class="fkl-checkgrid">'+fklPilihHtml()+'</div>'+
+      '<div class="fkl-selall"><button type="button" class="fkl-linkbtn" onclick="fklSelectAll(true)">Pilih semua</button>'+
+      '<span>•</span><button type="button" class="fkl-linkbtn" onclick="fklSelectAll(false)">Kosongkan</button></div>'+
+    '</div>';
+    html+='<div class="fkl-actions"><div class="fkl-actions-left">'+
+        '<button class="btn btn-ghost" onclick="fklBatal()">'+FKL_IC_X+'Batal</button>'+
+      '</div><div class="fkl-actions-right">'+
+        '<button class="btn btn-light" onclick="fklBack()">'+FKL_IC_BACK+'Kembali</button>'+
+        '<button class="btn btn-teal" onclick="fklNext()">Selanjutnya'+FKL_IC_NEXT+'</button>'+
+    '</div></div>';
+  }
+  else{
+    if(sub) sub.textContent='Langkah 3 dari 3 — Tandai ketersediaan tiap dokumen';
+    html+='<div class="form-card"><div class="form-section-title">'+FKL_SEC_ICON+'Kelengkapan Dokumen</div>'+
+      '<div class="fkl-hint">Tandai tiap dokumen: <b>Ada</b> atau <b>Tidak Ada</b>.</div>'+
+      fklAdaHtml()+
+    '</div>';
+    html+='<div class="form-card"><div class="form-section-title">'+FKL_SEC_ICON+'Ringkasan Pemeriksaan</div><div id="fkl-status"></div></div>';
+    html+='<div class="fkl-actions"><div class="fkl-actions-left">'+
+        '<button class="btn btn-ghost" onclick="fklBatal()">'+FKL_IC_X+'Batal</button>'+
+      '</div><div class="fkl-actions-right">'+
+        '<button class="btn btn-light" onclick="fklBack()">'+FKL_IC_BACK+'Sebelumnya</button>'+
+        '<button class="btn btn-green" onclick="fklSimpanLihat()">'+FKL_IC_SAVE+'Simpan &amp; Lihat</button>'+
+    '</div></div>';
+  }
+
   cont.innerHTML=html;
-  FKL_INFO_FIELDS.forEach(f=>{
-    const el=document.getElementById('fkl-'+f.key); if(!el) return;
-    const v=st.info[f.key];
-    el.value = (f.type==='num') ? rupiahInputText(v) : (v!=null?v:'');
-  });
-  fklUpdateStatus();
-  fklUpdateSign();
+
+  if(fklStep===1){
+    FKL_INFO_FIELDS.forEach(f=>{
+      const el=document.getElementById('fkl-'+f.key); if(!el) return;
+      const v=st.info[f.key];
+      el.value = (f.type==='num') ? rupiahInputText(v) : (v!=null?v:'');
+    });
+  }
+  if(fklStep===3) fklUpdateStatus();
 }
+
+/* ---------- Ikon tombol ---------- */
+const FKL_IC_X='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+const FKL_IC_NEXT='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:15px;height:15px"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+const FKL_IC_BACK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:15px;height:15px"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>';
+const FKL_IC_SAVE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>';
+
+/* ---------- Interaksi data ---------- */
 function fklOnInfoChange(){
   const st=fklState[fklModul];
   FKL_INFO_FIELDS.forEach(f=>{
     const el=document.getElementById('fkl-'+f.key); if(!el) return;
     st.info[f.key] = (f.type==='num') ? parseRupiah(el.value) : el.value.trim();
   });
-  fklSaveState(); fklUpdateSign();
+  fklSaveState();
 }
-function fklOnCheck(el){
+function fklOnPilih(el){
   const st=fklState[fklModul];
-  st[el.dataset.kind][+el.dataset.idx]=el.checked;
-  fklSaveState(); fklUpdateStatus();
+  st.pilih[el.dataset.nama]=el.checked;
+  fklSaveState();
+  const chip=document.querySelector('.fkl-count-chip');
+  if(chip) chip.textContent=fklSelectedDocs().length+' dipilih';
 }
-function fklCountWajib(){
-  const def=FKL_DOCS[fklModul], st=fklState[fklModul];
-  let n=0; def.wajib.forEach((_,i)=>{ if(st.wajib[i]) n++; });
-  return {done:n, total:def.wajib.length, lengkap:n===def.wajib.length};
+function fklSelectAll(on){
+  const st=fklState[fklModul];
+  fklDocPool().forEach(nama=>{ st.pilih[nama]=on; });
+  fklSaveState(); renderFormKelengkapan();
+}
+function fklSetAda(nama, val){
+  const st=fklState[fklModul];
+  st.ada[nama] = (st.ada[nama]===val) ? undefined : val;  // klik lagi = batalkan pilihan
+  if(st.ada[nama]===undefined) delete st.ada[nama];
+  fklSaveState(); renderFormKelengkapan();
+}
+
+/* ---------- Ringkasan status (langkah 3) ---------- */
+function fklCountAda(){
+  const st=fklState[fklModul], list=fklSelectedDocs();
+  let ada=0, tidak=0, belum=0;
+  list.forEach(nama=>{
+    if(st.ada[nama]===true) ada++;
+    else if(st.ada[nama]===false) tidak++;
+    else belum++;
+  });
+  return {ada,tidak,belum,total:list.length, lengkap:(list.length>0 && ada===list.length)};
 }
 function fklUpdateStatus(){
   const box=document.getElementById('fkl-status'); if(!box) return;
-  const def=FKL_DOCS[fklModul], st=fklState[fklModul];
-  const w=fklCountWajib();
-  let t=0; def.tambahan.forEach((_,i)=>{ if(st.tambahan[i]) t++; });
-  const pct=Math.round(w.done/w.total*100);
-  const badge = w.lengkap
-    ? '<span class="fkl-status-badge ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>LENGKAP</span>'
-    : '<span class="fkl-status-badge no"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6 6 18M6 6l12 12"/></svg>TIDAK LENGKAP</span>';
+  const c=fklCountAda();
+  const pct = c.total ? Math.round(c.ada/c.total*100) : 0;
+  const badge = c.lengkap
+    ? '<span class="fkl-status-badge ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>DOKUMEN LENGKAP</span>'
+    : '<span class="fkl-status-badge no"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6 6 18M6 6l12 12"/></svg>DOKUMEN TIDAK LENGKAP</span>';
   box.innerHTML='<div class="fkl-status-card">'+badge+
-    '<div class="fkl-status-meta">Berkas Wajib: <b>'+w.done+'/'+w.total+'</b> &nbsp;•&nbsp; Berkas Tambahan: <b>'+t+'/'+def.tambahan.length+'</b><br>Status ditentukan otomatis dari kelengkapan <b>Berkas Wajib</b>.</div>'+
-    '<div class="fkl-prog"><div class="fkl-prog-bar"><div class="fkl-prog-fill" style="width:'+pct+'%"></div></div><div class="fkl-prog-txt">'+pct+'% berkas wajib terpenuhi</div></div>'+
+    '<div class="fkl-status-meta">Ada: <b>'+c.ada+'</b> &nbsp;•&nbsp; Tidak Ada: <b>'+c.tidak+'</b> &nbsp;•&nbsp; Belum ditandai: <b>'+c.belum+'</b><br>Hasil pemeriksaan dinyatakan <b>LENGKAP</b> bila seluruh dokumen berstatus <b>Ada</b>.</div>'+
+    '<div class="fkl-prog"><div class="fkl-prog-bar"><div class="fkl-prog-fill" style="width:'+pct+'%"></div></div><div class="fkl-prog-txt">'+pct+'% dokumen tersedia</div></div>'+
   '</div>';
 }
-function fklUpdateSign(){
-  const box=document.getElementById('fkl-sign'); if(!box) return;
-  const info=fklState[fklModul].info;
-  const tgl = info.tgl_terima ? fmtDate(info.tgl_terima) : '..........................';
-  const nyerah = info.menyerahkan || '..........................';
-  const nerima = info.menerima || '..........................';
-  box.innerHTML=
-    '<div class="fkl-sign-date">Masohi, <b>'+fkEsc(tgl)+'</b></div>'+
-    '<div class="fkl-sign-cols">'+
-      '<div class="fkl-sign-col"><div class="fkl-sign-role">Yang Menyerahkan,</div><div class="fkl-sign-name">'+fkEsc(nyerah)+'</div><div class="fkl-sign-sub">Nama Pegawai</div></div>'+
-      '<div class="fkl-sign-col"><div class="fkl-sign-role">Yang Menerima,</div><div class="fkl-sign-name">'+fkEsc(nerima)+'</div><div class="fkl-sign-sub">Nama Pegawai</div></div>'+
-    '</div>';
+
+/* ---------- Navigasi wizard ---------- */
+function fklNext(){
+  if(fklStep===1){
+    fklOnInfoChange();
+    fklStep=2; renderFormKelengkapan(); fklScrollTop(); return;
+  }
+  if(fklStep===2){
+    if(!fklSelectedDocs().length){ toast('Pilih minimal satu dokumen','warn'); return; }
+    fklStep=3; renderFormKelengkapan(); fklScrollTop(); return;
+  }
 }
-function fklReset(){
-  openConfirm({ icon:'del', title:'Reset Form',
-    text:'Kosongkan seluruh isian & centang pada modul '+FKL_DOCS[fklModul].label+'?',
-    onYes:()=>{ fklState[fklModul]=fklBlankState(); fklSaveState(); renderFormKelengkapan(); toast('Form dikosongkan','ok'); }
+function fklBack(){
+  if(fklStep>1){ fklStep--; renderFormKelengkapan(); fklScrollTop(); }
+}
+function fklScrollTop(){
+  const v=document.getElementById('view-form-kelengkapan');
+  if(v) v.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function fklBatal(){
+  openConfirm({ icon:'del', title:'Batalkan Proses',
+    text:'Batalkan proses ini? Data yang belum disimpan akan hilang.',
+    onYes:()=>{
+      fklState[fklModul]=fklBlankState(); fklSaveState();
+      fklStep=1; showView('dashboard'); toast('Proses dibatalkan','ok');
+    }
   });
 }
-function fklPrint(){
+
+/* ==================================================================
+   PRATINJAU PDF — FORM PEMERIKSAAN KELENGKAPAN DOKUMEN PENGADAAN
+   ================================================================== */
+function fklSimpanLihat(){
+  const c=fklCountAda();
+  if(c.belum>0){
+    openConfirm({ icon:'warn', title:'Masih Ada yang Belum Ditandai',
+      text:c.belum+' dokumen belum ditandai Ada/Tidak Ada. Lanjutkan menyimpan & melihat pratinjau?',
+      onYes:()=>{ fklSaveState(); fklOpenPreview(); }
+    });
+    return;
+  }
+  fklSaveState(); fklOpenPreview();
+}
+
+/* Tanggal panjang Indonesia: "2026-07-06" -> "06 Juli 2026" */
+const FKL_BULAN=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+function fklDateLong(s){
+  if(!s) return '';
+  const p=String(s).split('-'); if(p.length!==3) return s;
+  const y=p[0], m=parseInt(p[1],10), d=p[2];
+  if(!(m>=1&&m<=12)) return s;
+  return d+' '+FKL_BULAN[m-1]+' '+y;
+}
+/* Logo PLN resmi (di-embed sebagai PNG) */
+const FKL_LOGO_SRC='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAK8AAADwCAYAAAB2SjRXAAAxr0lEQVR42u2dd5hd1Xnuf2utffapU9UbAtFBomNjqoRDx3SEDcSFG+M4uXGuHcc3ubkJEMexk9xmxx0bOzbGjoQMBlNsMBLYpglTRe8I1Kaffs7ee637x9rnSEKa0cxoNMxI632e8zw8Z8TZ7V3ffr9vfQUcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHMYcYmd/wBjEWPyOwx4HIwTG3QYHZ3lHanGFwJgiM8nSRh7jLLDDcKhDK4ISeZFjvQEhGJ0F9nbiJBQQovky8DEg3Mnfc9gzYHkScRNwJStRLCEcb/Juab0FIJHO8jrsABq5BWd2CmNlKQ2g4xNzcBiavowNT8aKvHYlCWd5HXZo5sYsOuUspcOkhSOvgyOvg4Mjr4ODI6+DI6+DgyOvg4Mjr4ODI6+DI6+DgyOvg4Mjr8MeAZd/O1qYMfoNV0TlyDvuxE2MwXtLABGMLhXbwZF3NMRVYHoUpih3jsAaREYjpkQ2y9XBkXeXIn7NFz41m/CJFGT1qIgnJOi8ouXr6/EvKcCAAOWKaR15dxU0kIHoGd8SVxiojKJ8UIKuCtSCOonTilAGpCOuI+8ulQwCEobggSymKBFTQohG4W0pAzVF6sMDiHYDfQI8R15H3l0qGQzUob4ya8mmR2F1BVAXyJkh/gUFqOLkwijh4rwjkQwp0K8lCJ9OITJ6dOEyaTAFiX92EblPCFXhQmWOvOMgGZIQ/C6D6VHW8o6GvFogsobUR/ptiEw4q+vIOx6SIYL6fdn4NT8arQumKEmcUEYdXYOSewKOvLvc6gJJ0GsV4R/SiLQeZVzWWuvk5QO235BxesGRd5frXQEpCB/OoDcq8M2owmOmLPEOreF/sGStrnPUHHnHy/rW78uOPqdBGqhIkpfmoc1A4KyuI+94SAbfYDZKgkfSiEwcIhuRXgZqAjknIHlB3oXHHHnHUTKkIXwsjV6bGKVkMJiiwj+niJgfufCYI+94RhpiyTDa0JYWiJwm9eEBFx5z5B1HyZAwmF5B8PsMpEchGRSYgiRxUhl1pAuPOfKOJ3nTED2VInrNR6RGszFh/4fk5f0uPObIO57kFSDjXIaaGPnrvhEeW1TDX1J24TFH3nGEMlAUBA9kIalHbjVFHB5bmodWFx5z5B23KEMsGZ71iV70EWkzsl21RvbYvIDk+XmoOKvryDueksGD+v3ZuNxnpJLBhseS5xYR86JYdrjb6sg7LnfGQBWCVdk4tjtC5kUC0aJJfngAAlx4zJF3HCVDCvTLPuGa5MgTcRrZYyeXUIfX4jIfd1sdecdLMvhQ/20G069GUaJjQEDqigF7h114zJF33CAMhBA0yn1GIlYlmJLEO6xKYnEZis5Rc+QdN6sbS4Y3PMInUiOXDNJATZK8LA85M7oCTQdH3tHp3bjc58EMusuDxAh21QRQlTY8dl7BhsdcSbsj77iaXg3Bfdk4QjACy6kMpiRJnldAzHHZY7sa3u5LQcsaY0Tzv61xtM6U/dZsKxmSYNYpgtWN3N0RHDQU0KpJLC0Q1ZUlrtl8XCG2c8wxvN53X+t4HNeRd6ze+EaikQgMSkSWpMpsbf0MjUnJREZhEEihkei43McQPJpGr/MQbdHwNasy6H6PzIf6SRxZtY5a8l3HNKC1PUeJRgo9JtfriRAhLUm3e60GjLHXKwAp9G5BZm93IawnQqSnkTLupxAKNtams7E+jf6gg4rx8EVEmyow1e9hpr8R3681OzVGkUIYkCKykmGEvDJGkFAh9csi1pX2padnCnkyaKBVVpnmdzE7uYGMX7LnqMFEgsgolIhGRCaDQBuJ8iL7WyFsqMxkQ306A2EbVeOh0LSoCh2JPqb7XbQn+vESkb03EURaITA7vYAceUcBa0UMUmmksg/wmYGFPNB3Ir/rP45nioewtjqbfNgK2o/lvQEZkFJlZvsbOazlWU7rXMk50+5mfu5N8MF0SYKHMnEuw/CsrhaSTLXCM/sfwCXq22y8p5MgSoNRVjOLCE+Vmel3sSj3HKd2PsCZU+9hYcuzeCpsLh52YBUNluyeDFGJiKf7FvHjdVdwb+/JvFrZm0LYEl9rrFdEhJRVOhP97JNey9EtT/LBKfezpPN+pqR77NsnVJPWEo/anTAGTwhCk+eHtPAx8oSI8VkMBtGUAy/kD2T5hou5tescnsgvxISt1tGSNRCBfYBCN+WnMQJjFJgE6CQYSS65ifOm3MVnFn2dox55loGP7IXMDb/taCgV04q9fPLjX+L7p30SWezFKBFrTdAGDAp045gKmchzfNujfGTWzVww/XZmZ9bFKwGMtpb13VpdyQg82FSZxjUv/wPfe/tjhGGLvVZZBxEi42M2rxVpF5H27UdopqfXctH02/mzvb7NovZnbXXHeHHXENKKR56bRBtXmJV4YsnoOhRPSvIi4Tc9i/nGW5/mjq7TqAcd9gGqCp4IAYEexIFpOjFbODKh9qGeg07Njf95NUtvuZv+lhaU3jF7jRAkwoCutk6O+YdbyWfaQEfo7TlOgIitXGg8iLKgE7Sn1nH6lN9w0YzbOLHjQeak1tkXxbv060Ctjf/ccAlffPVveLu0HyT68UTYJPr2rzVe7sIg0dZ66ySEOfzEAJ+edz3/uP8XaVUFjGHXW+AxJO+kkQ2NBxPicflT3+fmd66wT9Qr4PndaCTGSEuK4XjmbG6SJ0SESvchioJ9H3+b0PeGnUcTCUlntcTXT7uS/ilzUYVeIqkGOSaxlLCkkl4eMPSHLSxbdyXL1l1BS3IjB2df5IDsy8xOriclaxSjDK9X9uGRgWNYV9ofZIWE34WJBKFMxCphMKkRLx0j0HFkVIgA5XcTGMVXX/08j+SPYOWx55Kkbt9qk0RCTCrNK4QhCH3u7VmMkBU8VSE03rAIO6Qh14Yw2cKxrz/M4Rufp+ynkWZ4msHTEX25Nn54/EVQr2KEGOZitLrdXleITPQCUAhzPNp3PI/2nLK16RXaklZ1g4FApKElC+UBEmFA4PmDEnh7Cyk0no14+AM8V9qfWuiTStQwkygPY9JtUggMLV6x6byYMfpNvARnrPktqWqNSAzvtkRS0Vopcveik3h5r4XIWgUtRn5LG9cSGYUQIcor4vm9eH43nt9Nwu8iqbqRokaQaiXITWFaqZc/u/Nb/Pj7nydpNAIxYg1oj+uRllUbZnPRhvEJj42ImDv4JpIKWS1y+rO/p5ZIIodpwTCGSEquP+nSbX55OMcdnFCWhtJohDGEXhKyWQiqvP/l1Vzx0K2c9dQq9nt9Df982Rcots3AK/QQStXUuO+WW0Pez0m60bpbbVI0HKKmY2Ikxnj2BWOwUQgR2g2MeBEIY9B+hoPWrmHR2hcp+6lhSQYtJC21Mo/uexi/PeQEVLWAUAaPMI49K2guMgNCNzdDGnHawZxJqTVaCHQyC16Czt51nP/QCi5/8Bcc9/LjpOtVSskMm2btw/UnLUXWy0ipUSKWIk0ZZRDNaIvBIOPj7h7YLcjbIEVoPEyYQ2vfElWVyHp5sqqEEoZKlKQ/bCcKOi2hVBGfCnXf5/Tnfk9buUBXSyeejoZBXkEyrPMfJ12ISWXQAxUgZ3N3VQ2pyiRVGYHGIKlGaXTz3DSoMkpWm4RqWNnISxBl2iCscdTrT3D5w7/g/D/cw4JNawlUgmIqQyGVY0qxn18fdiJvzV2ALmrqehqIELwiGa+IQBMYn3qUIQrTdiHJOqgyngibetuR9z2CtaACHWXRUQqZGOCI9tWc3PEg72tbzUGZl5iZ3EhOlZBoKjrFxvoMnigczu1dZ3FH1xmUqtOhFnDmMw9Q9xLDerkbIcgEVV6dMY8fHHYZuuAxP/s2J3f+nuPbH+Hg7AvM9DeSU0WEiDBGUYhaWVebyZriITzQdwKrek+ip7IXUEOoMjqZAT9JW98Gzn30dq548FZOeOkxctUyxWSG7lwHMrbKSkf4IuCG4y5BBxn2Tj3H+bPu4NTO+9k//Spt3gBCaGo6SXcwlVfL+/CH/FE80Hc8j+WPIKxPBa+EJ8tEJuHIO+6WVkQEYSsYxcGtT/HhWSu4cPptLMqtsVdl3vUBspSYmuzh0LbnuHLuT3mtsA//e/1fsvKJ4znyjeeo+CmkHp5kSFer/MexF3HCQY/xubav8kfTV5Lzi1a7aLYT9F/PQa0vcur0+/lM9C02lWewovd8vtn7X1jTdyiL3lzD5Q/fxoWP/Yr9Nr5JKBTFVJbuXAfK6ObbQAtJS73Eg9OPYvXhR/AvC/6KT835Pm2pgWbOxpbYW7zFMR2Pc9ncFRDBs4VD+dmGS/jhO1fYWLGq4oloUpJ30mxSGOyOVTVMM/u3L9BX3ouTp9/DX+z1bc6b/kv8RN0+uIg4dGaQcXB+6/PeHMxXRNAKXd+Zh/zrNKJzmIk48SDB7psVBxz5ItQtaSKtmnFSm71mtjTXmEhghECmI2TSQB4Kd03lsRuO5/Bnn6OjMkAxmaWaSAJmu5skRglS/XWevHo/pl33JgeYV0BDqL2tjisazpoh3jARNodCGlDQV+3gm2uv5suvfIFQ1ug+ZT9yXhljdnGcd0/cpGggMAmOanmaqw/+HEtnr7DLL4Sw7jUztewu2+Cx4qYFjSQmFOQeqFNW6eGtZWUw/YrkRQUOOHY9pl+gpUQK3XQE3+XK2xyJhIbWmORrkpRubaVyWxvqFcEHvD9QTqfpynWijJUFg55/ZKi2+Jzw0d9AAqKih1TRdq+5kf65ZSxBRxIdSTq8Pv7ugH/hwum/4O9f+R9UdYocZScbdlV8FwNpVeaeo89HeBoTWq99R4QdzHrKlEa/7VF5LDf8piJxP4fU5QOYyMZWt0vaxlcZbOl8n6B+S5ba8lY7lKVPITIa3W4omixC6x07igrMgMQ/s4g5SGCKAqVGdt3NiIcRRDXFIS0vsOLwjxJqL64bNY68u+yEY5JGgU0lVKPVa3HubvhwGrNRIdqHIRkaxZVHV/BOaPQee5eciOygQdpiDj/vU/9FC7XbWohe8O1CzGnE1HgAYWQzMYa94gwkL8kjlNmpIg2BsXkRoUQIM/LF78g7ev2rxsLJGGmrfmGgLmyf3TS2C44ym61sGkgayAuCO7JUb24lWBWPvkprRJvebJXDUXRXr0jU/nVblTxGI19dPu97ISF2krQjbtUfF1eqfev45xRtpURjJ67N/l2/lKB2ewv1W1sIn03aqe4NK6vFZpKPKi5oMOW4fdQU7Ua+sqeOb9UC0obwPtuqX7QMo7xdGUxJ4Z9XQEzV1vJ1YLtI/jpDbXkr9ZUZzCbPWtkWvTlsFo5BsksoEO0R/gV52z7KVSXvwbOHt2nVL4a2uoFATIlIXdVnp7ZvSFC/M0ftlhbCp1MQvsvKjuXbuOGonV5CHVp33dX3WPIa7Ot2JK36JZi8bSSiNyQof2kawcoseoMHKY3IabsAtBgbKzuEo2Y3YLYoS3bk3Z24uWXSS2OjYosyIC0xWYFenSR6LTG88vYIRFYTPpImf1sLpmQ7QG5tZXdRHmxDa+8XkFgSDx/cQjI0ClDffa3b3guQ6N2qDH63IK9uJLdgq4eVF23umdDYMjUgBAipQUGwMo2pSkQuHF6hpQS90XbQEZ16F1rZQbT2ObHWjh21RlroVhXTW1wrwm7IKBltXlfNHUhl8yQmcaRh0pN3mwpiDV3VaTxdWMiThcN4rnQgb1Xn0he0UzcJEoRkvTLz0mv50n1foyNdJIxLwIeFRuun8ew/FgpEm7bDBwObHKaNsgsUWJM/lJU9i3m8cBhvVueQD1upmQQemrQqMzXRy/z0WhZmX+Do1idY1PIsSb8KGnQoJ3W4zJuspFUiQiXsA3ytuIA7us7kjq4zWJ0/kt7ajLgEHBCR/TQ6byRT7PXk87S99hWilEToEbxCx+Bta4RACznkFvC7HTXvjyqwMCIseXheiPIiHuw5ji+98jf8qmcJUdgaX2to0y2bJxpXDjfyilWZfTOvcdbUe7ly9k95f8ej9n6Gamzi5o68w3imiQgTCW7fcA7ff/tj3NOzmEp9qiWpKiO9ou2AA1tV1XpRRJTyuOKlX9BR62dTYgqeGZ+HpoVEC0E6qJGtlcmnc0RC7lApCwNtS9dDIoIEdNWn8qUX/jtfe/PPMDoF3gCe300j+r11ufzmO9BY9K+WF/D11/8bX3/ras6d9iuu2e+LHNPxBCYUk04LTyryGmxW1op15/Mvr/01f+g/1lqXuIK44aBsdmK2RiAEplbjg2seoqaSjEdNQSRtDXu2ViZdr/LGtLn8n7Ou4pynVnLI269Q8VOI7ZUdCRBVCPcxrDn2IN5aO5v7Ni3hpvWXsr68LyLRh1IVIqNGVIAqZRWpykRG8suN53N39+n80wF/z+f3+SpCi+aid+QdY+I2UiI/+dzXGKjM3YqwO3qA0mi0n2bfdS9xxJvPUfLTw8rdHe25RlKijKatXEBgeHL+IfzoxIv56QcuoC+Z4YoHb9tuifxmqauYWu/j3474JH/z0j9CXwAiCV4J5XcTGW9U1RAN5xbAS/QQ6hzXvfbXfHru9bR6xV2fErmny4Y2r0DBK6KN2qa5x+DkNehEitOef5DOUp6uXMewyn1GqmcjKfHDkPZinoqf5J7DTuJ7p1zGHYuWEKStNj3uuQeY3b+RSmIQq4stqS9ksvzHsRdAPSDhFzCiEFcZj81ji4yHIKLNG3AO2/g5bHFobAROvxYCwhpnPfMAgVRjal221LO5aolNbVNY/v5LueHky3h4v2NAJaBSIFnood46hYPXv0aqXqPoZ7aruSMpaSsX+NVhJ/H8/IXIWolAeLtkX6JRdu/IO0HQ6H7YIKgwBuMnmdn1Bse+9jTlZBqpd54J9rVvyFXLJMM6r8ycz8+Ov4obj7+Ql+fsD1GEX83bCmWpQNnY62FrX9ghoZTR3PiB88HzkdXSMPKGzKAN82zvXjnst5Qj7zijUUWhkWidJAqTm0vATQQJxUkv/JKZ+W66sqOXDEYIIiHxtKa9lMdIeHzfhfzg5Eu46cjzKbbNsO38ezUIn7rIbB1rqxgWrnuZQCW26zCa2IK/MmM+dy5aDNVi7PQNct0xYSOd2lwlvA2zI5A1hKyhRDSoQ+vIO95hMxHZjaUog47SIOtMT6/l0OwLHJx7kfmpt5imeqBFctiP3qCk06hReNQ6js8mw4CO6gDFdIY7j13Mt0+6grsPPAdSkNYbOc77DfvPepU5qXV0JvqRok5kkvTW23kz2Jt3Ns5kwaa11LzEdvVuJCS5aomfH306xY5Zg/Y+s5Y2IgpbwCSYkXmdY1sf56Dsi0z3u5AipBLlWF+fwSvlfXmueCBvV+YTRmlQFZQqxxLMkfc9IS0YoqAdMOzf8hznTb+Ts6f+iqNanqQ92d9syYsH9EL5+bmUk5lh9yED0NLmBqTrFbK1Cus7p3HTyR/iOydewVPzjoVExLnZFVw542ecNOVBZqe30+HRuvm2JOghj57+feJmftsyR2lNIZPlJ+//EAS1bXqfNbq+hzpJFHRwWPujfG7vf+e86XfQkezbfoqFhlKQ5enCIm7vOpvlGy7gleJCkFWUrE/aXIdJR96GtouCFkiUOHvGbXxq3g2cPuVeUvG2Z2PrUyPtVm6bof67HKW1OVR7MLztXWXDa23VAkqHPD9nP350/MV8730fpnvqPIQscnXnN/iLvb7FwvZnm7m7Rgtb2PluFkUCkdYEz2ehIiEVbnMekZS0Vwrcu+gDvLDPIfi1Alpujr1qJDpKEkZZOlPr+NsD/oHPzP+mrZwOIQqk7ce7HUmVVSU+0PkwH5j6MP9z369w84aL+LfX/5I1/ceg/a5JSeBJR16NpBhmOXPmbfz9fl/m+I6Ht6ogbpC7OWdCCJCG2srkji2uwJb1hAL6JSWZ5t4DTuKGk5dy15GnQUeCvdXzfLrzWj4+90csaHu9uVAasy2a8zC2+W0BwlB9Ljlk1EBEhm8c88dEOkdUy8CWelfWmJd+k8tm3sJn9v4687JvQwBhXaGERol45W5PqxuBDm2z6Ywo89G9bmTprOV85dUv8I13Pko4CSMOk6t6OFYBtxx+JadM/a0l8xbE2aaI0AAJs+NW/ZLm8D/Tr6BNk72onyfPOYwH9z+EA1PPcKFZwdHpJ1jUtoZEMrCt+OsjmOsgDdSwRZiJ7QziFiBrhtK8FH/1if/HmfyajZWpVI1PWtaY5W/k0NwLHNX6BLlUsXl8e93RsO6fEjbtzCCI6pKUqHHtQV/kwhm3xMR31cO7DgayqsQpU39rG3gYMTRxNJCD8HcpojcSNmlcby0NAExZQEUh5wWkPt5P8sMDqEV1ThX3cmrl3maKYWMYSVj3Bu/TMMh5kwDTrYje9BG+3tb6SgNlhXdWiSUH3c+S0v1bVyaz+fgN0o42mcZWDkd2d7IuObx1zVadhRx5dyGiUKKEHkZPWSsZgpVZCETcJdJ+hxaYvAQNamGN1GV5/AsLyLmhrREbsOndW4apBBo5mjJxA/gQvZXAdCnbx8FsE85AZDWpC/NEgcIE2xZsNqz8WGWANSSOjuSkTIucnFllw73RnoEBQfDbDKS1lQchmAEFSUPilDKpKwbwTy9Cq7Hx2b5YRihLVm8sElWMLZGPXkxiKgKR0ls7axJMQZI4uYw6omaLO8dRgrp83onn2VnJ8EiS6HUfoQym20NMiUh+JE/qigG84yqQwJax98U9GHbhHQmfHcRZE3bAdvLiPPhA2dWo7eHktWSs35lDr/fwjqrin99PcmkedVDdvpKLNJvm7dIeCNJAveGssbWzJoCaRM6v459WHLNmIo68kxkJAwWB7vbIfW0DycvyiOkR1ID+mDTjsUMab5KYbhk7a+/Su9LWqKU+WkTM1NAfvwEc9kzyNodIB4LUv3Qj2iKikoReDyR2Ti9m+8Ozx+K4W85E09ZZMw1nLfEu8mqByGiSF+a36CExUoVkE2+2373MxI7e7jc829udCBsZ2ezaKKSxvcNELA9UZLdnG9Ywjuc30gFHO8K0keTSqFxuDupu8CiKLe9LCXRJITu32OGTYIqSxAll1FGxozaCt8GWBahsWSX8bssfX68xIv5/9PCdXkfeXUdYbWTzAXrShpBMKFlbnsvrlfm8VZ1LT9BJWfskRUiHN8Cs5AYWZN5gQfoNEol67E1ZMgyHxJuPq7eqXC7UW3mtvDdvVOezoTaD/jCLjgTtU2qc8thq5oke6qjNHBOGKFCkLyphfIEoMyzJ0GjrquJB2OvKs3mxtL+tlA47KGsPTxhaVZFpfg/zUm+zd+otpqc22VnHcQl8o5DVkfc9sLLeFhXE75Rns6r3FO7tWczq/FG8VtmLStBuZwy/ezdLhihVZEH6LU7ueJBLZtzKaVPuRfmR3W413jaT2BuEBVAyPq6GFwsHclf36dzTs4QnCotYX5sJUWZzamIc4731ycvZP/kOVdNis9oE6JqibUEfybP7oAKhsMk621tApjnFUuB5EUbDz96+jO+/8zEezR9Jod4Jxt82SCE0yCrtfi8HZ15mcefvOG/aHRzX8QhKRphwGJs9ExSTc/awsMuuWk/xy66zuXHdZazsO4l8bWYcU62CqCNlGOfMmm00ojbKDrGO0iBDDm99nD/f6ztcOfunpP0KRI0B1ramS8bt8BHQV+ngtq5zuXHdZTzQd7ydfSyi5nFVTD6BwUiP1vIAq//xYqb29xLEqZBaSTIDFVZefCzqX4ucLn+DTEXNXTQMzW43zS1oZWXFwz3v4/MvfIXf9ywBGYIsx9eqB31LGOOBTtnh3arCB9of4TPzv8mHZy0HQdwo24yH5dkzB2cbBAgYCNu44Z2P8Z21V/FSYaH9oyqiZIDAxHOIxZAD9KwsbSSwC3SYA53koNan+NO9rufiGb9gbuptq0E15INWHssfzc0bL+DWTeewvrTAEtYr4Ylgu7PVpNHoZJYjX3uc+79yOXW5edqQFoJMWOV9X1jBswuOZaG/mrNn/JozptzLYbk1TPW7N6dWGgijBM8UD+X6tZ/gu29/gkinUZ4Nm+hBnbUtr7fhtGk7ny7KgU5w6rRf8e+HfJaDcy/alqyTaHD2pBqogoBA+3zg0Xt5vPtESJRRqtLUgTvTK9y+qjVRlIMoRS61nkNzzzHV7yUftvBKeV/Wl+fbZiZeCSWr8XEHHyHr6Ygw18EVq27kR9/9a7rjok8tJS2VEg8cdCxnfuHHiKBGpLMQpUDW6UhuYK/0Wqb7XaREnZJOs7Y6h5dL+0HYCol+pIjs22PU1xvZ2XX1aezVsobnT3gfaVnd9a3999SBKgJDqD3ers1G+XmECMYslc/qWYlUZYQqUgxzPNJ7su04IzSIWrOZSWNO8HBx2NoXtlpWGkEiCvjJcR9CJzJ4NTt0UKoiGklf0ElfbUZcxhSbXhnY5HG/G228nSLu5kUnUYk8JZ0m0B4ZaTCTqM5tUiaj+6JOZDzkLvCUGyQWIkR6haZeHqqZyaChLCEhqLHo7ZcIlIfEYIQgFdR5Y9ocbjvij6BaJhIydsbsbwsRILz6Ng6jMXLMyt63DLcpIpeMPp7RhuESfcuWnltuIgwvoiFGvcAkBuMpWord7LfpTWqeb8ezCklHrcQNR15M35S5qGLfNjVqjfMczXFFHILbLO8EOxICZpJWFe9WO2yNtp0mtijG+JjIw3asi8NGIgBZxxPRVt1jdvZt0KziNQpjPCItQOWYs+lVZg50UVc+GINEU08muOm4cxFRYFM0dxKNWG1kPIxOWKmDiK83AhE0Q38jadTiyDsOUTPZrCBOoXXGfqsKTEtuYIbfFc/ijahEOdbVZrK+Opsw6GhW0W75yh4paZWICE3C1tQZD1SFXKKPaaqbbLvgjCfuJVkNqOaSYARttQJ3LljC6vmnoGo9m4tER+lkGiAK2sAoPL+PmZl1tHnWoatFGXqDdrqDKXZYuBF2YPcWTq4j73ukfT0RUjcJoqADMMzNvsqSzt9yauf9HNXyJPNTb9lWRo2Qk4ZimOPF8gHc1X06N677MC/mD7Pzd1Vp2JpWxmXnoU4SBh0kEn2cMv1uzpp6D8e1rWaf9Ot0in6SnVVqd3RQCKajRIgWypYOXVjl2FkPs/rNw+P+YwNxPwU1rFd4c9GELYBgybR7+OPZP+PE9oeYk3yHTFzWro0iH7bwTm02TxcWcV/fydzTvYQ3SweA0ChvAIMbZTW+Jx2XsNSDqXjeAOfOupmPzv4Jf9S5ipZkfvMUnrhVrdYCjEAITc4rcnT74xzd+Tif3/ur3Lj+I3zltc/yamFh0yo1YsUYEVcAGVs/2aj/itLoKMOU9Fo+vvc3uGrOjzik5flmTLj5CaD2XLaZbinrmvKsFOdf+XPOn/Jz7p91Mv/+1qdZsfFDRDoDXr4ZM7Zzg0WzAgkR62gMUZQmjLIc2fEw/7T/dZw9/W577Hhzo2HJJRHtiX7a/X4ObXuOj8z7T4q1HHd1n8E33/okq3pOBeSkHCA4aaMNPUEHHoar5n+D/7rXd1jUtiZ2ne1kTBNbx4azJrcYYm2MsGNfkaREhT+ZfwOXzVzGd9Z+km++9UleLx1ot3Zl3TZrxthycqNsjFdo9s6+xCfm3MifzL2B2dn1EG0utbfH0/bO9ghbO+fbZB1TVKQu60PPFog+OGXqA5wy7QEe6X0f/+/NP+cXm86O+wzH2jzuTWGJ7KHjre652Vf4b3t/nb/Y61v4Xh0d2FZOjcyxLR1UjN0pNHEyUE4VuXT2Ci6dtYJbN36I//7CP/NqfYaLNowH6ibB5TNv5tPzvscRHU9b4gSbK4h3lGjSiEDI2IrquqRFFfn8fv+XP533Xe7qOpO7u0/j6eLBbAqmEugESVljht/N4blnOWPqvZw+9V5yyWJcbr95vkNzezZOg4zW+nYumx9XLac0yYvyyMiAFEShzQp7f8ej/LTzUV4tLODO7jN5oO94Xi4voDdoIzQJEjJgWqKXg7MvcfqU+/jQ9F/SnhqAYPMYWznItdrQ29bRBx3YRXbBrNs5tXMVX37ts9R0khZKk87fGV246j3KbdBIm8UFzYe/s0klja1dJaPNtWMR1KIUofFIiADfq9m/NSqItWrmMGwnwAvthtqNrRT/fBZiSogZUCTeV6H1lrVQ3/rO291BUEpvdYxqlCIyCTwRkFTVZm4FIURajTqNc6sYr4xsauYkzG2YdJZXopuDQMa6irZhlQy2yDOpqiQb91wLokjG0Y3h9UqI4gYjQoIJhE04TwHVraslGotPa4mOZPN8UqoKVBvGAh1LIjVGFcTNaw7FpMzvnZQO265K33t3t5stNwoavQ6G90PGpla+kLRNT6oCOSfAP6toK5QHqVFrdLoc7Pi7Ivd2czOSyRjXdxhaH4+0VKjRYKRXol9PIFIaU7SjV8W8yE6KF7vw+HsQHHnHXtOBD3ptAr3Js+8235C8KG9DWcIRcY+WDRObvHZCZfRi0raR8iFxZBXvfRU38NpZ3smB8PnY1asL/AsLthhUC3djHHknslA2NpT1gg8a5OyQ5FmFIR01B0feiaF3Y2ctejOBCQT+B0uI+SNz1Bwced9bZ229h8hq56g58k4mZw2iV3x0l0fi6NhRK7s77cg7iZw1UxfW6mYY3gwMB0fe99xZiyB8KoVq7KhVnaPmyDsZ9K4HDAiiZ5L4ZxXtjlrVOWqOvJOBvEnbul/3KVIfGXCOmiPv5HLWwidTqH3reMc7R82RdzJZXiB8PE3y/IJNfQydXnDknQxQtnW/6Vf45xVswrnrcO7IOymsrg96rYfcp25nXlRwjpoj7yQhbwL0Bo/EieVxHUO1J8OlRI4FBBCAyBjUgmoc23W3xZF3EpFX7V23PRoid0ucbJhsSDgHzZF3MmtfB0deBwdHXgdHXgcHR14HB0deB0deBwdHXgcHR14HB0deB0deB4cJibFIzNHYVJRo0k6jcxhPRBDPrHnPyWvIAYocytlxh2GYOpvtLMjt7E/tzEwKIQTGDHAcrexDEU3k6OuwAyg0OSR53hBtPNTgkbsxDnsUdlqjGoMdk74KWOxuqMMOsJknWohJPH7TwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcFhj4YRY/4xRrBsmWKl8VhpPK4xcuJdz0R/LMO8jjG9t7vJvdsFD0OyzLhZO7uM6JMLoy99X2YUS0XEir7ryLV+iNJAyJgNcZIgTIhQPcCrKLkaTz2AEG80SQwGMYaDfY2RCKFZ3reYTO7/UC1EiEGroSOybR6Fgf/FJZ03Ne/FREDjXG7p/WMybZ8d8rkYNJmcolS4HyE+O+rruMZIrhOaZaU5eLVbEFKBNoP08YjItHkU++/ikil/x7JliqVLo/El77T4xIQ5gLQ8kloS1BgOFxICpASpwBiolMrcXryHuvkaQty3FeHGAsvj61F0kvGORKfssbdL3RDSEgpizlb3YiKgcS5GziEzjOcSaWjrPJLlPQ9yqVi+cwuxmMbLHUsiAVqz3frexr0ridcAeHaaGH/Lu9lKVqigCWohQc0bQ/IaMGAwYARSZUi0nI8Mz+e20k/oeuezCNE15lbPmJBKqKlXoyHeJCGVjAemPoF1QH2Yz0VjIoHvf4sVxd9xERualnTEVEgEhLUqYd0HM5jlje+dqIzB+3ksXrdx+bsQY/cBBUIhhIeQCqMN5YGIalGTzlzBtDkPsWzDIpaKaEx1sEDYc2Coc2v8feLqRIEY5nPxqFchlZ2CqV+PEIbFO8ULiZCDH7dx79h5J3ESdbgRwpJZSvJ9AV5iX1Ktv+Gn3QezVESxDnYY1a2VimJ/SGvHOSzv+lOWiJBrVk74AZOT84ELkaBSCEkkppH2buVW0zJZPeYJBEWlGJHM/C9uHtif65aEE90gyElsLTzKhYBc2wGEPf9mIwWuV9pOGARBWIdEMouIfsg1RnLtKjmRY7Lj/LBNhDHhDj/235lh3HCPwkCEn7qaFb2HW/27zMWBd0Y+lPMhrR3Hs6jnb7luScjKiTvDfnzJm2lTtHR4O/xk2xRSCYzekccr0NqQyggwn7dfXepIuHOOnqKUj0hmruWW/qNZIsKJahDGQZQbg5CWZOXCdRjdhQ0AbmtZpQRoAXEMgnNJ5VJUizr2XgfXauUiCHket+Wncp7oxhgxphsYe5h+IAoFiZTCmP/gTnM0RcKJeE+9cVzRhqz6Fme0bxrWv781fwhh/cekckcNSWAhBDqMyLS1Uu5fAixn1SoFhI6Io5YPkmoxpLXzUAZ6v8zSKZ9jpfEm2j0d33BIzXSy0vTShWTaEO0tX/qD4ILW57hpw9lkxFN4yemEdTNoXNVgkNKAPBFY7nqtjpFDXBwISec+y/KuO1gifjOhtsHHnbzCRDaGOIwdnGXGZ6nYyM3dX6Vtyj+Tr4eDnq9AEEUCYw4FYJXr+zom0FqiI4Pn38Cy3sO4lMJEkg8TOLS0PLI3St5JuWgQQ3q9gigEmI0xYlRbmw7bk2SSeiUi27oX0nwNITSrJk70YeKS99JLNUIYEt47hEEBlRCDh88EmAgQOe7Cj/1Et2ExZvKhPyTX/lGWb7rURh8mRlrqxA/qV8MAqA9vAoFRrF3n4rxjDiOpVzR++lus2DSLS9HjWxwwWcmrdAuQs5Z10Jtrra+gBrODhjF2GC43d7QhJCRBzZDKToHEd8cgeWc3J+9ypF3d3sGkcymiSA8RbWjk3vbxKRHYLU0X5x2mrgVvKEnW5K9N3mlpP5cVPZ9iiQhZ+d4m78gJagkEoLhOaIy+yiZTD+GECaHxPDC8YSMVLsdh2MTVOiQMNpLwBUbvaMHb5J1E6n9z86b9WfLeJu+M78oxdcUyo+hDsmwQh+pZTFwdUefnfReRSF5GaUAjhjhXY+zunOBxYGJVNkx0ueAlJEHwOcLgX/HTs6lX7I7o9sluk3cybVnC+g8w5iSWI7gWw3W7O3kT6QHOE3ZO8VC4Mz+NgKsQ8otEAXFscQgLgqRWhcisBKDLTVQcLnvx0xIdPIM2nyKV/iVBLRySF5uTd05gRc//YOnUL7FsjW+d6t2OvEJg5ZSgEv6Yn/eVMAi2P7JTAO3UokPJtHVSzttaqCELFozGTwtqlZfZp3N1TPTIEXOY0CEgpnNxxx3c3LOc1s5LKfRGtohyUGOxRfJO191cOO0Pu7lsEIJ09oOIHUgko6FehVJ/hBlGqY0xmmTKo1b+PseIYCLuwU94RGiMEdxU+DPKhePxU7Op13RctrP9Z9lI3sH/ISvNsay6Nra84+coj6/YrhQiygNDfyqFiDAwcf2a2CHT/bSkMLARKb+DMYLFOKs7YvUQtxG4orWbsHo1ni8QUu8g+mCTd3KtC+nu/QrXXadRQgB6kJzByR5tEGpYn2EXNoqIVFpi9F9xYUc/y5EuFXJEpI2VWmglwp0vJblk+p2UC9+ipc3D6HAHBLbJO9mWv+TnvSciwh6MSezZobJhhi5oa08w0PsDLu78yUTLeJpUaBiL9P62EjvR8XmKAy+TzHo7LAhoJO8I9QOUPxMhyjuUhnsseY3RGBPS1uFTGLidKZ1Xs8woLnWZZDuNRpTmPFEmij6B0Qbp6SFFgBCSWtmQTO9HEH0bM369LORkYWyz/s1PSXIdHvn89TzxxEUsJuJStJMLY4SlImKl8bhkyu+pl75CrtXD6GiH+rdSNHjJU5FyKlHIePS0GO/tvRAzQo4JBEIpkmmFl4Ba+RVKA//ARe0/bWaOOeKOLRZj5UM31yAGziTdciTVYmR9kiGkR1jTjJdmGHfyZts85AgWpMH2tqpVygT11QTBTQzkf8JHZ5XiTj3G5TDsEg1sWLYMPrU0YHnvx4nC1UiliCIztEUV4/omH0fyGkM5/z0MfUNsUmx5A+sI2YVKvIL01nBe5q3m35YZ5TYidrV8WGrlwxLxNDf3/E/aOv+VfF/4Hryt30vyxtXDxhiS8u84u7VrlD8juHaV4trFkSPuOGEJEStXepw69d9Y0Xsu2daTKQ0Mvfu2e1peoFqfykrTt8MCzHd7wJuTdcL3IgFkSEV+jZF0NdI3xwDXjnHf4Z27PMNio62fIq6iXn2ShJ8mCMxEaDI4zok5iXDYBZiTIwpSj69j7MJD47k4hTC2D7Inh/g3mmtWelzU/irLez5HW+d3CSaGfPBwGJ3FtQlDs7l5YH+k8KC6c1JGJw1trYK+vo0s7RwY14R6sYMU0uuW2MTzJVOu5+ae82jpOJdi33suHxx5R2exFOU8GPO3yOhvxuRWyijE4JEQnwK+x0oUSyZQgtGqxTZ55+ddV1MtPUMi1THeobFtbplj4k6RWCCkHJMPKARykG7i7z2ui7twXjx9PVH90yRTcsjqFkfeySB7tRmTD2g7wmACo7H7dtGU5RT7byTXvuPdN0feiW1+x+RjLe7EL19ajO1CL+VfUCmsxU9LjNGOvA6TYa0aliO4sKOfqP4nKG/Hub+OvA4TTz5M/TWVwteHlfs7gaMNcWB9O1k3ws6j2uF28MQSsnHOhBm/c7YbE2N9vMGfi7Vd9m/KG/lxG8k7EV+gMHAaqeyB1Mpx8o4x43GdY2N5BcLW70uxzccI+72eRFbebmdv/3p21ccmGo2t5h3quSAFRkuEFESRN8rFBktFhbD6CYzZoofy+FznzhNKGIMm9pa350Ub+72YRMniWg9+PbvqAzq+j2NF3KGfSzPCYQwmGh0PGvJh6cyHqJT/iVTWDmEcznWanX+r7cQKiHeAflmcicq2Uckbwvr2f88HtG8I177B0oX1CU3cZRtztLTNoVIb/Hp2iYDzDelWQaFvw87tsDWeS38Hqm36kM/F8w3ppEAm3+YMUdoJlWV79t46cCD1+vCus9yV5+Lp62G8yjUdHCaSuhsD30Zw7TB/Z1Ik4xjBNe9hvHWssspG9FzGKKl/JJl1Eyp7zsHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcGhif8PllUT/M911JIAAAAASUVORK5CYII=';
+
+function fklBuildDocHtml(){
   const def=FKL_DOCS[fklModul], st=fklState[fklModul], info=st.info;
-  const w=fklCountWajib();
-  const fmtNilai = (info.nilai!=='' && info.nilai!=null) ? 'Rp '+Number(info.nilai).toLocaleString('id-ID') : '-';
-  const row=(k,v)=>'<tr><td class="k">'+k+'</td><td class="s">:</td><td>'+fkEsc(v||'-')+'</td></tr>';
-  const chkRows=(list,mapp)=>list.map((nama,i)=>'<tr><td class="no">'+(i+1)+'</td><td>'+fkEsc(nama)+'</td><td class="ada">'+(mapp[i]?'✓':'–')+'</td></tr>').join('');
-  const statusTxt = w.lengkap ? 'LENGKAP' : 'TIDAK LENGKAP';
-  const tgl = info.tgl_terima ? fmtDate(info.tgl_terima) : '..........................';
-  const doc=
+  const list=fklSelectedDocs(), c=fklCountAda();
+  const fmtNilai = (info.nilai!=='' && info.nilai!=null && info.nilai!=='') ? 'Rp '+Number(info.nilai).toLocaleString('id-ID') : '-';
+  const tglTerima = info.tgl_terima ? fklDateLong(info.tgl_terima) : '..........................';
+  const infoRow=(k,v)=>'<tr><td class="k">'+k+'</td><td class="s">:</td><td class="v">'+fkEsc(v||'-')+'</td></tr>';
+
+  const chkRows=list.map((nama,i)=>{
+    const val=st.ada[nama];
+    const cell = val===true
+      ? '<span class="pill ada">Ada</span>'
+      : (val===false ? '<span class="pill no">Tidak Ada</span>' : '<span class="pill nn">–</span>');
+    return '<tr><td class="no">'+(i+1)+'</td><td class="nm">'+fkEsc(nama)+'</td><td class="ck">'+cell+'</td></tr>';
+  }).join('');
+
+  const hasilLengkap = c.lengkap;
+  const hasilBadge = hasilLengkap
+    ? '<div class="hasil ok"><span class="hi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></span><div><div class="ht">DOKUMEN LENGKAP</div><div class="hs">Seluruh dokumen yang diperiksa dinyatakan tersedia</div></div></div>'
+    : '<div class="hasil no"><span class="hi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6 6 18M6 6l12 12"/></svg></span><div><div class="ht">DOKUMEN TIDAK LENGKAP</div><div class="hs">Terdapat dokumen yang belum tersedia ('+c.tidak+' tidak ada'+(c.belum? ', '+c.belum+' belum ditandai':'')+')</div></div></div>';
+
+  return ''+
   '<div class="fkl-doc">'+
-    '<h1>Checklist Kelengkapan Dokumen</h1>'+
-    '<h2>'+fkEsc(def.label)+'</h2>'+
-    '<hr class="fkl-doc-rule">'+
-    '<table class="info"><tbody>'+
-      row('Nama Pekerjaan', info.nama)+
-      row('Lokasi Pekerjaan', info.lokasi)+
-      row('Nilai Pekerjaan', fmtNilai)+
-      row('No. Anggaran', info.no_anggaran)+
-      row('Tgl. Anggaran', info.tgl_anggaran?fmtDate(info.tgl_anggaran):'-')+
-      row('Jenis Anggaran', info.jenis_anggaran)+
+    '<div class="fkl-doc-head">'+
+      '<div class="fkl-doc-logo">'+
+        '<img src="'+FKL_LOGO_SRC+'" alt="Logo PLN">'+
+      '</div>'+
+      '<div class="fkl-doc-org">'+
+        '<div class="l1">PT PLN (PERSERO)</div>'+
+        '<div class="l2">UNIT PELAKSANA PELAYANAN PELANGGAN MASOHI</div>'+
+        '<div class="l3">Jl. Abdullah Soulissa No 1, Masohi, Kec. Kota Masohi</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="fkl-doc-band"></div>'+
+    '<h1 class="fkl-doc-title">FORM PEMERIKSAAN KELENGKAPAN<br>DOKUMEN PENGADAAN</h1>'+
+    '<div class="fkl-doc-titlegap"></div>'+
+
+    '<div class="fkl-sec-h"><span class="rn">A</span>Uraian Pekerjaan</div>'+
+    '<table class="fkl-info"><tbody>'+
+      infoRow('Nama Pekerjaan', info.nama)+
+      infoRow('Lokasi Pekerjaan', info.lokasi)+
+      infoRow('Nilai Pekerjaan', fmtNilai)+
+      infoRow('No. Anggaran', info.no_anggaran)+
+      infoRow('Tgl. Anggaran', info.tgl_anggaran?fklDateLong(info.tgl_anggaran):'-')+
+      infoRow('Jenis Anggaran', info.jenis_anggaran)+
+      infoRow('Metode Pengadaan', info.metode)+
     '</tbody></table>'+
-    '<div class="sec">I. Kelengkapan Berkas Wajib</div>'+
-    '<table class="chk"><thead><tr><th class="no">No</th><th>Jenis Dokumen</th><th class="ada">Ada</th></tr></thead><tbody>'+chkRows(def.wajib, st.wajib)+'</tbody></table>'+
-    '<div class="sec">II. Kelengkapan Berkas Tambahan</div>'+
-    '<table class="chk"><thead><tr><th class="no">No</th><th>Jenis Dokumen</th><th class="ada">Ada</th></tr></thead><tbody>'+chkRows(def.tambahan, st.tambahan)+'</tbody></table>'+
-    '<div class="fkl-doc-status">III. Kelengkapan Dokumen : <b>'+statusTxt+'</b></div>'+
-    '<div class="fkl-doc-sign"><div class="d">Masohi, '+fkEsc(tgl)+'</div>'+
-      '<table><tbody><tr>'+
-        '<td><div class="role">Yang Menyerahkan,</div><div class="nm">'+fkEsc(info.menyerahkan||'(..........................)')+'</div></td>'+
-        '<td><div class="role">Yang Menerima,</div><div class="nm">'+fkEsc(info.menerima||'(..........................)')+'</div></td>'+
+
+    '<div class="fkl-sec-h"><span class="rn">B</span>Kelengkapan Dokumen</div>'+
+    '<table class="fkl-chk"><thead><tr><th class="no">No</th><th class="nm">Jenis Dokumen</th><th class="ck">Ketersediaan</th></tr></thead><tbody>'+
+      (chkRows||'<tr><td colspan="3" class="empty">Tidak ada dokumen yang diperiksa</td></tr>')+
+    '</tbody></table>'+
+
+    '<div class="fkl-sec-h"><span class="rn">C</span>Hasil Pemeriksaan</div>'+
+    hasilBadge+
+
+    '<div class="fkl-doc-foot">'+
+      '<div class="ttd-date">Masohi, '+fkEsc(tglTerima)+'</div>'+
+      '<table class="ttd"><tbody><tr>'+
+        '<td><div class="role">Yang Menyerahkan,</div><div class="gap"></div><div class="nm">'+fkEsc(info.menyerahkan||'(..........................)')+'</div></td>'+
+        '<td><div class="role">Yang Menerima,</div><div class="gap"></div><div class="nm">'+fkEsc(info.menerima||'(..........................)')+'</div></td>'+
       '</tr></tbody></table>'+
     '</div>'+
   '</div>';
+}
+
+function fklOpenPreview(){
+  const ov=document.getElementById('pn-preview-overlay'); if(!ov) return;
+  const titleEl=document.getElementById('pn-preview-title');
+  if(titleEl) titleEl.textContent='Pratinjau — Form Pemeriksaan Kelengkapan Dokumen';
+  const body=document.getElementById('pn-preview-body');
+  if(body){
+    body.classList.add('fkl-preview-body');
+    body.innerHTML='<div class="fkl-doc-scroll">'+fklBuildDocHtml()+'</div>';
+  }
+  /* Tombol aksi pada header pratinjau: sisipkan tombol Cetak khusus FKL bila belum ada */
+  const actions=document.querySelector('#pn-preview-overlay .pn-preview-head-actions');
+  if(actions && !document.getElementById('fkl-preview-print')){
+    const btn=document.createElement('button');
+    btn.id='fkl-preview-print'; btn.className='btn btn-teal';
+    btn.style.padding='8px 14px'; btn.style.fontSize='11px';
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>Cetak / PDF';
+    btn.onclick=fklPrint;
+    actions.insertBefore(btn, actions.firstChild);
+  }
+  ov.classList.add('show');
+}
+
+/* Cetak dokumen (mencetak isi dokumen yang sama dengan pratinjau) */
+function fklPrint(){
   const root=document.getElementById('fkl-print-root'); if(!root) return;
-  root.innerHTML=doc;
+  root.innerHTML=fklBuildDocHtml();
   const done=()=>{ root.innerHTML=''; window.removeEventListener('afterprint',done); };
   window.addEventListener('afterprint',done);
-  setTimeout(()=>{ window.print(); }, 60);
+  setTimeout(()=>{ window.print(); }, 80);
 }
 
 refreshData();      // muat data SPBJ/Kontrak Rinci
