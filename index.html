@@ -1285,6 +1285,8 @@ tbody tr{animation:rowIn .3s ease both}
 .fk-act-del{background:linear-gradient(135deg,var(--red),#e25151)}
 .fk-act[disabled]{background:linear-gradient(135deg,#c3ced4,#d6dee2);color:#fff;cursor:not-allowed;box-shadow:none;transform:none;filter:none;opacity:.85}
 .fk-act.is-busy{cursor:progress;opacity:.75;pointer-events:none}
+.fk-act-icon{padding:9px;width:36px;height:36px;justify-content:center;gap:0}
+.fk-act-icon svg{width:16px;height:16px}
 /* Chip nama file terunggah */
 .fk-file-chip{display:inline-flex;align-items:center;gap:7px;max-width:260px;padding:6px 11px;border-radius:9px;background:linear-gradient(180deg,#eef8f9,#e2f2f3);border:1px solid #bfe2e5;color:var(--teal-dark);font-size:11px;font-weight:700}
 .fk-file-chip svg{width:14px;height:14px;flex:0 0 auto;color:var(--teal)}
@@ -6740,15 +6742,14 @@ function fkInputActionHtml(modul, rid, f){
     ? `<button class="fk-act fk-act-up" onclick="fkUpload('${modul}','${rid}',this)">${upIcon}Unggah File</button>`
     : `<span class="fk-none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>Menunggu unggah</span>`;
 }
-/* Aksi kolom Lihat Data: Lihat/Preview (PDF) + Hapus */
+/* Aksi kolom Lihat Data: Lihat/Preview (PDF) + Hapus — hanya ikon, tanpa nama file */
 function fkViewActionHtml(modul, rid, f){
   if(!f){
     return `<span class="fk-none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>Belum ada file</span>`;
   }
-  const chip=`<span class="fk-file-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span class="fk-file-name">${fkEsc(f.nama_file)}</span><span class="fk-file-size">${fkFmtSize(f.ukuran)}</span></span>`;
-  const view=`<button class="fk-act fk-act-view" onclick="fkPreview('${modul}','${rid}',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>Lihat</button>`;
-  const del=canInput()?`<button class="fk-act fk-act-del" onclick="fkDelete('${modul}','${rid}',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Hapus</button>`:'';
-  return chip+view+del;
+  const view=`<button class="fk-act fk-act-view fk-act-icon" title="Lihat" aria-label="Lihat" onclick="fkPreview('${modul}','${rid}',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>`;
+  const del=canInput()?`<button class="fk-act fk-act-del fk-act-icon" title="Hapus" aria-label="Hapus" onclick="fkDelete('${modul}','${rid}',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>`:'';
+  return view+del;
 }
 
 function fkRenderPagination(mode, page, totalPages, el){
