@@ -1478,6 +1478,72 @@ tbody tr{animation:rowIn .3s ease both}
   .pn-seg-wrap .fk-seg{width:100%}
   .pn-seg-wrap .fk-seg-btn{flex:1 1 auto;justify-content:center}
 }
+
+/* ================= FORM — KELENGKAPAN DOKUMEN PENGADAAN ================= */
+.fkl-checkgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px 20px}
+@media(max-width:820px){.fkl-checkgrid{grid-template-columns:1fr}}
+.fkl-check{display:flex;align-items:center;gap:11px;padding:10px 13px;border:1px solid var(--line);border-radius:11px;cursor:pointer;background:#fff;transition:border-color .16s,background .16s}
+.fkl-check:hover{border-color:var(--teal);background:var(--teal-soft)}
+.fkl-check input{position:absolute;opacity:0;width:0;height:0}
+.fkl-check .pn-check-box{margin-top:0}
+.fkl-check .fkl-num{flex:0 0 auto;width:22px;height:22px;border-radius:7px;background:var(--teal-soft);color:var(--teal-dark);font-family:'Plus Jakarta Sans';font-weight:800;font-size:11px;display:flex;align-items:center;justify-content:center}
+.fkl-check input:checked~.fkl-num{background:linear-gradient(135deg,var(--teal),var(--cyan));color:#fff}
+.fkl-check input:checked+.pn-check-box{background:linear-gradient(135deg,var(--teal),var(--cyan));border-color:var(--teal)}
+.fkl-check input:checked+.pn-check-box svg{opacity:1}
+.fkl-check .fkl-lbl{flex:1 1 auto;font-family:'Plus Jakarta Sans';font-size:12px;font-weight:600;color:#3d4d53;line-height:1.35}
+.fkl-check input:checked~.fkl-lbl{color:var(--ink)}
+/* Ringkasan status (Section III — otomatis) */
+.fkl-status-card{display:flex;flex-wrap:wrap;align-items:center;gap:16px;padding:16px 18px;border-radius:14px;border:1px solid var(--line);background:linear-gradient(180deg,#ffffff,#f7fbfc)}
+.fkl-status-badge{display:inline-flex;align-items:center;gap:9px;padding:9px 18px;border-radius:30px;font-family:'Plus Jakarta Sans';font-weight:800;font-size:13px;letter-spacing:.3px}
+.fkl-status-badge svg{width:17px;height:17px}
+.fkl-status-badge.ok{background:linear-gradient(180deg,#e0f5ea,#cdeedd);color:#127a43;box-shadow:inset 0 0 0 1px rgba(21,122,68,.25)}
+.fkl-status-badge.no{background:linear-gradient(180deg,#fce4e4,#f7d6d6);color:#b02626;box-shadow:inset 0 0 0 1px rgba(178,42,42,.25)}
+.fkl-status-meta{font-size:11.5px;color:var(--muted);line-height:1.6}
+.fkl-status-meta b{color:var(--ink)}
+.fkl-prog{flex:1 1 180px;min-width:150px}
+.fkl-prog-bar{height:9px;border-radius:6px;background:#e6eff0;overflow:hidden}
+.fkl-prog-fill{height:100%;width:0;border-radius:6px;background:linear-gradient(90deg,var(--teal),var(--teal-dark));transition:width .28s ease}
+.fkl-prog-txt{font-size:10.5px;color:var(--muted);margin-top:5px;font-weight:600}
+/* Blok tanda tangan kanan bawah */
+.fkl-signwrap{display:flex;justify-content:flex-end;margin-top:6px}
+.fkl-sign{width:min(560px,100%);border:1px dashed var(--line);border-radius:14px;padding:18px 22px;background:#fff}
+.fkl-sign-date{text-align:right;font-family:'Plus Jakarta Sans';font-size:12.5px;font-weight:600;color:var(--ink);margin-bottom:14px}
+.fkl-sign-date b{font-weight:800}
+.fkl-sign-cols{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.fkl-sign-col{text-align:center}
+.fkl-sign-role{font-family:'Plus Jakarta Sans';font-size:12px;font-weight:700;color:var(--teal-dark);margin-bottom:52px}
+.fkl-sign-name{font-family:'Plus Jakarta Sans';font-size:13px;font-weight:800;color:var(--ink);border-top:1.5px solid var(--ink);padding-top:6px;min-height:20px}
+.fkl-sign-sub{font-size:10.5px;color:var(--muted);margin-top:2px}
+.fkl-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+/* ===== Cetak / Print ===== */
+#fkl-print-root{display:none}
+@media print{
+  body *{visibility:hidden !important}
+  #fkl-print-root,#fkl-print-root *{visibility:visible !important}
+  #fkl-print-root{display:block !important;position:absolute;inset:0;margin:0;padding:0;width:100%;background:#fff}
+  @page{size:A4;margin:16mm 15mm}
+}
+.fkl-doc{font-family:'Times New Roman',serif;color:#000;font-size:12pt;line-height:1.45;padding:6mm}
+.fkl-doc h1{text-align:center;font-size:14pt;font-weight:bold;margin:0 0 2px;text-transform:uppercase;letter-spacing:.5px}
+.fkl-doc h2{text-align:center;font-size:12pt;font-weight:bold;margin:0 0 14px;text-transform:uppercase}
+.fkl-doc .fkl-doc-rule{border:0;border-top:2px solid #000;margin:6px 0 14px}
+.fkl-doc table{width:100%;border-collapse:collapse}
+.fkl-doc .info td{padding:2px 4px;vertical-align:top;font-size:11.5pt}
+.fkl-doc .info td.k{width:38%}.fkl-doc .info td.s{width:3%}
+.fkl-doc .sec{font-weight:bold;margin:14px 0 5px;font-size:12pt}
+.fkl-doc .chk{width:100%;border-collapse:collapse;margin-bottom:4px}
+.fkl-doc .chk td,.fkl-doc .chk th{border:1px solid #000;padding:4px 8px;font-size:11pt;vertical-align:middle}
+.fkl-doc .chk th{background:#e8e8e8;text-align:center;font-size:10.5pt}
+.fkl-doc .chk td.no{width:8%;text-align:center}
+.fkl-doc .chk td.ada{width:16%;text-align:center;font-weight:bold}
+.fkl-doc .fkl-doc-status{margin:12px 0;font-size:12pt}
+.fkl-doc .fkl-doc-status b{padding:2px 12px;border:1.5px solid #000;border-radius:4px}
+.fkl-doc .fkl-doc-sign{margin-top:26px;width:60%;margin-left:auto}
+.fkl-doc .fkl-doc-sign .d{text-align:center;margin-bottom:10px;font-size:11.5pt}
+.fkl-doc .fkl-doc-sign table{width:100%}
+.fkl-doc .fkl-doc-sign td{width:50%;text-align:center;vertical-align:top;font-size:11.5pt}
+.fkl-doc .fkl-doc-sign .role{margin-bottom:64px}
+.fkl-doc .fkl-doc-sign .nm{font-weight:bold;text-decoration:underline}
 </style>
 <!-- (Gaya & library Pembuatan Kontrak dihapus) -->
 </head>
@@ -1574,6 +1640,40 @@ tbody tr{animation:rowIn .3s ease both}
             <button class="topnav-item" data-view="pn-lihat" data-role="admin" onclick="openPnLihat('pl')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
               Lihat Nomor
+            </button>
+          </div>
+        </div>
+
+        <!-- ===== Form ===== -->
+        <div class="topnav-group" data-group="form">
+          <button class="topnav-trigger" type="button" onclick="toggleTopGroup(event,'form')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6a1 1 0 0 1 1 1v1h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2V3a1 1 0 0 1 1-1Z"/><path d="M9 12l2 2 4-4"/></svg>
+            Form
+            <svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="topnav-dropdown">
+            <!-- Submenu bertingkat: Kelengkapan Dokumen Pengadaan (Pengadaan Langsung / Tender) -->
+            <div class="topnav-sub" data-sub="kelengkapan" data-role="admin user">
+              <button class="topnav-subtrigger" type="button" onclick="toggleFkSub(event,'kelengkapan')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>
+                <span class="sub-label">Kelengkapan Dokumen Pengadaan</span>
+                <svg class="caret2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <div class="topnav-subdrop">
+                <button class="topnav-item" data-view="form-kelengkapan" data-modul="pl" data-role="admin user" onclick="openFormKelengkapan('pl')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>
+                  Pengadaan Langsung
+                </button>
+                <button class="topnav-item" data-view="form-kelengkapan" data-modul="tender" data-role="admin user" onclick="openFormKelengkapan('tender')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>
+                  Tender
+                </button>
+              </div>
+            </div>
+            <!-- Pembukaan Penawaran -->
+            <button class="topnav-item" data-view="form-pembukaan" data-role="admin user" onclick="openFormPembukaan()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16a1 1 0 0 1 1 1v3H3V5a1 1 0 0 1 1-1Z"/><path d="M3 8v11a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V8"/><path d="M9 13h6"/></svg>
+              Pembukaan Penawaran
             </button>
           </div>
         </div>
@@ -2287,6 +2387,47 @@ tbody tr{animation:rowIn .3s ease both}
       <div class="pagination" id="pn-lihat-pagination"></div>
     </div>
   </section>
+
+  <!-- ============ FORM — KELENGKAPAN DOKUMEN PENGADAAN ============ -->
+  <section id="view-form-kelengkapan" class="view">
+    <div class="page-head">
+      <div>
+        <h2 id="fkl-title">Kelengkapan Dokumen Pengadaan</h2>
+        <p id="fkl-sub">Checklist kelengkapan berkas &amp; tanda terima dokumen pengadaan</p>
+      </div>
+      <div class="head-right-tools">
+        <div class="fk-seg mod-seg" id="fkl-seg">
+          <button class="fk-seg-btn" data-modul="pl" onclick="openFormKelengkapan('pl')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>Pengadaan Langsung</button>
+          <button class="fk-seg-btn" data-modul="tender" onclick="openFormKelengkapan('tender')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>Tender</button>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-body">
+        <div id="fkl-content"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FORM — PEMBUKAAN PENAWARAN ============ -->
+  <section id="view-form-pembukaan" class="view">
+    <div class="page-head">
+      <div>
+        <h2>Pembukaan Penawaran</h2>
+        <p>Berita acara pembukaan penawaran</p>
+      </div>
+    </div>
+    <div class="panel pn-pending">
+      <div class="empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="1.6" style="width:46px;height:46px"><path d="M4 4h16a1 1 0 0 1 1 1v3H3V5a1 1 0 0 1 1-1Z"/><path d="M3 8v11a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V8"/><path d="M9 13h6"/></svg>
+        <div class="pn-pending-title">Modul dalam penyiapan</div>
+        <div class="pn-pending-desc">Form Pembukaan Penawaran akan disiapkan pada tahap berikutnya. Silakan sampaikan rincian data &amp; format yang diinginkan agar bisa dibangun sesuai kebutuhan.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Wadah cetak dokumen kelengkapan (khusus print) -->
+  <div id="fkl-print-root"></div>
 
   <!-- Input file tersembunyi untuk unggah lampiran Penetapan Nomor (khusus PDF) -->
   <input type="file" id="pn-file-input" style="display:none"
@@ -3294,6 +3435,7 @@ function showView(name, loaderMsg, noLoader){
         if(name==='fk-view') renderFkView();
         if(name==='pn-ambil') renderPnAmbil();
         if(name==='pn-lihat') renderPnLihat();
+        if(name==='form-kelengkapan') renderFormKelengkapan();
     }catch(err){ console.error('showView error:', err); }
     if(!noLoader){ const wait=Math.max(0, 460-(Date.now()-t0)); setTimeout(hideLoader, wait); }
   };
@@ -7531,6 +7673,235 @@ function pnDelete(id, key, btn){
 
 /* (Modul Pembuatan Kontrak dihapus) */
 
+/* ==================================================================
+   FORM — KELENGKAPAN DOKUMEN PENGADAAN (Pengadaan Langsung & Tender)
+   - Checklist berkas wajib + tambahan (bisa dicentang)
+   - Status "Lengkap/Tidak Lengkap" otomatis dari kelengkapan berkas WAJIB
+   - Tanggal terima dokumen + blok tanda tangan (menyerahkan/menerima) kanan bawah
+   - Cetak dokumen (window.print) siap tanda tangan
+   ================================================================== */
+const FKL_JENIS_ANGGARAN = ['Investasi','Operasi'];
+const FKL_DOCS = {
+  pl:{ label:'Pengadaan Langsung',
+    wajib:[
+      'ND Pelaksanaan Pengadaan',
+      'Dokumen Rencana Pengadaan (DRP)',
+      'Dokumen TOR/KAK',
+      'Dokumen RAB',
+      'Surat Anggaran',
+      'Risiko Pekerjaan',
+      'Pakta Integritas Pengguna',
+      'Pakta Integritas Direksi Pekerjaan'
+    ],
+    tambahan:[
+      'Spesifikasi Teknis',
+      'Gambar Pekerjaan',
+      'Referensi Harga',
+      'Kajian Kelayakan Proyek',
+      'Kajian Risiko'
+    ]
+  },
+  tender:{ label:'Tender',
+    wajib:[
+      'Inisialisasi Pengadaan',
+      'ND Pelaksanaan Pengadaan',
+      'ND Perencanaan Pengadaan',
+      'Dokumen Rencana Pengadaan (DRP)',
+      'Dokumen Kualifikasi',
+      'Dokumen Tender/RKS',
+      'Dokumen TOR/KAK',
+      'Dokumen RAB',
+      'Dokumen HPE',
+      'Surat Anggaran',
+      'Risiko Pekerjaan',
+      'Pakta Integritas Pengguna',
+      'Pakta Integritas Direksi Pekerjaan'
+    ],
+    tambahan:[
+      'Spesifikasi Teknis',
+      'Gambar Pekerjaan',
+      'Referensi Harga',
+      'Kajian Kelayakan Proyek',
+      'Kajian Risiko'
+    ]
+  }
+};
+const FKL_INFO_FIELDS=[
+  {key:'nama',          label:'Nama Pekerjaan',      type:'text', span:2, ph:'cth. Pembangunan Gardu Hubung'},
+  {key:'lokasi',        label:'Lokasi Pekerjaan',    type:'text', span:2, ph:'cth. ULP Kobisonta'},
+  {key:'nilai',         label:'Nilai Pekerjaan',     type:'num'},
+  {key:'no_anggaran',   label:'No. Anggaran',        type:'text'},
+  {key:'tgl_anggaran',  label:'Tgl. Anggaran',       type:'date'},
+  {key:'jenis_anggaran',label:'Jenis Anggaran',      type:'select', options:FKL_JENIS_ANGGARAN},
+  {key:'menyerahkan',   label:'Yang Menyerahkan',    type:'text', ph:'Nama pegawai'},
+  {key:'menerima',      label:'Yang Menerima',       type:'text', ph:'Nama pegawai'},
+  {key:'tgl_terima',    label:'Tgl. Terima Dokumen', type:'date'}
+];
+let fklModul='pl';
+const FKL_STATE_KEY='fkl_state_v1';
+function fklBlankState(){ return { info:{}, wajib:{}, tambahan:{} }; }
+let fklState = { pl:fklBlankState(), tender:fklBlankState() };
+(function fklLoadState(){
+  try{ const raw=localStorage.getItem(FKL_STATE_KEY); if(raw){ const o=JSON.parse(raw); if(o&&o.pl&&o.tender) fklState=o; } }catch(e){}
+})();
+function fklSaveState(){ try{ localStorage.setItem(FKL_STATE_KEY, JSON.stringify(fklState)); }catch(e){} }
+
+function openFormKelengkapan(modul){
+  if(modul!=='pl' && modul!=='tender') modul='pl';
+  fklModul=modul; showView('form-kelengkapan');
+}
+function openFormPembukaan(){ showView('form-pembukaan'); }
+
+function fklMarkActive(){
+  document.querySelectorAll('.topnav-item[data-view="form-kelengkapan"]').forEach(b=>{
+    b.classList.toggle('active', b.dataset.modul===fklModul);
+  });
+  const seg=document.getElementById('fkl-seg');
+  if(seg) seg.querySelectorAll('.fk-seg-btn').forEach(b=> b.classList.toggle('active', b.dataset.modul===fklModul));
+}
+
+const FKL_SEC_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>';
+
+function fklInfoInputHtml(f){
+  const id='fkl-'+f.key;
+  const span=f.span?(' style="grid-column:span '+f.span+'"'):'';
+  let ctl;
+  if(f.type==='select') ctl='<select id="'+id+'" onchange="fklOnInfoChange()"><option value="">— Pilih —</option>'+(f.options||[]).map(o=>'<option>'+fkEsc(o)+'</option>').join('')+'</select>';
+  else if(f.type==='num') ctl='<input id="'+id+'" type="text" inputmode="numeric" placeholder="Rp" oninput="onRupiahInput(this)" onchange="fklOnInfoChange()">';
+  else if(f.type==='date') ctl='<input id="'+id+'" type="date" onchange="fklOnInfoChange()">';
+  else ctl='<input id="'+id+'" type="text"'+(f.ph?' placeholder="'+fkEsc(f.ph)+'"':'')+' oninput="fklOnInfoChange()">';
+  return '<div class="field"'+span+'><label>'+fkEsc(f.label)+'</label>'+ctl+'</div>';
+}
+function fklCheckHtml(kind, list, mapp){
+  return list.map((nama,i)=>{
+    const on=!!mapp[i];
+    return '<label class="fkl-check">'+
+      '<input type="checkbox" data-kind="'+kind+'" data-idx="'+i+'" '+(on?'checked':'')+' onchange="fklOnCheck(this)">'+
+      '<span class="pn-check-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></span>'+
+      '<span class="fkl-num">'+(i+1)+'</span>'+
+      '<span class="fkl-lbl">'+fkEsc(nama)+'</span>'+
+    '</label>';
+  }).join('');
+}
+function renderFormKelengkapan(){
+  fklMarkActive();
+  const def=FKL_DOCS[fklModul], st=fklState[fklModul];
+  const tt=document.getElementById('fkl-title'); if(tt) tt.textContent='Kelengkapan Dokumen Pengadaan — '+def.label;
+  const cont=document.getElementById('fkl-content'); if(!cont) return;
+  let html='';
+  html+='<div class="form-card"><div class="form-section-title">'+KR_SECTION_ICON+'Data Pekerjaan</div><div class="form-flow" style="--cols:4">';
+  html+=FKL_INFO_FIELDS.map(fklInfoInputHtml).join('');
+  html+='</div></div>';
+  html+='<div class="form-card"><div class="form-section-title">'+FKL_SEC_ICON+'I. Kelengkapan Berkas Wajib</div>';
+  html+='<div class="fkl-checkgrid">'+fklCheckHtml('wajib', def.wajib, st.wajib)+'</div></div>';
+  html+='<div class="form-card"><div class="form-section-title">'+FKL_SEC_ICON+'II. Kelengkapan Berkas Tambahan</div>';
+  html+='<div class="fkl-checkgrid">'+fklCheckHtml('tambahan', def.tambahan, st.tambahan)+'</div></div>';
+  html+='<div class="form-card"><div class="form-section-title">'+FKL_SEC_ICON+'III. Kelengkapan Dokumen (Otomatis)</div><div id="fkl-status"></div></div>';
+  html+='<div class="form-card"><div class="form-section-title">'+KR_SECTION_ICON+'Tanda Terima Dokumen</div><div class="fkl-signwrap"><div class="fkl-sign" id="fkl-sign"></div></div></div>';
+  html+='<div class="fkl-actions">'+
+    '<button class="btn btn-teal" onclick="fklPrint()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>Cetak</button>'+
+    '<button class="btn btn-red" onclick="fklReset()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>Reset</button>'+
+  '</div>';
+  cont.innerHTML=html;
+  FKL_INFO_FIELDS.forEach(f=>{
+    const el=document.getElementById('fkl-'+f.key); if(!el) return;
+    const v=st.info[f.key];
+    el.value = (f.type==='num') ? rupiahInputText(v) : (v!=null?v:'');
+  });
+  fklUpdateStatus();
+  fklUpdateSign();
+}
+function fklOnInfoChange(){
+  const st=fklState[fklModul];
+  FKL_INFO_FIELDS.forEach(f=>{
+    const el=document.getElementById('fkl-'+f.key); if(!el) return;
+    st.info[f.key] = (f.type==='num') ? parseRupiah(el.value) : el.value.trim();
+  });
+  fklSaveState(); fklUpdateSign();
+}
+function fklOnCheck(el){
+  const st=fklState[fklModul];
+  st[el.dataset.kind][+el.dataset.idx]=el.checked;
+  fklSaveState(); fklUpdateStatus();
+}
+function fklCountWajib(){
+  const def=FKL_DOCS[fklModul], st=fklState[fklModul];
+  let n=0; def.wajib.forEach((_,i)=>{ if(st.wajib[i]) n++; });
+  return {done:n, total:def.wajib.length, lengkap:n===def.wajib.length};
+}
+function fklUpdateStatus(){
+  const box=document.getElementById('fkl-status'); if(!box) return;
+  const def=FKL_DOCS[fklModul], st=fklState[fklModul];
+  const w=fklCountWajib();
+  let t=0; def.tambahan.forEach((_,i)=>{ if(st.tambahan[i]) t++; });
+  const pct=Math.round(w.done/w.total*100);
+  const badge = w.lengkap
+    ? '<span class="fkl-status-badge ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>LENGKAP</span>'
+    : '<span class="fkl-status-badge no"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 6 6 18M6 6l12 12"/></svg>TIDAK LENGKAP</span>';
+  box.innerHTML='<div class="fkl-status-card">'+badge+
+    '<div class="fkl-status-meta">Berkas Wajib: <b>'+w.done+'/'+w.total+'</b> &nbsp;•&nbsp; Berkas Tambahan: <b>'+t+'/'+def.tambahan.length+'</b><br>Status ditentukan otomatis dari kelengkapan <b>Berkas Wajib</b>.</div>'+
+    '<div class="fkl-prog"><div class="fkl-prog-bar"><div class="fkl-prog-fill" style="width:'+pct+'%"></div></div><div class="fkl-prog-txt">'+pct+'% berkas wajib terpenuhi</div></div>'+
+  '</div>';
+}
+function fklUpdateSign(){
+  const box=document.getElementById('fkl-sign'); if(!box) return;
+  const info=fklState[fklModul].info;
+  const tgl = info.tgl_terima ? fmtDate(info.tgl_terima) : '..........................';
+  const nyerah = info.menyerahkan || '..........................';
+  const nerima = info.menerima || '..........................';
+  box.innerHTML=
+    '<div class="fkl-sign-date">Masohi, <b>'+fkEsc(tgl)+'</b></div>'+
+    '<div class="fkl-sign-cols">'+
+      '<div class="fkl-sign-col"><div class="fkl-sign-role">Yang Menyerahkan,</div><div class="fkl-sign-name">'+fkEsc(nyerah)+'</div><div class="fkl-sign-sub">Nama Pegawai</div></div>'+
+      '<div class="fkl-sign-col"><div class="fkl-sign-role">Yang Menerima,</div><div class="fkl-sign-name">'+fkEsc(nerima)+'</div><div class="fkl-sign-sub">Nama Pegawai</div></div>'+
+    '</div>';
+}
+function fklReset(){
+  openConfirm({ icon:'del', title:'Reset Form',
+    text:'Kosongkan seluruh isian & centang pada modul '+FKL_DOCS[fklModul].label+'?',
+    onYes:()=>{ fklState[fklModul]=fklBlankState(); fklSaveState(); renderFormKelengkapan(); toast('Form dikosongkan','ok'); }
+  });
+}
+function fklPrint(){
+  const def=FKL_DOCS[fklModul], st=fklState[fklModul], info=st.info;
+  const w=fklCountWajib();
+  const fmtNilai = (info.nilai!=='' && info.nilai!=null) ? 'Rp '+Number(info.nilai).toLocaleString('id-ID') : '-';
+  const row=(k,v)=>'<tr><td class="k">'+k+'</td><td class="s">:</td><td>'+fkEsc(v||'-')+'</td></tr>';
+  const chkRows=(list,mapp)=>list.map((nama,i)=>'<tr><td class="no">'+(i+1)+'</td><td>'+fkEsc(nama)+'</td><td class="ada">'+(mapp[i]?'✓':'–')+'</td></tr>').join('');
+  const statusTxt = w.lengkap ? 'LENGKAP' : 'TIDAK LENGKAP';
+  const tgl = info.tgl_terima ? fmtDate(info.tgl_terima) : '..........................';
+  const doc=
+  '<div class="fkl-doc">'+
+    '<h1>Checklist Kelengkapan Dokumen</h1>'+
+    '<h2>'+fkEsc(def.label)+'</h2>'+
+    '<hr class="fkl-doc-rule">'+
+    '<table class="info"><tbody>'+
+      row('Nama Pekerjaan', info.nama)+
+      row('Lokasi Pekerjaan', info.lokasi)+
+      row('Nilai Pekerjaan', fmtNilai)+
+      row('No. Anggaran', info.no_anggaran)+
+      row('Tgl. Anggaran', info.tgl_anggaran?fmtDate(info.tgl_anggaran):'-')+
+      row('Jenis Anggaran', info.jenis_anggaran)+
+    '</tbody></table>'+
+    '<div class="sec">I. Kelengkapan Berkas Wajib</div>'+
+    '<table class="chk"><thead><tr><th class="no">No</th><th>Jenis Dokumen</th><th class="ada">Ada</th></tr></thead><tbody>'+chkRows(def.wajib, st.wajib)+'</tbody></table>'+
+    '<div class="sec">II. Kelengkapan Berkas Tambahan</div>'+
+    '<table class="chk"><thead><tr><th class="no">No</th><th>Jenis Dokumen</th><th class="ada">Ada</th></tr></thead><tbody>'+chkRows(def.tambahan, st.tambahan)+'</tbody></table>'+
+    '<div class="fkl-doc-status">III. Kelengkapan Dokumen : <b>'+statusTxt+'</b></div>'+
+    '<div class="fkl-doc-sign"><div class="d">Masohi, '+fkEsc(tgl)+'</div>'+
+      '<table><tbody><tr>'+
+        '<td><div class="role">Yang Menyerahkan,</div><div class="nm">'+fkEsc(info.menyerahkan||'(..........................)')+'</div></td>'+
+        '<td><div class="role">Yang Menerima,</div><div class="nm">'+fkEsc(info.menerima||'(..........................)')+'</div></td>'+
+      '</tr></tbody></table>'+
+    '</div>'+
+  '</div>';
+  const root=document.getElementById('fkl-print-root'); if(!root) return;
+  root.innerHTML=doc;
+  const done=()=>{ root.innerHTML=''; window.removeEventListener('afterprint',done); };
+  window.addEventListener('afterprint',done);
+  setTimeout(()=>{ window.print(); }, 60);
+}
+
 refreshData();      // muat data SPBJ/Kontrak Rinci
 refreshDataPl();    // muat data Pengadaan Langsung
 refreshDataTender();// muat data Tender
@@ -7545,7 +7916,7 @@ resetLoginForm();
   if(role==='admin' || role==='user' || role==='guest'){
     currentUsername = uname || null;
     // Refresh: kembali ke halaman terakhir (data di halaman itu di-refresh), bukan ke dashboard.
-    const allowed=['dashboard','list','list-pl','list-tender','pn-lihat','pn-ambil'];
+    const allowed=['dashboard','list','list-pl','list-tender','pn-lihat','pn-ambil','form-kelengkapan','form-pembukaan'];
     const inputViews=['input','input-pl','input-tender'];
     const draft=getDraft();
     if(inputViews.includes(view)){
