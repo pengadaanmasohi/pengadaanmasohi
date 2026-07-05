@@ -1594,7 +1594,7 @@ tbody tr{animation:rowIn .3s ease both}
 .fkl-chk{width:100%;border-collapse:separate;border-spacing:0;margin-top:2px;border:1px solid #dbe6e8;border-radius:9px;overflow:hidden}
 .fkl-chk thead th{background:linear-gradient(180deg,#0E7C86,#0b6a73);color:#fff;font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;padding:9px 12px;text-align:left}
 .fkl-chk th.no,.fkl-chk td.no{width:44px;text-align:center}
-.fkl-chk th.ck,.fkl-chk td.ck{width:120px;text-align:center}
+.fkl-chk th.ck,.fkl-chk td.ck{width:150px;text-align:center}.fkl-chk th.ck{padding-top:7px;padding-bottom:7px}.fkl-chk th.ck .ck-main{display:block;line-height:1.2}.fkl-chk th.ck .ck-sub{display:block;font-weight:600;font-size:9px;opacity:.85;margin-top:2px;text-transform:none;letter-spacing:.2px}
 .fkl-chk tbody td{padding:8px 12px;font-size:12.5px;border-top:1px solid #e7eef0;color:#22343a}
 .fkl-chk tbody tr:nth-child(even) td{background:#f6fafb}
 .fkl-chk td.nm{font-weight:600}
@@ -1655,7 +1655,7 @@ tbody tr{animation:rowIn .3s ease both}
 .fkl-chk{width:100%;border-collapse:separate;border-spacing:0;margin-top:2px;border:1px solid #dbe6e8;border-radius:9px;overflow:hidden}
 .fkl-chk thead th{background:linear-gradient(180deg,#0E7C86,#0b6a73);color:#fff;font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;padding:9px 12px;text-align:left}
 .fkl-chk th.no,.fkl-chk td.no{width:44px;text-align:center}
-.fkl-chk th.ck,.fkl-chk td.ck{width:120px;text-align:center}
+.fkl-chk th.ck,.fkl-chk td.ck{width:150px;text-align:center}.fkl-chk th.ck{padding-top:7px;padding-bottom:7px}.fkl-chk th.ck .ck-main{display:block;line-height:1.2}.fkl-chk th.ck .ck-sub{display:block;font-weight:600;font-size:9px;opacity:.85;margin-top:2px;text-transform:none;letter-spacing:.2px}
 .fkl-chk tbody td{padding:8px 12px;font-size:12.5px;border-top:1px solid #e7eef0;color:#22343a}
 .fkl-chk tbody tr:nth-child(even) td{background:#f6fafb}
 .fkl-chk td.nm{font-weight:600}
@@ -8226,7 +8226,7 @@ function fklBuildDocHtml(){
     '</tbody></table>'+
 
     '<div class="fkl-sec-h"><span class="rn">B</span>Kelengkapan Dokumen</div>'+
-    '<table class="fkl-chk"><thead><tr><th class="no">No</th><th class="nm">Jenis Dokumen</th><th class="ck">Ketersediaan</th></tr></thead><tbody>'+
+    '<table class="fkl-chk"><thead><tr><th class="no">No</th><th class="nm">Jenis Dokumen</th><th class="ck"><span class="ck-main">Kelengkapan Dokumen</span><span class="ck-sub">Ada / Tidak Ada</span></th></tr></thead><tbody>'+
       (chkRows||'<tr><td colspan="3" class="empty">Tidak ada dokumen yang diperiksa</td></tr>')+
     '</tbody></table>'+
 
@@ -8247,10 +8247,18 @@ function fklBuildDocHtml(){
 function fklStandaloneDocHtml(){
   const cssEl=document.getElementById('fkl-doc-css');
   const css=cssEl?cssEl.textContent:'';
+  const wm=
+    '.fkl-wm{position:fixed;inset:0;z-index:0;pointer-events:none;'+
+      'background-image:url('+FKL_LOGO_SRC+');background-repeat:no-repeat;'+
+      'background-position:center center;background-size:58% auto;opacity:.06;'+
+      '-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+    '.fkl-print-page{position:relative;z-index:1}'+
+    '.fkl-doc{position:relative;z-index:1}';
   return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8">'+
     '<meta name="viewport" content="width=device-width, initial-scale=1">'+
     '<title>Form Pemeriksaan Kelengkapan Dokumen Pengadaan</title>'+
-    '<style>'+css+'</style></head><body>'+
+    '<style>'+css+wm+'</style></head><body>'+
+    '<div class="fkl-wm"></div>'+
     '<div class="fkl-print-page">'+fklBuildDocHtml()+'</div>'+
     '</body></html>';
 }
