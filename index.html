@@ -414,7 +414,11 @@ td.cell-center{text-align:center}
 #edit-banner,#edit-banner-pl,#edit-banner-tender{display:none!important}
 
 /* upload box */
-.io-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:flex-end;background:none;border:none;border-radius:0;padding:0;margin-bottom:16px}
+/* Bar tombol Template: container ringkas & cantik yang membungkus kedua tombol saja */
+.io-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:flex-end;margin:0 0 16px auto;width:max-content;max-width:100%;
+  background:linear-gradient(135deg,#f4fbfb 0%,#eaf6f7 55%,#f6fbf3 100%);
+  border:1px solid #d3e7e9;border-radius:16px;padding:12px 14px;
+  box-shadow:0 1px 2px rgba(16,40,50,.05),0 10px 26px rgba(14,124,134,.10),inset 0 1px 0 rgba(255,255,255,.7)}
 /* Sembunyikan ikon & label "Template Pengisian Data" — sisakan tombol saja */
 .io-row>svg{display:none}
 .io-row .io-txt{display:none}
@@ -1117,7 +1121,7 @@ body.nav-open{overflow:hidden}
   #view-dashboard .page-head>div:last-child{width:100%;flex-wrap:wrap}
   #view-dashboard .filter-field{flex:1 1 100%}
   .act{width:34px;height:34px}
-  .io-row{flex-wrap:wrap;text-align:center;justify-content:center}
+  .io-row{flex-wrap:wrap;text-align:center;justify-content:center;width:auto;margin-left:0}
   .io-row .btn{flex:1 1 auto;justify-content:center}
   .toast{left:14px;right:14px;transform:translateY(120px);bottom:16px}
   .toast.show{transform:translateY(0)}
@@ -2092,7 +2096,6 @@ tbody tr{animation:rowIn .3s ease both}
     <div class="page-head">
       <div>
         <h2>File Kontrak — Input Kontrak <span class="count-badge" id="fk-input-count">0</span></h2>
-        <p class="fk-hint">Unggah file kontrak untuk setiap pekerjaan. Urutan daftar mengikuti tabel Monitoring.</p>
       </div>
       <div class="head-right-tools">
         <div class="fk-seg mod-seg" id="fk-input-seg">
@@ -2156,7 +2159,6 @@ tbody tr{animation:rowIn .3s ease both}
     <div class="page-head">
       <div>
         <h2>File Kontrak — Lihat Kontrak <span class="count-badge" id="fk-view-count">0</span></h2>
-        <p class="fk-hint">Unduh atau hapus file kontrak yang telah diunggah. Urutan daftar mengikuti tabel Monitoring.</p>
       </div>
       <div class="head-right-tools">
         <div class="fk-seg mod-seg" id="fk-view-seg">
@@ -2220,7 +2222,6 @@ tbody tr{animation:rowIn .3s ease both}
     <div class="page-head">
       <div>
         <h2>Penetapan Nomor — Ambil Nomor</h2>
-        <p class="fk-hint">Tanggal terbit terisi otomatis sesuai tanggal saat penetapan. Nomor yang dihapus akan tersedia kembali.</p>
       </div>
       <div class="head-right-tools">
         <div class="fk-seg mod-seg" id="pn-ambil-seg">
