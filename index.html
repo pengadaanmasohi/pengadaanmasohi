@@ -1691,7 +1691,7 @@ tbody tr{animation:rowIn .3s ease both}
 /* --- Layout halaman A4 untuk cetak & pratinjau paginasi --- */
 html,body{background:#e9eef1}
 *{box-sizing:border-box}
-.fkl-print-page{background:#fff;width:210mm;min-height:297mm;margin:0 auto 16px;padding:16mm 15mm;box-shadow:0 10px 30px rgba(20,50,60,.18);position:relative}
+.fkl-print-page{background:#fff;width:210mm;min-height:297mm;margin:0 auto 16px;padding:25.4mm;box-shadow:0 10px 30px rgba(20,50,60,.18);position:relative}
 .fkl-print-page .fkl-doc{padding:0;overflow:visible}
 .fkl-chk{break-inside:auto;page-break-inside:auto}
 .fkl-chk tr{break-inside:avoid;page-break-inside:avoid}
@@ -1700,7 +1700,8 @@ html,body{background:#e9eef1}
 .fkl-chk thead th,.fkl-sec-h .rn,.fkl-doc-band,.fkl-doc .hasil,.fkl-chk .pill,.fkl-doc-logo img,.fkl-chk tbody tr:nth-child(even) td,.fkl-doc-org .l1,.fkl-doc-org .l2{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 @media print{
   html,body{background:#fff;margin:0;padding:0}
-  .fkl-print-page{width:auto;min-height:0;margin:0;padding:14mm 15mm;box-shadow:none}
+  /* Margin standar seperti Microsoft Word: 2,54 cm (1 inci) di semua sisi */
+  .fkl-print-page{width:auto;min-height:0;margin:0;padding:25.4mm;box-shadow:none}
   @page{size:A4;margin:0}
 }
 
@@ -8247,18 +8248,10 @@ function fklBuildDocHtml(){
 function fklStandaloneDocHtml(){
   const cssEl=document.getElementById('fkl-doc-css');
   const css=cssEl?cssEl.textContent:'';
-  const wm=
-    '.fkl-wm{position:fixed;inset:0;z-index:0;pointer-events:none;'+
-      'background-image:url('+FKL_LOGO_SRC+');background-repeat:no-repeat;'+
-      'background-position:center center;background-size:58% auto;opacity:.06;'+
-      '-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
-    '.fkl-print-page{position:relative;z-index:1}'+
-    '.fkl-doc{position:relative;z-index:1}';
   return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8">'+
     '<meta name="viewport" content="width=device-width, initial-scale=1">'+
     '<title>Form Pemeriksaan Kelengkapan Dokumen Pengadaan</title>'+
-    '<style>'+css+wm+'</style></head><body>'+
-    '<div class="fkl-wm"></div>'+
+    '<style>'+css+'</style></head><body>'+
     '<div class="fkl-print-page">'+fklBuildDocHtml()+'</div>'+
     '</body></html>';
 }
