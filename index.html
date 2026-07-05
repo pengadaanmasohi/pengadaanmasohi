@@ -794,33 +794,50 @@ tbody.tbody-reveal>tr:nth-child(10){animation-delay:.29s}
 .topbar-brand .brand h1{font-size:13px;font-weight:800;letter-spacing:.3px;line-height:1.15;color:#fff}
 .topbar-brand .brand span{font-size:8.5px;opacity:.85;font-weight:600;letter-spacing:1.6px;text-transform:uppercase;color:#dff3f4}
 
-.topnav{display:flex;align-items:center;gap:6px;flex:1 1 auto}
-.topnav-link{appearance:none;background:none;border:none;padding:9px 16px;font-family:'Plus Jakarta Sans';font-size:12.5px;font-weight:600;color:rgba(255,255,255,.85);display:flex;align-items:center;gap:8px;border-radius:11px;cursor:pointer;transition:background .2s ease,color .2s ease,transform .16s cubic-bezier(.16,1,.3,1),box-shadow .2s ease;white-space:nowrap;position:relative}
-.topnav-link svg{width:17px;height:17px;flex:0 0 auto;transition:transform .2s ease}
-.topnav-link:hover{background:rgba(255,255,255,.14);color:#fff;transform:translateY(-1px)}
-.topnav-link:hover svg{transform:scale(1.08)}
-.topnav-link.active{background:linear-gradient(135deg,var(--yellow),#ffd35a);color:#073f45;font-weight:800;box-shadow:0 5px 16px rgba(246,180,14,.4),inset 0 1px 0 rgba(255,255,255,.4)}
+.topnav{display:flex;align-items:center;gap:8px;flex:0 0 auto;margin-right:auto}
+.topnav-link{appearance:none;background:none;border:none;padding:9px 16px;font-family:'Plus Jakarta Sans';font-size:12.5px;font-weight:600;color:rgba(255,255,255,.85);display:flex;align-items:center;gap:8px;border-radius:12px;cursor:pointer;transition:background .25s ease,color .25s ease,transform .18s cubic-bezier(.34,1.56,.64,1),box-shadow .25s ease;white-space:nowrap;position:relative;overflow:hidden;isolation:isolate}
+.topnav-link svg{width:17px;height:17px;flex:0 0 auto;transition:transform .28s cubic-bezier(.34,1.56,.64,1)}
+/* Kilau menyapu saat hover */
+.topnav-link::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(120deg,transparent 25%,rgba(255,255,255,.22) 50%,transparent 75%);transform:translateX(-130%);transition:transform .6s cubic-bezier(.22,1,.36,1)}
+.topnav-link:hover::before{transform:translateX(130%)}
+/* Indikator garis bawah beranimasi */
+.topnav-link::after{content:"";position:absolute;left:50%;right:50%;bottom:5px;height:2.5px;border-radius:3px;background:linear-gradient(90deg,var(--yellow),#ffe08a);transition:left .28s cubic-bezier(.22,1,.36,1),right .28s cubic-bezier(.22,1,.36,1);opacity:.9}
+.topnav-link:hover{background:rgba(255,255,255,.16);color:#fff;transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.16)}
+.topnav-link:hover svg{transform:scale(1.16) rotate(-4deg)}
+.topnav-link:hover::after{left:14px;right:14px}
+.topnav-link:active{transform:translateY(0) scale(.95);transition-duration:.08s}
+.topnav-link.active{background:linear-gradient(135deg,var(--yellow),#ffd35a);color:#073f45;font-weight:800;box-shadow:0 6px 18px rgba(246,180,14,.45),inset 0 1px 0 rgba(255,255,255,.5);transform:translateY(-1px)}
 .topnav-link.active svg{color:#073f45}
+.topnav-link.active::after{left:50%;right:50%}
 
 .topnav-group{position:relative}
 /* #1: Tombol Input Pekerjaan & Monitoring dibuat polos (tanpa border/kotak) seperti
    Dashboard; saat dipilih/dibuka berubah kuning sama seperti Dashboard aktif. */
-.topnav-trigger{appearance:none;border:none;padding:9px 16px;font-family:'Plus Jakarta Sans';font-size:12.5px;font-weight:600;color:rgba(255,255,255,.85);display:flex;align-items:center;gap:8px;border-radius:11px;cursor:pointer;transition:background .2s ease,color .2s ease,transform .16s cubic-bezier(.16,1,.3,1),box-shadow .2s ease;white-space:nowrap;background:none;position:relative}
-.topnav-trigger svg:first-of-type{width:17px;height:17px;flex:0 0 auto;transition:transform .2s ease}
-.topnav-trigger .caret{width:13px;height:13px;margin-left:1px;transition:transform .22s;opacity:.85}
-.topnav-trigger:hover{background:rgba(255,255,255,.14);color:#fff;transform:translateY(-1px)}
-.topnav-trigger:hover svg:first-of-type{transform:scale(1.08)}
+.topnav-trigger{appearance:none;border:none;padding:9px 16px;font-family:'Plus Jakarta Sans';font-size:12.5px;font-weight:600;color:rgba(255,255,255,.85);display:flex;align-items:center;gap:8px;border-radius:12px;cursor:pointer;transition:background .25s ease,color .25s ease,transform .18s cubic-bezier(.34,1.56,.64,1),box-shadow .25s ease;white-space:nowrap;background:none;position:relative;overflow:hidden;isolation:isolate}
+.topnav-trigger svg:first-of-type{width:17px;height:17px;flex:0 0 auto;transition:transform .28s cubic-bezier(.34,1.56,.64,1)}
+.topnav-trigger .caret{width:13px;height:13px;margin-left:1px;transition:transform .28s cubic-bezier(.34,1.56,.64,1);opacity:.85}
+.topnav-trigger::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(120deg,transparent 25%,rgba(255,255,255,.22) 50%,transparent 75%);transform:translateX(-130%);transition:transform .6s cubic-bezier(.22,1,.36,1)}
+.topnav-trigger:hover::before{transform:translateX(130%)}
+.topnav-trigger::after{content:"";position:absolute;left:50%;right:50%;bottom:5px;height:2.5px;border-radius:3px;background:linear-gradient(90deg,var(--yellow),#ffe08a);transition:left .28s cubic-bezier(.22,1,.36,1),right .28s cubic-bezier(.22,1,.36,1);opacity:.9}
+.topnav-trigger:hover{background:rgba(255,255,255,.16);color:#fff;transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.16)}
+.topnav-trigger:hover svg:first-of-type{transform:scale(1.16) rotate(-4deg)}
+.topnav-trigger:hover::after{left:14px;right:14px}
+.topnav-trigger:active{transform:translateY(0) scale(.95);transition-duration:.08s}
 /* Kuning HANYA menandai HALAMAN yang sedang aktif (bukan menu yang diklik/dibuka).
    Grup menjadi kuning bila salah satu sub-menunya adalah view yang aktif (has-active). */
-.topnav-group.has-active .topnav-trigger{background:linear-gradient(135deg,var(--yellow),#ffd35a);color:#073f45;font-weight:800;box-shadow:0 5px 16px rgba(246,180,14,.4),inset 0 1px 0 rgba(255,255,255,.4)}
+.topnav-group.has-active .topnav-trigger{background:linear-gradient(135deg,var(--yellow),#ffd35a);color:#073f45;font-weight:800;box-shadow:0 6px 18px rgba(246,180,14,.45),inset 0 1px 0 rgba(255,255,255,.5);transform:translateY(-1px)}
 .topnav-group.has-active .topnav-trigger svg:first-of-type{color:#073f45}
+.topnav-group.has-active .topnav-trigger::after{left:50%;right:50%}
 /* Saat dropdown dibuka tetapi halaman aktif bukan di grup ini → umpan balik halus (bukan kuning) */
-.topnav-group.open:not(.has-active) .topnav-trigger{background:rgba(255,255,255,.14);color:#fff}
+.topnav-group.open:not(.has-active) .topnav-trigger{background:rgba(255,255,255,.16);color:#fff}
 .topnav-group.open:not(.has-active) .topnav-trigger svg:first-of-type{color:currentColor}
 .topnav-group.open .topnav-trigger .caret{transform:rotate(180deg)}
 
 .topnav-dropdown{position:absolute;top:calc(100% + 9px);left:0;min-width:232px;background:linear-gradient(180deg,#ffffff,#fbfdfe);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-lg);padding:8px;display:none;flex-direction:column;gap:3px;z-index:80;animation:dropIn .2s cubic-bezier(.16,1,.3,1)}
 @keyframes dropIn{from{opacity:0;transform:translateY(-8px) scale(.98)}to{opacity:1;transform:none}}
+/* Denyut halus pada menu aktif (kuning) agar menonjol */
+@keyframes navGlow{0%,100%{box-shadow:0 6px 18px rgba(246,180,14,.42),inset 0 1px 0 rgba(255,255,255,.5)}50%{box-shadow:0 8px 26px rgba(246,180,14,.62),inset 0 1px 0 rgba(255,255,255,.6)}}
+.topnav-link.active,.topnav-group.has-active .topnav-trigger{animation:navGlow 2.6s ease-in-out infinite}
 .topnav-group.open .topnav-dropdown{display:flex}
 .topnav-dropdown::before{content:"";position:absolute;top:-6px;left:22px;width:11px;height:11px;background:#fff;border-left:1px solid var(--line);border-top:1px solid var(--line);transform:rotate(45deg)}
 .topnav-item{appearance:none;width:100%;background:none;border:none;text-align:left;padding:10px 12px;font-family:'Plus Jakarta Sans';font-size:12px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:11px;border-radius:10px;cursor:pointer;transition:background .16s ease,color .16s ease,transform .14s ease}
@@ -857,6 +874,8 @@ tbody.tbody-reveal>tr:nth-child(10){animation-delay:.29s}
   .topnav{position:fixed;top:0;left:0;bottom:0;width:280px;max-width:86vw;flex-direction:column;align-items:stretch;gap:3px;background:linear-gradient(165deg,#073f45,var(--teal-dark) 55%,var(--teal));padding:18px 14px;transform:translateX(-100%);transition:transform .28s ease;z-index:90;overflow-y:auto;-webkit-overflow-scrolling:touch;box-shadow:0 0 50px rgba(0,0,0,.45)}
   .topnav.open{transform:translateX(0)}
   .topnav-link,.topnav-trigger{width:100%;justify-content:flex-start}
+  .topnav-link::after,.topnav-trigger::after{display:none}
+  .topnav-link.active,.topnav-group.has-active .topnav-trigger{animation:none}
   .topnav-trigger .caret{margin-left:auto}
   .topnav-group{position:static}
   .topnav-group.has-active .topnav-trigger::after{display:none}
