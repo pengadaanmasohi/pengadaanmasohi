@@ -2959,7 +2959,7 @@ html,body{background:#e9eef1}
       </div>
       <div class="filter-field toolbar-search fk-search">
         <label>Cari</label>
-        <input id="fk-input-search" type="text" placeholder="Cari Nama Pekerjaan" oninput="fkFilterInput()">
+        <input id="fk-input-search" type="text" placeholder="Cari No. SPBJ / Pekerjaan / Penyedia" oninput="fkFilterInput()">
       </div>
       <div class="toolbar-actions fk-actions-inline">
         <button class="btn btn-red" onclick="fkResetInput()">
@@ -3024,7 +3024,7 @@ html,body{background:#e9eef1}
         <label>Cari</label>
         <div class="search-elegant-box">
           <svg class="search-elegant-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-          <input id="fk-view-search" type="text" placeholder="Cari Nama Pekerjaan" oninput="fkFilterView()">
+          <input id="fk-view-search" type="text" placeholder="Cari No. SPBJ / Pekerjaan / Penyedia" oninput="fkFilterView()">
         </div>
       </div>
       <div class="toolbar-actions fk-actions-inline">
@@ -7382,7 +7382,9 @@ const FK_MODULES = {
     noKontrak: r=> fkEsc(r.no_spbj||'—'),
     tgl: r=> r.tgl_terbit_kr,
     year: r=> contractYear(r),
-    nilai: r=> rupiah(r.nilai_kontrak_kr)||'—'
+    nilai: r=> rupiah(r.nilai_kontrak_kr)||'—',
+    penyedia: r=> r.nama_penyedia || '',
+    noKontrakRaw: r=> r.no_spbj || ''
   },
   pl: {
     label:'Pengadaan Langsung',
@@ -7395,7 +7397,9 @@ const FK_MODULES = {
     noKontrak: r=> fkEsc(r.no_kontrak||'—'),
     tgl: r=> r.tgl_awal_kontrak,
     year: r=> yearOf(r, r.tgl_awal_kontrak),
-    nilai: r=> rupiah(r.kontrak_total_dengan_ppn)||'—'
+    nilai: r=> rupiah(r.kontrak_total_dengan_ppn)||'—',
+    penyedia: r=> r.perusahaan || '',
+    noKontrakRaw: r=> r.no_kontrak || ''
   },
   tender: {
     label:'Tender',
@@ -7412,7 +7416,17 @@ const FK_MODULES = {
     noKontrak: r=> stackPenyediaHtml(r,'no_kontrak'),
     tgl: r=> r.tgl_awal_kontrak,
     year: r=> yearOf(r, r.tgl_awal_kontrak),
-    nilai: r=> stackPenyediaRupiah(r,'kontrak_total_dengan_ppn')
+    nilai: r=> stackPenyediaRupiah(r,'kontrak_total_dengan_ppn'),
+    penyedia: r=>{
+      const base = r.perusahaan || '';
+      const L = Array.isArray(r.penyedia_layers) ? r.penyedia_layers : [];
+      return [base, ...L.map(x=>(x&&x.perusahaan)||'')].filter(Boolean).join(' ');
+    },
+    noKontrakRaw: r=>{
+      const base = r.no_kontrak || '';
+      const L = Array.isArray(r.penyedia_layers) ? r.penyedia_layers : [];
+      return [base, ...L.map(x=>(x&&x.no_kontrak)||'')].filter(Boolean).join(' ');
+    }
   }
 };
 
@@ -7514,6 +7528,13 @@ function openFkView(modul){
   fkState.view.modul=modul; showView('fk-view');
 }
 /* ---- Filter (Bidang Pelaksana) & Cari (Nama Pekerjaan) ---- */
+/* Set placeholder kotak Cari File Kontrak sesuai modul (No. SPBJ utk KR, No. Kontrak utk PL/Tender) */
+function fkSetSearchPlaceholder(mode, cfg){
+  const inp=document.getElementById('fk-'+mode+'-search');
+  if(!inp||!cfg) return;
+  const noLabel = (cfg.noKontrakLabel||'').includes('SPBJ') ? 'No. SPBJ' : 'No. Kontrak';
+  inp.placeholder = 'Cari '+noLabel+' / Pekerjaan / Penyedia';
+}
 function fkApplyFilters(mode, cfg, rows){
   const fb=document.getElementById('fk-'+mode+'-bidang')?.value||'';
   const ft=document.getElementById('fk-'+mode+'-tahun')?.value||'';
@@ -7522,7 +7543,14 @@ function fkApplyFilters(mode, cfg, rows){
   return rows.filter(r=>{
     if(fb && String(cfg.bidang(r)||'')!==fb) return false;
     if(ft && String((cfg.year?cfg.year(r):'')||'')!==ft) return false;
-    if(fs && !String(cfg.nama(r)||'').toLowerCase().includes(fs)) return false;
+    if(fs){
+      const hay = [
+        cfg.nama(r)||'',
+        (cfg.noKontrakRaw?cfg.noKontrakRaw(r):'')||'',
+        (cfg.penyedia?cfg.penyedia(r):'')||''
+      ].join(' ').toLowerCase();
+      if(!hay.includes(fs)) return false;
+    }
     return true;
   });
 }
@@ -7560,6 +7588,7 @@ async function renderFkInput(){
   fkMarkActive('input', modul);
   const cfg=FK_MODULES[modul];
   const thNok=document.getElementById('fk-input-th-nok'); if(thNok) thNok.textContent=cfg.noKontrakLabel;
+  fkSetSearchPlaceholder('input', cfg);
   const tb=document.getElementById('fk-input-body');
   const pg=document.getElementById('fk-input-pagination');
   const cEl=document.getElementById('fk-input-count');
@@ -7578,6 +7607,7 @@ async function renderFkView(){
   fkMarkActive('view', modul);
   const cfg=FK_MODULES[modul];
   const thNok=document.getElementById('fk-view-th-nok'); if(thNok) thNok.textContent=cfg.noKontrakLabel;
+  fkSetSearchPlaceholder('view', cfg);
   const tb=document.getElementById('fk-view-body');
   const pg=document.getElementById('fk-view-pagination');
   const cEl=document.getElementById('fk-view-count');
