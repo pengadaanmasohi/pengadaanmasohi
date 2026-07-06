@@ -9928,6 +9928,28 @@ function pnwCountBelum(){
   });
   return belum;
 }
+/* Cari lokasi (sampul + penyedia) pertama yang masih memiliki baris belum ditandai.
+   Mengembalikan {sk, pidx, nama} atau null bila semua sudah lengkap. */
+function pnwFirstBelum(){
+  const st=pnwState;
+  const sampuls=pnwSampulList(st);
+  for(let s=0;s<sampuls.length;s++){
+    const sk=sampuls[s];
+    const kats=pnwSelectedKategori(st,sk);
+    for(let pidx=0;pidx<st.penyedia.length;pidx++){
+      for(const kat of kats){
+        for(const baris of (st.syarat[sk][kat]||[])){
+          const c=pnwGetPeriksa(sk,pidx,kat,baris);
+          if(c.ada!==true && c.ada!==false){
+            const nama=(st.penyedia[pidx]&&st.penyedia[pidx].trim())?st.penyedia[pidx]:('Penyedia '+(pidx+1));
+            return {sk, pidx, nama};
+          }
+        }
+      }
+    }
+  }
+  return null;
+}
 async function pnwSimpan(){
   if(!requireInput()) return;
   const st=pnwState; const info=st.info||{};
@@ -9960,8 +9982,15 @@ async function pnwSimpan(){
   };
   const belum=pnwCountBelum();
   if(belum>0){
-    openConfirm({ icon:'warn', title:'Masih Ada yang Belum Ditandai',
-      text:belum+' baris pemeriksaan belum ditandai Ada/Tidak Ada. Tetap simpan?', onYes:doSave });
+    // Tolak simpan: seluruh pemeriksaan (setiap penyedia) harus lengkap dulu.
+    const loc=pnwFirstBelum();
+    toast('Data gagal disimpan, lengkapi pemeriksaan terlebih dahulu','err');
+    if(loc){
+      // arahkan langsung ke sampul & penyedia yang masih ada baris belum ditandai
+      pnwActiveSampul=loc.sk; pnwActivePenyedia=loc.pidx;
+      if(pnwStep!==4){ pnwStep=4; }
+      renderPnwForm(); pnwScrollTop();
+    }
     return;
   }
   doSave();
