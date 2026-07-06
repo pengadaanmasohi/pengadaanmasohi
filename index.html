@@ -2016,9 +2016,10 @@ tbody tr{animation:rowIn .3s ease both}
 .pnw-periksa-table th.pnw-no{text-align:center}
 .pnw-periksa-table td{padding:11px 13px;border-bottom:1px solid #eef3f4;vertical-align:middle;background:#fff;transition:background .15s}
 .pnw-periksa-table tbody tr:last-child td{border-bottom:none}
-.pnw-periksa-table td.pnw-no{width:46px;text-align:center;color:var(--muted);font-weight:800}
+.pnw-periksa-table th.pnw-no,.pnw-periksa-table td.pnw-no{width:24px;text-align:center;color:var(--muted);font-weight:800;padding-left:6px;padding-right:6px}
 .pnw-periksa-table td.pnw-uraian{color:#233a41;font-weight:600}
-.pnw-periksa-table th.pnw-ck,.pnw-periksa-table td.pnw-ck{width:230px}
+.pnw-periksa-table th.pnw-ck,.pnw-periksa-table td.pnw-ck{width:160px;text-align:center}
+.pnw-periksa-table td.pnw-ck .fkl-ada-opts{justify-content:center}
 .pnw-periksa-table th.pnw-ket,.pnw-periksa-table td.pnw-ket{width:26%}
 .pnw-periksa-table td.pnw-ket input{width:100%}
 .pnw-periksa-table tr.is-ada td{background:#f4fbf7}
@@ -9745,7 +9746,48 @@ function pnwSetAda(sk, pidx, kat, baris, val){
   const st=pnwState; st.periksa[sk]=st.periksa[sk]||{}; st.periksa[sk][pidx]=st.periksa[sk][pidx]||{};
   const k=pnwRowKey(kat,baris); const cur=st.periksa[sk][pidx][k]||{};
   cur.ada = (cur.ada===val)? undefined : val;
-  st.periksa[sk][pidx][k]=cur; pnwSaveState(); renderPnwForm();
+  st.periksa[sk][pidx][k]=cur; pnwSaveState();
+  // Perbarui tampilan secara in-place agar posisi scroll TIDAK bergeser.
+  // Hanya lakukan bila baris yang diklik memang sedang tampil (penyedia & sampul aktif).
+  if(sk===pnwActiveSampul && pidx===pnwActivePenyedia && pnwPatchAdaRow(k, cur.ada)){
+    pnwPatchProgress();
+    return;
+  }
+  // fallback (mis. kondisi tak terduga): render ulang penuh
+  renderPnwForm();
+}
+/* Perbarui satu baris (tombol Ada/Tidak Ada + warna baris) tanpa render ulang.
+   Mengembalikan true bila baris ditemukan & diperbarui. */
+function pnwPatchAdaRow(rk, ada){
+  const cont=document.getElementById('pnw-content'); if(!cont) return false;
+  const tr=cont.querySelector('tr[data-rk="'+(window.CSS&&CSS.escape?CSS.escape(rk):rk.replace(/"/g,'\\"'))+'"]');
+  if(!tr){
+    // fallback pencarian manual bila selector attr gagal (karakter khusus)
+    const rows=cont.querySelectorAll('tr[data-rk]');
+    let found=null; rows.forEach(r=>{ if(r.getAttribute('data-rk')===rk) found=r; });
+    if(!found) return false;
+    return pnwApplyRowState(found, ada);
+  }
+  return pnwApplyRowState(tr, ada);
+}
+function pnwApplyRowState(tr, ada){
+  tr.classList.remove('is-ada','is-no');
+  if(ada===true) tr.classList.add('is-ada');
+  else if(ada===false) tr.classList.add('is-no');
+  const btnAda=tr.querySelector('.fkl-ada-btn.ada');
+  const btnNo =tr.querySelector('.fkl-ada-btn.no');
+  if(btnAda) btnAda.classList.toggle('on', ada===true);
+  if(btnNo)  btnNo.classList.toggle('on', ada===false);
+  return true;
+}
+/* Perbarui ringkasan progres penyedia aktif (angka + bar) tanpa render ulang. */
+function pnwPatchProgress(){
+  const cont=document.getElementById('pnw-content'); if(!cont) return;
+  const pg=pnwProgressPenyedia();
+  const sAda=cont.querySelector('.pnw-pstat.ada');   if(sAda) sAda.textContent='Ada '+pg.ada;
+  const sNo =cont.querySelector('.pnw-pstat.no');    if(sNo)  sNo.textContent='Tidak Ada '+pg.tidak;
+  const sBl =cont.querySelector('.pnw-pstat.belum'); if(sBl)  sBl.textContent='Belum '+pg.belum;
+  const fill=cont.querySelector('.pnw-progress-fill');if(fill) fill.style.width=pg.pct+'%';
 }
 function pnwSetKet(el){
   const st=pnwState; const sk=el.dataset.sk, pidx=+el.dataset.pidx, kat=el.dataset.kat, baris=el.dataset.baris;
@@ -9773,7 +9815,8 @@ function pnwPeriksaTableHtml(){
       if(isRAB){ ketPh='Isi Nilai Penawaran (dengan PPN)'; ketOn='oninput="onRupiahInput(this);pnwSetKet(this)"'; ketMode=' inputmode="numeric"'; }
       else if(isJangka){ ketPh='Isi jangka waktu pelaksanaan'; }
       const ketCell='<td class="pnw-ket"><input type="text"'+ketMode+' placeholder="'+fkEsc(ketPh)+'" data-sk="'+sk+'" data-pidx="'+pidx+'" data-kat="'+fkEsc(kat)+'" data-baris="'+fkEsc(baris)+'" value="'+fkEsc(cur.ket||'')+'" '+ketOn+'></td>';
-      rows+='<tr class="'+rowCls+'">'+
+      const rkAttr = 'data-rk="'+fkEsc(pnwRowKey(kat,baris))+'"';
+      rows+='<tr class="'+rowCls+'" '+rkAttr+'>'+
         '<td class="pnw-no">'+(i+1)+'</td>'+
         '<td class="pnw-uraian">'+fkEsc(uraian)+'</td>'+
         '<td class="pnw-ck">'+
