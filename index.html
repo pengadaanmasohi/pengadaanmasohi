@@ -199,6 +199,15 @@ a{color:inherit}
 /* Penetapan Nomor: kolom Cari dipindah ke kanan & diperbesar 2x (158px → 316px) */
 .toolbar .toolbar-search.pn-search-right{margin-left:auto}
 .toolbar #pn-lihat-search{min-width:316px;max-width:316px}
+/* Kelengkapan Dokumen — Lihat Data: samakan lebar kotak Cari dengan Monitoring (300–390px) */
+.toolbar #fkl-view-search{min-width:300px;max-width:390px}
+/* Kolom Lokasi Pekerjaan pada tabel Kelengkapan — Lihat Data */
+#view-fkl-view th.fkl-col-lokasi,#view-fkl-view td.fkl-col-lokasi{white-space:normal;min-width:170px;max-width:240px;word-break:break-word;overflow-wrap:break-word;line-height:1.3}
+/* Kolom Metode + badge pada tabel Penetapan — Lihat Nomor (gabungan PL & Tender) */
+.pn-col-metode{text-align:center;white-space:nowrap;vertical-align:middle}
+.pn-metode-badge{display:inline-block;padding:4px 10px;border-radius:20px;font-size:9.5px;font-weight:800;letter-spacing:.2px;white-space:nowrap;line-height:1.3}
+.pn-badge-pl{background:#e0f2f4;color:#0b6b74;box-shadow:inset 0 0 0 1px rgba(14,124,134,.22)}
+.pn-badge-tender{background:#e7e3fb;color:#4531a3;box-shadow:inset 0 0 0 1px rgba(69,49,163,.20)}
 /* Toolbar tanpa kotak putih (hanya menyisakan field Cari) */
 .toolbar.pn-toolbar-bare{background:none;border:none;box-shadow:none;padding:0;margin-bottom:16px}
 /* Samakan ukuran tombol Reset & Hapus Semua */
@@ -2564,12 +2573,7 @@ html,body{background:#e9eef1}
     <div class="page-head">
       <div>
         <h2>Penetapan Nomor — Lihat Nomor <span class="count-badge" id="pn-lihat-count">0</span></h2>
-      </div>
-      <div class="head-right-tools">
-        <div class="fk-seg mod-seg" id="pn-lihat-seg">
-          <button class="fk-seg-btn" data-modul="pl" onclick="openPnLihat('pl')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>Pengadaan Langsung</button>
-          <button class="fk-seg-btn" data-modul="tender" onclick="openPnLihat('tender')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>Tender</button>
-        </div>
+        <p>Daftar nomor dokumen Pengadaan Langsung &amp; Tender dalam satu tabel</p>
       </div>
     </div>
     <div class="toolbar pn-toolbar-bare">
@@ -2584,6 +2588,7 @@ html,body{background:#e9eef1}
             <tr>
               <th class="col-no">No.</th>
               <th class="col-nama-freeze">Nama Pekerjaan</th>
+              <th class="pn-col-metode">Metode</th>
               <th class="pn-col-jenis">Jenis Dokumen</th>
               <th class="pn-col-nomor">No. Dokumen</th>
               <th class="col-date">Tgl. Terbit</th>
@@ -2619,9 +2624,6 @@ html,body{background:#e9eef1}
         <h2>Kelengkapan Dokumen Pengadaan — Lihat Data <span class="count-badge" id="fkl-view-count">0</span></h2>
         <p>Daftar pemeriksaan kelengkapan dokumen yang telah disimpan</p>
       </div>
-      <div class="head-right-tools">
-        <button class="btn btn-teal" type="button" onclick="openFklInput()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M12 5v14M5 12h14"/></svg>Input Data</button>
-      </div>
     </div>
     <div class="toolbar pn-toolbar-bare">
       <div class="filter-field toolbar-search pn-search-right">
@@ -2635,6 +2637,7 @@ html,body{background:#e9eef1}
             <tr>
               <th class="col-no">No.</th>
               <th class="col-nama-freeze">Nama Pekerjaan</th>
+              <th class="fkl-col-lokasi">Lokasi Pekerjaan</th>
               <th class="col-date">Tgl. Terima Dokumen</th>
               <th>Metode Pengadaan</th>
               <th style="text-align:center;min-width:170px">Aksi</th>
@@ -3297,7 +3300,7 @@ const DRAFT_KEY = 'mon_draft'; // draft form input/edit (dipulihkan saat refresh
    pengguna otomatis logout ketika browser ditutup. Sesi tetap dipulihkan
    saat halaman di-refresh (F5) selama tab tidak ditutup.
    localStorage lama (jika ada) langsung dibersihkan agar tidak memulihkan sesi. */
-try{ localStorage.removeItem('mon_role'); localStorage.removeItem('mon_user'); localStorage.removeItem('mon_view'); }catch(e){}
+try{ localStorage.removeItem('mon_role'); localStorage.removeItem('mon_user'); localStorage.removeItem('mon_view'); localStorage.removeItem('fkl_state_v2'); }catch(e){}
 function ssSet(k,v){ try{ sessionStorage.setItem(k,v); }catch(e){} }
 function ssGet(k){ try{ return sessionStorage.getItem(k); }catch(e){ return null; } }
 function ssDel(k){ try{ sessionStorage.removeItem(k); }catch(e){} }
@@ -3680,7 +3683,7 @@ function showView(name, loaderMsg, noLoader){
     try{
         document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
         document.getElementById('view-'+name).classList.add('active');
-        ssSet(VIEW_KEY, name);   // ingat halaman aktif utk refresh (sessionStorage + localStorage)
+        ssSet(VIEW_KEY, name);   // ingat halaman aktif utk refresh (sessionStorage)
         // Draft form hanya relevan di halaman input/ubah; bersihkan bila pindah ke halaman lain
         if(name!=='input' && name!=='input-pl' && name!=='input-tender') clearDraft();
         // active state untuk Dashboard (nav-link) maupun item di dalam grup (nav-item)
@@ -6742,10 +6745,13 @@ renderTableTender();
 const FK_TABLE = 'file_kontrak';
 const FK_MAX_MB = 15;   // batas ukuran file (aman untuk payload Supabase)
 
-/* Hanya pekerjaan berstatus "Terkontrak" atau "Selesai" yang masuk daftar File Kontrak.
+/* Yang masuk daftar File Kontrak:
+   - SPBJ / Kontrak Rinci (kr) : HANYA status "Selesai".
+   - Pengadaan Langsung & Tender: tahapan "Terkontrak" atau "Selesai".
    (On Progress / Gagal-Batal / tahapan proses lain dikecualikan.) */
 function fkStatusOk(modul, r){
   const s=String((modul==='kr' ? r.status : r.tahapan)||'').trim();
+  if(modul==='kr') return s==='Selesai';
   return s==='Terkontrak' || s==='Selesai';
 }
 
@@ -7242,7 +7248,7 @@ const PN_DOC_ICON  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
 const PN_COPY_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
 const PN_CHECK_ICON= '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg>';
 const PN_WARN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4M12 17h.01"/></svg>';
-const PN_HASH_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>';
+const PN_HASH_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M10.6 12.2l-1 5.4M14 12.2l-1 5.4M8.6 14.2h6M8.2 16.2h6"/></svg>';
 
 /* ---- Store Supabase ---- */
 const StorePenetapan = {
@@ -7389,10 +7395,9 @@ function openPnAmbil(modul){
   if(pnState.ambil.modul!==modul) pnState.lastResult=null;
   pnState.ambil.modul=modul; showView('pn-ambil');
 }
-function openPnLihat(modul){
-  if(!PN_MODULES[modul]) modul='pl';
-  if(pnState.lihat.modul!==modul){ pnState.lihat.page=1; pnClearLihatFilters(); }
-  pnState.lihat.modul=modul; showView('pn-lihat');
+function openPnLihat(){
+  // Tabel gabungan: Pengadaan Langsung + Tender ditampilkan bersama.
+  showView('pn-lihat');
 }
 function pnMarkActive(mode, modul){
   document.querySelectorAll('.topnav-item[data-view="pn-'+mode+'"]').forEach(b=>{
@@ -7636,17 +7641,22 @@ function pnClearLihatFilters(){
 function pnFilterLihat(){ pnState.lihat.page=1; renderPnLihat(); }
 function pnResetLihat(){ pnClearLihatFilters(); pnState.lihat.page=1; renderPnLihat(); }
 function pnLihatRows(){
-  const modul=pnState.lihat.modul;
-  let rows=records_penetapan.filter(r=>r.modul===modul);
+  // Gabungan seluruh modul (Pengadaan Langsung + Tender)
+  let rows=(records_penetapan||[]).slice();
   const fs=(document.getElementById('pn-lihat-search')?.value||'').toLowerCase().trim();
   if(fs) rows=rows.filter(r=>String(r.nama_pekerjaan||'').toLowerCase().includes(fs));
   return rows;
 }
+/* Badge metode pengadaan untuk tabel Lihat Nomor gabungan */
+function pnMetodeBadge(modul){
+  const isT = String(modul)==='tender';
+  return '<span class="pn-metode-badge '+(isT?'pn-badge-tender':'pn-badge-pl')+'">'+
+    (isT?'Tender':'Pengadaan Langsung')+'</span>';
+}
 function renderPnLihat(){
-  const modul=pnState.lihat.modul;
-  pnMarkActive('lihat', modul);
   const sec=document.getElementById('view-pn-lihat');
-  if(sec){ sec.classList.toggle('pn-modul-tender', modul==='tender'); sec.classList.toggle('pn-modul-pl', modul==='pl'); }
+  // Tabel gabungan memakai layout auto agar label jenis dokumen (PL & Tender) tidak terpotong.
+  if(sec){ sec.classList.add('pn-modul-tender'); sec.classList.remove('pn-modul-pl'); }
   const tb=document.getElementById('pn-lihat-body');
   const pg=document.getElementById('pn-lihat-pagination');
   const cEl=document.getElementById('pn-lihat-count');
@@ -7666,6 +7676,7 @@ function renderPnLihat(){
     return '<tr>' +
       '<td class="col-no">'+(start+i+1)+'</td>' +
       '<td class="wrap-cell col-nama-freeze">'+fkEsc(nama)+'</td>' +
+      '<td class="pn-col-metode">'+pnMetodeBadge(r.modul)+'</td>' +
       '<td class="pn-col-jenis">'+pnJenisCellHtml(r)+'</td>' +
       '<td class="pn-col-nomor">'+pnNomorCellHtml(r)+'</td>' +
       '<td class="pn-col-tgl">'+pnTglCellHtml(r)+'</td>' +
@@ -7676,7 +7687,7 @@ function renderPnLihat(){
   pnRenderPagination(st.page, totalPages, pg);
 }
 function pnEmptyRow(){
-  return '<tr><td colspan="6"><div class="empty">'+PN_HASH_ICON+'<div>Data tidak tersedia</div></div></td></tr>';
+  return '<tr><td colspan="7"><div class="empty">'+PN_HASH_ICON+'<div>Data tidak tersedia</div></div></td></tr>';
 }
 function pnJenisCellHtml(r){
   const docs=Array.isArray(r.dokumen)?r.dokumen:[];
@@ -8000,65 +8011,77 @@ const FKL_STATE_KEY='fkl_state_v2';
    ada    : { "Nama Dokumen": true|false }   (hasil pemeriksaan: Ada / Tidak Ada) */
 function fklBlankState(){ return { info:{}, pilih:{}, ada:{} }; }
 let fklState = { pl:fklBlankState(), tender:fklBlankState() };
+/* Buffer wizard bersifat transien: disimpan di sessionStorage (ikut hilang saat
+   tab ditutup), konsisten dengan draft form lain. TIDAK memakai localStorage. */
 (function fklLoadState(){
-  try{ const raw=localStorage.getItem(FKL_STATE_KEY); if(raw){ const o=JSON.parse(raw); if(o&&o.pl&&o.tender) fklState=o; } }catch(e){}
+  try{ const raw=ssGet(FKL_STATE_KEY); if(raw){ const o=JSON.parse(raw); if(o&&o.pl&&o.tender) fklState=o; } }catch(e){}
 })();
-function fklSaveState(){ try{ localStorage.setItem(FKL_STATE_KEY, JSON.stringify(fklState)); }catch(e){} }
+function fklSaveState(){ try{ ssSet(FKL_STATE_KEY, JSON.stringify(fklState)); }catch(e){} }
 
 /* ==================================================================
-   Penyimpanan data Kelengkapan (Supabase tabel `kelengkapan_dokumen`
-   dengan fallback localStorage bila tabel belum tersedia).
+   Penyimpanan data Kelengkapan — SEPENUHNYA di Supabase
+   (tabel `kelengkapan_dokumen`). Tidak ada fallback localStorage.
    ================================================================== */
 const FKL_TABLE='kelengkapan_dokumen';
-const FKL_RECS_KEY='fkl_records_v1';
-let fklUseSupa = USE_SUPABASE;
+const FKL_RECS_KEY='fkl_records_v1';   // kunci lama (hanya untuk migrasi & pembersihan)
 let records_kelengkapan = [];
 let fklEditId = null;          // id record yang sedang diubah (null = tambah baru)
 let fklPreviewState = null;    // state khusus untuk pratinjau record tersimpan
 
-function fklLsList(){ try{ const raw=localStorage.getItem(FKL_RECS_KEY); const a=raw?JSON.parse(raw):[]; return Array.isArray(a)?a:[]; }catch(e){ return []; } }
-function fklLsSave(arr){ try{ localStorage.setItem(FKL_RECS_KEY, JSON.stringify(arr)); }catch(e){} }
-function fklNewId(){ return 'fkl_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+function fklSupaReady(){ return !!(USE_SUPABASE && db); }
 
 const StoreKelengkapan = {
   async list(){
-    if(fklUseSupa && db){
-      try{
-        const {data,error}=await db.from(FKL_TABLE).select('*').order('created_at',{ascending:false});
-        if(error) throw error;
-        return data||[];
-      }catch(e){ console.warn('Kelengkapan: memakai penyimpanan lokal ('+(e&&e.message||e)+')'); fklUseSupa=false; }
-    }
-    return fklLsList();
+    if(!fklSupaReady()) return [];
+    const {data,error}=await db.from(FKL_TABLE).select('*').order('created_at',{ascending:false});
+    if(error) throw error;
+    return data||[];
   },
   async create(rec){
-    if(fklUseSupa && db){
-      try{ const {data,error}=await db.from(FKL_TABLE).insert(rec).select(); if(error) throw error; return data&&data[0]; }
-      catch(e){ console.warn('Kelengkapan: memakai penyimpanan lokal ('+(e&&e.message||e)+')'); fklUseSupa=false; }
-    }
-    const arr=fklLsList();
-    const row=Object.assign({ id:fklNewId(), created_at:new Date().toISOString() }, rec);
-    arr.unshift(row); fklLsSave(arr); return row;
+    if(!fklSupaReady()) throw new Error('Koneksi Supabase tidak tersedia');
+    const {data,error}=await db.from(FKL_TABLE).insert(rec).select();
+    if(error) throw error; return data&&data[0];
   },
   async update(rid, rec){
-    if(fklUseSupa && db){
-      try{ const {error}=await db.from(FKL_TABLE).update(rec).eq('id',rid); if(error) throw error; return; }
-      catch(e){ console.warn('Kelengkapan: memakai penyimpanan lokal ('+(e&&e.message||e)+')'); fklUseSupa=false; }
-    }
-    const arr=fklLsList(); const i=arr.findIndex(r=>String(r.id)===String(rid));
-    if(i>=0){ arr[i]=Object.assign({}, arr[i], rec); fklLsSave(arr); }
+    if(!fklSupaReady()) throw new Error('Koneksi Supabase tidak tersedia');
+    const {error}=await db.from(FKL_TABLE).update(rec).eq('id',rid);
+    if(error) throw error;
   },
   async remove(rid){
-    if(fklUseSupa && db){
-      try{ const {error}=await db.from(FKL_TABLE).delete().eq('id',rid); if(error) throw error; return; }
-      catch(e){ console.warn('Kelengkapan: memakai penyimpanan lokal ('+(e&&e.message||e)+')'); fklUseSupa=false; }
-    }
-    const arr=fklLsList().filter(r=>String(r.id)!==String(rid)); fklLsSave(arr);
+    if(!fklSupaReady()) throw new Error('Koneksi Supabase tidak tersedia');
+    const {error}=await db.from(FKL_TABLE).delete().eq('id',rid);
+    if(error) throw error;
   }
 };
+
+/* Migrasi satu kali: pindahkan record Kelengkapan yang tersisa di localStorage
+   (versi lama) ke Supabase, lalu bersihkan localStorage. Aman & idempotent —
+   hanya berjalan bila masih ada data lokal. */
+async function fklMigrateLocalToSupabase(){
+  if(!fklSupaReady()) return;
+  let arr=[];
+  try{ const raw=localStorage.getItem(FKL_RECS_KEY); arr=raw?JSON.parse(raw):[]; }catch(e){ arr=[]; }
+  if(!Array.isArray(arr) || !arr.length){ try{ localStorage.removeItem(FKL_RECS_KEY); }catch(e){} return; }
+  const rows=arr.map(r=>({
+    nama_pekerjaan: r.nama_pekerjaan||(r.info&&r.info.nama)||'',
+    tgl_terima: r.tgl_terima||(r.info&&r.info.tgl_terima)||'',
+    metode: r.metode||(r.info&&r.info.metode)||'',
+    info: r.info||{}, pilih: r.pilih||{}, ada: r.ada||{},
+    created_at: r.created_at||new Date().toISOString()
+  }));
+  const {error}=await db.from(FKL_TABLE).insert(rows);
+  if(error) throw error;
+  try{ localStorage.removeItem(FKL_RECS_KEY); }catch(e){}
+  toast(rows.length+' data Kelengkapan dipindahkan ke Supabase','ok');
+}
 async function refreshDataKelengkapan(){
-  try{ records_kelengkapan = await StoreKelengkapan.list(); }
-  catch(err){ console.error(err); records_kelengkapan = records_kelengkapan||[]; }
+  try{
+    await fklMigrateLocalToSupabase();   // pindahkan sisa data lokal (jika ada) ke Supabase
+    records_kelengkapan = await StoreKelengkapan.list();
+  }catch(err){
+    console.error(err); records_kelengkapan = records_kelengkapan||[];
+    toast('Gagal memuat data Kelengkapan: '+errMsg(err),'err');
+  }
 }
 
 /* ---- Input Data (wizard). editId opsional untuk mode ubah ---- */
@@ -8376,7 +8399,7 @@ function fklViewRows(){
   return rows;
 }
 function fklEmptyRow(){
-  return '<tr><td colspan="5"><div class="empty" style="padding:40px 20px">'+
+  return '<tr><td colspan="6"><div class="empty" style="padding:40px 20px">'+
     '<svg viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="1.5" style="width:42px;height:42px;margin-bottom:8px"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>'+
     '<div>Data tidak tersedia</div></div></td></tr>';
 }
@@ -8396,12 +8419,14 @@ function renderFklView(){
   tb.innerHTML=pageRows.map((r,i)=>{
     const info=r.info||{};
     const nama=r.nama_pekerjaan||info.nama||'—';
+    const lokasi=(info.lokasi!=null?String(info.lokasi):'').trim();
     const tgl=r.tgl_terima||info.tgl_terima||'';
     const metode=r.metode||info.metode||'';
     const rid=fkEsc(String(r.id));
     return '<tr>'+
       '<td class="col-no">'+(start+i+1)+'</td>'+
       '<td class="wrap-cell col-nama-freeze">'+fkEsc(nama)+'</td>'+
+      '<td class="fkl-col-lokasi">'+fkEsc(lokasi||'—')+'</td>'+
       '<td class="col-date">'+fkEsc(tgl?fklDateLong(tgl):'—')+'</td>'+
       '<td>'+fkEsc(fklMetodeShort(metode))+'</td>'+
       '<td><div class="action-cell" style="justify-content:center">'+
