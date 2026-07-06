@@ -158,7 +158,18 @@ a{color:inherit}
 /* #3: Perkecil sedikit keseluruhan tampilan pada Dashboard agar lebih ringkas & elegan
    (hanya berlaku di #view-dashboard; tabel monitoring tidak terpengaruh). */
 #view-dashboard .page-head{margin-bottom:14px}
-#view-dashboard .page-head h2{font-size:17px}
+#view-dashboard .page-head h2{
+  font-size:22px;font-weight:800;letter-spacing:.2px;line-height:1.15;
+  padding-left:18px;
+  background:linear-gradient(100deg,var(--ink) 0%,var(--teal-dark) 46%,var(--teal) 72%,var(--cyan) 100%);
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;color:transparent;
+}
+#view-dashboard .page-head h2::before{
+  content:"";position:absolute;left:0;top:1px;bottom:1px;width:6px;border-radius:6px;
+  background:linear-gradient(180deg,var(--cyan),var(--teal),var(--teal-dark));
+  box-shadow:0 0 0 3px rgba(22,169,181,.12),0 4px 12px rgba(14,124,134,.35);
+}
 #view-dashboard .page-head p{font-size:10.5px}
 #view-dashboard .cards{gap:13px;margin-bottom:18px}
 #view-dashboard .card{padding:15px 15px 15px 18px}
@@ -1994,18 +2005,6 @@ html,body{background:#e9eef1}
         <h2 id="dash-title">Dashboard</h2>
       </div>
       <div class="dash-filter-bar">
-        <div class="filter-field" id="dash-metode-wrap" style="display:none">
-          <label>Metode Pengadaan</label>
-          <select id="dash-filter-metode" onchange="renderDashboard()">
-            <option value="">Semua Metode</option>
-            <option>Tender Terbatas</option>
-            <option>Tender Terbuka</option>
-            <option>Seleksi Umum</option>
-            <option>Seleksi Terbatas</option>
-            <option>Penunjukan Langsung</option>
-            <option>Tender Cepat</option>
-          </select>
-        </div>
         <div class="filter-field">
           <label>Jenis Pekerjaan</label>
           <select id="dash-filter-jenis" onchange="changeDashJenis()">
