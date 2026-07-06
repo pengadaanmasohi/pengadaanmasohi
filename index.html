@@ -649,6 +649,43 @@ td.cell-center{text-align:center}
 .logout-anim::before{content:"";position:absolute;inset:0;opacity:.5;background-image:radial-gradient(rgba(255,255,255,.10) 1px,transparent 1px);background-size:22px 22px;pointer-events:none}
 .logout-anim::after{content:"";position:absolute;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.10),transparent 62%);animation:loRipple 2.4s ease-out infinite}
 @keyframes loRipple{0%{transform:scale(.35);opacity:.55}70%{opacity:0}100%{transform:scale(1.35);opacity:0}}
+
+/* ====== Orang berjalan (walker) pada animasi Login / Logout ====== */
+.walker{position:absolute;bottom:12%;width:52px;height:78px;color:rgba(255,255,255,.9);
+  z-index:3;pointer-events:none;filter:drop-shadow(0 6px 10px rgba(0,0,0,.25))}
+.walker-svg{width:100%;height:100%;overflow:visible}
+/* Sedikit "bobbing" naik-turun tiap langkah */
+.walker .wk-body{animation:wkBob .5s ease-in-out infinite;transform-origin:32px 88px}
+@keyframes wkBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+/* Ayunan kaki & lengan bergantian (walk cycle) */
+.wk-leg-a{transform-origin:32px 56px;animation:wkLegA .5s ease-in-out infinite}
+.wk-leg-b{transform-origin:32px 56px;animation:wkLegB .5s ease-in-out infinite}
+.wk-arm-a{transform-origin:32px 32px;animation:wkLegB .5s ease-in-out infinite}
+.wk-arm-b{transform-origin:32px 32px;animation:wkLegA .5s ease-in-out infinite}
+@keyframes wkLegA{0%,100%{transform:rotate(20deg)}50%{transform:rotate(-20deg)}}
+@keyframes wkLegB{0%,100%{transform:rotate(-20deg)}50%{transform:rotate(20deg)}}
+
+/* LOGOUT: berjalan ke KIRI — melintas dari kanan ke kiri, menghadap kiri (di-mirror) */
+.walker-left{right:8%}
+.logout-anim.show .walker-left{animation:walkLeft 2.2s linear both}
+@keyframes walkLeft{
+  0%{transform:translateX(46vw) scaleX(-1);opacity:0}
+  12%{opacity:1}
+  88%{opacity:1}
+  100%{transform:translateX(-46vw) scaleX(-1);opacity:0}
+}
+/* LOGIN: berjalan ke KANAN — melintas dari kiri ke kanan, menghadap kanan */
+.walker-right{left:8%}
+.login-anim.show .walker-right{animation:walkRight 2.2s linear both}
+@keyframes walkRight{
+  0%{transform:translateX(-46vw);opacity:0}
+  12%{opacity:1}
+  88%{opacity:1}
+  100%{transform:translateX(46vw);opacity:0}
+}
+@media (prefers-reduced-motion:reduce){
+  .walker{display:none}
+}
 .lo-box{position:relative;display:flex;flex-direction:column;align-items:center;gap:22px;text-align:center;animation:loRise .55s cubic-bezier(.2,.85,.25,1) both}
 @keyframes loRise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 .lo-ring{position:relative;width:124px;height:124px;display:grid;place-items:center}
@@ -3184,6 +3221,19 @@ html,body{background:#e9eef1}
       <div class="lo-sub" id="login-anim-sub"></div>
     </div>
   </div>
+  <!-- Orang berjalan ke KANAN (masuk) -->
+  <div class="walker walker-right" aria-hidden="true">
+    <svg viewBox="0 0 64 96" class="walker-svg">
+      <g class="wk-body" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle class="wk-head" cx="32" cy="14" r="9" fill="currentColor" stroke="none"/>
+        <line class="wk-torso" x1="32" y1="24" x2="32" y2="56"/>
+        <line class="wk-arm wk-arm-a" x1="32" y1="32" x2="20" y2="44"/>
+        <line class="wk-arm wk-arm-b" x1="32" y1="32" x2="44" y2="46"/>
+        <line class="wk-leg wk-leg-a" x1="32" y1="56" x2="20" y2="78"/>
+        <line class="wk-leg wk-leg-b" x1="32" y1="56" x2="44" y2="80"/>
+      </g>
+    </svg>
+  </div>
 </div>
 
 <!-- ====== ANIMASI LOGOUT ====== -->
@@ -3199,6 +3249,19 @@ html,body{background:#e9eef1}
       <div class="lo-title">Sedang Keluar<span class="lo-dots"></span></div>
       <div class="lo-sub">Sampai jumpa</div>
     </div>
+  </div>
+  <!-- Orang berjalan ke KIRI (keluar) -->
+  <div class="walker walker-left" aria-hidden="true">
+    <svg viewBox="0 0 64 96" class="walker-svg">
+      <g class="wk-body" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle class="wk-head" cx="32" cy="14" r="9" fill="currentColor" stroke="none"/>
+        <line class="wk-torso" x1="32" y1="24" x2="32" y2="56"/>
+        <line class="wk-arm wk-arm-a" x1="32" y1="32" x2="20" y2="46"/>
+        <line class="wk-arm wk-arm-b" x1="32" y1="32" x2="44" y2="44"/>
+        <line class="wk-leg wk-leg-a" x1="32" y1="56" x2="20" y2="80"/>
+        <line class="wk-leg wk-leg-b" x1="32" y1="56" x2="44" y2="78"/>
+      </g>
+    </svg>
   </div>
 </div>
 
