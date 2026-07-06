@@ -1937,6 +1937,53 @@ tbody tr{animation:rowIn .3s ease both}
 .fkl-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:18px;flex-wrap:wrap}
 .fkl-actions-left,.fkl-actions-right{display:flex;gap:10px;flex-wrap:wrap}
 .fkl-actions-right{margin-left:auto}
+/* ================== PEMBUKAAN PENAWARAN (WIZARD) ================== */
+.pnw-hint-inline{font-weight:500;color:var(--muted);font-size:10.5px}
+.pnw-penyampaian-note{margin-top:14px;padding:10px 13px;border:1px dashed var(--line);border-radius:10px;background:#f8fbfc;color:var(--muted);font-size:11.5px;line-height:1.55}
+.pnw-sampul-band{font-family:'Plus Jakarta Sans';font-weight:800;font-size:11.5px;letter-spacing:.4px;color:#0b3d42;background:linear-gradient(90deg,var(--teal-soft),#f2fafb);border:1px solid #bfe0e2;border-left:4px solid var(--teal);border-radius:8px;padding:8px 12px;margin:14px 0 12px;text-transform:uppercase}
+.pnw-sampul-band:first-child{margin-top:0}
+.pnw-kat-card{border:1px solid var(--line);border-radius:12px;padding:14px 15px;margin-bottom:14px;background:linear-gradient(180deg,#fff,#fbfdfe)}
+.pnw-kat-card:last-child{margin-bottom:0}
+.pnw-kat-head{font-family:'Plus Jakarta Sans';font-weight:800;font-size:12px;color:var(--teal-dark);margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.pnw-kat-head::before{content:"";width:8px;height:8px;border-radius:3px;background:linear-gradient(135deg,var(--teal),var(--cyan))}
+.pnw-lock-note{font-size:10.5px;color:var(--muted);margin:-2px 0 10px;line-height:1.5}
+.pnw-syarat-list{display:flex;flex-direction:column;gap:8px}
+.pnw-syarat-row{display:flex;align-items:center;gap:9px}
+.pnw-syarat-no{flex:0 0 auto;width:22px;height:22px;border-radius:7px;background:var(--teal-soft);color:var(--teal-dark);font-family:'Plus Jakarta Sans';font-weight:800;font-size:11px;display:flex;align-items:center;justify-content:center}
+.pnw-syarat-row input{flex:1 1 auto;width:100%}
+.pnw-syarat-row.locked input{background:#f4f7f8;color:#54666c;font-weight:600}
+.pnw-lock-badge{flex:0 0 auto;font-family:'Plus Jakarta Sans';font-size:9.5px;font-weight:800;color:#8a6d00;background:#fff3d1;border:1px solid #f0d98a;border-radius:20px;padding:3px 9px;text-transform:uppercase;letter-spacing:.3px}
+.pnw-syarat-del{flex:0 0 auto;width:32px;height:32px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:#b02626;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.15s}
+.pnw-syarat-del svg{width:15px;height:15px}
+.pnw-syarat-del:hover{background:#fdf4f4;border-color:#e79a9a}
+.pnw-syarat-add{margin-top:11px;display:inline-flex;align-items:center;gap:6px;font-family:'Plus Jakarta Sans';font-weight:700;font-size:11px;color:var(--teal-dark);background:var(--teal-soft);border:1px dashed var(--teal);border-radius:9px;padding:8px 13px;cursor:pointer;transition:.15s}
+.pnw-syarat-add svg{width:14px;height:14px}
+.pnw-syarat-add:hover{background:#d3ecee}
+/* Langkah 4: header + picker penyedia */
+.pnw-periksa-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:6px}
+.pnw-periksa-title{display:flex;align-items:center;gap:9px;font-family:'Plus Jakarta Sans';font-weight:800;font-size:12.5px;color:var(--teal-dark)}
+.pnw-periksa-picker{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.pnw-picker-lbl{font-family:'Plus Jakarta Sans';font-weight:700;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px}
+.pnw-penyedia-tabs{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end;max-width:520px}
+.pnw-ptab{font-family:'Plus Jakarta Sans';font-weight:700;font-size:11px;color:#54666c;background:#fff;border:1.5px solid var(--line);border-radius:20px;padding:6px 13px;cursor:pointer;transition:.15s}
+.pnw-ptab:hover{border-color:var(--teal);color:var(--teal-dark)}
+.pnw-ptab.on{background:linear-gradient(135deg,var(--teal),var(--cyan));border-color:var(--teal);color:#fff}
+.pnw-sampul-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 14px}
+.pnw-stab{font-family:'Plus Jakarta Sans';font-weight:700;font-size:11.5px;color:#54666c;background:#f1f6f7;border:1.5px solid var(--line);border-radius:10px;padding:9px 15px;cursor:pointer;transition:.15s}
+.pnw-stab:hover{border-color:var(--teal);color:var(--teal-dark)}
+.pnw-stab.on{background:var(--teal-soft);border-color:var(--teal);color:var(--teal-dark);box-shadow:inset 0 0 0 1px var(--teal)}
+/* Tabel pemeriksaan */
+.pnw-periksa-table{width:100%;border-collapse:collapse;font-size:12px}
+.pnw-periksa-table th{background:#f1f6f7;color:var(--teal-dark);font-family:'Plus Jakarta Sans';font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:.3px;padding:10px 11px;text-align:left;border-bottom:1px solid var(--line)}
+.pnw-periksa-table td{padding:9px 11px;border-bottom:1px solid #eef3f4;vertical-align:middle}
+.pnw-periksa-table td.pnw-no{width:40px;text-align:center;color:var(--muted);font-weight:700}
+.pnw-periksa-table td.pnw-uraian{color:#2b3b41}
+.pnw-periksa-table th.pnw-ck,.pnw-periksa-table td.pnw-ck{width:210px}
+.pnw-periksa-table th.pnw-ket,.pnw-periksa-table td.pnw-ket{width:26%}
+.pnw-periksa-table td.pnw-ket input{width:100%}
+.pnw-periksa-table tr.pnw-cat-row td{background:linear-gradient(90deg,var(--teal-soft),#f7fcfc);color:#0b3d42;font-family:'Plus Jakarta Sans';font-weight:800;font-size:11px;text-transform:uppercase;letter-spacing:.3px;padding:8px 11px;border-bottom:1px solid var(--line)}
+.pnw-jd-cell{font-weight:700;color:var(--teal-dark);white-space:nowrap}
+@media(max-width:720px){.pnw-periksa-top{flex-direction:column}.pnw-periksa-picker{align-items:flex-start}.pnw-penyedia-tabs{justify-content:flex-start}}
 .btn.btn-ghost{background:#fff;border:1.5px solid var(--line);color:#7c8a8f}
 .btn.btn-ghost:hover{border-color:#e79a9a;color:#b02626;background:#fdf4f4}
 .btn.btn-light{background:#f1f6f7;border:1.5px solid var(--line);color:var(--teal-dark)}
@@ -2380,11 +2427,24 @@ html,body{background:#e9eef1}
                 </button>
               </div>
             </div>
-            <!-- Pembukaan Penawaran -->
-            <button class="topnav-item" data-view="form-pembukaan" data-role="admin" onclick="openFormPembukaan()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16a1 1 0 0 1 1 1v3H3V5a1 1 0 0 1 1-1Z"/><path d="M3 8v11a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V8"/><path d="M9 13h6"/></svg>
-              Pembukaan Penawaran
-            </button>
+            <!-- Pembukaan Penawaran: submenu Input Data / Lihat Data -->
+            <div class="topnav-sub" data-sub="pembukaan" data-role="admin">
+              <button class="topnav-subtrigger" type="button" onclick="toggleFkSub(event,'pembukaan')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16a1 1 0 0 1 1 1v3H3V5a1 1 0 0 1 1-1Z"/><path d="M3 8v11a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V8"/><path d="M9 13h6"/></svg>
+                <span class="sub-label">Pembukaan Penawaran</span>
+                <svg class="caret2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <div class="topnav-subdrop">
+                <button class="topnav-item" data-view="form-pembukaan" data-role="admin" onclick="openPnwInput()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                  Input Data
+                </button>
+                <button class="topnav-item" data-view="pnw-view" data-role="admin" onclick="openPnwView()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                  Lihat Data
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </nav>
@@ -3146,20 +3206,50 @@ html,body{background:#e9eef1}
     </div>
   </section>
 
-  <!-- ============ FORM — PEMBUKAAN PENAWARAN ============ -->
+  <!-- ============ FORM — PEMBUKAAN PENAWARAN (WIZARD) ============ -->
   <section id="view-form-pembukaan" class="view">
     <div class="page-head">
       <div>
-        <h2>Pembukaan Penawaran</h2>
-        <p>Berita acara pembukaan penawaran</p>
+        <h2 id="pnw-title">Pembukaan Penawaran</h2>
+        <p id="pnw-sub">Pemeriksaan kelengkapan dokumen penawaran penyedia</p>
       </div>
     </div>
-    <div class="panel pn-pending">
-      <div class="empty">
-        <svg viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="1.6" style="width:46px;height:46px"><path d="M4 4h16a1 1 0 0 1 1 1v3H3V5a1 1 0 0 1 1-1Z"/><path d="M3 8v11a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V8"/><path d="M9 13h6"/></svg>
-        <div class="pn-pending-title">Modul dalam penyiapan</div>
-        <div class="pn-pending-desc">Form Pembukaan Penawaran akan disiapkan pada tahap berikutnya. Silakan sampaikan rincian data &amp; format yang diinginkan agar bisa dibangun sesuai kebutuhan.</div>
+    <div class="panel" style="padding:20px 22px">
+      <div id="pnw-content"></div>
+    </div>
+  </section>
+
+  <!-- ============ PEMBUKAAN PENAWARAN — LIHAT HASIL PEMERIKSAAN ============ -->
+  <section id="view-pnw-view" class="view">
+    <div class="page-head">
+      <div>
+        <h2>Pembukaan Penawaran — Lihat Hasil Pemeriksaan <span class="count-badge" id="pnw-view-count">0</span></h2>
       </div>
+      <div class="filter-field toolbar-search pn-search-right search-elegant pn-head-search">
+        <div class="search-elegant-box">
+          <svg class="search-elegant-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input id="pnw-view-search" type="text" placeholder="Cari Nama Pekerjaan" oninput="renderPnwView()">
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="col-no">No.</th>
+              <th class="col-nama-freeze">Nama Pekerjaan</th>
+              <th class="fkl-col-lokasi">Lokasi Pekerjaan</th>
+              <th>Metode Pengadaan</th>
+              <th>Jenis Dokumen</th>
+              <th class="col-date">Tgl. Pemeriksaan</th>
+              <th style="text-align:center;min-width:170px">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="pnw-view-body"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="pnw-view-pagination"></div>
     </div>
   </section>
 
@@ -4236,6 +4326,8 @@ function showView(name, loaderMsg, noLoader){
         if(name==='pn-lihat') renderPnLihat();
         if(name==='form-kelengkapan') renderFormKelengkapan();
         if(name==='fkl-view') renderFklView();
+        if(name==='form-pembukaan') renderPnwForm();
+        if(name==='pnw-view') renderPnwView();
     }catch(err){ console.error('showView error:', err); }
     if(!noLoader){ const wait=Math.max(0, 460-(Date.now()-t0)); setTimeout(hideLoader, wait); }
   };
@@ -8469,7 +8561,7 @@ function pnPreviewResetMaxBtn(){
   const icon=document.getElementById('pn-preview-max-icon');
   if(icon) icon.innerHTML='<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>';  // maximize
 }
-function closePnPreview(){ const ov=document.getElementById('pn-preview-overlay'); if(ov) ov.classList.remove('show'); const modal=ov&&ov.querySelector('.pn-preview-modal'); if(modal) modal.classList.remove('is-max'); pnPreviewResetMaxBtn(); const b=document.getElementById('pn-preview-body'); if(b){ b.innerHTML=''; b.classList.remove('fkl-preview-body'); } const fp=document.getElementById('fkl-preview-print'); if(fp) fp.remove(); if(typeof fklPreviewState!=='undefined') fklPreviewState=null; pnCleanupPreview(); }
+function closePnPreview(){ const ov=document.getElementById('pn-preview-overlay'); if(ov) ov.classList.remove('show'); const modal=ov&&ov.querySelector('.pn-preview-modal'); if(modal) modal.classList.remove('is-max'); pnPreviewResetMaxBtn(); const b=document.getElementById('pn-preview-body'); if(b){ b.innerHTML=''; b.classList.remove('fkl-preview-body'); } const fp=document.getElementById('fkl-preview-print'); if(fp) fp.remove(); const pp=document.getElementById('pnw-preview-print'); if(pp) pp.remove(); if(typeof fklPreviewState!=='undefined') fklPreviewState=null; if(typeof pnwPreviewState!=='undefined') pnwPreviewState=null; pnCleanupPreview(); }
 
 /* ---- Upload / Download / Hapus lampiran (per masing-masing nomor dokumen) ---- */
 let pnUploadCtx=null;
@@ -8753,10 +8845,7 @@ function openFklView(){
   if(!isAdmin()){ toast('Menu ini hanya untuk akun admin','warn'); return; }
   refreshDataKelengkapan().then(()=>showView('fkl-view'));
 }
-function openFormPembukaan(){
-  if(!isAdmin()){ toast('Menu ini hanya untuk akun admin','warn'); return; }
-  showView('form-pembukaan');
-}
+function openFormPembukaan(){ openPnwInput(); }
 
 /* Konversi record tersimpan -> state wizard */
 function fklRecordToState(rec){
@@ -9218,6 +9307,7 @@ function fklOpenPreview(){
   }
   /* Tombol aksi pada header pratinjau: sisipkan tombol Cetak khusus FKL bila belum ada */
   const actions=document.querySelector('#pn-preview-overlay .pn-preview-head-actions');
+  const _oldPnw=document.getElementById('pnw-preview-print'); if(_oldPnw) _oldPnw.remove();
   if(actions && !document.getElementById('fkl-preview-print')){
     const btn=document.createElement('button');
     btn.id='fkl-preview-print'; btn.className='btn btn-teal';
@@ -9254,11 +9344,736 @@ function fklPrint(){
   } else { setTimeout(go, 120); }
 }
 
+
+/* ####################### MODUL PEMBUKAAN PENAWARAN ####################### */
+/* ==================================================================
+   MODUL PEMBUKAAN PENAWARAN
+   Alur 4 langkah:
+     1. Data Pekerjaan  (+ jumlah & nama penyedia, pejabat pelaksana)
+     2. Pilihan Kategori (1 grup utk 1 Sampul, 2 grup utk 2 Sampul/2 Tahap)
+     3. Pengisian Persyaratan (baris persyaratan per kategori, bisa tambah/hapus)
+     4. Pemeriksaan Kelengkapan (per penyedia: Ada/Tidak Ada + Keterangan)
+   Simpan -> Lihat Hasil Pemeriksaan + cetak PDF.
+   Pola menyalin modul Kelengkapan (FKL): stepper, form-card, fkl-actions,
+   fkl-check, fkl-ada, dokumen cetak (kop PLN), penyimpanan Supabase.
+   ================================================================== */
+
+const PNW_METODE = ['Pengadaan Langsung','Tender Terbuka','Tender Terbatas','Seleksi Umum','Seleksi Terbatas','Penunjukan Langsung','Tender Cepat'];
+const PNW_JENIS_ANGGARAN = ['Investasi','Operasi'];
+const PNW_PENYAMPAIAN = ['1 Tahap 1 Sampul','1 Tahap 2 Sampul','2 Tahap'];
+/* Kategori dokumen penawaran */
+const PNW_KATEGORI = ['Data Administrasi','Data Teknis','Keuangan','Jaminan Penawaran','Penawaran Harga'];
+/* Kategori Penawaran Harga terkunci: 3 item wajib, tidak bisa ditambah/kurang */
+const PNW_HARGA_LOCK = ['Surat Penawaran','Nilai RAB','Jangka Waktu Pelaksanaan'];
+
+/* Field data pekerjaan (langkah 1). Penyedia & pejabat ditangani terpisah. */
+const PNW_INFO_FIELDS = [
+  {key:'nama',          label:'Nama Pekerjaan',        type:'text', span:2},
+  {key:'lokasi',        label:'Lokasi Pekerjaan',      type:'text', span:2},
+  {key:'nilai',         label:'Perkiraan Nilai Pekerjaan', type:'num'},
+  {key:'no_anggaran',   label:'No. Anggaran',          type:'text'},
+  {key:'tgl_anggaran',  label:'Tgl. Anggaran',         type:'date'},
+  {key:'jenis_anggaran',label:'Jenis Anggaran',        type:'select', options:PNW_JENIS_ANGGARAN},
+  {key:'metode',        label:'Metode Pengadaan',      type:'select', options:PNW_METODE},
+  {key:'penyampaian',   label:'Metode Penyampaian Dokumen', type:'select', span:2, options:PNW_PENYAMPAIAN}
+];
+
+/* ---------- State ----------
+   info      : { key:value }  data pekerjaan
+   penyedia  : ['Nama A', ...] sepanjang jumlah
+   pejabat   : nama pejabat pelaksana pengadaan (utk ttd)
+   pilih     : { s1:{kategori:true}, s2:{kategori:true} }  kategori dicentang per sampul
+   syarat    : { s1:{ kategori:[ 'baris', ... ] }, s2:{...} }  daftar persyaratan
+   periksa   : { s1:{ penyediaIdx:{ 'kat||baris': {ada:bool, ket:str} } }, s2:{...} }
+*/
+function pnwBlankState(){
+  return { info:{}, penyedia:[''], pejabat:'', pilih:{s1:{},s2:{}}, syarat:{s1:{},s2:{}}, periksa:{s1:{},s2:{}} };
+}
+let pnwState = pnwBlankState();
+let pnwStep = 1;               // 1..4
+let pnwActiveSampul = 's1';    // langkah 4: sampul yang sedang diperiksa
+let pnwActivePenyedia = 0;     // langkah 4: indeks penyedia yang sedang diperiksa
+let pnwEditId = null;
+let pnwPreviewState = null;    // utk pratinjau record tersimpan
+let pnwPreviewSampul = 's1';   // sampul aktif saat cetak/pratinjau
+
+const PNW_STATE_KEY = 'pnw_state_v1';
+function pnwLoadState(){ try{ const raw=ssGet(PNW_STATE_KEY); if(raw){ const o=JSON.parse(raw); if(o&&o.info) pnwState=o; } }catch(e){} }
+function pnwSaveState(){ try{ ssSet(PNW_STATE_KEY, JSON.stringify(pnwState)); }catch(e){} }
+pnwLoadState();
+
+/* Sampul: apakah pekerjaan memakai 2 sampul (2 Sampul / 2 Tahap) */
+function pnwIsTwoSampul(st){ const p=(st||pnwState).info.penyampaian||''; return p==='1 Tahap 2 Sampul' || p==='2 Tahap'; }
+function pnwSampulList(st){ return pnwIsTwoSampul(st) ? ['s1','s2'] : ['s1']; }
+function pnwSampulLabel(sk){ return sk==='s2' ? 'Sampul Dua' : 'Sampul Satu'; }
+/* Judul grup kategori di langkah 2 */
+function pnwKategoriTitle(st, sk){
+  if(!pnwIsTwoSampul(st)) return 'Pilihan Kategori Dokumen';
+  return 'Pilihan Kategori Dokumen ' + (sk==='s2' ? 'Sampul Dua' : 'Sampul Satu');
+}
+
+/* ---------- Penyimpanan Supabase ---------- */
+const PNW_TABLE = 'pembukaan_penawaran';
+let records_pembukaan = [];
+function pnwSupaReady(){ return !!(USE_SUPABASE && db); }
+const StorePembukaan = {
+  async list(){
+    if(!pnwSupaReady()) return [];
+    const {data,error}=await db.from(PNW_TABLE).select('*').order('created_at',{ascending:false});
+    if(error) throw error; return data||[];
+  },
+  async create(rec){
+    if(!pnwSupaReady()) throw new Error('Koneksi Supabase tidak tersedia');
+    const {data,error}=await db.from(PNW_TABLE).insert(rec).select();
+    if(error) throw error; return data&&data[0];
+  },
+  async update(rid, rec){
+    if(!pnwSupaReady()) throw new Error('Koneksi Supabase tidak tersedia');
+    const {error}=await db.from(PNW_TABLE).update(rec).eq('id',rid);
+    if(error) throw error;
+  },
+  async remove(rid){
+    if(!pnwSupaReady()) throw new Error('Koneksi Supabase tidak tersedia');
+    const {error}=await db.from(PNW_TABLE).delete().eq('id',rid);
+    if(error) throw error;
+  }
+};
+async function refreshDataPembukaan(){
+  try{ records_pembukaan = await StorePembukaan.list(); }
+  catch(err){ console.error(err); records_pembukaan = records_pembukaan||[]; toast('Gagal memuat data Pembukaan Penawaran: '+errMsg(err),'err'); }
+}
+
+/* ---------- Buka form / lihat data ---------- */
+function openPnwInput(editId){
+  if(!isAdmin()){ toast('Menu ini hanya untuk akun admin','warn'); return; }
+  pnwPreviewState=null;
+  if(editId){
+    const rec=records_pembukaan.find(r=>String(r.id)===String(editId));
+    pnwEditId = rec ? rec.id : null;
+    pnwState = rec ? pnwRecordToState(rec) : pnwBlankState();
+  }else{
+    pnwEditId = null; pnwState = pnwBlankState();
+  }
+  pnwStep=1; pnwActiveSampul='s1'; pnwActivePenyedia=0;
+  pnwSaveState(); showView('form-pembukaan');
+}
+function openPnwView(){
+  if(!isAdmin()){ toast('Menu ini hanya untuk akun admin','warn'); return; }
+  refreshDataPembukaan().then(()=>showView('pnw-view'));
+}
+function pnwRecordToState(rec){
+  const base=pnwBlankState();
+  const s=(rec&&rec.state&&typeof rec.state==='object')?rec.state:{};
+  return {
+    info:  Object.assign({}, base.info,  s.info||{}),
+    penyedia: Array.isArray(s.penyedia)&&s.penyedia.length ? s.penyedia.slice() : [''],
+    pejabat: s.pejabat||'',
+    pilih: { s1:Object.assign({}, (s.pilih&&s.pilih.s1)||{}), s2:Object.assign({}, (s.pilih&&s.pilih.s2)||{}) },
+    syarat:{ s1:Object.assign({}, (s.syarat&&s.syarat.s1)||{}), s2:Object.assign({}, (s.syarat&&s.syarat.s2)||{}) },
+    periksa:{ s1:Object.assign({}, (s.periksa&&s.periksa.s1)||{}), s2:Object.assign({}, (s.periksa&&s.periksa.s2)||{}) }
+  };
+}
+function pnwActiveState(){ return pnwPreviewState || pnwState; }
+function pnwMarkActive(){ document.querySelectorAll('.topnav-item[data-view="form-pembukaan"]').forEach(b=>b.classList.add('active')); }
+
+/* ---------- Stepper ---------- */
+function pnwStepperHtml(){
+  const steps=[['1','Data Pekerjaan'],['2','Pilihan Kategori'],['3','Pengisian Persyaratan'],['4','Pemeriksaan']];
+  return '<div class="fkl-stepper">'+steps.map((s,i)=>{
+    const n=i+1;
+    const cls = n<pnwStep ? 'done' : (n===pnwStep ? 'active' : '');
+    const mark = n<pnwStep
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg>'
+      : s[0];
+    const line = i<steps.length-1 ? '<div class="fkl-step-line '+(n<pnwStep?'done':'')+'"></div>' : '';
+    return '<div class="fkl-step '+cls+'"><div class="fkl-step-dot">'+mark+'</div><div class="fkl-step-name">'+s[1]+'</div></div>'+line;
+  }).join('')+'</div>';
+}
+
+/* ================= LANGKAH 1: DATA PEKERJAAN ================= */
+function pnwInfoInputHtml(f){
+  const id='pnw-'+f.key;
+  const span=f.span?(' style="grid-column:span '+f.span+'"'):'';
+  let ctl;
+  if(f.type==='select'){
+    const extra = f.key==='penyampaian' ? ' onchange="pnwOnPenyampaianChange()"' : ' onchange="pnwOnInfoChange()"';
+    ctl='<select id="'+id+'"'+extra+'><option value="">— Pilih —</option>'+(f.options||[]).map(o=>'<option>'+fkEsc(o)+'</option>').join('')+'</select>';
+  }
+  else if(f.type==='num') ctl='<input id="'+id+'" type="text" inputmode="numeric" placeholder="Rp" oninput="onRupiahInput(this)" onchange="pnwOnInfoChange()">';
+  else if(f.type==='date') ctl='<input id="'+id+'" type="date" onchange="pnwOnInfoChange()">';
+  else ctl='<input id="'+id+'" type="text" oninput="pnwOnInfoChange()">';
+  return '<div class="field"'+span+'><label>'+fkEsc(f.label)+'</label>'+ctl+'</div>';
+}
+function pnwPenyediaFieldsHtml(){
+  const st=pnwState, n=st.penyedia.length;
+  let opts=''; for(let i=1;i<=20;i++) opts+='<option value="'+i+'"'+(i===n?' selected':'')+'>'+i+' Penyedia</option>';
+  let html='<div class="field"><label>Jumlah Penyedia</label><select id="pnw-jumlah" onchange="pnwOnJumlahChange(this)">'+opts+'</select></div>';
+  html+='<div class="field" style="grid-column:span 3"><label>Nama Pejabat Pelaksana Pengadaan <span class="pnw-hint-inline">(untuk kebutuhan tanda tangan)</span></label><input id="pnw-pejabat" type="text" placeholder="Nama pejabat pelaksana" oninput="pnwOnPejabatChange(this)"></div>';
+  return html;
+}
+function pnwPenyediaListHtml(){
+  const st=pnwState;
+  const rows=st.penyedia.map((nm,i)=>{
+    return '<div class="field"><label>Nama Penyedia '+(i+1)+'</label>'+
+      '<input type="text" data-pidx="'+i+'" placeholder="Nama penyedia ke-'+(i+1)+'" oninput="pnwOnPenyediaNama(this)" value="'+fkEsc(nm||'')+'"></div>';
+  }).join('');
+  return '<div class="form-flow" style="--cols:3">'+rows+'</div>';
+}
+
+/* ================= LANGKAH 2: PILIHAN KATEGORI ================= */
+function pnwKategoriGroupHtml(sk){
+  const st=pnwState, sel=st.pilih[sk]||{};
+  const items=PNW_KATEGORI.map((kat,i)=>{
+    const on=!!sel[kat];
+    return '<label class="fkl-check">'+
+      '<input type="checkbox" data-sk="'+sk+'" data-kat="'+fkEsc(kat)+'" '+(on?'checked':'')+' onchange="pnwOnPilih(this)">'+
+      '<span class="pn-check-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></span>'+
+      '<span class="fkl-num">'+(i+1)+'</span>'+
+      '<span class="fkl-lbl">'+fkEsc(kat)+'</span>'+
+    '</label>';
+  }).join('');
+  const cnt=PNW_KATEGORI.filter(k=>sel[k]).length;
+  return '<div class="form-card"><div class="form-section-title">'+FKL_SEC_ICON+fkEsc(pnwKategoriTitle(st,sk))+
+    ' <span class="fkl-count-chip">'+cnt+' dipilih</span></div>'+
+    '<div class="fkl-checkgrid" style="--rows:'+Math.ceil(PNW_KATEGORI.length/2)+'">'+items+'</div></div>';
+}
+
+/* ================= LANGKAH 3: PENGISIAN PERSYARATAN ================= */
+function pnwSelectedKategori(st, sk){ const sel=(st||pnwState).pilih[sk]||{}; return PNW_KATEGORI.filter(k=>sel[k]); }
+/* pastikan tiap kategori terpilih punya array syarat (default 3 baris, Penawaran Harga terkunci) */
+function pnwEnsureSyarat(){
+  const st=pnwState;
+  pnwSampulList(st).forEach(sk=>{
+    st.syarat[sk]=st.syarat[sk]||{};
+    pnwSelectedKategori(st,sk).forEach(kat=>{
+      if(kat==='Penawaran Harga'){ st.syarat[sk][kat]=PNW_HARGA_LOCK.slice(); return; }
+      if(!Array.isArray(st.syarat[sk][kat])) st.syarat[sk][kat]=['','',''];
+    });
+    // buang kategori yang tak lagi dipilih
+    Object.keys(st.syarat[sk]).forEach(kat=>{ if(!pnwSelectedKategori(st,sk).includes(kat)) delete st.syarat[sk][kat]; });
+  });
+}
+function pnwSyaratGroupHtml(sk){
+  const st=pnwState, kats=pnwSelectedKategori(st,sk);
+  if(!kats.length) return '';
+  const head = pnwIsTwoSampul(st) ? '<div class="pnw-sampul-band">'+fkEsc(pnwSampulLabel(sk))+'</div>' : '';
+  const cards=kats.map(kat=>{
+    const locked = kat==='Penawaran Harga';
+    const arr = st.syarat[sk][kat]||[];
+    const rows=arr.map((val,i)=>{
+      if(locked){
+        return '<div class="pnw-syarat-row locked"><span class="pnw-syarat-no">'+(i+1)+'</span>'+
+          '<input type="text" value="'+fkEsc(val)+'" readonly>'+
+          '<span class="pnw-lock-badge">Terkunci</span></div>';
+      }
+      return '<div class="pnw-syarat-row"><span class="pnw-syarat-no">'+(i+1)+'</span>'+
+        '<input type="text" data-sk="'+sk+'" data-kat="'+fkEsc(kat)+'" data-i="'+i+'" placeholder="Uraian persyaratan" value="'+fkEsc(val)+'" oninput="pnwOnSyaratInput(this)">'+
+        '<button type="button" class="pnw-syarat-del" title="Hapus baris" onclick="pnwSyaratDel(\''+sk+'\',\''+fkEscJs(kat)+'\','+i+')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></div>';
+    }).join('');
+    const addBtn = locked ? '' : '<button type="button" class="pnw-syarat-add" onclick="pnwSyaratAdd(\''+sk+'\',\''+fkEscJs(kat)+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>Tambah Persyaratan</button>';
+    const lockNote = locked ? '<div class="pnw-lock-note">Kategori Penawaran Harga terkunci: Surat Penawaran, Nilai RAB, dan Jangka Waktu Pelaksanaan.</div>' : '';
+    return '<div class="pnw-kat-card"><div class="pnw-kat-head">'+fkEsc(kat)+'</div>'+lockNote+
+      '<div class="pnw-syarat-list">'+rows+'</div>'+addBtn+'</div>';
+  }).join('');
+  return head+cards;
+}
+function pnwSyaratAdd(sk,kat){ const st=pnwState; st.syarat[sk]=st.syarat[sk]||{}; st.syarat[sk][kat]=st.syarat[sk][kat]||[]; st.syarat[sk][kat].push(''); pnwSaveState(); renderPnwForm(); }
+function pnwSyaratDel(sk,kat,i){ const st=pnwState; const arr=st.syarat[sk][kat]||[]; if(arr.length<=1){ toast('Minimal satu baris persyaratan','warn'); return; } arr.splice(i,1); pnwSaveState(); renderPnwForm(); }
+function pnwOnSyaratInput(el){ const st=pnwState; const sk=el.dataset.sk, kat=el.dataset.kat, i=+el.dataset.i; st.syarat[sk]=st.syarat[sk]||{}; st.syarat[sk][kat]=st.syarat[sk][kat]||[]; st.syarat[sk][kat][i]=el.value; pnwSaveState(); }
+
+/* ================= LANGKAH 4: PEMERIKSAAN ================= */
+/* kunci pemeriksaan per baris persyaratan */
+function pnwRowKey(kat, baris){ return kat+'||'+baris; }
+/* pilihan tab penyedia (kanan atas) */
+function pnwPenyediaTabsHtml(){
+  const st=pnwState;
+  return '<div class="pnw-penyedia-tabs">'+st.penyedia.map((nm,i)=>{
+    const on = i===pnwActivePenyedia;
+    const label = (nm&&nm.trim()) ? nm : ('Penyedia '+(i+1));
+    return '<button type="button" class="pnw-ptab'+(on?' on':'')+'" onclick="pnwSetPenyedia('+i+')">'+fkEsc(label)+'</button>';
+  }).join('')+'</div>';
+}
+function pnwSampulTabsHtml(){
+  const st=pnwState; if(!pnwIsTwoSampul(st)) return '';
+  return '<div class="pnw-sampul-tabs">'+pnwSampulList(st).map(sk=>{
+    const on = sk===pnwActiveSampul;
+    return '<button type="button" class="pnw-stab'+(on?' on':'')+'" onclick="pnwSetSampul(\''+sk+'\')">Pembukaan Penawaran '+pnwSampulLabel(sk)+'</button>';
+  }).join('')+'</div>';
+}
+function pnwSetSampul(sk){ pnwActiveSampul=sk; renderPnwForm(); }
+function pnwSetPenyedia(i){ pnwActivePenyedia=i; renderPnwForm(); }
+/* nilai pemeriksaan satu baris */
+function pnwGetPeriksa(sk, pidx, kat, baris){
+  const st=pnwState; const p=st.periksa[sk]||{}; const pp=p[pidx]||{}; return pp[pnwRowKey(kat,baris)]||{};
+}
+function pnwSetAda(sk, pidx, kat, baris, val){
+  const st=pnwState; st.periksa[sk]=st.periksa[sk]||{}; st.periksa[sk][pidx]=st.periksa[sk][pidx]||{};
+  const k=pnwRowKey(kat,baris); const cur=st.periksa[sk][pidx][k]||{};
+  cur.ada = (cur.ada===val)? undefined : val;
+  st.periksa[sk][pidx][k]=cur; pnwSaveState(); renderPnwForm();
+}
+function pnwSetKet(el){
+  const st=pnwState; const sk=el.dataset.sk, pidx=+el.dataset.pidx, kat=el.dataset.kat, baris=el.dataset.baris;
+  st.periksa[sk]=st.periksa[sk]||{}; st.periksa[sk][pidx]=st.periksa[sk][pidx]||{};
+  const k=pnwRowKey(kat,baris); const cur=st.periksa[sk][pidx][k]||{}; cur.ket=el.value;
+  st.periksa[sk][pidx][k]=cur; pnwSaveState();
+}
+function pnwPeriksaTableHtml(){
+  const st=pnwState, sk=pnwActiveSampul, pidx=pnwActivePenyedia;
+  const kats=pnwSelectedKategori(st,sk);
+  if(!kats.length) return '<div class="fkl-empty-note">Belum ada kategori dokumen untuk sampul ini.</div>';
+  let rows='';
+  kats.forEach(kat=>{
+    const arr=st.syarat[sk][kat]||[];
+    rows+='<tr class="pnw-cat-row"><td colspan="4">'+fkEsc(kat)+'</td></tr>';
+    arr.forEach((baris,i)=>{
+      const uraian = baris && baris.trim() ? baris : '(persyaratan '+(i+1)+')';
+      const cur=pnwGetPeriksa(sk,pidx,kat,baris);
+      const yes=cur.ada===true, no=cur.ada===false;
+      rows+='<tr>'+
+        '<td class="pnw-no">'+(i+1)+'</td>'+
+        '<td class="pnw-uraian">'+fkEsc(uraian)+'</td>'+
+        '<td class="pnw-ck">'+
+          '<span class="fkl-ada-opts">'+
+            '<button type="button" class="fkl-ada-btn ada'+(yes?' on':'')+'" onclick="pnwSetAda(\''+sk+'\','+pidx+',\''+fkEscJs(kat)+'\',\''+fkEscJs(baris)+'\',true)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M20 6 9 17l-5-5"/></svg>Ada</button>'+
+            '<button type="button" class="fkl-ada-btn no'+(no?' on':'')+'" onclick="pnwSetAda(\''+sk+'\','+pidx+',\''+fkEscJs(kat)+'\',\''+fkEscJs(baris)+'\',false)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M18 6 6 18M6 6l12 12"/></svg>Tidak Ada</button>'+
+          '</span>'+
+        '</td>'+
+        '<td class="pnw-ket"><input type="text" placeholder="Keterangan" data-sk="'+sk+'" data-pidx="'+pidx+'" data-kat="'+fkEsc(kat)+'" data-baris="'+fkEsc(baris)+'" value="'+fkEsc(cur.ket||'')+'" oninput="pnwSetKet(this)"></td>'+
+      '</tr>';
+    });
+  });
+  return '<div class="table-wrap"><table class="pnw-periksa-table"><thead><tr>'+
+    '<th class="pnw-no">No</th><th class="pnw-uraian">Uraian Persyaratan</th>'+
+    '<th class="pnw-ck">Kelengkapan Dokumen</th><th class="pnw-ket">Keterangan</th>'+
+    '</tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+
+/* ================= RENDER UTAMA ================= */
+function renderPnwForm(){
+  pnwMarkActive();
+  pnwEnsureSyarat();
+  const tt=document.getElementById('pnw-title'); if(tt) tt.textContent='Pembukaan Penawaran'+(pnwEditId?' — Ubah Data':' — Input Data');
+  const sub=document.getElementById('pnw-sub');
+  const cont=document.getElementById('pnw-content'); if(!cont) return;
+  const st=pnwState;
+  let html=pnwStepperHtml();
+
+  if(pnwStep===1){
+    if(sub) sub.textContent='Langkah 1 dari 4 — Lengkapi data pekerjaan & penyedia';
+    html+='<div class="form-card"><div class="form-section-title">'+KR_SECTION_ICON+'Data Pekerjaan</div><div class="form-flow" style="--cols:4">';
+    html+=PNW_INFO_FIELDS.map(pnwInfoInputHtml).join('');
+    html+=pnwPenyediaFieldsHtml();
+    html+='</div>';
+    html+='<div class="pnw-penyampaian-note" id="pnw-penyampaian-note">'+pnwPenyampaianNoteText()+'</div>';
+    html+='</div>';
+    html+='<div class="form-card"><div class="form-section-title">'+FKL_SEC_ICON+'Nama Penyedia</div>'+pnwPenyediaListHtml()+'</div>';
+    html+=pnwActionsHtml({back:false});
+  }
+  else if(pnwStep===2){
+    if(sub) sub.textContent='Langkah 2 dari 4 — Pilih kategori dokumen yang diperiksa';
+    pnwSampulList(st).forEach(sk=>{ html+=pnwKategoriGroupHtml(sk); });
+    html+=pnwActionsHtml({back:true});
+  }
+  else if(pnwStep===3){
+    if(sub) sub.textContent='Langkah 3 dari 4 — Isi uraian persyaratan tiap kategori';
+    let body='';
+    pnwSampulList(st).forEach(sk=>{ body+=pnwSyaratGroupHtml(sk); });
+    if(!body) body='<div class="fkl-empty-note">Belum ada kategori dipilih. Kembali ke langkah <b>Pilihan Kategori</b>.</div>';
+    html+='<div class="form-card"><div class="form-section-title">'+FKL_SEC_ICON+'Pengisian Persyaratan</div>'+body+'</div>';
+    html+=pnwActionsHtml({back:true});
+  }
+  else{
+    if(sub) sub.textContent='Langkah 4 dari 4 — Pemeriksaan kelengkapan dokumen penawaran';
+    const judul = pnwIsTwoSampul(st) ? ('Pemeriksaan — '+pnwSampulLabel(pnwActiveSampul)) : 'Pemeriksaan Kelengkapan Dokumen Penawaran';
+    html+='<div class="form-card">';
+    html+='<div class="pnw-periksa-top">'+
+        '<div class="pnw-periksa-title">'+FKL_SEC_ICON+fkEsc(judul)+'</div>'+
+        '<div class="pnw-periksa-picker"><span class="pnw-picker-lbl">Pilihan Penyedia</span>'+pnwPenyediaTabsHtml()+'</div>'+
+      '</div>';
+    html+=pnwSampulTabsHtml();
+    html+=pnwPeriksaTableHtml();
+    html+='</div>';
+    html+=pnwActionsHtml({back:true, save:true});
+  }
+  cont.innerHTML=html;
+
+  // isi ulang nilai field langkah 1
+  if(pnwStep===1){
+    PNW_INFO_FIELDS.forEach(f=>{
+      const el=document.getElementById('pnw-'+f.key); if(!el) return;
+      const v=st.info[f.key];
+      el.value = (f.type==='num') ? rupiahInputText(v) : (v!=null?v:'');
+    });
+    const pj=document.getElementById('pnw-pejabat'); if(pj) pj.value=st.pejabat||'';
+  }
+}
+function pnwPenyampaianNoteText(){
+  const p=pnwState.info.penyampaian||'';
+  if(p==='1 Tahap 1 Sampul') return 'Metode 1 Tahap 1 Sampul: seluruh dokumen dijadikan satu file PDF dan satu tahapan pemeriksaan.';
+  if(p==='1 Tahap 2 Sampul' || p==='2 Tahap') return 'Metode '+p+': dokumen dipisah menjadi dua sampul/tahapan — Sampul Satu dan Sampul Dua, masing-masing dengan pemeriksaan & file PDF terpisah.';
+  return 'Pilih metode penyampaian untuk menentukan jumlah sampul/tahapan pemeriksaan.';
+}
+function pnwActionsHtml(o){
+  o=o||{};
+  let left='<button class="btn btn-ghost" onclick="pnwBatal()">'+FKL_IC_X+'Batal</button>';
+  let right='';
+  if(o.back) right+='<button class="btn btn-light" onclick="pnwBack()">'+FKL_IC_BACK+(pnwStep===4?'Sebelumnya':'Kembali')+'</button>';
+  if(o.save) right+='<button class="btn btn-green" onclick="pnwSimpan()">'+FKL_IC_SAVE+'Simpan</button>';
+  else right+='<button class="btn btn-teal" onclick="pnwNext()">Selanjutnya'+FKL_IC_NEXT+'</button>';
+  return '<div class="fkl-actions"><div class="fkl-actions-left">'+left+'</div><div class="fkl-actions-right">'+right+'</div></div>';
+}
+
+/* ---------- Interaksi langkah 1 ---------- */
+function pnwOnInfoChange(){
+  const st=pnwState;
+  PNW_INFO_FIELDS.forEach(f=>{
+    const el=document.getElementById('pnw-'+f.key); if(!el) return;
+    st.info[f.key] = (f.type==='num') ? parseRupiah(el.value) : el.value.trim();
+  });
+  pnwSaveState();
+}
+function pnwOnPenyampaianChange(){
+  pnwOnInfoChange();
+  const note=document.getElementById('pnw-penyampaian-note'); if(note) note.textContent=pnwPenyampaianNoteText();
+}
+function pnwOnJumlahChange(el){
+  const n=Math.max(1,Math.min(20,parseInt(el.value,10)||1));
+  const st=pnwState; const cur=st.penyedia.slice();
+  const next=[]; for(let i=0;i<n;i++) next.push(cur[i]||'');
+  st.penyedia=next;
+  if(pnwActivePenyedia>=n) pnwActivePenyedia=n-1;
+  pnwSaveState(); renderPnwForm();
+}
+function pnwOnPenyediaNama(el){ const i=+el.dataset.pidx; pnwState.penyedia[i]=el.value; pnwSaveState(); }
+function pnwOnPejabatChange(el){ pnwState.pejabat=el.value; pnwSaveState(); }
+
+/* ---------- Interaksi langkah 2 ---------- */
+function pnwOnPilih(el){
+  const st=pnwState, sk=el.dataset.sk, kat=el.dataset.kat;
+  st.pilih[sk]=st.pilih[sk]||{}; st.pilih[sk][kat]=el.checked;
+  pnwSaveState();
+  const chip=el.closest('.form-card').querySelector('.fkl-count-chip');
+  if(chip){ const c=PNW_KATEGORI.filter(k=>st.pilih[sk][k]).length; chip.textContent=c+' dipilih'; }
+}
+
+/* ---------- Navigasi ---------- */
+function pnwNext(){
+  const st=pnwState;
+  if(pnwStep===1){
+    pnwOnInfoChange();
+    if(!String(st.info.nama||'').trim()){ toast('Nama Pekerjaan wajib diisi','warn'); return; }
+    if(!st.info.penyampaian){ toast('Pilih Metode Penyampaian Dokumen','warn'); return; }
+    pnwStep=2;
+  } else if(pnwStep===2){
+    let any=false; pnwSampulList(st).forEach(sk=>{ if(pnwSelectedKategori(st,sk).length) any=true; });
+    if(!any){ toast('Pilih minimal satu kategori dokumen','warn'); return; }
+    pnwEnsureSyarat(); pnwStep=3;
+  } else if(pnwStep===3){
+    pnwActiveSampul='s1'; pnwActivePenyedia=0; pnwStep=4;
+  }
+  renderPnwForm(); pnwScrollTop();
+}
+function pnwBack(){ if(pnwStep>1){ pnwStep--; renderPnwForm(); pnwScrollTop(); } }
+function pnwScrollTop(){ const v=document.getElementById('view-form-pembukaan'); if(v) v.scrollIntoView({behavior:'smooth',block:'start'}); }
+function pnwBatal(){
+  openConfirm({ icon:'del', title:'Batalkan Proses',
+    text:'Batalkan proses ini? Data yang belum disimpan akan hilang.',
+    onYes:()=>{ pnwEditId=null; pnwState=pnwBlankState(); pnwSaveState(); pnwStep=1; openPnwView(); toast('Proses dibatalkan','ok'); }
+  });
+}
+
+/* ---------- Simpan ---------- */
+function pnwCountBelum(){
+  const st=pnwState; let belum=0;
+  pnwSampulList(st).forEach(sk=>{
+    const kats=pnwSelectedKategori(st,sk);
+    st.penyedia.forEach((_,pidx)=>{
+      kats.forEach(kat=>{ (st.syarat[sk][kat]||[]).forEach(baris=>{ const c=pnwGetPeriksa(sk,pidx,kat,baris); if(c.ada!==true && c.ada!==false) belum++; }); });
+    });
+  });
+  return belum;
+}
+async function pnwSimpan(){
+  if(!requireInput()) return;
+  const st=pnwState; const info=st.info||{};
+  const nama=String(info.nama||'').trim();
+  if(!nama){ toast('Nama Pekerjaan wajib diisi','warn'); pnwStep=1; renderPnwForm(); return; }
+  const jenisDok = pnwIsTwoSampul(st) ? 'Dua Sampul' : 'Satu Sampul';
+  const doSave=async()=>{
+    const rec={
+      nama_pekerjaan:nama,
+      lokasi: info.lokasi||'',
+      metode: info.metode||'',
+      penyampaian: info.penyampaian||'',
+      jenis_dokumen: jenisDok,
+      tgl_periksa: (new Date()).toISOString().slice(0,10),
+      state: JSON.parse(JSON.stringify(st))
+    };
+    let ok=false;
+    try{
+      await withActionLoader(pnwEditId?'Menyimpan perubahan':'Menyimpan', async()=>{
+        if(pnwEditId) await StorePembukaan.update(pnwEditId, rec);
+        else await StorePembukaan.create(rec);
+        await refreshDataPembukaan();
+      });
+      ok=true;
+    }catch(err){ console.error(err); toast('Gagal menyimpan: '+errMsg(err),'err'); return; }
+    if(!ok) return;
+    toast(pnwEditId?'Data berhasil diperbarui':'Data berhasil disimpan','ok');
+    pnwEditId=null; pnwState=pnwBlankState(); pnwSaveState(); pnwStep=1;
+    showView('pnw-view');
+  };
+  const belum=pnwCountBelum();
+  if(belum>0){
+    openConfirm({ icon:'warn', title:'Masih Ada yang Belum Ditandai',
+      text:belum+' baris pemeriksaan belum ditandai Ada/Tidak Ada. Tetap simpan?', onYes:doSave });
+    return;
+  }
+  doSave();
+}
+
+/* ================= LIHAT HASIL PEMERIKSAAN ================= */
+let pnwViewPage=1;
+const PNW_VIEW_PAGE_SIZE=8;
+function pnwViewRows(){
+  let rows=(records_pembukaan||[]).slice();
+  const fs=(document.getElementById('pnw-view-search')?.value||'').toLowerCase().trim();
+  if(fs) rows=rows.filter(r=>String(r.nama_pekerjaan||(r.state&&r.state.info&&r.state.info.nama)||'').toLowerCase().includes(fs));
+  return rows;
+}
+function pnwEmptyRow(){
+  return '<tr><td colspan="7"><div class="empty">'+
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16a1 1 0 0 1 1 1v3H3V5a1 1 0 0 1 1-1Z"/><path d="M3 8v11a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V8"/><path d="M9 13h6"/></svg>'+
+    '<div>Data tidak tersedia</div></div></td></tr>';
+}
+function renderPnwView(){
+  const tb=document.getElementById('pnw-view-body');
+  const pg=document.getElementById('pnw-view-pagination');
+  const cEl=document.getElementById('pnw-view-count');
+  if(!tb) return;
+  const rows=pnwViewRows();
+  if(cEl) cEl.textContent=rows.length;
+  if(!rows.length){ tb.innerHTML=pnwEmptyRow(); if(pg) pg.innerHTML=''; return; }
+  const totalPages=Math.max(1,Math.ceil(rows.length/PNW_VIEW_PAGE_SIZE));
+  if(pnwViewPage>totalPages) pnwViewPage=totalPages;
+  if(pnwViewPage<1) pnwViewPage=1;
+  const start=(pnwViewPage-1)*PNW_VIEW_PAGE_SIZE;
+  const pageRows=rows.slice(start,start+PNW_VIEW_PAGE_SIZE);
+  tb.innerHTML=pageRows.map((r,i)=>{
+    const stt=r.state||{}; const info=stt.info||{};
+    const nama=r.nama_pekerjaan||info.nama||'—';
+    const lokasi=(r.lokasi||info.lokasi||'').trim();
+    const metode=r.metode||info.metode||'';
+    const jenis=r.jenis_dokumen||(pnwIsTwoSampul(stt)?'Dua Sampul':'Satu Sampul');
+    const tgl=r.tgl_periksa||'';
+    const two = jenis==='Dua Sampul';
+    const rid=fkEsc(String(r.id));
+    // Baris aksi: jika dua sampul, dua baris data (Sampul Satu / Sampul Dua) dgn aksi terpisah
+    const mkActions=(sk)=>'<div class="action-cell" style="justify-content:center">'+
+        '<button class="act act-edit" title="Edit" onclick="openPnwInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
+        '<button class="act act-view" title="Lihat (Pratinjau PDF)" onclick="pnwPreviewRecord(\''+rid+'\',\''+sk+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
+        '<button class="act act-del" title="Hapus" onclick="pnwDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>'+
+      '</div>';
+    if(two){
+      return '<tr>'+
+        '<td class="col-no" rowspan="2">'+(start+i+1)+'</td>'+
+        '<td class="wrap-cell col-nama-freeze" rowspan="2">'+fkEsc(nama)+'</td>'+
+        '<td class="fkl-col-lokasi" rowspan="2">'+fkEsc(lokasi||'—')+'</td>'+
+        '<td rowspan="2">'+fkEsc(metode||'—')+'</td>'+
+        '<td class="pnw-jd-cell">Sampul Satu</td>'+
+        '<td class="col-date" rowspan="2">'+fkEsc(tgl?pnwDateLong(tgl):'—')+'</td>'+
+        '<td>'+mkActions('s1')+'</td>'+
+      '</tr>'+
+      '<tr>'+
+        '<td class="pnw-jd-cell">Sampul Dua</td>'+
+        '<td>'+mkActions('s2')+'</td>'+
+      '</tr>';
+    }
+    return '<tr>'+
+      '<td class="col-no">'+(start+i+1)+'</td>'+
+      '<td class="wrap-cell col-nama-freeze">'+fkEsc(nama)+'</td>'+
+      '<td class="fkl-col-lokasi">'+fkEsc(lokasi||'—')+'</td>'+
+      '<td>'+fkEsc(metode||'—')+'</td>'+
+      '<td class="pnw-jd-cell">Satu Sampul</td>'+
+      '<td class="col-date">'+fkEsc(tgl?pnwDateLong(tgl):'—')+'</td>'+
+      '<td>'+mkActions('s1')+'</td>'+
+    '</tr>';
+  }).join('');
+  if(pg){
+    if(totalPages<=1){ pg.innerHTML=''; }
+    else{
+      let h='<button class="pg-btn" '+(pnwViewPage<=1?'disabled':'')+' onclick="pnwViewGoto('+(pnwViewPage-1)+')">‹</button>';
+      for(let p=1;p<=totalPages;p++) h+='<button class="pg-btn '+(p===pnwViewPage?'active':'')+'" onclick="pnwViewGoto('+p+')">'+p+'</button>';
+      h+='<button class="pg-btn" '+(pnwViewPage>=totalPages?'disabled':'')+' onclick="pnwViewGoto('+(pnwViewPage+1)+')">›</button>';
+      pg.innerHTML=h;
+    }
+  }
+}
+function pnwViewGoto(p){ pnwViewPage=p; renderPnwView(); }
+function pnwPreviewRecord(id, sk){
+  const rec=records_pembukaan.find(r=>String(r.id)===String(id)); if(!rec) return;
+  pnwPreviewState = pnwRecordToState(rec);
+  pnwPreviewSampul = (sk==='s2') ? 's2' : 's1';
+  pnwOpenPreview();
+}
+function pnwDeleteRecord(id){
+  if(!requireInput()) return;
+  const rec=records_pembukaan.find(r=>String(r.id)===String(id)); if(!rec) return;
+  openConfirm({ icon:'del', title:'Hapus Data',
+    text:'Hapus data pembukaan penawaran "'+(rec.nama_pekerjaan||(rec.state&&rec.state.info&&rec.state.info.nama)||'')+'"?',
+    onYes:async()=>{
+      try{ await withActionLoader('Menghapus', async()=>{ await StorePembukaan.remove(id); await refreshDataPembukaan(); }); }
+      catch(err){ console.error(err); toast('Gagal menghapus: '+errMsg(err),'err'); return; }
+      toast('Data dihapus','ok'); renderPnwView();
+    }
+  });
+}
+const PNW_BULAN=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+function pnwDateLong(s){ if(!s) return ''; const p=String(s).split('-'); if(p.length!==3) return s; const y=p[0],m=parseInt(p[1],10),d=p[2]; return d+' '+(PNW_BULAN[m-1]||'')+' '+y; }
+
+/* ================= DOKUMEN PDF ================= */
+/* Bangun dokumen satu sampul (utk penyampaian 1 sampul, atau salah satu sampul) */
+function pnwBuildDocHtml(sk){
+  const st=pnwActiveState(); const info=st.info||{};
+  const two=pnwIsTwoSampul(st);
+  const kats=pnwSelectedKategori(st,sk);
+  const fmtNilai = (info.nilai!=='' && info.nilai!=null) ? 'Rp '+Number(info.nilai).toLocaleString('id-ID') : '-';
+  const tglDoc = st.__tgl ? pnwDateLong(st.__tgl) : pnwDateLong((new Date()).toISOString().slice(0,10));
+  const infoRow=(k,v)=>'<tr><td class="k">'+k+'</td><td class="s">:</td><td class="v">'+fkEsc(v||'-')+'</td></tr>';
+
+  // Per penyedia: satu blok tabel
+  const penyBlocks = st.penyedia.map((nm,pidx)=>{
+    const namaP=(nm&&nm.trim())?nm:('Penyedia '+(pidx+1));
+    let rows='';
+    kats.forEach(kat=>{
+      rows+='<tr class="cat"><td colspan="4">'+fkEsc(kat)+'</td></tr>';
+      (st.syarat[sk][kat]||[]).forEach((baris,i)=>{
+        const uraian=baris&&baris.trim()?baris:('(persyaratan '+(i+1)+')');
+        const c=pnwGetPeriksa(sk,pidx,kat,baris);
+        const cell = c.ada===true ? '<span class="pill ada">Ada</span>' : (c.ada===false ? '<span class="pill no">Tidak Ada</span>' : '<span class="pill nn">–</span>');
+        rows+='<tr><td class="no">'+(i+1)+'</td><td class="nm">'+fkEsc(uraian)+'</td><td class="ck">'+cell+'</td><td class="kt">'+fkEsc(c.ket||'')+'</td></tr>';
+      });
+    });
+    if(!rows) rows='<tr><td colspan="4" class="empty">Data tidak tersedia</td></tr>';
+    return '<div class="pnw-penyedia-block">'+
+      '<div class="pnw-penyedia-name">'+fkEsc(namaP.toUpperCase())+'</div>'+
+      '<table class="fkl-chk"><thead><tr><th class="no">No</th><th class="nm">Uraian Persyaratan</th><th class="ck">Kelengkapan Dokumen</th><th class="kt">Keterangan</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+    '</div>';
+  }).join('');
+
+  const judul = two
+    ? 'BERITA ACARA PEMBUKAAN PENAWARAN<br>'+pnwSampulLabel(sk).toUpperCase()
+    : 'BERITA ACARA PEMBUKAAN PENAWARAN';
+
+  return ''+
+  '<div class="fkl-doc pnw-doc">'+
+    '<div class="fkl-doc-head">'+
+      '<div class="fkl-doc-logo"><img src="'+FKL_LOGO_SRC+'" alt="Logo PLN"></div>'+
+      '<div class="fkl-doc-org">'+
+        '<div class="l1">PT PLN (PERSERO)</div>'+
+        '<div class="l2">UNIT PELAKSANA PELAYANAN PELANGGAN MASOHI</div>'+
+        '<div class="l3">Jl. Abdullah Soulissa No 1, Masohi, Kec. Kota Masohi</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="fkl-doc-band"></div>'+
+    '<h1 class="fkl-doc-title">'+judul+'</h1>'+
+    '<div class="fkl-doc-titlegap"></div>'+
+
+    '<div class="fkl-sec-h"><span class="rn">A</span>Uraian Pekerjaan</div>'+
+    '<table class="fkl-info"><tbody>'+
+      infoRow('Nama Pekerjaan', info.nama)+
+      infoRow('Lokasi Pekerjaan', info.lokasi)+
+      infoRow('Perkiraan Nilai', fmtNilai)+
+      infoRow('No. Anggaran', info.no_anggaran)+
+      infoRow('Tgl. Anggaran', info.tgl_anggaran?pnwDateLong(info.tgl_anggaran):'-')+
+      infoRow('Jenis Anggaran', info.jenis_anggaran)+
+      infoRow('Metode Pengadaan', info.metode)+
+      infoRow('Metode Penyampaian', info.penyampaian)+
+      infoRow('Jenis Dokumen', two?('Dua Sampul — '+pnwSampulLabel(sk)):'Satu Sampul')+
+    '</tbody></table>'+
+
+    '<div class="fkl-sec-h"><span class="rn">B</span>Pemeriksaan Kelengkapan Dokumen Penawaran</div>'+
+    penyBlocks+
+
+    '<div class="fkl-doc-foot">'+
+      '<div class="ttd-date">Masohi, '+fkEsc(tglDoc)+'</div>'+
+      '<table class="ttd ttd-single"><tbody><tr>'+
+        '<td><div class="role">Diperiksa oleh,</div><div class="role2">Pejabat Pelaksana Pengadaan</div><div class="gap"></div><div class="nm">'+fkEsc(st.pejabat?st.pejabat:'(..........................)')+'</div></td>'+
+      '</tr></tbody></table>'+
+    '</div>'+
+  '</div>';
+}
+function pnwStandaloneDocHtml(){
+  const cssEl=document.getElementById('fkl-doc-css');
+  const css=(cssEl?cssEl.textContent:'') + pnwExtraDocCss();
+  return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8">'+
+    '<meta name="viewport" content="width=device-width, initial-scale=1">'+
+    '<title>Berita Acara Pembukaan Penawaran</title>'+
+    '<style>'+css+'</style></head><body>'+
+    '<div class="fkl-print-page">'+pnwBuildDocHtml(pnwPreviewSampul)+'</div>'+
+    '</body></html>';
+}
+function pnwExtraDocCss(){
+  return ''+
+  '.pnw-penyedia-block{margin:6px 0 14px}'+
+  '.pnw-penyedia-name{font-family:"Plus Jakarta Sans",sans-serif;font-weight:800;font-size:12px;letter-spacing:.4px;color:#0b3d42;background:#e3f2f3;border:1px solid #bfe0e2;border-radius:6px;padding:6px 10px;margin-bottom:6px;text-transform:uppercase}'+
+  '.fkl-chk td.kt,.fkl-chk th.kt{width:22%;text-align:left}'+
+  '.fkl-chk tr.cat td{background:#f1f6f7;font-weight:700;color:#0b3d42;font-size:10.5px;text-transform:uppercase;letter-spacing:.3px}'+
+  '.ttd.ttd-single{width:auto}'+
+  '.ttd.ttd-single td{width:280px;text-align:center;vertical-align:top;padding-top:4px}'+
+  '.ttd .role2{font-weight:700;color:#16242c;margin-top:1px}';
+}
+function pnwOpenPreview(){
+  const ov=document.getElementById('pn-preview-overlay'); if(!ov) return;
+  const _mdl=ov.querySelector('.pn-preview-modal'); if(_mdl) _mdl.classList.remove('is-max');
+  if(typeof pnPreviewResetMaxBtn==='function') pnPreviewResetMaxBtn();
+  const titleEl=document.getElementById('pn-preview-title');
+  const two=pnwIsTwoSampul(pnwActiveState());
+  if(titleEl) titleEl.textContent='Pratinjau — Berita Acara Pembukaan Penawaran'+(two?(' ('+pnwSampulLabel(pnwPreviewSampul)+')'):'');
+  const body=document.getElementById('pn-preview-body');
+  if(body){
+    body.classList.add('fkl-preview-body');
+    body.innerHTML='<iframe id="pnw-preview-frame" title="Pratinjau Dokumen"></iframe>';
+    const ifr=document.getElementById('pnw-preview-frame');
+    const doc=ifr.contentWindow.document; doc.open(); doc.write(pnwStandaloneDocHtml()); doc.close();
+  }
+  const actions=document.querySelector('#pn-preview-overlay .pn-preview-head-actions');
+  // hapus tombol cetak FKL bila ada agar tidak bentrok
+  const oldFkl=document.getElementById('fkl-preview-print'); if(oldFkl) oldFkl.remove();
+  if(actions && !document.getElementById('pnw-preview-print')){
+    const btn=document.createElement('button');
+    btn.id='pnw-preview-print'; btn.className='btn btn-teal';
+    btn.style.padding='8px 14px'; btn.style.fontSize='11px';
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>Cetak / PDF';
+    btn.onclick=pnwPrint;
+    actions.insertBefore(btn, actions.firstChild);
+  }
+  ov.classList.add('show');
+}
+function pnwPrint(){
+  const old=document.getElementById('pnw-print-frame'); if(old) old.remove();
+  const ifr=document.createElement('iframe');
+  ifr.id='pnw-print-frame'; ifr.setAttribute('aria-hidden','true');
+  ifr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+  document.body.appendChild(ifr);
+  const doc=ifr.contentWindow.document; doc.open(); doc.write(pnwStandaloneDocHtml()); doc.close();
+  const go=()=>{ try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }catch(e){ try{ window.print(); }catch(_){} } setTimeout(()=>{ const f=document.getElementById('pnw-print-frame'); if(f) f.remove(); },1500); };
+  const imgs=doc.images?Array.from(doc.images):[];
+  if(imgs.length){ let n=imgs.length; const dec=()=>{ if(--n<=0) setTimeout(go,60); }; imgs.forEach(im=>{ if(im.complete) dec(); else { im.onload=dec; im.onerror=dec; } }); setTimeout(go,1200); }
+  else setTimeout(go,120);
+}
+/* helper: escape utk string dalam atribut onclick JS */
+function fkEscJs(s){ return String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;').replace(/\n/g,' '); }
+
+/* ##################### AKHIR MODUL PEMBUKAAN PENAWARAN #################### */
+
 refreshData();      // muat data SPBJ/Kontrak Rinci
 refreshDataPl();    // muat data Pengadaan Langsung
 refreshDataTender();// muat data Tender
 refreshDataPenetapan(); // muat data Penetapan Nomor
 refreshDataKelengkapan(); // muat data Kelengkapan Dokumen (Lihat Data)
+refreshDataPembukaan();   // muat data Pembukaan Penawaran (Lihat Hasil)
 pnLoadConfig();         // muat konfigurasi nomor awal
 // #3: Refresh TIDAK lagi memaksa logout. Sesi dipulihkan dari sessionStorage,
 // dan filter data setiap halaman kembali ke default (ditangani showView/resetAllFilters).
@@ -9269,7 +10084,7 @@ resetLoginForm();
   if(role==='admin' || role==='user' || role==='guest'){
     currentUsername = uname || null;
     // Refresh: kembali ke halaman terakhir (data di halaman itu di-refresh), bukan ke dashboard.
-    const allowed=['dashboard','list','list-pl','list-tender','pn-lihat','pn-ambil','form-kelengkapan','fkl-view','form-pembukaan'];
+    const allowed=['dashboard','list','list-pl','list-tender','pn-lihat','pn-ambil','form-kelengkapan','fkl-view','form-pembukaan','pnw-view'];
     const inputViews=['input','input-pl','input-tender'];
     const draft=getDraft();
     if(inputViews.includes(view)){
