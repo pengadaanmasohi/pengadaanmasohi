@@ -201,6 +201,24 @@ a{color:inherit}
 .toolbar #pn-lihat-search{min-width:316px;max-width:316px}
 /* Kelengkapan Dokumen — Lihat Data: samakan lebar kotak Cari dengan Monitoring (300–390px) */
 .toolbar #fkl-view-search{min-width:300px;max-width:390px}
+/* ===== Kotak "Cari" elegan (Kelengkapan — Lihat Data & File Kontrak — Lihat Kontrak) ===== */
+.filter-field.search-elegant{
+  background:linear-gradient(135deg,#eef8f9 0%,#e0f1f3 100%);
+  border:1px solid #cbe4e7;border-radius:14px;padding:9px 13px 11px;
+  box-shadow:0 4px 14px rgba(14,124,134,.12), inset 0 1px 0 rgba(255,255,255,.7)
+}
+.filter-field.search-elegant label{color:var(--teal-dark);font-weight:800;opacity:1}
+.search-elegant-box{position:relative;display:flex;align-items:center}
+.search-elegant-box .search-elegant-ic{position:absolute;left:12px;width:16px;height:16px;color:var(--teal);pointer-events:none}
+.filter-field.search-elegant input{
+  padding-left:36px;background:#ffffff;border-color:#b6dde1;
+  box-shadow:0 1px 2px rgba(16,40,50,.05), inset 0 1px 0 rgba(255,255,255,.6)
+}
+.filter-field.search-elegant input:focus{border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-soft),0 3px 10px rgba(14,124,134,.16)}
+/* File Kontrak — Lihat Kontrak: lebar kotak Cari disamakan dengan Monitoring (300–390px) */
+@media(min-width:641px){
+  .toolbar.fk-toolbar .fk-search.search-elegant input{min-width:300px!important;max-width:390px!important;width:auto!important}
+}
 /* Kolom Lokasi Pekerjaan pada tabel Kelengkapan — Lihat Data */
 #view-fkl-view th.fkl-col-lokasi,#view-fkl-view td.fkl-col-lokasi{white-space:normal;min-width:170px;max-width:240px;word-break:break-word;overflow-wrap:break-word;line-height:1.3}
 /* Kolom Metode + badge pada tabel Penetapan — Lihat Nomor (gabungan PL & Tender) */
@@ -2526,9 +2544,12 @@ html,body{background:#e9eef1}
         <label>Tahun</label>
         <select id="fk-view-tahun" onchange="fkFilterView()"><option value="">Semua Tahun</option></select>
       </div>
-      <div class="filter-field toolbar-search fk-search">
+      <div class="filter-field toolbar-search fk-search search-elegant">
         <label>Cari</label>
-        <input id="fk-view-search" type="text" placeholder="Cari Nama Pekerjaan" oninput="fkFilterView()">
+        <div class="search-elegant-box">
+          <svg class="search-elegant-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input id="fk-view-search" type="text" placeholder="Cari Nama Pekerjaan" oninput="fkFilterView()">
+        </div>
       </div>
       <div class="toolbar-actions fk-actions-inline">
         <button class="btn btn-red" onclick="fkResetView()">
@@ -2626,8 +2647,12 @@ html,body{background:#e9eef1}
       </div>
     </div>
     <div class="toolbar pn-toolbar-bare">
-      <div class="filter-field toolbar-search pn-search-right">
-        <input id="fkl-view-search" type="text" placeholder="Cari Nama Pekerjaan" oninput="renderFklView()">
+      <div class="filter-field toolbar-search pn-search-right search-elegant">
+        <label>Cari</label>
+        <div class="search-elegant-box">
+          <svg class="search-elegant-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input id="fkl-view-search" type="text" placeholder="Cari Nama Pekerjaan" oninput="renderFklView()">
+        </div>
       </div>
     </div>
     <div class="panel">
