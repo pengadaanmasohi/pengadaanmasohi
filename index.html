@@ -185,9 +185,9 @@ a{color:inherit}
 .filter-field{display:flex;flex-direction:column;gap:5px}
 .filter-field label{font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
 .filter-field select,.filter-field input{min-width:180px;max-width:180px}
-/* Sembunyikan JUDUL filter (Bidang Pelaksana, Status, Tahun, dll.) di semua toolbar.
-   Kolom "Cari" (.toolbar-search) TIDAK terpengaruh — labelnya tetap tampil. */
-.toolbar .filter-field:not(.toolbar-search)>label{display:none}
+/* Sembunyikan JUDUL filter (Bidang Pelaksana, Status, Tahun, dan juga Cari) di semua toolbar.
+   Kotak input & ikon pencarian tetap tampil. */
+.toolbar .filter-field>label{display:none}
 /* Monitoring: perkecil sedikit agar tombol Reset & Hapus Semua sejajar satu baris dengan filter */
 .toolbar .filter-field select,.toolbar .filter-field input{min-width:158px;max-width:158px}
 /* Kolom "Cari" diperlebar ~1,5x dari ukuran sebelumnya (200–260px → 300–390px) */
