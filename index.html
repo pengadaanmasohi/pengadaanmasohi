@@ -143,6 +143,49 @@ a{color:inherit}
 #dash-content.dash-in #dash-nilai .card:nth-child(3){animation-delay:.14s}
 #dash-content.dash-in #dash-nilai .card:nth-child(4){animation-delay:.18s}
 @keyframes cardRise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+/* ✦✦✦ GRAND ENTRANCE — animasi masuk dashboard megah (khusus setelah login) ✦✦✦ */
+#dash-content.dash-grand{animation:dashGrand .95s cubic-bezier(.16,1,.3,1) both}
+@keyframes dashGrand{
+  0%{opacity:0;transform:translateY(28px) scale(.965);filter:blur(10px)}
+  55%{opacity:1;filter:blur(0)}
+  100%{opacity:1;transform:none;filter:blur(0)}
+}
+/* Baris judul dashboard turun lembut */
+#view-dashboard.dash-grand-on .page-head{animation:grandRise .8s .1s cubic-bezier(.16,1,.3,1) both}
+/* Baris filter muncul setelah judul */
+#view-dashboard.dash-grand-on .dash-filter-bar{animation:grandRise .8s .18s cubic-bezier(.16,1,.3,1) both}
+/* Kartu statistik naik & membesar bertahap (cascade) */
+#dash-content.dash-grand #dash-cards .card{animation:grandCard .8s cubic-bezier(.16,1,.3,1) both}
+#dash-content.dash-grand #dash-cards .card:nth-child(1){animation-delay:.26s}
+#dash-content.dash-grand #dash-cards .card:nth-child(2){animation-delay:.34s}
+#dash-content.dash-grand #dash-cards .card:nth-child(3){animation-delay:.42s}
+#dash-content.dash-grand #dash-cards .card:nth-child(4){animation-delay:.50s}
+#dash-content.dash-grand #dash-nilai .card{animation:grandCard .8s cubic-bezier(.16,1,.3,1) both}
+#dash-content.dash-grand #dash-nilai .card:nth-child(1){animation-delay:.40s}
+#dash-content.dash-grand #dash-nilai .card:nth-child(2){animation-delay:.48s}
+#dash-content.dash-grand #dash-nilai .card:nth-child(3){animation-delay:.56s}
+#dash-content.dash-grand #dash-nilai .card:nth-child(4){animation-delay:.64s}
+/* Panel grafik muncul terakhir, meluncur naik */
+#dash-content.dash-grand .split .panel,
+#dash-content.dash-grand > .panel{animation:grandPanel .9s .58s cubic-bezier(.16,1,.3,1) both}
+#dash-content.dash-grand .split .panel:nth-child(2){animation-delay:.68s}
+@keyframes grandRise{from{opacity:0;transform:translateY(-14px)}to{opacity:1;transform:none}}
+@keyframes grandCard{
+  0%{opacity:0;transform:translateY(30px) scale(.92)}
+  60%{opacity:1}
+  100%{opacity:1;transform:none}
+}
+@keyframes grandPanel{from{opacity:0;transform:translateY(26px) scale(.98)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){
+  #dash-content.dash-grand,
+  #view-dashboard.dash-grand-on .page-head,
+  #view-dashboard.dash-grand-on .dash-filter-bar,
+  #dash-content.dash-grand #dash-cards .card,
+  #dash-content.dash-grand #dash-nilai .card,
+  #dash-content.dash-grand .split .panel,
+  #dash-content.dash-grand > .panel{animation:fade .4s ease both;filter:none}
+}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
 .panel-head{padding:15px 20px;border-bottom:1px solid var(--line);font-weight:700;font-family:'Plus Jakarta Sans';display:flex;align-items:center;gap:9px;background:linear-gradient(180deg,#fafcfc,#f4f8f9);color:var(--teal-dark)}
 .panel-head::before{content:"";width:8px;height:8px;border-radius:50%;background:linear-gradient(135deg,var(--teal),var(--cyan));box-shadow:0 0 0 3px rgba(14,124,134,.12)}
@@ -424,7 +467,8 @@ td.cell-center{text-align:center}
 
 /* ===== Penetapan Nomor / Kelengkapan — Lihat: header rapi & kotak Cari lebih premium ===== */
 #view-pn-lihat .page-head,#view-fkl-view .page-head{
-  border-bottom:1px solid #e7eff0;padding-bottom:18px;margin-bottom:18px
+  align-items:center;
+  border-bottom:1px solid #e7eff0;padding-bottom:14px;margin-bottom:14px
 }
 #view-pn-lihat .page-head p,#view-fkl-view .page-head p{
   font-size:11.5px;color:#5b6d76;margin-top:5px
@@ -1407,32 +1451,35 @@ body.nav-open{overflow:hidden}
 }
 #view-dashboard .card:hover::after{opacity:.85;transform:scale(1.08)}
 
-/* ====== Cahaya menyusuri tepi kotak (seperti tali / ular berjalan) ====== */
-#view-dashboard .card{overflow:hidden;isolation:isolate}
-/* Titik cahaya memanjang yang berjalan MENGIKUTI garis tepi kartu.
-   offset-path rect() membuatnya bergerak persis di sepanjang keliling kotak. */
-#view-dashboard .card::before{
-  content:"";position:absolute;z-index:2;pointer-events:none;
-  width:64px;height:6px;border-radius:6px;
-  left:0;top:0;
-  background:linear-gradient(90deg,
-    transparent 0%,
-    color-mix(in srgb,var(--ca) 55%,transparent) 30%,
-    color-mix(in srgb,var(--ca) 95%,#fff) 50%,
-    color-mix(in srgb,var(--ca) 55%,transparent) 70%,
-    transparent 100%);
-  filter:drop-shadow(0 0 4px color-mix(in srgb,var(--ca) 80%,transparent))
-         drop-shadow(0 0 8px color-mix(in srgb,var(--ca) 55%,transparent));
-  offset-path:inset(1px round 17px);
-  offset-rotate:auto;
-  offset-distance:0%;
-  animation:cardRope 3.6s linear infinite;
+/* ====== Transisi hover premium untuk kartu dashboard (tanpa animasi berputar) ====== */
+#view-dashboard .card{
+  isolation:isolate;
+  transition:transform .34s cubic-bezier(.16,1,.3,1),
+             box-shadow .38s cubic-bezier(.16,1,.3,1),
+             border-color .3s ease;
 }
-@keyframes cardRope{to{offset-distance:100%}}
-/* Konten kartu di atas cahaya tepi */
-#view-dashboard .card>*{position:relative;z-index:3}
+/* Garis cahaya tipis di tepi atas yang menyapu masuk saat hover */
+#view-dashboard .card>*{position:relative;z-index:2}
+#view-dashboard .card:hover{
+  transform:translateY(-6px);
+  border-color:color-mix(in srgb,var(--ca) 40%,var(--line));
+  box-shadow:
+    0 2px 6px rgba(16,40,50,.06),
+    0 20px 46px color-mix(in srgb,var(--ca) 22%,rgba(16,40,50,.12)),
+    inset 0 1px 0 rgba(255,255,255,.9),
+    inset 0 0 0 1px color-mix(in srgb,var(--ca) 22%,transparent);
+}
+/* Sinar aksen di pojok membesar & menguat saat hover (memanfaatkan ::after yang ada) */
+#view-dashboard .card:hover::after{opacity:.95;transform:scale(1.15)}
+/* Chip ikon ikut "hidup" saat hover */
+#view-dashboard .card:hover .card-ic{
+  transform:translateY(-1px) scale(1.06);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb,var(--ic,var(--teal)) 34%,transparent),
+    0 8px 18px color-mix(in srgb,var(--ic,var(--teal)) 30%,transparent);
+}
 @media (prefers-reduced-motion: reduce){
-  #view-dashboard .card::before{animation:none;opacity:0}
+  #view-dashboard .card:hover{transform:none}
 }
 
 /* Batang aksen kiri: sedikit lebih tebal & bercahaya sesuai warna kartu */
@@ -1447,10 +1494,12 @@ body.nav-open{overflow:hidden}
     inset 0 0 0 1px color-mix(in srgb,var(--ic,var(--teal)) 24%,transparent),
     0 6px 14px color-mix(in srgb,var(--ic,var(--teal)) 22%,transparent);
 }
-#view-dashboard .card:hover .card-ic{transform:scale(1.1) rotate(-4deg)}
-/* Beri ruang di sisi kanan judul agar tidak menyatu / tertabrak ikon kanan-atas */
-#view-dashboard .card .k{padding-right:56px;line-height:1.35}
-#view-dashboard .card .v,#view-dashboard .card .sub{padding-right:4px}
+#view-dashboard .card:hover .card-ic{transform:scale(1.08) rotate(-3deg)}
+/* Ikon + judul dalam satu baris rapi (tidak lagi menumpuk) */
+#view-dashboard .card-head{display:flex;align-items:center;gap:12px;margin-bottom:2px}
+#view-dashboard .card-ic{position:static;top:auto;right:auto;flex:0 0 auto;transform:none}
+#view-dashboard .card .k{padding-right:0;line-height:1.3;margin:0}
+#view-dashboard .card .v,#view-dashboard .card .sub{padding-right:0}
 
 /* ---------- Panel chart Dashboard ---------- */
 #view-dashboard .panel{border-radius:18px;border-color:#e0eaec;box-shadow:0 1px 2px rgba(16,40,50,.05),0 12px 34px rgba(16,40,50,.06)}
@@ -3826,6 +3875,7 @@ function enterApp(role, view){
   document.getElementById('login-screen').style.display='none';
   document.getElementById('topbar-user').style.display='flex';
   resetLoginForm();
+  window.__grandDashEntrance = true;   // tandai: tampilkan animasi masuk megah utk dashboard
   showView(view||'dashboard', null, true);   // #2: tanpa loader "Memuat" (hanya animasi selamat datang)
   startIdleTimer();   // mulai hitung mundur auto-logout 5 menit idle
 }
@@ -4706,8 +4756,11 @@ function renderDashboard(){
 
   document.getElementById('dash-cards').innerHTML=cards.map(c=>`
     <div class="card" style="--card-accent:${c.c}"><div class="accent" style="background:${c.c}"></div>
-      <div class="card-ic" style="--ic:${c.c}">${cardIcon(c.k)}</div>
-      <div class="k">${c.k}</div><div class="v" style="${c.vs||''}">${c.v}</div><div class="sub">${c.sub}</div>
+      <div class="card-head">
+        <div class="card-ic" style="--ic:${c.c}">${cardIcon(c.k)}</div>
+        <div class="k">${c.k}</div>
+      </div>
+      <div class="v" style="${c.vs||''}">${c.v}</div><div class="sub">${c.sub}</div>
     </div>`).join('');
 
   // Baris nilai (khusus PL & Tender): Nilai RAB, Nilai HPS, Nilai Pekerjaan, Efisiensi Kontrak vs HPS
@@ -4725,8 +4778,11 @@ function renderDashboard(){
         {k:'Nilai Pekerjaan', v:rupiah(nilai)||'Rp 0',  sub:'Akumulasi nilai kontrak', c:'var(--teal-dark)', vs:vNum},
       ].map(c=>`
         <div class="card" style="--card-accent:${c.c}"><div class="accent" style="background:${c.c}"></div>
-          <div class="card-ic" style="--ic:${c.c}">${cardIcon(c.k)}</div>
-          <div class="k">${c.k}</div><div class="v" style="${c.vs||''}">${c.v}</div><div class="sub">${c.sub}</div>
+          <div class="card-head">
+            <div class="card-ic" style="--ic:${c.c}">${cardIcon(c.k)}</div>
+            <div class="k">${c.k}</div>
+          </div>
+          <div class="v" style="${c.vs||''}">${c.v}</div><div class="sub">${c.sub}</div>
         </div>`).join('');
       nilaiRow.innerHTML = nilaiCards + efisiensiCardHTML(data, totHPS, nilai);
     }
@@ -4736,6 +4792,52 @@ function renderDashboard(){
   const bidangList=['Jaringan dan Konstruksi','Pembangkitan','Transaksi Energi Listrik','Niaga dan Pemasaran','Perencanaan','Keuangan dan Umum','Keselamatan, Kesehatan Kerja, Lingkungan dan Keamanan'];
   renderBars('chart-bidang','bidang_pelaksana',bidangList,data,{jenis});
   renderBars('chart-anggaran','bidang_pelaksana',bidangList,data,{jenis,sum:true});
+
+  // ✦ Animasi masuk megah + angka menghitung naik (khusus saat baru login)
+  if(window.__grandDashEntrance){
+    window.__grandDashEntrance=false;
+    playGrandDashEntrance();
+  }
+}
+
+/* Animasi masuk dashboard yang mewah: konten muncul dari blur→fokus,
+   kartu naik bertahap, lalu angka besar "menghitung naik" (count up). */
+function playGrandDashEntrance(){
+  const c=document.getElementById('dash-content');
+  if(!c) return;
+  // Hindari tumpang tindih dengan animasi pageReveal pada section dashboard
+  const sec=document.getElementById('view-dashboard');
+  if(sec){ sec.style.animation='none'; sec.classList.add('dash-grand-on'); }
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  c.classList.remove('dash-in','dash-grand');
+  void c.offsetWidth;                  // reflow agar animasi terpicu ulang
+  c.classList.add('dash-grand');
+  c.addEventListener('animationend',function h(e){
+    if(e.target===c){
+      c.classList.remove('dash-grand');
+      if(sec){ sec.style.animation=''; sec.classList.remove('dash-grand-on'); }   // pulihkan
+      c.removeEventListener('animationend',h);
+    }
+  });
+  if(reduce) return;
+  // Count-up untuk angka bilangan bulat pada kartu (bukan nilai Rupiah)
+  const vEls=c.querySelectorAll('#dash-cards .card .v, #dash-nilai .card .v');
+  vEls.forEach(el=>{
+    const raw=(el.textContent||'').trim();
+    if(!/^\d+$/.test(raw)) return;      // hanya angka bulat murni (lewati "Rp ...", persen, dst)
+    const target=parseInt(raw,10);
+    if(target<=0){ el.textContent='0'; return; }
+    const dur=900, start=performance.now();
+    const ease=t=>1-Math.pow(1-t,3);    // easeOutCubic
+    el.textContent='0';
+    function step(now){
+      const p=Math.min(1,(now-start)/dur);
+      el.textContent=String(Math.round(ease(p)*target));
+      if(p<1) requestAnimationFrame(step);
+      else el.textContent=String(target);
+    }
+    requestAnimationFrame(step);
+  });
 }
 
 /* Kartu Efisiensi: Nilai Kontrak terhadap HPS (grafik batang % + penghematan Rp) */
