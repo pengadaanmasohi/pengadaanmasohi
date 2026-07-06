@@ -7462,7 +7462,7 @@ function pnAmbilUnifiedFormHtml(){
   '<div class="form-card">' +
     '<div class="form-section-title">'+KR_SECTION_ICON+'Data Pekerjaan</div>' +
     '<div class="form-flow" style="--cols:3">' +
-      '<div class="field"><label>Nama Pekerjaan <span class="req">*</span></label><input id="pn-uni-nama" type="text" placeholder="cth. Pembangunan Gardu Hubung"></div>' +
+      '<div class="field"><label>Nama Pekerjaan <span class="req">*</span></label><input id="pn-uni-nama" type="text"></div>' +
       '<div class="field"><label>Kode Klasifikasi <span class="req">*</span></label><select id="pn-uni-klas"><option value="">— Pilih —</option>'+klasOpts+'</select></div>' +
       '<div class="field pn-doc-bar-field"><label>&nbsp;</label>' +
         '<div class="pn-doc-bar">' +
@@ -7962,8 +7962,8 @@ function fklDocPool(){
   return pool;
 }
 const FKL_INFO_FIELDS=[
-  {key:'nama',          label:'Nama Pekerjaan',      type:'text', span:2, ph:'cth. Pembangunan Gardu Hubung'},
-  {key:'lokasi',        label:'Lokasi Pekerjaan',    type:'text', span:2, ph:'cth. ULP Kobisonta'},
+  {key:'nama',          label:'Nama Pekerjaan',      type:'text', span:2},
+  {key:'lokasi',        label:'Lokasi Pekerjaan',    type:'text', span:2},
   {key:'nilai',         label:'Nilai Pekerjaan',     type:'num'},
   {key:'no_anggaran',   label:'No. Anggaran',        type:'text'},
   {key:'tgl_anggaran',  label:'Tgl. Anggaran',       type:'date'},
