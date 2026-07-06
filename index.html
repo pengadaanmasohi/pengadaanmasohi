@@ -1817,7 +1817,7 @@ html,body{background:#e9eef1}
             <svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
           </button>
           <div class="topnav-dropdown">
-            <button class="topnav-item" data-view="fk-input" data-role="admin" onclick="openFkInput('kr')">
+            <button class="topnav-item" data-view="fk-input" data-role="admin user" onclick="openFkInput('kr')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
               Input Kontrak
             </button>
@@ -1856,25 +1856,25 @@ html,body{background:#e9eef1}
           </button>
           <div class="topnav-dropdown">
             <!-- Kelengkapan Dokumen Pengadaan: submenu Input Data / Lihat Data -->
-            <div class="topnav-sub" data-sub="kelengkapan" data-role="admin user">
+            <div class="topnav-sub" data-sub="kelengkapan" data-role="admin">
               <button class="topnav-subtrigger" type="button" onclick="toggleFkSub(event,'kelengkapan')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>
                 <span class="sub-label">Kelengkapan Dokumen Pengadaan</span>
                 <svg class="caret2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
               </button>
               <div class="topnav-subdrop">
-                <button class="topnav-item" data-view="form-kelengkapan" data-role="admin user" onclick="openFklInput()">
+                <button class="topnav-item" data-view="form-kelengkapan" data-role="admin" onclick="openFklInput()">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
                   Input Data
                 </button>
-                <button class="topnav-item" data-view="fkl-view" data-role="admin user" onclick="openFklView()">
+                <button class="topnav-item" data-view="fkl-view" data-role="admin" onclick="openFklView()">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                   Lihat Data
                 </button>
               </div>
             </div>
             <!-- Pembukaan Penawaran -->
-            <button class="topnav-item" data-view="form-pembukaan" data-role="admin user" onclick="openFormPembukaan()">
+            <button class="topnav-item" data-view="form-pembukaan" data-role="admin" onclick="openFormPembukaan()">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16a1 1 0 0 1 1 1v3H3V5a1 1 0 0 1 1-1Z"/><path d="M3 8v11a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V8"/><path d="M9 13h6"/></svg>
               Pembukaan Penawaran
             </button>
@@ -2430,9 +2430,9 @@ html,body{background:#e9eef1}
       </div>
       <div class="head-right-tools">
         <div class="fk-seg mod-seg" id="fk-input-seg">
-          <button class="fk-seg-btn" data-modul="kr" onclick="openFkInput('kr')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 5c0 1.66 4 3 9 3s9-1.34 9-3-4-3-9-3-9 1.34-9 3"/></svg>SPBJ / Kontrak Rinci</button>
-          <button class="fk-seg-btn" data-modul="pl" onclick="openFkInput('pl')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>Pengadaan Langsung</button>
-          <button class="fk-seg-btn" data-modul="tender" onclick="openFkInput('tender')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>Tender</button>
+          <button class="fk-seg-btn" data-role="admin user" data-modul="kr" onclick="openFkInput('kr')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 5c0 1.66 4 3 9 3s9-1.34 9-3-4-3-9-3-9 1.34-9 3"/></svg>SPBJ / Kontrak Rinci</button>
+          <button class="fk-seg-btn" data-role="admin" data-modul="pl" onclick="openFkInput('pl')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>Pengadaan Langsung</button>
+          <button class="fk-seg-btn" data-role="admin" data-modul="tender" onclick="openFkInput('tender')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>Tender</button>
         </div>
       </div>
     </div>
@@ -3101,7 +3101,18 @@ let db = null;
 if (USE_SUPABASE && window.supabase) {
   let cleanUrl = SUPABASE_URL.trim();
   try { cleanUrl = new URL(cleanUrl).origin; } catch(e){ cleanUrl = cleanUrl.replace(/\/+$/,''); }
-  db = window.supabase.createClient(cleanUrl, SUPABASE_KEY.trim());
+  db = window.supabase.createClient(cleanUrl, SUPABASE_KEY.trim(), {
+    auth: {
+      // Login aplikasi memakai RPC verify_login (bukan Supabase Auth), jadi
+      // client TIDAK boleh menyimpan/menyinkronkan sesi auth apa pun.
+      // Ini memastikan tiap device benar-benar independen: login/logout di
+      // satu perangkat tidak pernah mengeluarkan perangkat lain.
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+      multiTab: false
+    }
+  });
 }
 
 /* ============ STATE ============ */
@@ -3556,8 +3567,13 @@ function logout(){
   });
 }
 
-/* ============ AUTO LOGOUT (IDLE 5 MENIT) ============ */
-const IDLE_LIMIT_MS = 5 * 60 * 1000;   // 5 menit tanpa aktivitas
+/* ============ AUTO LOGOUT (IDLE) — DINONAKTIFKAN ============
+   Auto-logout idle dimatikan agar pengguna TIDAK keluar otomatis.
+   Satu akun dapat tetap login di banyak device sekaligus tanpa ada
+   yang ter-logout sendiri. Ubah IDLE_LOGOUT_ENABLED ke true bila
+   suatu saat ingin mengaktifkan kembali fitur ini. */
+const IDLE_LOGOUT_ENABLED = false;
+const IDLE_LIMIT_MS = 5 * 60 * 1000;   // 5 menit tanpa aktivitas (tidak dipakai saat dinonaktifkan)
 let _idleTimer = null;
 let _idleListenersBound = false;
 const _idleActivityEvents = ['mousemove','mousedown','keydown','touchstart','touchmove','scroll','wheel','click'];
@@ -3570,11 +3586,13 @@ function _onIdleTimeout(){
   performLogout();
 }
 function _resetIdleTimer(){
+  if(!IDLE_LOGOUT_ENABLED) return;    // auto-logout idle dinonaktifkan
   if(!currentRole) return;            // jangan jalan saat belum login
   if(_idleTimer) clearTimeout(_idleTimer);
   _idleTimer = setTimeout(_onIdleTimeout, IDLE_LIMIT_MS);
 }
 function startIdleTimer(){
+  if(!IDLE_LOGOUT_ENABLED){ stopIdleTimer(); return; }   // auto-logout idle dinonaktifkan
   if(!_idleListenersBound){
     _idleActivityEvents.forEach(ev=>document.addEventListener(ev, _resetIdleTimer, {passive:true}));
     // Aktivitas di tab lain / kembali fokus juga dihitung sebagai aktivitas
@@ -6865,6 +6883,8 @@ function fkEsc(s){ return String(s==null?'':s).replace(/[&<>"']/g,m=>({'&':'&amp
 /* ---- Navigasi ---- */
 function openFkInput(modul){
   if(!FK_MODULES[modul]) modul='kr';
+  // Akun user hanya boleh Input Kontrak untuk SPBJ / Kontrak Rinci (kr)
+  if(currentRole==='user' && modul!=='kr') modul='kr';
   if(fkState.input.modul!==modul){ fkState.input.page=1; fkClearFilters('input'); }
   fkState.input.modul=modul; showView('fk-input');
 }
@@ -6952,9 +6972,7 @@ async function renderFkView(){
 }
 
 function fkEmptyRow(mode){
-  const msg = mode==='input'
-    ? 'Data tidak tersedia'
-    : 'Data tidak tersedia');
+  const msg = 'Data tidak tersedia';
   return `<tr><td colspan="6"><div class="empty">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
     <div>${msg}</div>
@@ -8045,6 +8063,7 @@ async function refreshDataKelengkapan(){
 
 /* ---- Input Data (wizard). editId opsional untuk mode ubah ---- */
 function openFklInput(editId){
+  if(!isAdmin()){ toast('Menu ini hanya untuk akun admin','warn'); return; }
   fklPreviewState=null;
   if(editId){
     const rec=records_kelengkapan.find(r=>String(r.id)===String(editId));
@@ -8062,9 +8081,13 @@ function openFormKelengkapan(){ openFklInput(); }
 
 /* ---- Lihat Data ---- */
 function openFklView(){
+  if(!isAdmin()){ toast('Menu ini hanya untuk akun admin','warn'); return; }
   refreshDataKelengkapan().then(()=>showView('fkl-view'));
 }
-function openFormPembukaan(){ showView('form-pembukaan'); }
+function openFormPembukaan(){
+  if(!isAdmin()){ toast('Menu ini hanya untuk akun admin','warn'); return; }
+  showView('form-pembukaan');
+}
 
 /* Konversi record tersimpan -> state wizard */
 function fklRecordToState(rec){
