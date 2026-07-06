@@ -1939,6 +1939,9 @@ tbody tr{animation:rowIn .3s ease both}
 .fkl-actions-right{margin-left:auto}
 /* ================== PEMBUKAAN PENAWARAN (WIZARD) ================== */
 .pnw-hint-inline{font-weight:500;color:var(--muted);font-size:10.5px}
+.fkl-check.is-locked{cursor:default;background:var(--teal-soft);border-color:var(--teal)}
+.fkl-check.is-locked .fkl-lbl{color:var(--ink)}
+.pnw-auto-badge{margin-left:auto;flex:0 0 auto;font-family:'Plus Jakarta Sans';font-size:9.5px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;color:#0b6b74;background:#fff;border:1px solid var(--teal);border-radius:20px;padding:3px 9px}
 .pnw-penyampaian-note{margin-top:14px;padding:10px 13px;border:1px dashed var(--line);border-radius:10px;background:#f8fbfc;color:var(--muted);font-size:11.5px;line-height:1.55}
 .pnw-sampul-band{font-family:'Plus Jakarta Sans';font-weight:800;font-size:11.5px;letter-spacing:.4px;color:#0b3d42;background:linear-gradient(90deg,var(--teal-soft),#f2fafb);border:1px solid #bfe0e2;border-left:4px solid var(--teal);border-radius:8px;padding:8px 12px;margin:14px 0 12px;text-transform:uppercase}
 .pnw-sampul-band:first-child{margin-top:0}
@@ -2437,11 +2440,11 @@ html,body{background:#e9eef1}
               <div class="topnav-subdrop">
                 <button class="topnav-item" data-view="form-pembukaan" data-role="admin" onclick="openPnwInput()">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                  Input Data
+                  Pemeriksaan Dokumen
                 </button>
                 <button class="topnav-item" data-view="pnw-view" data-role="admin" onclick="openPnwView()">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                  Lihat Data
+                  Lihat Hasil Pemeriksaan
                 </button>
               </div>
             </div>
@@ -3885,7 +3888,7 @@ const DRAFT_KEY = 'mon_draft'; // draft form input/edit (dipulihkan saat refresh
    pengguna otomatis logout ketika browser ditutup. Sesi tetap dipulihkan
    saat halaman di-refresh (F5) selama tab tidak ditutup.
    localStorage lama (jika ada) langsung dibersihkan agar tidak memulihkan sesi. */
-try{ localStorage.removeItem('mon_role'); localStorage.removeItem('mon_user'); localStorage.removeItem('mon_view'); localStorage.removeItem('fkl_state_v2'); }catch(e){}
+try{ localStorage.removeItem('mon_role'); localStorage.removeItem('mon_user'); localStorage.removeItem('mon_view'); localStorage.removeItem('fkl_state_v2'); localStorage.removeItem('fkl_records_v1'); localStorage.removeItem('pnw_state_v1'); localStorage.removeItem('pnw_records_v1'); }catch(e){}
 function ssSet(k,v){ try{ sessionStorage.setItem(k,v); }catch(e){} }
 function ssGet(k){ try{ return sessionStorage.getItem(k); }catch(e){ return null; } }
 function ssDel(k){ try{ sessionStorage.removeItem(k); }catch(e){} }
@@ -8792,25 +8795,13 @@ const StoreKelengkapan = {
   }
 };
 
-/* Migrasi satu kali: pindahkan record Kelengkapan yang tersisa di localStorage
-   (versi lama) ke Supabase, lalu bersihkan localStorage. Aman & idempotent —
-   hanya berjalan bila masih ada data lokal. */
+/* Pembersihan kunci lama: seluruh data kini di Supabase. Fungsi ini TIDAK
+   membaca atau memindahkan data apa pun dari localStorage — hanya menghapus
+   sisa kunci penyimpanan lokal versi lama agar tidak menumpuk. Aman & idempotent. */
 async function fklMigrateLocalToSupabase(){
-  if(!fklSupaReady()) return;
-  let arr=[];
-  try{ const raw=localStorage.getItem(FKL_RECS_KEY); arr=raw?JSON.parse(raw):[]; }catch(e){ arr=[]; }
-  if(!Array.isArray(arr) || !arr.length){ try{ localStorage.removeItem(FKL_RECS_KEY); }catch(e){} return; }
-  const rows=arr.map(r=>({
-    nama_pekerjaan: r.nama_pekerjaan||(r.info&&r.info.nama)||'',
-    tgl_terima: r.tgl_terima||(r.info&&r.info.tgl_terima)||'',
-    metode: r.metode||(r.info&&r.info.metode)||'',
-    info: r.info||{}, pilih: r.pilih||{}, ada: r.ada||{},
-    created_at: r.created_at||new Date().toISOString()
-  }));
-  const {error}=await db.from(FKL_TABLE).insert(rows);
-  if(error) throw error;
-  try{ localStorage.removeItem(FKL_RECS_KEY); }catch(e){}
-  toast(rows.length+' data Kelengkapan dipindahkan ke Supabase','ok');
+  try{
+    localStorage.removeItem(FKL_RECS_KEY);   // 'fkl_records_v1' (Kelengkapan versi lama)
+  }catch(e){}
 }
 async function refreshDataKelengkapan(){
   try{
@@ -9508,7 +9499,7 @@ function pnwPenyediaFieldsHtml(){
   const st=pnwState, n=st.penyedia.length;
   let opts=''; for(let i=1;i<=20;i++) opts+='<option value="'+i+'"'+(i===n?' selected':'')+'>'+i+' Penyedia</option>';
   let html='<div class="field"><label>Jumlah Penyedia</label><select id="pnw-jumlah" onchange="pnwOnJumlahChange(this)">'+opts+'</select></div>';
-  html+='<div class="field" style="grid-column:span 3"><label>Nama Pejabat Pelaksana Pengadaan <span class="pnw-hint-inline">(untuk kebutuhan tanda tangan)</span></label><input id="pnw-pejabat" type="text" placeholder="Nama pejabat pelaksana" oninput="pnwOnPejabatChange(this)"></div>';
+  html+='<div class="field" style="grid-column:span 3"><label>Nama Pejabat Pelaksana Pengadaan</label><input id="pnw-pejabat" type="text" placeholder="Nama pejabat pelaksana" oninput="pnwOnPejabatChange(this)"></div>';
   return html;
 }
 function pnwPenyediaListHtml(){
@@ -9523,26 +9514,53 @@ function pnwPenyediaListHtml(){
 /* ================= LANGKAH 2: PILIHAN KATEGORI ================= */
 function pnwKategoriGroupHtml(sk){
   const st=pnwState, sel=st.pilih[sk]||{};
-  const items=PNW_KATEGORI.map((kat,i)=>{
+  const kategoriList=pnwKategoriUntukSampul(st,sk);
+  const two=pnwIsTwoSampul(st);
+  const items=kategoriList.map((kat)=>{
+    const idx=PNW_KATEGORI.indexOf(kat);           // nomor tetap sesuai urutan asli
     const on=!!sel[kat];
-    return '<label class="fkl-check">'+
-      '<input type="checkbox" data-sk="'+sk+'" data-kat="'+fkEsc(kat)+'" '+(on?'checked':'')+' onchange="pnwOnPilih(this)">'+
+    // Penawaran Harga pada Sampul Dua (2 sampul): otomatis & terkunci
+    const autoLock = two && sk==='s2' && kat==='Penawaran Harga';
+    const checked = autoLock ? true : on;
+    const attrs = autoLock ? 'checked disabled' : (checked?'checked':'');
+    const badge = autoLock ? '<span class="pnw-auto-badge">Otomatis</span>' : '';
+    return '<label class="fkl-check'+(autoLock?' is-locked':'')+'">'+
+      '<input type="checkbox" data-sk="'+sk+'" data-kat="'+fkEsc(kat)+'" '+attrs+' onchange="pnwOnPilih(this)">'+
       '<span class="pn-check-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></span>'+
-      '<span class="fkl-num">'+(i+1)+'</span>'+
-      '<span class="fkl-lbl">'+fkEsc(kat)+'</span>'+
+      '<span class="fkl-num">'+(idx+1)+'</span>'+
+      '<span class="fkl-lbl">'+fkEsc(kat)+'</span>'+badge+
     '</label>';
   }).join('');
-  const cnt=PNW_KATEGORI.filter(k=>sel[k]).length;
+  const cnt=kategoriList.filter(k=>sel[k]).length;
   return '<div class="form-card"><div class="form-section-title">'+FKL_SEC_ICON+fkEsc(pnwKategoriTitle(st,sk))+
     ' <span class="fkl-count-chip">'+cnt+' dipilih</span></div>'+
-    '<div class="fkl-checkgrid" style="--rows:'+Math.ceil(PNW_KATEGORI.length/2)+'">'+items+'</div></div>';
+    '<div class="fkl-checkgrid" style="--rows:'+Math.ceil(kategoriList.length/2)+'">'+items+'</div></div>';
 }
 
 /* ================= LANGKAH 3: PENGISIAN PERSYARATAN ================= */
 function pnwSelectedKategori(st, sk){ const sel=(st||pnwState).pilih[sk]||{}; return PNW_KATEGORI.filter(k=>sel[k]); }
+/* Daftar kategori yang DITAMPILKAN sebagai pilihan pada satu sampul.
+   Untuk metode 2 sampul/2 tahap: "Penawaran Harga" hanya ada di Sampul Dua,
+   sehingga dikeluarkan dari daftar pilihan Sampul Satu. */
+function pnwKategoriUntukSampul(st, sk){
+  st=st||pnwState;
+  if(pnwIsTwoSampul(st) && sk==='s1') return PNW_KATEGORI.filter(k=>k!=='Penawaran Harga');
+  return PNW_KATEGORI.slice();
+}
+/* Terapkan aturan Penawaran Harga:
+   - 2 sampul/2 tahap: Sampul Dua otomatis memilih "Penawaran Harga" (terkunci),
+     dan Sampul Satu tidak boleh memilih "Penawaran Harga". */
+function pnwEnforceHargaRule(st){
+  st=st||pnwState;
+  if(pnwIsTwoSampul(st)){
+    st.pilih.s2=st.pilih.s2||{}; st.pilih.s2['Penawaran Harga']=true;   // otomatis di Sampul Dua
+    if(st.pilih.s1) delete st.pilih.s1['Penawaran Harga'];              // keluarkan dari Sampul Satu
+  }
+}
 /* pastikan tiap kategori terpilih punya array syarat (default 3 baris, Penawaran Harga terkunci) */
 function pnwEnsureSyarat(){
   const st=pnwState;
+  pnwEnforceHargaRule(st);
   pnwSampulList(st).forEach(sk=>{
     st.syarat[sk]=st.syarat[sk]||{};
     pnwSelectedKategori(st,sk).forEach(kat=>{
@@ -9665,7 +9683,6 @@ function renderPnwForm(){
     html+=PNW_INFO_FIELDS.map(pnwInfoInputHtml).join('');
     html+=pnwPenyediaFieldsHtml();
     html+='</div>';
-    html+='<div class="pnw-penyampaian-note" id="pnw-penyampaian-note">'+pnwPenyampaianNoteText()+'</div>';
     html+='</div>';
     html+='<div class="form-card"><div class="form-section-title">'+FKL_SEC_ICON+'Nama Penyedia</div>'+pnwPenyediaListHtml()+'</div>';
     html+=pnwActionsHtml({back:false});
@@ -9735,7 +9752,6 @@ function pnwOnInfoChange(){
 }
 function pnwOnPenyampaianChange(){
   pnwOnInfoChange();
-  const note=document.getElementById('pnw-penyampaian-note'); if(note) note.textContent=pnwPenyampaianNoteText();
 }
 function pnwOnJumlahChange(el){
   const n=Math.max(1,Math.min(20,parseInt(el.value,10)||1));
@@ -9752,9 +9768,10 @@ function pnwOnPejabatChange(el){ pnwState.pejabat=el.value; pnwSaveState(); }
 function pnwOnPilih(el){
   const st=pnwState, sk=el.dataset.sk, kat=el.dataset.kat;
   st.pilih[sk]=st.pilih[sk]||{}; st.pilih[sk][kat]=el.checked;
+  pnwEnforceHargaRule(st);   // pertahankan aturan: Harga otomatis di Sampul Dua & tidak ada di Sampul Satu
   pnwSaveState();
   const chip=el.closest('.form-card').querySelector('.fkl-count-chip');
-  if(chip){ const c=PNW_KATEGORI.filter(k=>st.pilih[sk][k]).length; chip.textContent=c+' dipilih'; }
+  if(chip){ const list=pnwKategoriUntukSampul(st,sk); const c=list.filter(k=>st.pilih[sk][k]).length; chip.textContent=c+' dipilih'; }
 }
 
 /* ---------- Navigasi ---------- */
