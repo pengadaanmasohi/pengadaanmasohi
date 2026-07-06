@@ -181,7 +181,7 @@ a{color:inherit}
 @media(max-width:640px){ #view-dashboard .bar-row .lbl{width:120px} }
 
 /* ---------- Toolbar / Filters ---------- */
-.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px;background:linear-gradient(180deg,#ffffff,#fafcfc);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+.toolbar{display:inline-flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px;width:fit-content;max-width:100%;background:linear-gradient(135deg,#eef8f9 0%,#e0f1f3 100%);border:1px solid #cbe4e7;border-radius:var(--radius);padding:16px;box-shadow:0 4px 14px rgba(14,124,134,.12),inset 0 1px 0 rgba(255,255,255,.7)}
 .filter-field{display:flex;flex-direction:column;gap:5px}
 .filter-field label{font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
 .filter-field select,.filter-field input{min-width:180px;max-width:180px}
@@ -203,9 +203,9 @@ a{color:inherit}
 .toolbar #fkl-view-search{min-width:300px;max-width:390px}
 /* ===== Kotak "Cari" elegan (Kelengkapan — Lihat Data & File Kontrak — Lihat Kontrak) ===== */
 .filter-field.search-elegant{
-  background:linear-gradient(135deg,#eef8f9 0%,#e0f1f3 100%);
-  border:1px solid #cbe4e7;border-radius:14px;padding:9px 13px 11px;
-  box-shadow:0 4px 14px rgba(14,124,134,.12), inset 0 1px 0 rgba(255,255,255,.7)
+  background:transparent;
+  border:none;border-radius:0;padding:0;
+  box-shadow:none
 }
 .filter-field.search-elegant label{color:var(--teal-dark);font-weight:800;opacity:1}
 .search-elegant-box{position:relative;display:flex;align-items:center}
@@ -226,8 +226,9 @@ a{color:inherit}
 .pn-metode-badge{display:inline-block;padding:4px 10px;border-radius:20px;font-size:9.5px;font-weight:800;letter-spacing:.2px;white-space:nowrap;line-height:1.3}
 .pn-badge-pl{background:#e0f2f4;color:#0b6b74;box-shadow:inset 0 0 0 1px rgba(14,124,134,.22)}
 .pn-badge-tender{background:#e7e3fb;color:#4531a3;box-shadow:inset 0 0 0 1px rgba(69,49,163,.20)}
-/* Toolbar tanpa kotak putih (hanya menyisakan field Cari) */
-.toolbar.pn-toolbar-bare{background:none;border:none;box-shadow:none;padding:0;margin-bottom:16px}
+/* Toolbar Lihat Nomor / Lihat Data: ikut background gabungan hijau, lebar mengikuti isi */
+.toolbar.pn-toolbar-bare{margin-bottom:16px}
+.toolbar.pn-toolbar-bare .pn-search-right{margin-left:0}
 /* Samakan ukuran tombol Reset & Hapus Semua */
 .toolbar .toolbar-actions>.btn-red,.toolbar .toolbar-actions>.btn-danger{min-width:118px;justify-content:center}
 /* ===== File Kontrak — toolbar: Cari 2× lebar tombol Reset, dan Reset menempel di kanan Cari ===== */
@@ -1042,8 +1043,8 @@ tbody.tbody-reveal>tr:nth-child(10){animation-delay:.29s}
 .panel{border-radius:16px}
 .panel-head{letter-spacing:.2px;font-size:12.5px}
 
-/* Toolbar filter: latar & bayangan lebih premium */
-.toolbar{border-radius:16px;background:linear-gradient(180deg,#ffffff,#f7fafb);box-shadow:0 2px 8px rgba(16,40,50,.05),0 12px 30px rgba(16,40,50,.06)}
+/* Toolbar filter: latar hijau lembut & bayangan lebih premium */
+.toolbar{border-radius:16px;background:linear-gradient(135deg,#eef8f9 0%,#e0f1f3 100%);border-color:#cbe4e7;box-shadow:0 4px 14px rgba(14,124,134,.12),inset 0 1px 0 rgba(255,255,255,.7)}
 .filter-field label{color:var(--teal-dark);opacity:.9}
 
 /* Kontrol input: fokus lebih elegan */
@@ -1198,7 +1199,7 @@ body.nav-open{overflow:hidden}
   .page-head{flex-direction:column;align-items:stretch;gap:12px}
   .page-head h2{font-size:18px}
   #view-dashboard .page-head h2{font-size:20px}
-  .toolbar{padding:13px}
+  .toolbar{padding:13px;display:flex;width:auto}
   .filter-field{flex:1 1 100%}
   .filter-field select,.filter-field input{min-width:0;max-width:none;width:100%}
   .toolbar .spacer{display:none}
@@ -1272,8 +1273,8 @@ body.nav-open{overflow:hidden}
 /* (Bar "Template Pengisian Data" kini tanpa kotak — hanya tombol) */
 
 /* ---------- Toolbar filter Monitoring ---------- */
-.toolbar{border-radius:18px;border-color:#e0eaec;background:linear-gradient(180deg,#ffffff,#f8fbfc);
-  box-shadow:0 1px 2px rgba(16,40,50,.05),0 10px 28px rgba(16,40,50,.05);padding:16px 18px;gap:12px}
+.toolbar{border-radius:18px;border-color:#cbe4e7;background:linear-gradient(135deg,#eef8f9 0%,#e0f1f3 100%);
+  box-shadow:0 4px 14px rgba(14,124,134,.12),inset 0 1px 0 rgba(255,255,255,.7);padding:16px 18px;gap:12px}
 .toolbar .filter-field label{color:var(--teal-dark);opacity:.85}
 .filter-field select,.filter-field input{border-radius:11px;border-color:#dbe6e9}
 .count-badge{padding:3px 12px;border-radius:20px}
@@ -2609,7 +2610,6 @@ html,body{background:#e9eef1}
             <tr>
               <th class="col-no">No.</th>
               <th class="col-nama-freeze">Nama Pekerjaan</th>
-              <th class="pn-col-metode">Metode</th>
               <th class="pn-col-jenis">Jenis Dokumen</th>
               <th class="pn-col-nomor">No. Dokumen</th>
               <th class="col-date">Tgl. Terbit</th>
@@ -7701,7 +7701,6 @@ function renderPnLihat(){
     return '<tr>' +
       '<td class="col-no">'+(start+i+1)+'</td>' +
       '<td class="wrap-cell col-nama-freeze">'+fkEsc(nama)+'</td>' +
-      '<td class="pn-col-metode">'+pnMetodeBadge(r.modul)+'</td>' +
       '<td class="pn-col-jenis">'+pnJenisCellHtml(r)+'</td>' +
       '<td class="pn-col-nomor">'+pnNomorCellHtml(r)+'</td>' +
       '<td class="pn-col-tgl">'+pnTglCellHtml(r)+'</td>' +
@@ -7712,7 +7711,7 @@ function renderPnLihat(){
   pnRenderPagination(st.page, totalPages, pg);
 }
 function pnEmptyRow(){
-  return '<tr><td colspan="7"><div class="empty">'+PN_HASH_ICON+'<div>Data tidak tersedia</div></div></td></tr>';
+  return '<tr><td colspan="6"><div class="empty">'+PN_HASH_ICON+'<div>Data tidak tersedia</div></div></td></tr>';
 }
 function pnJenisCellHtml(r){
   const docs=Array.isArray(r.dokumen)?r.dokumen:[];
