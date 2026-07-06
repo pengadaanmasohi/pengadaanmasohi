@@ -185,6 +185,9 @@ a{color:inherit}
 .filter-field{display:flex;flex-direction:column;gap:5px}
 .filter-field label{font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
 .filter-field select,.filter-field input{min-width:180px;max-width:180px}
+/* Sembunyikan JUDUL filter (Bidang Pelaksana, Status, Tahun, dll.) di semua toolbar.
+   Kolom "Cari" (.toolbar-search) TIDAK terpengaruh — labelnya tetap tampil. */
+.toolbar .filter-field:not(.toolbar-search)>label{display:none}
 /* Monitoring: perkecil sedikit agar tombol Reset & Hapus Semua sejajar satu baris dengan filter */
 .toolbar .filter-field select,.toolbar .filter-field input{min-width:158px;max-width:158px}
 /* Kolom "Cari" diperlebar ~1,5x dari ukuran sebelumnya (200–260px → 300–390px) */
@@ -312,24 +315,9 @@ td.cell-center{text-align:center}
 .table-wrap td.col-no,.table-wrap td.col-nama-freeze{background-clip:padding-box;position:sticky}
 .table-wrap td.col-no::before,.table-wrap td.col-nama-freeze::before{
   content:"";position:absolute;top:0;bottom:0;left:1px;right:1px;background:inherit;z-index:-1}
-/* #1 & #2: Freeze pane horizontal (kolom No. & Nama Pekerjaan menempel di kiri) HANYA
-   pada tabel Monitoring (Daftar Kontrak Rinci / Pengadaan Langsung / Tender).
-   Pada tabel lain (File Kontrak & Penetapan – Lihat Nomor) kolom TIDAK dibekukan dan
-   memakai garis border standar seperti kolom lainnya. */
-#view-fk-input .table-wrap thead th.col-no,#view-fk-input .table-wrap thead th.col-nama-freeze,
-#view-fk-view .table-wrap thead th.col-no,#view-fk-view .table-wrap thead th.col-nama-freeze,
-#view-fkl-view .table-wrap thead th.col-no,#view-fkl-view .table-wrap thead th.col-nama-freeze,
-#view-pn-lihat .table-wrap thead th.col-no,#view-pn-lihat .table-wrap thead th.col-nama-freeze{
-  left:auto!important;z-index:6!important;box-shadow:none!important}
-#view-fk-input .table-wrap tbody td.col-no,#view-fk-input .table-wrap tbody td.col-nama-freeze,
-#view-fk-view .table-wrap tbody td.col-no,#view-fk-view .table-wrap tbody td.col-nama-freeze,
-#view-fkl-view .table-wrap tbody td.col-no,#view-fkl-view .table-wrap tbody td.col-nama-freeze,
-#view-pn-lihat .table-wrap tbody td.col-no,#view-pn-lihat .table-wrap tbody td.col-nama-freeze{
-  position:static!important;left:auto!important;box-shadow:none!important;background:transparent!important}
-#view-fk-input .table-wrap td.col-no::before,#view-fk-input .table-wrap td.col-nama-freeze::before,
-#view-fk-view .table-wrap td.col-no::before,#view-fk-view .table-wrap td.col-nama-freeze::before,
-#view-fkl-view .table-wrap td.col-no::before,#view-fkl-view .table-wrap td.col-nama-freeze::before,
-#view-pn-lihat .table-wrap td.col-no::before,#view-pn-lihat .table-wrap td.col-nama-freeze::before{display:none!important}
+/* #1 & #2: Freeze pane horizontal (kolom No. & Nama Pekerjaan menempel di kiri)
+   kini berlaku pada SEMUA tabel — Monitoring, File Kontrak, Penetapan – Lihat Nomor,
+   dan Kelengkapan – Lihat Data — memakai aturan freeze dasar di atas. */
 /* Kolom Tgl. Terbit & Berakhir Kontrak — dilebarkan & judul dibungkus agar muat 2 baris */
 .table-wrap th.col-date,.table-wrap td.col-date{min-width:118px!important;width:118px!important;max-width:124px!important;padding-left:4px;padding-right:4px}
 .table-wrap th.col-date{white-space:normal;line-height:1.28;text-align:center;vertical-align:middle}
@@ -465,7 +453,7 @@ td.cell-center{text-align:center}
 
 /* upload box */
 /* Bar tombol Template: container ringkas & cantik yang membungkus kedua tombol saja */
-.io-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:flex-end;margin:0 0 16px auto;width:max-content;max-width:100%;
+.io-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:flex-end;margin:0 0 16px 0;width:auto;max-width:100%;
   background:linear-gradient(135deg,#f4fbfb 0%,#eaf6f7 55%,#f6fbf3 100%);
   border:1px solid #d3e7e9;border-radius:16px;padding:12px 14px;
   box-shadow:0 1px 2px rgba(16,40,50,.05),0 10px 26px rgba(14,124,134,.10),inset 0 1px 0 rgba(255,255,255,.7)}
@@ -2791,7 +2779,6 @@ html,body{background:#e9eef1}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/></svg>
         <span>Pilih Dokumen</span>
       </div>
-      <button type="button" class="pn-check-all" onclick="pnDocToggleAll()">Pilih Semua</button>
     </div>
     <p class="pn-doc-modal-sub" id="pn-doc-modal-sub">Centang jenis dokumen yang akan diterbitkan nomornya</p>
     <div class="pn-doc-modal-body">
@@ -3081,7 +3068,7 @@ const FIELDS_PL = [
   {key:'rab_harga_barang', label:'RAB — Harga Barang', type:'num'},
   {key:'rab_harga_jasa', label:'RAB — Harga Jasa', type:'num'},
   {key:'rab_total_tanpa_ppn', label:'RAB — Harga Total (Tanpa PPN)', type:'num', auto:'sum'},
-  {key:'rab_total_dengan_ppn', label:'RAB — Harga Total (Dengan PPN)', type:'num'},
+  {key:'rab_total_dengan_ppn', label:'RAB — Harga Total (Dengan PPN)', type:'num', auto:'ppn'},
   {key:'no_prk', label:'No. PRK', type:'text', ph:'cth. 2025.MMU.AO-ADM.01.01'},
   {key:'no_anggaran', label:'No. Anggaran', type:'text', ph:'cth. 001/SKKO/GM.MMU/ADM.NIAGA/MSH/2025/R1'},
   {key:'tgl_anggaran', label:'Tgl. Anggaran', type:'date'},
@@ -3096,7 +3083,7 @@ const FIELDS_PL = [
   {key:'hps_harga_barang', label:'HPS — Harga Barang', type:'num'},
   {key:'hps_harga_jasa', label:'HPS — Harga Jasa', type:'num'},
   {key:'hps_total_tanpa_ppn', label:'HPS — Harga Total (Tanpa PPN)', type:'num', auto:'sum'},
-  {key:'hps_total_dengan_ppn', label:'HPS — Harga Total (Dengan PPN)', type:'num'},
+  {key:'hps_total_dengan_ppn', label:'HPS — Harga Total (Dengan PPN)', type:'num', auto:'ppn'},
   // VII. Proses Pengadaan
   {key:'no_eproc', label:'No. Eproc', type:'text', ph:'cth. EPROC-4230-20250319-4230-00001'},
   {key:'tgl_pengumuman', label:'Tgl. Undangan', type:'date'},
@@ -3115,7 +3102,7 @@ const FIELDS_PL = [
   {key:'tawar_harga_barang', label:'Penawaran — Harga Barang', type:'num'},
   {key:'tawar_harga_jasa', label:'Penawaran — Harga Jasa', type:'num'},
   {key:'tawar_total_tanpa_ppn', label:'Penawaran — Harga Total (Tanpa PPN)', type:'num', auto:'sum'},
-  {key:'tawar_total_dengan_ppn', label:'Penawaran — Harga Total (Dengan PPN)', type:'num'},
+  {key:'tawar_total_dengan_ppn', label:'Penawaran — Harga Total (Dengan PPN)', type:'num', auto:'ppn'},
   // IX. Perjanjian/Kontrak
   {key:'no_kontrak', label:'No. Kontrak', type:'text', table:true},
   {key:'tgl_awal_kontrak', label:'Tgl. Awal Kontrak', type:'date', table:true},
@@ -3123,7 +3110,7 @@ const FIELDS_PL = [
   {key:'kontrak_harga_barang', label:'Kontrak — Harga Barang', type:'num'},
   {key:'kontrak_harga_jasa', label:'Kontrak — Harga Jasa', type:'num'},
   {key:'kontrak_total_tanpa_ppn', label:'Kontrak — Harga Total (Tanpa PPN)', type:'num', auto:'sum'},
-  {key:'kontrak_total_dengan_ppn', label:'Kontrak — Harga Total (Dengan PPN)', type:'num'},
+  {key:'kontrak_total_dengan_ppn', label:'Kontrak — Harga Total (Dengan PPN)', type:'num', auto:'ppn'},
   // X. Pengendali Pekerjaan
   {key:'direksi_pekerjaan', label:'Direksi Pekerjaan', type:'text'},
   {key:'pengawas_pekerjaan', label:'Pengawas Pekerjaan', type:'text'},
@@ -3874,10 +3861,15 @@ function buildFormKr(){
       const ph=f.ph?` placeholder="${f.ph}"`:'';
       let ctl='';
       if(f.type==='select') ctl=`<select id="${id}"><option value="">— Pilih —</option>${(f.options||[]).map(o=>`<option>${o}</option>`).join('')}</select>`;
-      else if(f.type==='num') ctl=`<input id="${id}" type="text" inputmode="numeric" placeholder="Rp" oninput="onRupiahInput(this)">`;
+      else if(f.type==='num'){
+        if(f.auto==='sum'||f.auto==='ppn') ctl=`<input id="${id}" type="text" inputmode="numeric" placeholder="Rp" readonly>`;
+        else if(/_harga_(barang|jasa)$/.test(f.key)){ const pfx=f.key.replace(/_harga_(barang|jasa)$/,''); ctl=`<input id="${id}" type="text" inputmode="numeric" placeholder="Rp" oninput="onHargaInput(this,'${pfx}','kr')">`; }
+        else ctl=`<input id="${id}" type="text" inputmode="numeric" placeholder="Rp" oninput="onRupiahInput(this)">`;
+      }
       else if(f.type==='date') ctl=`<input id="${id}" type="date">`;
       else ctl=`<input id="${id}" type="text"${ph}>`;
-      html+=`<div class="field${pxw.cls}"${pxw.style} id="wrap_${id}"><label>${f.label}${req}</label>${ctl}</div>`;
+      const note=f.auto==='sum'?AUTO_NOTE:(f.auto==='ppn'?PPN_NOTE:'');
+      html+=`<div class="field${pxw.cls}"${pxw.style} id="wrap_${id}"><label>${f.label}${req}${note?' ':''}${note}</label>${ctl}</div>`;
     });
     html+=`</div></div>`;
   });
@@ -3889,6 +3881,7 @@ function clearForm(){
 }
 function fillForm(rec){
   FIELDS.forEach(f=>{ const el=document.getElementById(krInputId(f)); if(el) el.value = f.type==='num' ? rupiahInputText(rec[f.key]) : (rec[f.key]!=null ? rec[f.key] : ''); });
+  refreshAutoTotals(FIELDS, krInputId);
 }
 function readForm(){
   const rec={};
@@ -3897,6 +3890,13 @@ function readForm(){
     let v = el ? el.value.trim() : '';
     if(f.type==='num') v = parseRupiah(v);
     rec[f.key]=v;
+  });
+  // Harga Total (Tanpa PPN) = Barang + Jasa; Harga Total (Dengan PPN) = Tanpa PPN × 111%
+  FIELDS.forEach(f=>{
+    if(f.auto==='sum'){ const p=f.key.replace(/_total_tanpa_ppn$/,''); const b=Number(rec[p+'_harga_barang'])||0,j=Number(rec[p+'_harga_jasa'])||0; rec[f.key]=(b+j)>0?(b+j):''; }
+  });
+  FIELDS.forEach(f=>{
+    if(f.auto==='ppn'){ const base=Number(rec[f.key.replace(/_total_dengan_ppn$/,'_total_tanpa_ppn')])||0; rec[f.key]=base>0?ppnFromBase(base):''; }
   });
   return rec;
 }
@@ -4108,24 +4108,29 @@ function onRupiahInput(el){
   for(let i=0;i<formatted.length;i++){ if(/\d/.test(formatted[i])){ seen++; if(seen===digitsBefore){ pos=i+1; break; } } }
   try{ el.setSelectionRange(pos,pos); }catch(e){}
 }
+/* Tarif PPN: Harga Total (Dengan PPN) = Harga Total (Tanpa PPN) × 111%. */
+const PPN_RATE = 1.11;
+function ppnFromBase(base){ const b=Number(base)||0; return b>0 ? Math.round(b*PPN_RATE) : 0; }
 /* #12: Harga Total (Tanpa PPN) = Harga Barang + Harga Jasa (otomatis, tak bisa diedit).
+   Harga Total (Dengan PPN) = Harga Total (Tanpa PPN) × 111% (otomatis, tak bisa diedit).
    Diberikan prefix (mis. 'rab','hps','tawar','kontrak','hpe') dan fungsi pembentuk id input,
    hitung total lalu tulis ke input total dalam format Rupiah. */
 function computeAutoTotal(prefix, idOf){
   const bEl=document.getElementById(idOf(prefix+'_harga_barang'));
   const jEl=document.getElementById(idOf(prefix+'_harga_jasa'));
   const tEl=document.getElementById(idOf(prefix+'_total_tanpa_ppn'));
-  if(!tEl) return;
+  const pEl=document.getElementById(idOf(prefix+'_total_dengan_ppn'));
   const b=parseRupiah(bEl?bEl.value:'')||0;
   const j=parseRupiah(jEl?jEl.value:'')||0;
   const sum=b+j;
-  tEl.value = sum>0 ? ('Rp '+Number(sum).toLocaleString('id-ID')) : '';
+  if(tEl) tEl.value = sum>0 ? ('Rp '+Number(sum).toLocaleString('id-ID')) : '';
+  if(pEl){ const withPpn=ppnFromBase(sum); pEl.value = withPpn>0 ? ('Rp '+Number(withPpn).toLocaleString('id-ID')) : ''; }
 }
 /* Handler oninput untuk field Harga Barang/Harga Jasa: format Rupiah lalu perbarui total.
    prefix diturunkan dari key field (mis. 'rab_harga_barang' -> 'rab'). */
 function onHargaInput(el, prefix, formKind){
   onRupiahInput(el);
-  const idOf = formKind==='tender' ? tenderInputId : plInputId;
+  const idOf = formKind==='tender' ? tenderInputId : (formKind==='kr' ? krInputId : plInputId);
   computeAutoTotal(prefix, idOf);
 }
 /* Perbarui seluruh total otomatis pada sebuah form (dipanggil saat fill/clear). */
@@ -4155,6 +4160,15 @@ function applyExcelAutoFormula(ws, fields, colMap, rowNum){
       if(bCol&&jCol&&tCol){
         const cell=ws.getCell(rowNum,tCol);
         cell.value={formula:`${xlsxCol(bCol)}${rowNum}+${xlsxCol(jCol)}${rowNum}`};
+        cell.numFmt=ACCT_NODEC;
+      }
+    }
+    if(f.auto==='ppn' && /_total_dengan_ppn$/.test(f.key)){
+      const baseKey=f.key.replace(/_total_dengan_ppn$/,'_total_tanpa_ppn');
+      const baseCol=colMap[baseKey], pCol=colMap[f.key];
+      if(baseCol&&pCol){
+        const cell=ws.getCell(rowNum,pCol);
+        cell.value={formula:`ROUND(${xlsxCol(baseCol)}${rowNum}*${PPN_RATE},0)`};
         cell.numFmt=ACCT_NODEC;
       }
     }
@@ -4656,6 +4670,8 @@ async function exportExcel(){
   rows.forEach(r=>{
     ws.addRow(COLS.map(f=>{
       let v=r[f.key];
+      if(f.auto==='sum'){ const p=f.key.replace(/_total_tanpa_ppn$/,''); const b=Number(r[p+'_harga_barang'])||0, j=Number(r[p+'_harga_jasa'])||0; const t=b+j; return t>0?t:''; }
+      if(f.auto==='ppn'){ const p=f.key.replace(/_total_dengan_ppn$/,''); const b=Number(r[p+'_harga_barang'])||0, j=Number(r[p+'_harga_jasa'])||0; const t=b+j; return t>0?ppnFromBase(t):''; }
       if(v===''||v==null) return '';
       if(f.type==='num') return Number(v);
       return v;
@@ -4987,13 +5003,13 @@ function buildFormPl(){
       let ctl='';
       if(f.type==='select') ctl=`<select id="${id}"${onCtrl}><option value="">— Pilih —</option>${(f.options||[]).map(o=>`<option>${o}</option>`).join('')}</select>`;
       else if(f.type==='num'){
-        if(f.auto==='sum') ctl=`<input id="${id}" type="text" inputmode="numeric" placeholder="Rp" readonly>`;
+        if(f.auto==='sum'||f.auto==='ppn') ctl=`<input id="${id}" type="text" inputmode="numeric" placeholder="Rp" readonly>`;
         else if(/_harga_(barang|jasa)$/.test(f.key)){ const pfx=f.key.replace(/_harga_(barang|jasa)$/,''); ctl=`<input id="${id}" type="text" inputmode="numeric" placeholder="Rp" oninput="onHargaInput(this,'${pfx}','pl')"${onCtrl}>`; }
         else ctl=`<input id="${id}" type="text" inputmode="numeric" placeholder="Rp" oninput="onRupiahInput(this)"${onCtrl}>`;
       }
       else if(f.type==='date') ctl=`<input id="${id}" type="date"${onCtrl}>`;
       else ctl=`<input id="${id}" type="text"${ph}${onCtrl}>`;
-      const note=f.auto==='sum'?AUTO_NOTE:(f.lock?LOCK_NOTE:'');
+      const note=f.auto==='sum'?AUTO_NOTE:(f.auto==='ppn'?PPN_NOTE:(f.lock?LOCK_NOTE:''));
       html+=`<div class="field${pxw.cls}"${pxw.style} id="wrap_${id}"><label>${f.label}${req}${note?' ':''}${note}</label>${ctl}</div>`;
     });
     html+=`</div></div>`;
@@ -5024,7 +5040,7 @@ function applyLocksPl(){
 /* ---- Form helpers PL ---- */
 function clearFormPl(){ FIELDS_PL.forEach(f=>{ if(isIndepKeyPl(f.key)){ const w=document.getElementById('wrap_'+plInputId(f.key)); if(w){w.classList.remove('locked');w.classList.remove('field-error');} return; } const el=document.getElementById(plInputId(f.key)); if(el){el.value='';if(f.auto!=='sum')el.disabled=false;} const w=document.getElementById('wrap_'+plInputId(f.key)); if(w){w.classList.remove('locked');w.classList.remove('field-error');} }); INDEP_MULTI_KEYS_PL.forEach(k=>setIndepValuesPl(k,[''])); refreshAutoTotals(FIELDS_PL, plInputId); applyLocksPl(); }
 function fillFormPl(rec){ FIELDS_PL.forEach(f=>{ if(isIndepKeyPl(f.key)) return; const el=document.getElementById(plInputId(f.key)); if(el)el.value = f.type==='num' ? rupiahInputText(rec[f.key]) : (rec[f.key]!=null ? rec[f.key] : ''); }); INDEP_MULTI_KEYS_PL.forEach(k=>{ const list=(Array.isArray(rec[k+'_list'])&&rec[k+'_list'].length)?rec[k+'_list']:((rec[k]!=null&&rec[k]!=='')?[rec[k]]:['']); setIndepValuesPl(k,list); }); refreshAutoTotals(FIELDS_PL, plInputId); applyLocksPl(); }
-function readFormPl(){ const rec={}; FIELDS_PL.forEach(f=>{ if(isIndepKeyPl(f.key)) return; const el=document.getElementById(plInputId(f.key)); let v=el?el.value.trim():''; if(f.type==='num') v=parseRupiah(v); rec[f.key]=v; }); FIELDS_PL.forEach(f=>{ if(f.auto==='sum'){ const p=f.key.replace(/_total_tanpa_ppn$/,''); const b=Number(rec[p+'_harga_barang'])||0,j=Number(rec[p+'_harga_jasa'])||0; rec[f.key]=(b+j)>0?(b+j):''; } }); INDEP_MULTI_KEYS_PL.forEach(k=>{ const list=indepValuesPl(k); rec[k+'_list']=list; rec[k]=list[0]||''; }); return rec; }
+function readFormPl(){ const rec={}; FIELDS_PL.forEach(f=>{ if(isIndepKeyPl(f.key)) return; const el=document.getElementById(plInputId(f.key)); let v=el?el.value.trim():''; if(f.type==='num') v=parseRupiah(v); rec[f.key]=v; }); FIELDS_PL.forEach(f=>{ if(f.auto==='sum'){ const p=f.key.replace(/_total_tanpa_ppn$/,''); const b=Number(rec[p+'_harga_barang'])||0,j=Number(rec[p+'_harga_jasa'])||0; rec[f.key]=(b+j)>0?(b+j):''; } }); FIELDS_PL.forEach(f=>{ if(f.auto==='ppn'){ const base=Number(rec[f.key.replace(/_total_dengan_ppn$/,'_total_tanpa_ppn')])||0; rec[f.key]=base>0?ppnFromBase(base):''; } }); INDEP_MULTI_KEYS_PL.forEach(k=>{ const list=indepValuesPl(k); rec[k+'_list']=list; rec[k]=list[0]||''; }); return rec; }
 function newRecordPl(){
   if(!requireInput()) return;
   if(PYN_REG.pl.active) exitPenyesuaianPl();
@@ -5664,7 +5680,7 @@ async function exportExcelPl(){
   const wb=new ExcelJS.Workbook();
   const ws=wb.addWorksheet('Daftar Pengadaan Langsung');
   ws.addRow(COLS.map(f=>f.label));
-  rows.forEach((r,ri)=>{ ws.addRow(COLS.map(f=>{ if(isIndepKeyPl(f.key)) return indepCellValuePl(r,f.key); let v=r[f.key]; if(f.auto==='sum'){ const p=f.key.replace(/_total_tanpa_ppn$/,''); const b=Number(r[p+'_harga_barang'])||0, j=Number(r[p+'_harga_jasa'])||0; const t=b+j; return t>0?t:''; } if(v===''||v==null) return ''; if(f.type==='num') return Number(v); return v; })); });
+  rows.forEach((r,ri)=>{ ws.addRow(COLS.map(f=>{ if(isIndepKeyPl(f.key)) return indepCellValuePl(r,f.key); let v=r[f.key]; if(f.auto==='sum'){ const p=f.key.replace(/_total_tanpa_ppn$/,''); const b=Number(r[p+'_harga_barang'])||0, j=Number(r[p+'_harga_jasa'])||0; const t=b+j; return t>0?t:''; } if(f.auto==='ppn'){ const p=f.key.replace(/_total_dengan_ppn$/,''); const b=Number(r[p+'_harga_barang'])||0, j=Number(r[p+'_harga_jasa'])||0; const t=b+j; return t>0?ppnFromBase(t):''; } if(v===''||v==null) return ''; if(f.type==='num') return Number(v); return v; })); });
   ws.columns=COLS.map(f=>({width:Math.max(16,f.label.length+2)}));
   const thin={style:'thin',color:{argb:'FFBFCAD0'}};
   const allBorder={top:thin,left:thin,bottom:thin,right:thin};
@@ -5709,6 +5725,8 @@ function handleUploadPl(ev){
         if(fmtBad){ toast('Data gagal diperbarui : format tidak sesuai','err'); ev.target.value=''; return; }
         // #12: pastikan Harga Total (Tanpa PPN) = Harga Barang + Harga Jasa
         FIELDS_PL.forEach(f=>{ if(f.auto==='sum'){ const p=f.key.replace(/_total_tanpa_ppn$/,''); const b=Number(rec[p+'_harga_barang'])||0, j=Number(rec[p+'_harga_jasa'])||0; rec[f.key]=(b+j)>0?(b+j):''; } });
+        // Harga Total (Dengan PPN) = Harga Total (Tanpa PPN) × 111%
+        FIELDS_PL.forEach(f=>{ if(f.auto==='ppn'){ const base=Number(rec[f.key.replace(/_total_dengan_ppn$/,'_total_tanpa_ppn')])||0; rec[f.key]=base>0?ppnFromBase(base):''; } });
         // Field multi-nilai independen: pecah baris (Alt+Enter dalam satu sel) menjadi daftar
         INDEP_MULTI_KEYS_PL.forEach(k=>{ const raw=String(rec[k]!=null?rec[k]:''); const list=raw.split(/\r?\n/).map(s=>s.trim()).filter(Boolean); rec[k+'_list']=list; rec[k]=list[0]||''; });
         if(missingRequiredPl(rec).length){ toast('Data gagal diperbarui, lengkapi data terlebih dahulu','warn'); ev.target.value=''; return; }
@@ -5794,12 +5812,12 @@ const FIELDS_TENDER = [
   {key:'hpe_harga_barang', label:'HPE — Harga Barang', type:'num', req:true},
   {key:'hpe_harga_jasa', label:'HPE — Harga Jasa', type:'num', req:true},
   {key:'hpe_total_tanpa_ppn', label:'HPE — Harga Total (Tanpa PPN)', type:'num', req:true, auto:'sum'},
-  {key:'hpe_total_dengan_ppn', label:'HPE — Harga Total (Dengan PPN)', type:'num', req:true},
+  {key:'hpe_total_dengan_ppn', label:'HPE — Harga Total (Dengan PPN)', type:'num', auto:'ppn', req:true},
   // VI. Rencana Anggaran Biaya
   {key:'rab_harga_barang', label:'RAB — Harga Barang', type:'num', req:true},
   {key:'rab_harga_jasa', label:'RAB — Harga Jasa', type:'num', req:true},
   {key:'rab_total_tanpa_ppn', label:'RAB — Harga Total (Tanpa PPN)', type:'num', req:true, auto:'sum'},
-  {key:'rab_total_dengan_ppn', label:'RAB — Harga Total (Dengan PPN)', type:'num', req:true},
+  {key:'rab_total_dengan_ppn', label:'RAB — Harga Total (Dengan PPN)', type:'num', auto:'ppn', req:true},
   {key:'no_prk', label:'No. PRK', type:'text', req:true, ph:'cth. 2025.MMU.AO-ADM.01.01'},
   {key:'no_anggaran', label:'No. Anggaran', type:'text', req:true, ph:'cth. 001/SKKO/GM.MMU/ADM.NIAGA/MSH/2025/R1'},
   {key:'tgl_anggaran', label:'Tgl. Anggaran', type:'date', req:true},
@@ -5818,7 +5836,7 @@ const FIELDS_TENDER = [
   {key:'hps_harga_barang', label:'HPS — Harga Barang', type:'num'},
   {key:'hps_harga_jasa', label:'HPS — Harga Jasa', type:'num'},
   {key:'hps_total_tanpa_ppn', label:'HPS — Harga Total (Tanpa PPN)', type:'num', auto:'sum'},
-  {key:'hps_total_dengan_ppn', label:'HPS — Harga Total (Dengan PPN)', type:'num'},
+  {key:'hps_total_dengan_ppn', label:'HPS — Harga Total (Dengan PPN)', type:'num', auto:'ppn'},
   // IX. Proses Pascakualifikasi
   {key:'no_eproc', label:'No. Eproc', type:'text', ph:'cth. EPROC-4230-20250319-4230-00001'},
   {key:'tgl_pengumuman', label:'Tgl. Pengumuman / Undangan', type:'date'},
@@ -5868,7 +5886,7 @@ const FIELDS_TENDER = [
   {key:'tawar_harga_barang', label:'Penawaran — Harga Barang', type:'num'},
   {key:'tawar_harga_jasa', label:'Penawaran — Harga Jasa', type:'num'},
   {key:'tawar_total_tanpa_ppn', label:'Penawaran — Harga Total (Tanpa PPN)', type:'num', auto:'sum'},
-  {key:'tawar_total_dengan_ppn', label:'Penawaran — Harga Total (Dengan PPN)', type:'num'},
+  {key:'tawar_total_dengan_ppn', label:'Penawaran — Harga Total (Dengan PPN)', type:'num', auto:'ppn'},
   // XI. Perjanjian/Kontrak
   {key:'no_kontrak', label:'No. Kontrak', type:'text', table:true},
   {key:'tgl_awal_kontrak', label:'Tgl. Awal Kontrak', type:'date', table:true},
@@ -5876,7 +5894,7 @@ const FIELDS_TENDER = [
   {key:'kontrak_harga_barang', label:'Kontrak — Harga Barang', type:'num'},
   {key:'kontrak_harga_jasa', label:'Kontrak — Harga Jasa', type:'num'},
   {key:'kontrak_total_tanpa_ppn', label:'Kontrak — Harga Total (Tanpa PPN)', type:'num', auto:'sum'},
-  {key:'kontrak_total_dengan_ppn', label:'Kontrak — Harga Total (Dengan PPN)', type:'num', table:true},
+  {key:'kontrak_total_dengan_ppn', label:'Kontrak — Harga Total (Dengan PPN)', type:'num', auto:'ppn', table:true},
   // XII. Pengendali Pekerjaan
   {key:'direksi_pekerjaan', label:'Direksi Pekerjaan', type:'text'},
   {key:'pengawas_pekerjaan', label:'Pengawas Pekerjaan', type:'text'},
@@ -6100,6 +6118,7 @@ function readPenyediaInputs(){
     o[k]=v;
   });
   ['tawar','kontrak'].forEach(p=>{ if(FIELDS_TENDER.some(f=>f.key===p+'_total_tanpa_ppn'&&f.auto==='sum')){ const b=Number(o[p+'_harga_barang'])||0,j=Number(o[p+'_harga_jasa'])||0; o[p+'_total_tanpa_ppn']=(b+j)>0?(b+j):''; } });
+  ['tawar','kontrak'].forEach(p=>{ if(FIELDS_TENDER.some(f=>f.key===p+'_total_dengan_ppn'&&f.auto==='ppn')){ const base=Number(o[p+'_total_tanpa_ppn'])||0; o[p+'_total_dengan_ppn']=base>0?ppnFromBase(base):''; } });
   return o;
 }
 function writePenyediaInputs(o){
@@ -6208,13 +6227,17 @@ function stackFieldHTML(f){
 function penyediaCellValue(rec,key,ftype){
   const layers=penyediaLayersFromRecord(rec);
   const totalOf=(l)=>{ const m=key.match(/^(.*)_total_tanpa_ppn$/); if(!m) return null; const p=m[1]; return (parseRupiah(l[p+'_harga_barang'])||0)+(parseRupiah(l[p+'_harga_jasa'])||0); };
+  const ppnOf=(l)=>{ const m=key.match(/^(.*)_total_dengan_ppn$/); if(!m) return null; const p=m[1]; const base=(parseRupiah(l[p+'_harga_barang'])||0)+(parseRupiah(l[p+'_harga_jasa'])||0); return base>0?ppnFromBase(base):0; };
   const isAutoTotal=/_total_tanpa_ppn$/.test(key);
+  const isPpnTotal=/_total_dengan_ppn$/.test(key);
   if(layers.length<=1){
     if(isAutoTotal){ const t=totalOf(layers[0]||rec); return t>0?t:''; }
+    if(isPpnTotal){ const t=ppnOf(layers[0]||rec); return t>0?t:''; }
     let v=rec[key]; if(v===''||v==null) return '';
     return ftype==='num'?Number(v):v;
   }
   if(isAutoTotal) return layers.map(l=>{ const t=totalOf(l); return t>0?String(t):''; }).join('\n');
+  if(isPpnTotal) return layers.map(l=>{ const t=ppnOf(l); return t>0?String(t):''; }).join('\n');
   return layers.map(l=>{ let v=l[key]; return (v==null)?'':String(v); }).join('\n');
 }
 /* Tampilan sel tabel layar untuk kolom per-penyedia: tiap penyedia satu baris. */
@@ -6302,6 +6325,7 @@ function indepCellValue(rec,key){
 const TENDER_SECTION_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>';
 const LOCK_NOTE='<span class="lock-overlay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Data terkunci</span>';
 const AUTO_NOTE='<span class="lock-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" style="width:10px;height:10px"><path d="M5 12h14M12 5v14"/></svg>Otomatis (Barang + Jasa)</span>';
+const PPN_NOTE='<span class="lock-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" style="width:10px;height:10px"><path d="M5 12h14M12 5v14"/></svg>Otomatis (Tanpa PPN × 111%)</span>';
 function buildFormTender(){
   const cont=document.getElementById('form-tender-fields'); if(!cont) return;
   let html='';
@@ -6332,13 +6356,13 @@ function buildFormTender(){
       let ctl='';
       if(f.type==='select') ctl=`<select id="${id}"${onCtrl}><option value="">— Pilih —</option>${(f.options||[]).map(o=>`<option>${o}</option>`).join('')}</select>`;
       else if(f.type==='num'){
-        if(f.auto==='sum') ctl=`<input id="${id}" type="text" inputmode="numeric" placeholder="Rp" readonly>`;
+        if(f.auto==='sum'||f.auto==='ppn') ctl=`<input id="${id}" type="text" inputmode="numeric" placeholder="Rp" readonly>`;
         else if(/_harga_(barang|jasa)$/.test(f.key)){ const pfx=f.key.replace(/_harga_(barang|jasa)$/,''); ctl=`<input id="${id}" type="text" inputmode="numeric" placeholder="Rp" oninput="onHargaInput(this,'${pfx}','tender')"${onCtrl}>`; }
         else ctl=`<input id="${id}" type="text" inputmode="numeric" placeholder="Rp" oninput="onRupiahInput(this)"${onCtrl}>`;
       }
       else if(f.type==='date') ctl=`<input id="${id}" type="date"${onCtrl}>`;
       else ctl=`<input id="${id}" type="text"${ph}${onCtrl}>`;
-      const note=f.auto==='sum'?AUTO_NOTE:(f.lock?LOCK_NOTE:'');
+      const note=f.auto==='sum'?AUTO_NOTE:(f.auto==='ppn'?PPN_NOTE:(f.lock?LOCK_NOTE:''));
       html+=`<div class="field${pxw.cls}"${pxw.style} id="wrap_${id}"><label>${f.label}${req}${note?' ':''}${note}</label>${ctl}</div>`;
     });
     html+=`</div></div>`;
@@ -6349,7 +6373,7 @@ function buildFormTender(){
 }
 
 /* Terapkan kunci otomatis sesuai nilai field pengendali */
-function readTenderFlat(){ const rec={}; FIELDS_TENDER.forEach(f=>{ const el=document.getElementById(tenderInputId(f.key)); let v=el?el.value.trim():''; if(f.type==='num') v=parseRupiah(v); rec[f.key]=v; }); ['hpe','rab','hps'].forEach(p=>{ if(FIELDS_TENDER.some(f=>f.key===p+'_total_tanpa_ppn'&&f.auto==='sum')){ const b=Number(rec[p+'_harga_barang'])||0,j=Number(rec[p+'_harga_jasa'])||0; rec[p+'_total_tanpa_ppn']=(b+j)>0?(b+j):''; } }); return rec; }
+function readTenderFlat(){ const rec={}; FIELDS_TENDER.forEach(f=>{ const el=document.getElementById(tenderInputId(f.key)); let v=el?el.value.trim():''; if(f.type==='num') v=parseRupiah(v); rec[f.key]=v; }); ['hpe','rab','hps'].forEach(p=>{ if(FIELDS_TENDER.some(f=>f.key===p+'_total_tanpa_ppn'&&f.auto==='sum')){ const b=Number(rec[p+'_harga_barang'])||0,j=Number(rec[p+'_harga_jasa'])||0; rec[p+'_total_tanpa_ppn']=(b+j)>0?(b+j):''; } }); FIELDS_TENDER.forEach(f=>{ if(f.auto==='ppn'){ const base=Number(rec[f.key.replace(/_total_dengan_ppn$/,'_total_tanpa_ppn')])||0; rec[f.key]=base>0?ppnFromBase(base):''; } }); return rec; }
 function applyLocksTender(){
   const vals=readTenderFlat();
   FIELDS_TENDER.forEach(f=>{
@@ -6705,8 +6729,10 @@ async function exportExcelTender(){
   const colMapTd=fieldColMap(COLS);
   const FLAT_AUTO=['hpe','rab','hps'];
   const isFlatAutoTotal=(k)=>FLAT_AUTO.some(p=>k===p+'_total_tanpa_ppn');
+  const isFlatPpnTotal=(k)=>FLAT_AUTO.some(p=>k===p+'_total_dengan_ppn');
   rows.forEach((r,ri)=>{ ws.addRow(COLS.map(f=>{
     if(isFlatAutoTotal(f.key)){ const p=f.key.replace(/_total_tanpa_ppn$/,''); const b=Number(r[p+'_harga_barang'])||0, j=Number(r[p+'_harga_jasa'])||0; const t=b+j; return t>0?t:''; }
+    if(isFlatPpnTotal(f.key)){ const p=f.key.replace(/_total_dengan_ppn$/,''); const b=Number(r[p+'_harga_barang'])||0, j=Number(r[p+'_harga_jasa'])||0; const t=b+j; return t>0?ppnFromBase(t):''; }
     if(PENYEDIA_KEYS.includes(f.key)) return penyediaCellValue(r,f.key,f.type);
     if(INDEP_MULTI_KEYS.includes(f.key)) return indepCellValue(r,f.key);
     let v=r[f.key]; if(v===''||v==null) return ''; if(f.type==='num') return Number(v); return v;
@@ -6787,7 +6813,8 @@ function handleUploadTender(ev){
         PENYEDIA_KEYS.forEach(k=>{ rec[k]=layers[0]&&layers[0][k]!=null?layers[0][k]:''; });
         // #12: Harga Total (Tanpa PPN) = Barang + Jasa — total flat (HPE/RAB/HPS) di rec, total per-penyedia (tawar/kontrak) di tiap layer
         ['hpe','rab','hps'].forEach(p=>{ const b=Number(rec[p+'_harga_barang'])||0, j=Number(rec[p+'_harga_jasa'])||0; if(FIELDS_TENDER.some(f=>f.key===p+'_total_tanpa_ppn'&&f.auto==='sum')) rec[p+'_total_tanpa_ppn']=(b+j)>0?(b+j):''; });
-        layers.forEach(lay=>{ ['tawar','kontrak'].forEach(p=>{ const b=Number(lay[p+'_harga_barang'])||0, j=Number(lay[p+'_harga_jasa'])||0; if(lay[p+'_total_tanpa_ppn']!==undefined) lay[p+'_total_tanpa_ppn']=(b+j)>0?(b+j):''; }); });
+        ['hpe','rab','hps'].forEach(p=>{ if(FIELDS_TENDER.some(f=>f.key===p+'_total_dengan_ppn'&&f.auto==='ppn')){ const base=Number(rec[p+'_total_tanpa_ppn'])||0; rec[p+'_total_dengan_ppn']=base>0?ppnFromBase(base):''; } });
+        layers.forEach(lay=>{ ['tawar','kontrak'].forEach(p=>{ const b=Number(lay[p+'_harga_barang'])||0, j=Number(lay[p+'_harga_jasa'])||0; if(lay[p+'_total_tanpa_ppn']!==undefined) lay[p+'_total_tanpa_ppn']=(b+j)>0?(b+j):''; if(lay[p+'_total_dengan_ppn']!==undefined){ const base=Number(lay[p+'_total_tanpa_ppn'])||0; lay[p+'_total_dengan_ppn']=base>0?ppnFromBase(base):''; } }); });
         PENYEDIA_KEYS.forEach(k=>{ rec[k]=layers[0]&&layers[0][k]!=null?layers[0][k]:''; });
         if(missingRequiredTender(rec).length){ toast('Data gagal diperbarui, lengkapi data terlebih dahulu','warn'); ev.target.value=''; return; }
         batch.push(rec);
@@ -7526,7 +7553,7 @@ function pnDocGroupHtml(no, title, arr){
     '</label>';
   }).join('');
   return '<div class="pn-doc-group">'+
-    '<div class="pn-doc-group-title"><span class="pn-grp-badge">Bagian '+no+'</span>'+fkEsc(title)+'</div>'+
+    '<div class="pn-doc-group-title">'+fkEsc(title)+'</div>'+
     '<div class="pn-check-grid">'+items+'</div>'+
   '</div>';
 }
@@ -7546,8 +7573,11 @@ function pnDocModalOpen(){
   pnDocSnapshot=[...document.querySelectorAll('.pn-doc-check')].map(b=>b.checked);
   const ov=document.getElementById('pn-doc-overlay'); if(ov) ov.classList.add('show');
 }
-/* Simpan: cukup tutup modal (tanpa notifikasi/popup tambahan) */
+/* Simpan: minimal satu dokumen harus dicentang. Jika tidak, tampilkan pesan gagal
+   dan tetap berada di halaman Pilih Dokumen (modal tidak ditutup). */
 function pnDocModalSave(){
+  const checked=document.querySelectorAll('.pn-doc-check:checked').length;
+  if(!checked){ toast('Data gagal disimpan : Pilih salah satu dokumen','err'); return; }
   pnDocUpdateCount();
   const ov=document.getElementById('pn-doc-overlay'); if(ov) ov.classList.remove('show');
 }
@@ -8313,8 +8343,6 @@ function renderFormKelengkapan(){
       '<span class="fkl-count-chip">'+sel+' dipilih</span></div>'+
       '<div class="fkl-hint">Centang dokumen yang perlu diperiksa kelengkapannya (gabungan Dokumen Wajib &amp; Dokumen Tambahan).</div>'+
       '<div class="fkl-checkgrid" style="--rows:'+Math.ceil(fklDocPool().length/2)+'">'+fklPilihHtml()+'</div>'+
-      '<div class="fkl-selall"><button type="button" class="fkl-linkbtn" onclick="fklSelectAll(true)">Pilih semua</button>'+
-      '<span>•</span><button type="button" class="fkl-linkbtn" onclick="fklSelectAll(false)">Kosongkan</button></div>'+
     '</div>';
     html+='<div class="fkl-actions"><div class="fkl-actions-left">'+
         '<button class="btn btn-ghost" onclick="fklBatal()">'+FKL_IC_X+'Batal</button>'+
