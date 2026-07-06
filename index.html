@@ -1612,18 +1612,28 @@ tbody tr{animation:rowIn .3s ease both}
 #view-pn-lihat .table-wrap thead th{border-left-color:rgba(255,255,255,.3);border-right-color:rgba(255,255,255,.3)}
 /* Garis pembatas antar pekerjaan (antar baris) — tipis */
 #view-pn-lihat .table-wrap tbody td{border-top:1px solid #dce6e9;border-bottom:1px solid #dce6e9}
-/* ==== Tabel Monitoring (Daftar Kontrak Rinci / Pengadaan Langsung / Tender) ====
-   Border vertikal antar kolom + garis pembatas antar baris dipertegas. */
-#view-list .table-wrap table,#view-list-pl .table-wrap table,#view-list-tender .table-wrap table{border-collapse:collapse}
+/* ==== Tabel Monitoring (Daftar Kontrak Rinci / Pengadaan Langsung / Tender)
+   + File Kontrak & Kelengkapan — border kolom & baris disamakan (tipis, warna sama) ==== */
+#view-list .table-wrap table,#view-list-pl .table-wrap table,#view-list-tender .table-wrap table,
+#view-fk-input .table-wrap table,#view-fk-view .table-wrap table,#view-fkl-view .table-wrap table{border-collapse:collapse}
 #view-list .table-wrap th,#view-list .table-wrap td,
 #view-list-pl .table-wrap th,#view-list-pl .table-wrap td,
-#view-list-tender .table-wrap th,#view-list-tender .table-wrap td{border-left:1px solid #dce6e9;border-right:1px solid #dce6e9}
+#view-list-tender .table-wrap th,#view-list-tender .table-wrap td,
+#view-fk-input .table-wrap th,#view-fk-input .table-wrap td,
+#view-fk-view .table-wrap th,#view-fk-view .table-wrap td,
+#view-fkl-view .table-wrap th,#view-fkl-view .table-wrap td{border-left:1px solid #dce6e9;border-right:1px solid #dce6e9}
 #view-list .table-wrap thead th,
 #view-list-pl .table-wrap thead th,
-#view-list-tender .table-wrap thead th{border-left-color:rgba(255,255,255,.3);border-right-color:rgba(255,255,255,.3)}
+#view-list-tender .table-wrap thead th,
+#view-fk-input .table-wrap thead th,
+#view-fk-view .table-wrap thead th,
+#view-fkl-view .table-wrap thead th{border-left-color:rgba(255,255,255,.3);border-right-color:rgba(255,255,255,.3)}
 #view-list .table-wrap tbody td,
 #view-list-pl .table-wrap tbody td,
-#view-list-tender .table-wrap tbody td{border-top:1px solid #dce6e9;border-bottom:1px solid #dce6e9}
+#view-list-tender .table-wrap tbody td,
+#view-fk-input .table-wrap tbody td,
+#view-fk-view .table-wrap tbody td,
+#view-fkl-view .table-wrap tbody td{border-top:1px solid #dce6e9;border-bottom:1px solid #dce6e9}
 /* Daftar per masing-masing nomor dokumen — SATU BARIS per nomor (tanpa wrap),
    tinggi seragam & ringkas, data di tengah baris. */
 .pn-nomor-list{display:flex;flex-direction:column;gap:0;padding:0}
