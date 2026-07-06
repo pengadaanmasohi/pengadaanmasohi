@@ -181,7 +181,7 @@ a{color:inherit}
 @media(max-width:640px){ #view-dashboard .bar-row .lbl{width:120px} }
 
 /* ---------- Toolbar / Filters ---------- */
-.toolbar{display:inline-flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px;width:fit-content;max-width:100%;background:linear-gradient(135deg,#eef8f9 0%,#e0f1f3 100%);border:1px solid #cbe4e7;border-radius:var(--radius);padding:16px;box-shadow:0 4px 14px rgba(14,124,134,.12),inset 0 1px 0 rgba(255,255,255,.7)}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px;margin-left:auto;margin-right:0;width:fit-content;max-width:100%;background:linear-gradient(135deg,#eef8f9 0%,#e0f1f3 100%);border:1px solid #cbe4e7;border-radius:var(--radius);padding:16px;box-shadow:0 4px 14px rgba(14,124,134,.12),inset 0 1px 0 rgba(255,255,255,.7)}
 .filter-field{display:flex;flex-direction:column;gap:5px}
 .filter-field label{font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
 .filter-field select,.filter-field input{min-width:180px;max-width:180px}
@@ -1182,6 +1182,52 @@ td{padding:2px 4px}
 /* Filter dashboard: kapsul rapi */
 #view-dashboard .filter-field select{border-radius:11px;font-weight:600}
 
+/* ===== Filter Dashboard — tampilan elegan ===== */
+.dash-filter-bar{
+  display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;
+  padding:13px 16px;border-radius:16px;
+  background:linear-gradient(135deg,rgba(255,255,255,.72),rgba(238,248,249,.66));
+  border:1px solid rgba(203,228,231,.9);
+  box-shadow:0 6px 22px rgba(14,124,134,.10),inset 0 1px 0 rgba(255,255,255,.85);
+  backdrop-filter:blur(8px) saturate(1.05);-webkit-backdrop-filter:blur(8px) saturate(1.05)
+}
+.dash-filter-bar .filter-field{gap:7px}
+#view-dashboard .dash-filter-bar .filter-field label{
+  display:inline-flex;align-items:center;gap:6px;align-self:flex-start;text-align:left;
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:10.5px;font-weight:700;
+  color:var(--teal-dark);text-transform:uppercase;letter-spacing:.9px;opacity:1
+}
+#view-dashboard .dash-filter-bar .filter-field label::before{
+  content:"";width:6px;height:6px;border-radius:50%;flex:0 0 6px;
+  background:linear-gradient(135deg,var(--teal),var(--cyan));
+  box-shadow:0 0 0 3px rgba(22,169,181,.14)
+}
+#view-dashboard .dash-filter-bar .filter-field select{
+  appearance:none;-webkit-appearance:none;
+  font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:600;
+  color:var(--teal-dark);letter-spacing:.1px;
+  padding:11px 38px 11px 15px;border-radius:12px;
+  border:1px solid #cbe4e7;
+  background-color:#fff;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%230e7c86' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 13px center;
+  box-shadow:0 2px 6px rgba(14,124,134,.08),inset 0 1px 0 rgba(255,255,255,.7);
+  transition:border-color .18s ease,box-shadow .2s ease,transform .16s ease
+}
+#view-dashboard .dash-filter-bar .filter-field select:hover{
+  border-color:var(--teal);transform:translateY(-1px);
+  box-shadow:0 5px 14px rgba(14,124,134,.16),inset 0 1px 0 rgba(255,255,255,.7)
+}
+#view-dashboard .dash-filter-bar .filter-field select:focus{
+  outline:none;border-color:var(--teal);
+  box-shadow:0 0 0 3px var(--teal-soft),0 6px 16px rgba(14,124,134,.18)
+}
+@media(max-width:640px){
+  .dash-filter-bar{width:100%;padding:12px 13px}
+  .dash-filter-bar .filter-field{flex:1 1 100%}
+  .dash-filter-bar .filter-field select{width:100%;min-width:0;max-width:none}
+}
+
 @media (prefers-reduced-motion: reduce){
   #view-dashboard .bar-fill{animation:none !important}
 }
@@ -1199,7 +1245,7 @@ body.nav-open{overflow:hidden}
   .page-head{flex-direction:column;align-items:stretch;gap:12px}
   .page-head h2{font-size:18px}
   #view-dashboard .page-head h2{font-size:20px}
-  .toolbar{padding:13px;display:flex;width:auto}
+  .toolbar{padding:13px;display:flex;width:auto;margin-left:0;margin-right:0}
   .filter-field{flex:1 1 100%}
   .filter-field select,.filter-field input{min-width:0;max-width:none;width:100%}
   .toolbar .spacer{display:none}
@@ -1950,7 +1996,7 @@ html,body{background:#e9eef1}
         <h2>Dashboard</h2>
         <p id="dash-subtitle">Ringkasan monitoring Pengadaan Langsung &amp; Tender UP3 Masohi</p>
       </div>
-      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+      <div class="dash-filter-bar">
         <div class="filter-field" id="dash-metode-wrap" style="display:none">
           <label>Metode Pengadaan</label>
           <select id="dash-filter-metode" onchange="renderDashboard()">
@@ -3571,6 +3617,7 @@ function performLogout(){
   const finish=()=>{
     ssDel(ROLE_KEY); ssDel(USER_KEY); ssDel(VIEW_KEY); ssDel(DRAFT_KEY);
     currentRole=null; currentUsername=null;
+    try{ resetAllFilters(); }catch(e){}
     document.getElementById('topbar-user').style.display='none';
     document.getElementById('login-screen').style.display='flex';
     resetLoginForm();
@@ -3686,15 +3733,24 @@ let routeTimer=null;
 /* #5: Kembalikan semua filter monitoring (Bidang, Status, Tahun, Cari) ke default
    setiap kali pindah halaman. Hanya membersihkan nilai; render dilakukan oleh showView. */
 function resetAllFilters(){
+  // Filter select & kotak cari yang default-nya kosong
   ['filter-bidang','filter-status','filter-tahun','filter-search',
    'filter-pl-bidang','filter-pl-tahapan','filter-pl-tahun','filter-pl-search',
    'filter-tender-bidang','filter-tender-tahapan','filter-tender-tahun','filter-tender-search',
-   'fk-input-bidang','fk-input-search','fk-view-bidang','fk-view-search'
+   'fk-input-bidang','fk-input-search','fk-view-bidang','fk-view-search',
+   'pn-lihat-search','fkl-view-search',
+   'dash-filter-anggaran','dash-filter-tahun','dash-filter-metode'
   ].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  // Filter dashboard "Jenis Pekerjaan" kembali ke default (SPBJ / Kontrak Rinci)
+  const dj=document.getElementById('dash-filter-jenis'); if(dj) dj.value='kr';
+  const dmw=document.getElementById('dash-metode-wrap'); if(dmw) dmw.style.display='none';
+  // Reset nomor halaman setiap tabel ke 1
   if(typeof currentPage!=='undefined') currentPage=1;
   if(typeof currentPagePl!=='undefined') currentPagePl=1;
   if(typeof currentPageTender!=='undefined') currentPageTender=1;
   if(typeof fkState!=='undefined'){ fkState.input.page=1; fkState.view.page=1; }
+  if(typeof pnState!=='undefined' && pnState.lihat) pnState.lihat.page=1;
+  if(typeof fklViewPage!=='undefined') fklViewPage=1;
 }
 
 function showView(name, loaderMsg, noLoader){
