@@ -1991,8 +1991,7 @@ html,body{background:#e9eef1}
   <section id="view-dashboard" class="view active">
     <div class="page-head">
       <div>
-        <h2>Dashboard</h2>
-        <p id="dash-subtitle">Ringkasan monitoring Pengadaan Langsung &amp; Tender UP3 Masohi</p>
+        <h2 id="dash-title">Dashboard</h2>
       </div>
       <div class="dash-filter-bar">
         <div class="filter-field" id="dash-metode-wrap" style="display:none">
@@ -4386,10 +4385,11 @@ function renderDashboard(){
 
   // Subtitle & label status
   const meta = {
-    kr:     {label:'SPBJ / Kontrak Rinci', sub:'Ringkasan monitoring SPBJ / Kontrak Rinci UP3 Masohi'},
-    pl:     {label:'Pengadaan Langsung',   sub:'Ringkasan monitoring Pengadaan Langsung UP3 Masohi'},
-    tender: {label:'Tender',               sub:'Ringkasan monitoring Tender UP3 Masohi'},
+    kr:     {label:'SPBJ / Kontrak Rinci', title:'Kontrak Rinci',       sub:'Ringkasan monitoring SPBJ / Kontrak Rinci UP3 Masohi'},
+    pl:     {label:'Pengadaan Langsung',   title:'Pengadaan Langsung',  sub:'Ringkasan monitoring Pengadaan Langsung UP3 Masohi'},
+    tender: {label:'Tender',               title:'Tender',              sub:'Ringkasan monitoring Tender UP3 Masohi'},
   }[jenis];
+  const titleEl=document.getElementById('dash-title'); if(titleEl) titleEl.textContent = meta && meta.title ? ('Dashboard '+meta.title) : 'Dashboard';
   const subEl=document.getElementById('dash-subtitle'); if(subEl) subEl.textContent=meta.sub;
 
   const total=data.length;
