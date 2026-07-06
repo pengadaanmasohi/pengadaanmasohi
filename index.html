@@ -1443,37 +1443,32 @@ body.nav-open{overflow:hidden}
 }
 #view-dashboard .card:hover::after{opacity:.85;transform:scale(1.08)}
 
-/* ====== Cahaya bergerak melingkar mengelilingi tepi setiap kotak dashboard ====== */
+/* ====== Cahaya menyusuri tepi kotak (seperti tali / ular berjalan) ====== */
 #view-dashboard .card{overflow:hidden;isolation:isolate}
-/* Lapisan cahaya berputar (conic) di lapisan paling belakang kartu */
+/* Titik cahaya memanjang yang berjalan MENGIKUTI garis tepi kartu.
+   offset-path rect() membuatnya bergerak persis di sepanjang keliling kotak. */
 #view-dashboard .card::before{
-  content:"";position:absolute;z-index:0;pointer-events:none;
-  top:50%;left:50%;width:200%;height:200%;
-  transform:translate(-50%,-50%);
-  background:conic-gradient(from 0deg,
-    transparent 0deg,
-    transparent 250deg,
-    color-mix(in srgb,var(--ca) 25%,transparent) 295deg,
-    color-mix(in srgb,var(--ca) 90%,#fff) 325deg,
-    #ffffff 335deg,
-    color-mix(in srgb,var(--ca) 90%,#fff) 345deg,
-    color-mix(in srgb,var(--ca) 25%,transparent) 355deg,
-    transparent 360deg);
-  animation:cardBorderSpin 4s linear infinite;
+  content:"";position:absolute;z-index:2;pointer-events:none;
+  width:64px;height:6px;border-radius:6px;
+  left:0;top:0;
+  background:linear-gradient(90deg,
+    transparent 0%,
+    color-mix(in srgb,var(--ca) 55%,transparent) 30%,
+    color-mix(in srgb,var(--ca) 95%,#fff) 50%,
+    color-mix(in srgb,var(--ca) 55%,transparent) 70%,
+    transparent 100%);
+  filter:drop-shadow(0 0 4px color-mix(in srgb,var(--ca) 80%,transparent))
+         drop-shadow(0 0 8px color-mix(in srgb,var(--ca) 55%,transparent));
+  offset-path:inset(1px round 17px);
+  offset-rotate:auto;
+  offset-distance:0%;
+  animation:cardRope 3.6s linear infinite;
 }
-/* Permukaan kartu (mask) menutup bagian tengah — hanya menyisakan ~2px tepi bercahaya */
-#view-dashboard .card::after{
-  content:"";position:absolute;z-index:1;inset:2px;right:auto;top:2px;left:2px;
-  width:auto;height:auto;border-radius:16px;
-  background:linear-gradient(180deg, color-mix(in srgb,var(--ca) 6%,#fff) 0%, #ffffff 42%, #fbfdfd 100%);
-  opacity:1;transform:none;pointer-events:none;
-}
-#view-dashboard .card:hover::after{opacity:1;transform:none}
-/* Konten kartu berada di atas mask */
-#view-dashboard .card>*{position:relative;z-index:2}
-@keyframes cardBorderSpin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes cardRope{to{offset-distance:100%}}
+/* Konten kartu di atas cahaya tepi */
+#view-dashboard .card>*{position:relative;z-index:3}
 @media (prefers-reduced-motion: reduce){
-  #view-dashboard .card::before{animation:none}
+  #view-dashboard .card::before{animation:none;opacity:0}
 }
 
 /* Batang aksen kiri: sedikit lebih tebal & bercahaya sesuai warna kartu */
@@ -1489,6 +1484,9 @@ body.nav-open{overflow:hidden}
     0 6px 14px color-mix(in srgb,var(--ic,var(--teal)) 22%,transparent);
 }
 #view-dashboard .card:hover .card-ic{transform:scale(1.1) rotate(-4deg)}
+/* Beri ruang di sisi kanan judul agar tidak menyatu / tertabrak ikon kanan-atas */
+#view-dashboard .card .k{padding-right:56px;line-height:1.35}
+#view-dashboard .card .v,#view-dashboard .card .sub{padding-right:4px}
 
 /* ---------- Panel chart Dashboard ---------- */
 #view-dashboard .panel{border-radius:18px;border-color:#e0eaec;box-shadow:0 1px 2px rgba(16,40,50,.05),0 12px 34px rgba(16,40,50,.06)}
