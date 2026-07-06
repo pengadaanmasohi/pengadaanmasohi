@@ -799,8 +799,20 @@ tbody.tbody-reveal>tr:nth-child(10){animation-delay:.29s}
   background:rgba(255,255,255,.14);border-radius:26px;overflow:hidden;
   box-shadow:0 40px 100px rgba(2,26,29,.55),0 8px 30px rgba(2,26,29,.35),inset 0 0 0 1px rgba(255,255,255,.22);
   backdrop-filter:blur(22px) saturate(140%);-webkit-backdrop-filter:blur(22px) saturate(140%);
-  animation:loginIn .6s cubic-bezier(.2,.8,.2,1)}
-@keyframes loginIn{from{opacity:0;transform:translateY(22px) scale(.985)}to{opacity:1;transform:none}}
+  animation:loginZoomOut .85s cubic-bezier(.16,1,.3,1) both}
+/* Efek zoom-out: kartu login muncul dari ukuran kecil lalu membesar perlahan ke ukuran normal.
+   Class .replay dipakai untuk memicu ulang animasi (mis. setelah logout). */
+.login-card.replay{animation:none}
+.login-card.replay.go{animation:loginZoomOut .85s cubic-bezier(.16,1,.3,1) both}
+@keyframes loginZoomOut{
+  0%{opacity:0;transform:scale(.55)}
+  60%{opacity:1}
+  100%{opacity:1;transform:scale(1)}
+}
+@media (prefers-reduced-motion:reduce){
+  .login-card,.login-card.replay.go{animation:loginFadeOnly .4s ease both}
+}
+@keyframes loginFadeOnly{from{opacity:0}to{opacity:1}}
 
 /* ---- Panel kiri: branding ---- */
 .login-brandside{position:relative;padding:44px 38px;color:#eafafb;display:flex;flex-direction:column;justify-content:space-between;
@@ -1394,28 +1406,35 @@ body.nav-open{overflow:hidden}
 }
 #view-dashboard .card:hover::after{opacity:.85;transform:scale(1.08)}
 
-/* ====== Efek cahaya melingkar (halo) di setiap kartu dashboard ====== */
-#view-dashboard .card{overflow:hidden}
+/* ====== Cahaya bergerak melingkar mengelilingi tepi setiap kotak dashboard ====== */
+#view-dashboard .card{overflow:hidden;isolation:isolate}
+/* Lapisan cahaya berputar (conic) di lapisan paling belakang kartu */
 #view-dashboard .card::before{
   content:"";position:absolute;z-index:0;pointer-events:none;
-  left:-70px;bottom:-90px;width:230px;height:230px;border-radius:50%;
-  background:radial-gradient(circle,
-    color-mix(in srgb,var(--ca) 22%,transparent) 0%,
-    color-mix(in srgb,var(--ca) 10%,transparent) 42%,
-    transparent 68%);
-  opacity:.5;
-  animation:cardHalo 6s ease-in-out infinite;
+  top:50%;left:50%;width:200%;height:200%;
+  transform:translate(-50%,-50%);
+  background:conic-gradient(from 0deg,
+    transparent 0deg,
+    transparent 250deg,
+    color-mix(in srgb,var(--ca) 25%,transparent) 295deg,
+    color-mix(in srgb,var(--ca) 90%,#fff) 325deg,
+    #ffffff 335deg,
+    color-mix(in srgb,var(--ca) 90%,#fff) 345deg,
+    color-mix(in srgb,var(--ca) 25%,transparent) 355deg,
+    transparent 360deg);
+  animation:cardBorderSpin 4s linear infinite;
 }
-#view-dashboard .efisiensi-card::before{
-  --ca:var(--green);
+/* Permukaan kartu (mask) menutup bagian tengah — hanya menyisakan ~2px tepi bercahaya */
+#view-dashboard .card::after{
+  content:"";position:absolute;z-index:1;inset:2px;right:auto;top:2px;left:2px;
+  width:auto;height:auto;border-radius:16px;
+  background:linear-gradient(180deg, color-mix(in srgb,var(--ca) 6%,#fff) 0%, #ffffff 42%, #fbfdfd 100%);
+  opacity:1;transform:none;pointer-events:none;
 }
-/* Konten kartu tetap di atas cahaya */
-#view-dashboard .card>*{position:relative;z-index:1}
-#view-dashboard .card:hover::before{opacity:.8}
-@keyframes cardHalo{
-  0%,100%{transform:scale(1);opacity:.42}
-  50%{transform:scale(1.18);opacity:.62}
-}
+#view-dashboard .card:hover::after{opacity:1;transform:none}
+/* Konten kartu berada di atas mask */
+#view-dashboard .card>*{position:relative;z-index:2}
+@keyframes cardBorderSpin{to{transform:translate(-50%,-50%) rotate(360deg)}}
 @media (prefers-reduced-motion: reduce){
   #view-dashboard .card::before{animation:none}
 }
@@ -3795,6 +3814,18 @@ document.addEventListener('click',function(ev){
 });
 document.addEventListener('keydown',function(ev){ if(ev.key==='Escape') closeSettingsMenu(); });
 
+/* Memicu ulang animasi zoom-out pada kartu login (dipakai saat login screen
+   ditampilkan kembali, mis. setelah logout — CSS animation tidak otomatis
+   terulang saat elemen hanya di-show kembali). */
+function replayLoginZoom(){
+  const card=document.querySelector('#login-screen .login-card');
+  if(!card) return;
+  card.classList.remove('go');
+  card.classList.add('replay');
+  // paksa reflow agar animasi benar-benar dijalankan ulang
+  void card.offsetWidth;
+  card.classList.add('go');
+}
 function performLogout(){
   stopIdleTimer();   // hentikan pemantauan idle
   const anim=document.getElementById('logout-anim');
@@ -3804,6 +3835,7 @@ function performLogout(){
     try{ resetAllFilters(); }catch(e){}
     document.getElementById('topbar-user').style.display='none';
     document.getElementById('login-screen').style.display='flex';
+    replayLoginZoom();
     resetLoginForm();
     if(anim){
       anim.classList.add('fade-out');
