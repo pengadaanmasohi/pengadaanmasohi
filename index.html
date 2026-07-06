@@ -1618,7 +1618,7 @@ tbody tr{animation:rowIn .3s ease both}
 .fkl-chk{width:100%;border-collapse:separate;border-spacing:0;margin-top:2px;border:1px solid #dbe6e8;border-radius:9px;overflow:hidden}
 .fkl-chk thead th{background:linear-gradient(180deg,#0E7C86,#0b6a73);color:#fff;font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;padding:9px 12px;text-align:left}
 .fkl-chk th.no,.fkl-chk td.no{width:44px;text-align:center}
-.fkl-chk th.ck,.fkl-chk td.ck{width:150px;text-align:center}.fkl-chk th.ck{padding-top:7px;padding-bottom:7px}.fkl-chk th.ck .ck-main{display:block;line-height:1.2}.fkl-chk th.ck .ck-sub{display:block;font-weight:600;font-size:9px;opacity:.85;margin-top:2px;text-transform:none;letter-spacing:.2px}
+.fkl-chk th.ck,.fkl-chk td.ck{width:190px;text-align:center}.fkl-chk th.ck{padding-top:7px;padding-bottom:7px}.fkl-chk th.ck .ck-main{display:block;line-height:1.2;white-space:nowrap}
 .fkl-chk tbody td{padding:8px 12px;font-size:12.5px;border-top:1px solid #e7eef0;color:#22343a}
 .fkl-chk tbody tr:nth-child(even) td{background:#f6fafb}
 .fkl-chk td.nm{font-weight:600}
@@ -1679,7 +1679,7 @@ tbody tr{animation:rowIn .3s ease both}
 .fkl-chk{width:100%;border-collapse:separate;border-spacing:0;margin-top:2px;border:1px solid #dbe6e8;border-radius:9px;overflow:hidden}
 .fkl-chk thead th{background:linear-gradient(180deg,#0E7C86,#0b6a73);color:#fff;font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;padding:9px 12px;text-align:left}
 .fkl-chk th.no,.fkl-chk td.no{width:44px;text-align:center}
-.fkl-chk th.ck,.fkl-chk td.ck{width:150px;text-align:center}.fkl-chk th.ck{padding-top:7px;padding-bottom:7px}.fkl-chk th.ck .ck-main{display:block;line-height:1.2}.fkl-chk th.ck .ck-sub{display:block;font-weight:600;font-size:9px;opacity:.85;margin-top:2px;text-transform:none;letter-spacing:.2px}
+.fkl-chk th.ck,.fkl-chk td.ck{width:190px;text-align:center}.fkl-chk th.ck{padding-top:7px;padding-bottom:7px}.fkl-chk th.ck .ck-main{display:block;line-height:1.2;white-space:nowrap}
 .fkl-chk tbody td{padding:8px 12px;font-size:12.5px;border-top:1px solid #e7eef0;color:#22343a}
 .fkl-chk tbody tr:nth-child(even) td{background:#f6fafb}
 .fkl-chk td.nm{font-weight:600}
@@ -8425,7 +8425,7 @@ function fklBuildDocHtml(){
     '</tbody></table>'+
 
     '<div class="fkl-sec-h"><span class="rn">B</span>Kelengkapan Dokumen</div>'+
-    '<table class="fkl-chk"><thead><tr><th class="no">No</th><th class="nm">Jenis Dokumen</th><th class="ck"><span class="ck-main">Kelengkapan Dokumen</span><span class="ck-sub">Ada / Tidak Ada</span></th></tr></thead><tbody>'+
+    '<table class="fkl-chk"><thead><tr><th class="no">No</th><th class="nm">Jenis Dokumen</th><th class="ck"><span class="ck-main">Kelengkapan Dokumen</span></th></tr></thead><tbody>'+
       (chkRows||'<tr><td colspan="3" class="empty">Tidak ada dokumen yang diperiksa</td></tr>')+
     '</tbody></table>'+
 
