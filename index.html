@@ -9519,16 +9519,15 @@ function pnwKategoriGroupHtml(sk){
   const items=kategoriList.map((kat)=>{
     const idx=PNW_KATEGORI.indexOf(kat);           // nomor tetap sesuai urutan asli
     const on=!!sel[kat];
-    // Penawaran Harga pada Sampul Dua (2 sampul): otomatis & terkunci
+    // Penawaran Harga pada Sampul Dua (2 sampul): otomatis terpilih & terkunci
     const autoLock = two && sk==='s2' && kat==='Penawaran Harga';
     const checked = autoLock ? true : on;
     const attrs = autoLock ? 'checked disabled' : (checked?'checked':'');
-    const badge = autoLock ? '<span class="pnw-auto-badge">Otomatis</span>' : '';
     return '<label class="fkl-check'+(autoLock?' is-locked':'')+'">'+
       '<input type="checkbox" data-sk="'+sk+'" data-kat="'+fkEsc(kat)+'" '+attrs+' onchange="pnwOnPilih(this)">'+
       '<span class="pn-check-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></span>'+
       '<span class="fkl-num">'+(idx+1)+'</span>'+
-      '<span class="fkl-lbl">'+fkEsc(kat)+'</span>'+badge+
+      '<span class="fkl-lbl">'+fkEsc(kat)+'</span>'+
     '</label>';
   }).join('');
   const cnt=kategoriList.filter(k=>sel[k]).length;
@@ -9544,7 +9543,10 @@ function pnwSelectedKategori(st, sk){ const sel=(st||pnwState).pilih[sk]||{}; re
    sehingga dikeluarkan dari daftar pilihan Sampul Satu. */
 function pnwKategoriUntukSampul(st, sk){
   st=st||pnwState;
-  if(pnwIsTwoSampul(st) && sk==='s1') return PNW_KATEGORI.filter(k=>k!=='Penawaran Harga');
+  if(pnwIsTwoSampul(st)){
+    if(sk==='s1') return PNW_KATEGORI.filter(k=>k!=='Penawaran Harga');  // Sampul Satu: tanpa Penawaran Harga
+    return ['Penawaran Harga'];                                          // Sampul Dua: HANYA Penawaran Harga
+  }
   return PNW_KATEGORI.slice();
 }
 /* Terapkan aturan Penawaran Harga:
@@ -9553,8 +9555,10 @@ function pnwKategoriUntukSampul(st, sk){
 function pnwEnforceHargaRule(st){
   st=st||pnwState;
   if(pnwIsTwoSampul(st)){
-    st.pilih.s2=st.pilih.s2||{}; st.pilih.s2['Penawaran Harga']=true;   // otomatis di Sampul Dua
-    if(st.pilih.s1) delete st.pilih.s1['Penawaran Harga'];              // keluarkan dari Sampul Satu
+    // Sampul Dua HANYA berisi "Penawaran Harga" (kategori lain dibersihkan)
+    st.pilih.s2 = { 'Penawaran Harga': true };
+    // "Penawaran Harga" dikeluarkan dari Sampul Satu
+    if(st.pilih.s1) delete st.pilih.s1['Penawaran Harga'];
   }
 }
 /* pastikan tiap kategori terpilih punya array syarat (default 3 baris, Penawaran Harga terkunci) */
