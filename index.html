@@ -1962,31 +1962,77 @@ tbody tr{animation:rowIn .3s ease both}
 .pnw-syarat-add{margin-top:11px;display:inline-flex;align-items:center;gap:6px;font-family:'Plus Jakarta Sans';font-weight:700;font-size:11px;color:var(--teal-dark);background:var(--teal-soft);border:1px dashed var(--teal);border-radius:9px;padding:8px 13px;cursor:pointer;transition:.15s}
 .pnw-syarat-add svg{width:14px;height:14px}
 .pnw-syarat-add:hover{background:#d3ecee}
-/* Langkah 4: header + picker penyedia */
-.pnw-periksa-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:6px}
-.pnw-periksa-title{display:flex;align-items:center;gap:9px;font-family:'Plus Jakarta Sans';font-weight:800;font-size:12.5px;color:var(--teal-dark)}
-.pnw-periksa-picker{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
-.pnw-picker-lbl{font-family:'Plus Jakarta Sans';font-weight:700;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px}
-.pnw-penyedia-tabs{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end;max-width:520px}
-.pnw-ptab{font-family:'Plus Jakarta Sans';font-weight:700;font-size:11px;color:#54666c;background:#fff;border:1.5px solid var(--line);border-radius:20px;padding:6px 13px;cursor:pointer;transition:.15s}
-.pnw-ptab:hover{border-color:var(--teal);color:var(--teal-dark)}
-.pnw-ptab.on{background:linear-gradient(135deg,var(--teal),var(--cyan));border-color:var(--teal);color:#fff}
-.pnw-sampul-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 14px}
-.pnw-stab{font-family:'Plus Jakarta Sans';font-weight:700;font-size:11.5px;color:#54666c;background:#f1f6f7;border:1.5px solid var(--line);border-radius:10px;padding:9px 15px;cursor:pointer;transition:.15s}
+/* ===== Langkah 4: PANEL PEMERIKSAAN (mewah & profesional) ===== */
+.pnw-panel{border:1px solid #d8e4e7;border-radius:18px;overflow:hidden;background:#fff;box-shadow:0 2px 8px rgba(16,40,50,.06),0 22px 50px rgba(9,94,102,.08)}
+/* Hero header dengan gradasi teal gelap */
+.pnw-hero{position:relative;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;
+  padding:20px 24px;background:linear-gradient(120deg,#0b5d64 0%,#0E7C86 46%,#12a3ad 100%);color:#fff;overflow:hidden}
+.pnw-hero-glow{position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(520px 220px at 88% -40%, rgba(246,180,14,.22), transparent 60%),radial-gradient(420px 200px at 8% 140%, rgba(255,255,255,.16), transparent 60%)}
+.pnw-hero-main{position:relative;display:flex;align-items:center;gap:15px;min-width:0}
+.pnw-hero-badge{flex:0 0 auto;width:46px;height:46px;border-radius:13px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.30);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.pnw-hero-badge svg{width:24px;height:24px;color:#fff}
+.pnw-hero-text{min-width:0}
+.pnw-hero-kicker{font-family:'Plus Jakarta Sans';font-weight:700;font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:rgba(255,255,255,.82)}
+.pnw-hero-title{font-family:'Plus Jakarta Sans';font-weight:800;font-size:18px;line-height:1.25;margin-top:3px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.12);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:44vw}
+.pnw-hero-meta{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
+.pnw-hero-chip{font-family:'Plus Jakarta Sans';font-weight:700;font-size:10px;letter-spacing:.2px;color:#eafcfd;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.26);border-radius:20px;padding:4px 11px}
+.pnw-hero-picker{position:relative;display:flex;flex-direction:column;gap:7px;min-width:230px}
+.pnw-hero-picker .pnw-picker-lbl{color:rgba(255,255,255,.85)}
+.pnw-picker-lbl{font-family:'Plus Jakarta Sans';font-weight:800;font-size:9.5px;text-transform:uppercase;letter-spacing:1px}
+/* Dropdown penyedia */
+.pnw-penyedia-select{position:relative;display:flex;align-items:center}
+.pnw-penyedia-select .pnw-sel-ic{position:absolute;left:13px;width:17px;height:17px;color:var(--teal-dark);pointer-events:none}
+.pnw-penyedia-select .pnw-sel-caret{position:absolute;right:12px;width:16px;height:16px;color:var(--teal-dark);pointer-events:none}
+.pnw-penyedia-select select{appearance:none;-webkit-appearance:none;width:100%;font-family:'Plus Jakarta Sans';font-weight:700;font-size:12.5px;color:#0d2a30;
+  background:#fff;border:1.5px solid rgba(255,255,255,.6);border-radius:11px;padding:11px 38px 11px 38px;cursor:pointer;
+  box-shadow:0 6px 18px rgba(0,0,0,.14);transition:box-shadow .16s,border-color .16s}
+.pnw-penyedia-select select:focus{outline:none;border-color:var(--yellow);box-shadow:0 0 0 3px rgba(246,180,14,.35)}
+/* Sub-bar: judul sampul + nama penyedia aktif + progres */
+.pnw-subbar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:14px 24px;background:linear-gradient(180deg,#f7fbfc,#f1f7f8);border-bottom:1px solid var(--line)}
+.pnw-subbar-left{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.pnw-subbar-title{font-family:'Plus Jakarta Sans';font-weight:800;font-size:13px;color:var(--teal-dark)}
+.pnw-active-penyedia{display:inline-flex;align-items:center;gap:7px;font-family:'Plus Jakarta Sans';font-weight:800;font-size:11.5px;color:#0b3d42;background:#fff;border:1px solid #cfe3e5;border-radius:20px;padding:5px 13px 5px 10px}
+.pnw-active-penyedia svg{width:14px;height:14px;color:var(--teal)}
+.pnw-progress{display:flex;flex-direction:column;align-items:flex-end;gap:6px;min-width:220px}
+.pnw-progress-stats{display:flex;gap:6px}
+.pnw-pstat{font-family:'Plus Jakarta Sans';font-weight:800;font-size:10px;letter-spacing:.2px;border-radius:20px;padding:3px 10px;border:1px solid transparent}
+.pnw-pstat.ada{color:var(--green-dark);background:#e7f6ee;border-color:#bfe6cf}
+.pnw-pstat.no{color:var(--red-dark);background:#fbeaea;border-color:#f2c9c9}
+.pnw-pstat.belum{color:#8a6d00;background:#fff6d9;border-color:#f0dc95}
+.pnw-progress-bar{width:220px;max-width:46vw;height:7px;border-radius:20px;background:#e3edee;overflow:hidden}
+.pnw-progress-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,var(--teal),var(--cyan));transition:width .3s ease}
+/* Tab sampul (di dalam panel) */
+.pnw-sampul-tabs{display:flex;flex-wrap:wrap;gap:9px;padding:14px 24px 0}
+.pnw-stab{display:inline-flex;align-items:center;gap:8px;font-family:'Plus Jakarta Sans';font-weight:700;font-size:11.5px;color:#54666c;background:#fff;border:1.5px solid var(--line);border-radius:11px;padding:9px 15px;cursor:pointer;transition:.15s}
+.pnw-stab .pnw-stab-dot{width:8px;height:8px;border-radius:50%;background:#c2d3d6;transition:.15s}
 .pnw-stab:hover{border-color:var(--teal);color:var(--teal-dark)}
-.pnw-stab.on{background:var(--teal-soft);border-color:var(--teal);color:var(--teal-dark);box-shadow:inset 0 0 0 1px var(--teal)}
+.pnw-stab.on{background:linear-gradient(135deg,rgba(14,124,134,.10),rgba(18,169,181,.06));border-color:var(--teal);color:var(--teal-dark);box-shadow:inset 0 0 0 1px var(--teal)}
+.pnw-stab.on .pnw-stab-dot{background:linear-gradient(135deg,var(--teal),var(--cyan))}
 /* Tabel pemeriksaan */
-.pnw-periksa-table{width:100%;border-collapse:collapse;font-size:12px}
-.pnw-periksa-table th{background:#f1f6f7;color:var(--teal-dark);font-family:'Plus Jakarta Sans';font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:.3px;padding:10px 11px;text-align:left;border-bottom:1px solid var(--line)}
-.pnw-periksa-table td{padding:9px 11px;border-bottom:1px solid #eef3f4;vertical-align:middle}
-.pnw-periksa-table td.pnw-no{width:40px;text-align:center;color:var(--muted);font-weight:700}
-.pnw-periksa-table td.pnw-uraian{color:#2b3b41}
-.pnw-periksa-table th.pnw-ck,.pnw-periksa-table td.pnw-ck{width:210px}
+.pnw-table-wrap{padding:16px 20px 20px}
+.pnw-periksa-table{width:100%;border-collapse:separate;border-spacing:0;font-size:12px;border:1px solid #e6eef0;border-radius:12px;overflow:hidden}
+.pnw-periksa-table th{background:linear-gradient(180deg,#0E7C86,#0b6c74);color:#eafcfd;font-family:'Plus Jakarta Sans';font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:.6px;padding:12px 13px;text-align:left;border:none}
+.pnw-periksa-table th.pnw-no{text-align:center}
+.pnw-periksa-table td{padding:11px 13px;border-bottom:1px solid #eef3f4;vertical-align:middle;background:#fff;transition:background .15s}
+.pnw-periksa-table tbody tr:last-child td{border-bottom:none}
+.pnw-periksa-table td.pnw-no{width:46px;text-align:center;color:var(--muted);font-weight:800}
+.pnw-periksa-table td.pnw-uraian{color:#233a41;font-weight:600}
+.pnw-periksa-table th.pnw-ck,.pnw-periksa-table td.pnw-ck{width:230px}
 .pnw-periksa-table th.pnw-ket,.pnw-periksa-table td.pnw-ket{width:26%}
 .pnw-periksa-table td.pnw-ket input{width:100%}
-.pnw-periksa-table tr.pnw-cat-row td{background:linear-gradient(90deg,var(--teal-soft),#f7fcfc);color:#0b3d42;font-family:'Plus Jakarta Sans';font-weight:800;font-size:11px;text-transform:uppercase;letter-spacing:.3px;padding:8px 11px;border-bottom:1px solid var(--line)}
+.pnw-periksa-table tr.is-ada td{background:#f4fbf7}
+.pnw-periksa-table tr.is-no td{background:#fdf6f6}
+.pnw-periksa-table tr.pnw-cat-row td{background:linear-gradient(90deg,var(--teal-soft),#f7fcfc);padding:9px 13px;border-bottom:1px solid #d8e9ea}
+.pnw-cat-idx{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:6px;background:linear-gradient(135deg,var(--teal),var(--cyan));color:#fff;font-family:'Plus Jakarta Sans';font-weight:800;font-size:10.5px;margin-right:9px;vertical-align:middle}
+.pnw-cat-name{font-family:'Plus Jakarta Sans';font-weight:800;font-size:11px;color:#0b3d42;text-transform:uppercase;letter-spacing:.4px;vertical-align:middle}
 .pnw-jd-cell{font-weight:700;color:var(--teal-dark);white-space:nowrap}
-@media(max-width:720px){.pnw-periksa-top{flex-direction:column}.pnw-periksa-picker{align-items:flex-start}.pnw-penyedia-tabs{justify-content:flex-start}}
+@media(max-width:760px){
+  .pnw-hero{padding:16px}.pnw-hero-title{max-width:100%;white-space:normal}
+  .pnw-hero-picker{min-width:100%}.pnw-subbar{padding:12px 16px}
+  .pnw-progress{align-items:flex-start;min-width:100%}.pnw-progress-bar{max-width:100%;width:100%}
+  .pnw-sampul-tabs{padding:12px 16px 0}.pnw-table-wrap{padding:12px}
+}
 .btn.btn-ghost{background:#fff;border:1.5px solid var(--line);color:#7c8a8f}
 .btn.btn-ghost:hover{border-color:#e79a9a;color:#b02626;background:#fdf4f4}
 .btn.btn-light{background:#f1f6f7;border:1.5px solid var(--line);color:var(--teal-dark)}
@@ -9606,21 +9652,88 @@ function pnwOnSyaratInput(el){ const st=pnwState; const sk=el.dataset.sk, kat=el
 /* ================= LANGKAH 4: PEMERIKSAAN ================= */
 /* kunci pemeriksaan per baris persyaratan */
 function pnwRowKey(kat, baris){ return kat+'||'+baris; }
-/* pilihan tab penyedia (kanan atas) */
-function pnwPenyediaTabsHtml(){
+/* Dropdown pilihan penyedia (sesuai Nama Penyedia yang diisi) */
+function pnwPenyediaSelectHtml(){
   const st=pnwState;
-  return '<div class="pnw-penyedia-tabs">'+st.penyedia.map((nm,i)=>{
-    const on = i===pnwActivePenyedia;
-    const label = (nm&&nm.trim()) ? nm : ('Penyedia '+(i+1));
-    return '<button type="button" class="pnw-ptab'+(on?' on':'')+'" onclick="pnwSetPenyedia('+i+')">'+fkEsc(label)+'</button>';
-  }).join('')+'</div>';
+  const opts=st.penyedia.map((nm,i)=>{
+    const label=(nm&&nm.trim())?nm:('Penyedia '+(i+1));
+    return '<option value="'+i+'"'+(i===pnwActivePenyedia?' selected':'')+'>'+fkEsc(label)+'</option>';
+  }).join('');
+  return '<div class="pnw-penyedia-select">'+
+    '<svg class="pnw-sel-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'+
+    '<select id="pnw-penyedia-select" onchange="pnwOnPenyediaSelect(this)">'+opts+'</select>'+
+    '<svg class="pnw-sel-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>'+
+  '</div>';
 }
+function pnwOnPenyediaSelect(el){ pnwActivePenyedia=Math.max(0,parseInt(el.value,10)||0); renderPnwForm(); }
+/* (dipertahankan utk kompatibilitas — tidak lagi dipakai di UI) */
+function pnwPenyediaTabsHtml(){ return pnwPenyediaSelectHtml(); }
 function pnwSampulTabsHtml(){
   const st=pnwState; if(!pnwIsTwoSampul(st)) return '';
   return '<div class="pnw-sampul-tabs">'+pnwSampulList(st).map(sk=>{
     const on = sk===pnwActiveSampul;
-    return '<button type="button" class="pnw-stab'+(on?' on':'')+'" onclick="pnwSetSampul(\''+sk+'\')">Pembukaan Penawaran '+pnwSampulLabel(sk)+'</button>';
+    return '<button type="button" class="pnw-stab'+(on?' on':'')+'" onclick="pnwSetSampul(\''+sk+'\')">'+
+      '<span class="pnw-stab-dot"></span>Pembukaan Penawaran '+pnwSampulLabel(sk)+'</button>';
   }).join('')+'</div>';
+}
+/* Ringkasan progres pemeriksaan penyedia aktif (Ada / Tidak Ada / Belum) */
+function pnwProgressPenyedia(){
+  const st=pnwState, sk=pnwActiveSampul, pidx=pnwActivePenyedia;
+  let ada=0,tidak=0,belum=0,total=0;
+  pnwSelectedKategori(st,sk).forEach(kat=>{
+    (st.syarat[sk][kat]||[]).forEach(baris=>{
+      total++; const c=pnwGetPeriksa(sk,pidx,kat,baris);
+      if(c.ada===true) ada++; else if(c.ada===false) tidak++; else belum++;
+    });
+  });
+  return {ada,tidak,belum,total,pct: total?Math.round((ada+tidak)/total*100):0};
+}
+/* Panel pemeriksaan (hero header mewah + dropdown + tabel) */
+function pnwPeriksaPanelHtml(){
+  const st=pnwState, info=st.info||{};
+  const two=pnwIsTwoSampul(st);
+  const namaP=(st.penyedia[pnwActivePenyedia]&&st.penyedia[pnwActivePenyedia].trim())?st.penyedia[pnwActivePenyedia]:('Penyedia '+(pnwActivePenyedia+1));
+  const pg=pnwProgressPenyedia();
+  const subJudul = two ? ('Pembukaan Penawaran '+pnwSampulLabel(pnwActiveSampul)) : 'Pembukaan Penawaran';
+  const metaChips = ''+
+    (info.metode?'<span class="pnw-hero-chip">'+fkEsc(info.metode)+'</span>':'')+
+    (info.penyampaian?'<span class="pnw-hero-chip">'+fkEsc(info.penyampaian)+'</span>':'')+
+    '<span class="pnw-hero-chip">'+(two?'Dua Sampul':'Satu Sampul')+'</span>';
+
+  let html='<div class="pnw-panel">';
+  // HERO
+  html+='<div class="pnw-hero">'+
+    '<div class="pnw-hero-glow"></div>'+
+    '<div class="pnw-hero-main">'+
+      '<div class="pnw-hero-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg></div>'+
+      '<div class="pnw-hero-text">'+
+        '<div class="pnw-hero-kicker">Pemeriksaan Kelengkapan Dokumen Penawaran</div>'+
+        '<div class="pnw-hero-title">'+fkEsc(info.nama||'Pekerjaan')+'</div>'+
+        '<div class="pnw-hero-meta">'+metaChips+'</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="pnw-hero-picker">'+
+      '<span class="pnw-picker-lbl">Pilihan Penyedia</span>'+
+      pnwPenyediaSelectHtml()+
+    '</div>'+
+  '</div>';
+  // SUB-BAR: sampul aktif + progres penyedia
+  html+='<div class="pnw-subbar">'+
+    '<div class="pnw-subbar-left"><span class="pnw-subbar-title">'+fkEsc(subJudul)+'</span>'+
+      '<span class="pnw-active-penyedia"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'+fkEsc(namaP)+'</span>'+
+    '</div>'+
+    '<div class="pnw-progress"><div class="pnw-progress-stats">'+
+        '<span class="pnw-pstat ada">Ada '+pg.ada+'</span>'+
+        '<span class="pnw-pstat no">Tidak Ada '+pg.tidak+'</span>'+
+        '<span class="pnw-pstat belum">Belum '+pg.belum+'</span>'+
+      '</div>'+
+      '<div class="pnw-progress-bar"><div class="pnw-progress-fill" style="width:'+pg.pct+'%"></div></div>'+
+    '</div>'+
+  '</div>';
+  if(two) html+=pnwSampulTabsHtml();
+  html+=pnwPeriksaTableHtml();
+  html+='</div>';
+  return html;
 }
 function pnwSetSampul(sk){ pnwActiveSampul=sk; renderPnwForm(); }
 function pnwSetPenyedia(i){ pnwActivePenyedia=i; renderPnwForm(); }
@@ -9645,14 +9758,22 @@ function pnwPeriksaTableHtml(){
   const kats=pnwSelectedKategori(st,sk);
   if(!kats.length) return '<div class="fkl-empty-note">Belum ada kategori dokumen untuk sampul ini.</div>';
   let rows='';
-  kats.forEach(kat=>{
+  kats.forEach((kat,ki)=>{
     const arr=st.syarat[sk][kat]||[];
-    rows+='<tr class="pnw-cat-row"><td colspan="4">'+fkEsc(kat)+'</td></tr>';
+    rows+='<tr class="pnw-cat-row"><td colspan="4"><span class="pnw-cat-idx">'+(ki+1)+'</span><span class="pnw-cat-name">'+fkEsc(kat)+'</span></td></tr>';
     arr.forEach((baris,i)=>{
       const uraian = baris && baris.trim() ? baris : '(persyaratan '+(i+1)+')';
       const cur=pnwGetPeriksa(sk,pidx,kat,baris);
       const yes=cur.ada===true, no=cur.ada===false;
-      rows+='<tr>'+
+      const rowCls = yes ? 'is-ada' : (no ? 'is-no' : '');
+      // Kolom Keterangan khusus untuk kategori Penawaran Harga (baris terkunci)
+      const isRAB = (kat==='Penawaran Harga' && baris==='Nilai RAB');
+      const isJangka = (kat==='Penawaran Harga' && baris==='Jangka Waktu Pelaksanaan');
+      let ketPh='Tambahkan keterangan…', ketOn='oninput="pnwSetKet(this)"', ketMode='';
+      if(isRAB){ ketPh='Isi Nilai Penawaran (dengan PPN)'; ketOn='oninput="onRupiahInput(this);pnwSetKet(this)"'; ketMode=' inputmode="numeric"'; }
+      else if(isJangka){ ketPh='Isi jangka waktu pelaksanaan'; }
+      const ketCell='<td class="pnw-ket"><input type="text"'+ketMode+' placeholder="'+fkEsc(ketPh)+'" data-sk="'+sk+'" data-pidx="'+pidx+'" data-kat="'+fkEsc(kat)+'" data-baris="'+fkEsc(baris)+'" value="'+fkEsc(cur.ket||'')+'" '+ketOn+'></td>';
+      rows+='<tr class="'+rowCls+'">'+
         '<td class="pnw-no">'+(i+1)+'</td>'+
         '<td class="pnw-uraian">'+fkEsc(uraian)+'</td>'+
         '<td class="pnw-ck">'+
@@ -9661,11 +9782,11 @@ function pnwPeriksaTableHtml(){
             '<button type="button" class="fkl-ada-btn no'+(no?' on':'')+'" onclick="pnwSetAda(\''+sk+'\','+pidx+',\''+fkEscJs(kat)+'\',\''+fkEscJs(baris)+'\',false)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M18 6 6 18M6 6l12 12"/></svg>Tidak Ada</button>'+
           '</span>'+
         '</td>'+
-        '<td class="pnw-ket"><input type="text" placeholder="Keterangan" data-sk="'+sk+'" data-pidx="'+pidx+'" data-kat="'+fkEsc(kat)+'" data-baris="'+fkEsc(baris)+'" value="'+fkEsc(cur.ket||'')+'" oninput="pnwSetKet(this)"></td>'+
+        ketCell+
       '</tr>';
     });
   });
-  return '<div class="table-wrap"><table class="pnw-periksa-table"><thead><tr>'+
+  return '<div class="table-wrap pnw-table-wrap"><table class="pnw-periksa-table"><thead><tr>'+
     '<th class="pnw-no">No</th><th class="pnw-uraian">Uraian Persyaratan</th>'+
     '<th class="pnw-ck">Kelengkapan Dokumen</th><th class="pnw-ket">Keterangan</th>'+
     '</tr></thead><tbody>'+rows+'</tbody></table></div>';
@@ -9706,15 +9827,7 @@ function renderPnwForm(){
   }
   else{
     if(sub) sub.textContent='Langkah 4 dari 4 — Pemeriksaan kelengkapan dokumen penawaran';
-    const judul = pnwIsTwoSampul(st) ? ('Pemeriksaan — '+pnwSampulLabel(pnwActiveSampul)) : 'Pemeriksaan Kelengkapan Dokumen Penawaran';
-    html+='<div class="form-card">';
-    html+='<div class="pnw-periksa-top">'+
-        '<div class="pnw-periksa-title">'+FKL_SEC_ICON+fkEsc(judul)+'</div>'+
-        '<div class="pnw-periksa-picker"><span class="pnw-picker-lbl">Pilihan Penyedia</span>'+pnwPenyediaTabsHtml()+'</div>'+
-      '</div>';
-    html+=pnwSampulTabsHtml();
-    html+=pnwPeriksaTableHtml();
-    html+='</div>';
+    html+=pnwPeriksaPanelHtml();
     html+=pnwActionsHtml({back:true, save:true});
   }
   cont.innerHTML=html;
