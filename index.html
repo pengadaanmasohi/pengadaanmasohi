@@ -2459,6 +2459,61 @@ table.hps-sum tr.grand td.val{color:#0d7a3f;font-size:13.5px}
 .hps-terbilang{padding:11px 15px;font-size:11.5px;color:#2b3f48;background:#f6fafb;border-top:1px solid #eef4f5;line-height:1.55}
 .hps-terbilang b{color:var(--teal-dark)}
 @media(max-width:640px){ table.hps-uraian{min-width:860px} }
+
+/* ==================== ANALISA HARGA SATUAN ==================== */
+/* Kotak input Sumber Referensi (jumlah menyesuaikan Jumlah Referensi) */
+.ana-ref-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-top:4px}
+.ana-ref-cell{display:flex;align-items:center;gap:8px;background:#f6fbfc;border:1px solid #dde9eb;border-radius:11px;padding:8px 10px}
+.ana-ref-cell .rn{flex:0 0 auto;width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,var(--teal),var(--cyan));color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;font-family:'Plus Jakarta Sans'}
+.ana-ref-cell input{flex:1 1 auto;min-width:0;border:1px solid #cdd9de;border-radius:8px;padding:6px 9px;font-size:12px;background:#fff;color:var(--ink)}
+.ana-ref-cell input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,124,134,.15)}
+
+/* Toolbar Analisa Harga Satuan (langkah 2): pemilih Referensi + Metode Perhitungan */
+.ana-toolbar{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;justify-content:flex-end;margin:0 0 14px}
+.ana-toolbar .ana-tb-field{display:flex;flex-direction:column;gap:4px;min-width:170px}
+.ana-toolbar .ana-tb-field label{font-size:10px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;color:#7c8a8f}
+.ana-toolbar .ana-tb-field select{border:1px solid #cdd9de;border-radius:9px;padding:8px 10px;font-size:12px;background:#fff;color:var(--ink);font-family:inherit}
+.ana-toolbar .ana-tb-field select:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,124,134,.15)}
+.ana-ref-pill{margin-right:auto;display:flex;align-items:center;gap:8px;background:linear-gradient(180deg,#f3fbfc,#e9f6f7);border:1px dashed #a9d3d8;border-radius:11px;padding:8px 12px;font-size:11px;color:var(--teal-dark);font-weight:700}
+.ana-ref-pill b{font-family:'Plus Jakarta Sans';font-weight:800}
+
+/* Tabel input analisa per-referensi */
+.ana-uraian-wrap{overflow-x:auto;border:1px solid #dde9eb;border-radius:14px;box-shadow:0 2px 8px rgba(16,40,50,.05)}
+table.ana-uraian{border-collapse:separate;border-spacing:0;width:100%;min-width:1020px}
+table.ana-uraian thead th{background:linear-gradient(90deg,#0E7C86,#0b6a73);color:#fff;font-weight:800;font-size:10.5px;text-transform:uppercase;letter-spacing:.2px;padding:9px 8px;text-align:center;white-space:nowrap;vertical-align:middle}
+table.ana-uraian thead th.c-ur{text-align:left;min-width:220px}
+table.ana-uraian tbody td{border-bottom:1px solid #e8f0f1;padding:7px 8px;vertical-align:middle;font-size:12px}
+table.ana-uraian tbody tr:last-child td{border-bottom:none}
+table.ana-uraian tbody tr:nth-child(even){background:#f8fbfc}
+table.ana-uraian td.c-no{text-align:center;font-weight:800;color:#0b6a73;width:40px}
+table.ana-uraian textarea,table.ana-uraian input,table.ana-uraian select{width:100%;border:1px solid #cdd9de;border-radius:9px;padding:7px 8px;font-size:12px;background:#fff;font-family:inherit;color:var(--ink)}
+table.ana-uraian textarea{resize:vertical;min-height:36px;line-height:1.45}
+table.ana-uraian td.c-kel input{min-width:92px}
+table.ana-uraian td.c-sat input{text-align:center;min-width:58px}
+table.ana-uraian td.c-vol input{text-align:center;min-width:58px}
+table.ana-uraian td.c-money input{text-align:right;min-width:118px}
+table.ana-uraian td.c-method select{min-width:120px}
+table.ana-uraian textarea:focus,table.ana-uraian input:focus,table.ana-uraian select:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,124,134,.15)}
+table.ana-uraian td.c-calc{text-align:right;font-weight:800;color:#0b6a73;white-space:nowrap;background:#f2fafb;min-width:118px}
+
+/* Kartu rekap hasil analisa (Rata-rata / Terendah antar referensi) */
+.ana-res-card{margin-top:16px;border:1px solid #dde9eb;border-radius:14px;overflow:hidden}
+.ana-res-head{display:flex;align-items:center;gap:9px;padding:11px 15px;background:linear-gradient(90deg,#0E7C86,#0b6a73);color:#fff;font-weight:800;font-size:12.5px}
+.ana-res-head svg{width:16px;height:16px}
+.ana-res-wrap{overflow-x:auto}
+table.ana-res{width:100%;border-collapse:separate;border-spacing:0;min-width:760px}
+table.ana-res thead th{background:#eef6f7;color:#5a6b70;font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:.3px;padding:8px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid #e2edee}
+table.ana-res thead th.c-ur{text-align:left}
+table.ana-res thead th.c-no{text-align:center;width:40px}
+table.ana-res tbody td{padding:8px 10px;font-size:12px;border-bottom:1px solid #eef4f5;text-align:right;white-space:nowrap;color:#2b3f48}
+table.ana-res tbody td.c-no{text-align:center;font-weight:800;color:#0b6a73}
+table.ana-res tbody td.c-ur{text-align:left;font-weight:600}
+table.ana-res tbody td.c-res{font-weight:800;color:#0b3d42;background:#f2fafb}
+table.ana-res tbody tr:last-child td{border-bottom:none}
+.ana-res-hint{padding:10px 15px;font-size:11px;color:#5a6b70;background:#f6fafb;border-top:1px solid #eef4f5;line-height:1.55}
+.ana-res-hint b{color:var(--teal-dark)}
+.ana-method-chip{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;color:#0b6a73;background:#dff1f2;padding:2px 8px;border-radius:20px;margin-left:6px}
+@media(max-width:640px){ table.ana-uraian{min-width:940px} .ana-toolbar{justify-content:flex-start} }
 </style>
 </head>
 <body>
@@ -2628,9 +2683,13 @@ table.hps-sum tr.grand td.val{color:#0d7a3f;font-size:13.5px}
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                   Lihat HPS
                 </button>
-                <button class="topnav-item" data-role="admin" onclick="openHpsAnalisa()">
+                <button class="topnav-item" data-view="form-analisa" data-role="admin" onclick="openAnalisaInput()">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.8L7 14.3"/></svg>
-                  Analisa <span class="menu-soon">Segera</span>
+                  Hitung Analisa
+                </button>
+                <button class="topnav-item" data-view="analisa-view" data-role="admin" onclick="openAnalisaView()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                  Lihat Analisa
                 </button>
               </div>
             </div>
@@ -3535,6 +3594,52 @@ table.hps-sum tr.grand td.val{color:#0d7a3f;font-size:13.5px}
         </table>
       </div>
       <div class="pagination" id="hps-view-pagination"></div>
+    </div>
+  </section>
+
+  <!-- ============ ANALISA HARGA SATUAN — HITUNG ANALISA ============ -->
+  <section id="view-form-analisa" class="view">
+    <div class="page-head">
+      <div>
+        <h2 id="ana-title">Analisa Harga Satuan</h2>
+        <p id="ana-sub">Penyusunan analisa harga satuan berdasarkan referensi</p>
+      </div>
+    </div>
+    <div id="ana-content"></div>
+  </section>
+
+  <!-- ============ ANALISA HARGA SATUAN — LIHAT ANALISA ============ -->
+  <section id="view-analisa-view" class="view">
+    <div class="page-head">
+      <div>
+        <h2>Analisa Harga Satuan — Lihat Analisa <span class="count-badge" id="ana-view-count">0</span></h2>
+      </div>
+      <div class="filter-field toolbar-search pn-search-right search-elegant pn-head-search">
+        <div class="search-elegant-box">
+          <svg class="search-elegant-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input id="ana-view-search" type="text" placeholder="Cari Nama Pekerjaan" oninput="renderAnalisaView()">
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="col-no">No.</th>
+              <th class="col-nama-freeze">Nama Pekerjaan</th>
+              <th class="fkl-col-lokasi">Lokasi Pekerjaan</th>
+              <th>Metode Pengadaan</th>
+              <th style="text-align:center">Jml Barang/Jasa</th>
+              <th style="text-align:center">Jml Referensi</th>
+              <th class="col-date">Tgl. Analisa</th>
+              <th style="text-align:center;min-width:130px">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="ana-view-body"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="ana-view-pagination"></div>
     </div>
   </section>
 
@@ -4617,6 +4722,8 @@ function showView(name, loaderMsg, noLoader){
         if(name==='rho-view') renderRhoView();
         if(name==='form-hps') renderHpsForm();
         if(name==='hps-view') renderHpsView();
+        if(name==='form-analisa') renderAnalisaForm();
+        if(name==='analisa-view') renderAnalisaView();
     }catch(err){ console.error('showView error:', err); }
     if(!noLoader){ const wait=Math.max(0, 460-(Date.now()-t0)); setTimeout(hideLoader, wait); }
   };
@@ -11830,6 +11937,548 @@ function hpsPrint(){
 /* ##################### AKHIR MODUL HARGA PERKIRAAN SENDIRI #################### */
 
 
+/* ##################### MODUL ANALISA HARGA SATUAN #################### */
+/* Menu Analisa terdiri dari 2 langkah (mirip Hitung HPS):
+   Langkah 1 — Data Pekerjaan (tanpa Nama Pengguna/Pejabat) + Jumlah Barang/Jasa,
+               Jumlah Referensi (1..20) & Sumber Referensi (kotak menyesuaikan jumlah referensi).
+   Langkah 2 — Analisa Harga Satuan: pilih Referensi (kanan atas) untuk mengisi data per referensi,
+               Metode Perhitungan referensi (Sama → Rata-rata/Terendah utk semua uraian; Berbeda → per uraian).
+   Semua hitungan mengabaikan nilai 0 / tidak ada data. */
+
+const ANA_SEC_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.8L7 14.3"/></svg>';
+const ANA_REF_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>';
+
+/* Field data pekerjaan (langkah 1) — tanpa Nama Pengguna/Pejabat. */
+const ANA_INFO_FIELDS = [
+  {key:'nama',         label:'Nama Pekerjaan',            type:'text', span:2},
+  {key:'lokasi',       label:'Lokasi Pekerjaan',          type:'text', span:2},
+  {key:'nilai',        label:'Perkiraan Nilai Pekerjaan', type:'num'},
+  {key:'no_anggaran',  label:'No. Anggaran',              type:'text'},
+  {key:'tgl_anggaran', label:'Tgl. Anggaran',             type:'date'},
+  {key:'metode',       label:'Metode Pengadaan',          type:'select', options:PNW_METODE},
+  {key:'tgl_analisa',  label:'Tgl. Analisa',              type:'date'}
+];
+
+const ANA_MAX_ITEM = 150;   // jumlah barang/jasa (uraian)
+const ANA_MAX_REF  = 20;    // jumlah referensi
+
+/* ---------- Struktur data per referensi ----------
+   Tiap referensi punya array items sepanjang jumlahItem:
+   { kelompok, uraian, sat, vol, hargaBarang, hargaJasa, method } (method dipakai saat metodeRef='Berbeda') */
+function anaBlankRefItem(){ return {kelompok:'', uraian:'', sat:'', vol:'', hargaBarang:'', hargaJasa:'', method:'Rata-rata'}; }
+function anaNormRefItem(c){ c=c||{}; return {
+  kelompok:c.kelompok||'', uraian:c.uraian||'', sat:c.sat||'',
+  vol:(c.vol!=null?c.vol:''),
+  hargaBarang:(c.hargaBarang!=null?c.hargaBarang:''),
+  hargaJasa:(c.hargaJasa!=null?c.hargaJasa:''),
+  method:(c.method==='Terendah'?'Terendah':'Rata-rata')
+}; }
+function anaBlankRef(){ return { items:[anaBlankRefItem()] }; }
+
+/* State:
+   info      : data pekerjaan
+   jumlahItem: jumlah barang/jasa (1..150)
+   jumlahRef : jumlah referensi (1..20)
+   sumber    : [nama sumber referensi, ...] sepanjang jumlahRef
+   refs      : [ {items:[...]}, ... ] sepanjang jumlahRef; tiap items sepanjang jumlahItem
+   metodeRef : 'Sama' | 'Berbeda'
+   metodeAll : 'Rata-rata' | 'Terendah' (dipakai saat metodeRef='Sama')
+   aktifRef  : index referensi yang sedang diisi (0-based)
+*/
+function anaBlankState(){ return {
+  info:{}, jumlahItem:1, jumlahRef:1,
+  sumber:[''], refs:[anaBlankRef()],
+  metodeRef:'Sama', metodeAll:'Rata-rata', aktifRef:0
+}; }
+let anaState = anaBlankState();
+let anaStep = 1;             // 1..2
+let anaEditId = null;
+let anaPreviewState = null;
+
+const ANA_STATE_KEY = 'analisa_state_v1';
+function anaLoadState(){ try{ const raw=ssGet(ANA_STATE_KEY); if(raw){ const o=JSON.parse(raw); if(o&&o.info) anaState=o; } }catch(e){} }
+function anaSaveState(){ try{ ssSet(ANA_STATE_KEY, JSON.stringify(anaState)); }catch(e){} }
+anaLoadState();
+function anaActiveState(){ return anaPreviewState || anaState; }
+function anaMarkActive(){ document.querySelectorAll('.topnav-item[data-view="form-analisa"]').forEach(b=>b.classList.add('active')); }
+
+/* Sinkronkan panjang array sumber/refs/items agar konsisten dgn jumlahRef & jumlahItem. */
+function anaEnsure(){
+  const st=anaState;
+  const nItem=Math.max(1,Math.min(ANA_MAX_ITEM, parseInt(st.jumlahItem,10)||1)); st.jumlahItem=nItem;
+  const nRef =Math.max(1,Math.min(ANA_MAX_REF,  parseInt(st.jumlahRef,10)||1));  st.jumlahRef=nRef;
+  // sumber
+  if(!Array.isArray(st.sumber)) st.sumber=[];
+  const curS=st.sumber.slice(); st.sumber=[]; for(let i=0;i<nRef;i++) st.sumber.push(curS[i]!=null?curS[i]:'');
+  // refs
+  if(!Array.isArray(st.refs)) st.refs=[];
+  const curR=st.refs.slice(); st.refs=[];
+  for(let r=0;r<nRef;r++){
+    const src=(curR[r]&&Array.isArray(curR[r].items))?curR[r].items:[];
+    const items=[]; for(let i=0;i<nItem;i++) items.push(anaNormRefItem(src[i]));
+    st.refs.push({items});
+  }
+  if(st.metodeRef!=='Berbeda') st.metodeRef='Sama';
+  if(st.metodeAll!=='Terendah') st.metodeAll='Rata-rata';
+  st.aktifRef=Math.max(0,Math.min(nRef-1, parseInt(st.aktifRef,10)||0));
+}
+
+/* ---------- Angka & format (pakai helper HPS bila ada) ---------- */
+function anaNum(v){ if(v===''||v==null) return 0; if(typeof v==='number') return v; const n=parseFloat(String(v).replace(/,/g,'.')); return isNaN(n)?0:n; }
+function anaRp(n){ n=Math.round(anaNum(n)); return n>0 ? ('Rp '+n.toLocaleString('id-ID')) : '–'; }
+
+/* ---------- Penyimpanan (Supabase + fallback lokal) ---------- */
+const ANA_TABLE = 'analisa_harga_satuan';
+const ANA_LS_KEY = 'analisa_records_v1';
+let records_ana = [];
+let anaUseLocal = false;
+function anaSupaReady(){ return !!(USE_SUPABASE && db); }
+function anaLocalLoad(){ try{ const r=localStorage.getItem(ANA_LS_KEY); records_ana = r?JSON.parse(r):[]; }catch(e){ records_ana=[]; } }
+function anaLocalSave(){ try{ localStorage.setItem(ANA_LS_KEY, JSON.stringify(records_ana)); }catch(e){} }
+const StoreAna = {
+  async list(){
+    if(anaSupaReady() && !anaUseLocal){
+      try{ const {data,error}=await db.from(ANA_TABLE).select('*').order('created_at',{ascending:false}); if(error) throw error; return data||[]; }
+      catch(err){ console.warn('Analisa: Supabase list gagal, memakai penyimpanan lokal —', err&&err.message); anaUseLocal=true; }
+    }
+    anaLocalLoad(); return records_ana.slice();
+  },
+  async create(rec){
+    if(anaSupaReady() && !anaUseLocal){
+      try{ const {data,error}=await db.from(ANA_TABLE).insert(rec).select(); if(error) throw error; return data&&data[0]; }
+      catch(err){ console.warn('Analisa: Supabase create gagal, memakai penyimpanan lokal —', err&&err.message); anaUseLocal=true; }
+    }
+    anaLocalLoad(); const row=Object.assign({id:'ana_'+Date.now()+'_'+Math.random().toString(36).slice(2,7), created_at:new Date().toISOString()}, rec);
+    records_ana.unshift(row); anaLocalSave(); return row;
+  },
+  async update(rid, rec){
+    if(anaSupaReady() && !anaUseLocal){
+      try{ const {error}=await db.from(ANA_TABLE).update(rec).eq('id',rid); if(error) throw error; return; }
+      catch(err){ console.warn('Analisa: Supabase update gagal, memakai penyimpanan lokal —', err&&err.message); anaUseLocal=true; }
+    }
+    anaLocalLoad(); records_ana=records_ana.map(r=>String(r.id)===String(rid)?Object.assign({},r,rec):r); anaLocalSave();
+  },
+  async remove(rid){
+    if(anaSupaReady() && !anaUseLocal){
+      try{ const {error}=await db.from(ANA_TABLE).delete().eq('id',rid); if(error) throw error; return; }
+      catch(err){ console.warn('Analisa: Supabase remove gagal, memakai penyimpanan lokal —', err&&err.message); anaUseLocal=true; }
+    }
+    anaLocalLoad(); records_ana=records_ana.filter(r=>String(r.id)!==String(rid)); anaLocalSave();
+  }
+};
+async function refreshDataAnalisa(){
+  try{ records_ana = await StoreAna.list(); }
+  catch(err){ console.error(err); records_ana = records_ana||[]; }
+}
+
+/* ---------- Buka form / lihat data ---------- */
+function openAnalisaInput(editId){
+  if(!isAdmin()){ toast('Menu ini hanya untuk akun admin','warn'); return; }
+  anaPreviewState=null;
+  if(editId){
+    const rec=(records_ana||[]).find(r=>String(r.id)===String(editId));
+    anaEditId = rec ? rec.id : null;
+    anaState = rec ? anaRecordToState(rec) : anaBlankState();
+  }else{
+    anaEditId=null; anaState=anaBlankState();
+  }
+  anaStep=1; anaEnsure(); anaSaveState(); showView('form-analisa');
+}
+function openAnalisaView(){
+  if(!isAdmin()){ toast('Menu ini hanya untuk akun admin','warn'); return; }
+  refreshDataAnalisa().then(()=>showView('analisa-view'));
+}
+function anaRecordToState(rec){
+  const base=anaBlankState();
+  const s=(rec&&rec.state&&typeof rec.state==='object')?rec.state:{};
+  const st={
+    info: Object.assign({}, base.info, s.info||{}),
+    jumlahItem: Math.max(1,Math.min(ANA_MAX_ITEM, parseInt(s.jumlahItem,10)||1)),
+    jumlahRef:  Math.max(1,Math.min(ANA_MAX_REF,  parseInt(s.jumlahRef,10)||1)),
+    sumber: Array.isArray(s.sumber)?s.sumber.slice():[''],
+    refs: Array.isArray(s.refs)?s.refs.map(rf=>({items:(rf&&Array.isArray(rf.items))?rf.items.map(anaNormRefItem):[anaBlankRefItem()]})):[anaBlankRef()],
+    metodeRef: s.metodeRef==='Berbeda'?'Berbeda':'Sama',
+    metodeAll: s.metodeAll==='Terendah'?'Terendah':'Rata-rata',
+    aktifRef: parseInt(s.aktifRef,10)||0
+  };
+  const _save=anaState; anaState=st; anaEnsure(); const out=anaState; anaState=_save; return out;
+}
+
+/* ---------- Stepper ---------- */
+function anaStepperHtml(){
+  const steps=[['1','Data Pekerjaan'],['2','Analisa Harga Satuan']];
+  return '<div class="fkl-stepper">'+steps.map((s,i)=>{
+    const n=i+1;
+    const cls = n<anaStep ? 'done' : (n===anaStep ? 'active' : '');
+    const mark = n<anaStep ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg>' : s[0];
+    const line = i<steps.length-1 ? '<div class="fkl-step-line '+(n<anaStep?'done':'')+'"></div>' : '';
+    return '<div class="fkl-step '+cls+'"><div class="fkl-step-dot">'+mark+'</div><div class="fkl-step-name">'+s[1]+'</div></div>'+line;
+  }).join('')+'</div>';
+}
+
+/* ================= LANGKAH 1 ================= */
+function anaInfoInputHtml(f){
+  const id='ana-'+f.key;
+  const span=f.span?(' style="grid-column:span '+f.span+'"'):'';
+  let ctl;
+  if(f.type==='select') ctl='<select id="'+id+'" onchange="anaOnInfoChange()"><option value="">— Pilih —</option>'+(f.options||[]).map(o=>'<option>'+fkEsc(o)+'</option>').join('')+'</select>';
+  else if(f.type==='num') ctl='<input id="'+id+'" type="text" inputmode="numeric" placeholder="Rp" oninput="onRupiahInput(this)" onchange="anaOnInfoChange()">';
+  else if(f.type==='date') ctl='<input id="'+id+'" type="date" onchange="anaOnInfoChange()">';
+  else ctl='<input id="'+id+'" type="text" oninput="anaOnInfoChange()">';
+  return '<div class="field"'+span+'><label>'+fkEsc(f.label)+'</label>'+ctl+'</div>';
+}
+function anaCountItemFieldHtml(){
+  const st=anaState;
+  let opts=''; for(let i=1;i<=ANA_MAX_ITEM;i++) opts+='<option value="'+i+'"'+(i===st.jumlahItem?' selected':'')+'>'+i+' Item</option>';
+  return '<div class="field"><label>Jumlah Barang/Jasa</label><select id="ana-jumlahitem" onchange="anaOnJumlahItemChange(this)">'+opts+'</select></div>';
+}
+function anaCountRefFieldHtml(){
+  const st=anaState;
+  let opts=''; for(let i=1;i<=ANA_MAX_REF;i++) opts+='<option value="'+i+'"'+(i===st.jumlahRef?' selected':'')+'>'+i+' Referensi</option>';
+  return '<div class="field"><label>Jumlah Referensi</label><select id="ana-jumlahref" onchange="anaOnJumlahRefChange(this)">'+opts+'</select></div>';
+}
+function anaSumberGridHtml(){
+  const st=anaState;
+  let cells='';
+  for(let i=0;i<st.jumlahRef;i++){
+    cells+='<div class="ana-ref-cell"><span class="rn">'+(i+1)+'</span>'+
+      '<input type="text" data-i="'+i+'" placeholder="Sumber referensi ke-'+(i+1)+'" value="'+fkEsc(st.sumber[i]||'')+'" oninput="anaOnSumber(this)"></div>';
+  }
+  return '<div class="ana-ref-grid">'+cells+'</div>';
+}
+function anaOnInfoChange(){
+  const st=anaState;
+  ANA_INFO_FIELDS.forEach(f=>{ const el=document.getElementById('ana-'+f.key); if(!el) return; st.info[f.key]=(f.type==='num')?parseRupiah(el.value):el.value.trim(); });
+  anaSaveState();
+}
+function anaOnJumlahItemChange(el){ anaState.jumlahItem=Math.max(1,Math.min(ANA_MAX_ITEM,parseInt(el.value,10)||1)); anaEnsure(); anaSaveState(); }
+function anaOnJumlahRefChange(el){
+  anaState.jumlahRef=Math.max(1,Math.min(ANA_MAX_REF,parseInt(el.value,10)||1)); anaEnsure(); anaSaveState();
+  // perbarui grid sumber referensi seketika
+  const wrap=document.getElementById('ana-sumber-wrap'); if(wrap) wrap.innerHTML=anaSumberGridHtml();
+}
+function anaOnSumber(el){ const i=+el.dataset.i; if(anaState.sumber[i]!=null||i<anaState.jumlahRef){ anaState.sumber[i]=el.value; anaSaveState(); } }
+
+/* ================= LANGKAH 2: ANALISA HARGA SATUAN ================= */
+/* Nama tampil untuk sebuah referensi (pakai sumber bila diisi). */
+function anaRefLabel(r){ const s=(anaState.sumber[r]||'').trim(); return s?s:('Referensi '+(r+1)); }
+
+/* Toolbar: pemilih Referensi + Metode Perhitungan (Sama/Berbeda) + (Rata-rata/Terendah bila Sama). */
+function anaToolbarHtml(){
+  const st=anaState;
+  let refOpts=''; for(let r=0;r<st.jumlahRef;r++) refOpts+='<option value="'+r+'"'+(r===st.aktifRef?' selected':'')+'>'+fkEsc(anaRefLabel(r))+'</option>';
+  let html='<div class="ana-toolbar">';
+  html+='<div class="ana-ref-pill">'+ANA_REF_ICON+'<span>Mengisi data untuk: <b>'+fkEsc(anaRefLabel(st.aktifRef))+'</b></span></div>';
+  html+='<div class="ana-tb-field"><label>Referensi</label><select id="ana-aktifref" onchange="anaOnAktifRef(this)">'+refOpts+'</select></div>';
+  html+='<div class="ana-tb-field"><label>Metode Perhitungan</label><select id="ana-metoderef" onchange="anaOnMetodeRef(this)">'+
+        '<option value="Sama"'+(st.metodeRef==='Sama'?' selected':'')+'>Sama</option>'+
+        '<option value="Berbeda"'+(st.metodeRef==='Berbeda'?' selected':'')+'>Berbeda</option></select></div>';
+  if(st.metodeRef==='Sama'){
+    html+='<div class="ana-tb-field"><label>Metode (Semua Uraian)</label><select id="ana-metodeall" onchange="anaOnMetodeAll(this)">'+
+          '<option value="Rata-rata"'+(st.metodeAll==='Rata-rata'?' selected':'')+'>Rata-rata</option>'+
+          '<option value="Terendah"'+(st.metodeAll==='Terendah'?' selected':'')+'>Terendah</option></select></div>';
+  }
+  html+='</div>';
+  return html;
+}
+function anaOnAktifRef(el){ anaState.aktifRef=Math.max(0,Math.min(anaState.jumlahRef-1,parseInt(el.value,10)||0)); anaSaveState(); anaRenderStep2Body(); }
+function anaOnMetodeRef(el){ anaState.metodeRef=(el.value==='Berbeda')?'Berbeda':'Sama'; anaSaveState(); anaRenderStep2Body(); }
+function anaOnMetodeAll(el){ anaState.metodeAll=(el.value==='Terendah')?'Terendah':'Rata-rata'; anaSaveState(); anaRenderResult(); }
+
+/* Tabel input untuk referensi aktif. Uraian sebanyak Jumlah Barang/Jasa.
+   Kolom Metode per-uraian hanya tampil saat metodeRef='Berbeda' (nilai disimpan pada referensi ke-0 sebagai acuan bersama). */
+function anaUraianTableHtml(){
+  const st=anaState; const r=st.aktifRef; const ref=st.refs[r]||anaBlankRef();
+  const showMethod=(st.metodeRef==='Berbeda');
+  let rows='';
+  ref.items.forEach((it,i)=>{
+    const m=(st.refs[0]&&st.refs[0].items[i]&&st.refs[0].items[i].method)||'Rata-rata';
+    rows+='<tr>'+
+      '<td class="c-no">'+(i+1)+'</td>'+
+      '<td class="c-kel"><input type="text" data-i="'+i+'" placeholder="mis. MATERIAL" value="'+fkEsc(it.kelompok||'')+'" oninput="anaOnCell(this,\'kelompok\')"></td>'+
+      '<td class="c-ur"><textarea data-i="'+i+'" rows="1" placeholder="Uraian pekerjaan / barang / jasa ke-'+(i+1)+'" oninput="anaOnCell(this,\'uraian\')">'+fkEsc(it.uraian||'')+'</textarea></td>'+
+      '<td class="c-sat"><input type="text" data-i="'+i+'" placeholder="Bh" value="'+fkEsc(it.sat||'')+'" oninput="anaOnCell(this,\'sat\')"></td>'+
+      '<td class="c-vol"><input type="text" inputmode="decimal" data-i="'+i+'" placeholder="0" value="'+fkEsc(it.vol!=null?String(it.vol):'')+'" oninput="anaOnVol(this)"></td>'+
+      '<td class="c-money"><input type="text" inputmode="numeric" data-i="'+i+'" placeholder="Rp" value="'+rupiahInputText(it.hargaBarang)+'" oninput="anaOnHarga(this,\'hargaBarang\')"></td>'+
+      '<td class="c-money"><input type="text" inputmode="numeric" data-i="'+i+'" placeholder="Rp" value="'+rupiahInputText(it.hargaJasa)+'" oninput="anaOnHarga(this,\'hargaJasa\')"></td>'+
+      (showMethod?('<td class="c-method"><select data-i="'+i+'" onchange="anaOnMethodRow(this)">'+
+        '<option value="Rata-rata"'+(m==='Rata-rata'?' selected':'')+'>Rata-rata</option>'+
+        '<option value="Terendah"'+(m==='Terendah'?' selected':'')+'>Terendah</option></select></td>'):'')+
+    '</tr>';
+  });
+  return '<div class="ana-uraian-wrap"><table class="ana-uraian"><thead>'+
+    '<tr><th class="c-no">No</th><th>Kelompok</th><th class="c-ur">Uraian Pekerjaan</th><th>Sat</th><th>Vol</th>'+
+      '<th>Harga Sat.<br>Barang (Rp)</th><th>Harga Sat.<br>Jasa (Rp)</th>'+
+      (showMethod?'<th>Metode<br>Perhitungan</th>':'')+'</tr>'+
+    '</thead><tbody>'+rows+'</tbody></table></div>';
+}
+/* Handler input sel: tulis ke referensi AKTIF; kolom struktur (kelompok/uraian/sat/vol)
+   disalin ke semua referensi agar konsisten antar sumber. */
+function anaOnCell(el,key){
+  const i=+el.dataset.i; const st=anaState;
+  if(key==='kelompok'||key==='uraian'||key==='sat'){
+    st.refs.forEach(rf=>{ if(rf.items[i]) rf.items[i][key]=el.value; });
+  }else{
+    const ref=st.refs[st.aktifRef]; if(ref&&ref.items[i]) ref.items[i][key]=el.value;
+  }
+  anaSaveState();
+}
+function anaOnVol(el){
+  let v=el.value.replace(/[^0-9.,]/g,'').replace(/,/g,'.');
+  const parts=v.split('.'); if(parts.length>2) v=parts[0]+'.'+parts.slice(1).join('');
+  el.value=v; const i=+el.dataset.i; const st=anaState;
+  st.refs.forEach(rf=>{ if(rf.items[i]) rf.items[i].vol=v; });   // vol sama utk semua referensi
+  anaSaveState(); anaRenderResult();
+}
+function anaOnHarga(el,key){
+  onRupiahInput(el); const i=+el.dataset.i; const ref=anaState.refs[anaState.aktifRef];
+  if(ref&&ref.items[i]){ ref.items[i][key]=parseRupiah(el.value); anaSaveState(); anaRenderResult(); }
+}
+function anaOnMethodRow(el){
+  const i=+el.dataset.i; const v=(el.value==='Terendah')?'Terendah':'Rata-rata';
+  anaState.refs.forEach(rf=>{ if(rf.items[i]) rf.items[i].method=v; });
+  anaSaveState(); anaRenderResult();
+}
+
+/* ---------- Perhitungan hasil (abaikan nilai 0 / kosong) ---------- */
+/* Kumpulkan harga (barang/jasa) untuk uraian ke-i dari SEMUA referensi, buang 0/kosong. */
+function anaCollect(i, key){
+  const vals=[];
+  (anaState.refs||[]).forEach(rf=>{ const it=rf.items[i]; if(!it) return; const v=anaNum(it[key]); if(v>0) vals.push(v); });
+  return vals;
+}
+function anaAvg(vals){ if(!vals.length) return 0; return vals.reduce((a,b)=>a+b,0)/vals.length; }
+function anaMin(vals){ if(!vals.length) return 0; return Math.min.apply(null,vals); }
+/* Metode efektif utk uraian ke-i */
+function anaMethodFor(i){
+  if(anaState.metodeRef==='Sama') return anaState.metodeAll;
+  const m=(anaState.refs[0]&&anaState.refs[0].items[i]&&anaState.refs[0].items[i].method)||'Rata-rata';
+  return m==='Terendah'?'Terendah':'Rata-rata';
+}
+function anaResultFor(i){
+  const method=anaMethodFor(i);
+  const barangVals=anaCollect(i,'hargaBarang'), jasaVals=anaCollect(i,'hargaJasa');
+  const calc=(vals)=> method==='Terendah'?anaMin(vals):anaAvg(vals);
+  const hb=Math.round(calc(barangVals)), hj=Math.round(calc(jasaVals));
+  return {method, hargaBarang:hb, hargaJasa:hj, total:hb+hj};
+}
+
+/* Kartu hasil analisa (per uraian: harga barang & jasa hasil metode + total). */
+function anaResultCardHtml(){
+  return '<div class="ana-res-card" id="ana-res-card">'+
+    '<div class="ana-res-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.8L7 14.3"/></svg>Hasil Analisa Harga Satuan</div>'+
+    '<div id="ana-res-body"></div></div>';
+}
+function anaRenderResult(){
+  const body=document.getElementById('ana-res-body'); if(!body) return;
+  const st=anaState;
+  const struct=(st.refs[0]&&st.refs[0].items)||[];
+  let rows='';
+  struct.forEach((it,i)=>{
+    const res=anaResultFor(i);
+    const uraian=(it.uraian||'').trim()||('Uraian ke-'+(i+1));
+    const sat=(it.sat||'').trim();
+    rows+='<tr>'+
+      '<td class="c-no">'+(i+1)+'</td>'+
+      '<td class="c-ur">'+fkEsc(uraian)+(sat?(' <span style="color:#9aa7ab;font-weight:600">('+fkEsc(sat)+')</span>'):'')+
+        '<span class="ana-method-chip">'+res.method+'</span></td>'+
+      '<td>'+anaRp(res.hargaBarang)+'</td>'+
+      '<td>'+anaRp(res.hargaJasa)+'</td>'+
+      '<td class="c-res">'+anaRp(res.total)+'</td>'+
+    '</tr>';
+  });
+  const modeTxt = st.metodeRef==='Sama'
+    ? ('Metode <b>'+st.metodeAll+'</b> diterapkan ke semua uraian.')
+    : 'Metode ditentukan <b>per uraian</b> pada kolom Metode Perhitungan.';
+  body.innerHTML='<div class="ana-res-wrap"><table class="ana-res"><thead><tr>'+
+      '<th class="c-no">No</th><th class="c-ur">Uraian Pekerjaan</th>'+
+      '<th>Harga Sat. Barang</th><th>Harga Sat. Jasa</th><th>Harga Satuan (Total)</th>'+
+    '</tr></thead><tbody>'+(rows||'<tr><td colspan="5" style="text-align:center;color:#9aa7ab">Belum ada data</td></tr>')+'</tbody></table></div>'+
+    '<div class="ana-res-hint">'+modeTxt+' Nilai <b>0 / kosong</b> diabaikan dalam perhitungan (rata-rata dihitung hanya dari referensi yang terisi).</div>';
+}
+
+/* ---------- Render form ---------- */
+function anaRenderStep2Body(){
+  const holder=document.getElementById('ana-step2-body'); if(!holder) return;
+  holder.innerHTML=anaToolbarHtml()+anaUraianTableHtml();
+  anaRenderResult();
+}
+function renderAnalisaForm(){
+  anaMarkActive();
+  anaEnsure();
+  const tt=document.getElementById('ana-title'); if(tt) tt.textContent='Analisa Harga Satuan'+(anaEditId?' — Ubah Data':' — Hitung Analisa');
+  const sub=document.getElementById('ana-sub');
+  const cont=document.getElementById('ana-content'); if(!cont) return;
+  const st=anaState;
+  let html=anaStepperHtml();
+  if(anaStep===1){
+    if(sub) sub.textContent='Langkah 1 dari 2 — Data pekerjaan, jumlah barang/jasa & referensi';
+    html+='<div class="form-card"><div class="form-section-title">'+KR_SECTION_ICON+'Data Pekerjaan</div>'+
+      '<div class="form-flow" style="--cols:4">';
+    html+=ANA_INFO_FIELDS.map(anaInfoInputHtml).join('');
+    html+=anaCountItemFieldHtml();
+    html+=anaCountRefFieldHtml();
+    html+='</div></div>';
+    html+='<div class="form-card"><div class="form-section-title">'+ANA_REF_ICON+'Sumber Referensi <span class="fkl-count-chip">'+st.jumlahRef+' referensi</span></div>'+
+      '<div class="hps-hint">Isi nama/sumber tiap referensi (mis. Toko A, e-Katalog, Survei Pasar). Jumlah kotak menyesuaikan <b>Jumlah Referensi</b>. Nama ini muncul sebagai pilihan pada langkah Analisa Harga Satuan.</div>'+
+      '<div id="ana-sumber-wrap">'+anaSumberGridHtml()+'</div></div>';
+    html+=anaActionsHtml({back:false});
+  } else {
+    if(sub) sub.textContent='Langkah 2 dari 2 — Isi harga per referensi, tentukan metode perhitungan';
+    html+='<div class="form-card"><div class="form-section-title">'+ANA_SEC_ICON+'Analisa Harga Satuan '+
+      '<span class="fkl-count-chip">'+st.jumlahItem+' uraian • '+st.jumlahRef+' referensi</span></div>'+
+      '<div class="hps-hint">Pilih <b>Referensi</b> (kanan atas) untuk mengisi harganya. Kolom <b>Kelompok/Uraian/Sat/Vol</b> berlaku sama untuk semua referensi; <b>Harga Satuan</b> diisi per referensi. <b>Metode Perhitungan: Sama</b> → satu metode (Rata-rata/Terendah) untuk semua uraian; <b>Berbeda</b> → metode diatur per uraian. Nilai 0/kosong diabaikan.</div>'+
+      '<div id="ana-step2-body"></div>'+
+      anaResultCardHtml()+'</div>';
+    html+=anaActionsHtml({back:true, save:true});
+  }
+  cont.innerHTML=html;
+  if(anaStep===1){
+    ANA_INFO_FIELDS.forEach(f=>{ const el=document.getElementById('ana-'+f.key); if(!el) return; const v=st.info[f.key]; el.value=(f.type==='num')?rupiahInputText(v):(v!=null?v:''); });
+  } else {
+    anaRenderStep2Body();
+  }
+}
+function anaActionsHtml(o){
+  o=o||{};
+  let left='<button class="btn btn-ghost" onclick="anaBatal()">'+FKL_IC_X+'Batal</button>';
+  let right='';
+  if(o.back) right+='<button class="btn btn-light" onclick="anaBack()">'+FKL_IC_BACK+'Kembali</button>';
+  if(o.save) right+='<button class="btn btn-green" onclick="anaSimpan()">'+FKL_IC_SAVE+'Simpan</button>';
+  else right+='<button class="btn btn-teal" onclick="anaNext()">Selanjutnya'+FKL_IC_NEXT+'</button>';
+  return '<div class="fkl-actions"><div class="fkl-actions-left">'+left+'</div><div class="fkl-actions-right">'+right+'</div></div>';
+}
+
+/* ---------- Navigasi ---------- */
+function anaNext(){
+  const st=anaState;
+  if(anaStep===1){
+    anaOnInfoChange();
+    if(!String(st.info.nama||'').trim()){ toast('Nama Pekerjaan wajib diisi','warn'); return; }
+    anaEnsure(); anaStep=2;
+  }
+  renderAnalisaForm(); anaScrollTop();
+}
+function anaBack(){ if(anaStep>1){ anaStep--; renderAnalisaForm(); anaScrollTop(); } }
+function anaScrollTop(){ const v=document.getElementById('view-form-analisa'); if(v) v.scrollIntoView({behavior:'smooth',block:'start'}); }
+function anaBatal(){
+  openConfirm({ icon:'del', title:'Batalkan Proses',
+    text:'Batalkan proses ini? Data yang belum disimpan akan hilang.',
+    onYes:()=>{ anaEditId=null; anaState=anaBlankState(); anaSaveState(); anaStep=1; openAnalisaView(); toast('Proses dibatalkan','ok'); }
+  });
+}
+
+/* ---------- Simpan ---------- */
+async function anaSimpan(){
+  if(!requireInput()) return;
+  const st=anaState; const info=st.info||{}; const nama=String(info.nama||'').trim();
+  if(!nama){ toast('Nama Pekerjaan wajib diisi','warn'); anaStep=1; renderAnalisaForm(); return; }
+  anaEnsure();
+  // nilai_total = jumlah (harga satuan total hasil analisa × vol) utk semua uraian
+  let nilaiTotal=0;
+  const struct=(st.refs[0]&&st.refs[0].items)||[];
+  struct.forEach((it,i)=>{ const res=anaResultFor(i); nilaiTotal += Math.round(res.total*anaNum(it.vol)); });
+  const rec={
+    nama_pekerjaan: nama,
+    lokasi: info.lokasi||'',
+    metode: info.metode||'',
+    jumlah_item: st.jumlahItem,
+    jumlah_referensi: st.jumlahRef,
+    nilai_total: nilaiTotal,
+    tgl_analisa: info.tgl_analisa||'',
+    tgl_input: (new Date()).toISOString().slice(0,10),
+    state: JSON.parse(JSON.stringify(st))
+  };
+  try{
+    await withActionLoader(anaEditId?'Menyimpan perubahan':'Menyimpan', async()=>{
+      if(anaEditId){ await StoreAna.update(anaEditId, rec); }
+      else { await StoreAna.create(rec); }
+      await refreshDataAnalisa();
+    });
+  }catch(err){ console.error(err); toast('Gagal menyimpan: '+errMsg(err),'err'); return; }
+  toast(anaEditId?'Data berhasil diperbarui':'Data berhasil disimpan','ok');
+  anaEditId=null; anaState=anaBlankState(); anaSaveState(); anaStep=1;
+  showView('analisa-view');
+}
+
+/* ================= LIHAT ANALISA ================= */
+let anaViewPage=1;
+const ANA_VIEW_PAGE_SIZE=8;
+function anaDateLong(s){ return pnwDateLong(s); }
+function anaViewRows(){
+  let rows=(records_ana||[]).slice();
+  const fs=(document.getElementById('ana-view-search')?.value||'').toLowerCase().trim();
+  if(fs) rows=rows.filter(r=>String(r.nama_pekerjaan||(r.state&&r.state.info&&r.state.info.nama)||'').toLowerCase().includes(fs));
+  return rows;
+}
+function anaEmptyRow(){
+  return '<tr><td colspan="8"><div class="empty">'+
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/></svg>'+
+    '<div>Data tidak tersedia</div></div></td></tr>';
+}
+function renderAnalisaView(){
+  const tb=document.getElementById('ana-view-body');
+  const pg=document.getElementById('ana-view-pagination');
+  const cEl=document.getElementById('ana-view-count');
+  if(!tb) return;
+  const rows=anaViewRows();
+  if(cEl) cEl.textContent=rows.length;
+  if(!rows.length){ tb.innerHTML=anaEmptyRow(); if(pg) pg.innerHTML=''; return; }
+  const totalPages=Math.max(1,Math.ceil(rows.length/ANA_VIEW_PAGE_SIZE));
+  if(anaViewPage>totalPages) anaViewPage=totalPages;
+  if(anaViewPage<1) anaViewPage=1;
+  const start=(anaViewPage-1)*ANA_VIEW_PAGE_SIZE;
+  const pageRows=rows.slice(start,start+ANA_VIEW_PAGE_SIZE);
+  tb.innerHTML=pageRows.map((r,i)=>{
+    const stt=r.state||{}; const info=stt.info||{};
+    const nama=r.nama_pekerjaan||info.nama||'—';
+    const lokasi=(r.lokasi||info.lokasi||'').trim();
+    const metode=r.metode||info.metode||'';
+    const ji=(r.jumlah_item!=null)?r.jumlah_item:(stt.jumlahItem||0);
+    const jr=(r.jumlah_referensi!=null)?r.jumlah_referensi:(stt.jumlahRef||0);
+    const tgl=r.tgl_analisa||info.tgl_analisa||'';
+    const rid=fkEsc(String(r.id));
+    return '<tr>'+
+      '<td class="col-no">'+(start+i+1)+'</td>'+
+      '<td class="wrap-cell col-nama-freeze">'+fkEsc(nama)+'</td>'+
+      '<td class="fkl-col-lokasi">'+fkEsc(lokasi||'—')+'</td>'+
+      '<td>'+fkEsc(metode||'—')+'</td>'+
+      '<td style="text-align:center">'+ji+'</td>'+
+      '<td style="text-align:center">'+jr+'</td>'+
+      '<td class="col-date">'+fkEsc(tgl?anaDateLong(tgl):'—')+'</td>'+
+      '<td><div class="action-cell" style="justify-content:center">'+
+        '<button class="act act-edit" title="Edit" onclick="openAnalisaInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
+        '<button class="act act-del" title="Hapus" onclick="anaDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>'+
+      '</div></td>'+
+    '</tr>';
+  }).join('');
+  if(pg){
+    if(totalPages<=1){ pg.innerHTML=''; }
+    else{
+      let h='<button class="pg-btn" '+(anaViewPage<=1?'disabled':'')+' onclick="anaViewGoto('+(anaViewPage-1)+')">‹</button>';
+      for(let p=1;p<=totalPages;p++) h+='<button class="pg-btn '+(p===anaViewPage?'active':'')+'" onclick="anaViewGoto('+p+')">'+p+'</button>';
+      h+='<button class="pg-btn" '+(anaViewPage>=totalPages?'disabled':'')+' onclick="anaViewGoto('+(anaViewPage+1)+')">›</button>';
+      pg.innerHTML=h;
+    }
+  }
+}
+function anaViewGoto(p){ anaViewPage=p; renderAnalisaView(); }
+function anaDeleteRecord(id){
+  if(!requireInput()) return;
+  const rec=(records_ana||[]).find(r=>String(r.id)===String(id)); if(!rec) return;
+  openConfirm({ icon:'del', title:'Hapus Data',
+    text:'Hapus data Analisa "'+(rec.nama_pekerjaan||(rec.state&&rec.state.info&&rec.state.info.nama)||'')+'"?',
+    onYes:async()=>{
+      try{ await withActionLoader('Menghapus', async()=>{ await StoreAna.remove(id); await refreshDataAnalisa(); }); }
+      catch(err){ console.error(err); toast('Gagal menghapus: '+errMsg(err),'err'); return; }
+      toast('Data dihapus','ok'); renderAnalisaView();
+    }
+  });
+}
+
+/* ##################### AKHIR MODUL ANALISA HARGA SATUAN #################### */
+
+
 refreshData();      // muat data SPBJ/Kontrak Rinci
 refreshDataPl();    // muat data Pengadaan Langsung
 refreshDataTender();// muat data Tender
@@ -11838,6 +12487,7 @@ refreshDataKelengkapan(); // muat data Kelengkapan Dokumen (Lihat Data)
 refreshDataPembukaan();   // muat data Pembukaan Penawaran (Lihat Hasil)
 refreshDataRho();         // muat data Referensi Harga Online (Lihat Harga)
 refreshDataHps();         // muat data Harga Perkiraan Sendiri (Lihat HPS)
+refreshDataAnalisa();     // muat data Analisa Harga Satuan (Lihat Analisa)
 pnLoadConfig();         // muat konfigurasi nomor awal
 // #3: Refresh TIDAK lagi memaksa logout. Sesi dipulihkan dari sessionStorage,
 // dan filter data setiap halaman kembali ke default (ditangani showView/resetAllFilters).
@@ -11848,7 +12498,7 @@ resetLoginForm();
   if(role==='admin' || role==='user' || role==='guest'){
     currentUsername = uname || null;
     // Refresh: kembali ke halaman terakhir (data di halaman itu di-refresh), bukan ke dashboard.
-    const allowed=['dashboard','list','list-pl','list-tender','pn-lihat','pn-ambil','form-kelengkapan','fkl-view','form-pembukaan','pnw-view','form-rho','rho-view','form-hps','hps-view'];
+    const allowed=['dashboard','list','list-pl','list-tender','pn-lihat','pn-ambil','form-kelengkapan','fkl-view','form-pembukaan','pnw-view','form-rho','rho-view','form-hps','hps-view','form-analisa','analisa-view'];
     const inputViews=['input','input-pl','input-tender'];
     const draft=getDraft();
     if(inputViews.includes(view)){
