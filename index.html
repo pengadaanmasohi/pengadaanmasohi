@@ -1661,6 +1661,9 @@ tbody tr{animation:rowIn .3s ease both}
 .fk-act.is-busy{cursor:progress;opacity:.75;pointer-events:none}
 .fk-act-icon{padding:9px;width:36px;height:36px;justify-content:center;gap:0}
 .fk-act-icon svg{width:16px;height:16px}
+.fk-actcell{position:relative;transition:background .16s ease}
+.fk-actcell.fk-drop-over{background:rgba(20,166,177,.14);outline:2px dashed var(--teal);outline-offset:-4px;border-radius:10px}
+.fk-actcell.fk-drop-over .fk-act-up{transform:translateY(-2px) scale(1.04);box-shadow:0 8px 22px rgba(16,40,50,.3)}
 /* Chip nama file terunggah */
 .fk-file-chip{display:inline-flex;align-items:center;gap:7px;max-width:260px;padding:6px 11px;border-radius:9px;background:linear-gradient(180deg,#eef8f9,#e2f2f3);border:1px solid #bfe2e5;color:var(--teal-dark);font-size:11px;font-weight:700}
 .fk-file-chip svg{width:14px;height:14px;flex:0 0 auto;color:var(--teal)}
@@ -8293,13 +8296,16 @@ function fkRenderRows(mode, modul, cfg, rows, meta, tb, pg){
     const tgl=fmtDate(cfg.tgl(r))||'—';
     const f=meta[rid];
     const aksi = (mode==='input') ? fkInputActionHtml(modul, rid, f) : fkViewActionHtml(modul, rid, f);
+    const dropAttrs = (mode==='input' && canInput())
+      ? ` ondragover="fkRowDragOver(event,this)" ondragleave="fkRowDragLeave(event,this)" ondrop="fkRowDrop(event,'${modul}','${rid}',this)"`
+      : '';
     return `<tr>
       <td class="col-no">${start+i+1}</td>
       <td class="wrap-cell col-nama-freeze fk-namecell">${fkEsc(nama)}</td>
       <td class="${kontrakCls}">${noKontrak}</td>
       <td class="cell-center col-date">${tgl}</td>
       <td class="fk-col-bidang wrap-cell">${fkEsc(bidang)}</td>
-      <td><div class="fk-actions">${aksi}</div></td>
+      <td class="fk-actcell"${dropAttrs}><div class="fk-actions">${aksi}</div></td>
     </tr>`;
   }).join('');
   revealTbody(tb);
@@ -8352,7 +8358,12 @@ function fkUpload(modul, recordId, btn){
 async function fkHandleFileSelected(file){
   const ctx=fkUploadCtx; fkUploadCtx=null;
   if(!ctx || !file) return;
-  const {modul, recordId, btn}=ctx;
+  await fkUploadFile(ctx.modul, ctx.recordId, file, ctx.btn);
+}
+
+/* Inti proses unggah file kontrak — dipakai baik oleh pemilih file (click)
+   maupun drag-and-drop. */
+async function fkUploadFile(modul, recordId, file, btn){
   if(file.size > FK_MAX_MB*1048576){ toast(`Ukuran file melebihi batas ${FK_MAX_MB} MB`,'warn'); return; }
   if(btn) btn.classList.add('is-busy');
   pnUploadProgressOpen(file.name);
@@ -8378,6 +8389,33 @@ async function fkHandleFileSelected(file){
     if(btn) btn.classList.remove('is-busy');
   }
 }
+
+/* ---- Drag & drop file langsung ke baris / tombol "Unggah File" ---- */
+function fkRowDragOver(ev, el){
+  if(!ev.dataTransfer || !Array.from(ev.dataTransfer.types||[]).includes('Files')) return;
+  ev.preventDefault(); ev.stopPropagation();
+  ev.dataTransfer.dropEffect='copy';
+  el.classList.add('fk-drop-over');
+}
+function fkRowDragLeave(ev, el){
+  ev.stopPropagation();
+  if(ev.currentTarget===el && (!ev.relatedTarget || !el.contains(ev.relatedTarget))){
+    el.classList.remove('fk-drop-over');
+  }
+}
+function fkRowDrop(ev, modul, recordId, el){
+  ev.preventDefault(); ev.stopPropagation();
+  el.classList.remove('fk-drop-over');
+  if(!requireInput()) return;
+  const dt=ev.dataTransfer;
+  const file=dt && dt.files && dt.files[0];
+  if(!file){ toast('Tidak ada file yang terdeteksi pada saat drop','warn'); return; }
+  const btn=el.querySelector('.fk-act-up');
+  fkUploadFile(modul, recordId, file, btn);
+}
+/* Cegah browser membuka file sebagai halaman baru bila di-drop di luar target */
+window.addEventListener('dragover', e=>{ if(e.dataTransfer && Array.from(e.dataTransfer.types||[]).includes('Files')) e.preventDefault(); });
+window.addEventListener('drop', e=>{ if(e.dataTransfer && Array.from(e.dataTransfer.types||[]).includes('Files')) e.preventDefault(); });
 
 /* ---- Unduh file (TANPA notifikasi apa pun, sesuai permintaan) ---- */
 async function fkDownload(modul, recordId, btn){
