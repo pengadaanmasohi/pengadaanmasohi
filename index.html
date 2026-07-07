@@ -2459,6 +2459,10 @@ table.hps-sum tr.grand td.val{color:#0d7a3f;font-size:13.5px}
 .hps-terbilang{padding:11px 15px;font-size:11.5px;color:#2b3f48;background:#f6fafb;border-top:1px solid #eef4f5;line-height:1.55}
 .hps-terbilang b{color:var(--teal-dark)}
 @media(max-width:640px){ table.hps-uraian{min-width:860px} }
+/* Sel tabel Uraian yang terkunci otomatis dari Analisa */
+table.hps-uraian td.hps-cell-locked input,table.hps-uraian td.hps-cell-locked textarea{background:#eef4f5;color:#41565c;cursor:not-allowed;border-color:#d3e0e2}
+.hps-lock-note{display:flex;align-items:flex-start;gap:7px;font-size:10.5px;color:#0b6a73;background:#eef8f9;border:1px dashed #a9d3d8;border-radius:10px;padding:8px 11px;margin:0 0 10px;line-height:1.55}
+.hps-lock-note b{color:var(--teal-dark)}
 
 /* ==================== ANALISA HARGA SATUAN ==================== */
 /* Kotak input Sumber Referensi (jumlah menyesuaikan Jumlah Referensi) */
@@ -11459,8 +11463,9 @@ function hpsTtdInputHtml(f){
 }
 function hpsCountFieldHtml(){
   const st=hpsState;
+  const locked=hpsItemsLocked();
   let opts=''; for(let i=1;i<=150;i++) opts+='<option value="'+i+'"'+(i===st.items.length?' selected':'')+'>'+i+' Item</option>';
-  return '<div class="field"><label>Jumlah Barang/Jasa</label><select id="hps-jumlahitem" onchange="hpsOnJumlahItemChange(this)">'+opts+'</select></div>';
+  return '<div class="field'+(locked?' is-locked':'')+'"><label>Jumlah Barang/Jasa</label><select id="hps-jumlahitem"'+(locked?' disabled':'')+' onchange="hpsOnJumlahItemChange(this)">'+opts+'</select>'+(locked?HPS_LOCK_BADGE:'')+'</div>';
 }
 function hpsOnInfoChange(){
   const st=hpsState;
@@ -11473,6 +11478,7 @@ function hpsOnTtdChange(){
   hpsSaveState();
 }
 function hpsOnJumlahItemChange(el){
+  if(hpsItemsLocked()) return; // jumlah item mengikuti Analisa terpilih, tidak dapat diubah manual
   const n=Math.max(1,Math.min(150,parseInt(el.value,10)||1));
   const st=hpsState; const cur=st.items.slice(); const next=[];
   for(let i=0;i<n;i++){ next.push(hpsNormItem(cur[i])); }
@@ -11522,20 +11528,34 @@ function hpsTerbilangRupiah(n){
 /* ================= LANGKAH 2: URAIAN PEKERJAAN (gaya RAB/HPS) ================= */
 function hpsUraianTableHtml(){
   const st=hpsState;
+  const itemsLocked=hpsItemsLocked();
+  const hargaLocked=hpsHargaLocked();
+  const dis1=itemsLocked?' disabled':'';
+  const disH=hargaLocked?' disabled':'';
+  const clsKUSV=itemsLocked?' hps-cell-locked':'';
+  const clsHarga=hargaLocked?' hps-cell-locked':'';
   let rows='';
   st.items.forEach((it,i)=>{
     rows+='<tr>'+
       '<td class="c-no">'+(i+1)+'</td>'+
-      '<td class="c-kel"><input type="text" data-i="'+i+'" placeholder="mis. MATERIAL" value="'+fkEsc(it.kelompok||'')+'" oninput="hpsOnKelompok(this)"></td>'+
-      '<td class="c-ur"><textarea data-i="'+i+'" rows="1" placeholder="Uraian pekerjaan / barang / jasa ke-'+(i+1)+'" oninput="hpsOnUraian(this)">'+fkEsc(it.uraian||'')+'</textarea></td>'+
-      '<td class="c-sat"><input type="text" data-i="'+i+'" placeholder="Bh" value="'+fkEsc(it.sat||'')+'" oninput="hpsOnSat(this)"></td>'+
-      '<td class="c-vol"><input type="text" inputmode="decimal" data-i="'+i+'" placeholder="0" value="'+fkEsc(it.vol!=null?String(it.vol):'')+'" oninput="hpsOnVol(this)"></td>'+
-      '<td class="c-money"><input type="text" inputmode="numeric" id="hps-hm-'+i+'" data-i="'+i+'" placeholder="Rp" value="'+rupiahInputText(it.hargaMat)+'" oninput="hpsOnHargaMat(this)"></td>'+
-      '<td class="c-money"><input type="text" inputmode="numeric" id="hps-hj-'+i+'" data-i="'+i+'" placeholder="Rp" value="'+rupiahInputText(it.hargaJasa)+'" oninput="hpsOnHargaJasa(this)"></td>'+
+      '<td class="c-kel'+clsKUSV+'"><input type="text" data-i="'+i+'" placeholder="mis. MATERIAL" value="'+fkEsc(it.kelompok||'')+'" oninput="hpsOnKelompok(this)"'+dis1+'></td>'+
+      '<td class="c-ur'+clsKUSV+'"><textarea data-i="'+i+'" rows="1" placeholder="Uraian pekerjaan / barang / jasa ke-'+(i+1)+'" oninput="hpsOnUraian(this)"'+dis1+'>'+fkEsc(it.uraian||'')+'</textarea></td>'+
+      '<td class="c-sat'+clsKUSV+'"><input type="text" data-i="'+i+'" placeholder="Bh" value="'+fkEsc(it.sat||'')+'" oninput="hpsOnSat(this)"'+dis1+'></td>'+
+      '<td class="c-vol'+clsKUSV+'"><input type="text" inputmode="decimal" data-i="'+i+'" placeholder="0" value="'+fkEsc(it.vol!=null?String(it.vol):'')+'" oninput="hpsOnVol(this)"'+dis1+'></td>'+
+      '<td class="c-money'+clsHarga+'"><input type="text" inputmode="numeric" id="hps-hm-'+i+'" data-i="'+i+'" placeholder="Rp" value="'+rupiahInputText(it.hargaMat)+'" oninput="hpsOnHargaMat(this)"'+disH+'></td>'+
+      '<td class="c-money'+clsHarga+'"><input type="text" inputmode="numeric" id="hps-hj-'+i+'" data-i="'+i+'" placeholder="Rp" value="'+rupiahInputText(it.hargaJasa)+'" oninput="hpsOnHargaJasa(this)"'+disH+'></td>'+
       '<td class="c-calc" id="hps-jt-'+i+'">'+hpsRp(hpsItemTotal(it))+'</td>'+
     '</tr>';
   });
-  return '<div class="hps-uraian-wrap"><table class="hps-uraian"><thead>'+
+  let note='';
+  if(itemsLocked){
+    note='<div class="hps-lock-note">'+HPS_LOCK_BADGE+'<span>Kolom <b>Kelompok/Uraian/Sat/Vol</b> terkunci — otomatis terisi dari Analisa'+
+      (hargaLocked
+        ? ' terpilih. Kolom <b>Harga Sat. Material &amp; Jasa</b> juga ikut terkunci (sudah termasuk ROK), karena Analisa berkategori <b>Pekerjaan Umum</b>.'
+        : ' terpilih. Kolom <b>Harga Sat. Material &amp; Jasa</b> tetap dapat diisi manual, karena Analisa berkategori <b>Pekerjaan Konstruksi</b> (harga tidak ikut terkunci).')+
+      '</span></div>';
+  }
+  return note+'<div class="hps-uraian-wrap"><table class="hps-uraian"><thead>'+
     '<tr><th class="c-no">No</th><th>Kelompok</th><th class="c-ur">Uraian Pekerjaan</th><th>Sat</th><th>Vol</th>'+
       '<th>Harga Sat.<br>Material (Rp)</th><th>Harga Sat.<br>Jasa (Rp)</th><th>Jumlah Total<br>(Rp)</th></tr>'+
     '</thead><tbody>'+rows+'</tbody></table></div>';
@@ -11545,17 +11565,18 @@ function hpsRecalcRow(i){
   const c=document.getElementById('hps-jt-'+i); if(c) c.innerHTML=hpsRp(hpsItemTotal(it));
   hpsRenderSummary();
 }
-function hpsOnKelompok(el){ const i=+el.dataset.i; if(hpsState.items[i]){ hpsState.items[i].kelompok=el.value; hpsSaveState(); } }
-function hpsOnUraian(el){ const i=+el.dataset.i; if(hpsState.items[i]){ hpsState.items[i].uraian=el.value; hpsSaveState(); } }
-function hpsOnSat(el){ const i=+el.dataset.i; if(hpsState.items[i]){ hpsState.items[i].sat=el.value; hpsSaveState(); } }
+function hpsOnKelompok(el){ if(hpsItemsLocked()) return; const i=+el.dataset.i; if(hpsState.items[i]){ hpsState.items[i].kelompok=el.value; hpsSaveState(); } }
+function hpsOnUraian(el){ if(hpsItemsLocked()) return; const i=+el.dataset.i; if(hpsState.items[i]){ hpsState.items[i].uraian=el.value; hpsSaveState(); } }
+function hpsOnSat(el){ if(hpsItemsLocked()) return; const i=+el.dataset.i; if(hpsState.items[i]){ hpsState.items[i].sat=el.value; hpsSaveState(); } }
 function hpsOnVol(el){
+  if(hpsItemsLocked()) return;
   let v=el.value.replace(/[^0-9.,]/g,'').replace(/,/g,'.');
   const parts=v.split('.'); if(parts.length>2) v=parts[0]+'.'+parts.slice(1).join('');
   el.value=v;
   const i=+el.dataset.i; if(hpsState.items[i]){ hpsState.items[i].vol=v; hpsSaveState(); hpsRecalcRow(i); }
 }
-function hpsOnHargaMat(el){ onRupiahInput(el); const i=+el.dataset.i; if(hpsState.items[i]){ hpsState.items[i].hargaMat=parseRupiah(el.value); hpsSaveState(); hpsRecalcRow(i); } }
-function hpsOnHargaJasa(el){ onRupiahInput(el); const i=+el.dataset.i; if(hpsState.items[i]){ hpsState.items[i].hargaJasa=parseRupiah(el.value); hpsSaveState(); hpsRecalcRow(i); } }
+function hpsOnHargaMat(el){ if(hpsHargaLocked()) return; onRupiahInput(el); const i=+el.dataset.i; if(hpsState.items[i]){ hpsState.items[i].hargaMat=parseRupiah(el.value); hpsSaveState(); hpsRecalcRow(i); } }
+function hpsOnHargaJasa(el){ if(hpsHargaLocked()) return; onRupiahInput(el); const i=+el.dataset.i; if(hpsState.items[i]){ hpsState.items[i].hargaJasa=parseRupiah(el.value); hpsSaveState(); hpsRecalcRow(i); } }
 
 /* Ringkasan langsung (Jumlah / DPP / PPn / Jumlah Total) di bawah tabel input */
 function hpsSummaryPanelHtml(){
@@ -11608,7 +11629,7 @@ function renderHpsForm(){
   } else {
     if(sub) sub.textContent='Langkah 2 dari 2 — Uraian pekerjaan, satuan, volume & harga satuan';
     html+='<div class="form-card"><div class="form-section-title">'+FKL_SEC_ICON+'Uraian Pekerjaan <span class="fkl-count-chip">'+st.items.length+' item</span></div>'+
-      '<div class="hps-hint"><b>Jumlah Harga</b> = Volume × Harga Satuan (Material/Jasa) &nbsp;•&nbsp; <b>Jumlah Total</b> = Jumlah Harga Material + Jasa. Kolom <b>Harga Satuan</b> nantinya terisi otomatis dari modul <b>Analisa</b> (dalam pengembangan); untuk saat ini dapat diisi manual. Isi kolom <b>Kelompok</b> (mis. MATERIAL / JASA) bila ingin dokumen dikelompokkan.</div>'+
+      '<div class="hps-hint"><b>Jumlah Harga</b> = Volume × Harga Satuan (Material/Jasa) &nbsp;•&nbsp; <b>Jumlah Total</b> = Jumlah Harga Material + Jasa. Bila memilih <b>Analisa</b> pada Langkah 1, kolom <b>Kelompok/Uraian/Sat/Vol</b> otomatis terisi &amp; terkunci; kolom <b>Harga Satuan</b> ikut terisi &amp; terkunci hanya bila Analisa berkategori <b>Pekerjaan Umum</b> (sudah termasuk ROK) — untuk kategori <b>Pekerjaan Konstruksi</b>, harga tetap diisi manual. Tanpa Analisa, semua kolom dapat diisi manual; isi kolom <b>Kelompok</b> (mis. MATERIAL / JASA) bila ingin dokumen dikelompokkan.</div>'+
       hpsUraianTableHtml()+
       hpsSummaryPanelHtml()+'</div>';
     html+=hpsActionsHtml({back:true, save:true});
@@ -11625,9 +11646,10 @@ function renderHpsForm(){
 function hpsAnalisaBarHtml(){
   const info=hpsState.info||{};
   const dipilih=(info.analisaId)?String(info.analisaNama||'').trim():'';
+  const jenisTxt = dipilih ? (info.analisaJenis==='Konstruksi'?'Pekerjaan Konstruksi':'Pekerjaan Umum') : '';
   const sub = dipilih
-    ? ('Data pekerjaan terisi otomatis & terkunci dari analisa: <b style="color:var(--teal-dark)">'+fkEsc(dipilih)+'</b>')
-    : 'Ambil data pekerjaan otomatis dari data Hitung Analisa tersimpan (kolom yang sama akan terisi & terkunci).';
+    ? ('Data pekerjaan &amp; Uraian Pekerjaan (Kelompok/Uraian/Sat/Vol) terisi otomatis &amp; terkunci dari analisa: <b style="color:var(--teal-dark)">'+fkEsc(dipilih)+'</b> — kategori <b>'+jenisTxt+'</b>'+(info.analisaJenis==='Konstruksi'?' (harga diisi manual)':' (harga ikut terkunci, sudah termasuk ROK)'))
+    : 'Ambil data pekerjaan otomatis dari data Hitung Analisa tersimpan (kolom yang sama, termasuk Kelompok/Uraian/Sat/Vol, akan terisi & terkunci; harga ikut terkunci hanya untuk kategori Pekerjaan Umum).';
   let btns='';
   btns+='<button type="button" class="btn btn-teal" style="padding:8px 14px;font-size:11.5px" onclick="hpsPilihAnalisa()">'+
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.8L7 14.3"/></svg>'+(dipilih?'Ganti Analisa':'Pilih Analisa')+'</button>';
@@ -11669,14 +11691,43 @@ function renderHpsAnaPickerList(){
     '</div>';
   }).join('');
 }
-/* Ambil data pekerjaan dari analisa terpilih → isi & kunci kolom yang sama pada HPS. */
+/* Apakah kolom Kelompok/Uraian/Sat/Vol pada tabel Uraian Pekerjaan HPS sedang terkunci
+   (otomatis terisi dari Analisa yang dipilih). Berlaku untuk SEMUA kategori (Umum & Konstruksi). */
+function hpsItemsLocked(){ return !!(hpsState.info && hpsState.info.analisaId); }
+/* Apakah Harga Sat. Material & Harga Sat. Jasa ikut terkunci (otomatis terisi dari hasil Analisa).
+   Untuk saat ini HANYA berlaku bila Analisa yang dipilih berkategori "Pekerjaan Umum".
+   Bila kategorinya "Pekerjaan Konstruksi", harga TIDAK ikut terkunci — tetap diisi manual. */
+function hpsHargaLocked(){ return hpsItemsLocked() && hpsState.info.analisaJenis==='Umum'; }
+
+/* Ambil data pekerjaan dari analisa terpilih → isi & kunci kolom yang sama pada HPS,
+   termasuk baris Uraian Pekerjaan (Kelompok/Uraian/Sat/Vol selalu ikut terkunci; Harga Sat.
+   Material & Jasa — sudah termasuk ROK — ikut terkunci hanya bila kategori Analisa "Umum"). */
 function hpsAmbilAnalisa(id){
   const rec=(records_ana||[]).find(r=>String(r.id)===String(id)); if(!rec) return;
-  const aInfo=(rec.state&&rec.state.info)?rec.state.info:{};
+  const aSt=(rec.state&&typeof rec.state==='object')?rec.state:{};
+  const aInfo=aSt.info||{};
   const st=hpsState; st.info=st.info||{};
   HPS_ANA_LOCK_KEYS.forEach(k=>{ st.info[k]=(aInfo[k]!=null?aInfo[k]:''); });
   st.info.analisaId=String(rec.id);
   st.info.analisaNama=rec.nama_pekerjaan||aInfo.nama||'';
+  st.info.analisaJenis=(aSt.jenis==='Konstruksi')?'Konstruksi':'Umum';
+  const hargaLocked=(st.info.analisaJenis==='Umum');
+  // Struktur Kelompok/Uraian/Sat/Vol sama di semua referensi analisa → ambil dari referensi pertama
+  const struct=(aSt.refs&&aSt.refs[0]&&Array.isArray(aSt.refs[0].items))?aSt.refs[0].items:[];
+  if(struct.length){
+    st.items=struct.map((it,i)=>{
+      const res=hargaLocked?anaResultForState(aSt,i):null;
+      return {
+        kelompok: it.kelompok||'',
+        uraian: it.uraian||'',
+        sat: it.sat||'',
+        vol: it.vol!=null?it.vol:'',
+        hargaMat: hargaLocked?(res.hargaBarang||''):'',
+        hargaJasa: hargaLocked?(res.hargaJasa||''):''
+      };
+    });
+    st.jumlahItem=st.items.length;
+  }
   hpsSaveState();
   closeHpsAnaPicker();
   renderHpsForm();
@@ -11685,7 +11736,7 @@ function hpsAmbilAnalisa(id){
 /* Lepas pilihan analisa → kolom kembali bisa diinput (nilai tetap, tidak dihapus). */
 function hpsLepasAnalisa(){
   const st=hpsState; if(!st.info) return;
-  delete st.info.analisaId; delete st.info.analisaNama;
+  delete st.info.analisaId; delete st.info.analisaNama; delete st.info.analisaJenis;
   hpsSaveState(); renderHpsForm();
   toast('Pilihan analisa dilepas — kolom dapat diinput kembali','ok');
 }
@@ -12391,6 +12442,23 @@ function anaResultFor(i){
   let hb=calc(barangVals), hj=calc(jasaVals);
   // Terapkan ROK (%) ke Harga Barang & Jasa masing-masing
   const rok=anaNum(anaState.rok);
+  if(rok>0){ hb=hb*(1+rok/100); hj=hj*(1+rok/100); }
+  hb=Math.round(hb); hj=Math.round(hj);
+  return {method, hargaBarang:hb, hargaJasa:hj, total:hb+hj};
+}
+
+/* Versi umum dari anaResultFor() yang bekerja pada state Analisa APAPUN (mis. state
+   dari record tersimpan yang sedang diambil oleh modul HPS), bukan hanya anaState aktif. */
+function anaResultForState(state, i){
+  state=state||{};
+  const metodeRef=state.metodeRef==='Berbeda'?'Berbeda':'Sama';
+  const metodeAll=state.metodeAll==='Terendah'?'Terendah':'Rata-rata';
+  const refs=Array.isArray(state.refs)?state.refs:[];
+  const method = metodeRef==='Sama' ? metodeAll : (((refs[0]&&refs[0].items&&refs[0].items[i]&&refs[0].items[i].method)==='Terendah')?'Terendah':'Rata-rata');
+  const collect=(key)=>{ const vals=[]; refs.forEach(rf=>{ const it=rf&&rf.items&&rf.items[i]; if(!it) return; const v=anaNum(it[key]); if(v>0) vals.push(v); }); return vals; };
+  const calc=(vals)=> method==='Terendah'?anaMin(vals):anaAvg(vals);
+  let hb=calc(collect('hargaBarang')), hj=calc(collect('hargaJasa'));
+  const rok=anaNum(state.rok);
   if(rok>0){ hb=hb*(1+rok/100); hj=hj*(1+rok/100); }
   hb=Math.round(hb); hj=Math.round(hj);
   return {method, hargaBarang:hb, hargaJasa:hj, total:hb+hj};
