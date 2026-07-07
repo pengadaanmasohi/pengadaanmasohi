@@ -2415,6 +2415,28 @@ table.rho-matrix input:focus{outline:none;border-color:var(--teal);box-shadow:0 
   table.rho-matrix{min-width:480px}
 }
 </style>
+
+<style id="hps-ui-css">
+/* ===================== Harga Perkiraan Sendiri (UI) ===================== */
+.hps-hint{font-size:10.5px;color:var(--muted);margin:2px 0 12px;line-height:1.6}
+/* Tabel input Uraian Pekerjaan (langkah 2): Uraian | Satuan | Volume */
+.hps-uraian-wrap{overflow-x:auto;border:1px solid #dde9eb;border-radius:14px;box-shadow:0 2px 8px rgba(16,40,50,.05)}
+table.hps-uraian{border-collapse:separate;border-spacing:0;width:100%;min-width:640px}
+table.hps-uraian thead th{background:linear-gradient(90deg,#0E7C86,#0b6a73);color:#fff;font-weight:800;font-size:11px;text-transform:uppercase;letter-spacing:.3px;padding:11px 12px;text-align:left;white-space:nowrap}
+table.hps-uraian thead th.c-no{width:52px;text-align:center}
+table.hps-uraian thead th.c-sat{width:150px;text-align:center}
+table.hps-uraian thead th.c-vol{width:130px;text-align:center}
+table.hps-uraian tbody td{border-bottom:1px solid #e8f0f1;padding:8px 10px;vertical-align:middle;font-size:12px}
+table.hps-uraian tbody tr:last-child td{border-bottom:none}
+table.hps-uraian tbody tr:nth-child(even){background:#f8fbfc}
+table.hps-uraian td.c-no{text-align:center;font-weight:800;color:#0b6a73}
+table.hps-uraian textarea,table.hps-uraian input{width:100%;border:1px solid #cdd9de;border-radius:9px;padding:8px 9px;font-size:12px;background:#fff;font-family:inherit;color:var(--ink)}
+table.hps-uraian textarea{resize:vertical;min-height:38px;line-height:1.45}
+table.hps-uraian input{text-align:center}
+table.hps-uraian td.c-vol input,table.hps-uraian td.c-sat input{text-align:center}
+table.hps-uraian textarea:focus,table.hps-uraian input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,124,134,.15)}
+@media(max-width:640px){ table.hps-uraian{min-width:560px} }
+</style>
 </head>
 <body>
 
@@ -2564,6 +2586,24 @@ table.rho-matrix input:focus{outline:none;border-color:var(--teal);box-shadow:0 
                 <button class="topnav-item" data-view="rho-view" data-role="admin" onclick="openRhoView()">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                   Lihat Harga
+                </button>
+              </div>
+            </div>
+            <!-- Harga Perkiraan Sendiri: submenu Perhitungan HPS (Hitung HPS / Lihat HPS) -->
+            <div class="topnav-sub" data-sub="hps" data-role="admin">
+              <button class="topnav-subtrigger" type="button" onclick="toggleFkSub(event,'hps')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="10" y2="18"/><line x1="14" y1="18" x2="16" y2="18"/></svg>
+                <span class="sub-label">Harga Perkiraan Sendiri</span>
+                <svg class="caret2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <div class="topnav-subdrop">
+                <button class="topnav-item" data-view="form-hps" data-role="admin" onclick="openHpsInput()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 10h2M14 10h2M8 14h2M14 14h2M8 18h2"/></svg>
+                  Hitung HPS
+                </button>
+                <button class="topnav-item" data-view="hps-view" data-role="admin" onclick="openHpsView()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                  Lihat HPS
                 </button>
               </div>
             </div>
@@ -3420,6 +3460,53 @@ table.rho-matrix input:focus{outline:none;border-color:var(--teal);box-shadow:0 
         </table>
       </div>
       <div class="pagination" id="rho-view-pagination"></div>
+    </div>
+  </section>
+
+  <!-- ============ HARGA PERKIRAAN SENDIRI — HITUNG HPS ============ -->
+  <section id="view-form-hps" class="view">
+    <div class="page-head">
+      <div>
+        <h2 id="hps-title">Perhitungan HPS</h2>
+        <p id="hps-sub">Penyusunan Harga Perkiraan Sendiri (HPS) pekerjaan pengadaan</p>
+      </div>
+    </div>
+    <div class="panel" style="padding:20px 22px">
+      <div id="hps-content"></div>
+    </div>
+  </section>
+
+  <!-- ============ HARGA PERKIRAAN SENDIRI — LIHAT HPS ============ -->
+  <section id="view-hps-view" class="view">
+    <div class="page-head">
+      <div>
+        <h2>Perhitungan HPS — Lihat HPS <span class="count-badge" id="hps-view-count">0</span></h2>
+      </div>
+      <div class="filter-field toolbar-search pn-search-right search-elegant pn-head-search">
+        <div class="search-elegant-box">
+          <svg class="search-elegant-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input id="hps-view-search" type="text" placeholder="Cari Nama Pekerjaan" oninput="renderHpsView()">
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="col-no">No.</th>
+              <th class="col-nama-freeze">Nama Pekerjaan</th>
+              <th class="fkl-col-lokasi">Lokasi Pekerjaan</th>
+              <th>Metode Pengadaan</th>
+              <th style="text-align:center">Jumlah Item</th>
+              <th class="col-date">Tgl. HPS</th>
+              <th style="text-align:center;min-width:170px">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="hps-view-body"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="hps-view-pagination"></div>
     </div>
   </section>
 
@@ -4500,6 +4587,8 @@ function showView(name, loaderMsg, noLoader){
         if(name==='pnw-view') renderPnwView();
         if(name==='form-rho') renderRhoForm();
         if(name==='rho-view') renderRhoView();
+        if(name==='form-hps') renderHpsForm();
+        if(name==='hps-view') renderHpsView();
     }catch(err){ console.error('showView error:', err); }
     if(!noLoader){ const wait=Math.max(0, 460-(Date.now()-t0)); setTimeout(hideLoader, wait); }
   };
@@ -8733,7 +8822,7 @@ function pnPreviewResetMaxBtn(){
   const icon=document.getElementById('pn-preview-max-icon');
   if(icon) icon.innerHTML='<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>';  // maximize
 }
-function closePnPreview(){ const ov=document.getElementById('pn-preview-overlay'); if(ov) ov.classList.remove('show'); const modal=ov&&ov.querySelector('.pn-preview-modal'); if(modal) modal.classList.remove('is-max'); pnPreviewResetMaxBtn(); const b=document.getElementById('pn-preview-body'); if(b){ b.innerHTML=''; b.classList.remove('fkl-preview-body'); } const fp=document.getElementById('fkl-preview-print'); if(fp) fp.remove(); const pp=document.getElementById('pnw-preview-print'); if(pp) pp.remove(); const rp=document.getElementById('rho-preview-print'); if(rp) rp.remove(); if(typeof fklPreviewState!=='undefined') fklPreviewState=null; if(typeof pnwPreviewState!=='undefined') pnwPreviewState=null; if(typeof rhoPreviewState!=='undefined') rhoPreviewState=null; pnCleanupPreview(); }
+function closePnPreview(){ const ov=document.getElementById('pn-preview-overlay'); if(ov) ov.classList.remove('show'); const modal=ov&&ov.querySelector('.pn-preview-modal'); if(modal) modal.classList.remove('is-max'); pnPreviewResetMaxBtn(); const b=document.getElementById('pn-preview-body'); if(b){ b.innerHTML=''; b.classList.remove('fkl-preview-body'); } const fp=document.getElementById('fkl-preview-print'); if(fp) fp.remove(); const pp=document.getElementById('pnw-preview-print'); if(pp) pp.remove(); const rp=document.getElementById('rho-preview-print'); if(rp) rp.remove(); const hp=document.getElementById('hps-preview-print'); if(hp) hp.remove(); if(typeof fklPreviewState!=='undefined') fklPreviewState=null; if(typeof pnwPreviewState!=='undefined') pnwPreviewState=null; if(typeof rhoPreviewState!=='undefined') rhoPreviewState=null; if(typeof hpsPreviewState!=='undefined') hpsPreviewState=null; pnCleanupPreview(); }
 
 /* ---- Upload / Download / Hapus lampiran (per masing-masing nomor dokumen) ---- */
 let pnUploadCtx=null;
@@ -11017,6 +11106,520 @@ function rhoPrint(){
 /* ##################### AKHIR MODUL REFERENSI HARGA ONLINE #################### */
 
 
+/* ####################################################################### */
+/* ############# MODUL HARGA PERKIRAAN SENDIRI (HPS) ###################### */
+/* ####################################################################### */
+
+/* Ikon bagian penandatangan (pena) */
+const HPS_TTD_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
+
+/* Nama hari (untuk baris "Masohi, Hari, Tanggal Tahun" pada blok TTD) */
+const HPS_HARI=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+function hpsDateFull(s){
+  if(!s) return '';
+  const p=String(s).split('-'); if(p.length!==3) return s;
+  const y=+p[0], m=+p[1], d=+p[2];
+  const dt=new Date(y, m-1, d);
+  const hari=isNaN(dt.getTime())?'':(HPS_HARI[dt.getDay()]||'');
+  return (hari?hari+', ':'')+d+' '+(PNW_BULAN[m-1]||'')+' '+y;
+}
+
+/* Field data pekerjaan (langkah 1). Nama Pengguna & Pejabat TIDAK di sini —
+   keduanya khusus blok tanda tangan (Form TTD HPS) di bawah. */
+const HPS_INFO_FIELDS = [
+  {key:'nama',         label:'Nama Pekerjaan',            type:'text', span:2},
+  {key:'lokasi',       label:'Lokasi Pekerjaan',          type:'text', span:2},
+  {key:'nilai',        label:'Perkiraan Nilai Pekerjaan', type:'num'},
+  {key:'no_anggaran',  label:'No. Anggaran',              type:'text'},
+  {key:'tgl_anggaran', label:'Tgl. Anggaran',             type:'date'},
+  {key:'metode',       label:'Metode Pengadaan',          type:'select', options:PNW_METODE},
+  {key:'tgl_hps',      label:'Tgl. HPS',                  type:'date'}
+];
+/* Field khusus blok tanda tangan (muncul hanya di bagian bawah dokumen) */
+const HPS_TTD_FIELDS = [
+  {key:'pengguna', label:'Nama Pengguna (Manager)',          type:'text'},
+  {key:'pejabat',  label:'Nama Pejabat Pelaksana Pengadaan', type:'text'}
+];
+
+/* ---------- State ----------
+   info      : { key:value } data pekerjaan + pengguna/pejabat (utk TTD)
+   jumlahItem: jumlah barang/material (1..150)
+   items     : [ {uraian, sat, vol}, ... ] sepanjang jumlahItem
+*/
+function hpsBlankState(){ return { info:{}, jumlahItem:1, items:[{uraian:'',sat:'',vol:''}] }; }
+let hpsState = hpsBlankState();
+let hpsStep = 1;              // 1..2
+let hpsEditId = null;
+let hpsPreviewState = null;   // utk pratinjau record tersimpan
+
+const HPS_STATE_KEY = 'hps_state_v1';
+function hpsLoadState(){ try{ const raw=ssGet(HPS_STATE_KEY); if(raw){ const o=JSON.parse(raw); if(o&&o.info) hpsState=o; } }catch(e){} }
+function hpsSaveState(){ try{ ssSet(HPS_STATE_KEY, JSON.stringify(hpsState)); }catch(e){} }
+hpsLoadState();
+function hpsActiveState(){ return hpsPreviewState || hpsState; }
+function hpsMarkActive(){ document.querySelectorAll('.topnav-item[data-view="form-hps"]').forEach(b=>b.classList.add('active')); }
+
+/* Pastikan panjang items sesuai jumlahItem */
+function hpsEnsureItems(){
+  const st=hpsState;
+  const n=Math.max(1,Math.min(150, parseInt(st.jumlahItem,10)|| (Array.isArray(st.items)?st.items.length:1) ||1)); st.jumlahItem=n;
+  if(!Array.isArray(st.items)) st.items=[];
+  const cur=st.items.slice(); const next=[];
+  for(let i=0;i<n;i++){ const c=cur[i]||{}; next.push({uraian:c.uraian||'', sat:c.sat||'', vol:(c.vol!=null?c.vol:'')}); }
+  st.items=next;
+}
+
+/* ---------- Penyimpanan (Supabase + fallback lokal) ---------- */
+const HPS_TABLE = 'harga_perkiraan_sendiri';
+const HPS_LS_KEY = 'hps_records_v1';
+let records_hps = [];
+let hpsUseLocal = false;
+function hpsSupaReady(){ return !!(USE_SUPABASE && db); }
+function hpsLocalLoad(){ try{ const r=localStorage.getItem(HPS_LS_KEY); records_hps = r?JSON.parse(r):[]; }catch(e){ records_hps=[]; } }
+function hpsLocalSave(){ try{ localStorage.setItem(HPS_LS_KEY, JSON.stringify(records_hps)); }catch(e){ toast('Penyimpanan lokal penuh','warn'); } }
+function hpsIsLocalId(id){ return String(id).indexOf('loc_')===0; }
+const StoreHps = {
+  async list(){
+    if(hpsSupaReady() && !hpsUseLocal){
+      try{ const {data,error}=await db.from(HPS_TABLE).select('*').order('created_at',{ascending:false}); if(error) throw error; return data||[]; }
+      catch(err){ console.warn('HPS: Supabase list gagal, memakai penyimpanan lokal —', err&&err.message); hpsUseLocal=true; }
+    }
+    hpsLocalLoad(); return records_hps.slice();
+  },
+  async create(rec){
+    if(hpsSupaReady() && !hpsUseLocal){
+      try{ const {data,error}=await db.from(HPS_TABLE).insert(rec).select(); if(error) throw error; return data&&data[0]; }
+      catch(err){ console.warn('HPS: Supabase create gagal, memakai penyimpanan lokal —', err&&err.message); hpsUseLocal=true; }
+    }
+    hpsLocalLoad();
+    const row=Object.assign({id:'loc_'+Date.now()+'_'+Math.random().toString(36).slice(2,7), created_at:new Date().toISOString()}, rec);
+    records_hps.unshift(row); hpsLocalSave(); return row;
+  },
+  async update(rid, rec){
+    if(hpsSupaReady() && !hpsUseLocal && !hpsIsLocalId(rid)){
+      try{ const {error}=await db.from(HPS_TABLE).update(rec).eq('id',rid); if(error) throw error; return; }
+      catch(err){ console.warn('HPS: Supabase update gagal, memakai penyimpanan lokal —', err&&err.message); hpsUseLocal=true; }
+    }
+    hpsLocalLoad(); const idx=records_hps.findIndex(r=>String(r.id)===String(rid));
+    if(idx>=0){ records_hps[idx]=Object.assign({}, records_hps[idx], rec); hpsLocalSave(); }
+  },
+  async remove(rid){
+    if(hpsSupaReady() && !hpsUseLocal && !hpsIsLocalId(rid)){
+      try{ const {error}=await db.from(HPS_TABLE).delete().eq('id',rid); if(error) throw error; return; }
+      catch(err){ console.warn('HPS: Supabase remove gagal, memakai penyimpanan lokal —', err&&err.message); hpsUseLocal=true; }
+    }
+    hpsLocalLoad(); records_hps=records_hps.filter(r=>String(r.id)!==String(rid)); hpsLocalSave();
+  }
+};
+async function refreshDataHps(){
+  try{ records_hps = await StoreHps.list(); }
+  catch(err){ console.error(err); records_hps = records_hps||[]; }
+}
+
+/* ---------- Buka form / lihat data ---------- */
+function openHpsInput(editId){
+  if(!isAdmin()){ toast('Menu ini hanya untuk akun admin','warn'); return; }
+  hpsPreviewState=null;
+  if(editId){
+    const rec=(records_hps||[]).find(r=>String(r.id)===String(editId));
+    hpsEditId = rec ? rec.id : null;
+    hpsState = rec ? hpsRecordToState(rec) : hpsBlankState();
+  }else{
+    hpsEditId=null; hpsState=hpsBlankState();
+  }
+  hpsStep=1; hpsEnsureItems(); hpsSaveState(); showView('form-hps');
+}
+function openHpsView(){
+  if(!isAdmin()){ toast('Menu ini hanya untuk akun admin','warn'); return; }
+  refreshDataHps().then(()=>showView('hps-view'));
+}
+function hpsRecordToState(rec){
+  const base=hpsBlankState();
+  const s=(rec&&rec.state&&typeof rec.state==='object')?rec.state:{};
+  const st={
+    info: Object.assign({}, base.info, s.info||{}),
+    jumlahItem: Math.max(1,Math.min(150, parseInt(s.jumlahItem,10)|| (Array.isArray(s.items)?s.items.length:1) ||1)),
+    items: (Array.isArray(s.items)&&s.items.length)?s.items.map(c=>({uraian:c.uraian||'', sat:c.sat||'', vol:(c.vol!=null?c.vol:'')})):[{uraian:'',sat:'',vol:''}]
+  };
+  return st;
+}
+
+/* ---------- Stepper ---------- */
+function hpsStepperHtml(){
+  const steps=[['1','Data Pekerjaan'],['2','Uraian Pekerjaan']];
+  return '<div class="fkl-stepper">'+steps.map((s,i)=>{
+    const n=i+1;
+    const cls = n<hpsStep ? 'done' : (n===hpsStep ? 'active' : '');
+    const mark = n<hpsStep ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg>' : s[0];
+    const line = i<steps.length-1 ? '<div class="fkl-step-line '+(n<hpsStep?'done':'')+'"></div>' : '';
+    return '<div class="fkl-step '+cls+'"><div class="fkl-step-dot">'+mark+'</div><div class="fkl-step-name">'+s[1]+'</div></div>'+line;
+  }).join('')+'</div>';
+}
+
+/* ================= LANGKAH 1: DATA PEKERJAAN ================= */
+function hpsInfoInputHtml(f){
+  const id='hps-'+f.key;
+  const span=f.span?(' style="grid-column:span '+f.span+'"'):'';
+  let ctl;
+  if(f.type==='select') ctl='<select id="'+id+'" onchange="hpsOnInfoChange()"><option value="">— Pilih —</option>'+(f.options||[]).map(o=>'<option>'+fkEsc(o)+'</option>').join('')+'</select>';
+  else if(f.type==='num') ctl='<input id="'+id+'" type="text" inputmode="numeric" placeholder="Rp" oninput="onRupiahInput(this)" onchange="hpsOnInfoChange()">';
+  else if(f.type==='date') ctl='<input id="'+id+'" type="date" onchange="hpsOnInfoChange()">';
+  else ctl='<input id="'+id+'" type="text" oninput="hpsOnInfoChange()">';
+  return '<div class="field"'+span+'><label>'+fkEsc(f.label)+'</label>'+ctl+'</div>';
+}
+function hpsTtdInputHtml(f){
+  const id='hps-'+f.key;
+  return '<div class="field"><label>'+fkEsc(f.label)+'</label><input id="'+id+'" type="text" oninput="hpsOnTtdChange()"></div>';
+}
+function hpsCountFieldHtml(){
+  const st=hpsState;
+  let opts=''; for(let i=1;i<=150;i++) opts+='<option value="'+i+'"'+(i===st.items.length?' selected':'')+'>'+i+' Item</option>';
+  return '<div class="field"><label>Jumlah Barang/Material</label><select id="hps-jumlahitem" onchange="hpsOnJumlahItemChange(this)">'+opts+'</select></div>';
+}
+function hpsOnInfoChange(){
+  const st=hpsState;
+  HPS_INFO_FIELDS.forEach(f=>{ const el=document.getElementById('hps-'+f.key); if(!el) return; st.info[f.key]=(f.type==='num')?parseRupiah(el.value):el.value.trim(); });
+  hpsSaveState();
+}
+function hpsOnTtdChange(){
+  const st=hpsState;
+  HPS_TTD_FIELDS.forEach(f=>{ const el=document.getElementById('hps-'+f.key); if(!el) return; st.info[f.key]=el.value.trim(); });
+  hpsSaveState();
+}
+function hpsOnJumlahItemChange(el){
+  const n=Math.max(1,Math.min(150,parseInt(el.value,10)||1));
+  const st=hpsState; const cur=st.items.slice(); const next=[];
+  for(let i=0;i<n;i++){ const c=cur[i]||{}; next.push({uraian:c.uraian||'', sat:c.sat||'', vol:(c.vol!=null?c.vol:'')}); }
+  st.items=next; st.jumlahItem=n; hpsSaveState();
+}
+
+/* ================= LANGKAH 2: URAIAN PEKERJAAN ================= */
+function hpsUraianTableHtml(){
+  const st=hpsState;
+  let rows='';
+  st.items.forEach((it,i)=>{
+    rows+='<tr>'+
+      '<td class="c-no">'+(i+1)+'</td>'+
+      '<td><textarea data-i="'+i+'" rows="1" placeholder="Uraian pekerjaan / barang / material ke-'+(i+1)+'" oninput="hpsOnUraian(this)">'+fkEsc(it.uraian||'')+'</textarea></td>'+
+      '<td class="c-sat"><input type="text" data-i="'+i+'" placeholder="mis. Unit, m, kg" value="'+fkEsc(it.sat||'')+'" oninput="hpsOnSat(this)"></td>'+
+      '<td class="c-vol"><input type="text" inputmode="decimal" data-i="'+i+'" placeholder="0" value="'+fkEsc(it.vol!=null?String(it.vol):'')+'" oninput="hpsOnVol(this)"></td>'+
+    '</tr>';
+  });
+  return '<div class="hps-uraian-wrap"><table class="hps-uraian"><thead><tr>'+
+    '<th class="c-no">No</th><th>Uraian Pekerjaan</th><th class="c-sat">Satuan (Sat)</th><th class="c-vol">Volume (Vol)</th>'+
+    '</tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+function hpsOnUraian(el){ const i=+el.dataset.i; if(hpsState.items[i]){ hpsState.items[i].uraian=el.value; hpsSaveState(); } }
+function hpsOnSat(el){ const i=+el.dataset.i; if(hpsState.items[i]){ hpsState.items[i].sat=el.value; hpsSaveState(); } }
+function hpsOnVol(el){
+  let v=el.value.replace(/[^0-9.,]/g,'').replace(/,/g,'.');
+  const parts=v.split('.'); if(parts.length>2) v=parts[0]+'.'+parts.slice(1).join('');
+  el.value=v;
+  const i=+el.dataset.i; if(hpsState.items[i]){ hpsState.items[i].vol=v; hpsSaveState(); }
+}
+
+/* ---------- Render form ---------- */
+function renderHpsForm(){
+  hpsMarkActive();
+  hpsEnsureItems();
+  const tt=document.getElementById('hps-title'); if(tt) tt.textContent='Perhitungan HPS'+(hpsEditId?' — Ubah Data':' — Hitung HPS');
+  const sub=document.getElementById('hps-sub');
+  const cont=document.getElementById('hps-content'); if(!cont) return;
+  const st=hpsState;
+  let html=hpsStepperHtml();
+  if(hpsStep===1){
+    if(sub) sub.textContent='Langkah 1 dari 2 — Lengkapi data pekerjaan & penandatangan';
+    html+='<div class="form-card"><div class="form-section-title">'+KR_SECTION_ICON+'Data Pekerjaan</div><div class="form-flow" style="--cols:4">';
+    html+=HPS_INFO_FIELDS.map(hpsInfoInputHtml).join('');
+    html+=hpsCountFieldHtml();
+    html+='</div></div>';
+    html+='<div class="form-card"><div class="form-section-title">'+HPS_TTD_ICON+'Penandatangan (Form TTD HPS)</div>'+
+      '<div class="hps-hint">Nama Pengguna &amp; Pejabat <b>tidak</b> tampil pada tabel data — keduanya hanya muncul di bagian bawah dokumen sebagai blok tanda tangan. <b>Nama Pengguna</b> tampil di sebelah kiri (Manager) dan <b>Nama Pejabat</b> di sebelah kanan (Pejabat Pelaksana Pengadaan, dicetak huruf kapital).</div>'+
+      '<div class="form-flow" style="--cols:2">'+HPS_TTD_FIELDS.map(hpsTtdInputHtml).join('')+'</div></div>';
+    html+=hpsActionsHtml({back:false});
+  } else {
+    if(sub) sub.textContent='Langkah 2 dari 2 — Isi uraian pekerjaan, satuan & volume tiap item';
+    html+='<div class="form-card"><div class="form-section-title">'+FKL_SEC_ICON+'Uraian Pekerjaan <span class="fkl-count-chip">'+st.items.length+' item</span></div>'+
+      '<div class="hps-hint">Isi <b>Uraian Pekerjaan</b> tiap barang/material beserta <b>Satuan (Sat)</b> dan <b>Volume (Vol)</b> di sampingnya.</div>'+
+      hpsUraianTableHtml()+'</div>';
+    html+=hpsActionsHtml({back:true, save:true});
+  }
+  cont.innerHTML=html;
+  if(hpsStep===1){
+    HPS_INFO_FIELDS.forEach(f=>{ const el=document.getElementById('hps-'+f.key); if(!el) return; const v=st.info[f.key]; el.value=(f.type==='num')?rupiahInputText(v):(v!=null?v:''); });
+    HPS_TTD_FIELDS.forEach(f=>{ const el=document.getElementById('hps-'+f.key); if(!el) return; el.value=(st.info[f.key]!=null?st.info[f.key]:''); });
+  }
+}
+function hpsActionsHtml(o){
+  o=o||{};
+  let left='<button class="btn btn-ghost" onclick="hpsBatal()">'+FKL_IC_X+'Batal</button>';
+  let right='';
+  if(o.back) right+='<button class="btn btn-light" onclick="hpsBack()">'+FKL_IC_BACK+'Kembali</button>';
+  if(o.save) right+='<button class="btn btn-green" onclick="hpsSimpan()">'+FKL_IC_SAVE+'Simpan &amp; Lihat PDF</button>';
+  else right+='<button class="btn btn-teal" onclick="hpsNext()">Selanjutnya'+FKL_IC_NEXT+'</button>';
+  return '<div class="fkl-actions"><div class="fkl-actions-left">'+left+'</div><div class="fkl-actions-right">'+right+'</div></div>';
+}
+
+/* ---------- Navigasi ---------- */
+function hpsNext(){
+  const st=hpsState;
+  if(hpsStep===1){
+    hpsOnInfoChange(); hpsOnTtdChange();
+    if(!String(st.info.nama||'').trim()){ toast('Nama Pekerjaan wajib diisi','warn'); return; }
+    hpsEnsureItems(); hpsStep=2;
+  }
+  renderHpsForm(); hpsScrollTop();
+}
+function hpsBack(){ if(hpsStep>1){ hpsStep--; renderHpsForm(); hpsScrollTop(); } }
+function hpsScrollTop(){ const v=document.getElementById('view-form-hps'); if(v) v.scrollIntoView({behavior:'smooth',block:'start'}); }
+function hpsBatal(){
+  openConfirm({ icon:'del', title:'Batalkan Proses',
+    text:'Batalkan proses ini? Data yang belum disimpan akan hilang.',
+    onYes:()=>{ hpsEditId=null; hpsState=hpsBlankState(); hpsSaveState(); hpsStep=1; openHpsView(); toast('Proses dibatalkan','ok'); }
+  });
+}
+
+/* ---------- Simpan ---------- */
+async function hpsSimpan(){
+  if(!requireInput()) return;
+  const st=hpsState; const info=st.info||{}; const nama=String(info.nama||'').trim();
+  if(!nama){ toast('Nama Pekerjaan wajib diisi','warn'); hpsStep=1; renderHpsForm(); return; }
+  hpsEnsureItems();
+  const rec={
+    nama_pekerjaan: nama,
+    lokasi: info.lokasi||'',
+    metode: info.metode||'',
+    jumlah_item: st.items.length,
+    tgl_hps: info.tgl_hps||'',
+    tgl_input: (new Date()).toISOString().slice(0,10),
+    state: JSON.parse(JSON.stringify(st))
+  };
+  let saved=null;
+  try{
+    await withActionLoader(hpsEditId?'Menyimpan perubahan':'Menyimpan', async()=>{
+      if(hpsEditId){ await StoreHps.update(hpsEditId, rec); }
+      else { saved=await StoreHps.create(rec); }
+      await refreshDataHps();
+    });
+  }catch(err){ console.error(err); toast('Gagal menyimpan: '+errMsg(err),'err'); return; }
+  toast(hpsEditId?'Data berhasil diperbarui':'Data berhasil disimpan','ok');
+  const savedId = hpsEditId || (saved && saved.id);
+  hpsEditId=null; hpsState=hpsBlankState(); hpsSaveState(); hpsStep=1;
+  showView('hps-view');
+  setTimeout(()=>{ if(savedId!=null) hpsPreviewRecord(savedId); }, 420);
+}
+
+/* ================= LIHAT HPS ================= */
+let hpsViewPage=1;
+const HPS_VIEW_PAGE_SIZE=8;
+function hpsDateLong(s){ return pnwDateLong(s); }
+function hpsViewRows(){
+  let rows=(records_hps||[]).slice();
+  const fs=(document.getElementById('hps-view-search')?.value||'').toLowerCase().trim();
+  if(fs) rows=rows.filter(r=>String(r.nama_pekerjaan||(r.state&&r.state.info&&r.state.info.nama)||'').toLowerCase().includes(fs));
+  return rows;
+}
+function hpsEmptyRow(){
+  return '<tr><td colspan="7"><div class="empty">'+
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/></svg>'+
+    '<div>Data tidak tersedia</div></div></td></tr>';
+}
+function renderHpsView(){
+  const tb=document.getElementById('hps-view-body');
+  const pg=document.getElementById('hps-view-pagination');
+  const cEl=document.getElementById('hps-view-count');
+  if(!tb) return;
+  const rows=hpsViewRows();
+  if(cEl) cEl.textContent=rows.length;
+  if(!rows.length){ tb.innerHTML=hpsEmptyRow(); if(pg) pg.innerHTML=''; return; }
+  const totalPages=Math.max(1,Math.ceil(rows.length/HPS_VIEW_PAGE_SIZE));
+  if(hpsViewPage>totalPages) hpsViewPage=totalPages;
+  if(hpsViewPage<1) hpsViewPage=1;
+  const start=(hpsViewPage-1)*HPS_VIEW_PAGE_SIZE;
+  const pageRows=rows.slice(start,start+HPS_VIEW_PAGE_SIZE);
+  tb.innerHTML=pageRows.map((r,i)=>{
+    const stt=r.state||{}; const info=stt.info||{};
+    const nama=r.nama_pekerjaan||info.nama||'—';
+    const lokasi=(r.lokasi||info.lokasi||'').trim();
+    const metode=r.metode||info.metode||'';
+    const ji=(r.jumlah_item!=null)?r.jumlah_item:((stt.items&&stt.items.length)||0);
+    const tgl=r.tgl_hps||info.tgl_hps||'';
+    const rid=fkEsc(String(r.id));
+    return '<tr>'+
+      '<td class="col-no">'+(start+i+1)+'</td>'+
+      '<td class="wrap-cell col-nama-freeze">'+fkEsc(nama)+'</td>'+
+      '<td class="fkl-col-lokasi">'+fkEsc(lokasi||'—')+'</td>'+
+      '<td>'+fkEsc(metode||'—')+'</td>'+
+      '<td style="text-align:center">'+ji+'</td>'+
+      '<td class="col-date">'+fkEsc(tgl?hpsDateLong(tgl):'—')+'</td>'+
+      '<td><div class="action-cell" style="justify-content:center">'+
+        '<button class="act act-edit" title="Edit" onclick="openHpsInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
+        '<button class="act act-view" title="Lihat (Pratinjau PDF)" onclick="hpsPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
+        '<button class="act act-del" title="Hapus" onclick="hpsDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>'+
+      '</div></td>'+
+    '</tr>';
+  }).join('');
+  if(pg){
+    if(totalPages<=1){ pg.innerHTML=''; }
+    else{
+      let h='<button class="pg-btn" '+(hpsViewPage<=1?'disabled':'')+' onclick="hpsViewGoto('+(hpsViewPage-1)+')">‹</button>';
+      for(let p=1;p<=totalPages;p++) h+='<button class="pg-btn '+(p===hpsViewPage?'active':'')+'" onclick="hpsViewGoto('+p+')">'+p+'</button>';
+      h+='<button class="pg-btn" '+(hpsViewPage>=totalPages?'disabled':'')+' onclick="hpsViewGoto('+(hpsViewPage+1)+')">›</button>';
+      pg.innerHTML=h;
+    }
+  }
+}
+function hpsViewGoto(p){ hpsViewPage=p; renderHpsView(); }
+function hpsPreviewRecord(id){
+  const rec=(records_hps||[]).find(r=>String(r.id)===String(id)); if(!rec) return;
+  hpsPreviewState=hpsRecordToState(rec);
+  hpsOpenPreview();
+}
+function hpsDeleteRecord(id){
+  if(!requireInput()) return;
+  const rec=(records_hps||[]).find(r=>String(r.id)===String(id)); if(!rec) return;
+  openConfirm({ icon:'del', title:'Hapus Data',
+    text:'Hapus data HPS "'+(rec.nama_pekerjaan||(rec.state&&rec.state.info&&rec.state.info.nama)||'')+'"?',
+    onYes:async()=>{
+      try{ await withActionLoader('Menghapus', async()=>{ await StoreHps.remove(id); await refreshDataHps(); }); }
+      catch(err){ console.error(err); toast('Gagal menghapus: '+errMsg(err),'err'); return; }
+      toast('Data dihapus','ok'); renderHpsView();
+    }
+  });
+}
+
+/* ================= DOKUMEN PDF ================= */
+function hpsBuildDocHtml(){
+  const st=hpsActiveState(); const info=st.info||{};
+  const fmtNilai=(info.nilai!==''&&info.nilai!=null)?('Rp '+Number(info.nilai).toLocaleString('id-ID')):'-';
+  const infoRow=(k,v)=>'<tr><td class="k">'+k+'</td><td class="s">:</td><td class="v">'+fkEsc(v||'-')+'</td></tr>';
+
+  const rows=(st.items||[]).map((it,i)=>{
+    const uraian=(it.uraian&&String(it.uraian).trim())?it.uraian:('Barang/Material '+(i+1));
+    const sat=(it.sat!=null&&String(it.sat).trim())?it.sat:'-';
+    const vol=(it.vol!=null&&String(it.vol).trim())?it.vol:'-';
+    return '<tr><td class="no">'+(i+1)+'</td><td class="ur">'+fkEsc(uraian)+'</td><td class="st">'+fkEsc(String(sat))+'</td><td class="vl">'+fkEsc(String(vol))+'</td></tr>';
+  }).join('');
+
+  const pengguna=(info.pengguna&&String(info.pengguna).trim())?String(info.pengguna).trim():'(..........................)';
+  const pejabat=(info.pejabat&&String(info.pejabat).trim())?String(info.pejabat).trim().toUpperCase():'(..........................)';
+  const tglFull=info.tgl_hps?hpsDateFull(info.tgl_hps):'..........................';
+
+  return ''+
+  '<div class="fkl-doc pnw-doc hps-doc">'+
+    '<div class="fkl-doc-head">'+
+      '<div class="fkl-doc-logo"><img src="'+FKL_LOGO_SRC+'" alt="Logo PLN"></div>'+
+      '<div class="fkl-doc-org">'+
+        '<div class="l1">PT PLN (PERSERO)</div>'+
+        '<div class="l2">UNIT PELAKSANA PELAYANAN PELANGGAN MASOHI</div>'+
+        '<div class="l3">Jl. Abdullah Soulissa No 1, Masohi, Kec. Kota Masohi</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="fkl-doc-band"></div>'+
+    '<h1 class="fkl-doc-title">HARGA PERKIRAAN SENDIRI (HPS)</h1>'+
+    '<div class="fkl-doc-titlegap"></div>'+
+    '<div class="fkl-sec-h"><span class="rn">A</span>Data Pekerjaan</div>'+
+    '<table class="fkl-info"><tbody>'+
+      infoRow('Nama Pekerjaan', info.nama)+
+      infoRow('Lokasi Pekerjaan', info.lokasi)+
+      infoRow('Perkiraan Nilai Pekerjaan', fmtNilai)+
+      infoRow('No. Anggaran', info.no_anggaran)+
+      infoRow('Tgl. Anggaran', info.tgl_anggaran?pnwDateLong(info.tgl_anggaran):'-')+
+      infoRow('Metode Pengadaan', info.metode)+
+      infoRow('Tgl. HPS', info.tgl_hps?pnwDateLong(info.tgl_hps):'-')+
+      infoRow('Jumlah Barang/Material', String((st.items||[]).length)+' item')+
+    '</tbody></table>'+
+    '<div class="fkl-sec-h"><span class="rn">B</span>Uraian Pekerjaan</div>'+
+    '<table class="hps-doc-tbl"><thead><tr><th class="no">No</th><th class="ur">Uraian Pekerjaan</th><th class="st">Satuan</th><th class="vl">Volume</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+    '<div class="fkl-doc-foot hps-foot">'+
+      '<table class="ttd"><tbody><tr>'+
+        '<td><div class="hps-topgap"></div>'+
+          '<div class="role">Disetujui oleh,</div>'+
+          '<div class="role2">Manager</div>'+
+          '<div class="gap"></div>'+
+          '<div class="nm">'+fkEsc(pengguna)+'</div></td>'+
+        '<td><div class="ttd-date">Masohi, '+fkEsc(tglFull)+'</div>'+
+          '<div class="role">Disusun oleh,</div>'+
+          '<div class="role2">Pejabat Pelaksana Pengadaan</div>'+
+          '<div class="gap"></div>'+
+          '<div class="nm nm-up">'+fkEsc(pejabat)+'</div></td>'+
+      '</tr></tbody></table>'+
+    '</div>'+
+  '</div>';
+}
+function hpsExtraDocCss(){
+  return ''+
+  'table.hps-doc-tbl{width:100%;border-collapse:collapse;table-layout:fixed;margin:2px 0 8px}'+
+  'table.hps-doc-tbl th,table.hps-doc-tbl td{border:1px solid #cfe0e3;padding:6px 8px;font-size:11px;vertical-align:top;word-wrap:break-word;overflow-wrap:anywhere}'+
+  'table.hps-doc-tbl thead th{background:#0E7C86;color:#fff;font-weight:800;text-transform:uppercase;letter-spacing:.2px;text-align:center;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  'table.hps-doc-tbl th.no,table.hps-doc-tbl td.no{width:38px;text-align:center;font-weight:700;color:#0b3d42}'+
+  'table.hps-doc-tbl th.st,table.hps-doc-tbl td.st{width:88px;text-align:center}'+
+  'table.hps-doc-tbl th.vl,table.hps-doc-tbl td.vl{width:88px;text-align:center;font-weight:700}'+
+  'table.hps-doc-tbl td.ur{text-align:left}'+
+  'table.hps-doc-tbl tbody tr:nth-child(even) td{background:#f6fafb}'+
+  '.hps-foot{margin-top:26px;break-inside:avoid;page-break-inside:avoid}'+
+  '.hps-foot .ttd{width:100%;margin:0;border-collapse:collapse}'+
+  '.hps-foot .ttd td{width:50%;text-align:center;vertical-align:top;padding:0 12px}'+
+  '.hps-foot .ttd-date{text-align:center;font-size:12px;color:#22343a;font-weight:600;margin:0 0 6px}'+
+  '.hps-foot .hps-topgap{height:24px}'+
+  '.hps-foot .role{font-size:12px;color:#22343a;font-weight:600}'+
+  '.hps-foot .role2{font-size:12px;color:#0d2a30;font-weight:800;margin-top:1px}'+
+  '.hps-foot .gap{height:66px}'+
+  '.hps-foot .nm{font-weight:800;font-size:12.5px;color:#0d2a30;display:inline-block;min-width:180px;border-top:1.4px solid #22343a;padding-top:5px}'+
+  '.hps-foot .nm.nm-up{text-transform:uppercase}';
+}
+function hpsStandaloneDocHtml(){
+  const cssEl=document.getElementById('fkl-doc-css');
+  const css=(cssEl?cssEl.textContent:'') + hpsExtraDocCss();
+  return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8">'+
+    '<meta name="viewport" content="width=device-width, initial-scale=1">'+
+    '<title>Harga Perkiraan Sendiri (HPS)</title>'+
+    '<style>'+css+'</style></head><body>'+
+    '<div class="fkl-print-page">'+hpsBuildDocHtml()+'</div>'+
+    '</body></html>';
+}
+function hpsOpenPreview(){
+  const ov=document.getElementById('pn-preview-overlay'); if(!ov) return;
+  const _mdl=ov.querySelector('.pn-preview-modal'); if(_mdl) _mdl.classList.remove('is-max');
+  if(typeof pnPreviewResetMaxBtn==='function') pnPreviewResetMaxBtn();
+  const titleEl=document.getElementById('pn-preview-title');
+  if(titleEl) titleEl.textContent='Pratinjau — Harga Perkiraan Sendiri (HPS)';
+  const body=document.getElementById('pn-preview-body');
+  if(body){
+    body.classList.add('fkl-preview-body');
+    body.innerHTML='<iframe id="hps-preview-frame" title="Pratinjau Dokumen"></iframe>';
+    const ifr=document.getElementById('hps-preview-frame');
+    const doc=ifr.contentWindow.document; doc.open(); doc.write(hpsStandaloneDocHtml()); doc.close();
+  }
+  const actions=document.querySelector('#pn-preview-overlay .pn-preview-head-actions');
+  const oldFkl=document.getElementById('fkl-preview-print'); if(oldFkl) oldFkl.remove();
+  const oldPnw=document.getElementById('pnw-preview-print'); if(oldPnw) oldPnw.remove();
+  const oldRho=document.getElementById('rho-preview-print'); if(oldRho) oldRho.remove();
+  if(actions && !document.getElementById('hps-preview-print')){
+    const btn=document.createElement('button');
+    btn.id='hps-preview-print'; btn.className='btn btn-teal';
+    btn.style.padding='8px 14px'; btn.style.fontSize='11px';
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>Cetak / PDF';
+    btn.onclick=hpsPrint;
+    actions.insertBefore(btn, actions.firstChild);
+  }
+  ov.classList.add('show');
+}
+function hpsPrint(){
+  const old=document.getElementById('hps-print-frame'); if(old) old.remove();
+  const ifr=document.createElement('iframe');
+  ifr.id='hps-print-frame'; ifr.setAttribute('aria-hidden','true');
+  ifr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+  document.body.appendChild(ifr);
+  const doc=ifr.contentWindow.document; doc.open(); doc.write(hpsStandaloneDocHtml()); doc.close();
+  const go=()=>{ try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }catch(e){ try{ window.print(); }catch(_){} } setTimeout(()=>{ const f=document.getElementById('hps-print-frame'); if(f) f.remove(); },1500); };
+  const imgs=doc.images?Array.from(doc.images):[];
+  if(imgs.length){ let n=imgs.length; const dec=()=>{ if(--n<=0) setTimeout(go,60); }; imgs.forEach(im=>{ if(im.complete) dec(); else { im.onload=dec; im.onerror=dec; } }); setTimeout(go,1600); }
+  else setTimeout(go,120);
+}
+
+/* ##################### AKHIR MODUL HARGA PERKIRAAN SENDIRI #################### */
+
 
 refreshData();      // muat data SPBJ/Kontrak Rinci
 refreshDataPl();    // muat data Pengadaan Langsung
@@ -11025,6 +11628,7 @@ refreshDataPenetapan(); // muat data Penetapan Nomor
 refreshDataKelengkapan(); // muat data Kelengkapan Dokumen (Lihat Data)
 refreshDataPembukaan();   // muat data Pembukaan Penawaran (Lihat Hasil)
 refreshDataRho();         // muat data Referensi Harga Online (Lihat Harga)
+refreshDataHps();         // muat data Harga Perkiraan Sendiri (Lihat HPS)
 pnLoadConfig();         // muat konfigurasi nomor awal
 // #3: Refresh TIDAK lagi memaksa logout. Sesi dipulihkan dari sessionStorage,
 // dan filter data setiap halaman kembali ke default (ditangani showView/resetAllFilters).
@@ -11035,7 +11639,7 @@ resetLoginForm();
   if(role==='admin' || role==='user' || role==='guest'){
     currentUsername = uname || null;
     // Refresh: kembali ke halaman terakhir (data di halaman itu di-refresh), bukan ke dashboard.
-    const allowed=['dashboard','list','list-pl','list-tender','pn-lihat','pn-ambil','form-kelengkapan','fkl-view','form-pembukaan','pnw-view','form-rho','rho-view'];
+    const allowed=['dashboard','list','list-pl','list-tender','pn-lihat','pn-ambil','form-kelengkapan','fkl-view','form-pembukaan','pnw-view','form-rho','rho-view','form-hps','hps-view'];
     const inputViews=['input','input-pl','input-tender'];
     const draft=getDraft();
     if(inputViews.includes(view)){
