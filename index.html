@@ -1615,12 +1615,14 @@ tbody tr{animation:rowIn .3s ease both}
   .topnav-subdrop{border-left-color:rgba(255,255,255,.18)}
 }
 /* Segmented switcher (Jenis Pekerjaan) */
-.fk-seg{display:inline-flex;gap:4px;padding:5px;background:linear-gradient(180deg,#ffffff,#f3f8f9);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);flex-wrap:wrap}
-.fk-seg-btn{appearance:none;border:none;background:none;font-family:'Plus Jakarta Sans';font-size:11.5px;font-weight:700;color:var(--muted);padding:9px 16px;border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:background .18s ease,color .18s ease,transform .16s cubic-bezier(.16,1,.3,1),box-shadow .2s ease;white-space:nowrap}
+.fk-seg{display:inline-flex;gap:4px;padding:5px;background:linear-gradient(180deg,#ffffff,#f3f8f9);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);flex-wrap:wrap;position:relative}
+.fk-seg-btn{appearance:none;border:none;background:none;font-family:'Plus Jakarta Sans';font-size:11.5px;font-weight:700;color:var(--muted);padding:9px 16px;border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:color .18s ease,transform .16s cubic-bezier(.16,1,.3,1);white-space:nowrap;position:relative;z-index:1}
 .fk-seg-btn svg{width:15px;height:15px;flex:0 0 auto}
-.fk-seg-btn:hover{background:var(--teal-soft);color:var(--teal-dark)}
-.fk-seg-btn.active{background:linear-gradient(135deg,var(--teal),var(--cyan));color:#fff;box-shadow:0 5px 14px rgba(14,124,134,.32)}
+.fk-seg-btn:not(.active):hover{background:var(--teal-soft);color:var(--teal-dark)}
+.fk-seg-btn.active{background:none;color:#fff}
 .fk-seg-btn.active:hover{color:#fff}
+.fk-seg-thumb{position:absolute;top:5px;bottom:5px;left:0;width:0;border-radius:10px;background:linear-gradient(135deg,var(--teal),var(--cyan));box-shadow:0 5px 14px rgba(14,124,134,.32);transition:transform .38s cubic-bezier(.16,1,.3,1),width .38s cubic-bezier(.16,1,.3,1),opacity .18s ease;z-index:0;pointer-events:none;opacity:0}
+.fk-seg-thumb.no-anim{transition:none}
 /* Toggle modul di kanan atas tabel */
 .head-right-tools{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end}
 .head-left-tools{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
@@ -1628,6 +1630,7 @@ tbody tr{animation:rowIn .3s ease both}
 .mod-seg{padding:4px;border-radius:12px}
 .mod-seg .fk-seg-btn{font-size:11px;padding:7px 12px}
 .mod-seg .fk-seg-btn svg{width:14px;height:14px}
+.mod-seg .fk-seg-thumb{top:4px;bottom:4px}
 @media(max-width:900px){.head-right-tools{width:100%}.mod-seg{width:100%}.mod-seg .fk-seg-btn{flex:1 1 auto;justify-content:center}}
 /* Kolom & sel File Kontrak */
 /* Kolom Bidang Pelaksana mengacu ukuran tabel Monitoring - Daftar Pekerjaan (col-bidang): lebar tetap 200px + wrap */
@@ -4837,6 +4840,7 @@ function showView(name, loaderMsg, noLoader){
         if(name==='hps-view') renderHpsView();
         if(name==='form-analisa') renderAnalisaForm();
         if(name==='analisa-view') renderAnalisaView();
+        if(typeof fkSegSyncAll==='function') fkSegSyncAll(false);   // reposisi pil segmented setelah halaman baru terlihat
     }catch(err){ console.error('showView error:', err); }
     if(!noLoader){ const wait=Math.max(0, 460-(Date.now()-t0)); setTimeout(hideLoader, wait); }
   };
@@ -7934,6 +7938,46 @@ function handleUploadTender(ev){
   };
   reader.readAsArrayBuffer(file);
 }
+
+/* ============ SLIDING PILL INDICATOR (.fk-seg) ============
+   Latar pil pada grup tab (SPBJ/Kontrak Rinci | Pengadaan Langsung | Tender,
+   dan grup segmented lain yang memakai class .fk-seg) meluncur halus ke
+   tombol aktif, alih-alih berpindah instan. Memakai MutationObserver agar
+   otomatis sinkron kapan pun class "active" berubah di mana pun kode
+   memicunya (openFkInput/openFkView/showView/newRecord*, dsb) tanpa perlu
+   menyentuh setiap fungsi tersebut satu per satu. */
+function fkSegSyncThumb(seg, animate){
+  if(!seg) return;
+  let thumb=seg.querySelector(':scope > .fk-seg-thumb');
+  const activeBtn=seg.querySelector('.fk-seg-btn.active');
+  if(!thumb){
+    thumb=document.createElement('span');
+    thumb.className='fk-seg-thumb no-anim';
+    seg.insertBefore(thumb, seg.firstChild);
+  }
+  if(!activeBtn){ thumb.style.opacity='0'; return; }
+  if(animate===false) thumb.classList.add('no-anim');
+  thumb.style.opacity='1';
+  thumb.style.width=activeBtn.offsetWidth+'px';
+  thumb.style.transform='translateX('+activeBtn.offsetLeft+'px)';
+  if(animate===false){
+    // paksa reflow sekali lalu lepas kelas no-anim agar perubahan berikutnya kembali animasi
+    void thumb.offsetWidth;
+    thumb.classList.remove('no-anim');
+  }
+}
+function fkSegSyncAll(animate){
+  document.querySelectorAll('.fk-seg').forEach(seg=>fkSegSyncThumb(seg, animate));
+}
+(function initFkSegThumbs(){
+  document.querySelectorAll('.fk-seg').forEach(seg=>{
+    fkSegSyncThumb(seg, false);
+    new MutationObserver(()=>fkSegSyncThumb(seg, true))
+      .observe(seg, {subtree:true, attributes:true, attributeFilter:['class','style'], childList:true});
+  });
+  let rTO=null;
+  window.addEventListener('resize', ()=>{ clearTimeout(rTO); rTO=setTimeout(()=>fkSegSyncAll(false), 120); });
+})();
 
 /* ============ INIT ============ */
 showLoader();
