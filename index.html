@@ -11988,7 +11988,8 @@ function anaBlankRef(){ return { items:[anaBlankRefItem()] }; }
 function anaBlankState(){ return {
   info:{}, jumlahItem:1, jumlahRef:1,
   sumber:[''], refs:[anaBlankRef()],
-  metodeRef:'Sama', metodeAll:'Rata-rata', aktifRef:0
+  metodeRef:'Sama', metodeAll:'Rata-rata', aktifRef:0,
+  jenis:'Umum', rok:''
 }; }
 let anaState = anaBlankState();
 let anaStep = 1;             // 1..2
@@ -12021,6 +12022,10 @@ function anaEnsure(){
   if(st.metodeRef!=='Berbeda') st.metodeRef='Sama';
   if(st.metodeAll!=='Terendah') st.metodeAll='Rata-rata';
   st.aktifRef=Math.max(0,Math.min(nRef-1, parseInt(st.aktifRef,10)||0));
+  // jenis pekerjaan & ROK (%)
+  if(st.jenis!=='Konstruksi') st.jenis='Umum';
+  const rokMax=(st.jenis==='Konstruksi')?15:10;
+  if(st.rok!==''&&st.rok!=null){ let rk=anaNum(st.rok); if(rk<0) rk=0; if(rk>rokMax) rk=rokMax; st.rok=(rk===0&&String(st.rok).trim()==='')?'':rk; }
 }
 
 /* ---------- Angka & format (pakai helper HPS bila ada) ---------- */
@@ -12099,7 +12104,9 @@ function anaRecordToState(rec){
     refs: Array.isArray(s.refs)?s.refs.map(rf=>({items:(rf&&Array.isArray(rf.items))?rf.items.map(anaNormRefItem):[anaBlankRefItem()]})):[anaBlankRef()],
     metodeRef: s.metodeRef==='Berbeda'?'Berbeda':'Sama',
     metodeAll: s.metodeAll==='Terendah'?'Terendah':'Rata-rata',
-    aktifRef: parseInt(s.aktifRef,10)||0
+    aktifRef: parseInt(s.aktifRef,10)||0,
+    jenis: s.jenis==='Konstruksi'?'Konstruksi':'Umum',
+    rok: (s.rok!=null?s.rok:'')
   };
   const _save=anaState; anaState=st; anaEnsure(); const out=anaState; anaState=_save; return out;
 }
@@ -12167,9 +12174,15 @@ function anaRefLabel(r){ const s=(anaState.sumber[r]||'').trim(); return s?s:('R
 function anaToolbarHtml(){
   const st=anaState;
   let refOpts=''; for(let r=0;r<st.jumlahRef;r++) refOpts+='<option value="'+r+'"'+(r===st.aktifRef?' selected':'')+'>'+fkEsc(anaRefLabel(r))+'</option>';
+  const rokMax=(st.jenis==='Konstruksi')?15:10;
   let html='<div class="ana-toolbar">';
   html+='<div class="ana-ref-pill">'+ANA_REF_ICON+'<span>Mengisi data untuk: <b>'+fkEsc(anaRefLabel(st.aktifRef))+'</b></span></div>';
   html+='<div class="ana-tb-field"><label>Referensi</label><select id="ana-aktifref" onchange="anaOnAktifRef(this)">'+refOpts+'</select></div>';
+  html+='<div class="ana-tb-field"><label>Jenis Pekerjaan</label><select id="ana-jenis" onchange="anaOnJenis(this)">'+
+        '<option value="Umum"'+(st.jenis==='Umum'?' selected':'')+'>Pekerjaan Umum</option>'+
+        '<option value="Konstruksi"'+(st.jenis==='Konstruksi'?' selected':'')+'>Pekerjaan Konstruksi</option></select></div>';
+  html+='<div class="ana-tb-field"><label>ROK (%) — maks '+rokMax+'%</label>'+
+        '<input id="ana-rok" type="text" inputmode="decimal" placeholder="0" value="'+fkEsc(st.rok!==''&&st.rok!=null?String(st.rok):'')+'" oninput="anaOnRok(this)"></div>';
   html+='<div class="ana-tb-field"><label>Metode Perhitungan</label><select id="ana-metoderef" onchange="anaOnMetodeRef(this)">'+
         '<option value="Sama"'+(st.metodeRef==='Sama'?' selected':'')+'>Sama</option>'+
         '<option value="Berbeda"'+(st.metodeRef==='Berbeda'?' selected':'')+'>Berbeda</option></select></div>';
@@ -12182,6 +12195,20 @@ function anaToolbarHtml(){
   return html;
 }
 function anaOnAktifRef(el){ anaState.aktifRef=Math.max(0,Math.min(anaState.jumlahRef-1,parseInt(el.value,10)||0)); anaSaveState(); anaRenderStep2Body(); }
+function anaOnJenis(el){
+  anaState.jenis=(el.value==='Konstruksi')?'Konstruksi':'Umum';
+  // batasi ulang ROK sesuai jenis baru
+  const rokMax=(anaState.jenis==='Konstruksi')?15:10;
+  if(anaState.rok!==''&&anaState.rok!=null){ let rk=anaNum(anaState.rok); if(rk>rokMax){ rk=rokMax; anaState.rok=rk; } }
+  anaSaveState(); anaRenderStep2Body();
+}
+function anaOnRok(el){
+  let v=el.value.replace(/[^0-9.,]/g,'').replace(/,/g,'.');
+  const parts=v.split('.'); if(parts.length>2) v=parts[0]+'.'+parts.slice(1).join('');
+  const rokMax=(anaState.jenis==='Konstruksi')?15:10;
+  let num=parseFloat(v); if(!isNaN(num)&&num>rokMax){ v=String(rokMax); }
+  el.value=v; anaState.rok=(v===''?'':(parseFloat(v)||0)); anaSaveState(); anaRenderResult();
+}
 function anaOnMetodeRef(el){ anaState.metodeRef=(el.value==='Berbeda')?'Berbeda':'Sama'; anaSaveState(); anaRenderStep2Body(); }
 function anaOnMetodeAll(el){ anaState.metodeAll=(el.value==='Terendah')?'Terendah':'Rata-rata'; anaSaveState(); anaRenderResult(); }
 
@@ -12259,7 +12286,11 @@ function anaResultFor(i){
   const method=anaMethodFor(i);
   const barangVals=anaCollect(i,'hargaBarang'), jasaVals=anaCollect(i,'hargaJasa');
   const calc=(vals)=> method==='Terendah'?anaMin(vals):anaAvg(vals);
-  const hb=Math.round(calc(barangVals)), hj=Math.round(calc(jasaVals));
+  let hb=calc(barangVals), hj=calc(jasaVals);
+  // Terapkan ROK (%) ke Harga Barang & Jasa masing-masing
+  const rok=anaNum(anaState.rok);
+  if(rok>0){ hb=hb*(1+rok/100); hj=hj*(1+rok/100); }
+  hb=Math.round(hb); hj=Math.round(hj);
   return {method, hargaBarang:hb, hargaJasa:hj, total:hb+hj};
 }
 
@@ -12290,11 +12321,17 @@ function anaRenderResult(){
   const modeTxt = st.metodeRef==='Sama'
     ? ('Metode <b>'+st.metodeAll+'</b> diterapkan ke semua uraian.')
     : 'Metode ditentukan <b>per uraian</b> pada kolom Metode Perhitungan.';
+  const rok=anaNum(st.rok);
+  const rokSuffix = rok>0 ? (' <span style="color:#0b6a73;font-weight:800">(+ ROK '+ (Number.isInteger(rok)?rok:rok) +'%)</span>') : '';
+  const jenisTxt = st.jenis==='Konstruksi' ? 'Pekerjaan Konstruksi (ROK 1–15%)' : 'Pekerjaan Umum (ROK 1–10%)';
+  const rokHint = rok>0
+    ? (' ROK <b>'+rok+'%</b> ditambahkan ke Harga Barang &amp; Jasa masing-masing ('+jenisTxt+').')
+    : (' ROK belum diisi — '+jenisTxt+'.');
   body.innerHTML='<div class="ana-res-wrap"><table class="ana-res"><thead><tr>'+
       '<th class="c-no">No</th><th class="c-ur">Uraian Pekerjaan</th>'+
-      '<th>Harga Sat. Barang</th><th>Harga Sat. Jasa</th><th>Harga Satuan (Total)</th>'+
+      '<th>Harga Sat. Barang'+rokSuffix+'</th><th>Harga Sat. Jasa'+rokSuffix+'</th><th>Harga Satuan (Total)</th>'+
     '</tr></thead><tbody>'+(rows||'<tr><td colspan="5" style="text-align:center;color:#9aa7ab">Belum ada data</td></tr>')+'</tbody></table></div>'+
-    '<div class="ana-res-hint">'+modeTxt+' Nilai <b>0 / kosong</b> diabaikan dalam perhitungan (rata-rata dihitung hanya dari referensi yang terisi).</div>';
+    '<div class="ana-res-hint">'+modeTxt+rokHint+' Nilai <b>0 / kosong</b> diabaikan dalam perhitungan (rata-rata dihitung hanya dari referensi yang terisi).</div>';
 }
 
 /* ---------- Render form ---------- */
@@ -12344,7 +12381,7 @@ function anaActionsHtml(o){
   let left='<button class="btn btn-ghost" onclick="anaBatal()">'+FKL_IC_X+'Batal</button>';
   let right='';
   if(o.back) right+='<button class="btn btn-light" onclick="anaBack()">'+FKL_IC_BACK+'Kembali</button>';
-  if(o.save) right+='<button class="btn btn-green" onclick="anaSimpan()">'+FKL_IC_SAVE+'Simpan</button>';
+  if(o.save) right+='<button class="btn btn-green" onclick="anaSimpan()">'+FKL_IC_SAVE+'Simpan dan Lihat</button>';
   else right+='<button class="btn btn-teal" onclick="anaNext()">Selanjutnya'+FKL_IC_NEXT+'</button>';
   return '<div class="fkl-actions"><div class="fkl-actions-left">'+left+'</div><div class="fkl-actions-right">'+right+'</div></div>';
 }
