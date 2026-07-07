@@ -2552,6 +2552,7 @@ table.ana-ahsp-table tfoot td:first-child{text-transform:uppercase;letter-spacin
 .ana-ahsp-layer-del{width:30px;height:30px;font-size:17px}
 .ana-ahsp-addlayer-wrap{text-align:center;margin-top:6px}
 .ana-ahsp-addlayer-wrap .ana-ahsp-add{padding:9px 20px;font-size:11.5px}
+.ana-ahsp-pager{border-top:none;justify-content:center;padding:6px 0}
 /* Tombol tambah/hapus baris per-baris pada tabel Harga Satuan (Konstruksi) */
 table.hps-uraian td.c-act{width:64px;text-align:center;white-space:nowrap;padding:6px 4px}
 .ana-row-add{width:24px;height:24px;padding:0;border-radius:7px;font-size:15px;line-height:1;margin-right:4px}
@@ -12219,6 +12220,7 @@ function anaBlankState(){ return {
 let anaState = anaBlankState();
 let anaStep = 1;             // 1..2
 let anaEditId = null;
+let anaAhspActive = 0;        // index layer AHSP yang sedang ditampilkan (Bagian 3 Konstruksi, seperti halaman)
 let anaPreviewState = null;
 
 const ANA_STATE_KEY = 'analisa_state_v1';
@@ -12328,7 +12330,7 @@ function openAnalisaInput(editId){
   }else{
     anaEditId=null; anaState=anaBlankState();
   }
-  anaStep=1; anaEnsure(); anaSaveState(); showView('form-analisa');
+  anaStep=1; anaAhspActive=0; anaEnsure(); anaSaveState(); showView('form-analisa');
 }
 function openAnalisaView(){
   if(!isAdmin()){ toast('Menu ini hanya untuk akun admin','warn'); return; }
@@ -12569,15 +12571,44 @@ function anaAhspRecalcSubtotal(li,key){
   const rokTxt = rok>0 ? (' <span class="ana-rok-chip">(+ROK '+rok+'%) = '+anaRp(adj)+'</span>') : '';
   el.innerHTML=anaRp(subtotal)+rokTxt;
 }
-function anaAhspAddLayer(){ anaState.ahsp.push(anaBlankAhspLayer()); anaSaveState(); anaRenderAhspBody(); }
+function anaAhspAddLayer(){
+  anaState.ahsp.push(anaBlankAhspLayer());
+  anaAhspActive=anaState.ahsp.length-1; // pindah ke halaman/layer baru yang baru ditambahkan
+  anaSaveState(); anaRenderAhspBody();
+}
 function anaAhspRemoveLayer(li){
   if(anaState.ahsp.length<=1){ toast('Minimal harus ada 1 analisa','warn'); return; }
-  anaState.ahsp.splice(li,1); anaSaveState(); anaRenderAhspBody();
+  anaState.ahsp.splice(li,1);
+  if(anaAhspActive>=anaState.ahsp.length) anaAhspActive=anaState.ahsp.length-1;
+  else if(anaAhspActive>li) anaAhspActive--;
+  anaSaveState(); anaRenderAhspBody();
+}
+function anaAhspGotoLayer(li){
+  const n=anaState.ahsp.length;
+  anaAhspActive=Math.max(0,Math.min(n-1,li));
+  anaRenderAhspBody();
+  const holder=document.getElementById('ana-ahsp-body'); if(holder) holder.scrollIntoView({behavior:'smooth',block:'start'});
+}
+/* Navigasi halaman antar layer AHSP — mirip paginasi daftar (1, 2, 3, ... sesuai jumlah layer). */
+function anaAhspPagerHtml(){
+  const n=anaState.ahsp.length;
+  if(n<=1) return '';
+  let nums='';
+  for(let i=0;i<n;i++) nums+='<button type="button" class="pg-btn pg-num'+(i===anaAhspActive?' active':'')+'" onclick="anaAhspGotoLayer('+i+')">'+(i+1)+'</button>';
+  return '<div class="pagination ana-ahsp-pager">'+
+    '<button type="button" class="pg-btn" '+(anaAhspActive===0?'disabled':'')+' onclick="anaAhspGotoLayer('+(anaAhspActive-1)+')">‹ Sebelumnya</button>'+
+    nums+
+    '<button type="button" class="pg-btn" '+(anaAhspActive===n-1?'disabled':'')+' onclick="anaAhspGotoLayer('+(anaAhspActive+1)+')">Berikutnya ›</button>'+
+  '</div>';
 }
 function anaRenderAhspBody(){
   const holder=document.getElementById('ana-ahsp-body'); if(!holder) return;
-  holder.innerHTML = anaState.ahsp.map((_,li)=>anaAhspLayerHtml(li)).join('') +
-    '<div class="ana-ahsp-addlayer-wrap"><button type="button" class="ana-ahsp-add" onclick="anaAhspAddLayer()">+ Tambah Layer (Analisa Pekerjaan Berikutnya)</button></div>';
+  if(anaAhspActive>=anaState.ahsp.length) anaAhspActive=anaState.ahsp.length-1;
+  if(anaAhspActive<0) anaAhspActive=0;
+  const pager=anaAhspPagerHtml();
+  holder.innerHTML = pager + anaAhspLayerHtml(anaAhspActive) +
+    '<div class="ana-ahsp-addlayer-wrap"><button type="button" class="ana-ahsp-add" onclick="anaAhspAddLayer()">+ Tambah Layer (Analisa Pekerjaan Berikutnya)</button></div>' +
+    pager;
 }
 
 /* ================= LANGKAH 2: ANALISA HARGA SATUAN ================= */
