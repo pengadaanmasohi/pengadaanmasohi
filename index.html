@@ -1631,15 +1631,21 @@ tbody tr{animation:rowIn .3s ease both}
 .mod-seg .fk-seg-btn{font-size:11px;padding:7px 12px}
 .mod-seg .fk-seg-btn svg{width:14px;height:14px}
 .mod-seg .fk-seg-thumb{top:4px;bottom:4px}
-/* Jadwal Pelaksanaan Pekerjaan (filter hari kerja) */
-.jk-summary{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:14px}
-.jk-stat{flex:1 1 170px;background:linear-gradient(180deg,#ffffff,#f3f8f9);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:4px}
-.jk-stat .n{font-family:'Plus Jakarta Sans';font-weight:800;font-size:18px;color:var(--teal-dark)}
-.jk-stat .l{font-size:10.5px;color:var(--muted);font-weight:600}
-.jk-stat.ok .n{color:#137a44}
-.jk-stat.off .n{color:#b22a2a}
-.jk-stat.end .n{font-size:13px}
-tr.jk-off td{background:#fbf3f3}
+/* Jadwal Pelaksanaan Pekerjaan (tabel tahapan pengadaan) */
+.jp-table{border-left:4px solid var(--teal)}
+.jp-table thead th{background:#dbe7f2;color:#13324a;text-transform:uppercase;font-weight:800;font-size:10.5px;letter-spacing:.2px}
+tr.jp-row-hi td{background:#f2ecd9}
+.jp-in-nama,.jp-in-ket{width:100%;border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-family:'Plus Jakarta Sans';font-size:11.5px}
+.jp-durasi{white-space:nowrap}
+.jp-dur-in{width:44px;border:1px solid var(--line);border-radius:6px;padding:4px 6px;font-size:11px;margin-right:2px}
+.jp-durasi span{font-size:9.5px;color:var(--muted);margin-right:8px}
+.jp-awal-val{font-weight:700;color:#0d2a30;font-size:11.5px;white-space:nowrap}
+.jp-override-lbl{display:flex;align-items:center;gap:4px;font-size:9.5px;color:var(--muted);margin-top:4px;cursor:pointer;white-space:nowrap}
+.jp-override-input{margin-top:4px;width:100%;font-size:10.5px;border:1px solid var(--line);border-radius:6px;padding:4px 6px}
+.jp-aksi{display:flex;gap:4px;justify-content:center}
+.jp-aksi button{border:none;background:var(--teal-soft);color:var(--teal-dark);border-radius:8px;width:26px;height:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.jp-aksi button svg{width:14px;height:14px}
+.jp-aksi button:hover{background:var(--teal);color:#fff}
 tr.hl-weekend td{background:#f5f8fb}
 @media(max-width:900px){.head-right-tools{width:100%}.mod-seg{width:100%}.mod-seg .fk-seg-btn{flex:1 1 auto;justify-content:center}}
 /* Kolom & sel File Kontrak */
@@ -2798,26 +2804,16 @@ table.hps-uraian td.c-act{width:64px;text-align:center;white-space:nowrap;paddin
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                   Lihat Analisa
                 </button>
+                <button class="topnav-item" data-view="jadwal-kerja" data-role="admin" onclick="openJadwalKerja()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="m9 16 2 2 4-4"/></svg>
+                  Jadwal Pelaksanaan Pekerjaan
+                </button>
+                <button class="topnav-item" data-view="hari-libur" data-role="admin" onclick="openHariLibur()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 15h.01M12 15h.01M16 15h.01"/></svg>
+                  Hari Libur Nasional
+                </button>
               </div>
             </div>
-          </div>
-        </div>
-        <!-- ===== Jadwal Kerja (filter hari kerja: Sabtu/Minggu + libur nasional manual) ===== -->
-        <div class="topnav-group" data-group="jadwal">
-          <button class="topnav-trigger" type="button" onclick="toggleTopGroup(event,'jadwal')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="m9 16 2 2 4-4"/></svg>
-            Jadwal Kerja
-            <svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
-          </button>
-          <div class="topnav-dropdown">
-            <button class="topnav-item" data-view="jadwal-kerja" data-role="admin user" onclick="openJadwalKerja()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="m9 16 2 2 4-4"/></svg>
-              Buat Jadwal Kerja
-            </button>
-            <button class="topnav-item" data-view="hari-libur" data-role="admin user" onclick="openHariLibur()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 15h.01M12 15h.01M16 15h.01"/></svg>
-              Hari Libur Nasional
-            </button>
           </div>
         </div>
       </nav>
@@ -8105,132 +8101,197 @@ function hlDelete(id){
   });
 }
 
-/* ---------- Halaman: Buat Jadwal Kerja (kalkulator) ---------- */
-let jkResult = null;   // hasil generate terakhir (dipakai juga saat Cetak/PDF)
-function openJadwalKerja(){ refreshHariLibur().then(()=>showView('jadwal-kerja')); }
+/* ---------- Halaman: Jadwal Pelaksanaan Pekerjaan (berbasis tahapan) ----------
+   Tiap tahapan (Undangan Pengadaan, Pendaftaran, dst.) punya durasi sendiri
+   (Hari/Jam/Menit). Awal tahap ke-2 dst secara DEFAULT otomatis mengikuti
+   Akhir tahap sebelumnya (berurutan), tapi bisa di-override manual per
+   tahap (mis. Pendaftaran ingin mulai bersamaan dengan Undangan Pengadaan).
+   Perhitungan Akhir memakai jam kerja (Jam Kerja Mulai–Selesai) dan otomatis
+   melompati Sabtu, Minggu, & hari libur nasional (dari modul Hari Libur). */
+const JP_DEFAULT_TAHAPAN = [
+  {nama:'Undangan Pengadaan',              hari:1, jam:7, menit:0,  ket:''},
+  {nama:'Pendaftaran',                     hari:2, jam:7, menit:0,  ket:''},
+  {nama:'Upload Dokumen Penawaran',        hari:1, jam:7, menit:0,  ket:''},
+  {nama:'Pembukaan Dokumen Penawaran',     hari:0, jam:4, menit:0,  ket:''},
+  {nama:'Evaluasi Penawaran',              hari:0, jam:2, menit:30, ket:''},
+  {nama:'Klarifikasi dan Negosiasi Harga', hari:0, jam:7, menit:0,  ket:''},
+  {nama:'Penandatanganan Kontrak / SPK',   hari:0, jam:7, menit:0,  ket:''}
+];
+let jpState = null;
+function jpBlankState(){
+  return {
+    namaPekerjaan:'', tglMulai:'', jamMulai:'08:00',
+    jamKerjaMulai:'08:00', jamKerjaSelesai:'15:00',
+    tahapan: JP_DEFAULT_TAHAPAN.map(t=>Object.assign({}, t, {overrideAwal:null}))
+  };
+}
+function openJadwalKerja(){
+  refreshHariLibur().then(()=>{ if(!jpState) jpState=jpBlankState(); showView('jadwal-kerja'); });
+}
+
+/* ---- Util tanggal & jam kerja (memakai hlParseISO/hlDayStatus dari modul Hari Libur) ---- */
+function jpTimeToMin(t){ const p=String(t||'0:0').split(':'); return (Number(p[0])||0)*60+(Number(p[1])||0); }
+function jpCombine(dateStr, timeStr){
+  const d=hlParseISO(dateStr); const p=String(timeStr||'0:0').split(':');
+  d.setHours(Number(p[0])||0, Number(p[1])||0, 0, 0); return d;
+}
+function jpIsWorkDay(d){ return hlDayStatus(d).kerja; }
+function jpNextWorkDay(d){ const r=new Date(d); do{ r.setDate(r.getDate()+1); }while(!jpIsWorkDay(r)); return r; }
+function jpEnsureWorkStart(d){ let r=new Date(d); while(!jpIsWorkDay(r)) r.setDate(r.getDate()+1); return r; }
+function jpAddDurasi(start, hari, jam, menit, jamKerjaMulai, jamKerjaSelesai){
+  let cur=new Date(start);
+  for(let i=0;i<(Number(hari)||0);i++) cur=jpNextWorkDay(cur);
+  let remain=(Number(jam)||0)*60+(Number(menit)||0);
+  const mulMin=jpTimeToMin(jamKerjaMulai), selMin=jpTimeToMin(jamKerjaSelesai);
+  let guard=0;
+  while(remain>0 && guard<5000){
+    guard++;
+    const curMin=cur.getHours()*60+cur.getMinutes();
+    const avail=Math.max(0, selMin-curMin);
+    if(remain<=avail){ cur=new Date(cur.getTime()+remain*60000); remain=0; }
+    else{
+      remain-=avail;
+      cur=jpNextWorkDay(cur);
+      cur.setHours(Math.floor(mulMin/60), mulMin%60, 0, 0);
+    }
+  }
+  return cur;
+}
+function jpFmtDurasi(hari,jam,menit){
+  const p=[]; if(hari) p.push(hari+' Hari'); if(jam) p.push(jam+' Jam'); if(menit) p.push(menit+' Menit');
+  return p.length ? p.join(' ') : '0 Jam';
+}
+function jpFmtDT(d){
+  if(!d) return '-';
+  const pad=n=>String(n).padStart(2,'0');
+  return pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear()+'  '+pad(d.getHours())+':'+pad(d.getMinutes());
+}
+function jpDTLocal(d){
+  const pad=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());
+}
+/* Hitung Awal/Akhir semua tahapan berdasarkan jpState saat ini */
+function jpCompute(){
+  const st=jpState; if(!st || !st.tglMulai) return [];
+  let awalPertama=jpEnsureWorkStart(jpCombine(st.tglMulai, st.jamMulai));
+  const rows=[];
+  st.tahapan.forEach((t,i)=>{
+    let awal;
+    if(i===0) awal=awalPertama;
+    else if(t.overrideAwal) awal=new Date(t.overrideAwal);
+    else awal=new Date(rows[i-1].akhir);
+    const akhir=jpAddDurasi(awal, t.hari, t.jam, t.menit, st.jamKerjaMulai, st.jamKerjaSelesai);
+    rows.push(Object.assign({}, t, {awal, akhir}));
+  });
+  return rows;
+}
+
+/* ---- Render halaman (form + tabel tahapan yang bisa diedit langsung) ---- */
 function renderJadwalKerja(){
   const cont=document.getElementById('jk-content'); if(!cont) return;
+  if(!jpState) jpState=jpBlankState();
+  const st=jpState, rows=jpCompute();
+
+  const bodyRows = st.tahapan.map((t,i)=>{
+    const r = rows[i] || {awal:null, akhir:null};
+    const hasKet = !!(t.ket && t.ket.trim());
+    const overrideOn = !!t.overrideAwal;
+    const overrideInput = overrideOn
+      ? '<input type="datetime-local" class="jp-override-input" value="'+jpDTLocal(new Date(t.overrideAwal))+'" onchange="jpSetOverrideVal('+i+',this.value)">'
+      : '';
+    return '<tr class="'+(hasKet?'jp-row-hi':'')+'">'+
+      '<td class="col-no">'+(i+1)+'</td>'+
+      '<td><input type="text" class="jp-in-nama" value="'+fkEsc(t.nama)+'" oninput="jpSetTahap('+i+',\'nama\',this.value)"></td>'+
+      '<td class="jp-awal">'+
+        '<div class="jp-awal-val">'+fkEsc(jpFmtDT(r.awal))+'</div>'+
+        (i===0 ? '' : (
+          '<label class="jp-override-lbl"><input type="checkbox" '+(overrideOn?'checked':'')+' onchange="jpToggleOverride('+i+',this.checked)"> Atur manual</label>'+
+          overrideInput
+        ))+
+      '</td>'+
+      '<td class="jp-akhir">'+fkEsc(jpFmtDT(r.akhir))+'</td>'+
+      '<td class="jp-durasi">'+
+        '<input type="number" min="0" class="jp-dur-in" value="'+t.hari+'" oninput="jpSetTahap('+i+',\'hari\',this.value)"><span>Hari</span>'+
+        '<input type="number" min="0" class="jp-dur-in" value="'+t.jam+'" oninput="jpSetTahap('+i+',\'jam\',this.value)"><span>Jam</span>'+
+        '<input type="number" min="0" class="jp-dur-in" value="'+t.menit+'" oninput="jpSetTahap('+i+',\'menit\',this.value)"><span>Menit</span>'+
+      '</td>'+
+      '<td><input type="text" class="jp-in-ket" value="'+fkEsc(t.ket)+'" oninput="jpSetTahap('+i+',\'ket\',this.value)" placeholder="Keterangan (opsional)"></td>'+
+      '<td class="jp-aksi">'+
+        '<button type="button" title="Naik" onclick="jpMoveTahap('+i+',-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 15l-6-6-6 6"/></svg></button>'+
+        '<button type="button" title="Turun" onclick="jpMoveTahap('+i+',1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg></button>'+
+        '<button type="button" title="Hapus" onclick="jpDelTahap('+i+')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>'+
+      '</td>'+
+    '</tr>';
+  }).join('');
+
   cont.innerHTML = ''+
     '<div class="form-card">'+
       '<div class="form-section-title">Data Pekerjaan</div>'+
-      '<div class="form-flow" style="--cols:3">'+
-        '<div class="field" style="grid-column:span 3"><label>Nama Pekerjaan (opsional)</label><input type="text" id="jk-nama" placeholder="Untuk header jadwal saat dicetak"></div>'+
-        '<div class="field"><label>Tanggal Mulai</label><input type="date" id="jk-mulai"></div>'+
-        '<div class="field"><label>Mode</label><select id="jk-mode" onchange="jkOnModeChange()">'+
-          '<option value="kerja">Tentukan lewat Jumlah Hari Kerja</option>'+
-          '<option value="selesai">Tentukan lewat Tanggal Selesai</option>'+
-        '</select></div>'+
-        '<div class="field" id="jk-nilai-wrap"><label>Jumlah Hari Kerja</label><input type="number" id="jk-nilai" min="1" placeholder="mis. 90"></div>'+
+      '<div class="form-flow" style="--cols:4">'+
+        '<div class="field" style="grid-column:span 4"><label>Nama Pekerjaan (opsional)</label><input type="text" value="'+fkEsc(st.namaPekerjaan)+'" oninput="jpSet(\'namaPekerjaan\',this.value)" placeholder="Untuk header saat dicetak"></div>'+
+        '<div class="field"><label>Tanggal Mulai</label><input type="date" value="'+fkEsc(st.tglMulai)+'" onchange="jpSet(\'tglMulai\',this.value)"></div>'+
+        '<div class="field"><label>Jam Mulai</label><input type="time" value="'+fkEsc(st.jamMulai)+'" onchange="jpSet(\'jamMulai\',this.value)"></div>'+
+        '<div class="field"><label>Jam Kerja Mulai</label><input type="time" value="'+fkEsc(st.jamKerjaMulai)+'" onchange="jpSet(\'jamKerjaMulai\',this.value)"></div>'+
+        '<div class="field"><label>Jam Kerja Selesai</label><input type="time" value="'+fkEsc(st.jamKerjaSelesai)+'" onchange="jpSet(\'jamKerjaSelesai\',this.value)"></div>'+
       '</div>'+
-      '<div style="margin-top:14px"><button class="btn btn-teal" onclick="jkGenerate()">'+
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="m9 16 2 2 4-4"/></svg> Buat Jadwal'+
-      '</button></div>'+
     '</div>'+
-    '<div id="jk-result"></div>';
-  jkResult=null;
-}
-function jkOnModeChange(){
-  const mode=document.getElementById('jk-mode').value;
-  const wrap=document.getElementById('jk-nilai-wrap'); if(!wrap) return;
-  wrap.innerHTML = (mode==='selesai')
-    ? '<label>Tanggal Selesai</label><input type="date" id="jk-nilai">'
-    : '<label>Jumlah Hari Kerja</label><input type="number" id="jk-nilai" min="1" placeholder="mis. 90">';
-}
-function jkGenerate(){
-  const namaEl=document.getElementById('jk-nama'), mulaiEl=document.getElementById('jk-mulai'),
-        modeEl=document.getElementById('jk-mode'), nilaiEl=document.getElementById('jk-nilai');
-  const nama=(namaEl?namaEl.value:'').trim();
-  const mulaiStr=mulaiEl?mulaiEl.value:'';
-  const mode=modeEl?modeEl.value:'kerja';
-  if(!mulaiStr){ toast('Pilih Tanggal Mulai terlebih dahulu','warn'); return; }
-  const mulai=hlParseISO(mulaiStr);
-  let hariList=[], selesai=null;
-
-  if(mode==='kerja'){
-    const n=parseInt(nilaiEl?nilaiEl.value:'',10);
-    if(!n || n<1){ toast('Isi jumlah hari kerja yang valid','warn'); return; }
-    let cur=new Date(mulai), kerjaCount=0, guard=0;
-    while(kerjaCount<n && guard<20000){
-      const st=hlDayStatus(cur);
-      hariList.push({date:new Date(cur), status:st});
-      if(st.kerja) kerjaCount++;
-      cur=hlAddDays(cur,1); guard++;
-    }
-    selesai=hariList[hariList.length-1].date;
-  }else{
-    const selesaiStr=nilaiEl?nilaiEl.value:'';
-    if(!selesaiStr){ toast('Pilih Tanggal Selesai terlebih dahulu','warn'); return; }
-    selesai=hlParseISO(selesaiStr);
-    if(selesai<mulai){ toast('Tanggal Selesai harus setelah Tanggal Mulai','warn'); return; }
-    let cur=new Date(mulai);
-    while(cur<=selesai){ hariList.push({date:new Date(cur), status:hlDayStatus(cur)}); cur=hlAddDays(cur,1); }
-  }
-
-  jkResult={nama, mulai, selesai, hariList};
-  jkRenderResult();
-}
-function jkRenderResult(){
-  const box=document.getElementById('jk-result'); if(!box || !jkResult) return;
-  const {hariList}=jkResult;
-  let ada=0, sabtu=0, minggu=0, libur=0;
-  const rows=hariList.map((h,i)=>{
-    const dow=h.date.getDay();
-    if(h.status.kerja) ada++; else if(dow===6) sabtu++; else if(dow===0) minggu++; else libur++;
-    return '<tr class="'+(h.status.kerja?'':'jk-off')+'">'+
-      '<td class="col-no">'+(i+1)+'</td>'+
-      '<td class="col-date">'+fkEsc(pnwDateLong(hlToISO(h.date)))+'</td>'+
-      '<td>'+HARI_NAMA[dow]+'</td>'+
-      '<td>'+(h.status.kerja?'<span class="pill pill-kontrak">Hari Kerja</span>':'<span class="pill pill-batal">'+fkEsc(h.status.label)+'</span>')+'</td>'+
-      '<td class="wrap-cell">'+fkEsc(h.status.ket||'')+'</td>'+
-    '</tr>';
-  }).join('');
-  box.innerHTML = ''+
     '<div class="panel" style="margin-top:16px">'+
-      '<div class="jk-summary">'+
-        '<div class="jk-stat"><span class="n">'+hariList.length+'</span><span class="l">Total Hari Kalender</span></div>'+
-        '<div class="jk-stat ok"><span class="n">'+ada+'</span><span class="l">Hari Kerja</span></div>'+
-        '<div class="jk-stat off"><span class="n">'+(sabtu+minggu+libur)+'</span><span class="l">Hari Libur (Sabtu '+sabtu+' • Minggu '+minggu+' • Nasional '+libur+')</span></div>'+
-        '<div class="jk-stat end"><span class="n">'+fkEsc(pnwDateLong(hlToISO(jkResult.selesai)))+'</span><span class="l">Tanggal Selesai</span></div>'+
-      '</div>'+
-      '<div style="margin-bottom:12px"><button class="btn btn-teal" onclick="jkPrint()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg> Cetak / PDF</button></div>'+
-      '<div class="table-wrap"><table>'+
-        '<thead><tr><th class="col-no">No</th><th class="col-date">Tanggal</th><th>Hari</th><th>Status</th><th>Keterangan</th></tr></thead>'+
-        '<tbody>'+rows+'</tbody>'+
+      '<div class="table-wrap"><table class="jp-table">'+
+        '<thead><tr><th class="col-no">No</th><th>Tahapan Pengadaan</th><th>Awal</th><th>Akhir</th><th>Durasi</th><th>Keterangan</th><th style="width:104px">Aksi</th></tr></thead>'+
+        '<tbody>'+bodyRows+'</tbody>'+
       '</table></div>'+
+      '<div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap">'+
+        '<button class="btn btn-teal" onclick="jpAddTahap()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Tambah Tahapan</button>'+
+        '<button class="btn btn-teal" onclick="jpPrint()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg> Cetak / PDF</button>'+
+      '</div>'+
     '</div>';
 }
-
-/* ---- Cetak / PDF Jadwal Kerja (dokumen mandiri, memakai tema dokumen yang sama) ---- */
-function jkExtraDocCss(){
-  return ''+
-  'table.jk-doc-sum{width:60%;border-collapse:collapse;margin:6px 0 14px}'+
-  'table.jk-doc-sum td{padding:2px 6px;font-size:10.5px;vertical-align:top}'+
-  'table.jk-doc-sum td.k{color:#22343a;font-weight:600;white-space:nowrap}'+
-  'table.jk-doc-sum td.s{width:10px}'+
-  'table.jk-doc-sum td.v{font-weight:700;color:#0d2a30}'+
-  '.jk-doc-nama{font-weight:800;font-size:12px;color:#0d2a30;margin-bottom:6px}'+
-  'table.jk-doc-tbl{width:100%;border-collapse:collapse;table-layout:fixed;margin:2px 0 8px}'+
-  'table.jk-doc-tbl th,table.jk-doc-tbl td{border:1px solid #7d979c;padding:3px 6px;font-size:9px;line-height:1.3;word-wrap:break-word}'+
-  'table.jk-doc-tbl thead th{background:#0E7C86;color:#fff;font-weight:800;text-align:center;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
-  'table.jk-doc-tbl td.no,table.jk-doc-tbl td.hr{text-align:center}'+
-  'table.jk-doc-tbl tr.off td{background:#fbeaea}'+
-  'table.jk-doc-tbl tr.off td.st{color:#b22a2a;font-weight:700}';
+function jpSet(key, val){ jpState[key]=val; renderJadwalKerja(); }
+function jpSetTahap(i, key, val){
+  if(key==='hari'||key==='jam'||key==='menit') val=Math.max(0, parseInt(val,10)||0);
+  jpState.tahapan[i][key]=val; renderJadwalKerja();
 }
-function jkStandaloneDocHtml(){
-  if(!jkResult) return '';
+function jpToggleOverride(i, on){
+  if(on){ const rows=jpCompute(); jpState.tahapan[i].overrideAwal = rows[i] ? jpDTLocal(rows[i].awal) : null; }
+  else { jpState.tahapan[i].overrideAwal=null; }
+  renderJadwalKerja();
+}
+function jpSetOverrideVal(i, val){ jpState.tahapan[i].overrideAwal=val; renderJadwalKerja(); }
+function jpAddTahap(){ jpState.tahapan.push({nama:'Tahapan Baru', hari:0, jam:1, menit:0, ket:'', overrideAwal:null}); renderJadwalKerja(); }
+function jpDelTahap(i){
+  if(jpState.tahapan.length<=1){ toast('Minimal harus ada 1 tahapan','warn'); return; }
+  jpState.tahapan.splice(i,1); renderJadwalKerja();
+}
+function jpMoveTahap(i, dir){
+  const j=i+dir; if(j<0 || j>=jpState.tahapan.length) return;
+  const arr=jpState.tahapan; const tmp=arr[i]; arr[i]=arr[j]; arr[j]=tmp;
+  renderJadwalKerja();
+}
+
+/* ---- Cetak / PDF (dokumen mandiri bertema sama, meniru gaya tabel jadwal tahapan pengadaan) ---- */
+function jpExtraDocCss(){
+  return ''+
+  '.jp-doc-nama{font-weight:800;font-size:12px;color:#0d2a30;margin-bottom:8px}'+
+  '.jp-doc-wrap{border-left:4px solid #0E7C86}'+
+  'table.jp-doc-tbl{width:100%;border-collapse:collapse;margin:0}'+
+  'table.jp-doc-tbl th,table.jp-doc-tbl td{border:1px solid #7d97ab;padding:6px 8px;font-size:9.5px;vertical-align:middle}'+
+  'table.jp-doc-tbl thead th{background:#dbe7f2;color:#13324a;font-weight:800;text-align:center;text-transform:uppercase;letter-spacing:.2px;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  'table.jp-doc-tbl td.no,table.jp-doc-tbl td.awal,table.jp-doc-tbl td.akhir,table.jp-doc-tbl td.durasi{text-align:center;white-space:nowrap}'+
+  'table.jp-doc-tbl tr.hi td{background:#f2ecd9;-webkit-print-color-adjust:exact;print-color-adjust:exact}';
+}
+function jpStandaloneDocHtml(){
+  const st=jpState; const rows=jpCompute();
   const cssEl=document.getElementById('fkl-doc-css');
-  const css=(cssEl?cssEl.textContent:'') + jkExtraDocCss();
-  const {nama, hariList, selesai, mulai}=jkResult;
-  let ada=0, sabtu=0, minggu=0, libur=0;
-  const rows=hariList.map((h,i)=>{
-    const dow=h.date.getDay();
-    if(h.status.kerja) ada++; else if(dow===6) sabtu++; else if(dow===0) minggu++; else libur++;
-    return '<tr'+(h.status.kerja?'':' class="off"')+'>'+
+  const css=(cssEl?cssEl.textContent:'') + jpExtraDocCss();
+  const body=rows.map((r,i)=>{
+    const hasKet=!!(r.ket && r.ket.trim());
+    return '<tr'+(hasKet?' class="hi"':'')+'>'+
       '<td class="no">'+(i+1)+'</td>'+
-      '<td class="tgl">'+fkEsc(pnwDateLong(hlToISO(h.date)))+'</td>'+
-      '<td class="hr">'+HARI_NAMA[dow]+'</td>'+
-      '<td class="st">'+(h.status.kerja?'Hari Kerja':fkEsc(h.status.label))+'</td>'+
-      '<td class="kt">'+fkEsc(h.status.ket||'')+'</td>'+
+      '<td class="nm">'+fkEsc(r.nama)+'</td>'+
+      '<td class="awal">'+fkEsc(jpFmtDT(r.awal))+'</td>'+
+      '<td class="akhir">'+fkEsc(jpFmtDT(r.akhir))+'</td>'+
+      '<td class="durasi">'+fkEsc(jpFmtDurasi(r.hari,r.jam,r.menit))+'</td>'+
+      '<td class="ket">'+fkEsc(r.ket||'')+'</td>'+
     '</tr>';
   }).join('');
   return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8">'+
@@ -8249,31 +8310,24 @@ function jkStandaloneDocHtml(){
       '<div class="fkl-doc-band"></div>'+
       '<h1 class="fkl-doc-title">JADWAL PELAKSANAAN PEKERJAAN</h1>'+
       '<div class="fkl-doc-titlegap"></div>'+
-      (nama? '<div class="jk-doc-nama">'+fkEsc(nama)+'</div>' : '')+
-      '<table class="jk-doc-sum"><tbody>'+
-        '<tr><td class="k">Tanggal Mulai</td><td class="s">:</td><td class="v">'+fkEsc(pnwDateLong(hlToISO(mulai)))+'</td></tr>'+
-        '<tr><td class="k">Tanggal Selesai</td><td class="s">:</td><td class="v">'+fkEsc(pnwDateLong(hlToISO(selesai)))+'</td></tr>'+
-        '<tr><td class="k">Total Hari Kalender</td><td class="s">:</td><td class="v">'+hariList.length+' hari</td></tr>'+
-        '<tr><td class="k">Total Hari Kerja</td><td class="s">:</td><td class="v">'+ada+' hari</td></tr>'+
-        '<tr><td class="k">Total Hari Libur</td><td class="s">:</td><td class="v">'+(sabtu+minggu+libur)+' hari (Sabtu '+sabtu+', Minggu '+minggu+', Nasional '+libur+')</td></tr>'+
-      '</tbody></table>'+
-      '<table class="jk-doc-tbl"><thead><tr><th class="no">No</th><th class="tgl">Tanggal</th><th class="hr">Hari</th><th class="st">Status</th><th class="kt">Keterangan</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+      (st.namaPekerjaan? '<div class="jp-doc-nama">'+fkEsc(st.namaPekerjaan)+'</div>' : '')+
+      '<div class="jp-doc-wrap"><table class="jp-doc-tbl"><thead><tr><th class="no">No</th><th class="nm">Tahapan Pengadaan</th><th class="awal">Awal</th><th class="akhir">Akhir</th><th class="durasi">Durasi</th><th class="ket">Keterangan</th></tr></thead><tbody>'+body+'</tbody></table></div>'+
     '</div>'+
     '</body></html>';
 }
-function jkPrint(){
-  if(!jkResult){ toast('Buat jadwal terlebih dahulu sebelum mencetak','warn'); return; }
-  const old=document.getElementById('jk-print-frame'); if(old) old.remove();
+function jpPrint(){
+  if(!jpState || !jpState.tglMulai){ toast('Isi Tanggal Mulai terlebih dahulu','warn'); return; }
+  const old=document.getElementById('jp-print-frame'); if(old) old.remove();
   const ifr=document.createElement('iframe');
-  ifr.id='jk-print-frame';
+  ifr.id='jp-print-frame';
   ifr.setAttribute('aria-hidden','true');
   ifr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
   document.body.appendChild(ifr);
   const doc=ifr.contentWindow.document;
-  doc.open(); doc.write(jkStandaloneDocHtml()); doc.close();
+  doc.open(); doc.write(jpStandaloneDocHtml()); doc.close();
   const go=()=>{
     withHiddenPageTitle(()=>{ try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }catch(e){ try{ window.print(); }catch(_){} } });
-    setTimeout(()=>{ const f=document.getElementById('jk-print-frame'); if(f) f.remove(); }, 1500);
+    setTimeout(()=>{ const f=document.getElementById('jp-print-frame'); if(f) f.remove(); }, 1500);
   };
   const imgs=doc.images ? Array.from(doc.images) : [];
   if(imgs.length){
