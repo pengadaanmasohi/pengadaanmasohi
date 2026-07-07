@@ -1631,6 +1631,16 @@ tbody tr{animation:rowIn .3s ease both}
 .mod-seg .fk-seg-btn{font-size:11px;padding:7px 12px}
 .mod-seg .fk-seg-btn svg{width:14px;height:14px}
 .mod-seg .fk-seg-thumb{top:4px;bottom:4px}
+/* Jadwal Pelaksanaan Pekerjaan (filter hari kerja) */
+.jk-summary{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:14px}
+.jk-stat{flex:1 1 170px;background:linear-gradient(180deg,#ffffff,#f3f8f9);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.jk-stat .n{font-family:'Plus Jakarta Sans';font-weight:800;font-size:18px;color:var(--teal-dark)}
+.jk-stat .l{font-size:10.5px;color:var(--muted);font-weight:600}
+.jk-stat.ok .n{color:#137a44}
+.jk-stat.off .n{color:#b22a2a}
+.jk-stat.end .n{font-size:13px}
+tr.jk-off td{background:#fbf3f3}
+tr.hl-weekend td{background:#f5f8fb}
 @media(max-width:900px){.head-right-tools{width:100%}.mod-seg{width:100%}.mod-seg .fk-seg-btn{flex:1 1 auto;justify-content:center}}
 /* Kolom & sel File Kontrak */
 /* Kolom Bidang Pelaksana mengacu ukuran tabel Monitoring - Daftar Pekerjaan (col-bidang): lebar tetap 200px + wrap */
@@ -2792,6 +2802,24 @@ table.hps-uraian td.c-act{width:64px;text-align:center;white-space:nowrap;paddin
             </div>
           </div>
         </div>
+        <!-- ===== Jadwal Kerja (filter hari kerja: Sabtu/Minggu + libur nasional manual) ===== -->
+        <div class="topnav-group" data-group="jadwal">
+          <button class="topnav-trigger" type="button" onclick="toggleTopGroup(event,'jadwal')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="m9 16 2 2 4-4"/></svg>
+            Jadwal Kerja
+            <svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="topnav-dropdown">
+            <button class="topnav-item" data-view="jadwal-kerja" data-role="admin user" onclick="openJadwalKerja()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="m9 16 2 2 4-4"/></svg>
+              Buat Jadwal Kerja
+            </button>
+            <button class="topnav-item" data-view="hari-libur" data-role="admin user" onclick="openHariLibur()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 15h.01M12 15h.01M16 15h.01"/></svg>
+              Hari Libur Nasional
+            </button>
+          </div>
+        </div>
       </nav>
 
       <div class="topbar-user" id="topbar-user" style="display:none">
@@ -3738,6 +3766,28 @@ table.hps-uraian td.c-act{width:64px;text-align:center;white-space:nowrap;paddin
       </div>
       <div class="pagination" id="ana-view-pagination"></div>
     </div>
+  </section>
+
+  <!-- ============ JADWAL PELAKSANAAN PEKERJAAN (FILTER HARI KERJA) ============ -->
+  <section id="view-jadwal-kerja" class="view">
+    <div class="page-head">
+      <div>
+        <h2>Jadwal Pelaksanaan Pekerjaan</h2>
+        <p>Buat jadwal pelaksanaan yang otomatis melewati hari Sabtu, Minggu &amp; hari libur nasional</p>
+      </div>
+    </div>
+    <div id="jk-content"></div>
+  </section>
+
+  <!-- ============ HARI LIBUR NASIONAL & CUTI BERSAMA ============ -->
+  <section id="view-hari-libur" class="view">
+    <div class="page-head">
+      <div>
+        <h2>Hari Libur Nasional &amp; Cuti Bersama <span class="count-badge" id="hl-count">0</span></h2>
+        <p>Kelola tanggal merah untuk beberapa tahun ke depan — dipakai otomatis oleh Jadwal Pelaksanaan Pekerjaan</p>
+      </div>
+    </div>
+    <div id="hl-content"></div>
   </section>
 
   <!-- Wadah cetak dokumen kelengkapan (khusus print) -->
@@ -4840,6 +4890,8 @@ function showView(name, loaderMsg, noLoader){
         if(name==='hps-view') renderHpsView();
         if(name==='form-analisa') renderAnalisaForm();
         if(name==='analisa-view') renderAnalisaView();
+        if(name==='jadwal-kerja') renderJadwalKerja();
+        if(name==='hari-libur') renderHariLibur();
         if(typeof fkSegSyncAll==='function') fkSegSyncAll(false);   // reposisi pil segmented setelah halaman baru terlihat
     }catch(err){ console.error('showView error:', err); }
     if(!noLoader){ const wait=Math.max(0, 460-(Date.now()-t0)); setTimeout(hideLoader, wait); }
@@ -7939,6 +7991,299 @@ function handleUploadTender(ev){
   reader.readAsArrayBuffer(file);
 }
 
+/* ============================================================
+   ============  HARI LIBUR & JADWAL PELAKSANAAN  =============
+   Filter hari kerja (melewati Sabtu, Minggu, & hari libur nasional
+   yang diinput manual) untuk menyusun Jadwal Pelaksanaan Pekerjaan.
+   Daftar hari libur disimpan di Supabase tabel `hari_libur`
+   (kolom: id, tgl date, keterangan text) — bisa ditambah untuk
+   tahun berapa pun ke depan, tidak dibatasi tahun berjalan saja.
+   Jalankan skrip berikut sekali di Supabase SQL Editor:
+     create table if not exists hari_libur (
+       id bigint generated always as identity primary key,
+       tgl date not null unique,
+       keterangan text,
+       created_at timestamptz default now()
+     );
+   ============================================================ */
+const HL_TABLE = 'hari_libur';
+let hariLibur = [];   // [{id, tgl:'YYYY-MM-DD', keterangan}]
+let hlMap = {};        // {'YYYY-MM-DD': keterangan} — lookup cepat
+const HARI_NAMA = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+
+function hlSupaReady(){ return !!(USE_SUPABASE && db); }
+const StoreHariLibur = {
+  async list(){
+    if(!hlSupaReady()) return [];
+    const {data,error}=await db.from(HL_TABLE).select('*').order('tgl',{ascending:true});
+    if(error) throw error; return data||[];
+  },
+  async create(tgl, keterangan){
+    if(!hlSupaReady()) throw new Error('Koneksi Supabase tidak tersedia');
+    const {data,error}=await db.from(HL_TABLE).insert({tgl, keterangan}).select();
+    if(error) throw error; return data&&data[0];
+  },
+  async remove(id){
+    if(!hlSupaReady()) throw new Error('Koneksi Supabase tidak tersedia');
+    const {error}=await db.from(HL_TABLE).delete().eq('id',id);
+    if(error) throw error;
+  }
+};
+async function refreshHariLibur(){
+  try{ hariLibur = await StoreHariLibur.list(); }
+  catch(err){ console.error(err); hariLibur = hariLibur||[]; toast('Gagal memuat data Hari Libur: '+errMsg(err),'err'); }
+  hlMap = {}; hariLibur.forEach(r=>{ hlMap[String(r.tgl)] = r.keterangan||''; });
+}
+
+/* ---- Util tanggal (lokal, hindari pergeseran zona waktu) ---- */
+function hlToISO(d){ const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0'); return y+'-'+m+'-'+day; }
+function hlParseISO(s){ const p=String(s).split('-'); return new Date(Number(p[0]), Number(p[1])-1, Number(p[2])); }
+function hlAddDays(d,n){ const r=new Date(d); r.setDate(r.getDate()+n); return r; }
+/* Status satu tanggal: hari kerja, atau libur (Sabtu/Minggu/Nasional + keterangan) */
+function hlDayStatus(d){
+  const dow=d.getDay(); const iso=hlToISO(d);
+  if(Object.prototype.hasOwnProperty.call(hlMap, iso)) return {kerja:false, label:'Libur Nasional', ket:hlMap[iso]};
+  if(dow===0) return {kerja:false, label:'Minggu', ket:''};
+  if(dow===6) return {kerja:false, label:'Sabtu', ket:''};
+  return {kerja:true, label:'Hari Kerja', ket:''};
+}
+
+/* ---------- Halaman: Hari Libur Nasional & Cuti Bersama ---------- */
+function openHariLibur(){ refreshHariLibur().then(()=>showView('hari-libur')); }
+function renderHariLibur(){
+  const cont=document.getElementById('hl-content'); if(!cont) return;
+  const cnt=document.getElementById('hl-count'); if(cnt) cnt.textContent=hariLibur.length;
+
+  const rows = hariLibur.length ? hariLibur.map((r,i)=>{
+    const d=hlParseISO(r.tgl); const dow=d.getDay();
+    return '<tr class="'+((dow===0||dow===6)?'hl-weekend':'')+'">'+
+      '<td class="col-no">'+(i+1)+'</td>'+
+      '<td class="col-date">'+fkEsc(pnwDateLong(r.tgl))+'</td>'+
+      '<td>'+HARI_NAMA[dow]+'</td>'+
+      '<td class="wrap-cell">'+fkEsc(r.keterangan||'—')+'</td>'+
+      '<td style="text-align:center"><button class="fk-act fk-act-del fk-act-icon" title="Hapus" onclick="hlDelete(\''+r.id+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></td>'+
+    '</tr>';
+  }).join('') : '<tr><td colspan="5" class="fk-none" style="justify-content:center;padding:20px 0">Belum ada data hari libur</td></tr>';
+
+  cont.innerHTML = ''+
+    '<div class="panel">'+
+      '<div class="form-flow" style="--cols:3">'+
+        '<div class="field"><label>Tanggal</label><input type="date" id="hl-tgl"></div>'+
+        '<div class="field" style="grid-column:span 2"><label>Keterangan</label><input type="text" id="hl-ket" placeholder="mis. Hari Kemerdekaan RI" onkeydown="if(event.key===\'Enter\'){event.preventDefault();hlAdd();}"></div>'+
+      '</div>'+
+      '<div style="margin-top:14px"><button class="btn btn-teal" onclick="hlAdd()">'+
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Tambah Tanggal'+
+      '</button></div>'+
+    '</div>'+
+    '<div class="panel" style="margin-top:16px">'+
+      '<div class="table-wrap"><table>'+
+        '<thead><tr><th class="col-no">No</th><th class="col-date">Tanggal</th><th>Hari</th><th>Keterangan</th><th style="text-align:center;width:80px">Aksi</th></tr></thead>'+
+        '<tbody>'+rows+'</tbody>'+
+      '</table></div>'+
+    '</div>';
+}
+async function hlAdd(){
+  if(!requireInput()) return;
+  const tglEl=document.getElementById('hl-tgl'), ketEl=document.getElementById('hl-ket');
+  const tgl=tglEl?tglEl.value:''; const ket=(ketEl?ketEl.value:'').trim();
+  if(!tgl){ toast('Pilih tanggal terlebih dahulu','warn'); return; }
+  if(Object.prototype.hasOwnProperty.call(hlMap, tgl)){ toast('Tanggal ini sudah ada di daftar','warn'); return; }
+  try{ await withActionLoader('Menyimpan', async()=>{ await StoreHariLibur.create(tgl, ket); await refreshHariLibur(); }); }
+  catch(err){ console.error(err); toast('Gagal menyimpan: '+errMsg(err),'err'); return; }
+  toast('Tanggal libur ditambahkan','ok');
+  renderHariLibur();
+}
+function hlDelete(id){
+  openConfirm({
+    icon:'del', title:'Hapus Tanggal Libur', text:'Hapus tanggal ini dari daftar hari libur?',
+    onYes:async()=>{
+      try{ await withActionLoader('Menghapus', async()=>{ await StoreHariLibur.remove(id); await refreshHariLibur(); }); }
+      catch(err){ console.error(err); toast('Gagal menghapus: '+errMsg(err),'warn'); return; }
+      toast('Tanggal libur dihapus','ok');
+      renderHariLibur();
+    }
+  });
+}
+
+/* ---------- Halaman: Buat Jadwal Kerja (kalkulator) ---------- */
+let jkResult = null;   // hasil generate terakhir (dipakai juga saat Cetak/PDF)
+function openJadwalKerja(){ refreshHariLibur().then(()=>showView('jadwal-kerja')); }
+function renderJadwalKerja(){
+  const cont=document.getElementById('jk-content'); if(!cont) return;
+  cont.innerHTML = ''+
+    '<div class="form-card">'+
+      '<div class="form-section-title">Data Pekerjaan</div>'+
+      '<div class="form-flow" style="--cols:3">'+
+        '<div class="field" style="grid-column:span 3"><label>Nama Pekerjaan (opsional)</label><input type="text" id="jk-nama" placeholder="Untuk header jadwal saat dicetak"></div>'+
+        '<div class="field"><label>Tanggal Mulai</label><input type="date" id="jk-mulai"></div>'+
+        '<div class="field"><label>Mode</label><select id="jk-mode" onchange="jkOnModeChange()">'+
+          '<option value="kerja">Tentukan lewat Jumlah Hari Kerja</option>'+
+          '<option value="selesai">Tentukan lewat Tanggal Selesai</option>'+
+        '</select></div>'+
+        '<div class="field" id="jk-nilai-wrap"><label>Jumlah Hari Kerja</label><input type="number" id="jk-nilai" min="1" placeholder="mis. 90"></div>'+
+      '</div>'+
+      '<div style="margin-top:14px"><button class="btn btn-teal" onclick="jkGenerate()">'+
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="m9 16 2 2 4-4"/></svg> Buat Jadwal'+
+      '</button></div>'+
+    '</div>'+
+    '<div id="jk-result"></div>';
+  jkResult=null;
+}
+function jkOnModeChange(){
+  const mode=document.getElementById('jk-mode').value;
+  const wrap=document.getElementById('jk-nilai-wrap'); if(!wrap) return;
+  wrap.innerHTML = (mode==='selesai')
+    ? '<label>Tanggal Selesai</label><input type="date" id="jk-nilai">'
+    : '<label>Jumlah Hari Kerja</label><input type="number" id="jk-nilai" min="1" placeholder="mis. 90">';
+}
+function jkGenerate(){
+  const namaEl=document.getElementById('jk-nama'), mulaiEl=document.getElementById('jk-mulai'),
+        modeEl=document.getElementById('jk-mode'), nilaiEl=document.getElementById('jk-nilai');
+  const nama=(namaEl?namaEl.value:'').trim();
+  const mulaiStr=mulaiEl?mulaiEl.value:'';
+  const mode=modeEl?modeEl.value:'kerja';
+  if(!mulaiStr){ toast('Pilih Tanggal Mulai terlebih dahulu','warn'); return; }
+  const mulai=hlParseISO(mulaiStr);
+  let hariList=[], selesai=null;
+
+  if(mode==='kerja'){
+    const n=parseInt(nilaiEl?nilaiEl.value:'',10);
+    if(!n || n<1){ toast('Isi jumlah hari kerja yang valid','warn'); return; }
+    let cur=new Date(mulai), kerjaCount=0, guard=0;
+    while(kerjaCount<n && guard<20000){
+      const st=hlDayStatus(cur);
+      hariList.push({date:new Date(cur), status:st});
+      if(st.kerja) kerjaCount++;
+      cur=hlAddDays(cur,1); guard++;
+    }
+    selesai=hariList[hariList.length-1].date;
+  }else{
+    const selesaiStr=nilaiEl?nilaiEl.value:'';
+    if(!selesaiStr){ toast('Pilih Tanggal Selesai terlebih dahulu','warn'); return; }
+    selesai=hlParseISO(selesaiStr);
+    if(selesai<mulai){ toast('Tanggal Selesai harus setelah Tanggal Mulai','warn'); return; }
+    let cur=new Date(mulai);
+    while(cur<=selesai){ hariList.push({date:new Date(cur), status:hlDayStatus(cur)}); cur=hlAddDays(cur,1); }
+  }
+
+  jkResult={nama, mulai, selesai, hariList};
+  jkRenderResult();
+}
+function jkRenderResult(){
+  const box=document.getElementById('jk-result'); if(!box || !jkResult) return;
+  const {hariList}=jkResult;
+  let ada=0, sabtu=0, minggu=0, libur=0;
+  const rows=hariList.map((h,i)=>{
+    const dow=h.date.getDay();
+    if(h.status.kerja) ada++; else if(dow===6) sabtu++; else if(dow===0) minggu++; else libur++;
+    return '<tr class="'+(h.status.kerja?'':'jk-off')+'">'+
+      '<td class="col-no">'+(i+1)+'</td>'+
+      '<td class="col-date">'+fkEsc(pnwDateLong(hlToISO(h.date)))+'</td>'+
+      '<td>'+HARI_NAMA[dow]+'</td>'+
+      '<td>'+(h.status.kerja?'<span class="pill pill-kontrak">Hari Kerja</span>':'<span class="pill pill-batal">'+fkEsc(h.status.label)+'</span>')+'</td>'+
+      '<td class="wrap-cell">'+fkEsc(h.status.ket||'')+'</td>'+
+    '</tr>';
+  }).join('');
+  box.innerHTML = ''+
+    '<div class="panel" style="margin-top:16px">'+
+      '<div class="jk-summary">'+
+        '<div class="jk-stat"><span class="n">'+hariList.length+'</span><span class="l">Total Hari Kalender</span></div>'+
+        '<div class="jk-stat ok"><span class="n">'+ada+'</span><span class="l">Hari Kerja</span></div>'+
+        '<div class="jk-stat off"><span class="n">'+(sabtu+minggu+libur)+'</span><span class="l">Hari Libur (Sabtu '+sabtu+' • Minggu '+minggu+' • Nasional '+libur+')</span></div>'+
+        '<div class="jk-stat end"><span class="n">'+fkEsc(pnwDateLong(hlToISO(jkResult.selesai)))+'</span><span class="l">Tanggal Selesai</span></div>'+
+      '</div>'+
+      '<div style="margin-bottom:12px"><button class="btn btn-teal" onclick="jkPrint()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg> Cetak / PDF</button></div>'+
+      '<div class="table-wrap"><table>'+
+        '<thead><tr><th class="col-no">No</th><th class="col-date">Tanggal</th><th>Hari</th><th>Status</th><th>Keterangan</th></tr></thead>'+
+        '<tbody>'+rows+'</tbody>'+
+      '</table></div>'+
+    '</div>';
+}
+
+/* ---- Cetak / PDF Jadwal Kerja (dokumen mandiri, memakai tema dokumen yang sama) ---- */
+function jkExtraDocCss(){
+  return ''+
+  'table.jk-doc-sum{width:60%;border-collapse:collapse;margin:6px 0 14px}'+
+  'table.jk-doc-sum td{padding:2px 6px;font-size:10.5px;vertical-align:top}'+
+  'table.jk-doc-sum td.k{color:#22343a;font-weight:600;white-space:nowrap}'+
+  'table.jk-doc-sum td.s{width:10px}'+
+  'table.jk-doc-sum td.v{font-weight:700;color:#0d2a30}'+
+  '.jk-doc-nama{font-weight:800;font-size:12px;color:#0d2a30;margin-bottom:6px}'+
+  'table.jk-doc-tbl{width:100%;border-collapse:collapse;table-layout:fixed;margin:2px 0 8px}'+
+  'table.jk-doc-tbl th,table.jk-doc-tbl td{border:1px solid #7d979c;padding:3px 6px;font-size:9px;line-height:1.3;word-wrap:break-word}'+
+  'table.jk-doc-tbl thead th{background:#0E7C86;color:#fff;font-weight:800;text-align:center;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  'table.jk-doc-tbl td.no,table.jk-doc-tbl td.hr{text-align:center}'+
+  'table.jk-doc-tbl tr.off td{background:#fbeaea}'+
+  'table.jk-doc-tbl tr.off td.st{color:#b22a2a;font-weight:700}';
+}
+function jkStandaloneDocHtml(){
+  if(!jkResult) return '';
+  const cssEl=document.getElementById('fkl-doc-css');
+  const css=(cssEl?cssEl.textContent:'') + jkExtraDocCss();
+  const {nama, hariList, selesai, mulai}=jkResult;
+  let ada=0, sabtu=0, minggu=0, libur=0;
+  const rows=hariList.map((h,i)=>{
+    const dow=h.date.getDay();
+    if(h.status.kerja) ada++; else if(dow===6) sabtu++; else if(dow===0) minggu++; else libur++;
+    return '<tr'+(h.status.kerja?'':' class="off"')+'>'+
+      '<td class="no">'+(i+1)+'</td>'+
+      '<td class="tgl">'+fkEsc(pnwDateLong(hlToISO(h.date)))+'</td>'+
+      '<td class="hr">'+HARI_NAMA[dow]+'</td>'+
+      '<td class="st">'+(h.status.kerja?'Hari Kerja':fkEsc(h.status.label))+'</td>'+
+      '<td class="kt">'+fkEsc(h.status.ket||'')+'</td>'+
+    '</tr>';
+  }).join('');
+  return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8">'+
+    '<meta name="viewport" content="width=device-width, initial-scale=1">'+
+    '<title> </title>'+
+    '<style>'+css+'</style></head><body>'+
+    '<div class="fkl-doc">'+
+      '<div class="fkl-doc-head">'+
+        '<div class="fkl-doc-logo"><img src="'+FKL_LOGO_SRC+'" alt="Logo PLN"></div>'+
+        '<div class="fkl-doc-org">'+
+          '<div class="l1">PT PLN (PERSERO)</div>'+
+          '<div class="l2">UNIT PELAKSANA PELAYANAN PELANGGAN MASOHI</div>'+
+          '<div class="l3">Jl. Abdullah Soulissa No 1, Masohi, Kec. Kota Masohi</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="fkl-doc-band"></div>'+
+      '<h1 class="fkl-doc-title">JADWAL PELAKSANAAN PEKERJAAN</h1>'+
+      '<div class="fkl-doc-titlegap"></div>'+
+      (nama? '<div class="jk-doc-nama">'+fkEsc(nama)+'</div>' : '')+
+      '<table class="jk-doc-sum"><tbody>'+
+        '<tr><td class="k">Tanggal Mulai</td><td class="s">:</td><td class="v">'+fkEsc(pnwDateLong(hlToISO(mulai)))+'</td></tr>'+
+        '<tr><td class="k">Tanggal Selesai</td><td class="s">:</td><td class="v">'+fkEsc(pnwDateLong(hlToISO(selesai)))+'</td></tr>'+
+        '<tr><td class="k">Total Hari Kalender</td><td class="s">:</td><td class="v">'+hariList.length+' hari</td></tr>'+
+        '<tr><td class="k">Total Hari Kerja</td><td class="s">:</td><td class="v">'+ada+' hari</td></tr>'+
+        '<tr><td class="k">Total Hari Libur</td><td class="s">:</td><td class="v">'+(sabtu+minggu+libur)+' hari (Sabtu '+sabtu+', Minggu '+minggu+', Nasional '+libur+')</td></tr>'+
+      '</tbody></table>'+
+      '<table class="jk-doc-tbl"><thead><tr><th class="no">No</th><th class="tgl">Tanggal</th><th class="hr">Hari</th><th class="st">Status</th><th class="kt">Keterangan</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+    '</div>'+
+    '</body></html>';
+}
+function jkPrint(){
+  if(!jkResult){ toast('Buat jadwal terlebih dahulu sebelum mencetak','warn'); return; }
+  const old=document.getElementById('jk-print-frame'); if(old) old.remove();
+  const ifr=document.createElement('iframe');
+  ifr.id='jk-print-frame';
+  ifr.setAttribute('aria-hidden','true');
+  ifr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+  document.body.appendChild(ifr);
+  const doc=ifr.contentWindow.document;
+  doc.open(); doc.write(jkStandaloneDocHtml()); doc.close();
+  const go=()=>{
+    withHiddenPageTitle(()=>{ try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }catch(e){ try{ window.print(); }catch(_){} } });
+    setTimeout(()=>{ const f=document.getElementById('jk-print-frame'); if(f) f.remove(); }, 1500);
+  };
+  const imgs=doc.images ? Array.from(doc.images) : [];
+  if(imgs.length){
+    let n=imgs.length;
+    const dec=()=>{ if(--n<=0) setTimeout(go,60); };
+    imgs.forEach(im=>{ if(im.complete) dec(); else { im.onload=dec; im.onerror=dec; } });
+    setTimeout(go, 1200);
+  } else { setTimeout(go, 120); }
+}
+
 /* ============ SLIDING PILL INDICATOR (.fk-seg) ============
    Latar pil pada grup tab (SPBJ/Kontrak Rinci | Pengadaan Langsung | Tender,
    dan grup segmented lain yang memakai class .fk-seg) meluncur halus ke
@@ -9939,6 +10284,20 @@ function fklOpenPreview(){
   ov.classList.add('show');
 }
 
+/* Bantu cetak: browser (Chrome/Edge) memakai judul TAB UTAMA (bukan judul
+   dokumen di dalam iframe tersembunyi) untuk header cetak/PDF, sehingga
+   "Monitoring Pengadaan Masohi" tetap muncul walau <title> iframe sudah
+   dikosongkan. Fungsi ini menyembunyikan sementara judul tab utama selama
+   proses cetak berlangsung, lalu mengembalikannya setelah selesai. Dipakai
+   oleh semua fungsi *Print() dokumen (fkl, pnw, rho, hps, ana, jk). */
+function withHiddenPageTitle(fn){
+  const origTitle=document.title;
+  document.title=' ';
+  let done=false;
+  const restore=()=>{ if(done) return; done=true; document.title=origTitle; window.removeEventListener('afterprint', restore); };
+  window.addEventListener('afterprint', restore);
+  try{ fn(); } finally { setTimeout(restore, 4000); }
+}
 /* Cetak dokumen (mencetak isi dokumen yang sama dengan pratinjau) */
 function fklPrint(){
   // Buat iframe terisolasi agar isi dokumen pasti tercetak (tidak terpengaruh overlay/aplikasi)
@@ -9951,8 +10310,7 @@ function fklPrint(){
   const doc=ifr.contentWindow.document;
   doc.open(); doc.write(fklStandaloneDocHtml()); doc.close();
   const go=()=>{
-    try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }
-    catch(e){ try{ window.print(); }catch(_){} }
+    withHiddenPageTitle(()=>{ try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }catch(e){ try{ window.print(); }catch(_){} } });
     setTimeout(()=>{ const f=document.getElementById('fkl-print-frame'); if(f) f.remove(); }, 1500);
   };
   const imgs=doc.images ? Array.from(doc.images) : [];
@@ -10849,7 +11207,7 @@ function pnwPrint(){
   ifr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
   document.body.appendChild(ifr);
   const doc=ifr.contentWindow.document; doc.open(); doc.write(pnwStandaloneDocHtml()); doc.close();
-  const go=()=>{ try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }catch(e){ try{ window.print(); }catch(_){} } setTimeout(()=>{ const f=document.getElementById('pnw-print-frame'); if(f) f.remove(); },1500); };
+  const go=()=>{ withHiddenPageTitle(()=>{ try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }catch(e){ try{ window.print(); }catch(_){} } }); setTimeout(()=>{ const f=document.getElementById('pnw-print-frame'); if(f) f.remove(); },1500); };
   const imgs=doc.images?Array.from(doc.images):[];
   if(imgs.length){ let n=imgs.length; const dec=()=>{ if(--n<=0) setTimeout(go,60); }; imgs.forEach(im=>{ if(im.complete) dec(); else { im.onload=dec; im.onerror=dec; } }); setTimeout(go,1200); }
   else setTimeout(go,120);
@@ -11471,7 +11829,7 @@ function rhoPrint(){
   ifr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
   document.body.appendChild(ifr);
   const doc=ifr.contentWindow.document; doc.open(); doc.write(rhoStandaloneDocHtml()); doc.close();
-  const go=()=>{ try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }catch(e){ try{ window.print(); }catch(_){} } setTimeout(()=>{ const f=document.getElementById('rho-print-frame'); if(f) f.remove(); },1500); };
+  const go=()=>{ withHiddenPageTitle(()=>{ try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }catch(e){ try{ window.print(); }catch(_){} } }); setTimeout(()=>{ const f=document.getElementById('rho-print-frame'); if(f) f.remove(); },1500); };
   const imgs=doc.images?Array.from(doc.images):[];
   if(imgs.length){ let n=imgs.length; const dec=()=>{ if(--n<=0) setTimeout(go,60); }; imgs.forEach(im=>{ if(im.complete) dec(); else { im.onload=dec; im.onerror=dec; } }); setTimeout(go,1600); }
   else setTimeout(go,120);
@@ -12280,7 +12638,7 @@ function hpsPrint(){
   ifr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
   document.body.appendChild(ifr);
   const doc=ifr.contentWindow.document; doc.open(); doc.write(hpsStandaloneDocHtml()); doc.close();
-  const go=()=>{ try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }catch(e){ try{ window.print(); }catch(_){} } setTimeout(()=>{ const f=document.getElementById('hps-print-frame'); if(f) f.remove(); },1500); };
+  const go=()=>{ withHiddenPageTitle(()=>{ try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }catch(e){ try{ window.print(); }catch(_){} } }); setTimeout(()=>{ const f=document.getElementById('hps-print-frame'); if(f) f.remove(); },1500); };
   const imgs=doc.images?Array.from(doc.images):[];
   if(imgs.length){ let n=imgs.length; const dec=()=>{ if(--n<=0) setTimeout(go,60); }; imgs.forEach(im=>{ if(im.complete) dec(); else { im.onload=dec; im.onerror=dec; } }); setTimeout(go,1600); }
   else setTimeout(go,120);
@@ -13449,7 +13807,7 @@ function anaPrint(){
   ifr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
   document.body.appendChild(ifr);
   const doc=ifr.contentWindow.document; doc.open(); doc.write(anaStandaloneDocHtml(anaPreviewSection)); doc.close();
-  const go=()=>{ try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }catch(e){ try{ window.print(); }catch(_){} } setTimeout(()=>{ const f=document.getElementById('ana-print-frame'); if(f) f.remove(); },1500); };
+  const go=()=>{ withHiddenPageTitle(()=>{ try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }catch(e){ try{ window.print(); }catch(_){} } }); setTimeout(()=>{ const f=document.getElementById('ana-print-frame'); if(f) f.remove(); },1500); };
   const imgs=doc.images?Array.from(doc.images):[];
   if(imgs.length){ let n=imgs.length; const dec=()=>{ if(--n<=0) setTimeout(go,60); }; imgs.forEach(im=>{ if(im.complete) dec(); else { im.onload=dec; im.onerror=dec; } }); setTimeout(go,1600); }
   else setTimeout(go,120);
