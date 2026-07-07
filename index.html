@@ -11460,7 +11460,7 @@ function hpsTtdInputHtml(f){
 function hpsCountFieldHtml(){
   const st=hpsState;
   let opts=''; for(let i=1;i<=150;i++) opts+='<option value="'+i+'"'+(i===st.items.length?' selected':'')+'>'+i+' Item</option>';
-  return '<div class="field"><label>Jumlah Barang/Material</label><select id="hps-jumlahitem" onchange="hpsOnJumlahItemChange(this)">'+opts+'</select></div>';
+  return '<div class="field"><label>Jumlah Barang/Jasa</label><select id="hps-jumlahitem" onchange="hpsOnJumlahItemChange(this)">'+opts+'</select></div>';
 }
 function hpsOnInfoChange(){
   const st=hpsState;
@@ -11527,7 +11527,7 @@ function hpsUraianTableHtml(){
     rows+='<tr>'+
       '<td class="c-no">'+(i+1)+'</td>'+
       '<td class="c-kel"><input type="text" data-i="'+i+'" placeholder="mis. MATERIAL" value="'+fkEsc(it.kelompok||'')+'" oninput="hpsOnKelompok(this)"></td>'+
-      '<td class="c-ur"><textarea data-i="'+i+'" rows="1" placeholder="Uraian pekerjaan / barang / material ke-'+(i+1)+'" oninput="hpsOnUraian(this)">'+fkEsc(it.uraian||'')+'</textarea></td>'+
+      '<td class="c-ur"><textarea data-i="'+i+'" rows="1" placeholder="Uraian pekerjaan / barang / jasa ke-'+(i+1)+'" oninput="hpsOnUraian(this)">'+fkEsc(it.uraian||'')+'</textarea></td>'+
       '<td class="c-sat"><input type="text" data-i="'+i+'" placeholder="Bh" value="'+fkEsc(it.sat||'')+'" oninput="hpsOnSat(this)"></td>'+
       '<td class="c-vol"><input type="text" inputmode="decimal" data-i="'+i+'" placeholder="0" value="'+fkEsc(it.vol!=null?String(it.vol):'')+'" oninput="hpsOnVol(this)"></td>'+
       '<td class="c-money"><input type="text" inputmode="numeric" id="hps-hm-'+i+'" data-i="'+i+'" placeholder="Rp" value="'+rupiahInputText(it.hargaMat)+'" oninput="hpsOnHargaMat(this)"></td>'+
@@ -11853,7 +11853,7 @@ function hpsBuildDocHtml(){
       bodyRows+='<tr class="grp"><td class="no">'+letter+'</td><td class="gname" colspan="8">'+fkEsc(kelKey)+'</td></tr>';
     }
     noInGroup++;
-    const uraian=(it.uraian&&String(it.uraian).trim())?it.uraian:('Barang/Material '+(idx+1));
+    const uraian=(it.uraian&&String(it.uraian).trim())?it.uraian:('Barang/Jasa '+(idx+1));
     const sat=(it.sat!=null&&String(it.sat).trim())?it.sat:'-';
     const vol=(it.vol!=null&&String(it.vol).trim())?it.vol:'-';
     bodyRows+='<tr>'+
@@ -11933,7 +11933,7 @@ function hpsBuildDocHtml(){
       infoRow('Tgl. Anggaran', info.tgl_anggaran?pnwDateLong(info.tgl_anggaran):'-')+
       infoRow('Metode Pengadaan', info.metode)+
       infoRow('Tgl. HPS', info.tgl_hps?pnwDateLong(info.tgl_hps):'-')+
-      infoRow('Jumlah Barang/Material', String((st.items||[]).length)+' item')+
+      infoRow('Jumlah Barang/Jasa', String((st.items||[]).length)+' item')+
     '</tbody></table>'+
     '<div class="fkl-sec-h"><span class="rn">B</span>Uraian Pekerjaan &amp; Rincian Harga</div>'+
     tbl+
