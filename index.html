@@ -2549,10 +2549,15 @@ table.ana-ahsp-table tfoot td:first-child{text-transform:uppercase;letter-spacin
 .ana-ahsp-no{flex:0 0 auto;color:var(--teal-dark)}
 .ana-ahsp-judul-input{flex:1 1 220px;min-width:180px;border:1px solid #cdd9de;border-radius:9px;padding:8px 10px;font-size:13px;font-family:'Plus Jakarta Sans';font-weight:700;color:var(--ink);background:#fff}
 .ana-ahsp-judul-input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,124,134,.15)}
-.ana-ahsp-layer-del{width:30px;height:30px;font-size:17px}
-.ana-ahsp-addlayer-wrap{text-align:center;margin-top:6px}
-.ana-ahsp-addlayer-wrap .ana-ahsp-add{padding:9px 20px;font-size:11.5px}
-.ana-ahsp-pager{border-top:none;justify-content:center;padding:6px 0}
+/* Bar navigasi Bagian 3: paginasi (kiri) + Tambah/Hapus Analisa (kanan) */
+.ana-ahsp-topbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+.ana-ahsp-topbar-pager{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.ana-ahsp-topbar-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ana-ahsp-onlylabel{font-size:11px;color:#7c8a8f;font-weight:700}
+.ana-ahsp-rok-btn{border:1px solid var(--teal);background:#eef8f9;color:var(--teal-dark);font-weight:800;font-size:12px;border-radius:20px;padding:8px 14px;cursor:pointer;font-family:'Plus Jakarta Sans';width:100%}
+.ana-ahsp-rok-btn:focus{outline:none;box-shadow:0 0 0 3px rgba(14,124,134,.15)}
+.ana-ahsp-hapus-analisa{border:1px dashed #e2a9a9;background:#fbeaea;color:#b23b3b;font-size:10.5px;font-weight:800;padding:5px 13px;border-radius:20px;cursor:pointer}
+.ana-ahsp-hapus-analisa:hover{background:#f6d5d5}
 /* Tombol tambah/hapus baris per-baris pada tabel Harga Satuan (Konstruksi) */
 table.hps-uraian td.c-act{width:64px;text-align:center;white-space:nowrap;padding:6px 4px}
 .ana-row-add{width:24px;height:24px;padding:0;border-radius:7px;font-size:15px;line-height:1;margin-right:4px}
@@ -12489,25 +12494,28 @@ function anaOnKonSumberRef(el){ const i=+el.dataset.i; const st=anaState.konstru
    Setiap "layer" adalah SATU analisa lengkap untuk SATU pekerjaan (judul + A/B/C + ROK).
    Tombol "+ Tambah Layer" menambah analisa untuk pekerjaan berikutnya, dst. */
 const ANA_IC_VIEW='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+function anaAhspRokFieldHtml(li,layer){
+  const cur=(layer.rok!==''&&layer.rok!=null)?String(anaNum(layer.rok)):'';
+  let opts='<option value=""'+(cur===''?' selected':'')+'>ROK — Tidak ada</option>';
+  for(let n=1;n<=15;n++) opts+='<option value="'+n+'"'+(cur===String(n)?' selected':'')+'>ROK '+n+'%</option>';
+  return '<div class="ana-tb-field" style="min-width:150px"><label>ROK (%) — maks 15%</label>'+
+    '<select id="ana-ahsp-rok-'+li+'" class="ana-ahsp-rok-btn" onchange="anaOnAhspRok('+li+',this)">'+opts+'</select></div>';
+}
 function anaAhspLayerHtml(li){
   const layer=anaState.ahsp[li];
-  const canDel=anaState.ahsp.length>1;
   return '<div class="ana-ahsp-layer">'+
     '<div class="ana-ahsp-head">'+
       '<div class="tt">'+ANA_SEC_ICON+'<span class="ana-ahsp-no">'+(li+1)+'.</span>'+
         '<input type="text" class="ana-ahsp-judul-input" placeholder="Judul/Nama Pekerjaan (mis. Pembersihan Lahan)" value="'+fkEsc(layer.judul||'')+'" oninput="anaOnAhspJudul('+li+',this)"></div>'+
-      '<div class="ana-tb-field" style="min-width:170px"><label>ROK (%) — maks 15%</label>'+
-        '<input id="ana-ahsp-rok-'+li+'" type="text" inputmode="decimal" placeholder="0" value="'+fkEsc(layer.rok!==''&&layer.rok!=null?String(layer.rok):'')+'" oninput="anaOnAhspRok('+li+',this)"></div>'+
-      (canDel?('<button type="button" class="ana-ahsp-del ana-ahsp-layer-del" title="Hapus analisa ini" onclick="anaAhspRemoveLayer('+li+')">&times;</button>'):'')+
+      anaAhspRokFieldHtml(li,layer)+
     '</div>'+
     ANA_AHSP_SECTIONS.map(([key,letter,title])=>anaAhspSectionHtml(li,key,letter,title)).join('')+
   '</div>';
 }
 function anaOnAhspJudul(li,el){ if(anaState.ahsp[li]){ anaState.ahsp[li].judul=el.value; anaSaveState(); } }
 function anaOnAhspRok(li,el){
-  let v=el.value.replace(/[^0-9.,]/g,'').replace(/,/g,'.'); const parts=v.split('.'); if(parts.length>2) v=parts[0]+'.'+parts.slice(1).join('');
-  let num=parseFloat(v); if(!isNaN(num)&&num>15) v=String(15);
-  el.value=v; if(anaState.ahsp[li]){ anaState.ahsp[li].rok=(v===''?'':(parseFloat(v)||0)); anaSaveState(); }
+  const v=el.value; // '' (tidak ada) atau '1'..'15'
+  if(anaState.ahsp[li]){ anaState.ahsp[li].rok=(v===''?'':(parseFloat(v)||0)); anaSaveState(); }
   ANA_AHSP_SECTIONS.forEach(([key])=>anaAhspRecalcSubtotal(li,key));
 }
 function anaAhspSubtotal(li,key){ const layer=anaState.ahsp[li]; return (layer&&layer[key]||[]).reduce((s,r)=>s+anaAhspJumlah(r),0); }
@@ -12587,28 +12595,34 @@ function anaAhspGotoLayer(li){
   const n=anaState.ahsp.length;
   anaAhspActive=Math.max(0,Math.min(n-1,li));
   anaRenderAhspBody();
-  const holder=document.getElementById('ana-ahsp-body'); if(holder) holder.scrollIntoView({behavior:'smooth',block:'start'});
 }
-/* Navigasi halaman antar layer AHSP — mirip paginasi daftar (1, 2, 3, ... sesuai jumlah layer). */
-function anaAhspPagerHtml(){
+/* Bar navigasi Bagian 3: paginasi antar layer di kiri, aksi Tambah/Hapus Analisa di kanan. */
+function anaAhspTopBarHtml(){
   const n=anaState.ahsp.length;
-  if(n<=1) return '';
-  let nums='';
-  for(let i=0;i<n;i++) nums+='<button type="button" class="pg-btn pg-num'+(i===anaAhspActive?' active':'')+'" onclick="anaAhspGotoLayer('+i+')">'+(i+1)+'</button>';
-  return '<div class="pagination ana-ahsp-pager">'+
-    '<button type="button" class="pg-btn" '+(anaAhspActive===0?'disabled':'')+' onclick="anaAhspGotoLayer('+(anaAhspActive-1)+')">‹ Sebelumnya</button>'+
-    nums+
-    '<button type="button" class="pg-btn" '+(anaAhspActive===n-1?'disabled':'')+' onclick="anaAhspGotoLayer('+(anaAhspActive+1)+')">Berikutnya ›</button>'+
+  let pagerInner='';
+  if(n>1){
+    let nums='';
+    for(let i=0;i<n;i++) nums+='<button type="button" class="pg-btn pg-num'+(i===anaAhspActive?' active':'')+'" onclick="anaAhspGotoLayer('+i+')">'+(i+1)+'</button>';
+    pagerInner='<button type="button" class="pg-btn" '+(anaAhspActive===0?'disabled':'')+' onclick="anaAhspGotoLayer('+(anaAhspActive-1)+')">‹ Sebelumnya</button>'+
+      nums+
+      '<button type="button" class="pg-btn" '+(anaAhspActive===n-1?'disabled':'')+' onclick="anaAhspGotoLayer('+(anaAhspActive+1)+')">Berikutnya ›</button>';
+  } else {
+    pagerInner='<span class="ana-ahsp-onlylabel">Analisa 1 dari 1</span>';
+  }
+  const canDel=n>1;
+  return '<div class="ana-ahsp-topbar">'+
+    '<div class="ana-ahsp-topbar-pager">'+pagerInner+'</div>'+
+    '<div class="ana-ahsp-topbar-actions">'+
+      '<button type="button" class="ana-ahsp-add" onclick="anaAhspAddLayer()">+ Tambah Analisa</button>'+
+      (canDel?('<button type="button" class="ana-ahsp-hapus-analisa" title="Hapus analisa ini" onclick="anaAhspRemoveLayer('+anaAhspActive+')">&times; Hapus Analisa</button>'):'')+
+    '</div>'+
   '</div>';
 }
 function anaRenderAhspBody(){
   const holder=document.getElementById('ana-ahsp-body'); if(!holder) return;
   if(anaAhspActive>=anaState.ahsp.length) anaAhspActive=anaState.ahsp.length-1;
   if(anaAhspActive<0) anaAhspActive=0;
-  const pager=anaAhspPagerHtml();
-  holder.innerHTML = pager + anaAhspLayerHtml(anaAhspActive) +
-    '<div class="ana-ahsp-addlayer-wrap"><button type="button" class="ana-ahsp-add" onclick="anaAhspAddLayer()">+ Tambah Layer (Analisa Pekerjaan Berikutnya)</button></div>' +
-    pager;
+  holder.innerHTML = anaAhspTopBarHtml() + anaAhspLayerHtml(anaAhspActive);
 }
 
 /* ================= LANGKAH 2: ANALISA HARGA SATUAN ================= */
@@ -12816,13 +12830,12 @@ function renderAnalisaForm(){
     if(sub) sub.textContent='Langkah 2 dari 3 — Harga Satuan (Kelompok/Uraian/Satuan/Harga Barang/Harga Jasa/Sumber Referensi)';
     html+='<div class="form-card"><div class="form-section-title">'+ANA_SEC_ICON+'Harga Satuan <span class="fkl-count-chip">'+kst.items.length+' uraian</span>'+
       '<button type="button" class="ana-ahsp-add" style="margin-left:auto" onclick="anaKonAddRow()">+ Tambah Baris</button></div>'+
-      '<div class="hps-hint">Isi <b>Harga Barang</b> (Rp), <b>Harga Jasa</b> (Rp), dan <b>Sumber Referensi</b> (mis. SNI, Permen PUPR, survei pasar) untuk tiap uraian secara manual. Baris dapat ditambah/dihapus sesuai kebutuhan.</div>'+
       '<div id="ana-kon-table-wrap">'+anaKonTableHtml()+'</div></div>';
     html+=anaActionsHtml({back:true, save:true, next:true});
   } else if(anaStep===3 && isKon){
     if(sub) sub.textContent='Langkah 3 dari 3 — Analisa Harga Satuan Pekerjaan (Tenaga Kerja, Bahan, Peralatan)';
     html+='<div class="form-card"><div class="form-section-title">'+ANA_SEC_ICON+'Analisa Harga Satuan Pekerjaan</div>'+
-      '<div class="hps-hint">Satu blok = satu analisa untuk satu pekerjaan (isi <b>Judul/Nama Pekerjaan</b> di kanan atas tiap blok). Tambah/hapus baris sesuai kebutuhan pada tiap kelompok. <b>Jumlah Harga</b> = Koefisien × Harga Satuan. ROK diterapkan pada masing-masing subtotal kelompok. Gunakan <b>+ Tambah Layer</b> untuk membuat analisa pekerjaan berikutnya.</div>'+
+      '<div class="hps-hint">Satu blok = satu analisa untuk satu pekerjaan (isi <b>Judul/Nama Pekerjaan</b> di kanan atas tiap blok). Tambah/hapus baris sesuai kebutuhan pada tiap kelompok. <b>Jumlah Harga</b> = Koefisien × Harga Satuan. ROK diterapkan pada masing-masing subtotal kelompok. Gunakan <b>+ Tambah Analisa</b> (kanan atas) untuk membuat analisa pekerjaan berikutnya, navigasi halaman ada di kiri atas.</div>'+
       '<div id="ana-ahsp-body"></div></div>';
     html+=anaActionsHtml({back:true, save:true});
   } else {
