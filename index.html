@@ -2419,23 +2419,46 @@ table.rho-matrix input:focus{outline:none;border-color:var(--teal);box-shadow:0 
 <style id="hps-ui-css">
 /* ===================== Harga Perkiraan Sendiri (UI) ===================== */
 .hps-hint{font-size:10.5px;color:var(--muted);margin:2px 0 12px;line-height:1.6}
-/* Tabel input Uraian Pekerjaan (langkah 2): Uraian | Satuan | Volume */
+.menu-soon{margin-left:auto;font-size:8.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#9a6a00;background:#ffe9b8;padding:2px 7px;border-radius:20px}
+/* Tombol Pilih Analisa di Data Pekerjaan */
+.hps-analisa-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 16px;padding:12px 14px;background:linear-gradient(180deg,#f3fbfc,#e9f6f7);border:1px dashed #a9d3d8;border-radius:13px}
+.hps-analisa-bar .ic{flex:0 0 auto;width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--teal),var(--cyan));color:#fff;display:flex;align-items:center;justify-content:center}
+.hps-analisa-bar .ic svg{width:18px;height:18px}
+.hps-analisa-bar .tx{flex:1 1 200px;min-width:0}
+.hps-analisa-bar .tx b{display:block;font-size:12px;color:var(--teal-dark);font-family:'Plus Jakarta Sans';font-weight:800}
+.hps-analisa-bar .tx span{font-size:10px;color:var(--muted)}
+/* Tabel input Uraian Pekerjaan (langkah 2) — gaya RAB/HPS */
 .hps-uraian-wrap{overflow-x:auto;border:1px solid #dde9eb;border-radius:14px;box-shadow:0 2px 8px rgba(16,40,50,.05)}
-table.hps-uraian{border-collapse:separate;border-spacing:0;width:100%;min-width:640px}
-table.hps-uraian thead th{background:linear-gradient(90deg,#0E7C86,#0b6a73);color:#fff;font-weight:800;font-size:11px;text-transform:uppercase;letter-spacing:.3px;padding:11px 12px;text-align:left;white-space:nowrap}
-table.hps-uraian thead th.c-no{width:52px;text-align:center}
-table.hps-uraian thead th.c-sat{width:150px;text-align:center}
-table.hps-uraian thead th.c-vol{width:130px;text-align:center}
-table.hps-uraian tbody td{border-bottom:1px solid #e8f0f1;padding:8px 10px;vertical-align:middle;font-size:12px}
+table.hps-uraian{border-collapse:separate;border-spacing:0;width:100%;min-width:940px}
+table.hps-uraian thead th{background:linear-gradient(90deg,#0E7C86,#0b6a73);color:#fff;font-weight:800;font-size:10.5px;text-transform:uppercase;letter-spacing:.2px;padding:9px 8px;text-align:center;white-space:nowrap;vertical-align:middle}
+table.hps-uraian thead th.c-ur{text-align:left;min-width:220px}
+table.hps-uraian tbody td{border-bottom:1px solid #e8f0f1;padding:7px 8px;vertical-align:middle;font-size:12px}
 table.hps-uraian tbody tr:last-child td{border-bottom:none}
 table.hps-uraian tbody tr:nth-child(even){background:#f8fbfc}
-table.hps-uraian td.c-no{text-align:center;font-weight:800;color:#0b6a73}
-table.hps-uraian textarea,table.hps-uraian input{width:100%;border:1px solid #cdd9de;border-radius:9px;padding:8px 9px;font-size:12px;background:#fff;font-family:inherit;color:var(--ink)}
-table.hps-uraian textarea{resize:vertical;min-height:38px;line-height:1.45}
-table.hps-uraian input{text-align:center}
-table.hps-uraian td.c-vol input,table.hps-uraian td.c-sat input{text-align:center}
+table.hps-uraian td.c-no{text-align:center;font-weight:800;color:#0b6a73;width:44px}
+table.hps-uraian textarea,table.hps-uraian input{width:100%;border:1px solid #cdd9de;border-radius:9px;padding:7px 8px;font-size:12px;background:#fff;font-family:inherit;color:var(--ink)}
+table.hps-uraian textarea{resize:vertical;min-height:36px;line-height:1.45}
+table.hps-uraian td.c-kel input{min-width:96px}
+table.hps-uraian td.c-sat input{text-align:center;min-width:64px}
+table.hps-uraian td.c-vol input{text-align:center;min-width:64px}
+table.hps-uraian td.c-money input{text-align:right;min-width:120px}
 table.hps-uraian textarea:focus,table.hps-uraian input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,124,134,.15)}
-@media(max-width:640px){ table.hps-uraian{min-width:560px} }
+table.hps-uraian td.c-calc{text-align:right;font-weight:800;color:#0b6a73;white-space:nowrap;background:#f2fafb;min-width:120px}
+/* Panel ringkasan langsung di bawah tabel input */
+.hps-sum-card{margin-top:16px;border:1px solid #dde9eb;border-radius:14px;overflow:hidden}
+.hps-sum-head{display:flex;align-items:center;gap:9px;padding:11px 15px;background:linear-gradient(90deg,#0E7C86,#0b6a73);color:#fff;font-weight:800;font-size:12.5px}
+.hps-sum-head svg{width:16px;height:16px}
+table.hps-sum{width:100%;border-collapse:collapse}
+table.hps-sum td{padding:9px 15px;font-size:12.5px;border-bottom:1px solid #eef4f5}
+table.hps-sum tr:last-child td{border-bottom:none}
+table.hps-sum td.lbl{color:#2b3f48;font-weight:700}
+table.hps-sum td.val{text-align:right;font-weight:800;color:#0b3d42;white-space:nowrap;width:190px}
+table.hps-sum tr.grand td{background:#eef8f1}
+table.hps-sum tr.grand td.lbl{color:#0d7a3f}
+table.hps-sum tr.grand td.val{color:#0d7a3f;font-size:13.5px}
+.hps-terbilang{padding:11px 15px;font-size:11.5px;color:#2b3f48;background:#f6fafb;border-top:1px solid #eef4f5;line-height:1.55}
+.hps-terbilang b{color:var(--teal-dark)}
+@media(max-width:640px){ table.hps-uraian{min-width:860px} }
 </style>
 </head>
 <body>
@@ -2604,6 +2627,10 @@ table.hps-uraian textarea:focus,table.hps-uraian input:focus{outline:none;border
                 <button class="topnav-item" data-view="hps-view" data-role="admin" onclick="openHpsView()">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                   Lihat HPS
+                </button>
+                <button class="topnav-item" data-role="admin" onclick="openHpsAnalisa()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.8L7 14.3"/></svg>
+                  Analisa <span class="menu-soon">Segera</span>
                 </button>
               </div>
             </div>
@@ -3499,6 +3526,7 @@ table.hps-uraian textarea:focus,table.hps-uraian input:focus{outline:none;border
               <th class="fkl-col-lokasi">Lokasi Pekerjaan</th>
               <th>Metode Pengadaan</th>
               <th style="text-align:center">Jumlah Item</th>
+              <th class="col-num" style="text-align:right">Nilai HPS (Rp)</th>
               <th class="col-date">Tgl. HPS</th>
               <th style="text-align:center;min-width:170px">Aksi</th>
             </tr>
@@ -11142,11 +11170,15 @@ const HPS_TTD_FIELDS = [
 ];
 
 /* ---------- State ----------
-   info      : { key:value } data pekerjaan + pengguna/pejabat (utk TTD)
+   info      : { key:value } data pekerjaan + pengguna/pejabat (utk TTD) + analisa terpilih
    jumlahItem: jumlah barang/material (1..150)
-   items     : [ {uraian, sat, vol}, ... ] sepanjang jumlahItem
+   items     : [ {kelompok, uraian, sat, vol, hargaMat, hargaJasa}, ... ]
+               hargaMat/hargaJasa = Harga Satuan (Material/Jasa) — nantinya
+               terisi otomatis dari modul Analisa (masih dalam pengembangan).
 */
-function hpsBlankState(){ return { info:{}, jumlahItem:1, items:[{uraian:'',sat:'',vol:''}] }; }
+function hpsBlankItem(){ return {kelompok:'', uraian:'', sat:'', vol:'', hargaMat:'', hargaJasa:''}; }
+function hpsNormItem(c){ c=c||{}; return {kelompok:c.kelompok||'', uraian:c.uraian||'', sat:c.sat||'', vol:(c.vol!=null?c.vol:''), hargaMat:(c.hargaMat!=null?c.hargaMat:''), hargaJasa:(c.hargaJasa!=null?c.hargaJasa:'')}; }
+function hpsBlankState(){ return { info:{}, jumlahItem:1, items:[hpsBlankItem()] }; }
 let hpsState = hpsBlankState();
 let hpsStep = 1;              // 1..2
 let hpsEditId = null;
@@ -11165,7 +11197,7 @@ function hpsEnsureItems(){
   const n=Math.max(1,Math.min(150, parseInt(st.jumlahItem,10)|| (Array.isArray(st.items)?st.items.length:1) ||1)); st.jumlahItem=n;
   if(!Array.isArray(st.items)) st.items=[];
   const cur=st.items.slice(); const next=[];
-  for(let i=0;i<n;i++){ const c=cur[i]||{}; next.push({uraian:c.uraian||'', sat:c.sat||'', vol:(c.vol!=null?c.vol:'')}); }
+  for(let i=0;i<n;i++){ next.push(hpsNormItem(cur[i])); }
   st.items=next;
 }
 
@@ -11239,7 +11271,7 @@ function hpsRecordToState(rec){
   const st={
     info: Object.assign({}, base.info, s.info||{}),
     jumlahItem: Math.max(1,Math.min(150, parseInt(s.jumlahItem,10)|| (Array.isArray(s.items)?s.items.length:1) ||1)),
-    items: (Array.isArray(s.items)&&s.items.length)?s.items.map(c=>({uraian:c.uraian||'', sat:c.sat||'', vol:(c.vol!=null?c.vol:'')})):[{uraian:'',sat:'',vol:''}]
+    items: (Array.isArray(s.items)&&s.items.length)?s.items.map(hpsNormItem):[hpsBlankItem()]
   };
   return st;
 }
@@ -11289,33 +11321,113 @@ function hpsOnTtdChange(){
 function hpsOnJumlahItemChange(el){
   const n=Math.max(1,Math.min(150,parseInt(el.value,10)||1));
   const st=hpsState; const cur=st.items.slice(); const next=[];
-  for(let i=0;i<n;i++){ const c=cur[i]||{}; next.push({uraian:c.uraian||'', sat:c.sat||'', vol:(c.vol!=null?c.vol:'')}); }
+  for(let i=0;i<n;i++){ next.push(hpsNormItem(cur[i])); }
   st.items=next; st.jumlahItem=n; hpsSaveState();
 }
 
-/* ================= LANGKAH 2: URAIAN PEKERJAAN ================= */
+/* ================= HITUNGAN (Material / Jasa / Total) ================= */
+function hpsNum(v){ if(v===''||v==null) return 0; if(typeof v==='number') return v; const n=parseFloat(String(v).replace(/,/g,'.')); return isNaN(n)?0:n; }
+function hpsRp(n){ n=Math.round(hpsNum(n)); return n>0 ? ('Rp '+n.toLocaleString('id-ID')) : '–'; }
+function hpsRpDoc(n){ n=Math.round(hpsNum(n)); return n>0 ? n.toLocaleString('id-ID') : '-'; }
+function hpsItemMat(it){ return Math.round(hpsNum(it&&it.vol)*hpsNum(it&&it.hargaMat)); }   // 7 = 4 x 5
+function hpsItemJasa(it){ return Math.round(hpsNum(it&&it.vol)*hpsNum(it&&it.hargaJasa)); }  // 8 = 4 x 6
+function hpsItemTotal(it){ return hpsItemMat(it)+hpsItemJasa(it); }                          // 9 = 7 + 8
+/* Ringkasan bawah — dihitung dari penjumlahan vertikal kolom Jumlah Harga */
+function hpsSummary(st){
+  st=st||hpsState;
+  let jM=0,jJ=0;
+  (st.items||[]).forEach(it=>{ jM+=hpsItemMat(it); jJ+=hpsItemJasa(it); });
+  const jT=jM+jJ;
+  const dppM=Math.round(jM*11/12), dppJ=Math.round(jJ*11/12), dppT=Math.round(jT*11/12);
+  const ppnM=Math.round(dppM*0.12), ppnJ=Math.round(dppJ*0.12), ppnT=Math.round(dppT*0.12);
+  const totM=jM+ppnM, totJ=jJ+ppnJ, totT=jT+ppnT;
+  return {jM,jJ,jT, dppM,dppJ,dppT, ppnM,ppnJ,ppnT, totM,totJ,totT};
+}
+/* Terbilang (angka -> kata, Bahasa Indonesia). Dipakai pada baris "Terbilang :". */
+function hpsTerbilangKata(x){
+  x=Math.floor(Math.abs(Number(x)||0));
+  const sat=['','satu','dua','tiga','empat','lima','enam','tujuh','delapan','sembilan','sepuluh','sebelas'];
+  if(x<12) return sat[x];
+  if(x<20) return hpsTerbilangKata(x-10)+' belas';
+  if(x<100) return hpsTerbilangKata(Math.floor(x/10))+' puluh'+(x%10?' '+sat[x%10]:'');
+  if(x<200) return 'seratus'+(x-100?' '+hpsTerbilangKata(x-100):'');
+  if(x<1000) return sat[Math.floor(x/100)]+' ratus'+(x%100?' '+hpsTerbilangKata(x%100):'');
+  if(x<2000) return 'seribu'+(x-1000?' '+hpsTerbilangKata(x-1000):'');
+  if(x<1000000) return hpsTerbilangKata(Math.floor(x/1000))+' ribu'+(x%1000?' '+hpsTerbilangKata(x%1000):'');
+  if(x<1000000000) return hpsTerbilangKata(Math.floor(x/1000000))+' juta'+(x%1000000?' '+hpsTerbilangKata(x%1000000):'');
+  if(x<1000000000000) return hpsTerbilangKata(Math.floor(x/1000000000))+' miliar'+(x%1000000000?' '+hpsTerbilangKata(x%1000000000):'');
+  return hpsTerbilangKata(Math.floor(x/1000000000000))+' triliun'+(x%1000000000000?' '+hpsTerbilangKata(x%1000000000000):'');
+}
+function hpsTitleCase(s){ return String(s||'').replace(/\s+/g,' ').trim().split(' ').map(w=>w?w.charAt(0).toUpperCase()+w.slice(1):w).join(' '); }
+function hpsTerbilangRupiah(n){
+  n=Math.round(hpsNum(n));
+  const kata = n<=0 ? 'nol' : hpsTerbilangKata(n);
+  return hpsTitleCase(kata)+' Rupiah';
+}
+
+/* ================= LANGKAH 2: URAIAN PEKERJAAN (gaya RAB/HPS) ================= */
 function hpsUraianTableHtml(){
   const st=hpsState;
   let rows='';
   st.items.forEach((it,i)=>{
     rows+='<tr>'+
       '<td class="c-no">'+(i+1)+'</td>'+
-      '<td><textarea data-i="'+i+'" rows="1" placeholder="Uraian pekerjaan / barang / material ke-'+(i+1)+'" oninput="hpsOnUraian(this)">'+fkEsc(it.uraian||'')+'</textarea></td>'+
-      '<td class="c-sat"><input type="text" data-i="'+i+'" placeholder="mis. Unit, m, kg" value="'+fkEsc(it.sat||'')+'" oninput="hpsOnSat(this)"></td>'+
+      '<td class="c-kel"><input type="text" data-i="'+i+'" placeholder="mis. MATERIAL" value="'+fkEsc(it.kelompok||'')+'" oninput="hpsOnKelompok(this)"></td>'+
+      '<td class="c-ur"><textarea data-i="'+i+'" rows="1" placeholder="Uraian pekerjaan / barang / material ke-'+(i+1)+'" oninput="hpsOnUraian(this)">'+fkEsc(it.uraian||'')+'</textarea></td>'+
+      '<td class="c-sat"><input type="text" data-i="'+i+'" placeholder="Bh" value="'+fkEsc(it.sat||'')+'" oninput="hpsOnSat(this)"></td>'+
       '<td class="c-vol"><input type="text" inputmode="decimal" data-i="'+i+'" placeholder="0" value="'+fkEsc(it.vol!=null?String(it.vol):'')+'" oninput="hpsOnVol(this)"></td>'+
+      '<td class="c-money"><input type="text" inputmode="numeric" id="hps-hm-'+i+'" data-i="'+i+'" placeholder="Rp" value="'+rupiahInputText(it.hargaMat)+'" oninput="hpsOnHargaMat(this)"></td>'+
+      '<td class="c-money"><input type="text" inputmode="numeric" id="hps-hj-'+i+'" data-i="'+i+'" placeholder="Rp" value="'+rupiahInputText(it.hargaJasa)+'" oninput="hpsOnHargaJasa(this)"></td>'+
+      '<td class="c-calc" id="hps-jt-'+i+'">'+hpsRp(hpsItemTotal(it))+'</td>'+
     '</tr>';
   });
-  return '<div class="hps-uraian-wrap"><table class="hps-uraian"><thead><tr>'+
-    '<th class="c-no">No</th><th>Uraian Pekerjaan</th><th class="c-sat">Satuan (Sat)</th><th class="c-vol">Volume (Vol)</th>'+
-    '</tr></thead><tbody>'+rows+'</tbody></table></div>';
+  return '<div class="hps-uraian-wrap"><table class="hps-uraian"><thead>'+
+    '<tr><th class="c-no">No</th><th>Kelompok</th><th class="c-ur">Uraian Pekerjaan</th><th>Sat</th><th>Vol</th>'+
+      '<th>Harga Sat.<br>Material (Rp)</th><th>Harga Sat.<br>Jasa (Rp)</th><th>Jumlah Total<br>(Rp)</th></tr>'+
+    '</thead><tbody>'+rows+'</tbody></table></div>';
 }
+function hpsRecalcRow(i){
+  const it=hpsState.items[i]; if(!it) return;
+  const c=document.getElementById('hps-jt-'+i); if(c) c.innerHTML=hpsRp(hpsItemTotal(it));
+  hpsRenderSummary();
+}
+function hpsOnKelompok(el){ const i=+el.dataset.i; if(hpsState.items[i]){ hpsState.items[i].kelompok=el.value; hpsSaveState(); } }
 function hpsOnUraian(el){ const i=+el.dataset.i; if(hpsState.items[i]){ hpsState.items[i].uraian=el.value; hpsSaveState(); } }
 function hpsOnSat(el){ const i=+el.dataset.i; if(hpsState.items[i]){ hpsState.items[i].sat=el.value; hpsSaveState(); } }
 function hpsOnVol(el){
   let v=el.value.replace(/[^0-9.,]/g,'').replace(/,/g,'.');
   const parts=v.split('.'); if(parts.length>2) v=parts[0]+'.'+parts.slice(1).join('');
   el.value=v;
-  const i=+el.dataset.i; if(hpsState.items[i]){ hpsState.items[i].vol=v; hpsSaveState(); }
+  const i=+el.dataset.i; if(hpsState.items[i]){ hpsState.items[i].vol=v; hpsSaveState(); hpsRecalcRow(i); }
+}
+function hpsOnHargaMat(el){ onRupiahInput(el); const i=+el.dataset.i; if(hpsState.items[i]){ hpsState.items[i].hargaMat=parseRupiah(el.value); hpsSaveState(); hpsRecalcRow(i); } }
+function hpsOnHargaJasa(el){ onRupiahInput(el); const i=+el.dataset.i; if(hpsState.items[i]){ hpsState.items[i].hargaJasa=parseRupiah(el.value); hpsSaveState(); hpsRecalcRow(i); } }
+
+/* Ringkasan langsung (Jumlah / DPP / PPn / Jumlah Total) di bawah tabel input */
+function hpsSummaryPanelHtml(){
+  return '<div class="hps-sum-card" id="hps-sum-card">'+
+    '<div class="hps-sum-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16M4 9h16M4 14h10M4 19h7"/></svg>Rekapitulasi Nilai HPS</div>'+
+    '<div id="hps-sum-body"></div></div>';
+}
+function hpsRenderSummary(){
+  const body=document.getElementById('hps-sum-body'); if(!body) return;
+  const s=hpsSummary(hpsState);
+  const row=(lbl,mat,jasa,tot,cls)=>'<tr'+(cls?' class="'+cls+'"':'')+'>'+
+    '<td class="lbl">'+lbl+'</td>'+
+    '<td class="val">'+hpsRp(mat)+'</td>'+
+    '<td class="val">'+hpsRp(jasa)+'</td>'+
+    '<td class="val">'+hpsRp(tot)+'</td></tr>';
+  body.innerHTML='<table class="hps-sum"><thead><tr>'+
+      '<td class="lbl" style="color:#7c8a8f;font-weight:800;font-size:10.5px;text-transform:uppercase">Uraian</td>'+
+      '<td class="val" style="color:#7c8a8f;font-weight:800;font-size:10.5px;text-transform:uppercase">Material</td>'+
+      '<td class="val" style="color:#7c8a8f;font-weight:800;font-size:10.5px;text-transform:uppercase">Jasa</td>'+
+      '<td class="val" style="color:#7c8a8f;font-weight:800;font-size:10.5px;text-transform:uppercase">Total</td></tr></thead><tbody>'+
+      row('Jumlah', s.jM, s.jJ, s.jT)+
+      row('DPP (11/12 × Jumlah)', s.dppM, s.dppJ, s.dppT)+
+      row('PPn 12% (12% × DPP)', s.ppnM, s.ppnJ, s.ppnT)+
+      row('Jumlah Total (Jumlah + PPn)', s.totM, s.totJ, s.totT, 'grand')+
+    '</tbody></table>'+
+    '<div class="hps-terbilang"><b>Terbilang :</b> '+fkEsc(hpsTerbilangRupiah(s.totT))+'</div>';
 }
 
 /* ---------- Render form ---------- */
@@ -11329,7 +11441,9 @@ function renderHpsForm(){
   let html=hpsStepperHtml();
   if(hpsStep===1){
     if(sub) sub.textContent='Langkah 1 dari 2 — Lengkapi data pekerjaan & penandatangan';
-    html+='<div class="form-card"><div class="form-section-title">'+KR_SECTION_ICON+'Data Pekerjaan</div><div class="form-flow" style="--cols:4">';
+    html+='<div class="form-card"><div class="form-section-title">'+KR_SECTION_ICON+'Data Pekerjaan</div>'+
+      hpsAnalisaBarHtml()+
+      '<div class="form-flow" style="--cols:4">';
     html+=HPS_INFO_FIELDS.map(hpsInfoInputHtml).join('');
     html+=hpsCountFieldHtml();
     html+='</div></div>';
@@ -11338,17 +11452,37 @@ function renderHpsForm(){
       '<div class="form-flow" style="--cols:2">'+HPS_TTD_FIELDS.map(hpsTtdInputHtml).join('')+'</div></div>';
     html+=hpsActionsHtml({back:false});
   } else {
-    if(sub) sub.textContent='Langkah 2 dari 2 — Isi uraian pekerjaan, satuan & volume tiap item';
+    if(sub) sub.textContent='Langkah 2 dari 2 — Uraian pekerjaan, satuan, volume & harga satuan';
     html+='<div class="form-card"><div class="form-section-title">'+FKL_SEC_ICON+'Uraian Pekerjaan <span class="fkl-count-chip">'+st.items.length+' item</span></div>'+
-      '<div class="hps-hint">Isi <b>Uraian Pekerjaan</b> tiap barang/material beserta <b>Satuan (Sat)</b> dan <b>Volume (Vol)</b> di sampingnya.</div>'+
-      hpsUraianTableHtml()+'</div>';
+      '<div class="hps-hint"><b>Jumlah Harga</b> = Volume × Harga Satuan (Material/Jasa) &nbsp;•&nbsp; <b>Jumlah Total</b> = Jumlah Harga Material + Jasa. Kolom <b>Harga Satuan</b> nantinya terisi otomatis dari modul <b>Analisa</b> (dalam pengembangan); untuk saat ini dapat diisi manual. Isi kolom <b>Kelompok</b> (mis. MATERIAL / JASA) bila ingin dokumen dikelompokkan.</div>'+
+      hpsUraianTableHtml()+
+      hpsSummaryPanelHtml()+'</div>';
     html+=hpsActionsHtml({back:true, save:true});
   }
   cont.innerHTML=html;
   if(hpsStep===1){
     HPS_INFO_FIELDS.forEach(f=>{ const el=document.getElementById('hps-'+f.key); if(!el) return; const v=st.info[f.key]; el.value=(f.type==='num')?rupiahInputText(v):(v!=null?v:''); });
     HPS_TTD_FIELDS.forEach(f=>{ const el=document.getElementById('hps-'+f.key); if(!el) return; el.value=(st.info[f.key]!=null?st.info[f.key]:''); });
+  } else {
+    hpsRenderSummary();
   }
+}
+/* Tombol pemicu "Pilih Analisa" (modul Analisa masih dalam pengembangan) */
+function hpsAnalisaBarHtml(){
+  const dipilih=(hpsState.info&&hpsState.info.analisa)?String(hpsState.info.analisa).trim():'';
+  return '<div class="hps-analisa-bar">'+
+    '<div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.8L7 14.3"/></svg></div>'+
+    '<div class="tx"><b>Pilih Analisa</b><span>'+(dipilih?('Terpilih: '+fkEsc(dipilih)):'Ambil harga satuan (Material &amp; Jasa) otomatis dari data Analisa tersimpan.')+'</span></div>'+
+    '<button type="button" class="btn btn-teal" style="padding:8px 14px;font-size:11.5px" onclick="hpsPilihAnalisa()">'+
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.8L7 14.3"/></svg>Pilih Analisa</button>'+
+  '</div>';
+}
+function hpsPilihAnalisa(){
+  toast('Fitur "Pilih Analisa" — modul Analisa masih dalam pengembangan','warn');
+}
+function openHpsAnalisa(){
+  if(!isAdmin()){ toast('Menu ini hanya untuk akun admin','warn'); return; }
+  toast('Modul Analisa masih dalam pengembangan','warn');
 }
 function hpsActionsHtml(o){
   o=o||{};
@@ -11385,11 +11519,13 @@ async function hpsSimpan(){
   const st=hpsState; const info=st.info||{}; const nama=String(info.nama||'').trim();
   if(!nama){ toast('Nama Pekerjaan wajib diisi','warn'); hpsStep=1; renderHpsForm(); return; }
   hpsEnsureItems();
+  const _sum=hpsSummary(st);
   const rec={
     nama_pekerjaan: nama,
     lokasi: info.lokasi||'',
     metode: info.metode||'',
     jumlah_item: st.items.length,
+    nilai_total: _sum.totT,
     tgl_hps: info.tgl_hps||'',
     tgl_input: (new Date()).toISOString().slice(0,10),
     state: JSON.parse(JSON.stringify(st))
@@ -11420,7 +11556,7 @@ function hpsViewRows(){
   return rows;
 }
 function hpsEmptyRow(){
-  return '<tr><td colspan="7"><div class="empty">'+
+  return '<tr><td colspan="8"><div class="empty">'+
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/></svg>'+
     '<div>Data tidak tersedia</div></div></td></tr>';
 }
@@ -11443,6 +11579,7 @@ function renderHpsView(){
     const lokasi=(r.lokasi||info.lokasi||'').trim();
     const metode=r.metode||info.metode||'';
     const ji=(r.jumlah_item!=null)?r.jumlah_item:((stt.items&&stt.items.length)||0);
+    const nilai=(r.nilai_total!=null)?r.nilai_total:hpsSummary(stt).totT;
     const tgl=r.tgl_hps||info.tgl_hps||'';
     const rid=fkEsc(String(r.id));
     return '<tr>'+
@@ -11451,6 +11588,7 @@ function renderHpsView(){
       '<td class="fkl-col-lokasi">'+fkEsc(lokasi||'—')+'</td>'+
       '<td>'+fkEsc(metode||'—')+'</td>'+
       '<td style="text-align:center">'+ji+'</td>'+
+      '<td class="col-num" style="text-align:right;font-weight:700">'+hpsRp(nilai)+'</td>'+
       '<td class="col-date">'+fkEsc(tgl?hpsDateLong(tgl):'—')+'</td>'+
       '<td><div class="action-cell" style="justify-content:center">'+
         '<button class="act act-edit" title="Edit" onclick="openHpsInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
@@ -11494,12 +11632,71 @@ function hpsBuildDocHtml(){
   const fmtNilai=(info.nilai!==''&&info.nilai!=null)?('Rp '+Number(info.nilai).toLocaleString('id-ID')):'-';
   const infoRow=(k,v)=>'<tr><td class="k">'+k+'</td><td class="s">:</td><td class="v">'+fkEsc(v||'-')+'</td></tr>';
 
-  const rows=(st.items||[]).map((it,i)=>{
-    const uraian=(it.uraian&&String(it.uraian).trim())?it.uraian:('Barang/Material '+(i+1));
+  /* ---- Baris item + kelompok (A, B, ...) ---- */
+  let bodyRows='';
+  let groupIdx=0, curGroup=null, noInGroup=0;
+  (st.items||[]).forEach((it,idx)=>{
+    const kel=String(it.kelompok||'').trim();
+    const kelKey=kel.toUpperCase();
+    if(kel && kelKey!==curGroup){
+      curGroup=kelKey; noInGroup=0;
+      const letter=String.fromCharCode(65+(groupIdx%26)); groupIdx++;
+      bodyRows+='<tr class="grp"><td class="no">'+letter+'</td><td class="gname" colspan="8">'+fkEsc(kelKey)+'</td></tr>';
+    }
+    noInGroup++;
+    const uraian=(it.uraian&&String(it.uraian).trim())?it.uraian:('Barang/Material '+(idx+1));
     const sat=(it.sat!=null&&String(it.sat).trim())?it.sat:'-';
     const vol=(it.vol!=null&&String(it.vol).trim())?it.vol:'-';
-    return '<tr><td class="no">'+(i+1)+'</td><td class="ur">'+fkEsc(uraian)+'</td><td class="st">'+fkEsc(String(sat))+'</td><td class="vl">'+fkEsc(String(vol))+'</td></tr>';
-  }).join('');
+    bodyRows+='<tr>'+
+      '<td class="no">'+noInGroup+'</td>'+
+      '<td class="ur">'+fkEsc(uraian)+'</td>'+
+      '<td class="st">'+fkEsc(String(sat))+'</td>'+
+      '<td class="vl">'+fkEsc(String(vol))+'</td>'+
+      '<td class="num">'+hpsRpDoc(it.hargaMat)+'</td>'+
+      '<td class="num">'+hpsRpDoc(it.hargaJasa)+'</td>'+
+      '<td class="num">'+hpsRpDoc(hpsItemMat(it))+'</td>'+
+      '<td class="num">'+hpsRpDoc(hpsItemJasa(it))+'</td>'+
+      '<td class="num tot">'+hpsRpDoc(hpsItemTotal(it))+'</td>'+
+    '</tr>';
+  });
+
+  const s=hpsSummary(st);
+  const sumRow=(lbl,mat,jasa,tot,cls)=>'<tr class="sum'+(cls?' '+cls:'')+'">'+
+    '<td class="sum-lbl" colspan="6">'+lbl+'</td>'+
+    '<td class="num">'+hpsRpDoc(mat)+'</td>'+
+    '<td class="num">'+hpsRpDoc(jasa)+'</td>'+
+    '<td class="num">'+hpsRpDoc(tot)+'</td></tr>';
+  const sumRows=
+    sumRow('Jumlah', s.jM, s.jJ, s.jT)+
+    sumRow('DPP', s.dppM, s.dppJ, s.dppT)+
+    sumRow('PPn 12%', s.ppnM, s.ppnJ, s.ppnT)+
+    sumRow('Jumlah Total', s.totM, s.totJ, s.totT, 'grand');
+  const terbilangRow='<tr class="terb"><td colspan="9"><b>Terbilang :</b> '+fkEsc(hpsTerbilangRupiah(s.totT))+'</td></tr>';
+
+  const tbl=
+    '<table class="hps-doc-tbl">'+
+      '<colgroup><col style="width:4%"><col style="width:26%"><col style="width:5%"><col style="width:6%"><col style="width:11%"><col style="width:11%"><col style="width:12%"><col style="width:11%"><col style="width:14%"></colgroup>'+
+      '<thead>'+
+        '<tr>'+
+          '<th class="no" rowspan="2">No.</th>'+
+          '<th class="ur" rowspan="2">Uraian Pekerjaan</th>'+
+          '<th rowspan="2">Sat</th>'+
+          '<th rowspan="2">Vol</th>'+
+          '<th colspan="2">Harga Satuan</th>'+
+          '<th colspan="2">Jumlah Harga</th>'+
+          '<th rowspan="2">Jumlah Total<br>(Rp)</th>'+
+        '</tr>'+
+        '<tr>'+
+          '<th>Material (Rp)</th><th>Jasa (Rp)</th>'+
+          '<th>Material (Rp)</th><th>Jasa (Rp)</th>'+
+        '</tr>'+
+        '<tr class="numh">'+
+          '<td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td>'+
+          '<td>7 = 4 x 5</td><td>8 = 4 x 6</td><td>9 = 7 + 8</td>'+
+        '</tr>'+
+      '</thead>'+
+      '<tbody>'+bodyRows+sumRows+terbilangRow+'</tbody>'+
+    '</table>';
 
   const pengguna=(info.pengguna&&String(info.pengguna).trim())?String(info.pengguna).trim():'(..........................)';
   const pejabat=(info.pejabat&&String(info.pejabat).trim())?String(info.pejabat).trim().toUpperCase():'(..........................)';
@@ -11529,8 +11726,8 @@ function hpsBuildDocHtml(){
       infoRow('Tgl. HPS', info.tgl_hps?pnwDateLong(info.tgl_hps):'-')+
       infoRow('Jumlah Barang/Material', String((st.items||[]).length)+' item')+
     '</tbody></table>'+
-    '<div class="fkl-sec-h"><span class="rn">B</span>Uraian Pekerjaan</div>'+
-    '<table class="hps-doc-tbl"><thead><tr><th class="no">No</th><th class="ur">Uraian Pekerjaan</th><th class="st">Satuan</th><th class="vl">Volume</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+    '<div class="fkl-sec-h"><span class="rn">B</span>Uraian Pekerjaan &amp; Rincian Harga</div>'+
+    tbl+
     '<div class="fkl-doc-foot hps-foot">'+
       '<table class="ttd"><tbody><tr>'+
         '<td><div class="hps-topgap"></div>'+
@@ -11550,13 +11747,25 @@ function hpsBuildDocHtml(){
 function hpsExtraDocCss(){
   return ''+
   'table.hps-doc-tbl{width:100%;border-collapse:collapse;table-layout:fixed;margin:2px 0 8px}'+
-  'table.hps-doc-tbl th,table.hps-doc-tbl td{border:1px solid #cfe0e3;padding:6px 8px;font-size:11px;vertical-align:top;word-wrap:break-word;overflow-wrap:anywhere}'+
-  'table.hps-doc-tbl thead th{background:#0E7C86;color:#fff;font-weight:800;text-transform:uppercase;letter-spacing:.2px;text-align:center;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
-  'table.hps-doc-tbl th.no,table.hps-doc-tbl td.no{width:38px;text-align:center;font-weight:700;color:#0b3d42}'+
-  'table.hps-doc-tbl th.st,table.hps-doc-tbl td.st{width:88px;text-align:center}'+
-  'table.hps-doc-tbl th.vl,table.hps-doc-tbl td.vl{width:88px;text-align:center;font-weight:700}'+
+  'table.hps-doc-tbl th,table.hps-doc-tbl td{border:1px solid #7d979c;padding:3px 5px;font-size:8.7px;line-height:1.3;vertical-align:middle;word-wrap:break-word;overflow-wrap:anywhere}'+
+  'table.hps-doc-tbl thead th{background:#0E7C86;color:#fff;font-weight:800;text-align:center;letter-spacing:.2px;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  'table.hps-doc-tbl thead th.ur{text-align:center}'+
+  'table.hps-doc-tbl thead tr.numh td{background:#e7f2f3;color:#0b3d42;font-weight:700;text-align:center;font-style:italic;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  'table.hps-doc-tbl td.no{text-align:center;font-weight:700}'+
   'table.hps-doc-tbl td.ur{text-align:left}'+
-  'table.hps-doc-tbl tbody tr:nth-child(even) td{background:#f6fafb}'+
+  'table.hps-doc-tbl td.st,table.hps-doc-tbl td.vl{text-align:center}'+
+  'table.hps-doc-tbl td.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}'+
+  'table.hps-doc-tbl td.num.tot{font-weight:800;color:#0b3d42}'+
+  'table.hps-doc-tbl tr.grp td{background:#dcecee;font-weight:800;color:#0b3d42;text-transform:uppercase;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  'table.hps-doc-tbl tr.grp td.gname{text-align:left;letter-spacing:.3px}'+
+  'table.hps-doc-tbl tr.sum td{background:#f2f7f8;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  'table.hps-doc-tbl tr.sum td.sum-lbl{text-align:right;font-weight:800;color:#0d2a30;text-transform:none}'+
+  'table.hps-doc-tbl tr.sum td.num{font-weight:800;color:#0b3d42}'+
+  'table.hps-doc-tbl tr.sum.grand td{background:#e7f6ec;color:#0d7a3f}'+
+  'table.hps-doc-tbl tr.sum.grand td.num,table.hps-doc-tbl tr.sum.grand td.sum-lbl{color:#0d7a3f;font-size:9.4px}'+
+  'table.hps-doc-tbl tr.terb td{text-align:left;background:#fbfdf4;font-weight:600;color:#22343a;padding:5px 7px}'+
+  'table.hps-doc-tbl tr.terb td b{color:#0b3d42}'+
+  'table.hps-doc-tbl tr.grp,table.hps-doc-tbl tr.sum,table.hps-doc-tbl tr.terb{break-inside:avoid;page-break-inside:avoid}'+
   '.hps-foot{margin-top:26px;break-inside:avoid;page-break-inside:avoid}'+
   '.hps-foot .ttd{width:100%;margin:0;border-collapse:collapse}'+
   '.hps-foot .ttd td{width:50%;text-align:center;vertical-align:top;padding:0 12px}'+
