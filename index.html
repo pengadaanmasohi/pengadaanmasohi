@@ -2527,6 +2527,8 @@ table.ana-res tbody tr:last-child td{border-bottom:none}
 
 /* Bagian 2 Konstruksi: kolom Inflasi & Koefisien pada tabel */
 table.hps-uraian td.c-pct input,table.hps-uraian td.c-koef input{text-align:center;min-width:70px}
+table.hps-uraian th.c-ref,table.hps-uraian td.c-ref{min-width:160px}
+table.hps-uraian td.c-ref input{width:100%}
 
 /* Bagian 3 Konstruksi: Analisa Harga Satuan Pekerjaan (AHSP) */
 .ana-ahsp-head{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:6px}
@@ -2541,6 +2543,18 @@ table.ana-ahsp-table td.c-act{width:36px;text-align:center;padding:6px 4px}
 table.ana-ahsp-table tfoot td{background:#eef8f1;font-weight:800;color:#0d7a3f;padding:9px 10px;font-size:12px;border-top:2px solid #cfe9d8}
 table.ana-ahsp-table tfoot td:first-child{text-transform:uppercase;letter-spacing:.3px;font-size:10.5px}
 .ana-rok-chip{display:inline-block;color:#0b6a73;font-weight:800;background:#dff1f2;padding:2px 8px;border-radius:20px;font-size:11px;margin-left:6px}
+/* Layer AHSP (satu blok = satu analisa/pekerjaan) */
+.ana-ahsp-layer{border:1px solid #dde9eb;border-radius:14px;padding:16px 18px;margin-bottom:18px;background:#fbfeff}
+.ana-ahsp-layer+.ana-ahsp-layer{margin-top:0}
+.ana-ahsp-no{flex:0 0 auto;color:var(--teal-dark)}
+.ana-ahsp-judul-input{flex:1 1 220px;min-width:180px;border:1px solid #cdd9de;border-radius:9px;padding:8px 10px;font-size:13px;font-family:'Plus Jakarta Sans';font-weight:700;color:var(--ink);background:#fff}
+.ana-ahsp-judul-input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,124,134,.15)}
+.ana-ahsp-layer-del{width:30px;height:30px;font-size:17px}
+.ana-ahsp-addlayer-wrap{text-align:center;margin-top:6px}
+.ana-ahsp-addlayer-wrap .ana-ahsp-add{padding:9px 20px;font-size:11.5px}
+/* Tombol tambah/hapus baris per-baris pada tabel Harga Satuan (Konstruksi) */
+table.hps-uraian td.c-act{width:64px;text-align:center;white-space:nowrap;padding:6px 4px}
+.ana-row-add{width:24px;height:24px;padding:0;border-radius:7px;font-size:15px;line-height:1;margin-right:4px}
 
 /* Daftar pilih analisa (modal) */
 .hps-ana-list{display:flex;flex-direction:column;gap:9px;max-height:56vh;overflow-y:auto;padding:2px}
@@ -12156,15 +12170,15 @@ function anaNormRefItem(c){ c=c||{}; return {
 function anaBlankRef(){ return { items:[anaBlankRefItem()] }; }
 
 /* ---------- Struktur khusus "Pekerjaan Konstruksi" ---------- */
-/* Bagian 2 — Harga Satuan: Kelompok/Uraian/Satuan diisi manual, Harga Satuan (Rp) manual,
-   Inflasi (%) manual, Harga Total = Harga Satuan × (1 + Inflasi%). */
-function anaBlankKonItem(){ return {kelompok:'', uraian:'', sat:'', hargaSatuan:'', inflasi:''}; }
+/* Bagian 2 — Harga Satuan: Kelompok/Uraian/Satuan diisi manual, Harga Barang (Rp) & Harga Jasa (Rp) manual. */
+function anaBlankKonItem(){ return {kelompok:'', uraian:'', sat:'', hargaBarang:'', hargaJasa:'', sumberRef:''}; }
 function anaNormKonItem(c){ c=c||{}; return {
   kelompok:c.kelompok||'', uraian:c.uraian||'', sat:c.sat||'',
-  hargaSatuan:(c.hargaSatuan!=null?c.hargaSatuan:''),
-  inflasi:(c.inflasi!=null?c.inflasi:'')
+  hargaBarang:(c.hargaBarang!=null?c.hargaBarang:''),
+  hargaJasa:(c.hargaJasa!=null?c.hargaJasa:''),
+  sumberRef:c.sumberRef||''
 }; }
-function anaKonHargaTotal(it){ const hs=anaNum(it&&it.hargaSatuan), infl=anaNum(it&&it.inflasi); return Math.round(hs*(1+infl/100)); }
+function anaKonItemTotal(it){ return anaNum(it&&it.hargaBarang)+anaNum(it&&it.hargaJasa); }
 
 /* Bagian 3 — Analisa Harga Satuan Pekerjaan (AHSP): satu blok berlaku untuk keseluruhan
    (bukan per-uraian), terdiri dari 3 kelompok baris yang bisa ditambah/dihapus bebas:
@@ -12173,7 +12187,15 @@ function anaKonHargaTotal(it){ const hs=anaNum(it&&it.hargaSatuan), infl=anaNum(
 function anaBlankAhspRow(){ return {uraian:'', sat:'', koef:'', harga:''}; }
 function anaNormAhspRow(c){ c=c||{}; return {uraian:c.uraian||'', sat:c.sat||'', koef:(c.koef!=null?c.koef:''), harga:(c.harga!=null?c.harga:'')}; }
 function anaAhspJumlah(row){ return Math.round(anaNum(row&&row.koef)*anaNum(row&&row.harga)); }
-function anaBlankAhsp(){ return { rok:'', tenagaKerja:[anaBlankAhspRow()], bahan:[anaBlankAhspRow()], alat:[anaBlankAhspRow()] }; }
+/* Satu "layer" = satu analisa lengkap (judul pekerjaan + ROK + 3 kelompok baris) */
+function anaBlankAhspLayer(){ return { judul:'', rok:'', tenagaKerja:[anaBlankAhspRow()], bahan:[anaBlankAhspRow()], alat:[anaBlankAhspRow()] }; }
+function anaNormAhspLayer(c){ c=c||{}; return {
+  judul:c.judul||'', rok:(c.rok!=null?c.rok:''),
+  tenagaKerja: Array.isArray(c.tenagaKerja)&&c.tenagaKerja.length ? c.tenagaKerja.map(anaNormAhspRow) : [anaBlankAhspRow()],
+  bahan: Array.isArray(c.bahan)&&c.bahan.length ? c.bahan.map(anaNormAhspRow) : [anaBlankAhspRow()],
+  alat: Array.isArray(c.alat)&&c.alat.length ? c.alat.map(anaNormAhspRow) : [anaBlankAhspRow()]
+}; }
+function anaBlankAhsp(){ return [anaBlankAhspLayer()]; }
 const ANA_AHSP_SECTIONS = [['tenagaKerja','A','TENAGA KERJA'],['bahan','B','BAHAN'],['alat','C','PERALATAN']];
 
 /* State:
@@ -12191,7 +12213,7 @@ function anaBlankState(){ return {
   sumber:[''], refs:[anaBlankRef()],
   metodeRef:'Sama', metodeAll:'Rata-rata', aktifRef:0,
   jenis:'Umum', rok:'',
-  konstruksi:{ jumlahItem:1, items:[anaBlankKonItem()], jumlahRef:1, sumberRef:[''] },
+  konstruksi:{ jumlahItem:1, items:[anaBlankKonItem()] },
   ahsp: anaBlankAhsp()
 }; }
 let anaState = anaBlankState();
@@ -12230,20 +12252,21 @@ function anaEnsure(){
   const rokMax=(st.jenis==='Konstruksi')?15:10;
   if(st.rok!==''&&st.rok!=null){ let rk=anaNum(st.rok); if(rk<0) rk=0; if(rk>rokMax) rk=rokMax; st.rok=(rk===0&&String(st.rok).trim()==='')?'':rk; }
   // ---- Pekerjaan Konstruksi: Bagian 2 (Harga Satuan) & Bagian 3 (AHSP) ----
-  if(!st.konstruksi||typeof st.konstruksi!=='object') st.konstruksi={ jumlahItem:1, items:[anaBlankKonItem()], jumlahRef:1, sumberRef:[''] };
+  if(!st.konstruksi||typeof st.konstruksi!=='object') st.konstruksi={ jumlahItem:1, items:[anaBlankKonItem()] };
   const kst=st.konstruksi;
-  const nKItem=Math.max(1,Math.min(ANA_MAX_ITEM, parseInt(kst.jumlahItem,10)||1)); kst.jumlahItem=nKItem;
-  if(!Array.isArray(kst.items)) kst.items=[];
-  { const cur=kst.items.slice(); const next=[]; for(let i=0;i<nKItem;i++) next.push(anaNormKonItem(cur[i])); kst.items=next; }
-  const nKRef=Math.max(1,Math.min(ANA_MAX_REF, parseInt(kst.jumlahRef,10)||1)); kst.jumlahRef=nKRef;
-  if(!Array.isArray(kst.sumberRef)) kst.sumberRef=[];
-  { const curS=kst.sumberRef.slice(); kst.sumberRef=[]; for(let i=0;i<nKRef;i++) kst.sumberRef.push(curS[i]!=null?curS[i]:''); }
-  if(!st.ahsp||typeof st.ahsp!=='object') st.ahsp=anaBlankAhsp();
-  ANA_AHSP_SECTIONS.forEach(([key])=>{
-    if(!Array.isArray(st.ahsp[key])||!st.ahsp[key].length) st.ahsp[key]=[anaBlankAhspRow()];
-    st.ahsp[key]=st.ahsp[key].map(anaNormAhspRow);
+  if(!Array.isArray(kst.items)||!kst.items.length) kst.items=[anaBlankKonItem()];
+  kst.items=kst.items.map(anaNormKonItem);
+  kst.jumlahItem=kst.items.length; // derived, bukan dikontrol pengguna (baris tambah/hapus bebas)
+  // Migrasi bentuk lama (satu objek AHSP tunggal) -> array of layers
+  if(st.ahsp&&!Array.isArray(st.ahsp)&&typeof st.ahsp==='object'&&(Array.isArray(st.ahsp.tenagaKerja)||Array.isArray(st.ahsp.bahan)||Array.isArray(st.ahsp.alat))){
+    st.ahsp=[st.ahsp];
+  }
+  if(!Array.isArray(st.ahsp)||!st.ahsp.length) st.ahsp=anaBlankAhsp();
+  st.ahsp=st.ahsp.map(layer=>{
+    const nl=anaNormAhspLayer(layer);
+    if(nl.rok!==''&&nl.rok!=null){ let rk=anaNum(nl.rok); if(rk<0) rk=0; if(rk>15) rk=15; nl.rok=(rk===0&&String(nl.rok).trim()==='')?'':rk; }
+    return nl;
   });
-  if(st.ahsp.rok!==''&&st.ahsp.rok!=null){ let rk=anaNum(st.ahsp.rok); if(rk<0) rk=0; if(rk>15) rk=15; st.ahsp.rok=(rk===0&&String(st.ahsp.rok).trim()==='')?'':rk; }
 }
 
 /* ---------- Angka & format (pakai helper HPS bila ada) ---------- */
@@ -12327,16 +12350,11 @@ function anaRecordToState(rec){
     rok: (s.rok!=null?s.rok:''),
     konstruksi: (s.konstruksi&&typeof s.konstruksi==='object') ? {
       jumlahItem: Math.max(1,Math.min(ANA_MAX_ITEM, parseInt(s.konstruksi.jumlahItem,10)||1)),
-      items: Array.isArray(s.konstruksi.items)&&s.konstruksi.items.length ? s.konstruksi.items.map(anaNormKonItem) : [anaBlankKonItem()],
-      jumlahRef: Math.max(1,Math.min(ANA_MAX_REF, parseInt(s.konstruksi.jumlahRef,10)||1)),
-      sumberRef: Array.isArray(s.konstruksi.sumberRef) ? s.konstruksi.sumberRef.slice() : ['']
-    } : { jumlahItem:1, items:[anaBlankKonItem()], jumlahRef:1, sumberRef:[''] },
-    ahsp: (s.ahsp&&typeof s.ahsp==='object') ? {
-      rok:(s.ahsp.rok!=null?s.ahsp.rok:''),
-      tenagaKerja: Array.isArray(s.ahsp.tenagaKerja)&&s.ahsp.tenagaKerja.length ? s.ahsp.tenagaKerja.map(anaNormAhspRow) : [anaBlankAhspRow()],
-      bahan: Array.isArray(s.ahsp.bahan)&&s.ahsp.bahan.length ? s.ahsp.bahan.map(anaNormAhspRow) : [anaBlankAhspRow()],
-      alat: Array.isArray(s.ahsp.alat)&&s.ahsp.alat.length ? s.ahsp.alat.map(anaNormAhspRow) : [anaBlankAhspRow()]
-    } : anaBlankAhsp()
+      items: Array.isArray(s.konstruksi.items)&&s.konstruksi.items.length ? s.konstruksi.items.map(anaNormKonItem) : [anaBlankKonItem()]
+    } : { jumlahItem:1, items:[anaBlankKonItem()] },
+    ahsp: Array.isArray(s.ahsp)&&s.ahsp.length
+      ? s.ahsp.map(anaNormAhspLayer)
+      : ((s.ahsp&&typeof s.ahsp==='object'&&(Array.isArray(s.ahsp.tenagaKerja)||Array.isArray(s.ahsp.bahan)||Array.isArray(s.ahsp.alat))) ? [anaNormAhspLayer(s.ahsp)] : anaBlankAhsp())
   };
   const _save=anaState; anaState=st; anaEnsure(); const out=anaState; anaState=_save; return out;
 }
@@ -12415,16 +12433,18 @@ function anaOnJumlahRefChange(el){
 function anaOnSumber(el){ const i=+el.dataset.i; if(anaState.sumber[i]!=null||i<anaState.jumlahRef){ anaState.sumber[i]=el.value; anaSaveState(); } }
 
 /* ============= PEKERJAAN KONSTRUKSI — BAGIAN 2: HARGA SATUAN ============= */
-function anaKonCountItemFieldHtml(){
-  const st=anaState.konstruksi;
-  let opts=''; for(let i=1;i<=ANA_MAX_ITEM;i++) opts+='<option value="'+i+'"'+(i===st.jumlahItem?' selected':'')+'>'+i+' Item</option>';
-  return '<div class="field"><label>Jumlah Barang/Jasa</label><select id="ana-kon-jumlahitem" onchange="anaOnKonJumlahItemChange(this)">'+opts+'</select></div>';
+/* Baris tabel Harga Satuan ditambah/dihapus bebas per baris (tidak terikat jumlah item Umum). */
+function anaKonAddRow(afterIdx){
+  const st=anaState.konstruksi; if(!Array.isArray(st.items)) st.items=[];
+  const pos = (afterIdx!=null && afterIdx>=0) ? afterIdx+1 : st.items.length;
+  st.items.splice(pos, 0, anaBlankKonItem());
+  st.jumlahItem=st.items.length; anaSaveState();
+  const wrap=document.getElementById('ana-kon-table-wrap'); if(wrap) wrap.innerHTML=anaKonTableHtml();
 }
-function anaOnKonJumlahItemChange(el){
-  const st=anaState.konstruksi;
-  const n=Math.max(1,Math.min(ANA_MAX_ITEM,parseInt(el.value,10)||1));
-  const cur=st.items.slice(); const next=[]; for(let i=0;i<n;i++) next.push(anaNormKonItem(cur[i]));
-  st.items=next; st.jumlahItem=n; anaSaveState();
+function anaKonRemoveRow(i){
+  const st=anaState.konstruksi; if(!Array.isArray(st.items)) return;
+  if(st.items.length<=1){ toast('Minimal harus ada 1 baris','warn'); return; }
+  st.items.splice(i,1); st.jumlahItem=st.items.length; anaSaveState();
   const wrap=document.getElementById('ana-kon-table-wrap'); if(wrap) wrap.innerHTML=anaKonTableHtml();
 }
 function anaKonTableHtml(){
@@ -12436,149 +12456,128 @@ function anaKonTableHtml(){
       '<td class="c-kel"><input type="text" data-i="'+i+'" placeholder="mis. MATERIAL" value="'+fkEsc(it.kelompok||'')+'" oninput="anaOnKonCell(this,\'kelompok\')"></td>'+
       '<td class="c-ur"><textarea data-i="'+i+'" rows="1" placeholder="Uraian pekerjaan ke-'+(i+1)+'" oninput="anaOnKonCell(this,\'uraian\')">'+fkEsc(it.uraian||'')+'</textarea></td>'+
       '<td class="c-sat"><input type="text" data-i="'+i+'" placeholder="Bh" value="'+fkEsc(it.sat||'')+'" oninput="anaOnKonCell(this,\'sat\')"></td>'+
-      '<td class="c-money"><input type="text" inputmode="numeric" id="ana-kon-hs-'+i+'" data-i="'+i+'" placeholder="Rp" value="'+rupiahInputText(it.hargaSatuan)+'" oninput="anaOnKonHarga(this)"></td>'+
-      '<td class="c-pct"><input type="text" inputmode="decimal" data-i="'+i+'" placeholder="0" value="'+fkEsc(it.inflasi!=null?String(it.inflasi):'')+'" oninput="anaOnKonInflasi(this)"></td>'+
-      '<td class="c-calc" id="ana-kon-jt-'+i+'">'+anaRp(anaKonHargaTotal(it))+'</td>'+
+      '<td class="c-money"><input type="text" inputmode="numeric" id="ana-kon-hb-'+i+'" data-i="'+i+'" placeholder="Rp" value="'+rupiahInputText(it.hargaBarang)+'" oninput="anaOnKonHargaBarang(this)"></td>'+
+      '<td class="c-money"><input type="text" inputmode="numeric" id="ana-kon-hj-'+i+'" data-i="'+i+'" placeholder="Rp" value="'+rupiahInputText(it.hargaJasa)+'" oninput="anaOnKonHargaJasa(this)"></td>'+
+      '<td class="c-ref"><input type="text" data-i="'+i+'" placeholder="mis. SNI, survei pasar" value="'+fkEsc(it.sumberRef||'')+'" oninput="anaOnKonSumberRef(this)"></td>'+
+      '<td class="c-act"><button type="button" class="ana-ahsp-add ana-row-add" title="Tambah baris di bawah" onclick="anaKonAddRow('+i+')">+</button>'+
+        '<button type="button" class="ana-ahsp-del" title="Hapus baris" onclick="anaKonRemoveRow('+i+')">&times;</button></td>'+
     '</tr>';
   });
   return '<div class="hps-uraian-wrap"><table class="hps-uraian"><thead>'+
     '<tr><th class="c-no">No</th><th>Kelompok</th><th class="c-ur">Uraian Pekerjaan</th><th>Satuan</th>'+
-      '<th>Harga Satuan<br>(Rp)</th><th>Inflasi<br>(%)</th><th>Harga Total<br>(Rp)</th></tr>'+
+      '<th>Harga Barang<br>(Rp)</th><th>Harga Jasa<br>(Rp)</th><th class="c-ref">Sumber Referensi</th><th></th></tr>'+
     '</thead><tbody>'+rows+'</tbody></table></div>';
 }
 function anaOnKonCell(el,key){ const i=+el.dataset.i; const st=anaState.konstruksi; if(st.items[i]){ st.items[i][key]=el.value; anaSaveState(); } }
-function anaOnKonHarga(el){
+function anaOnKonHargaBarang(el){
   onRupiahInput(el); const i=+el.dataset.i; const st=anaState.konstruksi;
-  if(st.items[i]){ st.items[i].hargaSatuan=parseRupiah(el.value); anaSaveState(); anaKonRecalcRow(i); }
+  if(st.items[i]){ st.items[i].hargaBarang=parseRupiah(el.value); anaSaveState(); }
 }
-function anaOnKonInflasi(el){
-  let v=el.value.replace(/[^0-9.,]/g,'').replace(/,/g,'.'); const parts=v.split('.'); if(parts.length>2) v=parts[0]+'.'+parts.slice(1).join(''); el.value=v;
-  const i=+el.dataset.i; const st=anaState.konstruksi;
-  if(st.items[i]){ st.items[i].inflasi=v; anaSaveState(); anaKonRecalcRow(i); }
-}
-function anaKonRecalcRow(i){ const it=anaState.konstruksi.items[i]; if(!it) return; const c=document.getElementById('ana-kon-jt-'+i); if(c) c.innerHTML=anaRp(anaKonHargaTotal(it)); }
-
-/* Sumber Referensi (dokumentasi acuan harga, tanpa nilai per-referensi) untuk Konstruksi */
-function anaKonCountRefFieldHtml(){
-  const st=anaState.konstruksi;
-  let opts=''; for(let i=1;i<=ANA_MAX_REF;i++) opts+='<option value="'+i+'"'+(i===st.jumlahRef?' selected':'')+'>'+i+' Referensi</option>';
-  return '<div class="field" style="max-width:220px"><label>Jumlah Referensi</label><select id="ana-kon-jumlahref" onchange="anaOnKonJumlahRefChange(this)">'+opts+'</select></div>';
-}
-function anaOnKonJumlahRefChange(el){
-  const st=anaState.konstruksi;
-  const n=Math.max(1,Math.min(ANA_MAX_REF,parseInt(el.value,10)||1));
-  const cur=st.sumberRef.slice(); st.sumberRef=[]; for(let i=0;i<n;i++) st.sumberRef.push(cur[i]!=null?cur[i]:'');
-  st.jumlahRef=n; anaSaveState();
-  const wrap=document.getElementById('ana-kon-sumber-wrap'); if(wrap) wrap.innerHTML=anaKonSumberGridHtml();
-}
-function anaKonSumberGridHtml(){
-  const st=anaState.konstruksi;
-  let cells='';
-  for(let i=0;i<st.jumlahRef;i++){
-    cells+='<div class="ana-ref-cell"><span class="rn">'+(i+1)+'</span>'+
-      '<input type="text" data-i="'+i+'" placeholder="Sumber referensi ke-'+(i+1)+'" value="'+fkEsc(st.sumberRef[i]||'')+'" oninput="anaOnKonSumber(this)"></div>';
-  }
-  return '<div class="ana-ref-grid">'+cells+'</div>';
-}
-function anaOnKonSumber(el){ const i=+el.dataset.i; const st=anaState.konstruksi; if(st.sumberRef[i]!=null||i<st.jumlahRef){ st.sumberRef[i]=el.value; anaSaveState(); } }
-
-/* Cetak Bagian 2 (Harga Satuan + Sumber Referensi) — buka jendela cetak sederhana */
-function anaCetakHargaSatuan(){
-  const st=anaState; const info=st.info||{}; const kst=st.konstruksi;
-  let rows='';
-  (kst.items||[]).forEach((it,i)=>{
-    rows+='<tr><td>'+(i+1)+'</td><td>'+fkEsc(it.kelompok||'-')+'</td><td>'+fkEsc(it.uraian||'-')+'</td><td>'+fkEsc(it.sat||'-')+'</td>'+
-      '<td style="text-align:right">'+anaRp(it.hargaSatuan)+'</td><td style="text-align:right">'+(anaNum(it.inflasi)||0)+'%</td>'+
-      '<td style="text-align:right">'+anaRp(anaKonHargaTotal(it))+'</td></tr>';
-  });
-  const sumberRows=(kst.sumberRef||[]).map((s,i)=>'<li>'+fkEsc(s||('Referensi '+(i+1)))+'</li>').join('');
-  const html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Harga Satuan — '+fkEsc(info.nama||'')+'</title>'+
-    '<style>body{font-family:Arial,Helvetica,sans-serif;padding:24px;color:#0d2a30}h2{margin:0 0 4px}table{width:100%;border-collapse:collapse;margin-top:14px}th,td{border:1px solid #333;padding:6px 8px;font-size:12px}th{background:#eef4f5}ul{font-size:12px}</style></head><body>'+
-    '<h2>Harga Satuan (Pekerjaan Konstruksi)</h2><div>'+fkEsc(info.nama||'-')+' • '+fkEsc(info.lokasi||'-')+'</div>'+
-    '<table><thead><tr><th>No</th><th>Kelompok</th><th>Uraian Pekerjaan</th><th>Satuan</th><th>Harga Satuan (Rp)</th><th>Inflasi (%)</th><th>Harga Total (Rp)</th></tr></thead><tbody>'+rows+'</tbody></table>'+
-    '<h3 style="margin-top:20px">Sumber Referensi</h3><ul>'+(sumberRows||'<li>—</li>')+'</ul>'+
-    '</body></html>';
-  const w=window.open('','_blank'); if(!w){ toast('Popup diblokir browser — izinkan popup untuk mencetak','warn'); return; }
-  w.document.write(html); w.document.close(); w.focus();
-  setTimeout(()=>{ try{ w.print(); }catch(e){} }, 300);
+function anaOnKonHargaJasa(el){
+  onRupiahInput(el); const i=+el.dataset.i; const st=anaState.konstruksi;
+  if(st.items[i]){ st.items[i].hargaJasa=parseRupiah(el.value); anaSaveState(); }
 }
 
-/* ============= PEKERJAAN KONSTRUKSI — BAGIAN 3: ANALISA HARGA SATUAN PEKERJAAN (AHSP) ============= */
-const ANA_IC_PRINT='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>';
-function anaAhspHeaderHtml(){
-  const st=anaState.ahsp;
-  return '<div class="ana-ahsp-head"><div class="tt">'+ANA_SEC_ICON+'Analisa Harga Satuan Pekerjaan</div>'+
-    '<div class="ana-tb-field" style="min-width:170px"><label>ROK (%) — maks 15%</label>'+
-    '<input id="ana-ahsp-rok" type="text" inputmode="decimal" placeholder="0" value="'+fkEsc(st.rok!==''&&st.rok!=null?String(st.rok):'')+'" oninput="anaOnAhspRok(this)"></div></div>';
+
+/* Sumber Referensi kini per-baris (kolom di tabel Harga Satuan), bukan daftar terpisah */
+function anaOnKonSumberRef(el){ const i=+el.dataset.i; const st=anaState.konstruksi; if(st.items[i]){ st.items[i].sumberRef=el.value; anaSaveState(); } }
+
+
+/* ============= PEKERJAAN KONSTRUKSI — BAGIAN 3: ANALISA HARGA SATUAN PEKERJAAN (AHSP) =============
+   Setiap "layer" adalah SATU analisa lengkap untuk SATU pekerjaan (judul + A/B/C + ROK).
+   Tombol "+ Tambah Layer" menambah analisa untuk pekerjaan berikutnya, dst. */
+const ANA_IC_VIEW='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+function anaAhspLayerHtml(li){
+  const layer=anaState.ahsp[li];
+  const canDel=anaState.ahsp.length>1;
+  return '<div class="ana-ahsp-layer">'+
+    '<div class="ana-ahsp-head">'+
+      '<div class="tt">'+ANA_SEC_ICON+'<span class="ana-ahsp-no">'+(li+1)+'.</span>'+
+        '<input type="text" class="ana-ahsp-judul-input" placeholder="Judul/Nama Pekerjaan (mis. Pembersihan Lahan)" value="'+fkEsc(layer.judul||'')+'" oninput="anaOnAhspJudul('+li+',this)"></div>'+
+      '<div class="ana-tb-field" style="min-width:170px"><label>ROK (%) — maks 15%</label>'+
+        '<input id="ana-ahsp-rok-'+li+'" type="text" inputmode="decimal" placeholder="0" value="'+fkEsc(layer.rok!==''&&layer.rok!=null?String(layer.rok):'')+'" oninput="anaOnAhspRok('+li+',this)"></div>'+
+      (canDel?('<button type="button" class="ana-ahsp-del ana-ahsp-layer-del" title="Hapus analisa ini" onclick="anaAhspRemoveLayer('+li+')">&times;</button>'):'')+
+    '</div>'+
+    ANA_AHSP_SECTIONS.map(([key,letter,title])=>anaAhspSectionHtml(li,key,letter,title)).join('')+
+  '</div>';
 }
-function anaOnAhspRok(el){
+function anaOnAhspJudul(li,el){ if(anaState.ahsp[li]){ anaState.ahsp[li].judul=el.value; anaSaveState(); } }
+function anaOnAhspRok(li,el){
   let v=el.value.replace(/[^0-9.,]/g,'').replace(/,/g,'.'); const parts=v.split('.'); if(parts.length>2) v=parts[0]+'.'+parts.slice(1).join('');
   let num=parseFloat(v); if(!isNaN(num)&&num>15) v=String(15);
-  el.value=v; anaState.ahsp.rok=(v===''?'':(parseFloat(v)||0)); anaSaveState();
-  ANA_AHSP_SECTIONS.forEach(([key])=>anaAhspRecalcSubtotal(key));
+  el.value=v; if(anaState.ahsp[li]){ anaState.ahsp[li].rok=(v===''?'':(parseFloat(v)||0)); anaSaveState(); }
+  ANA_AHSP_SECTIONS.forEach(([key])=>anaAhspRecalcSubtotal(li,key));
 }
-function anaAhspSubtotal(key){ return (anaState.ahsp[key]||[]).reduce((s,r)=>s+anaAhspJumlah(r),0); }
-function anaAhspSectionHtml(key,letter,title){
-  const rows=anaState.ahsp[key]||[];
+function anaAhspSubtotal(li,key){ const layer=anaState.ahsp[li]; return (layer&&layer[key]||[]).reduce((s,r)=>s+anaAhspJumlah(r),0); }
+function anaAhspSectionHtml(li,key,letter,title){
+  const layer=anaState.ahsp[li];
+  const rows=layer[key]||[];
   let body='';
   rows.forEach((r,i)=>{
     body+='<tr>'+
       '<td class="c-no">'+(i+1)+'</td>'+
-      '<td class="c-ur"><input type="text" data-i="'+i+'" placeholder="Uraian" value="'+fkEsc(r.uraian||'')+'" oninput="anaOnAhspCell(\''+key+'\',this,\'uraian\')"></td>'+
-      '<td class="c-sat"><input type="text" data-i="'+i+'" placeholder="OH" value="'+fkEsc(r.sat||'')+'" oninput="anaOnAhspCell(\''+key+'\',this,\'sat\')"></td>'+
-      '<td class="c-koef"><input type="text" inputmode="decimal" data-i="'+i+'" placeholder="0" value="'+fkEsc(r.koef!=null?String(r.koef):'')+'" oninput="anaOnAhspKoef(\''+key+'\',this)"></td>'+
-      '<td class="c-money"><input type="text" inputmode="numeric" id="ana-ahsp-'+key+'-hg-'+i+'" data-i="'+i+'" placeholder="Rp" value="'+rupiahInputText(r.harga)+'" oninput="anaOnAhspHarga(\''+key+'\',this)"></td>'+
-      '<td class="c-calc" id="ana-ahsp-'+key+'-jt-'+i+'">'+anaRp(anaAhspJumlah(r))+'</td>'+
-      '<td class="c-act"><button type="button" class="ana-ahsp-del" title="Hapus baris" onclick="anaAhspRemoveRow(\''+key+'\','+i+')">&times;</button></td>'+
+      '<td class="c-ur"><input type="text" data-i="'+i+'" placeholder="Uraian" value="'+fkEsc(r.uraian||'')+'" oninput="anaOnAhspCell('+li+',\''+key+'\',this,\'uraian\')"></td>'+
+      '<td class="c-sat"><input type="text" data-i="'+i+'" placeholder="OH" value="'+fkEsc(r.sat||'')+'" oninput="anaOnAhspCell('+li+',\''+key+'\',this,\'sat\')"></td>'+
+      '<td class="c-koef"><input type="text" inputmode="decimal" data-i="'+i+'" placeholder="0" value="'+fkEsc(r.koef!=null?String(r.koef):'')+'" oninput="anaOnAhspKoef('+li+',\''+key+'\',this)"></td>'+
+      '<td class="c-money"><input type="text" inputmode="numeric" id="ana-ahsp-'+li+'-'+key+'-hg-'+i+'" data-i="'+i+'" placeholder="Rp" value="'+rupiahInputText(r.harga)+'" oninput="anaOnAhspHarga('+li+',\''+key+'\',this)"></td>'+
+      '<td class="c-calc" id="ana-ahsp-'+li+'-'+key+'-jt-'+i+'">'+anaRp(anaAhspJumlah(r))+'</td>'+
+      '<td class="c-act"><button type="button" class="ana-ahsp-del" title="Hapus baris" onclick="anaAhspRemoveRow('+li+',\''+key+'\','+i+')">&times;</button></td>'+
     '</tr>';
   });
-  const subtotal=anaAhspSubtotal(key);
-  const rok=anaNum(anaState.ahsp.rok);
+  const subtotal=anaAhspSubtotal(li,key);
+  const rok=anaNum(layer.rok);
   const adj = rok>0 ? Math.round(subtotal*(1+rok/100)) : subtotal;
   const rokTxt = rok>0 ? (' <span class="ana-rok-chip">(+ROK '+rok+'%) = '+anaRp(adj)+'</span>') : '';
   return '<div class="ana-ahsp-sec">'+
-    '<div class="ana-ahsp-sec-title">'+letter+'. '+title+' <button type="button" class="ana-ahsp-add" onclick="anaAhspAddRow(\''+key+'\')">+ Tambah Baris</button></div>'+
+    '<div class="ana-ahsp-sec-title">'+letter+'. '+title+' <button type="button" class="ana-ahsp-add" onclick="anaAhspAddRow('+li+',\''+key+'\')">+ Tambah Baris</button></div>'+
     '<div class="hps-uraian-wrap"><table class="hps-uraian ana-ahsp-table"><thead><tr>'+
       '<th class="c-no">No</th><th class="c-ur">Uraian</th><th>Satuan</th><th>Koefisien</th><th>Harga Satuan<br>(Rp)</th><th>Jumlah Harga<br>(Rp)</th><th></th>'+
     '</tr></thead><tbody>'+body+'</tbody>'+
-    '<tfoot><tr class="ana-ahsp-sum"><td colspan="5">JUMLAH HARGA '+title+'</td><td colspan="2" id="ana-ahsp-sum-'+key+'">'+anaRp(subtotal)+rokTxt+'</td></tr></tfoot>'+
+    '<tfoot><tr class="ana-ahsp-sum"><td colspan="5">JUMLAH HARGA '+title+'</td><td colspan="2" id="ana-ahsp-sum-'+li+'-'+key+'">'+anaRp(subtotal)+rokTxt+'</td></tr></tfoot>'+
     '</table></div></div>';
 }
-function anaAhspAddRow(key){
-  const st=anaState.ahsp; if(!Array.isArray(st[key])) st[key]=[];
-  st[key].push(anaBlankAhspRow()); anaSaveState(); anaRenderAhspBody();
+function anaAhspAddRow(li,key){
+  const layer=anaState.ahsp[li]; if(!layer) return; if(!Array.isArray(layer[key])) layer[key]=[];
+  layer[key].push(anaBlankAhspRow()); anaSaveState(); anaRenderAhspBody();
 }
-function anaAhspRemoveRow(key,i){
-  const st=anaState.ahsp; if(!Array.isArray(st[key])) return;
-  if(st[key].length<=1){ toast('Minimal harus ada 1 baris','warn'); return; }
-  st[key].splice(i,1); anaSaveState(); anaRenderAhspBody();
+function anaAhspRemoveRow(li,key,i){
+  const layer=anaState.ahsp[li]; if(!layer||!Array.isArray(layer[key])) return;
+  if(layer[key].length<=1){ toast('Minimal harus ada 1 baris','warn'); return; }
+  layer[key].splice(i,1); anaSaveState(); anaRenderAhspBody();
 }
-function anaOnAhspCell(key,el,field){ const i=+el.dataset.i; const st=anaState.ahsp; if(st[key]&&st[key][i]){ st[key][i][field]=el.value; anaSaveState(); } }
-function anaOnAhspKoef(key,el){
+function anaOnAhspCell(li,key,el,field){ const i=+el.dataset.i; const layer=anaState.ahsp[li]; if(layer&&layer[key]&&layer[key][i]){ layer[key][i][field]=el.value; anaSaveState(); } }
+function anaOnAhspKoef(li,key,el){
   let v=el.value.replace(/[^0-9.,]/g,'').replace(/,/g,'.'); const parts=v.split('.'); if(parts.length>2) v=parts[0]+'.'+parts.slice(1).join(''); el.value=v;
-  const i=+el.dataset.i; const st=anaState.ahsp;
-  if(st[key]&&st[key][i]){ st[key][i].koef=v; anaSaveState(); anaAhspRecalcRow(key,i); }
+  const i=+el.dataset.i; const layer=anaState.ahsp[li];
+  if(layer&&layer[key]&&layer[key][i]){ layer[key][i].koef=v; anaSaveState(); anaAhspRecalcRow(li,key,i); }
 }
-function anaOnAhspHarga(key,el){
-  onRupiahInput(el); const i=+el.dataset.i; const st=anaState.ahsp;
-  if(st[key]&&st[key][i]){ st[key][i].harga=parseRupiah(el.value); anaSaveState(); anaAhspRecalcRow(key,i); }
+function anaOnAhspHarga(li,key,el){
+  onRupiahInput(el); const i=+el.dataset.i; const layer=anaState.ahsp[li];
+  if(layer&&layer[key]&&layer[key][i]){ layer[key][i].harga=parseRupiah(el.value); anaSaveState(); anaAhspRecalcRow(li,key,i); }
 }
-function anaAhspRecalcRow(key,i){
-  const st=anaState.ahsp; const r=st[key]&&st[key][i]; if(!r) return;
-  const c=document.getElementById('ana-ahsp-'+key+'-jt-'+i); if(c) c.innerHTML=anaRp(anaAhspJumlah(r));
-  anaAhspRecalcSubtotal(key);
+function anaAhspRecalcRow(li,key,i){
+  const layer=anaState.ahsp[li]; const r=layer&&layer[key]&&layer[key][i]; if(!r) return;
+  const c=document.getElementById('ana-ahsp-'+li+'-'+key+'-jt-'+i); if(c) c.innerHTML=anaRp(anaAhspJumlah(r));
+  anaAhspRecalcSubtotal(li,key);
 }
-function anaAhspRecalcSubtotal(key){
-  const el=document.getElementById('ana-ahsp-sum-'+key); if(!el) return;
-  const subtotal=anaAhspSubtotal(key);
-  const rok=anaNum(anaState.ahsp.rok);
+function anaAhspRecalcSubtotal(li,key){
+  const el=document.getElementById('ana-ahsp-sum-'+li+'-'+key); if(!el) return;
+  const layer=anaState.ahsp[li]; if(!layer) return;
+  const subtotal=anaAhspSubtotal(li,key);
+  const rok=anaNum(layer.rok);
   const adj = rok>0 ? Math.round(subtotal*(1+rok/100)) : subtotal;
   const rokTxt = rok>0 ? (' <span class="ana-rok-chip">(+ROK '+rok+'%) = '+anaRp(adj)+'</span>') : '';
   el.innerHTML=anaRp(subtotal)+rokTxt;
 }
+function anaAhspAddLayer(){ anaState.ahsp.push(anaBlankAhspLayer()); anaSaveState(); anaRenderAhspBody(); }
+function anaAhspRemoveLayer(li){
+  if(anaState.ahsp.length<=1){ toast('Minimal harus ada 1 analisa','warn'); return; }
+  anaState.ahsp.splice(li,1); anaSaveState(); anaRenderAhspBody();
+}
 function anaRenderAhspBody(){
   const holder=document.getElementById('ana-ahsp-body'); if(!holder) return;
-  holder.innerHTML = ANA_AHSP_SECTIONS.map(([key,letter,title])=>anaAhspSectionHtml(key,letter,title)).join('');
+  holder.innerHTML = anaState.ahsp.map((_,li)=>anaAhspLayerHtml(li)).join('') +
+    '<div class="ana-ahsp-addlayer-wrap"><button type="button" class="ana-ahsp-add" onclick="anaAhspAddLayer()">+ Tambah Layer (Analisa Pekerjaan Berikutnya)</button></div>';
 }
 
 /* ================= LANGKAH 2: ANALISA HARGA SATUAN ================= */
@@ -12774,30 +12773,25 @@ function renderAnalisaForm(){
       '<span style="display:flex;align-items:center;gap:8px">'+KR_SECTION_ICON+'Data Pekerjaan</span>'+anaJenisTopHtml()+'</div>'+
       '<div class="form-flow" style="--cols:4">';
     html+=ANA_INFO_FIELDS.map(anaInfoInputHtml).join('');
-    if(isKon){ html+=anaKonCountItemFieldHtml(); }
-    else { html+=anaCountItemFieldHtml(); html+=anaCountRefFieldHtml(); }
+    if(!isKon){ html+=anaCountItemFieldHtml(); html+=anaCountRefFieldHtml(); }
     html+='</div></div>';
     if(!isKon){
       html+='<div class="form-card"><div class="form-section-title">'+ANA_REF_ICON+'Sumber Referensi <span class="fkl-count-chip">'+st.jumlahRef+' referensi</span></div>'+
         '<div class="hps-hint">Isi nama/sumber tiap referensi (mis. Toko A, e-Katalog, Survei Pasar). Jumlah kotak menyesuaikan <b>Jumlah Referensi</b>. Nama ini muncul sebagai pilihan pada langkah Analisa Harga Satuan.</div>'+
         '<div id="ana-sumber-wrap">'+anaSumberGridHtml()+'</div></div>';
     }
-    html+=anaActionsHtml({back:false});
+    html+=anaActionsHtml({back:false, next:true});
   } else if(anaStep===2 && isKon){
-    if(sub) sub.textContent='Langkah 2 dari 3 — Harga Satuan (Kelompok/Uraian/Satuan/Harga/Inflasi) & Sumber Referensi';
-    html+='<div class="form-card"><div class="form-section-title">'+ANA_SEC_ICON+'Harga Satuan <span class="fkl-count-chip">'+kst.jumlahItem+' uraian</span></div>'+
-      '<div class="hps-hint">Isi <b>Harga Satuan</b> (Rp) &amp; <b>Inflasi</b> (%) untuk tiap uraian secara manual. <b>Harga Total</b> = Harga Satuan × (1 + Inflasi%).</div>'+
-      anaKonCountItemFieldHtml()+
-      '<div id="ana-kon-table-wrap" style="margin-top:12px">'+anaKonTableHtml()+'</div></div>';
-    html+='<div class="form-card"><div class="form-section-title">'+ANA_REF_ICON+'Sumber Referensi <span class="fkl-count-chip">'+kst.jumlahRef+' referensi</span></div>'+
-      '<div class="hps-hint">Dokumentasikan sumber/acuan harga satuan di atas (mis. SNI, Permen PUPR, survei pasar).</div>'+
-      anaKonCountRefFieldHtml()+
-      '<div id="ana-kon-sumber-wrap" style="margin-top:10px">'+anaKonSumberGridHtml()+'</div></div>';
-    html+=anaActionsHtml({back:true, cetak:true});
+    if(sub) sub.textContent='Langkah 2 dari 3 — Harga Satuan (Kelompok/Uraian/Satuan/Harga Barang/Harga Jasa/Sumber Referensi)';
+    html+='<div class="form-card"><div class="form-section-title">'+ANA_SEC_ICON+'Harga Satuan <span class="fkl-count-chip">'+kst.items.length+' uraian</span>'+
+      '<button type="button" class="ana-ahsp-add" style="margin-left:auto" onclick="anaKonAddRow()">+ Tambah Baris</button></div>'+
+      '<div class="hps-hint">Isi <b>Harga Barang</b> (Rp), <b>Harga Jasa</b> (Rp), dan <b>Sumber Referensi</b> (mis. SNI, Permen PUPR, survei pasar) untuk tiap uraian secara manual. Baris dapat ditambah/dihapus sesuai kebutuhan.</div>'+
+      '<div id="ana-kon-table-wrap">'+anaKonTableHtml()+'</div></div>';
+    html+=anaActionsHtml({back:true, save:true, next:true});
   } else if(anaStep===3 && isKon){
     if(sub) sub.textContent='Langkah 3 dari 3 — Analisa Harga Satuan Pekerjaan (Tenaga Kerja, Bahan, Peralatan)';
-    html+='<div class="form-card">'+anaAhspHeaderHtml()+
-      '<div class="hps-hint">Tambah/hapus baris sesuai kebutuhan pada tiap kelompok. <b>Jumlah Harga</b> = Koefisien × Harga Satuan. ROK diterapkan pada masing-masing subtotal kelompok.</div>'+
+    html+='<div class="form-card"><div class="form-section-title">'+ANA_SEC_ICON+'Analisa Harga Satuan Pekerjaan</div>'+
+      '<div class="hps-hint">Satu blok = satu analisa untuk satu pekerjaan (isi <b>Judul/Nama Pekerjaan</b> di kanan atas tiap blok). Tambah/hapus baris sesuai kebutuhan pada tiap kelompok. <b>Jumlah Harga</b> = Koefisien × Harga Satuan. ROK diterapkan pada masing-masing subtotal kelompok. Gunakan <b>+ Tambah Layer</b> untuk membuat analisa pekerjaan berikutnya.</div>'+
       '<div id="ana-ahsp-body"></div></div>';
     html+=anaActionsHtml({back:true, save:true});
   } else {
@@ -12825,9 +12819,8 @@ function anaActionsHtml(o){
   let left='<button class="btn btn-ghost" onclick="anaBatal()">'+FKL_IC_X+'Batal</button>';
   let right='';
   if(o.back) right+='<button class="btn btn-light" onclick="anaBack()">'+FKL_IC_BACK+'Kembali</button>';
-  if(o.cetak) right+='<button class="btn btn-light" onclick="anaCetakHargaSatuan()">'+ANA_IC_PRINT+'Cetak</button>';
-  if(o.save) right+='<button class="btn btn-green" onclick="anaSimpan()">'+FKL_IC_SAVE+'Simpan dan Lihat</button>';
-  else right+='<button class="btn btn-teal" onclick="anaNext()">Selanjutnya'+FKL_IC_NEXT+'</button>';
+  if(o.save) right+='<button class="btn btn-green" onclick="anaSimpan()">'+FKL_IC_SAVE+'Simpan &amp; Lihat PDF</button>';
+  if(o.next) right+='<button class="btn btn-teal" onclick="anaNext()">Selanjutnya'+FKL_IC_NEXT+'</button>';
   return '<div class="fkl-actions"><div class="fkl-actions-left">'+left+'</div><div class="fkl-actions-right">'+right+'</div></div>';
 }
 
@@ -12861,8 +12854,8 @@ async function anaSimpan(){
   // nilai_total: Umum = jumlah (harga hasil analisa referensi × vol); Konstruksi = jumlah Harga Total Bagian 2 (Harga Satuan)
   let nilaiTotal=0, jumlahItemRec=st.jumlahItem, jumlahRefRec=st.jumlahRef;
   if(st.jenis==='Konstruksi'){
-    (st.konstruksi.items||[]).forEach(it=>{ nilaiTotal+=anaKonHargaTotal(it); });
-    jumlahItemRec=st.konstruksi.jumlahItem; jumlahRefRec=st.konstruksi.jumlahRef;
+    (st.konstruksi.items||[]).forEach(it=>{ nilaiTotal+=anaKonItemTotal(it); });
+    jumlahItemRec=st.konstruksi.jumlahItem; jumlahRefRec=0;
   } else {
     const struct=(st.refs[0]&&st.refs[0].items)||[];
     struct.forEach((it,i)=>{ const res=anaResultFor(i); nilaiTotal += Math.round(res.total*anaNum(it.vol)); });
@@ -12878,16 +12871,19 @@ async function anaSimpan(){
     tgl_input: (new Date()).toISOString().slice(0,10),
     state: JSON.parse(JSON.stringify(st))
   };
+  let saved=null;
   try{
     await withActionLoader(anaEditId?'Menyimpan perubahan':'Menyimpan', async()=>{
       if(anaEditId){ await StoreAna.update(anaEditId, rec); }
-      else { await StoreAna.create(rec); }
+      else { saved=await StoreAna.create(rec); }
       await refreshDataAnalisa();
     });
   }catch(err){ console.error(err); toast('Gagal menyimpan: '+errMsg(err),'err'); return; }
   toast(anaEditId?'Data berhasil diperbarui':'Data berhasil disimpan','ok');
+  const savedId = anaEditId || (saved && saved.id);
   anaEditId=null; anaState=anaBlankState(); anaSaveState(); anaStep=1;
   showView('analisa-view');
+  setTimeout(()=>{ if(savedId!=null) anaPreviewRecord(savedId); }, 420);
 }
 
 /* ================= LIHAT ANALISA ================= */
@@ -12982,7 +12978,7 @@ function anaBuildDocHtml(){
    Bagian A Data Pekerjaan, Bagian B Harga Satuan + Sumber Referensi,
    Bagian C Analisa Harga Satuan Pekerjaan (AHSP: Tenaga Kerja/Bahan/Peralatan). */
 function anaBuildDocHtmlKonstruksi(st){
-  const info=st.info||{}; const kst=st.konstruksi||{items:[],sumberRef:[]};
+  const info=st.info||{}; const kst=st.konstruksi||{items:[]};
   const fmtNilai=(info.nilai!==''&&info.nilai!=null)?('Rp '+Number(info.nilai).toLocaleString('id-ID')):'-';
   const infoRow=(k,v)=>'<tr><td class="k">'+k+'</td><td class="s">:</td><td class="v">'+fkEsc(v||'-')+'</td></tr>';
   const items=kst.items||[];
@@ -12998,22 +12994,22 @@ function anaBuildDocHtmlKonstruksi(st){
     const uraian=(it.uraian&&String(it.uraian).trim())?it.uraian:('Uraian '+(i+1));
     const sat=(it.sat!=null&&String(it.sat).trim())?it.sat:'-';
     hsRows+='<tr><td class="no">'+noInGroup+'</td><td class="ur">'+fkEsc(uraian)+'</td><td class="st">'+fkEsc(String(sat))+'</td>'+
-      '<td class="num">'+anaRpDoc(it.hargaSatuan)+'</td><td class="num">'+(anaNum(it.inflasi)||0)+'%</td>'+
-      '<td class="num tot">'+anaRpDoc(anaKonHargaTotal(it))+'</td></tr>';
+      '<td class="num">'+anaRpDoc(it.hargaBarang)+'</td><td class="num">'+anaRpDoc(it.hargaJasa)+'</td>'+
+      '<td class="ur">'+fkEsc(it.sumberRef||'-')+'</td></tr>';
   });
   if(!hsRows) hsRows='<tr><td colspan="6" style="text-align:center;color:#889">Belum ada data</td></tr>';
   const hsTbl='<table class="ana-doc-tbl"><thead><tr><th>No.</th><th class="ur">Uraian Pekerjaan</th><th>Satuan</th>'+
-    '<th>Harga Satuan (Rp)</th><th>Inflasi (%)</th><th>Harga Total (Rp)</th></tr></thead><tbody>'+hsRows+'</tbody></table>';
-  const sumberLi=(kst.sumberRef||[]).map((s,i)=>'<li>'+fkEsc(s||('Referensi '+(i+1)))+'</li>').join('')||'<li>—</li>';
+    '<th>Harga Barang (Rp)</th><th>Harga Jasa (Rp)</th><th class="ur">Sumber Referensi</th></tr></thead><tbody>'+hsRows+'</tbody></table>';
 
-  const ahsp=st.ahsp||anaBlankAhsp(); const rok=anaNum(ahsp.rok);
-  const ahspSecHtml=(key,letter,title)=>{
-    const rows=ahsp[key]||[];
+  const ahspLayers = Array.isArray(st.ahsp)&&st.ahsp.length ? st.ahsp : anaBlankAhsp();
+  const ahspSecHtml=(layer,key,letter,title)=>{
+    const rows=layer[key]||[];
     let body=''; rows.forEach((r,i)=>{
       body+='<tr><td class="no">'+(i+1)+'</td><td class="ur">'+fkEsc(r.uraian||'-')+'</td><td class="st">'+fkEsc(r.sat||'-')+'</td>'+
         '<td class="num">'+(anaNum(r.koef)||0)+'</td><td class="num">'+anaRpDoc(r.harga)+'</td><td class="num tot">'+anaRpDoc(anaAhspJumlah(r))+'</td></tr>';
     });
     const subtotal=(rows||[]).reduce((s,r)=>s+anaAhspJumlah(r),0);
+    const rok=anaNum(layer.rok);
     const adj = rok>0 ? Math.round(subtotal*(1+rok/100)) : subtotal;
     const rokTxt = rok>0 ? (' (+ROK '+rok+'%) = Rp '+adj.toLocaleString('id-ID')) : '';
     return '<div class="fkl-sec-h" style="margin-top:6px"><span class="rn">'+letter+'</span>'+title+'</div>'+
@@ -13021,6 +13017,13 @@ function anaBuildDocHtmlKonstruksi(st){
       '<tbody>'+(body||'<tr><td colspan="6" style="text-align:center;color:#889">Belum ada data</td></tr>')+'</tbody>'+
       '<tfoot><tr class="grp"><td colspan="5" class="gname">JUMLAH HARGA '+title+'</td><td class="num tot2">Rp '+subtotal.toLocaleString('id-ID')+rokTxt+'</td></tr></tfoot></table>';
   };
+  const ahspBlocksHtml = ahspLayers.map((layer,li)=>{
+    const rok=anaNum(layer.rok);
+    return '<div class="fkl-sec-h" style="margin-top:14px;background:#eef8f9"><span class="rn">C.'+(li+1)+'</span>'+fkEsc(layer.judul||('Analisa '+(li+1)))+(rok>0?(' (ROK '+rok+'%)'):'')+'</div>'+
+      ahspSecHtml(layer,'tenagaKerja','A','TENAGA KERJA')+
+      ahspSecHtml(layer,'bahan','B','BAHAN')+
+      ahspSecHtml(layer,'alat','C','PERALATAN');
+  }).join('');
 
   return ''+
   '<div class="fkl-doc pnw-doc ana-doc">'+
@@ -13048,11 +13051,8 @@ function anaBuildDocHtmlKonstruksi(st){
     '</tbody></table>'+
     '<div class="fkl-sec-h"><span class="rn">B</span>Harga Satuan</div>'+
     hsTbl+
-    '<div class="ana-doc-note" style="margin-bottom:8px"><b>Sumber Referensi:</b><ul style="margin:4px 0 0 16px;padding:0">'+sumberLi+'</ul></div>'+
-    '<div class="fkl-sec-h"><span class="rn">C</span>Analisa Harga Satuan Pekerjaan'+(rok>0?(' (ROK '+rok+'%)'):'')+'</div>'+
-    ahspSecHtml('tenagaKerja','A','TENAGA KERJA')+
-    ahspSecHtml('bahan','B','BAHAN')+
-    ahspSecHtml('alat','C','PERALATAN')+
+    '<div class="fkl-sec-h"><span class="rn">C</span>Analisa Harga Satuan Pekerjaan</div>'+
+    ahspBlocksHtml+
   '</div>';
 }
 function anaBuildDocHtmlUmum(st){
