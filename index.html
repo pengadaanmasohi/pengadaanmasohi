@@ -7955,7 +7955,8 @@ renderTableTender();
    Jalankan skrip: file_kontrak_supabase_up3masohi.sql
    ============================================================ */
 const FK_TABLE = 'file_kontrak';
-const FK_MAX_MB = 15;   // batas ukuran file (aman untuk payload Supabase)
+const FK_BUCKET = 'file-kontrak';   // bucket Supabase Storage untuk file fisik
+const FK_MAX_MB = 50;   // batas ukuran file (sesuai batas per-file Storage free tier)
 
 /* Yang masuk daftar File Kontrak:
    - SPBJ / Kontrak Rinci (kr) : HANYA status "Selesai".
@@ -8034,7 +8035,9 @@ const fkState = { input:{modul:'kr',page:1}, view:{modul:'kr',page:1} };
 const fkMetaMap = { kr:null, pl:null, tender:null };
 function fkResetCache(){ fkMetaMap.kr=null; fkMetaMap.pl=null; fkMetaMap.tender=null; }
 
-/* ---- Store Supabase (tabel file_kontrak) ---- */
+/* ---- Store Supabase: file fisik di Storage, metadata (+path) di tabel ----
+   Kolom `path` = lokasi objek di bucket Storage. Kolom lama `data_base64`
+   tetap dibaca untuk kompatibilitas data lama (sebelum migrasi Storage). */
 const FileKontrak = {
   async listMeta(modul){
     if(!(USE_SUPABASE && db)) return {};
@@ -8046,15 +8049,59 @@ const FileKontrak = {
   },
   async getOne(modul, recordId){
     const {data,error}=await db.from(FK_TABLE)
-      .select('nama_file,mime,data_base64')
+      .select('nama_file,mime,path,data_base64')
       .eq('modul',modul).eq('record_id',String(recordId)).limit(1);
     if(error) throw error; return (data&&data[0])||null;
   },
-  async upsert(row){
+  /* Simpan file ke Storage lalu simpan metadata (path) ke tabel.
+     onProgress opsional (0..1) — hanya mencakup pembacaan; Storage upload
+     tidak melaporkan progres granular, jadi diteruskan oleh pemanggil. */
+  async saveFile(modul, recordId, file, meta){
+    const safe=String(file.name||'file').replace(/[^\w.\-]+/g,'_');
+    const path=`${modul}/${String(recordId)}/${Date.now()}_${safe}`;
+    // Unggah file mentah (Blob) ke Storage — TANPA base64, tanpa batas payload DB
+    const up=await db.storage.from(FK_BUCKET).upload(path, file, {
+      contentType:file.type||'application/octet-stream', upsert:true
+    });
+    if(up.error) throw up.error;
+    // Ambil path lama (bila ada) agar bisa dibersihkan setelah metadata diganti
+    let oldPath=null;
+    try{
+      const prev=await db.from(FK_TABLE).select('path')
+        .eq('modul',modul).eq('record_id',String(recordId)).limit(1);
+      oldPath=(prev.data&&prev.data[0]&&prev.data[0].path)||null;
+    }catch(e){}
+    const row=Object.assign({
+      modul, record_id:String(recordId),
+      nama_file:file.name, mime:file.type||'application/octet-stream',
+      ukuran:file.size, path, data_base64:null
+    }, meta||{});
     const {error}=await db.from(FK_TABLE).upsert(row,{onConflict:'modul,record_id'});
-    if(error) throw error;
+    if(error){ // rollback objek yang sudah terunggah bila metadata gagal
+      try{ await db.storage.from(FK_BUCKET).remove([path]); }catch(e){}
+      throw error;
+    }
+    if(oldPath && oldPath!==path){ try{ await db.storage.from(FK_BUCKET).remove([oldPath]); }catch(e){} }
+  },
+  /* Blob file: dari Storage (path) atau fallback base64 lama. */
+  async getBlob(row){
+    if(!row) return null;
+    if(row.path){
+      const dl=await db.storage.from(FK_BUCKET).download(row.path);
+      if(dl.error) throw dl.error;
+      return dl.data;               // Blob
+    }
+    if(row.data_base64) return fkB64ToBlob(row.data_base64, row.mime);
+    return null;
   },
   async remove(modul, recordId){
+    // Hapus objek Storage dulu (bila ada), lalu baris metadata
+    try{
+      const prev=await db.from(FK_TABLE).select('path')
+        .eq('modul',modul).eq('record_id',String(recordId)).limit(1);
+      const p=prev.data&&prev.data[0]&&prev.data[0].path;
+      if(p){ try{ await db.storage.from(FK_BUCKET).remove([p]); }catch(e){} }
+    }catch(e){}
     const {error}=await db.from(FK_TABLE).delete()
       .eq('modul',modul).eq('record_id',String(recordId));
     if(error) throw error;
@@ -8311,20 +8358,16 @@ async function fkHandleFileSelected(file){
   pnUploadProgressOpen(file.name);
   let creep=null;
   try{
-    // Fase baca file: 0 -> 70%
-    const b64=await fkFileToBase64Progress(file, frac=>{ pnUploadProgressSet(frac*70); });
-    pnUploadProgressSet(72);
     const rec=FK_MODULES[modul].list().find(r=>String(r.id)===String(recordId));
-    const row={
-      modul, record_id:String(recordId),
+    const meta={
       nama_pekerjaan: rec?(FK_MODULES[modul].nama(rec)||null):null,
-      bidang_pelaksana: rec?(FK_MODULES[modul].bidang(rec)||null):null,
-      nama_file:file.name, mime:file.type||'application/octet-stream',
-      ukuran:file.size, data_base64:b64
+      bidang_pelaksana: rec?(FK_MODULES[modul].bidang(rec)||null):null
     };
-    // Fase simpan: naikkan perlahan 72 -> 95 selama menunggu penyimpanan
-    let p=72; creep=setInterval(()=>{ p=Math.min(95,p+2); pnUploadProgressSet(p); }, 120);
-    await FileKontrak.upsert(row); await fkEnsureMeta(modul, true);
+    // Progres mengunggah tidak granular; jalankan animasi 5 -> 92% selama proses
+    let p=5; pnUploadProgressSet(p);
+    creep=setInterval(()=>{ p=Math.min(92,p+3); pnUploadProgressSet(p); }, 140);
+    await FileKontrak.saveFile(modul, recordId, file, meta);
+    await fkEnsureMeta(modul, true);
     clearInterval(creep); creep=null;
     pnUploadProgressDone(()=>{ toast('File diunggah — kontrak dipindahkan ke Lihat Kontrak','ok'); renderFkInput(); });
   }catch(err){
@@ -8341,8 +8384,8 @@ async function fkDownload(modul, recordId, btn){
   if(btn) btn.classList.add('is-busy');
   try{
     const row=await FileKontrak.getOne(modul, recordId);
-    if(!row || !row.data_base64) return;               // diam-diam
-    const blob=fkB64ToBlob(row.data_base64, row.mime);
+    const blob=await FileKontrak.getBlob(row);
+    if(!blob) return;                                  // diam-diam
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
     a.href=url; a.download=row.nama_file||'file-kontrak';
@@ -8367,9 +8410,10 @@ async function fkPreview(modul, recordId, btn){
   document.getElementById('pn-preview-overlay').classList.add('show');
   try{
     const row=await FileKontrak.getOne(modul, recordId);
-    if(!row || !row.data_base64){ if(bodyEl) bodyEl.innerHTML=pnPreviewNoFileHtml(row&&row.nama_file,'File tidak tersedia.'); return; }
+    const blob=await FileKontrak.getBlob(row);
+    if(!blob){ if(bodyEl) bodyEl.innerHTML=pnPreviewNoFileHtml(row&&row.nama_file,'File tidak tersedia.'); return; }
     const mime=row.mime||'application/octet-stream';
-    const url=URL.createObjectURL(fkB64ToBlob(row.data_base64, mime));
+    const url=URL.createObjectURL(blob);
     pnPreviewCtx={url, name:row.nama_file||'file'};
     const nm=(row.nama_file||'').toLowerCase();
     const isPdf=mime.includes('pdf')||nm.endsWith('.pdf');
