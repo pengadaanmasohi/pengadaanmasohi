@@ -10320,9 +10320,12 @@ function pnwPeriksaPanelHtml(){
 }
 function pnwSetSampul(sk){ pnwActiveSampul=sk; renderPnwForm(); }
 function pnwSetPenyedia(i){ pnwActivePenyedia=i; renderPnwForm(); }
-/* nilai pemeriksaan satu baris */
+/* nilai pemeriksaan satu baris — pakai state aktif: pnwPreviewState (saat pratinjau
+   record tersimpan) atau pnwState (saat sedang mengisi form). Sebelumnya fungsi ini
+   selalu membaca pnwState, sehingga pratinjau/PDF record tersimpan selalu tampil "–"
+   walau data Ada/Tidak Ada sudah dipilih & tersimpan di record. */
 function pnwGetPeriksa(sk, pidx, kat, baris){
-  const st=pnwState; const p=st.periksa[sk]||{}; const pp=p[pidx]||{}; return pp[pnwRowKey(kat,baris)]||{};
+  const st=pnwActiveState(); const p=st.periksa[sk]||{}; const pp=p[pidx]||{}; return pp[pnwRowKey(kat,baris)]||{};
 }
 function pnwSetAda(sk, pidx, kat, baris, val){
   const st=pnwState; st.periksa[sk]=st.periksa[sk]||{}; st.periksa[sk][pidx]=st.periksa[sk][pidx]||{};
