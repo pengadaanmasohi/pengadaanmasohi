@@ -2070,7 +2070,7 @@ tbody tr{animation:rowIn .3s ease both}
 .fkl-doc-titlegap{height:18px}
 /* Judul section berhuruf A / B / C */
 .fkl-sec-h{display:flex;align-items:center;gap:10px;font-weight:800;font-size:13px;color:#0d2a30;letter-spacing:.3px;text-transform:uppercase;margin:22px 0 10px}
-.fkl-sec-h .rn{flex:0 0 auto;width:22px;height:22px;border-radius:6px;background:linear-gradient(135deg,#0E7C86,#12b3c0);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800}
+.fkl-sec-h .rn{flex:0 0 auto;color:#0d2a30;font-weight:800;font-size:13px}
 /* Tabel uraian pekerjaan */
 .fkl-info{width:100%;border-collapse:collapse}
 .fkl-info td{padding:5px 6px;vertical-align:top;font-size:12.5px}
@@ -2304,7 +2304,7 @@ tbody tr:hover{background:#eef5f6 !important}
 .fkl-doc-titlegap{height:18px}
 /* Judul section berhuruf A / B / C */
 .fkl-sec-h{display:flex;align-items:center;gap:10px;font-weight:800;font-size:13px;color:#0d2a30;letter-spacing:.3px;text-transform:uppercase;margin:22px 0 10px}
-.fkl-sec-h .rn{flex:0 0 auto;width:22px;height:22px;border-radius:6px;background:linear-gradient(135deg,#0E7C86,#12b3c0);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800}
+.fkl-sec-h .rn{flex:0 0 auto;color:#0d2a30;font-weight:800;font-size:13px}
 /* Tabel uraian pekerjaan */
 .fkl-info{width:100%;border-collapse:collapse}
 .fkl-info td{padding:5px 6px;vertical-align:top;font-size:12.5px}
@@ -9744,7 +9744,7 @@ function fklBuildDocHtml(){
     '<h1 class="fkl-doc-title">FORM PEMERIKSAAN KELENGKAPAN<br>DOKUMEN PENGADAAN</h1>'+
     '<div class="fkl-doc-titlegap"></div>'+
 
-    '<div class="fkl-sec-h"><span class="rn">A</span>Uraian Pekerjaan</div>'+
+    '<div class="fkl-sec-h"><span class="rn">1</span>Uraian Pekerjaan</div>'+
     '<table class="fkl-info"><tbody>'+
       infoRow('Nama Pekerjaan', info.nama)+
       infoRow('Lokasi Pekerjaan', info.lokasi)+
@@ -9755,12 +9755,12 @@ function fklBuildDocHtml(){
       infoRow('Metode Pengadaan', info.metode)+
     '</tbody></table>'+
 
-    '<div class="fkl-sec-h"><span class="rn">B</span>Kelengkapan Dokumen</div>'+
+    '<div class="fkl-sec-h"><span class="rn">2</span>Kelengkapan Dokumen</div>'+
     '<table class="fkl-chk"><thead><tr><th class="no">No</th><th class="nm">Jenis Dokumen</th><th class="ck"><span class="ck-main">Kelengkapan Dokumen</span></th></tr></thead><tbody>'+
       (chkRows||'<tr><td colspan="3" class="empty">Data tidak tersedia</td></tr>')+
     '</tbody></table>'+
 
-    '<div class="fkl-sec-h"><span class="rn">C</span>Hasil Pemeriksaan</div>'+
+    '<div class="fkl-sec-h"><span class="rn">3</span>Hasil Pemeriksaan</div>'+
     hasilBadge+
 
     '<div class="fkl-doc-foot">'+
@@ -10642,7 +10642,7 @@ function pnwBuildDocHtml(sk){
     '<h1 class="fkl-doc-title">'+judul+'</h1>'+
     '<div class="fkl-doc-titlegap"></div>'+
 
-    '<div class="fkl-sec-h"><span class="rn">A</span>Uraian Pekerjaan</div>'+
+    '<div class="fkl-sec-h"><span class="rn">1</span>Uraian Pekerjaan</div>'+
     '<table class="fkl-info"><tbody>'+
       infoRow('Nama Pekerjaan', info.nama)+
       infoRow('Lokasi Pekerjaan', info.lokasi)+
@@ -10655,7 +10655,7 @@ function pnwBuildDocHtml(sk){
       infoRow('Jenis Dokumen', two?('Dua Sampul — '+pnwSampulLabel(sk)):'Satu Sampul')+
     '</tbody></table>'+
 
-    '<div class="fkl-sec-h"><span class="rn">B</span>Pemeriksaan Kelengkapan Dokumen Penawaran</div>'+
+    '<div class="fkl-sec-h"><span class="rn">2</span>Pemeriksaan Kelengkapan Dokumen Penawaran</div>'+
     penyBlocks+
 
     '<div class="fkl-doc-foot">'+
@@ -11263,7 +11263,7 @@ function rhoBuildDocHtml(){
     '<div class="fkl-doc-band"></div>'+
     '<h1 class="fkl-doc-title">REFERENSI HARGA ONLINE</h1>'+
     '<div class="fkl-doc-titlegap"></div>'+
-    '<div class="fkl-sec-h"><span class="rn">A</span>Uraian Pekerjaan</div>'+
+    '<div class="fkl-sec-h"><span class="rn">1</span>Uraian Pekerjaan</div>'+
     '<table class="fkl-info"><tbody>'+
       infoRow('Nama Pekerjaan', info.nama)+
       infoRow('Lokasi Pekerjaan', info.lokasi)+
@@ -11275,7 +11275,7 @@ function rhoBuildDocHtml(){
       infoRow('Jumlah Barang/Jasa', String((st.items||[]).length)+' item')+
       infoRow('Jumlah Referensi', String(K)+' referensi')+
     '</tbody></table>'+
-    '<div class="fkl-sec-h"><span class="rn">B</span>Referensi Harga Barang/Jasa</div>'+
+    '<div class="fkl-sec-h"><span class="rn">2</span>Referensi Harga Barang/Jasa</div>'+
     itemBlocks+
   '</div>';
 }
@@ -12045,7 +12045,7 @@ function hpsBuildDocHtml(){
     '<div class="fkl-doc-band"></div>'+
     '<h1 class="fkl-doc-title">HARGA PERKIRAAN SENDIRI (HPS)</h1>'+
     '<div class="fkl-doc-titlegap"></div>'+
-    '<div class="fkl-sec-h"><span class="rn">A</span>Data Pekerjaan</div>'+
+    '<div class="fkl-sec-h"><span class="rn">1</span>Data Pekerjaan</div>'+
     '<table class="fkl-info"><tbody>'+
       infoRow('Nama Pekerjaan', info.nama)+
       infoRow('Lokasi Pekerjaan', info.lokasi)+
@@ -12056,7 +12056,7 @@ function hpsBuildDocHtml(){
       infoRow('Tgl. HPS', info.tgl_hps?pnwDateLong(info.tgl_hps):'-')+
       infoRow('Jumlah Barang/Jasa', String((st.items||[]).length)+' item')+
     '</tbody></table>'+
-    '<div class="fkl-sec-h"><span class="rn">B</span>Uraian Pekerjaan &amp; Rincian Harga</div>'+
+    '<div class="fkl-sec-h"><span class="rn">2</span>Uraian Pekerjaan &amp; Rincian Harga</div>'+
     tbl+
     '<div class="fkl-doc-foot hps-foot">'+
       '<table class="ttd"><tbody><tr>'+
@@ -13079,7 +13079,7 @@ function anaBuildDocHargaSatuan(st){
     '<div class="fkl-doc-band"></div>'+
     '<h1 class="fkl-doc-title">HARGA SATUAN — PEKERJAAN KONSTRUKSI</h1>'+
     '<div class="fkl-doc-titlegap"></div>'+
-    '<div class="fkl-sec-h"><span class="rn">A</span>Data Pekerjaan</div>'+
+    '<div class="fkl-sec-h"><span class="rn">1</span>Data Pekerjaan</div>'+
     '<table class="fkl-info"><tbody>'+
       infoRow('Nama Pekerjaan', info.nama)+
       infoRow('Lokasi Pekerjaan', info.lokasi)+
@@ -13090,7 +13090,7 @@ function anaBuildDocHargaSatuan(st){
       infoRow('Tgl. Analisa', info.tgl_analisa?pnwDateLong(info.tgl_analisa):'-')+
       infoRow('Jenis Pekerjaan', 'Pekerjaan Konstruksi')+
     '</tbody></table>'+
-    '<div class="fkl-sec-h"><span class="rn">B</span>Harga Satuan</div>'+
+    '<div class="fkl-sec-h"><span class="rn">2</span>Harga Satuan</div>'+
     hsTbl+
   '</div>';
 }
@@ -13224,7 +13224,7 @@ function anaBuildDocHtmlUmum(st){
     '<div class="fkl-doc-band"></div>'+
     '<h1 class="fkl-doc-title">ANALISA HARGA SATUAN</h1>'+
     '<div class="fkl-doc-titlegap"></div>'+
-    '<div class="fkl-sec-h"><span class="rn">A</span>Data Pekerjaan</div>'+
+    '<div class="fkl-sec-h"><span class="rn">1</span>Data Pekerjaan</div>'+
     '<table class="fkl-info"><tbody>'+
       infoRow('Nama Pekerjaan', info.nama)+
       infoRow('Lokasi Pekerjaan', info.lokasi)+
@@ -13238,7 +13238,7 @@ function anaBuildDocHtmlUmum(st){
       infoRow('Jenis Pekerjaan', jenisTxt+(rok>0?(' — ROK '+rok+'%'):''))+
       infoRow('Metode Perhitungan', st.metodeRef==='Sama'?('Sama — '+st.metodeAll+' (semua uraian)'):'Berbeda (per uraian)')+
     '</tbody></table>'+
-    '<div class="fkl-sec-h"><span class="rn">B</span>Analisa Harga Satuan</div>'+
+    '<div class="fkl-sec-h"><span class="rn">2</span>Analisa Harga Satuan</div>'+
     tbl+
     '<div class="ana-doc-note">Nilai 0 / kosong diabaikan dalam perhitungan. '+
       (rok>0?('Harga hasil analisa sudah termasuk ROK '+rok+'% ('+jenisTxt+').'):('Belum ada penambahan ROK ('+jenisTxt+').'))+'</div>'+
