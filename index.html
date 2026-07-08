@@ -2443,11 +2443,13 @@ html,body{background:#e9eef1}
 .fkl-chk thead th,.fkl-sec-h .rn,.fkl-doc-band,.fkl-doc .hasil,.fkl-chk .pill,.fkl-doc-logo img,.fkl-chk tbody tr:nth-child(even) td,.fkl-doc-org .l1,.fkl-doc-org .l2{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 @media print{
   html,body{background:#fff;margin:0;padding:0}
-  /* Margin cetak dikembalikan seperti semula; header & footer bawaan browser
-     (tanggal, judul, URL, nomor halaman) dibiarkan tampil agar terlihat sebagai
-     hasil cetakan website. */
-  .fkl-print-page{width:auto;min-height:0;margin:0;padding:0;box-shadow:none}
-  @page{size:A4;margin:14mm 15mm}
+  /* Header & footer bawaan browser (tanggal, judul, URL, nomor halaman)
+     dihilangkan dengan @page margin:0. Karena margin halaman menjadi 0, konten
+     akan menempel di tepi/pojok atas kertas — maka jarak tepi dikembalikan lewat
+     padding pada halaman, dengan padding ATAS sedikit lebih besar (18mm) agar
+     tampak proporsional setelah header dilepas. Berlaku untuk semua dokumen PDF. */
+  .fkl-print-page{width:auto;min-height:0;margin:0;padding:18mm 15mm 16mm;box-shadow:none}
+  @page{size:A4;margin:0}
 }
 
 </style>
@@ -2490,7 +2492,7 @@ table.rho-matrix input:focus{outline:none;border-color:var(--teal);box-shadow:0 
 .rho-foto-cell{position:relative;width:150px;height:120px;margin:0 auto;border:2px dashed #b9d3d7;border-radius:11px;background:#f4fafb;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;transition:.15s;outline:none}
 .rho-foto-cell:hover{border-color:var(--teal);background:#edf7f8}
 .rho-foto-cell:focus,.rho-foto-cell.is-focus{border-color:var(--teal);border-style:solid;box-shadow:0 0 0 3px rgba(14,124,134,.18);background:#fff}
-.rho-foto-cell img{width:100%;height:100%;object-fit:cover;object-position:center;background:#fff;display:block}
+.rho-foto-cell img{width:100%;height:100%;object-fit:contain;object-position:center;background:#fff;display:block}
 .rho-foto-empty{display:flex;flex-direction:column;align-items:center;gap:5px;color:#7f9aa0;padding:6px;text-align:center;pointer-events:none}
 .rho-foto-empty svg{width:26px;height:26px;opacity:.75}
 .rho-foto-empty span{font-size:9.5px;font-weight:700;line-height:1.25}
@@ -2503,7 +2505,7 @@ table.rho-matrix input:focus{outline:none;border-color:var(--teal);box-shadow:0 
 .rho-ref-chip{display:inline-block;font-size:9px;font-weight:700;color:var(--teal-dark);background:var(--teal-soft);padding:2px 8px;border-radius:20px;margin-top:4px}
 
 /* PDF foto dalam dokumen */
-.rho-pdf-foto{width:100%;max-width:150px;height:96px;object-fit:cover;object-position:center;background:#fff;display:block;margin:0 auto;border:1px solid #e2eaec;border-radius:4px}
+.rho-pdf-foto{width:100%;max-width:150px;height:96px;object-fit:contain;object-position:center;background:#fff;display:block;margin:0 auto;border:1px solid #e2eaec;border-radius:4px}
 .rho-pdf-foto-empty{display:block;text-align:center;color:#9aabb0;font-style:italic;font-size:10px;padding:24px 4px}
 @media(max-width:640px){
   .rho-foto-cell{width:120px;height:96px}
@@ -10996,7 +10998,7 @@ function fklBuildDocHtml(){
     '<h1 class="fkl-doc-title">FORM PEMERIKSAAN KELENGKAPAN<br>DOKUMEN PENGADAAN</h1>'+
     '<div class="fkl-doc-titlegap"></div>'+
 
-    '<div class="fkl-sec-h"><span class="rn">1</span>Uraian Pekerjaan</div>'+
+    '<div class="fkl-sec-h"><span class="rn">A</span>Uraian Pekerjaan</div>'+
     '<table class="fkl-info"><tbody>'+
       infoRow('Nama Pekerjaan', info.nama)+
       infoRow('Lokasi Pekerjaan', info.lokasi)+
@@ -11007,12 +11009,12 @@ function fklBuildDocHtml(){
       infoRow('Metode Pengadaan', info.metode)+
     '</tbody></table>'+
 
-    '<div class="fkl-sec-h"><span class="rn">2</span>Kelengkapan Dokumen</div>'+
+    '<div class="fkl-sec-h"><span class="rn">B</span>Kelengkapan Dokumen</div>'+
     '<table class="fkl-chk"><thead><tr><th class="no">No</th><th class="nm">Jenis Dokumen</th><th class="ck"><span class="ck-main">Kelengkapan Dokumen</span></th></tr></thead><tbody>'+
       (chkRows||'<tr><td colspan="3" class="empty">Data tidak tersedia</td></tr>')+
     '</tbody></table>'+
 
-    '<div class="fkl-sec-h"><span class="rn">3</span>Hasil Pemeriksaan</div>'+
+    '<div class="fkl-sec-h"><span class="rn">C</span>Hasil Pemeriksaan</div>'+
     hasilBadge+
 
     '<div class="fkl-doc-foot">'+
@@ -12285,8 +12287,8 @@ function rhoOnItemNama(el){ const i=+el.dataset.i; rhoState.items[i]=el.value; r
 function rhoNum(v){ if(v===''||v==null) return 0; if(typeof v==='number') return v; const n=parseFloat(String(v).replace(/,/g,'.')); return isNaN(n)?0:n; }
 function rhoRp(n){ n=Math.round(rhoNum(n)); return n>0 ? ('Rp '+n.toLocaleString('id-ID')) : '–'; }
 function rhoBeratText(v){ return (v==null||v==='') ? '' : String(v); }
-function rhoCalcEst(i,r){ const c=(rhoState.refs[i]&&rhoState.refs[i][r])?rhoState.refs[i][r]:{}; return Math.round(rhoNum(c.berat)*rhoNum(c.ongkir)); }
-function rhoCalcTot(i,r){ const c=(rhoState.refs[i]&&rhoState.refs[i][r])?rhoState.refs[i][r]:{}; return Math.round(rhoNum(c.harga)+rhoCalcEst(i,r)); }
+function rhoCalcEst(i,r){ const st=rhoActiveState(); const c=(st.refs&&st.refs[i]&&st.refs[i][r])?st.refs[i][r]:{}; return Math.round(rhoNum(c.berat)*rhoNum(c.ongkir)); }
+function rhoCalcTot(i,r){ const st=rhoActiveState(); const c=(st.refs&&st.refs[i]&&st.refs[i][r])?st.refs[i][r]:{}; return Math.round(rhoNum(c.harga)+rhoCalcEst(i,r)); }
 function rhoRecalcCell(i,r){ const e=document.getElementById('rho-est-'+i+'-'+r); if(e) e.textContent=rhoRp(rhoCalcEst(i,r)); const t=document.getElementById('rho-tot-'+i+'-'+r); if(t) t.textContent=rhoRp(rhoCalcTot(i,r)); }
 
 function rhoFotoInnerEmpty(){
@@ -12410,22 +12412,25 @@ function rhoOnBerat(el){
 }
 
 /* ---- Foto: fokus, tempel (paste), normalisasi ukuran, hapus ----
-   Gambar dipotong (crop) mengisi PENUH lebar & tinggi kotak (mode "cover"),
-   sesuai rasio kotak pengisian foto (.rho-foto-cell), tanpa sisa ruang kosong. */
+   Gambar disimpan UTUH (100% dari clipboard) tanpa dipotong (crop) dan tanpa
+   diperbesar. Rasio asli dipertahankan; hanya diperkecil bila melebihi batas
+   sisi terpanjang agar ukuran data tetap wajar. Saat ditampilkan/dicetak kotak
+   memakai object-fit:contain sehingga seluruh gambar terlihat. */
 function rhoFotoClick(el){ try{ el.focus(); }catch(e){} }
-const RHO_IMG_W=400, RHO_IMG_H=320;
+const RHO_IMG_MAX=1600;   // batas sisi terpanjang (px) — hanya untuk memperkecil, tidak pernah memperbesar
 function rhoNormalizeImage(src, cb){
   const img=new Image();
   img.onload=function(){
     try{
-      const cv=document.createElement('canvas'); cv.width=RHO_IMG_W; cv.height=RHO_IMG_H;
+      let w=img.width||1, h=img.height||1;
+      // Jangan pernah memperbesar: skala <= 1. Perkecil hanya bila melebihi batas.
+      const s=Math.min(1, RHO_IMG_MAX/Math.max(w,h));
+      w=Math.max(1,Math.round(w*s)); h=Math.max(1,Math.round(h*s));
+      const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
       const ctx=cv.getContext('2d');
-      const s=Math.max(RHO_IMG_W/img.width, RHO_IMG_H/img.height);   // "cover": isi penuh, potong kelebihan
-      const w=Math.max(1,Math.round(img.width*s)), h=Math.max(1,Math.round(img.height*s));
-      const x=Math.round((RHO_IMG_W-w)/2), y=Math.round((RHO_IMG_H-h)/2);
       try{ ctx.imageSmoothingQuality='high'; }catch(e){}
-      ctx.drawImage(img,x,y,w,h);
-      cb(cv.toDataURL('image/jpeg',0.82));
+      ctx.drawImage(img,0,0,w,h);   // seluruh gambar, tanpa dipotong
+      cb(cv.toDataURL('image/jpeg',0.92));
     }catch(err){ cb(src); }
   };
   img.onerror=function(){ cb(src); };
@@ -12698,7 +12703,7 @@ function rhoBuildDocHtml(){
     '<div class="fkl-doc-band"></div>'+
     '<h1 class="fkl-doc-title">REFERENSI HARGA ONLINE</h1>'+
     '<div class="fkl-doc-titlegap"></div>'+
-    '<div class="fkl-sec-h"><span class="rn">1</span>Uraian Pekerjaan</div>'+
+    '<div class="fkl-sec-h"><span class="rn">A</span>Uraian Pekerjaan</div>'+
     '<table class="fkl-info"><tbody>'+
       infoRow('Nama Pekerjaan', info.nama)+
       infoRow('Lokasi Pekerjaan', info.lokasi)+
@@ -12710,7 +12715,7 @@ function rhoBuildDocHtml(){
       infoRow('Jumlah Barang/Jasa', String((st.items||[]).length)+' item')+
       infoRow('Jumlah Referensi', String(K)+' referensi')+
     '</tbody></table>'+
-    '<div class="fkl-sec-h"><span class="rn">2</span>Referensi Harga Barang/Jasa</div>'+
+    '<div class="fkl-sec-h"><span class="rn">B</span>Referensi Harga Barang/Jasa</div>'+
     itemBlocks+
   '</div>';
 }
@@ -12731,7 +12736,7 @@ function rhoExtraDocCss(){
   'table.rho-doc-tbl td.lnk a{color:#0b6a73;text-decoration:none}'+
   'table.rho-doc-tbl tr.auto td{background:#fbfdf4}'+
   'table.rho-doc-tbl tr.tot td{background:#eef8f1;color:#0d7a3f;font-weight:800}'+
-  '.rho-pdf-foto{width:100%;max-width:150px;height:92px;object-fit:cover;object-position:center;background:#fff;display:block;margin:0 auto}'+
+  '.rho-pdf-foto{width:100%;max-width:150px;height:92px;object-fit:contain;object-position:center;background:#fff;display:block;margin:0 auto}'+
   '.rho-pdf-foto-empty{color:#9aabb0;font-style:italic;font-size:9px}';
 }
 function rhoStandaloneDocHtml(){
@@ -13840,7 +13845,7 @@ function hpsBuildDocHtml(){
     '<div class="fkl-doc-band"></div>'+
     '<h1 class="fkl-doc-title">HARGA PERKIRAAN SENDIRI (HPS)</h1>'+
     '<div class="fkl-doc-titlegap"></div>'+
-    '<div class="fkl-sec-h"><span class="rn">1</span>Data Pekerjaan</div>'+
+    '<div class="fkl-sec-h"><span class="rn">A</span>Data Pekerjaan</div>'+
     '<table class="fkl-info"><tbody>'+
       infoRow('Nama Pekerjaan', info.nama)+
       infoRow('Lokasi Pekerjaan', info.lokasi)+
@@ -13851,7 +13856,7 @@ function hpsBuildDocHtml(){
       infoRow('Tgl. HPS', info.tgl_hps?pnwDateLong(info.tgl_hps):'-')+
       infoRow('Jumlah Barang/Jasa', String((st.items||[]).length)+' item')+
     '</tbody></table>'+
-    '<div class="fkl-sec-h"><span class="rn">2</span>Uraian Pekerjaan &amp; Rincian Harga</div>'+
+    '<div class="fkl-sec-h"><span class="rn">B</span>Uraian Pekerjaan &amp; Rincian Harga</div>'+
     tbl+
     '<div class="fkl-doc-foot hps-foot">'+
       '<table class="ttd"><tbody><tr>'+
@@ -14981,7 +14986,7 @@ function anaBuildDocHargaSatuan(st){
     '<div class="fkl-doc-band"></div>'+
     '<h1 class="fkl-doc-title">HARGA SATUAN — PEKERJAAN KONSTRUKSI</h1>'+
     '<div class="fkl-doc-titlegap"></div>'+
-    '<div class="fkl-sec-h"><span class="rn">1</span>Data Pekerjaan</div>'+
+    '<div class="fkl-sec-h"><span class="rn">A</span>Data Pekerjaan</div>'+
     '<table class="fkl-info"><tbody>'+
       infoRow('Nama Pekerjaan', info.nama)+
       infoRow('Lokasi Pekerjaan', info.lokasi)+
@@ -14992,7 +14997,7 @@ function anaBuildDocHargaSatuan(st){
       infoRow('Tgl. Analisa', info.tgl_analisa?pnwDateLong(info.tgl_analisa):'-')+
       infoRow('Jenis Pekerjaan', 'Pekerjaan Konstruksi')+
     '</tbody></table>'+
-    '<div class="fkl-sec-h"><span class="rn">2</span>Harga Satuan</div>'+
+    '<div class="fkl-sec-h"><span class="rn">B</span>Harga Satuan</div>'+
     hsTbl+
   '</div>';
 }
@@ -15017,7 +15022,7 @@ function anaAhspLayerDocHtml(layer,li){
     rows+='<tr class="grp"><td class="no"></td><td class="gname" colspan="4">JUMLAH HARGA '+fkEsc(title)+'</td><td class="num tot2">'+subtotalTxt+rokTxt+'</td></tr>';
     rows+='<tr class="ana-ahsp-spacer"><td colspan="6"></td></tr>';
   });
-  return '<div class="fkl-sec-h" style="margin-top:16px"><span class="rn">'+(li+1)+'</span>'+fkEsc(layer.judul||('Analisa '+(li+1)))+'</div>'+
+  return '<div class="fkl-sec-h" style="margin-top:16px"><span class="rn">'+String.fromCharCode(65+(li%26))+'</span>'+fkEsc(layer.judul||('Analisa '+(li+1)))+'</div>'+
     '<table class="ana-doc-tbl ana-ahsp-doc-tbl"><thead><tr>'+
       '<th>No</th><th class="ur">Uraian</th><th>Satuan</th><th>Koefisien</th><th>Harga Satuan<br>(Rp)</th><th>Jumlah Harga<br>(Rp)</th>'+
     '</tr></thead><tbody>'+rows+'</tbody></table>';
@@ -15114,7 +15119,7 @@ function anaBuildDocHtmlUmum(st){
     '<div class="fkl-doc-band"></div>'+
     '<h1 class="fkl-doc-title">ANALISA HARGA SATUAN</h1>'+
     '<div class="fkl-doc-titlegap"></div>'+
-    '<div class="fkl-sec-h"><span class="rn">1</span>Data Pekerjaan</div>'+
+    '<div class="fkl-sec-h"><span class="rn">A</span>Data Pekerjaan</div>'+
     '<table class="fkl-info"><tbody>'+
       infoRow('Nama Pekerjaan', info.nama)+
       infoRow('Lokasi Pekerjaan', info.lokasi)+
@@ -15128,11 +15133,11 @@ function anaBuildDocHtmlUmum(st){
       infoRow('Jenis Pekerjaan', jenisTxt+(rok>0?(' — ROK '+rok+'%'):''))+
       infoRow('Metode Perhitungan', st.metodeRef==='Sama'?('Sama — '+st.metodeAll+' (semua uraian)'):'Berbeda (per uraian)')+
     '</tbody></table>'+
-    '<div class="fkl-sec-h"><span class="rn">2</span>Analisa Harga Satuan</div>'+
+    '<div class="fkl-sec-h"><span class="rn">B</span>Analisa Harga Satuan</div>'+
     tblAnalisa+
     '<div class="ana-doc-note">Nilai 0 / kosong diabaikan dalam perhitungan. Kolom <b>Metode</b> menunjukkan cara perhitungan tiap uraian.</div>'+
     '<div class="ana-hasil-break"></div>'+
-    '<div class="fkl-sec-h"><span class="rn">3</span>Hasil Analisa Harga Satuan'+rokHdr+'</div>'+
+    '<div class="fkl-sec-h"><span class="rn">C</span>Hasil Analisa Harga Satuan'+rokHdr+'</div>'+
     tblHasil+
     '<div class="ana-doc-note">'+(rok>0?('Harga hasil analisa sudah termasuk ROK '+rok+'% ('+jenisTxt+').'):('Belum ada penambahan ROK ('+jenisTxt+').'))+'</div>'+
   '</div>';
@@ -15614,7 +15619,7 @@ function rekapStandaloneDocHtml(dp, hpsList, anaList){
       '<div class="fkl-doc-band"></div>'+
       '<h1 class="fkl-doc-title">REKAP HARGA PERKIRAAN SENDIRI</h1>'+
       '<div class="fkl-doc-titlegap"></div>'+
-      '<div class="fkl-sec-h"><span class="rn">1</span>Data Pekerjaan</div>'+
+      '<div class="fkl-sec-h"><span class="rn">A</span>Data Pekerjaan</div>'+
       '<table class="fkl-info"><tbody>'+
         infoRow('Nama Pekerjaan', dp.nama_pekerjaan)+
         infoRow('Lokasi Pekerjaan', dp.lokasi)+
@@ -15623,9 +15628,9 @@ function rekapStandaloneDocHtml(dp, hpsList, anaList){
         infoRow('Tgl. Anggaran', dp.tgl_anggaran?pnwDateLong(dp.tgl_anggaran):'-')+
         infoRow('Metode Pengadaan', dp.metode)+
       '</tbody></table>'+
-      '<div class="rekap-sec">2. Perhitungan HPS</div>'+
+      '<div class="rekap-sec">B. Perhitungan HPS</div>'+
       '<table class="rekap-tbl"><thead><tr><th style="width:34px">No</th><th>Tgl. HPS</th><th style="width:90px">Jumlah Item</th><th style="width:150px">Nilai HPS (Rp)</th></tr></thead><tbody>'+hpsBody+'</tbody></table>'+
-      '<div class="rekap-sec">3. Analisa Harga Satuan</div>'+
+      '<div class="rekap-sec">C. Analisa Harga Satuan</div>'+
       '<table class="rekap-tbl"><thead><tr><th style="width:34px">No</th><th>Tgl. Analisa</th><th style="width:90px">Jumlah Item</th><th style="width:150px">Nilai (Rp)</th></tr></thead><tbody>'+anaBody+'</tbody></table>'+
     '</div>'+
     '</body></html>';
