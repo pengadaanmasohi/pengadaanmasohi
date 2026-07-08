@@ -2790,6 +2790,24 @@ table.hps-uraian td.c-act{width:64px;text-align:center;white-space:nowrap;paddin
                 <svg class="caret2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
               </button>
               <div class="topnav-subdrop">
+                <!-- Data Pekerjaan: master data terpusat, dipakai bersama oleh Perhitungan HPS & Analisa Harga Satuan -->
+                <div class="topnav-sub" data-sub="data-pekerjaan" data-role="admin">
+                  <button class="topnav-subtrigger" type="button" onclick="toggleFkSub(event,'data-pekerjaan')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>
+                    <span class="sub-label">Data Pekerjaan</span>
+                    <svg class="caret2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
+                  </button>
+                  <div class="topnav-subdrop">
+                    <button class="topnav-item" data-view="form-dp" data-role="admin" onclick="openDpInput()">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                      Input Data
+                    </button>
+                    <button class="topnav-item" data-view="dp-view" data-role="admin" onclick="openDpView()">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                      Lihat Data
+                    </button>
+                  </div>
+                </div>
                 <!-- Perhitungan HPS: submenu Hitung HPS / Lihat HPS -->
                 <div class="topnav-sub" data-sub="hps-perhitungan" data-role="admin">
                   <button class="topnav-subtrigger" type="button" onclick="toggleFkSub(event,'hps-perhitungan')">
@@ -2848,38 +2866,20 @@ table.hps-uraian td.c-act{width:64px;text-align:center;white-space:nowrap;paddin
                     </button>
                   </div>
                 </div>
-              </div>
-            </div>
-            <!-- Data Pekerjaan: master data terpusat, dipakai bersama oleh Perhitungan HPS & Analisa Harga Satuan -->
-            <div class="topnav-sub" data-sub="data-pekerjaan" data-role="admin">
-              <button class="topnav-subtrigger" type="button" onclick="toggleFkSub(event,'data-pekerjaan')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>
-                <span class="sub-label">Data Pekerjaan</span>
-                <svg class="caret2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
-              </button>
-              <div class="topnav-subdrop">
-                <button class="topnav-item" data-view="form-dp" data-role="admin" onclick="openDpInput()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                  Input Data
-                </button>
-                <button class="topnav-item" data-view="dp-view" data-role="admin" onclick="openDpView()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                  Lihat Data
-                </button>
-              </div>
-            </div>
-            <!-- Rekap HPS: rekap gabungan Data Pekerjaan + Perhitungan HPS + Analisa Harga Satuan -->
-            <div class="topnav-sub" data-sub="rekap-hps" data-role="admin">
-              <button class="topnav-subtrigger" type="button" onclick="toggleFkSub(event,'rekap-hps')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 17V7a2 2 0 0 1 2-2h6.5L21 8.5V17a2 2 0 0 1-2 2H11a2 2 0 0 1-2-2Z"/><path d="M17 5v4h4"/><path d="M6 21V9a2 2 0 0 1 .4-1.2"/></svg>
-                <span class="sub-label">Rekap HPS</span>
-                <svg class="caret2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
-              </button>
-              <div class="topnav-subdrop">
-                <button class="topnav-item" data-view="rekap-hps" data-role="admin" onclick="openRekapHps()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                  Lihat Rekap
-                </button>
+                <!-- Rekap HPS: rekap gabungan Data Pekerjaan + Perhitungan HPS + Analisa Harga Satuan -->
+                <div class="topnav-sub" data-sub="rekap-hps" data-role="admin">
+                  <button class="topnav-subtrigger" type="button" onclick="toggleFkSub(event,'rekap-hps')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 17V7a2 2 0 0 1 2-2h6.5L21 8.5V17a2 2 0 0 1-2 2H11a2 2 0 0 1-2-2Z"/><path d="M17 5v4h4"/><path d="M6 21V9a2 2 0 0 1 .4-1.2"/></svg>
+                    <span class="sub-label">Rekap HPS</span>
+                    <svg class="caret2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
+                  </button>
+                  <div class="topnav-subdrop">
+                    <button class="topnav-item" data-view="rekap-hps" data-role="admin" onclick="openRekapHps()">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                      Lihat Rekap
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -12598,7 +12598,9 @@ const DP_INFO_FIELDS = [
   {key:'nilai',        label:'Perkiraan Nilai Pekerjaan', type:'num'},
   {key:'no_anggaran',  label:'No. Anggaran',              type:'text'},
   {key:'tgl_anggaran', label:'Tgl. Anggaran',             type:'date'},
-  {key:'metode',       label:'Metode Pengadaan',          type:'select', options:PNW_METODE}
+  {key:'metode',       label:'Metode Pengadaan',          type:'select', options:PNW_METODE},
+  {key:'pengguna',     label:'Nama Pengguna (Manager)',            type:'text', span:2},
+  {key:'pejabat',      label:'Nama Pejabat Pelaksana Pengadaan',   type:'text', span:2}
 ];
 /* Kunci field yang dipakai bersama oleh HPS & Analisa (sumbernya dari Data Pekerjaan) */
 const DP_SHARED_KEYS = DP_INFO_FIELDS.map(f=>f.key);
@@ -12838,9 +12840,6 @@ function dpPickerSelect(id){
 /* ############# MODUL HARGA PERKIRAAN SENDIRI (HPS) ###################### */
 /* ####################################################################### */
 
-/* Ikon bagian penandatangan (pena) */
-const HPS_TTD_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
-
 /* Nama hari (untuk baris "Masohi, Hari, Tanggal Tahun" pada blok TTD) */
 const HPS_HARI=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
 function hpsDateFull(s){
@@ -12852,8 +12851,8 @@ function hpsDateFull(s){
   return (hari?hari+', ':'')+d+' '+(PNW_BULAN[m-1]||'')+' '+y;
 }
 
-/* Field data pekerjaan (langkah 1). Nama Pengguna & Pejabat TIDAK di sini —
-   keduanya khusus blok tanda tangan (Form TTD HPS) di bawah. */
+/* Field data pekerjaan (langkah 1). Nama Pengguna & Pejabat kini bagian dari
+   Data Pekerjaan (menu Data Pekerjaan), bukan diisi di sini lagi. */
 const HPS_INFO_FIELDS = [
   {key:'nama',         label:'Nama Pekerjaan',            type:'text', span:2},
   {key:'lokasi',       label:'Lokasi Pekerjaan',          type:'text', span:2},
@@ -12867,11 +12866,6 @@ const HPS_INFO_FIELDS = [
    field khusus dokumen HPS ini saja (tetap dapat diisi manual). */
 const HPS_DP_FIELDS  = HPS_INFO_FIELDS.filter(f=>f.key!=='tgl_hps');
 const HPS_OWN_FIELDS = HPS_INFO_FIELDS.filter(f=>f.key==='tgl_hps');
-/* Field khusus blok tanda tangan (muncul hanya di bagian bawah dokumen) */
-const HPS_TTD_FIELDS = [
-  {key:'pengguna', label:'Nama Pengguna (Manager)',          type:'text'},
-  {key:'pejabat',  label:'Nama Pejabat Pelaksana Pengadaan', type:'text'}
-];
 
 /* ---------- State ----------
    info      : { key:value } data pekerjaan + pengguna/pejabat (utk TTD) + analisa terpilih
@@ -13011,10 +13005,6 @@ function hpsInfoInputHtml(f){
   else ctl='<input id="'+id+'" type="text"'+dis+' oninput="hpsOnInfoChange()">';
   return '<div class="field'+(locked?' is-locked':'')+'"'+span+'><label>'+fkEsc(f.label)+'</label>'+ctl+(locked?DP_LOCK_BADGE:'')+'</div>';
 }
-function hpsTtdInputHtml(f){
-  const id='hps-'+f.key;
-  return '<div class="field"><label>'+fkEsc(f.label)+'</label><input id="'+id+'" type="text" oninput="hpsOnTtdChange()"></div>';
-}
 function hpsCountFieldHtml(){
   const st=hpsState;
   const locked=hpsItemsLocked();
@@ -13061,11 +13051,6 @@ function hpsLepasDp(){
   HPS_DP_KEYS.forEach(k=>{ st.info[k]=''; });
   hpsSaveState(); renderHpsForm();
   toast('Pilihan Data Pekerjaan dilepas','ok');
-}
-function hpsOnTtdChange(){
-  const st=hpsState;
-  HPS_TTD_FIELDS.forEach(f=>{ const el=document.getElementById('hps-'+f.key); if(!el) return; st.info[f.key]=el.value.trim(); });
-  hpsSaveState();
 }
 function hpsOnJumlahItemChange(el){
   if(hpsItemsLocked()) return; // jumlah item mengikuti Analisa terpilih, tidak dapat diubah manual
@@ -13205,7 +13190,7 @@ function renderHpsForm(){
   const st=hpsState;
   let html=hpsStepperHtml();
   if(hpsStep===1){
-    if(sub) sub.textContent='Langkah 1 dari 2 — Pilih data pekerjaan & lengkapi penandatangan';
+    if(sub) sub.textContent='Langkah 1 dari 2 — Pilih data pekerjaan';
     html+='<div class="form-card"><div class="form-section-title">'+KR_SECTION_ICON+'Data Pekerjaan</div>'+
       hpsDpBarHtml();
     if(st.info.dpId){
@@ -13216,9 +13201,6 @@ function renderHpsForm(){
       html+='</div>';
     }
     html+='</div>';
-    html+='<div class="form-card"><div class="form-section-title">'+HPS_TTD_ICON+'Penandatangan (Form TTD HPS)</div>'+
-      '<div class="hps-hint">Nama Pengguna &amp; Pejabat <b>tidak</b> tampil pada tabel data — keduanya hanya muncul di bagian bawah dokumen sebagai blok tanda tangan. <b>Nama Pengguna</b> tampil di sebelah kiri (Manager) dan <b>Nama Pejabat</b> di sebelah kanan (Pejabat Pelaksana Pengadaan, dicetak huruf kapital).</div>'+
-      '<div class="form-flow" style="--cols:2">'+HPS_TTD_FIELDS.map(hpsTtdInputHtml).join('')+'</div></div>';
     html+=hpsActionsHtml({back:false});
   } else {
     if(sub) sub.textContent='Langkah 2 dari 2 — Uraian pekerjaan, satuan, volume & harga satuan';
@@ -13232,7 +13214,6 @@ function renderHpsForm(){
   cont.innerHTML=html;
   if(hpsStep===1){
     HPS_INFO_FIELDS.forEach(f=>{ const el=document.getElementById('hps-'+f.key); if(!el) return; const v=st.info[f.key]; el.value=(f.type==='num')?rupiahInputText(v):(v!=null?v:''); });
-    HPS_TTD_FIELDS.forEach(f=>{ const el=document.getElementById('hps-'+f.key); if(!el) return; el.value=(st.info[f.key]!=null?st.info[f.key]:''); });
   } else {
     hpsRenderSummary();
   }
@@ -13356,7 +13337,7 @@ function hpsActionsHtml(o){
 function hpsNext(){
   const st=hpsState;
   if(hpsStep===1){
-    hpsOnInfoChange(); hpsOnTtdChange();
+    hpsOnInfoChange();
     if(!st.info.dpId || !String(st.info.nama||'').trim()){ toast('Pilih Data Pekerjaan terlebih dahulu','warn'); return; }
     hpsEnsureItems(); hpsStep=2;
   }
