@@ -2591,6 +2591,16 @@ table.ana-res tbody tr:last-child td{border-bottom:none}
 
 /* Selector Jenis Pekerjaan (kanan atas kartu Data Pekerjaan) */
 .ana-jenis-top{display:flex;flex-direction:column;gap:4px;min-width:190px}
+/* Cluster gabungan Jenis Pekerjaan + tombol Pilih Data Pekerjaan (satu layer, kanan atas) */
+.ana-top-controls{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-left:auto}
+.ana-top-controls .ana-jenis-top{min-width:180px}
+.ana-top-dp{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+@media(max-width:640px){
+  .ana-top-controls{width:100%}
+  .ana-top-controls .ana-jenis-top{flex:1 1 100%;min-width:0}
+  .ana-top-dp{width:100%}
+  .ana-top-dp .btn{flex:1 1 auto;justify-content:center}
+}
 .ana-jenis-top label{font-size:10px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;color:#7c8a8f}
 .ana-jenis-top select{border:1px solid #cdd9de;border-radius:9px;padding:8px 10px;font-size:12px;background:#fff;color:var(--ink);font-family:inherit}
 .ana-jenis-top select:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,124,134,.15)}
@@ -2667,6 +2677,43 @@ table.hps-uraian td.c-act{width:64px;text-align:center;white-space:nowrap;paddin
 .field.is-locked .lock-badge svg{width:9px;height:9px}
 .hps-analisa-bar .btn-unpick{background:#fff;color:#b23b3b;border:1px solid #e6b8b8}
 .hps-analisa-bar .btn-unpick:hover{background:#fdf1f1}
+</style>
+
+<style id="table-unify-css">
+/* =================================================================
+   Penyeragaman tampilan tabel INPUT & PENGISIAN DATA agar warna &
+   garis (horizontal + vertikal) sama seperti tabel Monitoring —
+   Daftar Pekerjaan: header gradient teal, grid penuh 1px #dce6e9,
+   baris genap #f6fafb. Latar fungsional sel (kolom label, baris
+   otomatis, sel terkunci) tetap dipertahankan.
+   ================================================================= */
+table.hps-uraian,
+table.ana-uraian,
+table.rho-matrix{ border-collapse:collapse; border-spacing:0; }
+
+/* Garis grid horizontal + vertikal seragam pada semua sel */
+table.hps-uraian th, table.hps-uraian td,
+table.ana-uraian th, table.ana-uraian td,
+table.rho-matrix th, table.rho-matrix td{ border:1px solid #dce6e9; }
+
+/* Header: gradient teal 180° + teks putih (sama seperti Monitoring) */
+table.hps-uraian thead th,
+table.ana-uraian thead th,
+table.rho-matrix thead th{
+  background:linear-gradient(180deg,#12909c,#0b6b74);
+  color:#fff; border-color:#0b6b74;
+}
+/* Kolom label pertama rho-matrix ikut header teal saat di baris thead */
+table.rho-matrix thead th.rho-c-lbl{
+  background:linear-gradient(180deg,#12909c,#0b6b74); color:#fff;
+}
+
+/* Baris genap diberi arsiran halus seperti Monitoring (untuk tabel baris-vertikal) */
+table.hps-uraian tbody tr:nth-child(even),
+table.ana-uraian tbody tr:nth-child(even){ background:#f6fafb; }
+/* Pastikan garis bawah baris terakhir tetap tampil (grid penuh) */
+table.hps-uraian tbody tr:last-child td,
+table.ana-uraian tbody tr:last-child td{ border-bottom:1px solid #dce6e9; }
 </style>
 </head>
 <body>
@@ -3030,19 +3077,19 @@ table.hps-uraian td.c-act{width:64px;text-align:center;white-space:nowrap;paddin
     </div>
 
     <!-- Upload / Download template -->
-    <div class="io-row" id="io-tpl-kr">
-      <svg viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2" style="width:26px;height:26px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      <div class="io-txt">
-        <b>Template Pengisian Data</b>
+    <div class="hl-tpl-bar" id="io-tpl-kr">
+      <div class="hl-tpl-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
+      <div class="hl-tpl-txt"><b>Template Pengisian Data</b><span>Unduh format Excel, isi data, lalu unggah kembali untuk menambah banyak data sekaligus</span></div>
+      <div class="hl-tpl-actions">
+        <button class="btn btn-amber" onclick="downloadTemplate()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download Template
+        </button>
+        <button class="btn btn-teal" onclick="document.getElementById('xlsx-upload').click()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Upload Template
+        </button>
       </div>
-      <button class="btn btn-amber" onclick="downloadTemplate()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Download Template
-      </button>
-      <button class="btn btn-teal" onclick="document.getElementById('xlsx-upload').click()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        Upload Template
-      </button>
       <input type="file" id="xlsx-upload" accept=".xlsx,.xls" style="display:none" onchange="handleUpload(event)">
     </div>
 
@@ -3180,19 +3227,19 @@ table.hps-uraian td.c-act{width:64px;text-align:center;white-space:nowrap;paddin
     </div>
 
     <!-- Upload / Download template -->
-    <div class="io-row" id="io-tpl-pl">
-      <svg viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2" style="width:26px;height:26px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      <div class="io-txt">
-        <b>Template Pengisian Data</b>
+    <div class="hl-tpl-bar" id="io-tpl-pl">
+      <div class="hl-tpl-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
+      <div class="hl-tpl-txt"><b>Template Pengisian Data</b><span>Unduh format Excel, isi data, lalu unggah kembali untuk menambah banyak data sekaligus</span></div>
+      <div class="hl-tpl-actions">
+        <button class="btn btn-amber" onclick="downloadTemplatePl()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download Template
+        </button>
+        <button class="btn btn-teal" onclick="document.getElementById('xlsx-upload-pl').click()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Upload Template
+        </button>
       </div>
-      <button class="btn btn-amber" onclick="downloadTemplatePl()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Download Template
-      </button>
-      <button class="btn btn-teal" onclick="document.getElementById('xlsx-upload-pl').click()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        Upload Template
-      </button>
       <input type="file" id="xlsx-upload-pl" accept=".xlsx,.xls" style="display:none" onchange="handleUploadPl(event)">
     </div>
 
@@ -3332,19 +3379,19 @@ table.hps-uraian td.c-act{width:64px;text-align:center;white-space:nowrap;paddin
     </div>
 
     <!-- Upload / Download template -->
-    <div class="io-row" id="io-tpl-tender">
-      <svg viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2" style="width:26px;height:26px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      <div class="io-txt">
-        <b>Template Pengisian Data</b>
+    <div class="hl-tpl-bar" id="io-tpl-tender">
+      <div class="hl-tpl-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
+      <div class="hl-tpl-txt"><b>Template Pengisian Data</b><span>Unduh format Excel, isi data, lalu unggah kembali untuk menambah banyak data sekaligus</span></div>
+      <div class="hl-tpl-actions">
+        <button class="btn btn-amber" onclick="downloadTemplateTender()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download Template
+        </button>
+        <button class="btn btn-teal" onclick="document.getElementById('xlsx-upload-tender').click()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Upload Template
+        </button>
       </div>
-      <button class="btn btn-amber" onclick="downloadTemplateTender()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Download Template
-      </button>
-      <button class="btn btn-teal" onclick="document.getElementById('xlsx-upload-tender').click()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        Upload Template
-      </button>
       <input type="file" id="xlsx-upload-tender" accept=".xlsx,.xls" style="display:none" onchange="handleUploadTender(event)">
     </div>
 
@@ -8457,7 +8504,7 @@ function renderHariLibur(){
     '</div>'+
     '<div class="hl-tpl-bar">'+
       '<div class="hl-tpl-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>'+
-      '<div class="hl-tpl-txt"><b>Template Pengisian Hari Libur</b><span>Unduh format Excel, isi data, lalu unggah kembali untuk menambah banyak tanggal sekaligus</span></div>'+
+      '<div class="hl-tpl-txt"><b>Template Pengisian Hari Libur</b><span>Unduh format Excel, isi data, lalu unggah kembali untuk menambah banyak data sekaligus</span></div>'+
       '<div class="hl-tpl-actions">'+
         '<button class="btn btn-amber" onclick="hlDownloadTemplate()">'+
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'+
@@ -13879,6 +13926,17 @@ function anaOnJenisTop(el){
   anaState.jenis=(el.value==='Konstruksi')?'Konstruksi':'Umum';
   anaEnsure(); anaSaveState(); anaStep=1; renderAnalisaForm();
 }
+/* Kontrol kanan-atas kartu Data Pekerjaan (Langkah 1): gabungan Jenis Pekerjaan
+   + tombol Pilih/Ganti/Lepas Data Pekerjaan dalam SATU baris (satu layer). */
+function anaTopControlsHtml(){
+  const info=anaState.info||{};
+  const dipilih = info.dpId ? String(info.dpNama||info.nama||'').trim() : '';
+  let btns='<button type="button" class="btn btn-teal" style="padding:8px 14px;font-size:11.5px" onclick="anaPilihDp()">'+
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>'+(dipilih?'Ganti Data Pekerjaan':'Pilih Data Pekerjaan')+'</button>';
+  if(dipilih) btns+='<button type="button" class="btn btn-unpick" style="padding:8px 14px;font-size:11.5px" onclick="anaLepasDp()">'+
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M18 6 6 18M6 6l12 12"/></svg>Lepas Pilihan</button>';
+  return '<div class="ana-top-controls">'+anaJenisTopHtml()+'<div class="ana-top-dp">'+btns+'</div></div>';
+}
 
 /* ================= LANGKAH 1 ================= */
 function anaInfoInputHtml(f){
@@ -14336,9 +14394,8 @@ function renderAnalisaForm(){
   let html=anaStepperHtml();
   if(anaStep===1){
     if(sub) sub.textContent='Langkah 1 dari '+anaMaxStep()+' — Pilih data pekerjaan'+(isKon?'':' , jumlah barang/jasa & referensi');
-    html+='<div class="form-card"><div class="form-section-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">'+
-      '<span style="display:flex;align-items:center;gap:8px">'+KR_SECTION_ICON+'Data Pekerjaan</span>'+anaJenisTopHtml()+'</div>'+
-      anaDpBarHtml();
+    html+='<div class="form-card"><div class="form-section-title" style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:10px">'+
+      '<span style="display:flex;align-items:center;gap:8px">'+KR_SECTION_ICON+'Data Pekerjaan</span>'+anaTopControlsHtml()+'</div>';
     if(st.info.dpId){
       html+='<div class="form-flow" style="--cols:4">';
       html+=ANA_DP_FIELDS.map(anaInfoInputHtml).join('');
