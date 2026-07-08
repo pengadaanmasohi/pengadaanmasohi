@@ -2483,13 +2483,13 @@ html,body{background:#e9eef1}
 .fkl-chk thead th,.fkl-sec-h .rn,.fkl-doc-band,.fkl-doc .hasil,.fkl-chk .pill,.fkl-doc-logo img,.fkl-chk tbody tr:nth-child(even) td,.fkl-doc-org .l1,.fkl-doc-org .l2{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 @media print{
   html,body{background:#fff;margin:0;padding:0}
-  /* Header & footer bawaan browser (tanggal, judul, URL, nomor halaman)
-     dihilangkan dengan @page margin:0. Karena margin halaman menjadi 0, konten
-     akan menempel di tepi/pojok atas kertas — maka jarak tepi dikembalikan lewat
-     padding pada halaman, dengan padding ATAS sedikit lebih besar (18mm) agar
-     tampak proporsional setelah header dilepas. Berlaku untuk semua dokumen PDF. */
-  .fkl-print-page{width:auto;min-height:0;margin:0;padding:18mm 15mm 16mm;box-shadow:none}
-  @page{size:A4;margin:0}
+  /* Margin atas/bawah halaman diberi sedikit ruang (9mm) lewat @page agar HEADER &
+     FOOTER tiap halaman tidak menempel/rapat di tepi kertas — termasuk pada halaman
+     ke-2 dst. saat konten terpotong (page-break). Sisi kiri/kanan tetap 0 dan diatur
+     lewat padding halaman. Padding atas/bawah dikurangi (10mm) agar total tepi
+     halaman pertama/terakhir tetap proporsional (±19mm). Berlaku untuk semua PDF. */
+  .fkl-print-page{width:auto;min-height:0;margin:0;padding:10mm 15mm 10mm;box-shadow:none}
+  @page{size:A4;margin:9mm 0}
 }
 
 </style>
@@ -14232,7 +14232,7 @@ function anaStepperHtml(){
   const st=anaState;
   const steps = st.jenis==='Konstruksi'
     ? [['1','Data Pekerjaan'],['2','Harga Satuan'],['3','Analisa Harga Satuan Pekerjaan']]
-    : [['1','Data Pekerjaan & Sumber Referensi'],['2','Analisa Harga Satuan']];
+    : [['1','Data Pekerjaan & Sumber Referensi'],['2','Analisa Harga Satuan'],['3','Hasil Analisa Harga Satuan']];
   return '<div class="fkl-stepper">'+steps.map((s,i)=>{
     const n=i+1;
     const cls = n<anaStep ? 'done' : (n===anaStep ? 'active' : '');
@@ -14241,7 +14241,7 @@ function anaStepperHtml(){
     return '<div class="fkl-step '+cls+'"><div class="fkl-step-dot">'+mark+'</div><div class="fkl-step-name">'+s[1]+'</div></div>'+line;
   }).join('')+'</div>';
 }
-function anaMaxStep(){ return anaState.jenis==='Konstruksi' ? 3 : 2; }
+function anaMaxStep(){ return 3; }
 /* Selector Jenis Pekerjaan — tampil di kanan atas kartu Data Pekerjaan (Langkah 1),
    menentukan alur 2 langkah (Umum) atau 3 langkah (Konstruksi). */
 function anaJenisTopHtml(){
@@ -14799,21 +14799,27 @@ function renderAnalisaForm(){
         '<div id="ana-kon-table-wrap">'+anaKonTableHtml()+'</div></div>';
       html+=anaActionsHtml({back:true, next:true});
     } else {
-      // UMUM — Langkah 2 (dari 2): Analisa Harga Satuan + Hasil
-      if(sub) sub.textContent='Langkah 2 dari 2 — Analisa Harga Satuan';
+      // UMUM — Langkah 2 (dari 3): Analisa Harga Satuan (input) — Hasil dipindah ke Langkah 3
+      if(sub) sub.textContent='Langkah 2 dari 3 — Analisa Harga Satuan';
       html+='<div class="form-card"><div class="form-section-title">'+ANA_SEC_ICON+'Analisa Harga Satuan '+
         '<span class="fkl-count-chip">'+st.jumlahItem+' uraian • '+st.jumlahRef+' referensi</span></div>'+
         '<div class="hps-hint">Pilih <b>Referensi</b> (kanan atas) untuk mengisi harganya. Kolom <b>Kelompok/Uraian/Sat/Vol</b> berlaku sama untuk semua referensi; <b>Harga Satuan</b> diisi per referensi. <b>Metode Perhitungan: Sama</b> → satu metode (Rata-rata/Terendah) untuk semua uraian; <b>Berbeda</b> → metode diatur per uraian. Nilai 0/kosong diabaikan.</div>'+
-        '<div id="ana-step2-body"></div>'+
-        anaResultCardHtml()+'</div>';
-      html+=anaActionsHtml({back:true, save:true});
+        '<div id="ana-step2-body"></div></div>';
+      html+=anaActionsHtml({back:true, next:true});
     }
   } else if(anaStep===3){
-    // KONSTRUKSI — Langkah 3 (dari 3): Analisa Harga Satuan Pekerjaan (AHSP)
-    if(sub) sub.textContent='Langkah 3 dari 3 — Analisa Harga Satuan Pekerjaan (Tenaga Kerja, Bahan, Peralatan)';
-    html+='<div class="form-card"><div class="form-section-title">'+ANA_SEC_ICON+'Analisa Harga Satuan Pekerjaan</div>'+
-      '<div id="ana-ahsp-body"></div></div>';
-    html+=anaActionsHtml({back:true, save:true});
+    if(isKon){
+      // KONSTRUKSI — Langkah 3 (dari 3): Analisa Harga Satuan Pekerjaan (AHSP)
+      if(sub) sub.textContent='Langkah 3 dari 3 — Analisa Harga Satuan Pekerjaan (Tenaga Kerja, Bahan, Peralatan)';
+      html+='<div class="form-card"><div class="form-section-title">'+ANA_SEC_ICON+'Analisa Harga Satuan Pekerjaan</div>'+
+        '<div id="ana-ahsp-body"></div></div>';
+      html+=anaActionsHtml({back:true, save:true});
+    } else {
+      // UMUM — Langkah 3 (dari 3): Hasil Analisa Harga Satuan
+      if(sub) sub.textContent='Langkah 3 dari 3 — Hasil Analisa Harga Satuan';
+      html+=anaResultCardHtml();
+      html+=anaActionsHtml({back:true, save:true});
+    }
   }
   cont.innerHTML=html;
   anaRevealPick=false;   // animasi reveal hanya dijalankan sekali
@@ -14822,7 +14828,8 @@ function renderAnalisaForm(){
   } else if(anaStep===2){
     if(!isKon) anaRenderStep2Body();   // Umum: tabel Analisa Harga Satuan (Konstruksi: Harga Satuan inline)
   } else if(anaStep===3){
-    anaRenderAhspBody();   // Konstruksi: AHSP
+    if(isKon) anaRenderAhspBody();   // Konstruksi: AHSP
+    else anaRenderResult();          // Umum: Hasil Analisa Harga Satuan
   }
 }
 function anaActionsHtml(o){
@@ -15092,7 +15099,6 @@ function anaBuildDocHtmlUmum(st){
   const nRef=st.jumlahRef||(st.refs?st.refs.length:0);
   const rok=anaNum(st.rok);
   const jenisTxt='Pekerjaan Umum';
-  const rokHdr = rok>0 ? (' (+ROK '+rok+'%)') : '';
 
   /* ---- Tabel referensi: tampilkan harga tiap referensi (Barang & Jasa) + hasil ---- */
   /* Kolom: No | Uraian | Sat | Vol | [Ref1 B, Ref1 J] ... | Metode | Hasil B | Hasil J | Total */
@@ -15104,7 +15110,10 @@ function anaBuildDocHtmlUmum(st){
   const colCount = 4 /*no,ur,sat,vol*/ + nRef*2 + 4 /*metode,hasilB,hasilJ,total*/;
 
   const infOn=(st.inflasi==='Ya');
-  const colA = 4 + nRef*2 + 1;   // no,ur,sat,vol + ref*2 + metode
+  // Suffix (+ROK/+Inflasi) hanya ditempel pada JUDUL section Hasil Analisa, bukan pada judul kolom tabel.
+  const hasilSuffixParts=[]; if(rok>0) hasilSuffixParts.push('+ROK '+rok+'%'); if(infOn) hasilSuffixParts.push('+Inflasi');
+  const hasilTitleSuffix = hasilSuffixParts.length ? (' ('+hasilSuffixParts.join(' ')+')') : '';
+  const colA = 4 + nRef*2;   // no,ur,sat,vol + ref*2 (kolom Metode dihapus dari tabel Analisa)
   const colH = 4 + 1 + (infOn?1:0) + 3;   // no,ur,sat,vol + metode + inflasi? + hasilB,hasilJ,total
   let rowsA='', rowsH='';
   let groupIdx=0, curGroup=null, noInGroup=0;
@@ -15127,18 +15136,18 @@ function anaBuildDocHtmlUmum(st){
       refCells+='<td class="num">'+anaRpDoc(rit.hargaBarang)+'</td><td class="num">'+anaRpDoc(rit.hargaJasa)+'</td>';
     }
     const lead='<td class="no">'+noInGroup+'</td><td class="ur">'+fkEsc(uraian)+'</td><td class="st">'+fkEsc(String(sat))+'</td><td class="vl">'+fkEsc(String(vol))+'</td>';
-    rowsA+='<tr>'+lead+refCells+'<td class="mtd">'+res.method+'</td></tr>';
+    rowsA+='<tr>'+lead+refCells+'</tr>';
     rowsH+='<tr>'+lead+'<td class="mtd">'+res.method+'</td>'+(infOn?('<td class="num">'+(res.inflasi>0?(res.inflasi+'%'):'-')+'</td>'):'')+'<td class="num tot">'+anaRpDoc(res.hargaBarang)+'</td><td class="num tot">'+anaRpDoc(res.hargaJasa)+'</td><td class="num tot2">'+anaRpDoc(res.total)+'</td></tr>';
   });
   if(!rowsA){ rowsA='<tr><td colspan="'+colA+'" style="text-align:center;color:#889">Belum ada data</td></tr>'; rowsH='<tr><td colspan="'+colH+'" style="text-align:center;color:#889">Belum ada data</td></tr>'; }
   const tblAnalisa=
     '<table class="ana-doc-tbl"><thead>'+
-      '<tr><th class="no" rowspan="2">No.</th><th class="ur" rowspan="2">Uraian Pekerjaan</th><th class="st" rowspan="2">Sat</th><th class="vl" rowspan="2">Vol</th>'+refHead1+'<th rowspan="2">Metode</th></tr>'+
+      '<tr><th class="no" rowspan="2">No.</th><th class="ur" rowspan="2">Uraian Pekerjaan</th><th class="st" rowspan="2">Sat</th><th class="vl" rowspan="2">Vol</th>'+refHead1+'</tr>'+
       '<tr>'+refHead2+'</tr>'+
     '</thead><tbody>'+rowsA+'</tbody></table>';
   const tblHasil=
     '<table class="ana-doc-tbl"><thead>'+
-      '<tr><th class="no" rowspan="2">No.</th><th class="ur" rowspan="2">Uraian Pekerjaan</th><th class="st" rowspan="2">Sat</th><th class="vl" rowspan="2">Vol</th><th rowspan="2">Metode</th>'+(infOn?'<th rowspan="2">Inflasi</th>':'')+'<th colspan="2">Hasil Analisa'+rokHdr+(infOn?' + Inflasi':'')+'</th><th rowspan="2">Harga Satuan<br>(Total)</th></tr>'+
+      '<tr><th class="no" rowspan="2">No.</th><th class="ur" rowspan="2">Uraian Pekerjaan</th><th class="st" rowspan="2">Sat</th><th class="vl" rowspan="2">Vol</th><th rowspan="2">Metode</th>'+(infOn?'<th rowspan="2">Inflasi</th>':'')+'<th colspan="2">Hasil Analisa</th><th rowspan="2">Harga Satuan<br>(Total)</th></tr>'+
       '<tr><th>Barang (Rp)</th><th>Jasa (Rp)</th></tr>'+
     '</thead><tbody>'+rowsH+'</tbody></table>';
 
@@ -15170,8 +15179,8 @@ function anaBuildDocHtmlUmum(st){
     '</tbody></table>'+
     '<div class="fkl-sec-h"><span class="rn">B</span>Analisa Harga Satuan</div>'+
     tblAnalisa+
-    '<div class="ana-doc-note">Nilai 0 / kosong diabaikan dalam perhitungan. Kolom <b>Metode</b> menunjukkan cara perhitungan tiap uraian.</div>'+
-    '<div class="fkl-sec-h ana-hasil-sec"><span class="rn">C</span>Hasil Analisa Harga Satuan'+rokHdr+'</div>'+
+    '<div class="ana-doc-note">Nilai 0 / kosong diabaikan dalam perhitungan. Cara perhitungan tiap uraian ditunjukkan pada kolom <b>Metode</b> di tabel Hasil Analisa Harga Satuan.</div>'+
+    '<div class="fkl-sec-h ana-hasil-sec"><span class="rn">C</span>Hasil Analisa Harga Satuan'+hasilTitleSuffix+'</div>'+
     tblHasil+
     '<div class="ana-doc-note">'+(rok>0?('Harga hasil analisa sudah termasuk ROK '+rok+'% ('+jenisTxt+').'):('Belum ada penambahan ROK ('+jenisTxt+').'))+'</div>'+
   '</div>';
@@ -15182,7 +15191,7 @@ function anaExtraDocCss(){
   'table.ana-doc-tbl{width:100%;border-collapse:collapse;table-layout:auto;margin:2px 0 8px}'+
   'table.ana-doc-tbl th,table.ana-doc-tbl td{border:1px solid #dbe6e9;padding:4px 6px;font-size:8.2px;line-height:1.35;vertical-align:middle;word-wrap:break-word;overflow-wrap:anywhere}'+
   'table.ana-doc-tbl{border:1px solid #cdd9dc;border-radius:6px;overflow:hidden}'+
-  'table.ana-doc-tbl th.no,table.ana-doc-tbl td.no{width:22px;min-width:22px}'+
+  'table.ana-doc-tbl th.no,table.ana-doc-tbl td.no{width:28px;min-width:28px;white-space:nowrap;word-break:keep-all;overflow-wrap:normal}'+
   'table.ana-doc-tbl th.st,table.ana-doc-tbl td.st{width:32px;min-width:30px}'+
   'table.ana-doc-tbl th.vl,table.ana-doc-tbl td.vl{width:42px;min-width:38px}'+
   '.ana-hasil-sec{page-break-before:always;break-before:page}'+
