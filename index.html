@@ -1643,7 +1643,7 @@ tbody tr{animation:rowIn .3s ease both}
 .mod-seg .fk-seg-thumb{top:4px;bottom:4px}
 /* Jadwal Pelaksanaan Pekerjaan (tabel tahapan pengadaan) — dirapikan & dipercantik */
 .jp-table{border-left:4px solid var(--teal)}
-.jp-table thead th{background:#dbe7f2;color:#13324a;text-transform:uppercase;font-weight:800;font-size:10.5px;letter-spacing:.2px}
+.jp-table thead th{background:linear-gradient(180deg,var(--teal),var(--teal-dark));color:#fff;text-transform:uppercase;font-weight:800;font-size:10.5px;letter-spacing:.2px;border-color:#0b6b74}
 tr.jp-row-hi td{background:#f2ecd9}
 .jp-in-nama,.jp-in-ket{width:100%;border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-family:'Plus Jakarta Sans';font-size:11.5px;transition:border-color .15s ease,box-shadow .15s ease}
 .jp-in-nama:focus,.jp-in-ket:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-soft)}
@@ -1668,6 +1668,21 @@ tr.hl-weekend td{background:#f5f8fb}
 .hl-toolbar{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
 .hl-toolbar .field{flex:1 1 180px}
 .hl-toolbar .btn{flex:0 0 auto;height:38px}
+.hl-tpl-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:16px;
+  background:linear-gradient(135deg,#f4fbfb 0%,#eaf6f7 55%,#f6fbf3 100%);
+  border:1px solid #d3e7e9;border-radius:16px;padding:14px 18px;
+  box-shadow:0 1px 2px rgba(16,40,50,.05),0 10px 26px rgba(14,124,134,.10),inset 0 1px 0 rgba(255,255,255,.7)}
+.hl-tpl-icon{flex:0 0 auto;width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--teal),var(--cyan));display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 4px 12px rgba(14,124,134,.28)}
+.hl-tpl-icon svg{width:22px;height:22px}
+.hl-tpl-txt{flex:1 1 220px;display:flex;flex-direction:column;gap:2px;min-width:200px}
+.hl-tpl-txt b{font-size:13px;color:#0d2a30;font-weight:800}
+.hl-tpl-txt span{font-size:10.5px;color:var(--muted);font-weight:600;line-height:1.4}
+.hl-tpl-actions{display:flex;gap:10px;flex-wrap:wrap;margin-left:auto}
+@media(max-width:640px){
+  .hl-tpl-bar{justify-content:center;text-align:center}
+  .hl-tpl-actions{width:100%;margin-left:0}
+  .hl-tpl-actions .btn{flex:1 1 auto;justify-content:center}
+}
 @media(max-width:900px){.head-right-tools{width:100%}.mod-seg{width:100%}.mod-seg .fk-seg-btn{flex:1 1 auto;justify-content:center}}
 /* Kolom & sel File Kontrak */
 /* Kolom Bidang Pelaksana mengacu ukuran tabel Monitoring - Daftar Pekerjaan (col-bidang): lebar tetap 200px + wrap */
@@ -2415,6 +2430,7 @@ html,body{background:#e9eef1}
 <style id="rho-ui-css">
 /* ===================== Referensi Harga Online (UI) ===================== */
 .rho-item-list{display:flex;flex-direction:column;gap:10px}
+.rekap-static{padding:9px 12px;border:1px solid var(--line);border-radius:9px;background:#f4fafb;color:#0d2a30;font-weight:700;font-size:12px;min-height:16px}
 .rho-ongkir-bar{display:flex;gap:14px;flex-wrap:wrap;justify-content:flex-end;margin:0 0 14px}
 .rho-ongkir-bar .field{min-width:180px;margin:0}
 input.rho-input-locked{background:#f1f4f6;color:#9aa7ad;cursor:not-allowed;border-style:dashed}
@@ -2704,44 +2720,6 @@ table.hps-uraian td.c-act{width:64px;text-align:center;white-space:nowrap;paddin
           </div>
         </div>
 
-        <!-- ===== File Kontrak ===== -->
-        <div class="topnav-group" data-group="filekontrak">
-          <button class="topnav-trigger" type="button" onclick="toggleTopGroup(event,'filekontrak')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/><path d="M12 11v6M9 14h6"/></svg>
-            File Kontrak
-            <svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
-          </button>
-          <div class="topnav-dropdown">
-            <button class="topnav-item" data-view="fk-input" data-role="admin user" onclick="openFkInput('kr')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-              Input Kontrak
-            </button>
-            <button class="topnav-item" data-view="fk-view" onclick="openFkView('kr')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-              Lihat Kontrak
-            </button>
-          </div>
-        </div>
-
-        <!-- ===== Penetapan Nomor ===== -->
-        <div class="topnav-group" data-group="penetapan">
-          <button class="topnav-trigger" type="button" onclick="toggleTopGroup(event,'penetapan')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0l-7.2-7.2A2 2 0 0 1 2.8 12V4.8A2 2 0 0 1 4.8 2.8H12a2 2 0 0 1 1.4.6l7.2 7.2a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1.5" fill="currentColor" stroke="none"/></svg>
-            Penetapan
-            <svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
-          </button>
-          <div class="topnav-dropdown">
-            <button class="topnav-item" data-view="pn-ambil" data-role="admin" onclick="openPnAmbil('pl')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-              Ambil Nomor
-            </button>
-            <button class="topnav-item" data-view="pn-lihat" data-role="admin" onclick="openPnLihat('pl')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-              Lihat Nomor
-            </button>
-          </div>
-        </div>
-
         <!-- ===== Form ===== -->
         <div class="topnav-group" data-group="form">
           <button class="topnav-trigger" type="button" onclick="toggleTopGroup(event,'form')">
@@ -2872,8 +2850,78 @@ table.hps-uraian td.c-act{width:64px;text-align:center;white-space:nowrap;paddin
                 </div>
               </div>
             </div>
+            <!-- Data Pekerjaan: master data terpusat, dipakai bersama oleh Perhitungan HPS & Analisa Harga Satuan -->
+            <div class="topnav-sub" data-sub="data-pekerjaan" data-role="admin">
+              <button class="topnav-subtrigger" type="button" onclick="toggleFkSub(event,'data-pekerjaan')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>
+                <span class="sub-label">Data Pekerjaan</span>
+                <svg class="caret2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <div class="topnav-subdrop">
+                <button class="topnav-item" data-view="form-dp" data-role="admin" onclick="openDpInput()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                  Input Data
+                </button>
+                <button class="topnav-item" data-view="dp-view" data-role="admin" onclick="openDpView()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                  Lihat Data
+                </button>
+              </div>
+            </div>
+            <!-- Rekap HPS: rekap gabungan Data Pekerjaan + Perhitungan HPS + Analisa Harga Satuan -->
+            <div class="topnav-sub" data-sub="rekap-hps" data-role="admin">
+              <button class="topnav-subtrigger" type="button" onclick="toggleFkSub(event,'rekap-hps')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 17V7a2 2 0 0 1 2-2h6.5L21 8.5V17a2 2 0 0 1-2 2H11a2 2 0 0 1-2-2Z"/><path d="M17 5v4h4"/><path d="M6 21V9a2 2 0 0 1 .4-1.2"/></svg>
+                <span class="sub-label">Rekap HPS</span>
+                <svg class="caret2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <div class="topnav-subdrop">
+                <button class="topnav-item" data-view="rekap-hps" data-role="admin" onclick="openRekapHps()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                  Lihat Rekap
+                </button>
+              </div>
+            </div>
           </div>
         </div>
+        <!-- ===== Penetapan Nomor ===== -->
+        <div class="topnav-group" data-group="penetapan">
+          <button class="topnav-trigger" type="button" onclick="toggleTopGroup(event,'penetapan')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0l-7.2-7.2A2 2 0 0 1 2.8 12V4.8A2 2 0 0 1 4.8 2.8H12a2 2 0 0 1 1.4.6l7.2 7.2a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1.5" fill="currentColor" stroke="none"/></svg>
+            Penetapan
+            <svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="topnav-dropdown">
+            <button class="topnav-item" data-view="pn-ambil" data-role="admin" onclick="openPnAmbil('pl')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+              Ambil Nomor
+            </button>
+            <button class="topnav-item" data-view="pn-lihat" data-role="admin" onclick="openPnLihat('pl')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+              Lihat Nomor
+            </button>
+          </div>
+        </div>
+
+        <!-- ===== File Kontrak ===== -->
+        <div class="topnav-group" data-group="filekontrak">
+          <button class="topnav-trigger" type="button" onclick="toggleTopGroup(event,'filekontrak')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/><path d="M12 11v6M9 14h6"/></svg>
+            File Kontrak
+            <svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="topnav-dropdown">
+            <button class="topnav-item" data-view="fk-input" data-role="admin user" onclick="openFkInput('kr')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+              Input Kontrak
+            </button>
+            <button class="topnav-item" data-view="fk-view" onclick="openFkView('kr')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+              Lihat Kontrak
+            </button>
+          </div>
+        </div>
+
       </nav>
 
       <div class="topbar-user" id="topbar-user" style="display:none">
@@ -3728,6 +3776,52 @@ table.hps-uraian td.c-act{width:64px;text-align:center;white-space:nowrap;paddin
     </div>
   </section>
 
+  <!-- ============ DATA PEKERJAAN — INPUT DATA ============ -->
+  <section id="view-form-dp" class="view">
+    <div class="page-head">
+      <div>
+        <h2 id="dp-title">Data Pekerjaan</h2>
+        <p>Data pekerjaan terpusat — dipakai bersama oleh Perhitungan HPS &amp; Analisa Harga Satuan</p>
+      </div>
+    </div>
+    <div class="panel" style="padding:20px 22px">
+      <div id="dp-content"></div>
+    </div>
+  </section>
+
+  <!-- ============ DATA PEKERJAAN — LIHAT DATA ============ -->
+  <section id="view-dp-view" class="view">
+    <div class="page-head">
+      <div>
+        <h2>Data Pekerjaan — Lihat Data <span class="count-badge" id="dp-view-count">0</span></h2>
+      </div>
+      <div class="filter-field toolbar-search pn-search-right search-elegant pn-head-search">
+        <div class="search-elegant-box">
+          <svg class="search-elegant-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input id="dp-view-search" type="text" placeholder="Cari Nama Pekerjaan" oninput="renderDpView()">
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="col-no">No.</th>
+              <th class="col-nama-freeze">Nama Pekerjaan</th>
+              <th class="fkl-col-lokasi">Lokasi Pekerjaan</th>
+              <th>Metode Pengadaan</th>
+              <th class="col-num" style="text-align:right">Perkiraan Nilai (Rp)</th>
+              <th style="text-align:center;min-width:120px">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="dp-view-body"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="dp-view-pagination"></div>
+    </div>
+  </section>
+
   <!-- ============ HARGA PERKIRAAN SENDIRI — HITUNG HPS ============ -->
   <section id="view-form-hps" class="view">
     <div class="page-head">
@@ -3877,6 +3971,26 @@ table.hps-uraian td.c-act{width:64px;text-align:center;white-space:nowrap;paddin
     <div id="hl-content"></div>
   </section>
 
+  <!-- ============ REKAP HPS — LIHAT REKAP ============ -->
+  <section id="view-rekap-hps" class="view">
+    <div class="page-head">
+      <div>
+        <h2>Rekap HPS — Lihat Rekap</h2>
+        <p>Rekap gabungan Data Pekerjaan, Perhitungan HPS &amp; Analisa Harga Satuan berdasarkan Nama Pekerjaan</p>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="form-section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg> Pilih Nama Pekerjaan</div>
+      <div class="hl-toolbar" style="margin-top:10px">
+        <div class="field" style="flex:2 1 320px"><label>Nama Pekerjaan</label><select id="rekap-dp-select"><option value="">— Pilih Nama Pekerjaan —</option></select></div>
+        <button class="btn btn-teal" onclick="rekapTampilkan()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg> Tampilkan Data
+        </button>
+      </div>
+    </div>
+    <div id="rekap-result" style="margin-top:16px"></div>
+  </section>
+
   <!-- Wadah cetak dokumen kelengkapan (khusus print) -->
   <div id="fkl-print-root"></div>
 
@@ -3909,6 +4023,23 @@ table.hps-uraian td.c-act{width:64px;text-align:center;white-space:nowrap;paddin
     <div class="modal-actions">
       <button class="btn btn-green cf-icon" id="confirm-yes" title="Ya" aria-label="Ya">Ya</button>
       <button class="btn btn-red cf-icon" onclick="closeConfirm()" title="Tidak" aria-label="Tidak">Tidak</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== MODAL PERINGATAN SESI AKAN BERAKHIR (AUTO-LOGOUT IDLE) ====== -->
+<div class="overlay" id="idle-warn-overlay">
+  <div class="modal">
+    <div class="modal-icon" style="background:#fdf0d6">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#C98A00" stroke-width="2.1"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+    </div>
+    <div class="modal-body">
+      <h3>Sesi Akan Berakhir</h3>
+      <p>Tidak ada aktivitas terdeteksi. Demi keamanan, Anda akan otomatis keluar dalam <b id="idle-warn-count">60</b> detik.</p>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-green" onclick="idleStayLoggedIn()">Tetap Masuk</button>
+      <button class="btn btn-red" onclick="performLogout()">Keluar Sekarang</button>
     </div>
   </div>
 </div>
@@ -3995,6 +4126,25 @@ table.hps-uraian td.c-act{width:64px;text-align:center;white-space:nowrap;paddin
         </div>
       </div>
       <div class="hps-ana-list" id="hps-ana-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== MODAL PILIH DATA PEKERJAAN (dipakai bersama Hitung HPS & Analisa Harga) ====== -->
+<div class="overlay" id="dp-picker-overlay">
+  <div class="modal wide">
+    <div class="detail-head">
+      <h3>Pilih Data Pekerjaan</h3>
+      <button class="detail-close" onclick="closeDpPicker()">&times;</button>
+    </div>
+    <div style="padding:0 4px 4px">
+      <div class="filter-field toolbar-search search-elegant" style="margin:2px 0 12px">
+        <div class="search-elegant-box">
+          <svg class="search-elegant-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input id="dp-picker-search" type="text" placeholder="Cari Nama Pekerjaan" oninput="renderDpPickerList()">
+        </div>
+      </div>
+      <div class="hps-ana-list" id="dp-picker-list"></div>
     </div>
   </div>
 </div>
@@ -4527,6 +4677,8 @@ const ROLE_KEY = 'mon_role';
 const USER_KEY = 'mon_user';
 const VIEW_KEY = 'mon_view';   // halaman terakhir (untuk dipulihkan saat refresh)
 const DRAFT_KEY = 'mon_draft'; // draft form input/edit (dipulihkan saat refresh)
+const LOGIN_TIME_KEY = 'mon_login_time';   // timestamp login — dasar batas umur sesi absolut
+const LAST_ACTIVE_KEY = 'mon_last_active'; // timestamp aktivitas terakhir — dasar auto-logout idle
 /* Penyimpanan sesi HANYA di sessionStorage.
    sessionStorage otomatis terhapus saat tab/browser ditutup, sehingga
    pengguna otomatis logout ketika browser ditutup. Sesi tetap dipulihkan
@@ -4634,6 +4786,7 @@ async function doLogin(){
   if(!role){ showLoginError('Username atau kata sandi salah.'); return; }
   currentUsername = uname;
   ssSet(ROLE_KEY, role); ssSet(USER_KEY, uname);
+  ssSet(LOGIN_TIME_KEY, String(Date.now())); ssSet(LAST_ACTIVE_KEY, String(Date.now()));
   playLoginAnim(role, ()=>enterApp(role));
 }
 /* Masuk sebagai Tamu (tanpa kata sandi) */
@@ -4641,6 +4794,7 @@ function doLoginGuest(){
   showLoginError('');
   currentUsername = null;
   ssSet(ROLE_KEY, 'guest'); ssDel(USER_KEY);
+  ssSet(LOGIN_TIME_KEY, String(Date.now())); ssSet(LAST_ACTIVE_KEY, String(Date.now()));
   playLoginAnim('guest', ()=>enterApp('guest'));
 }
 /* ====== GANTI KATA SANDI (via Supabase) ====== */
@@ -4789,7 +4943,7 @@ function performLogout(){
   stopIdleTimer();   // hentikan pemantauan idle
   const anim=document.getElementById('logout-anim');
   const finish=()=>{
-    ssDel(ROLE_KEY); ssDel(USER_KEY); ssDel(VIEW_KEY); ssDel(DRAFT_KEY);
+    ssDel(ROLE_KEY); ssDel(USER_KEY); ssDel(VIEW_KEY); ssDel(DRAFT_KEY); ssDel(LOGIN_TIME_KEY); ssDel(LAST_ACTIVE_KEY);
     currentRole=null; currentUsername=null;
     try{ resetAllFilters(); }catch(e){}
     document.getElementById('topbar-user').style.display='none';
@@ -4817,32 +4971,95 @@ function logout(){
   });
 }
 
-/* ============ AUTO LOGOUT (IDLE) — DINONAKTIFKAN ============
-   Auto-logout idle dimatikan agar pengguna TIDAK keluar otomatis.
-   Satu akun dapat tetap login di banyak device sekaligus tanpa ada
-   yang ter-logout sendiri. Ubah IDLE_LOGOUT_ENABLED ke true bila
-   suatu saat ingin mengaktifkan kembali fitur ini. */
-const IDLE_LOGOUT_ENABLED = false;
-const IDLE_LIMIT_MS = 5 * 60 * 1000;   // 5 menit tanpa aktivitas (tidak dipakai saat dinonaktifkan)
+/* ============ AUTO LOGOUT (IDLE + BATAS UMUR SESI) ============
+   Dua lapis keamanan seperti situs-situs resmi lain:
+   1) IDLE_LIMIT_MS  — bila tidak ada aktivitas sama sekali (mouse/keyboard/
+      sentuh/scroll) selama durasi ini, muncul modal peringatan mundur
+      (IDLE_WARNING_MS) sebelum otomatis logout.
+   2) SESSION_MAX_MS — batas umur sesi absolut sejak login, walau pengguna
+      terus aktif maupun tab tidak pernah ditutup. Ini yang memperbaiki kasus
+      "refresh setelah 1 hari tapi masih ke-load" — dicek ulang setiap kali
+      halaman dimuat/refresh (lihat restoreSession di akhir file), sehingga
+      sesi lama otomatis dianggap kedaluwarsa meski sessionStorage sempat
+      terbawa oleh fitur "pulihkan tab" milik browser.
+   Ubah nilai di bawah ini sesuai kebutuhan. */
+const IDLE_LOGOUT_ENABLED = true;
+const IDLE_LIMIT_MS   = 15 * 60 * 1000;   // 15 menit tanpa aktivitas → tampilkan peringatan
+const IDLE_WARNING_MS = 60 * 1000;        // 60 detik hitung mundur sebelum logout otomatis
+const SESSION_MAX_MS  = 12 * 60 * 60 * 1000; // sesi maksimal 12 jam sejak login
+
 let _idleTimer = null;
+let _idleCountdownIv = null;
+let _idleWarningShowing = false;
 let _idleListenersBound = false;
+let _lastActiveWriteAt = 0;
 const _idleActivityEvents = ['mousemove','mousedown','keydown','touchstart','touchmove','scroll','wheel','click'];
-function _onIdleTimeout(){
-  // Hanya berlaku bila masih ada sesi login yang aktif
-  if(!currentRole) return;
+
+function _sessionExpiredByAge(){
+  const t=parseInt(ssGet(LOGIN_TIME_KEY)||'0',10);
+  return t>0 && (Date.now()-t) > SESSION_MAX_MS;
+}
+function _forceExpireLogout(msg){
+  hideIdleWarning();
   stopIdleTimer();
   try{ closeConfirm(); }catch(e){}
-  toast('Sesi berakhir otomatis karena tidak ada aktivitas selama 5 menit','warn');
+  toast(msg,'warn');
   performLogout();
 }
+/* Muncul saat benar-benar tidak ada aktivitas selama IDLE_LIMIT_MS */
+function _onIdleTimeout(){
+  if(!currentRole) return;
+  showIdleWarning();
+}
+/* Dipanggil oleh setiap event aktivitas pengguna — throttle penulisan
+   storage & pengecekan umur sesi agar tidak membebani (mousemove sangat sering). */
 function _resetIdleTimer(){
-  if(!IDLE_LOGOUT_ENABLED) return;    // auto-logout idle dinonaktifkan
-  if(!currentRole) return;            // jangan jalan saat belum login
+  if(!IDLE_LOGOUT_ENABLED || !currentRole || _idleWarningShowing) return;
+  const now=Date.now();
+  if(now-_lastActiveWriteAt > 2000){
+    _lastActiveWriteAt=now;
+    ssSet(LAST_ACTIVE_KEY, String(now));
+    if(_sessionExpiredByAge()){ _forceExpireLogout('Sesi Anda telah mencapai batas maksimal 12 jam, silakan masuk kembali'); return; }
+  }
   if(_idleTimer) clearTimeout(_idleTimer);
-  _idleTimer = setTimeout(_onIdleTimeout, IDLE_LIMIT_MS);
+  _idleTimer=setTimeout(_onIdleTimeout, IDLE_LIMIT_MS);
+}
+/* Modal peringatan "Sesi Akan Berakhir" dengan hitung mundur real-time */
+function showIdleWarning(){
+  _idleWarningShowing=true;
+  if(_idleTimer){ clearTimeout(_idleTimer); _idleTimer=null; }
+  const ov=document.getElementById('idle-warn-overlay');
+  if(!ov){ _forceExpireLogout('Sesi berakhir otomatis karena tidak ada aktivitas'); return; }
+  let remain=Math.round(IDLE_WARNING_MS/1000);
+  const cEl=document.getElementById('idle-warn-count'); if(cEl) cEl.textContent=remain;
+  ov.classList.add('show');
+  if(_idleCountdownIv) clearInterval(_idleCountdownIv);
+  _idleCountdownIv=setInterval(()=>{
+    remain--;
+    if(cEl) cEl.textContent=Math.max(0,remain);
+    if(remain<=0){
+      clearInterval(_idleCountdownIv); _idleCountdownIv=null;
+      _forceExpireLogout('Sesi berakhir otomatis karena tidak ada aktivitas');
+    }
+  },1000);
+}
+function hideIdleWarning(){
+  _idleWarningShowing=false;
+  const ov=document.getElementById('idle-warn-overlay'); if(ov) ov.classList.remove('show');
+  if(_idleCountdownIv){ clearInterval(_idleCountdownIv); _idleCountdownIv=null; }
+}
+/* Tombol "Tetap Masuk" pada modal peringatan */
+function idleStayLoggedIn(){
+  hideIdleWarning();
+  if(_sessionExpiredByAge()){ _forceExpireLogout('Sesi Anda telah mencapai batas maksimal 12 jam, silakan masuk kembali'); return; }
+  _lastActiveWriteAt=Date.now();
+  ssSet(LAST_ACTIVE_KEY, String(_lastActiveWriteAt));
+  toast('Sesi diperpanjang','ok');
+  if(_idleTimer) clearTimeout(_idleTimer);
+  _idleTimer=setTimeout(_onIdleTimeout, IDLE_LIMIT_MS);
 }
 function startIdleTimer(){
-  if(!IDLE_LOGOUT_ENABLED){ stopIdleTimer(); return; }   // auto-logout idle dinonaktifkan
+  if(!IDLE_LOGOUT_ENABLED){ stopIdleTimer(); return; }
   if(!_idleListenersBound){
     _idleActivityEvents.forEach(ev=>document.addEventListener(ev, _resetIdleTimer, {passive:true}));
     // Aktivitas di tab lain / kembali fokus juga dihitung sebagai aktivitas
@@ -4850,10 +5067,14 @@ function startIdleTimer(){
     document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) _resetIdleTimer(); });
     _idleListenersBound = true;
   }
-  _resetIdleTimer();
+  _lastActiveWriteAt=Date.now();
+  ssSet(LAST_ACTIVE_KEY, String(_lastActiveWriteAt));
+  if(_idleTimer) clearTimeout(_idleTimer);
+  _idleTimer=setTimeout(_onIdleTimeout, IDLE_LIMIT_MS);
 }
 function stopIdleTimer(){
   if(_idleTimer){ clearTimeout(_idleTimer); _idleTimer=null; }
+  hideIdleWarning();
 }
 
 /* ============ NAVIGATION ============ */
@@ -4977,6 +5198,8 @@ function showView(name, loaderMsg, noLoader){
         if(name==='pnw-view') renderPnwView();
         if(name==='form-rho') renderRhoForm();
         if(name==='rho-view') renderRhoView();
+        if(name==='form-dp') renderDpForm();
+        if(name==='dp-view') renderDpView();
         if(name==='form-hps') renderHpsForm();
         if(name==='hps-view') renderHpsView();
         if(name==='form-analisa') renderAnalisaForm();
@@ -4984,6 +5207,7 @@ function showView(name, loaderMsg, noLoader){
         if(name==='jadwal-kerja') renderJadwalKerja();
         if(name==='jadwal-view') renderJadwalView();
         if(name==='hari-libur') renderHariLibur();
+        if(name==='rekap-hps') renderRekapHps();
         if(typeof fkSegSyncAll==='function') fkSegSyncAll(false);   // reposisi pil segmented setelah halaman baru terlihat
     }catch(err){ console.error('showView error:', err); }
     if(!noLoader){ const wait=Math.max(0, 460-(Date.now()-t0)); setTimeout(hideLoader, wait); }
@@ -8200,6 +8424,11 @@ function hlDayStatus(d){
 
 /* ---------- Halaman: Hari Libur Nasional & Cuti Bersama ---------- */
 function openHariLibur(){ refreshHariLibur().then(()=>showView('hari-libur')); }
+function hlEmptyRow(){
+  return '<tr><td colspan="5"><div class="empty">'+
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>'+
+    '<div>Belum ada data hari libur</div></div></td></tr>';
+}
 function renderHariLibur(){
   const cont=document.getElementById('hl-content'); if(!cont) return;
   const cnt=document.getElementById('hl-count'); if(cnt) cnt.textContent=hariLibur.length;
@@ -8213,7 +8442,7 @@ function renderHariLibur(){
       '<td class="wrap-cell">'+fkEsc(r.keterangan||'—')+'</td>'+
       '<td style="text-align:center"><button class="fk-act fk-act-del fk-act-icon" title="Hapus" onclick="hlDelete(\''+r.id+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></td>'+
     '</tr>';
-  }).join('') : '<tr><td colspan="5" class="fk-none" style="justify-content:center;padding:20px 0">Belum ada data hari libur</td></tr>';
+  }).join('') : hlEmptyRow();
 
   cont.innerHTML = ''+
     '<div class="panel">'+
@@ -8226,17 +8455,19 @@ function renderHariLibur(){
         '</button>'+
       '</div>'+
     '</div>'+
-    '<div class="io-row" style="margin-top:16px">'+
-      '<svg viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2" style="width:26px;height:26px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'+
-      '<div class="io-txt"><b>Template Pengisian Hari Libur</b></div>'+
-      '<button class="btn btn-amber" onclick="hlDownloadTemplate()">'+
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'+
-        ' Download Template'+
-      '</button>'+
-      '<button class="btn btn-teal" onclick="document.getElementById(\'hl-file-input\').click()">'+
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>'+
-        ' Upload Template'+
-      '</button>'+
+    '<div class="hl-tpl-bar">'+
+      '<div class="hl-tpl-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>'+
+      '<div class="hl-tpl-txt"><b>Template Pengisian Hari Libur</b><span>Unduh format Excel, isi data, lalu unggah kembali untuk menambah banyak tanggal sekaligus</span></div>'+
+      '<div class="hl-tpl-actions">'+
+        '<button class="btn btn-amber" onclick="hlDownloadTemplate()">'+
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'+
+          ' Download Template'+
+        '</button>'+
+        '<button class="btn btn-teal" onclick="document.getElementById(\'hl-file-input\').click()">'+
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>'+
+          ' Upload Template'+
+        '</button>'+
+      '</div>'+
     '</div>'+
     '<div class="panel" style="margin-top:16px">'+
       '<div class="table-wrap"><table>'+
@@ -8555,7 +8786,7 @@ function jpStandaloneDocHtml(){
   }).join('');
   return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8">'+
     '<meta name="viewport" content="width=device-width, initial-scale=1">'+
-    '<title> </title>'+
+    '<title>&#8203;</title>'+
     '<style>'+css+'</style></head><body>'+
     '<div class="fkl-doc">'+
       '<div class="fkl-doc-head">'+
@@ -10708,7 +10939,7 @@ function fklStandaloneDocHtml(){
   const css=cssEl?cssEl.textContent:'';
   return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8">'+
     '<meta name="viewport" content="width=device-width, initial-scale=1">'+
-    '<title> </title>'+
+    '<title>&#8203;</title>'+
     '<style>'+css+'</style></head><body>'+
     '<div class="fkl-print-page">'+fklBuildDocHtml()+'</div>'+
     '</body></html>';
@@ -10745,12 +10976,18 @@ function fklOpenPreview(){
 /* Bantu cetak: browser (Chrome/Edge) memakai judul TAB UTAMA (bukan judul
    dokumen di dalam iframe tersembunyi) untuk header cetak/PDF, sehingga
    "Monitoring Pengadaan Masohi" tetap muncul walau <title> iframe sudah
-   dikosongkan. Fungsi ini menyembunyikan sementara judul tab utama selama
-   proses cetak berlangsung, lalu mengembalikannya setelah selesai. Dipakai
-   oleh semua fungsi *Print() dokumen (fkl, pnw, rho, hps, ana, jk). */
+   dikosongkan. Judul TIDAK dikosongkan dengan string kosong/spasi biasa,
+   karena Chrome menganggapnya "tanpa judul" lalu menggantinya dengan nama
+   domain (mis. "pengadaan-masohi.com") pada header cetak — bukan blank.
+   Dipakai karakter zero-width space (tak kasat mata, tapi tetap dianggap
+   "ada judul") supaya header cetak benar-benar tidak menampilkan tulisan
+   apa pun selain tanggal & jam cetak. Fungsi ini menyembunyikan sementara
+   judul tab utama selama proses cetak berlangsung, lalu mengembalikannya
+   setelah selesai. Dipakai oleh semua fungsi *Print() dokumen (fkl, pnw,
+   rho, hps, ana, jk) agar konsisten di semua PDF. */
 function withHiddenPageTitle(fn){
   const origTitle=document.title;
-  document.title=' ';
+  document.title='\u200B';   // zero-width space — bukan spasi biasa/string kosong
   let done=false;
   const restore=()=>{ if(done) return; done=true; document.title=origTitle; window.removeEventListener('afterprint', restore); };
   window.addEventListener('afterprint', restore);
@@ -11616,7 +11853,7 @@ function pnwStandaloneDocHtml(){
   const css=(cssEl?cssEl.textContent:'') + pnwExtraDocCss();
   return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8">'+
     '<meta name="viewport" content="width=device-width, initial-scale=1">'+
-    '<title> </title>'+
+    '<title>&#8203;</title>'+
     '<style>'+css+'</style></head><body>'+
     '<div class="fkl-print-page">'+pnwBuildDocHtml(pnwPreviewSampul)+'</div>'+
     '</body></html>';
@@ -12298,7 +12535,7 @@ function rhoStandaloneDocHtml(){
   const css=(cssEl?cssEl.textContent:'') + rhoExtraDocCss();
   return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8">'+
     '<meta name="viewport" content="width=device-width, initial-scale=1">'+
-    '<title> </title>'+
+    '<title>&#8203;</title>'+
     '<style>'+css+'</style></head><body>'+
     '<div class="fkl-print-page">'+rhoBuildDocHtml()+'</div>'+
     '</body></html>';
@@ -12346,6 +12583,258 @@ function rhoPrint(){
 
 
 /* ####################################################################### */
+/* ################# MODUL DATA PEKERJAAN (MASTER TERPUSAT) ############### */
+/* Data Pekerjaan (Nama, Lokasi, Nilai, No. Anggaran, Tgl. Anggaran, Metode
+   Pengadaan) kini diisi & disimpan SEKALI di sini, lalu dipakai bersama oleh
+   Perhitungan HPS maupun Analisa Harga Satuan lewat "Pilih Data Pekerjaan"
+   (nilai disalin/snapshot ke masing-masing dokumen saat dipilih, sehingga
+   dokumen yang sudah tersimpan tidak berubah walau Data Pekerjaan induknya
+   diubah/dihapus di kemudian hari). */
+/* ####################################################################### */
+
+const DP_INFO_FIELDS = [
+  {key:'nama',         label:'Nama Pekerjaan',            type:'text', span:2},
+  {key:'lokasi',       label:'Lokasi Pekerjaan',          type:'text', span:2},
+  {key:'nilai',        label:'Perkiraan Nilai Pekerjaan', type:'num'},
+  {key:'no_anggaran',  label:'No. Anggaran',              type:'text'},
+  {key:'tgl_anggaran', label:'Tgl. Anggaran',             type:'date'},
+  {key:'metode',       label:'Metode Pengadaan',          type:'select', options:PNW_METODE}
+];
+/* Kunci field yang dipakai bersama oleh HPS & Analisa (sumbernya dari Data Pekerjaan) */
+const DP_SHARED_KEYS = DP_INFO_FIELDS.map(f=>f.key);
+const DP_LOCK_BADGE='<span class="lock-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Dari Data Pekerjaan</span>';
+
+function dpBlankState(){ return { info:{} }; }
+let dpState = dpBlankState();
+let dpEditId = null;
+
+const DP_TABLE='data_pekerjaan';
+const DP_LS_KEY='dp_records_v1';
+let records_dp=[];
+let dpUseLocal=false;
+function dpSupaReady(){ return !!(USE_SUPABASE && db); }
+function dpLocalLoad(){ try{ const r=localStorage.getItem(DP_LS_KEY); records_dp=r?JSON.parse(r):[]; }catch(e){ records_dp=[]; } }
+function dpLocalSave(){ try{ localStorage.setItem(DP_LS_KEY, JSON.stringify(records_dp)); }catch(e){ toast('Penyimpanan lokal penuh','warn'); } }
+function dpIsLocalId(id){ return String(id).indexOf('loc_')===0; }
+const StoreDp={
+  async list(){
+    if(dpSupaReady() && !dpUseLocal){
+      try{ const {data,error}=await db.from(DP_TABLE).select('*').order('created_at',{ascending:false}); if(error) throw error; return data||[]; }
+      catch(err){ console.warn('Data Pekerjaan: Supabase list gagal, memakai penyimpanan lokal —', err&&err.message); dpUseLocal=true; }
+    }
+    dpLocalLoad(); return records_dp.slice();
+  },
+  async create(rec){
+    if(dpSupaReady() && !dpUseLocal){
+      try{ const {data,error}=await db.from(DP_TABLE).insert(rec).select(); if(error) throw error; return data&&data[0]; }
+      catch(err){ console.warn('Data Pekerjaan: Supabase create gagal, memakai penyimpanan lokal —', err&&err.message); dpUseLocal=true; }
+    }
+    dpLocalLoad();
+    const row=Object.assign({id:'loc_'+Date.now()+'_'+Math.random().toString(36).slice(2,7), created_at:new Date().toISOString()}, rec);
+    records_dp.unshift(row); dpLocalSave(); return row;
+  },
+  async update(rid, rec){
+    if(dpSupaReady() && !dpUseLocal && !dpIsLocalId(rid)){
+      try{ const {error}=await db.from(DP_TABLE).update(rec).eq('id',rid); if(error) throw error; return; }
+      catch(err){ console.warn('Data Pekerjaan: Supabase update gagal, memakai penyimpanan lokal —', err&&err.message); dpUseLocal=true; }
+    }
+    dpLocalLoad(); const idx=records_dp.findIndex(r=>String(r.id)===String(rid));
+    if(idx>=0){ records_dp[idx]=Object.assign({}, records_dp[idx], rec); dpLocalSave(); }
+  },
+  async remove(rid){
+    if(dpSupaReady() && !dpUseLocal && !dpIsLocalId(rid)){
+      try{ const {error}=await db.from(DP_TABLE).delete().eq('id',rid); if(error) throw error; return; }
+      catch(err){ console.warn('Data Pekerjaan: Supabase remove gagal, memakai penyimpanan lokal —', err&&err.message); dpUseLocal=true; }
+    }
+    dpLocalLoad(); records_dp=records_dp.filter(r=>String(r.id)!==String(rid)); dpLocalSave();
+  }
+};
+async function refreshDataDp(){
+  try{ records_dp=await StoreDp.list(); }
+  catch(err){ console.error(err); records_dp=records_dp||[]; }
+}
+function dpRecordToState(rec){
+  const s=(rec&&rec.state&&typeof rec.state==='object')?rec.state:{};
+  const info={};
+  DP_SHARED_KEYS.forEach(k=>{ info[k]=(s.info&&s.info[k]!=null)?s.info[k]:(rec[k]!=null?rec[k]:''); });
+  return { info };
+}
+function openDpInput(editId){
+  if(!isAdmin()){ toast('Menu ini hanya untuk akun admin','warn'); return; }
+  if(editId){
+    const rec=(records_dp||[]).find(r=>String(r.id)===String(editId));
+    dpEditId = rec ? rec.id : null;
+    dpState = rec ? dpRecordToState(rec) : dpBlankState();
+  }else{
+    dpEditId=null; dpState=dpBlankState();
+  }
+  showView('form-dp');
+}
+function openDpView(){
+  if(!isAdmin()){ toast('Menu ini hanya untuk akun admin','warn'); return; }
+  refreshDataDp().then(()=>showView('dp-view'));
+}
+function dpInfoInputHtml(f){
+  const id='dp-'+f.key;
+  const span=f.span?(' style="grid-column:span '+f.span+'"'):'';
+  let ctl;
+  if(f.type==='select') ctl='<select id="'+id+'" onchange="dpOnInfoChange()"><option value="">— Pilih —</option>'+(f.options||[]).map(o=>'<option>'+fkEsc(o)+'</option>').join('')+'</select>';
+  else if(f.type==='num') ctl='<input id="'+id+'" type="text" inputmode="numeric" placeholder="Rp" oninput="onRupiahInput(this)" onchange="dpOnInfoChange()">';
+  else if(f.type==='date') ctl='<input id="'+id+'" type="date" onchange="dpOnInfoChange()">';
+  else ctl='<input id="'+id+'" type="text" oninput="dpOnInfoChange()">';
+  return '<div class="field"'+span+'><label>'+fkEsc(f.label)+'</label>'+ctl+'</div>';
+}
+function dpOnInfoChange(){
+  const st=dpState; st.info=st.info||{};
+  DP_INFO_FIELDS.forEach(f=>{ const el=document.getElementById('dp-'+f.key); if(!el) return; st.info[f.key]=(f.type==='num')?parseRupiah(el.value):el.value.trim(); });
+}
+function renderDpForm(){
+  const tt=document.getElementById('dp-title'); if(tt) tt.textContent='Data Pekerjaan'+(dpEditId?' — Ubah Data':' — Input Data');
+  const cont=document.getElementById('dp-content'); if(!cont) return;
+  const st=dpState; st.info=st.info||{};
+  let html='<div class="form-card"><div class="form-section-title">'+KR_SECTION_ICON+'Data Pekerjaan</div>'+
+    '<div class="hps-hint">Data ini akan dipakai bersama oleh <b>Perhitungan HPS</b> dan <b>Analisa Harga Satuan</b> lewat tombol <b>Pilih Data Pekerjaan</b> — isi & simpan sekali di sini.</div>'+
+    '<div class="form-flow" style="--cols:4">'+DP_INFO_FIELDS.map(dpInfoInputHtml).join('')+'</div></div>';
+  html+='<div class="fkl-actions"><div class="fkl-actions-left">'+
+      '<button class="btn btn-ghost" onclick="dpBatal()">'+FKL_IC_X+'Batal</button>'+
+    '</div><div class="fkl-actions-right">'+
+      '<button class="btn btn-green" onclick="dpSimpan()">'+FKL_IC_SAVE+'Simpan</button>'+
+    '</div></div>';
+  cont.innerHTML=html;
+  DP_INFO_FIELDS.forEach(f=>{ const el=document.getElementById('dp-'+f.key); if(!el) return; const v=st.info[f.key]; el.value=(f.type==='num')?rupiahInputText(v):(v!=null?v:''); });
+}
+function dpBatal(){
+  openConfirm({ icon:'del', title:'Batalkan Proses', text:'Batalkan proses ini? Data yang belum disimpan akan hilang.',
+    onYes:()=>{ dpEditId=null; dpState=dpBlankState(); openDpView(); toast('Proses dibatalkan','ok'); }
+  });
+}
+async function dpSimpan(){
+  if(!requireInput()) return;
+  dpOnInfoChange();
+  const info=dpState.info||{}; const nama=String(info.nama||'').trim();
+  if(!nama){ toast('Nama Pekerjaan wajib diisi','warn'); return; }
+  const rec={
+    nama_pekerjaan: nama, lokasi: info.lokasi||'', metode: info.metode||'',
+    no_anggaran: info.no_anggaran||'', tgl_anggaran: info.tgl_anggaran||'',
+    nilai: Number(info.nilai)||0,
+    state: { info: JSON.parse(JSON.stringify(info)) }
+  };
+  try{
+    await withActionLoader(dpEditId?'Menyimpan perubahan':'Menyimpan', async()=>{
+      if(dpEditId) await StoreDp.update(dpEditId, rec);
+      else await StoreDp.create(rec);
+      await refreshDataDp();
+    });
+  }catch(err){ console.error(err); toast('Gagal menyimpan: '+errMsg(err),'err'); return; }
+  toast(dpEditId?'Data berhasil diperbarui':'Data berhasil disimpan','ok');
+  dpEditId=null; dpState=dpBlankState();
+  openDpView();
+}
+
+/* ================= LIHAT DATA PEKERJAAN ================= */
+let dpViewPage=1;
+const DP_VIEW_PAGE_SIZE=8;
+function dpViewRows(){
+  let rows=(records_dp||[]).slice();
+  const fs=(document.getElementById('dp-view-search')?.value||'').toLowerCase().trim();
+  if(fs) rows=rows.filter(r=>String(r.nama_pekerjaan||'').toLowerCase().includes(fs));
+  return rows;
+}
+function dpEmptyRow(){
+  return '<tr><td colspan="6"><div class="empty">'+
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>'+
+    '<div>Data tidak tersedia</div></div></td></tr>';
+}
+function renderDpView(){
+  const tb=document.getElementById('dp-view-body');
+  const pg=document.getElementById('dp-view-pagination');
+  const cEl=document.getElementById('dp-view-count');
+  if(!tb) return;
+  const rows=dpViewRows();
+  if(cEl) cEl.textContent=rows.length;
+  if(!rows.length){ tb.innerHTML=dpEmptyRow(); if(pg) pg.innerHTML=''; return; }
+  const totalPages=Math.max(1,Math.ceil(rows.length/DP_VIEW_PAGE_SIZE));
+  if(dpViewPage>totalPages) dpViewPage=totalPages;
+  if(dpViewPage<1) dpViewPage=1;
+  const start=(dpViewPage-1)*DP_VIEW_PAGE_SIZE;
+  const pageRows=rows.slice(start,start+DP_VIEW_PAGE_SIZE);
+  tb.innerHTML=pageRows.map((r,i)=>{
+    const rid=fkEsc(String(r.id));
+    return '<tr>'+
+      '<td class="col-no">'+(start+i+1)+'</td>'+
+      '<td class="wrap-cell col-nama-freeze">'+fkEsc(r.nama_pekerjaan||'—')+'</td>'+
+      '<td class="fkl-col-lokasi">'+fkEsc(r.lokasi||'—')+'</td>'+
+      '<td>'+fkEsc(r.metode||'—')+'</td>'+
+      '<td class="col-num" style="text-align:right;font-weight:700">'+hpsRp(r.nilai)+'</td>'+
+      '<td><div class="action-cell" style="justify-content:center">'+
+        '<button class="act act-edit" title="Ubah" onclick="openDpInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
+        '<button class="act act-del" title="Hapus" onclick="dpDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>'+
+      '</div></td>'+
+    '</tr>';
+  }).join('');
+  if(pg){
+    if(totalPages<=1){ pg.innerHTML=''; }
+    else{
+      let h='<button class="pg-btn" '+(dpViewPage<=1?'disabled':'')+' onclick="dpViewGoto('+(dpViewPage-1)+')">‹</button>';
+      for(let p=1;p<=totalPages;p++) h+='<button class="pg-btn '+(p===dpViewPage?'active':'')+'" onclick="dpViewGoto('+p+')">'+p+'</button>';
+      h+='<button class="pg-btn" '+(dpViewPage>=totalPages?'disabled':'')+' onclick="dpViewGoto('+(dpViewPage+1)+')">›</button>';
+      pg.innerHTML=h;
+    }
+  }
+}
+function dpViewGoto(p){ dpViewPage=p; renderDpView(); }
+function dpDeleteRecord(id){
+  if(!requireInput()) return;
+  const rec=(records_dp||[]).find(r=>String(r.id)===String(id)); if(!rec) return;
+  openConfirm({ icon:'del', title:'Hapus Data Pekerjaan',
+    text:'Hapus data pekerjaan "'+(rec.nama_pekerjaan||'')+'"? Dokumen HPS/Analisa yang sudah memakainya TIDAK ikut berubah.',
+    onYes:async()=>{
+      try{ await withActionLoader('Menghapus', async()=>{ await StoreDp.remove(id); await refreshDataDp(); }); }
+      catch(err){ console.error(err); toast('Gagal menghapus: '+errMsg(err),'warn'); return; }
+      toast('Data dihapus','ok'); renderDpView();
+    }
+  });
+}
+
+/* ================= PILIH DATA PEKERJAAN (dipakai bersama oleh HPS & Analisa) ================= */
+let _dpPickerTarget=null;   // 'hps' | 'ana'
+function openDpPicker(target){
+  _dpPickerTarget=target;
+  refreshDataDp().then(()=>{
+    const ov=document.getElementById('dp-picker-overlay'); if(!ov) return;
+    const srch=document.getElementById('dp-picker-search'); if(srch) srch.value='';
+    renderDpPickerList();
+    ov.classList.add('show');
+  });
+}
+function closeDpPicker(){ const ov=document.getElementById('dp-picker-overlay'); if(ov) ov.classList.remove('show'); }
+function renderDpPickerList(){
+  const list=document.getElementById('dp-picker-list'); if(!list) return;
+  const fs=(document.getElementById('dp-picker-search')?.value||'').toLowerCase().trim();
+  let rows=(records_dp||[]).slice();
+  if(fs) rows=rows.filter(r=>String(r.nama_pekerjaan||'').toLowerCase().includes(fs));
+  if(!rows.length){ list.innerHTML='<div class="hps-ana-empty">Belum ada data tersimpan.<br>Silakan buat lewat menu <b>Data Pekerjaan</b> terlebih dahulu.</div>'; return; }
+  list.innerHTML=rows.map(r=>{
+    const rid=fkEsc(String(r.id));
+    return '<div class="hps-ana-item" onclick="dpPickerSelect(\''+rid+'\')">'+
+      '<div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg></div>'+
+      '<div class="tx"><b>'+fkEsc(r.nama_pekerjaan||'—')+'</b><span>'+fkEsc(r.lokasi||'—')+' • '+fkEsc(r.metode||'—')+'</span></div>'+
+      '<div class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>'+
+    '</div>';
+  }).join('');
+}
+function dpPickerSelect(id){
+  const rec=(records_dp||[]).find(r=>String(r.id)===String(id)); if(!rec) return;
+  if(_dpPickerTarget==='hps' && typeof hpsApplyDp==='function') hpsApplyDp(rec);
+  else if(_dpPickerTarget==='ana' && typeof anaApplyDp==='function') anaApplyDp(rec);
+  closeDpPicker();
+}
+
+/* ##################### AKHIR MODUL DATA PEKERJAAN #################### */
+
+
+
+/* ####################################################################### */
 /* ############# MODUL HARGA PERKIRAAN SENDIRI (HPS) ###################### */
 /* ####################################################################### */
 
@@ -12374,6 +12863,10 @@ const HPS_INFO_FIELDS = [
   {key:'metode',       label:'Metode Pengadaan',          type:'select', options:PNW_METODE},
   {key:'tgl_hps',      label:'Tgl. HPS',                  type:'date'}
 ];
+/* Field bersama (sumbernya dari Data Pekerjaan, ditampilkan terkunci) vs
+   field khusus dokumen HPS ini saja (tetap dapat diisi manual). */
+const HPS_DP_FIELDS  = HPS_INFO_FIELDS.filter(f=>f.key!=='tgl_hps');
+const HPS_OWN_FIELDS = HPS_INFO_FIELDS.filter(f=>f.key==='tgl_hps');
 /* Field khusus blok tanda tangan (muncul hanya di bagian bawah dokumen) */
 const HPS_TTD_FIELDS = [
   {key:'pengguna', label:'Nama Pengguna (Manager)',          type:'text'},
@@ -12500,10 +12993,11 @@ function hpsStepperHtml(){
 }
 
 /* ================= LANGKAH 1: DATA PEKERJAAN ================= */
-/* Field yang otomatis terisi & terkunci saat sebuah Analisa dipilih
-   (data pekerjaan yang sama antara Analisa & HPS). */
-const HPS_ANA_LOCK_KEYS = ['nama','lokasi','nilai','no_anggaran','tgl_anggaran','metode'];
-function hpsIsLocked(key){ return !!(hpsState.info && hpsState.info.analisaId) && HPS_ANA_LOCK_KEYS.indexOf(key)>=0; }
+/* Field Data Pekerjaan (nama/lokasi/nilai/no_anggaran/tgl_anggaran/metode) kini
+   SELALU bersumber dari menu Data Pekerjaan (dipilih lewat "Pilih Data Pekerjaan"),
+   sehingga otomatis terisi & terkunci di sini (tidak diketik manual lagi). */
+const HPS_DP_KEYS = DP_SHARED_KEYS;   // ['nama','lokasi','nilai','no_anggaran','tgl_anggaran','metode']
+function hpsIsLocked(key){ return !!(hpsState.info && hpsState.info.dpId) && HPS_DP_KEYS.indexOf(key)>=0; }
 const HPS_LOCK_BADGE='<span class="lock-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Dari Analisa</span>';
 function hpsInfoInputHtml(f){
   const id='hps-'+f.key;
@@ -12515,7 +13009,7 @@ function hpsInfoInputHtml(f){
   else if(f.type==='num') ctl='<input id="'+id+'" type="text" inputmode="numeric" placeholder="Rp"'+dis+' oninput="onRupiahInput(this)" onchange="hpsOnInfoChange()">';
   else if(f.type==='date') ctl='<input id="'+id+'" type="date"'+dis+' onchange="hpsOnInfoChange()">';
   else ctl='<input id="'+id+'" type="text"'+dis+' oninput="hpsOnInfoChange()">';
-  return '<div class="field'+(locked?' is-locked':'')+'"'+span+'><label>'+fkEsc(f.label)+'</label>'+ctl+(locked?HPS_LOCK_BADGE:'')+'</div>';
+  return '<div class="field'+(locked?' is-locked':'')+'"'+span+'><label>'+fkEsc(f.label)+'</label>'+ctl+(locked?DP_LOCK_BADGE:'')+'</div>';
 }
 function hpsTtdInputHtml(f){
   const id='hps-'+f.key;
@@ -12531,6 +13025,42 @@ function hpsOnInfoChange(){
   const st=hpsState;
   HPS_INFO_FIELDS.forEach(f=>{ if(hpsIsLocked(f.key)) return; const el=document.getElementById('hps-'+f.key); if(!el) return; st.info[f.key]=(f.type==='num')?parseRupiah(el.value):el.value.trim(); });
   hpsSaveState();
+}
+/* Bar wajib "Pilih Data Pekerjaan" — sumber nama/lokasi/nilai/no.anggaran/tgl.anggaran/metode. */
+function hpsDpBarHtml(){
+  const info=hpsState.info||{};
+  const dipilih = info.dpId ? String(info.dpNama||info.nama||'').trim() : '';
+  const sub = dipilih
+    ? ('Data pekerjaan terisi otomatis & terkunci dari: <b style="color:var(--teal-dark)">'+fkEsc(dipilih)+'</b>')
+    : 'Wajib pilih Data Pekerjaan terlebih dahulu — kolom Nama/Lokasi/Nilai/No. Anggaran/Tgl. Anggaran/Metode akan otomatis terisi.';
+  let btns='<button type="button" class="btn btn-teal" style="padding:8px 14px;font-size:11.5px" onclick="hpsPilihDp()">'+
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>'+(dipilih?'Ganti Data Pekerjaan':'Pilih Data Pekerjaan')+'</button>';
+  if(dipilih) btns+='<button type="button" class="btn btn-unpick" style="padding:8px 14px;font-size:11.5px" onclick="hpsLepasDp()">'+
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M18 6 6 18M6 6l12 12"/></svg>Lepas Pilihan</button>';
+  return '<div class="hps-analisa-bar">'+
+    '<div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg></div>'+
+    '<div class="tx"><b>Pilih Data Pekerjaan</b><span>'+sub+'</span></div>'+btns+
+  '</div>';
+}
+function hpsPilihDp(){ openDpPicker('hps'); }
+/* Dipanggil oleh dpPickerSelect() saat sebuah Data Pekerjaan dipilih untuk Hitung HPS */
+function hpsApplyDp(rec){
+  const st=hpsState; st.info=st.info||{};
+  const info=(rec.state&&rec.state.info)||{};
+  HPS_DP_KEYS.forEach(k=>{ st.info[k]=(info[k]!=null?info[k]:''); });
+  st.info.dpId=String(rec.id);
+  st.info.dpNama=rec.nama_pekerjaan||info.nama||'';
+  hpsSaveState();
+  renderHpsForm();
+  toast('Data pekerjaan diterapkan: '+st.info.dpNama,'ok');
+}
+/* Lepas pilihan Data Pekerjaan → kembali ke kondisi belum dipilih (wajib pilih ulang) */
+function hpsLepasDp(){
+  const st=hpsState; if(!st.info) return;
+  delete st.info.dpId; delete st.info.dpNama;
+  HPS_DP_KEYS.forEach(k=>{ st.info[k]=''; });
+  hpsSaveState(); renderHpsForm();
+  toast('Pilihan Data Pekerjaan dilepas','ok');
 }
 function hpsOnTtdChange(){
   const st=hpsState;
@@ -12675,13 +13205,17 @@ function renderHpsForm(){
   const st=hpsState;
   let html=hpsStepperHtml();
   if(hpsStep===1){
-    if(sub) sub.textContent='Langkah 1 dari 2 — Lengkapi data pekerjaan & penandatangan';
+    if(sub) sub.textContent='Langkah 1 dari 2 — Pilih data pekerjaan & lengkapi penandatangan';
     html+='<div class="form-card"><div class="form-section-title">'+KR_SECTION_ICON+'Data Pekerjaan</div>'+
-      hpsAnalisaBarHtml()+
-      '<div class="form-flow" style="--cols:4">';
-    html+=HPS_INFO_FIELDS.map(hpsInfoInputHtml).join('');
-    html+=hpsCountFieldHtml();
-    html+='</div></div>';
+      hpsDpBarHtml();
+    if(st.info.dpId){
+      html+='<div class="form-flow" style="--cols:4">';
+      html+=HPS_DP_FIELDS.map(hpsInfoInputHtml).join('');
+      html+=HPS_OWN_FIELDS.map(hpsInfoInputHtml).join('');
+      html+=hpsCountFieldHtml();
+      html+='</div>';
+    }
+    html+='</div>';
     html+='<div class="form-card"><div class="form-section-title">'+HPS_TTD_ICON+'Penandatangan (Form TTD HPS)</div>'+
       '<div class="hps-hint">Nama Pengguna &amp; Pejabat <b>tidak</b> tampil pada tabel data — keduanya hanya muncul di bagian bawah dokumen sebagai blok tanda tangan. <b>Nama Pengguna</b> tampil di sebelah kiri (Manager) dan <b>Nama Pejabat</b> di sebelah kanan (Pejabat Pelaksana Pengadaan, dicetak huruf kapital).</div>'+
       '<div class="form-flow" style="--cols:2">'+HPS_TTD_FIELDS.map(hpsTtdInputHtml).join('')+'</div></div>';
@@ -12689,7 +13223,8 @@ function renderHpsForm(){
   } else {
     if(sub) sub.textContent='Langkah 2 dari 2 — Uraian pekerjaan, satuan, volume & harga satuan';
     html+='<div class="form-card"><div class="form-section-title">'+FKL_SEC_ICON+'Uraian Pekerjaan <span class="fkl-count-chip">'+st.items.length+' item</span></div>'+
-      '<div class="hps-hint"><b>Jumlah Harga</b> = Volume × Harga Satuan (Material/Jasa) &nbsp;•&nbsp; <b>Jumlah Total</b> = Jumlah Harga Material + Jasa. Bila memilih <b>Analisa</b> pada Langkah 1, kolom <b>Kelompok/Uraian/Sat/Vol</b> otomatis terisi &amp; terkunci; kolom <b>Harga Satuan</b> ikut terisi &amp; terkunci hanya bila Analisa berkategori <b>Pekerjaan Umum</b> (sudah termasuk ROK) — untuk kategori <b>Pekerjaan Konstruksi</b>, harga tetap diisi manual. Tanpa Analisa, semua kolom dapat diisi manual; isi kolom <b>Kelompok</b> (mis. MATERIAL / JASA) bila ingin dokumen dikelompokkan.</div>'+
+      hpsAnalisaBarHtml()+
+      '<div class="hps-hint"><b>Jumlah Harga</b> = Volume × Harga Satuan (Material/Jasa) &nbsp;•&nbsp; <b>Jumlah Total</b> = Jumlah Harga Material + Jasa. Bila memilih <b>Analisa</b> di atas, kolom <b>Kelompok/Uraian/Sat/Vol</b> otomatis terisi &amp; terkunci; kolom <b>Harga Satuan</b> ikut terisi &amp; terkunci hanya bila Analisa berkategori <b>Pekerjaan Umum</b> (sudah termasuk ROK) — untuk kategori <b>Pekerjaan Konstruksi</b>, harga tetap diisi manual. Tanpa Analisa, semua kolom dapat diisi manual; isi kolom <b>Kelompok</b> (mis. MATERIAL / JASA) bila ingin dokumen dikelompokkan.</div>'+
       hpsUraianTableHtml()+
       hpsSummaryPanelHtml()+'</div>';
     html+=hpsActionsHtml({back:true, save:true});
@@ -12708,8 +13243,8 @@ function hpsAnalisaBarHtml(){
   const dipilih=(info.analisaId)?String(info.analisaNama||'').trim():'';
   const jenisTxt = dipilih ? (info.analisaJenis==='Konstruksi'?'Pekerjaan Konstruksi':'Pekerjaan Umum') : '';
   const sub = dipilih
-    ? ('Data pekerjaan &amp; Uraian Pekerjaan (Kelompok/Uraian/Sat/Vol) terisi otomatis &amp; terkunci dari analisa: <b style="color:var(--teal-dark)">'+fkEsc(dipilih)+'</b> — kategori <b>'+jenisTxt+'</b>'+(info.analisaJenis==='Konstruksi'?' (harga diisi manual)':' (harga ikut terkunci, sudah termasuk ROK)'))
-    : 'Ambil data pekerjaan otomatis dari data Analisa Harga tersimpan (kolom yang sama, termasuk Kelompok/Uraian/Sat/Vol, akan terisi & terkunci; harga ikut terkunci hanya untuk kategori Pekerjaan Umum).';
+    ? ('Uraian Pekerjaan (Kelompok/Uraian/Sat/Vol) terisi otomatis &amp; terkunci dari analisa: <b style="color:var(--teal-dark)">'+fkEsc(dipilih)+'</b> — kategori <b>'+jenisTxt+'</b>'+(info.analisaJenis==='Konstruksi'?' (harga diisi manual)':' (harga ikut terkunci, sudah termasuk ROK)'))
+    : 'Opsional — ambil Uraian Pekerjaan (Kelompok/Uraian/Sat/Vol, & harga untuk kategori Pekerjaan Umum) otomatis dari data Analisa Harga tersimpan.';
   let btns='';
   btns+='<button type="button" class="btn btn-teal" style="padding:8px 14px;font-size:11.5px" onclick="hpsPilihAnalisa()">'+
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.8L7 14.3"/></svg>'+(dipilih?'Ganti Analisa':'Pilih Analisa')+'</button>';
@@ -12767,7 +13302,6 @@ function hpsAmbilAnalisa(id){
   const aSt=(rec.state&&typeof rec.state==='object')?rec.state:{};
   const aInfo=aSt.info||{};
   const st=hpsState; st.info=st.info||{};
-  HPS_ANA_LOCK_KEYS.forEach(k=>{ st.info[k]=(aInfo[k]!=null?aInfo[k]:''); });
   st.info.analisaId=String(rec.id);
   st.info.analisaNama=rec.nama_pekerjaan||aInfo.nama||'';
   st.info.analisaJenis=(aSt.jenis==='Konstruksi')?'Konstruksi':'Umum';
@@ -12823,7 +13357,7 @@ function hpsNext(){
   const st=hpsState;
   if(hpsStep===1){
     hpsOnInfoChange(); hpsOnTtdChange();
-    if(!String(st.info.nama||'').trim()){ toast('Nama Pekerjaan wajib diisi','warn'); return; }
+    if(!st.info.dpId || !String(st.info.nama||'').trim()){ toast('Pilih Data Pekerjaan terlebih dahulu','warn'); return; }
     hpsEnsureItems(); hpsStep=2;
   }
   renderHpsForm(); hpsScrollTop();
@@ -12841,7 +13375,7 @@ function hpsBatal(){
 async function hpsSimpan(){
   if(!requireInput()) return;
   const st=hpsState; const info=st.info||{}; const nama=String(info.nama||'').trim();
-  if(!nama){ toast('Nama Pekerjaan wajib diisi','warn'); hpsStep=1; renderHpsForm(); return; }
+  if(!info.dpId || !nama){ toast('Pilih Data Pekerjaan terlebih dahulu','warn'); hpsStep=1; renderHpsForm(); return; }
   hpsEnsureItems();
   const _sum=hpsSummary(st);
   const rec={
@@ -13106,7 +13640,7 @@ function hpsStandaloneDocHtml(){
   const css=(cssEl?cssEl.textContent:'') + hpsExtraDocCss();
   return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8">'+
     '<meta name="viewport" content="width=device-width, initial-scale=1">'+
-    '<title> </title>'+
+    '<title>&#8203;</title>'+
     '<style>'+css+'</style></head><body>'+
     '<div class="fkl-print-page">'+hpsBuildDocHtml()+'</div>'+
     '</body></html>';
@@ -13175,6 +13709,11 @@ const ANA_INFO_FIELDS = [
   {key:'metode',       label:'Metode Pengadaan',          type:'select', options:PNW_METODE},
   {key:'tgl_analisa',  label:'Tgl. Analisa',              type:'date'}
 ];
+/* Field bersama (sumbernya dari Data Pekerjaan, ditampilkan terkunci) vs
+   field khusus dokumen Analisa ini saja (tetap dapat diisi manual). */
+const ANA_DP_FIELDS  = ANA_INFO_FIELDS.filter(f=>f.key!=='tgl_analisa');
+const ANA_OWN_FIELDS = ANA_INFO_FIELDS.filter(f=>f.key==='tgl_analisa');
+function anaIsLocked(key){ return !!(anaState.info && anaState.info.dpId) && DP_SHARED_KEYS.indexOf(key)>=0; }
 
 const ANA_MAX_ITEM = 150;   // jumlah barang/jasa (uraian)
 const ANA_MAX_REF  = 20;    // jumlah referensi
@@ -13416,13 +13955,15 @@ function anaOnJenisTop(el){
 /* ================= LANGKAH 1 ================= */
 function anaInfoInputHtml(f){
   const id='ana-'+f.key;
+  const locked=anaIsLocked(f.key);
   const span=f.span?(' style="grid-column:span '+f.span+'"'):'';
+  const dis = locked ? ' disabled' : '';
   let ctl;
-  if(f.type==='select') ctl='<select id="'+id+'" onchange="anaOnInfoChange()"><option value="">— Pilih —</option>'+(f.options||[]).map(o=>'<option>'+fkEsc(o)+'</option>').join('')+'</select>';
-  else if(f.type==='num') ctl='<input id="'+id+'" type="text" inputmode="numeric" placeholder="Rp" oninput="onRupiahInput(this)" onchange="anaOnInfoChange()">';
-  else if(f.type==='date') ctl='<input id="'+id+'" type="date" onchange="anaOnInfoChange()">';
-  else ctl='<input id="'+id+'" type="text" oninput="anaOnInfoChange()">';
-  return '<div class="field"'+span+'><label>'+fkEsc(f.label)+'</label>'+ctl+'</div>';
+  if(f.type==='select') ctl='<select id="'+id+'"'+dis+' onchange="anaOnInfoChange()"><option value="">— Pilih —</option>'+(f.options||[]).map(o=>'<option>'+fkEsc(o)+'</option>').join('')+'</select>';
+  else if(f.type==='num') ctl='<input id="'+id+'" type="text" inputmode="numeric" placeholder="Rp"'+dis+' oninput="onRupiahInput(this)" onchange="anaOnInfoChange()">';
+  else if(f.type==='date') ctl='<input id="'+id+'" type="date"'+dis+' onchange="anaOnInfoChange()">';
+  else ctl='<input id="'+id+'" type="text"'+dis+' oninput="anaOnInfoChange()">';
+  return '<div class="field'+(locked?' is-locked':'')+'"'+span+'><label>'+fkEsc(f.label)+'</label>'+ctl+(locked?DP_LOCK_BADGE:'')+'</div>';
 }
 function anaCountItemFieldHtml(){
   const st=anaState;
@@ -13445,8 +13986,44 @@ function anaSumberGridHtml(){
 }
 function anaOnInfoChange(){
   const st=anaState;
-  ANA_INFO_FIELDS.forEach(f=>{ const el=document.getElementById('ana-'+f.key); if(!el) return; st.info[f.key]=(f.type==='num')?parseRupiah(el.value):el.value.trim(); });
+  ANA_INFO_FIELDS.forEach(f=>{ if(anaIsLocked(f.key)) return; const el=document.getElementById('ana-'+f.key); if(!el) return; st.info[f.key]=(f.type==='num')?parseRupiah(el.value):el.value.trim(); });
   anaSaveState();
+}
+/* Bar wajib "Pilih Data Pekerjaan" — sumber nama/lokasi/nilai/no.anggaran/tgl.anggaran/metode. */
+function anaDpBarHtml(){
+  const info=anaState.info||{};
+  const dipilih = info.dpId ? String(info.dpNama||info.nama||'').trim() : '';
+  const sub = dipilih
+    ? ('Data pekerjaan terisi otomatis & terkunci dari: <b style="color:var(--teal-dark)">'+fkEsc(dipilih)+'</b>')
+    : 'Wajib pilih Data Pekerjaan terlebih dahulu — kolom Nama/Lokasi/Nilai/No. Anggaran/Tgl. Anggaran/Metode akan otomatis terisi.';
+  let btns='<button type="button" class="btn btn-teal" style="padding:8px 14px;font-size:11.5px" onclick="anaPilihDp()">'+
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>'+(dipilih?'Ganti Data Pekerjaan':'Pilih Data Pekerjaan')+'</button>';
+  if(dipilih) btns+='<button type="button" class="btn btn-unpick" style="padding:8px 14px;font-size:11.5px" onclick="anaLepasDp()">'+
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M18 6 6 18M6 6l12 12"/></svg>Lepas Pilihan</button>';
+  return '<div class="hps-analisa-bar">'+
+    '<div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg></div>'+
+    '<div class="tx"><b>Pilih Data Pekerjaan</b><span>'+sub+'</span></div>'+btns+
+  '</div>';
+}
+function anaPilihDp(){ openDpPicker('ana'); }
+/* Dipanggil oleh dpPickerSelect() saat sebuah Data Pekerjaan dipilih untuk Analisa Harga */
+function anaApplyDp(rec){
+  const st=anaState; st.info=st.info||{};
+  const info=(rec.state&&rec.state.info)||{};
+  DP_SHARED_KEYS.forEach(k=>{ st.info[k]=(info[k]!=null?info[k]:''); });
+  st.info.dpId=String(rec.id);
+  st.info.dpNama=rec.nama_pekerjaan||info.nama||'';
+  anaSaveState();
+  renderAnalisaForm();
+  toast('Data pekerjaan diterapkan: '+st.info.dpNama,'ok');
+}
+/* Lepas pilihan Data Pekerjaan → kembali ke kondisi belum dipilih (wajib pilih ulang) */
+function anaLepasDp(){
+  const st=anaState; if(!st.info) return;
+  delete st.info.dpId; delete st.info.dpNama;
+  DP_SHARED_KEYS.forEach(k=>{ st.info[k]=''; });
+  anaSaveState(); renderAnalisaForm();
+  toast('Pilihan Data Pekerjaan dilepas','ok');
 }
 function anaOnJumlahItemChange(el){ anaState.jumlahItem=Math.max(1,Math.min(ANA_MAX_ITEM,parseInt(el.value,10)||1)); anaEnsure(); anaSaveState(); }
 function anaOnJumlahRefChange(el){
@@ -13830,14 +14407,19 @@ function renderAnalisaForm(){
   const st=anaState; const isKon=(st.jenis==='Konstruksi'); const kst=st.konstruksi;
   let html=anaStepperHtml();
   if(anaStep===1){
-    if(sub) sub.textContent='Langkah 1 dari '+anaMaxStep()+' — Data pekerjaan'+(isKon?'':' , jumlah barang/jasa & referensi');
+    if(sub) sub.textContent='Langkah 1 dari '+anaMaxStep()+' — Pilih data pekerjaan'+(isKon?'':' , jumlah barang/jasa & referensi');
     html+='<div class="form-card"><div class="form-section-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">'+
       '<span style="display:flex;align-items:center;gap:8px">'+KR_SECTION_ICON+'Data Pekerjaan</span>'+anaJenisTopHtml()+'</div>'+
-      '<div class="form-flow" style="--cols:4">';
-    html+=ANA_INFO_FIELDS.map(anaInfoInputHtml).join('');
-    if(!isKon){ html+=anaCountItemFieldHtml(); html+=anaCountRefFieldHtml(); }
-    html+='</div></div>';
-    if(!isKon){
+      anaDpBarHtml();
+    if(st.info.dpId){
+      html+='<div class="form-flow" style="--cols:4">';
+      html+=ANA_DP_FIELDS.map(anaInfoInputHtml).join('');
+      html+=ANA_OWN_FIELDS.map(anaInfoInputHtml).join('');
+      if(!isKon){ html+=anaCountItemFieldHtml(); html+=anaCountRefFieldHtml(); }
+      html+='</div>';
+    }
+    html+='</div>';
+    if(!isKon && st.info.dpId){
       html+='<div class="form-card"><div class="form-section-title">'+ANA_REF_ICON+'Sumber Referensi <span class="fkl-count-chip">'+st.jumlahRef+' referensi</span></div>'+
         '<div class="hps-hint">Isi nama/sumber tiap referensi (mis. Toko A, e-Katalog, Survei Pasar). Jumlah kotak menyesuaikan <b>Jumlah Referensi</b>. Nama ini muncul sebagai pilihan pada langkah Analisa Harga Satuan.</div>'+
         '<div id="ana-sumber-wrap">'+anaSumberGridHtml()+'</div></div>';
@@ -13889,7 +14471,7 @@ function anaNext(){
   const st=anaState;
   if(anaStep===1){
     anaOnInfoChange();
-    if(!String(st.info.nama||'').trim()){ toast('Nama Pekerjaan wajib diisi','warn'); return; }
+    if(!st.info.dpId || !String(st.info.nama||'').trim()){ toast('Pilih Data Pekerjaan terlebih dahulu','warn'); return; }
     anaEnsure(); anaStep=2;
   } else if(anaStep===2 && st.jenis==='Konstruksi'){
     anaStep=3;
@@ -13909,7 +14491,7 @@ function anaBatal(){
 async function anaSimpan(){
   if(!requireInput()) return;
   const st=anaState; const info=st.info||{}; const nama=String(info.nama||'').trim();
-  if(!nama){ toast('Nama Pekerjaan wajib diisi','warn'); anaStep=1; renderAnalisaForm(); return; }
+  if(!info.dpId || !nama){ toast('Pilih Data Pekerjaan terlebih dahulu','warn'); anaStep=1; renderAnalisaForm(); return; }
   anaEnsure();
   // nilai_total: Umum = jumlah (harga hasil analisa referensi × vol); Konstruksi = jumlah Harga Total Bagian 2 (Harga Satuan)
   let nilaiTotal=0, jumlahItemRec=st.jumlahItem, jumlahRefRec=st.jumlahRef;
@@ -14265,7 +14847,7 @@ function anaStandaloneDocHtml(section){
   const css=(cssEl?cssEl.textContent:'') + anaExtraDocCss();
   return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8">'+
     '<meta name="viewport" content="width=device-width, initial-scale=1">'+
-    '<title> </title>'+
+    '<title>&#8203;</title>'+
     '<style>'+css+'</style></head><body>'+
     '<div class="fkl-print-page">'+anaBuildDocHtml(section)+'</div>'+
     '</body></html>';
@@ -14323,6 +14905,215 @@ function anaPrint(){
 /* ##################### AKHIR MODUL ANALISA HARGA SATUAN #################### */
 
 
+/* ####################################################################### */
+/* ####################### MODUL REKAP HPS ################################ */
+/* Rekap gabungan: pilih satu Data Pekerjaan (berdasarkan Nama Pekerjaan),
+   lalu tampilkan Perhitungan HPS & Analisa Harga Satuan yang terkait
+   dengannya (dicocokkan lewat info.dpId pada masing-masing dokumen),
+   dengan tombol "Lihat Pdf" untuk mencetak rekap gabungannya. */
+/* ####################################################################### */
+
+function openRekapHps(){
+  if(!isAdmin()){ toast('Menu ini hanya untuk akun admin','warn'); return; }
+  Promise.all([refreshDataDp(), refreshDataHps(), refreshDataAnalisa()]).then(()=>showView('rekap-hps'));
+}
+function renderRekapHps(){
+  const sel=document.getElementById('rekap-dp-select');
+  if(sel){
+    const cur=sel.value;
+    sel.innerHTML='<option value="">— Pilih Nama Pekerjaan —</option>'+
+      (records_dp||[]).map(r=>'<option value="'+fkEsc(String(r.id))+'">'+fkEsc(r.nama_pekerjaan||'—')+'</option>').join('');
+    if(cur) sel.value=cur;
+  }
+  const res=document.getElementById('rekap-result'); if(res) res.innerHTML='';
+}
+function rekapRowsFor(dpId){
+  const hpsList=(records_hps||[]).filter(r=>{ const info=(r.state&&r.state.info)||{}; return String(info.dpId||'')===String(dpId); });
+  const anaList=(records_ana||[]).filter(r=>{ const info=(r.state&&r.state.info)||{}; return String(info.dpId||'')===String(dpId); });
+  return {hpsList, anaList};
+}
+let _rekapCurrentDpId=null;
+function rekapTampilkan(){
+  const sel=document.getElementById('rekap-dp-select'); const id=sel?sel.value:'';
+  const res=document.getElementById('rekap-result'); if(!res) return;
+  if(!id){ toast('Pilih Nama Pekerjaan terlebih dahulu','warn'); return; }
+  const dp=(records_dp||[]).find(r=>String(r.id)===String(id));
+  if(!dp){ toast('Data pekerjaan tidak ditemukan','warn'); return; }
+  _rekapCurrentDpId=id;
+  const {hpsList, anaList}=rekapRowsFor(id);
+  const hpsRows = hpsList.length ? hpsList.map((r,i)=>'<tr>'+
+      '<td class="col-no">'+(i+1)+'</td>'+
+      '<td class="col-date">'+fkEsc(r.tgl_hps?pnwDateLong(r.tgl_hps):'—')+'</td>'+
+      '<td style="text-align:center">'+(r.jumlah_item!=null?r.jumlah_item:'—')+'</td>'+
+      '<td class="col-num" style="text-align:right;font-weight:700">'+hpsRp(r.nilai_total)+'</td>'+
+    '</tr>').join('')
+    : '<tr><td colspan="4" class="fk-none" style="justify-content:center;padding:14px 0">Belum ada Perhitungan HPS untuk data pekerjaan ini</td></tr>';
+  const anaRows = anaList.length ? anaList.map((r,i)=>'<tr>'+
+      '<td class="col-no">'+(i+1)+'</td>'+
+      '<td class="col-date">'+fkEsc(r.tgl_analisa?pnwDateLong(r.tgl_analisa):'—')+'</td>'+
+      '<td style="text-align:center">'+(r.jumlah_item!=null?r.jumlah_item:'—')+'</td>'+
+      '<td class="col-num" style="text-align:right;font-weight:700">'+hpsRp(r.nilai_total)+'</td>'+
+    '</tr>').join('')
+    : '<tr><td colspan="4" class="fk-none" style="justify-content:center;padding:14px 0">Belum ada Analisa Harga Satuan untuk data pekerjaan ini</td></tr>';
+  res.innerHTML = ''+
+    '<div class="form-card">'+
+      '<div class="form-section-title">'+KR_SECTION_ICON+'Data Pekerjaan</div>'+
+      '<div class="form-flow" style="--cols:4">'+
+        '<div class="field" style="grid-column:span 2"><label>Nama Pekerjaan</label><div class="rekap-static">'+fkEsc(dp.nama_pekerjaan||'—')+'</div></div>'+
+        '<div class="field" style="grid-column:span 2"><label>Lokasi Pekerjaan</label><div class="rekap-static">'+fkEsc(dp.lokasi||'—')+'</div></div>'+
+        '<div class="field"><label>Perkiraan Nilai Pekerjaan</label><div class="rekap-static">'+hpsRp(dp.nilai)+'</div></div>'+
+        '<div class="field"><label>No. Anggaran</label><div class="rekap-static">'+fkEsc(dp.no_anggaran||'—')+'</div></div>'+
+        '<div class="field"><label>Tgl. Anggaran</label><div class="rekap-static">'+fkEsc(dp.tgl_anggaran?pnwDateLong(dp.tgl_anggaran):'—')+'</div></div>'+
+        '<div class="field"><label>Metode Pengadaan</label><div class="rekap-static">'+fkEsc(dp.metode||'—')+'</div></div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="panel" style="margin-top:16px">'+
+      '<div class="form-section-title" style="padding:16px 16px 0">'+KR_SECTION_ICON+'Perhitungan HPS <span class="fkl-count-chip">'+hpsList.length+' data</span></div>'+
+      '<div class="table-wrap" style="margin-top:10px"><table>'+
+        '<thead><tr><th class="col-no">No</th><th class="col-date">Tgl. HPS</th><th style="text-align:center">Jumlah Item</th><th class="col-num" style="text-align:right">Nilai HPS (Rp)</th></tr></thead>'+
+        '<tbody>'+hpsRows+'</tbody>'+
+      '</table></div>'+
+    '</div>'+
+    '<div class="panel" style="margin-top:16px">'+
+      '<div class="form-section-title" style="padding:16px 16px 0">'+KR_SECTION_ICON+'Analisa Harga Satuan <span class="fkl-count-chip">'+anaList.length+' data</span></div>'+
+      '<div class="table-wrap" style="margin-top:10px"><table>'+
+        '<thead><tr><th class="col-no">No</th><th class="col-date">Tgl. Analisa</th><th style="text-align:center">Jumlah Item</th><th class="col-num" style="text-align:right">Nilai (Rp)</th></tr></thead>'+
+        '<tbody>'+anaRows+'</tbody>'+
+      '</table></div>'+
+    '</div>'+
+    '<div class="jp-actions"><button class="btn btn-teal" onclick="rekapPrint()">'+
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg> Lihat Pdf'+
+    '</button></div>';
+}
+/* ---- Cetak / PDF rekap gabungan ---- */
+function rekapExtraDocCss(){
+  return ''+
+  '.rekap-sec{font-weight:800;font-size:12px;color:#0d2a30;margin:14px 0 6px}'+
+  'table.rekap-tbl{width:100%;border-collapse:collapse;margin:0 0 10px}'+
+  'table.rekap-tbl th,table.rekap-tbl td{border:1px solid #7d97ab;padding:6px 8px;font-size:9.5px;vertical-align:middle}'+
+  'table.rekap-tbl thead th{background:#dbe7f2;color:#13324a;font-weight:800;text-align:center;text-transform:uppercase;letter-spacing:.2px;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  'table.rekap-tbl td.no,table.rekap-tbl td.tgl{text-align:center;white-space:nowrap}'+
+  'table.rekap-tbl td.num{text-align:right;white-space:nowrap}';
+}
+function rekapStandaloneDocHtml(dp, hpsList, anaList){
+  const cssEl=document.getElementById('fkl-doc-css');
+  const css=(cssEl?cssEl.textContent:'') + rekapExtraDocCss();
+  const infoRow=(k,v)=>'<tr><td class="k">'+k+'</td><td class="s">:</td><td class="v">'+fkEsc(v||'-')+'</td></tr>';
+  const hpsBody = hpsList.length ? hpsList.map((r,i)=>'<tr>'+
+      '<td class="no">'+(i+1)+'</td>'+
+      '<td class="tgl">'+fkEsc(r.tgl_hps?pnwDateLong(r.tgl_hps):'-')+'</td>'+
+      '<td class="no">'+(r.jumlah_item!=null?r.jumlah_item:'-')+'</td>'+
+      '<td class="num">'+hpsRpDoc(r.nilai_total)+'</td>'+
+    '</tr>').join('')
+    : '<tr><td colspan="4" style="text-align:center;font-style:italic;color:#7d97ab">Belum ada data</td></tr>';
+  const anaBody = anaList.length ? anaList.map((r,i)=>'<tr>'+
+      '<td class="no">'+(i+1)+'</td>'+
+      '<td class="tgl">'+fkEsc(r.tgl_analisa?pnwDateLong(r.tgl_analisa):'-')+'</td>'+
+      '<td class="no">'+(r.jumlah_item!=null?r.jumlah_item:'-')+'</td>'+
+      '<td class="num">'+hpsRpDoc(r.nilai_total)+'</td>'+
+    '</tr>').join('')
+    : '<tr><td colspan="4" style="text-align:center;font-style:italic;color:#7d97ab">Belum ada data</td></tr>';
+  return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8">'+
+    '<meta name="viewport" content="width=device-width, initial-scale=1">'+
+    '<title>&#8203;</title>'+
+    '<style>'+css+'</style></head><body>'+
+    '<div class="fkl-doc">'+
+      '<div class="fkl-doc-head">'+
+        '<div class="fkl-doc-logo"><img src="'+FKL_LOGO_SRC+'" alt="Logo PLN"></div>'+
+        '<div class="fkl-doc-org">'+
+          '<div class="l1">PT PLN (PERSERO)</div>'+
+          '<div class="l2">UNIT PELAKSANA PELAYANAN PELANGGAN MASOHI</div>'+
+          '<div class="l3">Jl. Abdullah Soulissa No 1, Masohi, Kec. Kota Masohi</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="fkl-doc-band"></div>'+
+      '<h1 class="fkl-doc-title">REKAP HARGA PERKIRAAN SENDIRI</h1>'+
+      '<div class="fkl-doc-titlegap"></div>'+
+      '<div class="fkl-sec-h"><span class="rn">1</span>Data Pekerjaan</div>'+
+      '<table class="fkl-info"><tbody>'+
+        infoRow('Nama Pekerjaan', dp.nama_pekerjaan)+
+        infoRow('Lokasi Pekerjaan', dp.lokasi)+
+        infoRow('Perkiraan Nilai', hpsRpDoc(dp.nilai))+
+        infoRow('No. Anggaran', dp.no_anggaran)+
+        infoRow('Tgl. Anggaran', dp.tgl_anggaran?pnwDateLong(dp.tgl_anggaran):'-')+
+        infoRow('Metode Pengadaan', dp.metode)+
+      '</tbody></table>'+
+      '<div class="rekap-sec">2. Perhitungan HPS</div>'+
+      '<table class="rekap-tbl"><thead><tr><th style="width:34px">No</th><th>Tgl. HPS</th><th style="width:90px">Jumlah Item</th><th style="width:150px">Nilai HPS (Rp)</th></tr></thead><tbody>'+hpsBody+'</tbody></table>'+
+      '<div class="rekap-sec">3. Analisa Harga Satuan</div>'+
+      '<table class="rekap-tbl"><thead><tr><th style="width:34px">No</th><th>Tgl. Analisa</th><th style="width:90px">Jumlah Item</th><th style="width:150px">Nilai (Rp)</th></tr></thead><tbody>'+anaBody+'</tbody></table>'+
+    '</div>'+
+    '</body></html>';
+}
+function rekapPrint(){
+  const id=_rekapCurrentDpId; if(!id){ toast('Tampilkan data terlebih dahulu','warn'); return; }
+  const dp=(records_dp||[]).find(r=>String(r.id)===String(id)); if(!dp){ toast('Data pekerjaan tidak ditemukan','warn'); return; }
+  const {hpsList, anaList}=rekapRowsFor(id);
+  const old=document.getElementById('rekap-print-frame'); if(old) old.remove();
+  const ifr=document.createElement('iframe');
+  ifr.id='rekap-print-frame';
+  ifr.setAttribute('aria-hidden','true');
+  ifr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+  document.body.appendChild(ifr);
+  const doc=ifr.contentWindow.document;
+  doc.open(); doc.write(rekapStandaloneDocHtml(dp, hpsList, anaList)); doc.close();
+  const go=()=>{ withHiddenPageTitle(()=>{ try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }catch(e){ try{ window.print(); }catch(_){} } }); setTimeout(()=>{ const f=document.getElementById('rekap-print-frame'); if(f) f.remove(); },1500); };
+  const imgs=doc.images?Array.from(doc.images):[];
+  if(imgs.length){ let n=imgs.length; const dec=()=>{ if(--n<=0) setTimeout(go,60); }; imgs.forEach(im=>{ if(im.complete) dec(); else { im.onload=dec; im.onerror=dec; } }); setTimeout(go,1600); }
+  else setTimeout(go,120);
+}
+
+/* ---------- Migrasi otomatis (sekali jalan): Data Pekerjaan dari HPS/Analisa
+   lama (yang belum punya dpId) dijadikan entri baru di menu Data Pekerjaan,
+   lalu dokumen lama tsb ditautkan (dpId) ke entri barunya. Data pekerjaan
+   dengan nama+no.anggaran+tgl.anggaran yang sama akan digabung jadi satu
+   entri Data Pekerjaan (tidak dobel). ---------- */
+const DP_MIGRATION_FLAG='dp_migration_v1_done';
+async function dpMigrateOldRecords(){
+  try{ if(localStorage.getItem(DP_MIGRATION_FLAG)) return; }catch(e){}
+  try{
+    await Promise.all([refreshDataDp(), refreshDataHps(), refreshDataAnalisa()]);
+    const keyOf=info=>[String(info.nama||'').trim().toLowerCase(), String(info.no_anggaran||'').trim().toLowerCase(), String(info.tgl_anggaran||'')].join('|');
+    const dpByKey={};
+    (records_dp||[]).forEach(r=>{ const info=(r.state&&r.state.info)||{}; dpByKey[keyOf(info)]=r.id; });
+    async function ensureDp(info){
+      if(!String(info.nama||'').trim()) return null;
+      const k=keyOf(info);
+      if(dpByKey[k]) return dpByKey[k];
+      const rec={
+        nama_pekerjaan: info.nama||'', lokasi: info.lokasi||'', metode: info.metode||'',
+        no_anggaran: info.no_anggaran||'', tgl_anggaran: info.tgl_anggaran||'',
+        nilai: Number(info.nilai)||0,
+        state: { info: { nama:info.nama||'', lokasi:info.lokasi||'', nilai:info.nilai||'', no_anggaran:info.no_anggaran||'', tgl_anggaran:info.tgl_anggaran||'', metode:info.metode||'' } }
+      };
+      const row=await StoreDp.create(rec);
+      const id=row?row.id:null;
+      if(id) dpByKey[k]=id;
+      return id;
+    }
+    let changed=false;
+    for(const r of (records_hps||[])){
+      const st=(r.state&&typeof r.state==='object')?r.state:null; if(!st) continue;
+      st.info=st.info||{}; if(st.info.dpId) continue;
+      const dpId=await ensureDp(st.info); if(!dpId) continue;
+      st.info.dpId=String(dpId); st.info.dpNama=st.info.nama||'';
+      await StoreHps.update(r.id, {state: st}); changed=true;
+    }
+    for(const r of (records_ana||[])){
+      const st=(r.state&&typeof r.state==='object')?r.state:null; if(!st) continue;
+      st.info=st.info||{}; if(st.info.dpId) continue;
+      const dpId=await ensureDp(st.info); if(!dpId) continue;
+      st.info.dpId=String(dpId); st.info.dpNama=st.info.nama||'';
+      await StoreAna.update(r.id, {state: st}); changed=true;
+    }
+    if(changed){ await refreshDataDp(); await refreshDataHps(); await refreshDataAnalisa(); }
+    try{ localStorage.setItem(DP_MIGRATION_FLAG,'1'); }catch(e){}
+  }catch(err){ console.error('Migrasi Data Pekerjaan gagal:', err); }
+}
+
+/* ##################### AKHIR MODUL REKAP HPS #################### */
+
+
 refreshData();      // muat data SPBJ/Kontrak Rinci
 refreshDataPl();    // muat data Pengadaan Langsung
 refreshDataTender();// muat data Tender
@@ -14333,14 +15124,24 @@ refreshDataRho();         // muat data Referensi Harga Online (Lihat Harga)
 refreshDataHps();         // muat data Harga Perkiraan Sendiri (Lihat HPS)
 refreshDataAnalisa();     // muat data Analisa Harga Satuan (Lihat Analisa)
 refreshDataJadwal();      // muat data Jadwal Pelaksanaan Pengadaan (Lihat Jadwal)
+dpMigrateOldRecords();    // migrasi otomatis Data Pekerjaan dari HPS/Analisa lama (sekali jalan)
 pnLoadConfig();         // muat konfigurasi nomor awal
-// #3: Refresh TIDAK lagi memaksa logout. Sesi dipulihkan dari sessionStorage,
-// dan filter data setiap halaman kembali ke default (ditangani showView/resetAllFilters).
+// #3: Refresh TIDAK memaksa logout selama sesi masih dalam batas wajar.
+// Sesi dipulihkan dari sessionStorage HANYA bila belum melewati batas umur
+// sesi absolut (SESSION_MAX_MS) maupun batas idle (IDLE_LIMIT_MS) — inilah
+// yang mencegah sesi "menggantung" berhari-hari (mis. karena browser
+// memulihkan tab/sessionStorage lama saat dibuka kembali).
 resetLoginForm();
 (function restoreSession(){
   let role=null, uname=null, view=null;
   role=ssGet(ROLE_KEY); uname=ssGet(USER_KEY); view=ssGet(VIEW_KEY);
-  if(role==='admin' || role==='user' || role==='guest'){
+  const now=Date.now();
+  const loginAt=parseInt(ssGet(LOGIN_TIME_KEY)||'0',10);
+  const lastActiveAt=parseInt(ssGet(LAST_ACTIVE_KEY)||'0',10);
+  const tooOldSession = loginAt>0 && (now-loginAt) > SESSION_MAX_MS;
+  const tooLongIdle = IDLE_LOGOUT_ENABLED && lastActiveAt>0 && (now-lastActiveAt) > IDLE_LIMIT_MS;
+  const hasRole = (role==='admin' || role==='user' || role==='guest');
+  if(hasRole && !tooOldSession && !tooLongIdle){
     currentUsername = uname || null;
     // Refresh: kembali ke halaman terakhir (data di halaman itu di-refresh), bukan ke dashboard.
     const allowed=['dashboard','list','list-pl','list-tender','pn-lihat','pn-ambil','form-kelengkapan','fkl-view','form-pembukaan','pnw-view','form-rho','rho-view','form-hps','hps-view','form-analisa','analisa-view'];
@@ -14363,7 +15164,12 @@ resetLoginForm();
       enterApp(role, target);   // langsung masuk aplikasi tanpa login ulang (filter default)
     }
   }else{
-    currentRole=null; currentUsername=null;   // belum ada sesi → tampilkan layar login
+    if(hasRole && (tooOldSession || tooLongIdle)){
+      // Sesi lama yang sudah kedaluwarsa → bersihkan & beri tahu, jangan dipulihkan diam-diam
+      ssDel(ROLE_KEY); ssDel(USER_KEY); ssDel(VIEW_KEY); ssDel(DRAFT_KEY); ssDel(LOGIN_TIME_KEY); ssDel(LAST_ACTIVE_KEY);
+      setTimeout(()=>toast('Sesi sebelumnya sudah berakhir, silakan masuk kembali','warn'), 350);
+    }
+    currentRole=null; currentUsername=null;   // belum ada sesi / sesi kedaluwarsa → tampilkan layar login
   }
 })();
 // close modal on overlay click
@@ -14372,6 +15178,7 @@ document.getElementById('detail-overlay').addEventListener('click',e=>{ if(e.tar
 document.getElementById('cp-overlay').addEventListener('click',e=>{ if(e.target.id==='cp-overlay')closeChangePass(); });
 document.getElementById('pn-doc-overlay').addEventListener('click',e=>{ if(e.target.id==='pn-doc-overlay')pnDocModalCancel(); });
 document.getElementById('hps-ana-overlay').addEventListener('click',e=>{ if(e.target.id==='hps-ana-overlay')closeHpsAnaPicker(); });
+document.getElementById('dp-picker-overlay').addEventListener('click',e=>{ if(e.target.id==='dp-picker-overlay')closeDpPicker(); });
 document.getElementById('pn-preview-overlay').addEventListener('click',e=>{ if(e.target.id==='pn-preview-overlay')closePnPreview(); });
 </script>
 
