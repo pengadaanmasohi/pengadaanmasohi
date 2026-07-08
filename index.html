@@ -14390,13 +14390,19 @@ function renderAnalisaForm(){
   const sub=document.getElementById('ana-sub');
   const cont=document.getElementById('ana-content'); if(!cont) return;
   const st=anaState; const isKon=(st.jenis==='Konstruksi'); const kst=st.konstruksi;
+  // Saat MODE UBAH DATA (anaEditId aktif), halaman gabungan (Data Pekerjaan + Analisa
+  // Harga Satuan) selalu ditampilkan penuh — walau record lama belum tertaut dpId —
+  // sehingga tombol Edit dari "Lihat Analisa" selalu membuka SATU halaman: Data
+  // Pekerjaan di atas, seluruh data analisa di-insert di bawahnya. Alur "Analisa
+  // Harga" (buat baru) tidak berubah: tetap wajib "Pilih Data Pekerjaan" dahulu.
+  const showBody = !!(st.info.dpId || (anaEditId && String(st.info.nama||'').trim()));
   let html=anaStepperHtml();
   // Kartu Data Pekerjaan — kini SELALU berada di atas langkah pertama (digabung
   // dengan Analisa Harga Satuan), baik untuk Pekerjaan Umum maupun Konstruksi.
   const dpCardHtml =
     '<div class="form-card"><div class="form-section-title" style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:10px">'+
       '<span style="display:flex;align-items:center;gap:8px">'+KR_SECTION_ICON+'Data Pekerjaan</span>'+anaTopControlsHtml()+'</div>'+
-    (st.info.dpId ? (
+    (showBody ? (
       '<div class="form-flow" style="--cols:4">'+
         ANA_DP_FIELDS.map(anaInfoInputHtml).join('')+
         ANA_OWN_FIELDS.map(anaInfoInputHtml).join('')+
@@ -14410,7 +14416,7 @@ function renderAnalisaForm(){
       // KONSTRUKSI — Langkah 1 (dari 2): Data Pekerjaan + Harga Satuan
       if(sub) sub.textContent='Langkah 1 dari 2 — Data Pekerjaan & Harga Satuan';
       html+=dpCardHtml;
-      if(st.info.dpId){
+      if(showBody){
         html+='<div class="form-card"><div class="form-section-title">'+ANA_SEC_ICON+'Harga Satuan <span class="fkl-count-chip">'+kst.items.length+' uraian</span>'+
           '<button type="button" class="ana-ahsp-add" style="margin-left:auto" onclick="anaKonAddRow()">+ Tambah Baris</button></div>'+
           '<div id="ana-kon-table-wrap">'+anaKonTableHtml()+'</div></div>';
@@ -14420,7 +14426,7 @@ function renderAnalisaForm(){
       // UMUM — SATU langkah penuh: Data Pekerjaan + Sumber Referensi + Analisa Harga Satuan
       if(sub) sub.textContent='Isi Data Pekerjaan, sumber referensi & Analisa Harga Satuan';
       html+=dpCardHtml;
-      if(st.info.dpId){
+      if(showBody){
         html+='<div class="form-card"><div class="form-section-title">'+ANA_REF_ICON+'Sumber Referensi <span class="fkl-count-chip">'+st.jumlahRef+' referensi</span></div>'+
           '<div class="hps-hint">Isi nama/sumber tiap referensi (mis. Toko A, e-Katalog, Survei Pasar). Jumlah kotak menyesuaikan <b>Jumlah Referensi</b>. Nama ini muncul sebagai pilihan pada bagian Analisa Harga Satuan.</div>'+
           '<div id="ana-sumber-wrap">'+anaSumberGridHtml()+'</div></div>';
@@ -14442,7 +14448,7 @@ function renderAnalisaForm(){
   cont.innerHTML=html;
   if(anaStep===1){
     ANA_INFO_FIELDS.forEach(f=>{ const el=document.getElementById('ana-'+f.key); if(!el) return; const v=st.info[f.key]; el.value=(f.type==='num')?rupiahInputText(v):(v!=null?v:''); });
-    if(!isKon && st.info.dpId){ anaRenderStep2Body(); }   // tabel Analisa Harga Satuan (Umum) pada halaman gabungan
+    if(!isKon && showBody){ anaRenderStep2Body(); }   // tabel Analisa Harga Satuan (Umum) pada halaman gabungan
   } else if(anaStep===2 && isKon){
     anaRenderAhspBody();
   }
@@ -14462,7 +14468,8 @@ function anaNext(){
   const st=anaState;
   if(anaStep===1){
     anaOnInfoChange();
-    if(!st.info.dpId || !String(st.info.nama||'').trim()){ toast('Pilih Data Pekerjaan terlebih dahulu','warn'); return; }
+    if(!String(st.info.nama||'').trim()){ toast('Nama Pekerjaan wajib diisi','warn'); return; }
+    if(!st.info.dpId && !anaEditId){ toast('Pilih Data Pekerjaan terlebih dahulu','warn'); return; }
     anaEnsure(); anaStep=2;   // hanya Konstruksi yang punya langkah ke-2 (AHSP)
   }
   renderAnalisaForm(); anaScrollTop();
@@ -14480,7 +14487,8 @@ function anaBatal(){
 async function anaSimpan(){
   if(!requireInput()) return;
   const st=anaState; const info=st.info||{}; const nama=String(info.nama||'').trim();
-  if(!info.dpId || !nama){ toast('Pilih Data Pekerjaan terlebih dahulu','warn'); anaStep=1; renderAnalisaForm(); return; }
+  if(!nama){ toast('Nama Pekerjaan wajib diisi','warn'); anaStep=1; renderAnalisaForm(); return; }
+  if(!info.dpId && !anaEditId){ toast('Pilih Data Pekerjaan terlebih dahulu','warn'); anaStep=1; renderAnalisaForm(); return; }
   anaEnsure();
   // nilai_total: Umum = jumlah (harga hasil analisa referensi × vol); Konstruksi = jumlah Harga Total Bagian 2 (Harga Satuan)
   let nilaiTotal=0, jumlahItemRec=st.jumlahItem, jumlahRefRec=st.jumlahRef;
