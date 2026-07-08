@@ -11987,6 +11987,7 @@ function rhoBlankState(){ return { info:{}, jumlahRef:1, items:[''], refs:{}, on
 let rhoState = rhoBlankState();
 let rhoStep = 1;              // 1..2
 let rhoEditId = null;
+let rhoRevealPick = false;    // true sekali setelah "Pilih Data Pekerjaan" → animasi reveal
 let rhoPreviewState = null;   // utk pratinjau record tersimpan
 
 const RHO_STATE_KEY = 'rho_state_v1';
@@ -12104,17 +12105,24 @@ function rhoStepperHtml(){
 }
 
 /* ================= LANGKAH 1: DATA PEKERJAAN ================= */
+/* Field bersama (sumber dari Data Pekerjaan) yang dikunci saat sebuah Data
+   Pekerjaan dipilih — sama seperti Perhitungan HPS & Analisa Harga Satuan.
+   DP_SHARED_KEYS dirujuk saat pemanggilan (bukan saat definisi) karena modul
+   Data Pekerjaan berada setelah blok ini. */
+function rhoIsLocked(key){ return !!(rhoState.info && rhoState.info.dpId) && DP_SHARED_KEYS.indexOf(key)>=0; }
 function rhoInfoInputHtml(f){
   const id='rho-'+f.key;
+  const locked=rhoIsLocked(f.key);
   const span=f.span?(' style="grid-column:span '+f.span+'"'):'';
+  const dis = locked ? ' disabled' : '';
   let ctl;
   if(f.type==='select'){
-    ctl='<select id="'+id+'" onchange="rhoOnInfoChange()"><option value="">— Pilih —</option>'+(f.options||[]).map(o=>'<option>'+fkEsc(o)+'</option>').join('')+'</select>';
+    ctl='<select id="'+id+'"'+dis+' onchange="rhoOnInfoChange()"><option value="">— Pilih —</option>'+(f.options||[]).map(o=>'<option>'+fkEsc(o)+'</option>').join('')+'</select>';
   }
-  else if(f.type==='num') ctl='<input id="'+id+'" type="text" inputmode="numeric" placeholder="Rp" oninput="onRupiahInput(this)" onchange="rhoOnInfoChange()">';
-  else if(f.type==='date') ctl='<input id="'+id+'" type="date" onchange="rhoOnInfoChange()">';
-  else ctl='<input id="'+id+'" type="text" oninput="rhoOnInfoChange()">';
-  return '<div class="field"'+span+'><label>'+fkEsc(f.label)+'</label>'+ctl+'</div>';
+  else if(f.type==='num') ctl='<input id="'+id+'" type="text" inputmode="numeric" placeholder="Rp"'+dis+' oninput="onRupiahInput(this)" onchange="rhoOnInfoChange()">';
+  else if(f.type==='date') ctl='<input id="'+id+'" type="date"'+dis+' onchange="rhoOnInfoChange()">';
+  else ctl='<input id="'+id+'" type="text"'+dis+' oninput="rhoOnInfoChange()">';
+  return '<div class="field'+(locked?' is-locked':'')+'"'+span+'><label>'+fkEsc(f.label)+'</label>'+ctl+(locked?DP_LOCK_BADGE:'')+'</div>';
 }
 function rhoCountFieldsHtml(){
   const st=rhoState;
@@ -12131,8 +12139,45 @@ function rhoItemListHtml(){
 }
 function rhoOnInfoChange(){
   const st=rhoState;
-  RHO_INFO_FIELDS.forEach(f=>{ const el=document.getElementById('rho-'+f.key); if(!el) return; st.info[f.key]=(f.type==='num')?parseRupiah(el.value):el.value.trim(); });
+  RHO_INFO_FIELDS.forEach(f=>{ if(rhoIsLocked(f.key)) return; const el=document.getElementById('rho-'+f.key); if(!el) return; st.info[f.key]=(f.type==='num')?parseRupiah(el.value):el.value.trim(); });
   rhoSaveState();
+}
+/* Bar wajib "Pilih Data Pekerjaan" — sumber nama/lokasi/nilai/no.anggaran/tgl.anggaran/metode. */
+function rhoDpBarHtml(){
+  const info=rhoState.info||{};
+  const dipilih = info.dpId ? String(info.dpNama||info.nama||'').trim() : '';
+  const sub = dipilih
+    ? ('Data pekerjaan terisi otomatis & terkunci dari: <b style="color:var(--teal-dark)">'+fkEsc(dipilih)+'</b>')
+    : 'Wajib pilih Data Pekerjaan terlebih dahulu — kolom Nama/Lokasi/Nilai/No. Anggaran/Tgl. Anggaran/Metode akan otomatis terisi.';
+  let btns='<button type="button" class="btn btn-teal" style="padding:8px 14px;font-size:11.5px" onclick="rhoPilihDp()">'+
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>'+(dipilih?'Ganti Data Pekerjaan':'Pilih Data Pekerjaan')+'</button>';
+  if(dipilih) btns+='<button type="button" class="btn btn-unpick" style="padding:8px 14px;font-size:11.5px" onclick="rhoLepasDp()">'+
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M18 6 6 18M6 6l12 12"/></svg>Lepas Pilihan</button>';
+  return '<div class="hps-analisa-bar">'+
+    '<div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg></div>'+
+    '<div class="tx"><b>Pilih Data Pekerjaan</b><span>'+sub+'</span></div>'+btns+
+  '</div>';
+}
+function rhoPilihDp(){ openDpPicker('rho'); }
+/* Dipanggil oleh dpPickerSelect() saat sebuah Data Pekerjaan dipilih untuk RHO */
+function rhoApplyDp(rec){
+  const st=rhoState; st.info=st.info||{};
+  const info=(rec.state&&rec.state.info)||{};
+  DP_SHARED_KEYS.forEach(k=>{ st.info[k]=(info[k]!=null?info[k]:''); });
+  st.info.dpId=String(rec.id);
+  st.info.dpNama=rec.nama_pekerjaan||info.nama||'';
+  rhoSaveState();
+  rhoRevealPick=true;   // pemicu animasi reveal konten di bawah tombol
+  renderRhoForm();
+  toast('Data pekerjaan diterapkan: '+st.info.dpNama,'ok');
+}
+/* Lepas pilihan Data Pekerjaan → kembali ke kondisi belum dipilih (wajib pilih ulang) */
+function rhoLepasDp(){
+  const st=rhoState; if(!st.info) return;
+  delete st.info.dpId; delete st.info.dpNama;
+  DP_SHARED_KEYS.forEach(k=>{ st.info[k]=''; });
+  rhoSaveState(); renderRhoForm();
+  toast('Pilihan Data Pekerjaan dilepas','ok');
 }
 function rhoOnJumlahRefChange(el){
   const n=Math.max(1,Math.min(10,parseInt(el.value,10)||1));
@@ -12324,16 +12369,29 @@ function renderRhoForm(){
   const sub=document.getElementById('rho-sub');
   const cont=document.getElementById('rho-content'); if(!cont) return;
   const st=rhoState;
+  // Sama seperti HPS/Analisa: field Data Pekerjaan bersumber dari "Pilih Data
+  // Pekerjaan". Saat Ubah Data (rhoEditId aktif) selalu ditampilkan penuh walau
+  // record lama belum tertaut dpId. rev1/rev2 = animasi reveal sekali setelah pilih.
+  const showBody = !!(st.info.dpId || (rhoEditId && String(st.info.nama||'').trim()));
+  const rev1 = (rhoRevealPick && showBody) ? ' dp-reveal dp-reveal-d1' : '';
+  const rev2 = (rhoRevealPick && showBody) ? ' dp-reveal dp-reveal-d2' : '';
   let html=rhoStepperHtml();
   if(rhoStep===1){
     if(sub) sub.textContent='Langkah 1 dari 2 — Lengkapi data pekerjaan & daftar barang/jasa';
-    html+='<div class="form-card"><div class="form-section-title">'+KR_SECTION_ICON+'Data Pekerjaan</div><div class="form-flow" style="--cols:4">';
-    html+=RHO_INFO_FIELDS.map(rhoInfoInputHtml).join('');
-    html+=rhoCountFieldsHtml();
-    html+='</div></div>';
-    html+='<div class="form-card"><div class="form-section-title">'+FKL_SEC_ICON+'Nama Barang/Material <span class="fkl-count-chip">'+st.items.length+' item</span></div>'+
-      '<div class="rho-hint">Isi nama tiap barang/material. Jumlah baris mengikuti pilihan <b>Jumlah Barang/Jasa</b>.</div>'+
-      rhoItemListHtml()+'</div>';
+    html+='<div class="form-card"><div class="form-section-title">'+KR_SECTION_ICON+'Data Pekerjaan</div>'+
+      rhoDpBarHtml();
+    if(showBody){
+      html+='<div class="form-flow'+rev1+'" style="--cols:4">';
+      html+=RHO_INFO_FIELDS.map(rhoInfoInputHtml).join('');
+      html+=rhoCountFieldsHtml();
+      html+='</div>';
+    }
+    html+='</div>';
+    if(showBody){
+      html+='<div class="form-card'+rev2+'"><div class="form-section-title">'+FKL_SEC_ICON+'Nama Barang/Material <span class="fkl-count-chip">'+st.items.length+' item</span></div>'+
+        '<div class="rho-hint">Isi nama tiap barang/material. Jumlah baris mengikuti pilihan <b>Jumlah Barang/Jasa</b>.</div>'+
+        rhoItemListHtml()+'</div>';
+    }
     html+=rhoActionsHtml({back:false});
   } else {
     if(sub) sub.textContent='Langkah 2 dari 2 — Isi referensi harga tiap barang/jasa';
@@ -12341,6 +12399,7 @@ function renderRhoForm(){
     html+=rhoActionsHtml({back:true, save:true});
   }
   cont.innerHTML=html;
+  rhoRevealPick=false;   // animasi reveal hanya dijalankan sekali
   if(rhoStep===1){
     RHO_INFO_FIELDS.forEach(f=>{ const el=document.getElementById('rho-'+f.key); if(!el) return; const v=st.info[f.key]; el.value=(f.type==='num')?rupiahInputText(v):(v!=null?v:''); });
   }
@@ -12361,6 +12420,7 @@ function rhoNext(){
   if(rhoStep===1){
     rhoOnInfoChange();
     if(!String(st.info.nama||'').trim()){ toast('Nama Pekerjaan wajib diisi','warn'); return; }
+    if(!st.info.dpId && !rhoEditId){ toast('Pilih Data Pekerjaan terlebih dahulu','warn'); return; }
     rhoEnsureRefs(); rhoStep=2;
   }
   renderRhoForm(); rhoScrollTop();
@@ -12379,6 +12439,7 @@ async function rhoSimpan(){
   if(!requireInput()) return;
   const st=rhoState; const info=st.info||{}; const nama=String(info.nama||'').trim();
   if(!nama){ toast('Nama Pekerjaan wajib diisi','warn'); rhoStep=1; renderRhoForm(); return; }
+  if(!info.dpId && !rhoEditId){ toast('Pilih Data Pekerjaan terlebih dahulu','warn'); rhoStep=1; renderRhoForm(); return; }
   rhoEnsureRefs();
   const rec={
     nama_pekerjaan: nama,
@@ -12856,6 +12917,7 @@ function dpPickerSelect(id){
   const rec=(records_dp||[]).find(r=>String(r.id)===String(id)); if(!rec) return;
   if(_dpPickerTarget==='hps' && typeof hpsApplyDp==='function') hpsApplyDp(rec);
   else if(_dpPickerTarget==='ana' && typeof anaApplyDp==='function') anaApplyDp(rec);
+  else if(_dpPickerTarget==='rho' && typeof rhoApplyDp==='function') rhoApplyDp(rec);
   closeDpPicker();
 }
 
@@ -13928,7 +13990,7 @@ function anaStepperHtml(){
   const st=anaState;
   const steps = st.jenis==='Konstruksi'
     ? [['1','Data Pekerjaan & Harga Satuan'],['2','Analisa Harga Satuan Pekerjaan']]
-    : [['1','Analisa Harga Satuan']];
+    : [['1','Data Pekerjaan & Sumber Referensi'],['2','Analisa Harga Satuan']];
   return '<div class="fkl-stepper">'+steps.map((s,i)=>{
     const n=i+1;
     const cls = n<anaStep ? 'done' : (n===anaStep ? 'active' : '');
@@ -13937,7 +13999,7 @@ function anaStepperHtml(){
     return '<div class="fkl-step '+cls+'"><div class="fkl-step-dot">'+mark+'</div><div class="fkl-step-name">'+s[1]+'</div></div>'+line;
   }).join('')+'</div>';
 }
-function anaMaxStep(){ return anaState.jenis==='Konstruksi'?2:1; }
+function anaMaxStep(){ return 2; }
 /* Selector Jenis Pekerjaan — tampil di kanan atas kartu Data Pekerjaan (Langkah 1),
    menentukan alur 2 langkah (Umum) atau 3 langkah (Konstruksi). */
 function anaJenisTopHtml(){
@@ -14456,35 +14518,41 @@ function renderAnalisaForm(){
       }
       html+=anaActionsHtml({back:false, save:true, next:true});
     } else {
-      // UMUM — SATU langkah penuh: Data Pekerjaan + Sumber Referensi + Analisa Harga Satuan
-      if(sub) sub.textContent='Isi Data Pekerjaan, sumber referensi & Analisa Harga Satuan';
+      // UMUM — Langkah 1 (dari 2): Data Pekerjaan + Sumber Referensi
+      if(sub) sub.textContent='Langkah 1 dari 2 — Data Pekerjaan & Sumber Referensi';
       html+=dpCardHtml;
       if(showBody){
         html+='<div class="form-card'+rev2+'"><div class="form-section-title">'+ANA_REF_ICON+'Sumber Referensi <span class="fkl-count-chip">'+st.jumlahRef+' referensi</span></div>'+
           '<div class="hps-hint">Isi nama/sumber tiap referensi (mis. Toko A, e-Katalog, Survei Pasar). Jumlah kotak menyesuaikan <b>Jumlah Referensi</b>. Nama ini muncul sebagai pilihan pada bagian Analisa Harga Satuan.</div>'+
           '<div id="ana-sumber-wrap">'+anaSumberGridHtml()+'</div></div>';
-        html+='<div class="form-card'+rev3+'"><div class="form-section-title">'+ANA_SEC_ICON+'Analisa Harga Satuan '+
-          '<span class="fkl-count-chip">'+st.jumlahItem+' uraian • '+st.jumlahRef+' referensi</span></div>'+
-          '<div class="hps-hint">Pilih <b>Referensi</b> (kanan atas) untuk mengisi harganya. Kolom <b>Kelompok/Uraian/Sat/Vol</b> berlaku sama untuk semua referensi; <b>Harga Satuan</b> diisi per referensi. <b>Metode Perhitungan: Sama</b> → satu metode (Rata-rata/Terendah) untuk semua uraian; <b>Berbeda</b> → metode diatur per uraian. Nilai 0/kosong diabaikan.</div>'+
-          '<div id="ana-step2-body"></div>'+
-          anaResultCardHtml()+'</div>';
       }
-      html+=anaActionsHtml({back:false, save:true});
+      html+=anaActionsHtml({back:false, next:true});
     }
-  } else if(anaStep===2 && isKon){
-    // KONSTRUKSI — Langkah 2 (dari 2): Analisa Harga Satuan Pekerjaan (AHSP)
-    if(sub) sub.textContent='Langkah 2 dari 2 — Analisa Harga Satuan Pekerjaan (Tenaga Kerja, Bahan, Peralatan)';
-    html+='<div class="form-card"><div class="form-section-title">'+ANA_SEC_ICON+'Analisa Harga Satuan Pekerjaan</div>'+
-      '<div id="ana-ahsp-body"></div></div>';
-    html+=anaActionsHtml({back:true, save:true});
+  } else if(anaStep===2){
+    if(isKon){
+      // KONSTRUKSI — Langkah 2 (dari 2): Analisa Harga Satuan Pekerjaan (AHSP)
+      if(sub) sub.textContent='Langkah 2 dari 2 — Analisa Harga Satuan Pekerjaan (Tenaga Kerja, Bahan, Peralatan)';
+      html+='<div class="form-card"><div class="form-section-title">'+ANA_SEC_ICON+'Analisa Harga Satuan Pekerjaan</div>'+
+        '<div id="ana-ahsp-body"></div></div>';
+      html+=anaActionsHtml({back:true, save:true});
+    } else {
+      // UMUM — Langkah 2 (dari 2): Analisa Harga Satuan + Hasil
+      if(sub) sub.textContent='Langkah 2 dari 2 — Analisa Harga Satuan';
+      html+='<div class="form-card"><div class="form-section-title">'+ANA_SEC_ICON+'Analisa Harga Satuan '+
+        '<span class="fkl-count-chip">'+st.jumlahItem+' uraian • '+st.jumlahRef+' referensi</span></div>'+
+        '<div class="hps-hint">Pilih <b>Referensi</b> (kanan atas) untuk mengisi harganya. Kolom <b>Kelompok/Uraian/Sat/Vol</b> berlaku sama untuk semua referensi; <b>Harga Satuan</b> diisi per referensi. <b>Metode Perhitungan: Sama</b> → satu metode (Rata-rata/Terendah) untuk semua uraian; <b>Berbeda</b> → metode diatur per uraian. Nilai 0/kosong diabaikan.</div>'+
+        '<div id="ana-step2-body"></div>'+
+        anaResultCardHtml()+'</div>';
+      html+=anaActionsHtml({back:true, save:true});
+    }
   }
   cont.innerHTML=html;
   anaRevealPick=false;   // animasi reveal hanya dijalankan sekali
   if(anaStep===1){
     ANA_INFO_FIELDS.forEach(f=>{ const el=document.getElementById('ana-'+f.key); if(!el) return; const v=st.info[f.key]; el.value=(f.type==='num')?rupiahInputText(v):(v!=null?v:''); });
-    if(!isKon && showBody){ anaRenderStep2Body(); }   // tabel Analisa Harga Satuan (Umum) pada halaman gabungan
-  } else if(anaStep===2 && isKon){
-    anaRenderAhspBody();
+  } else if(anaStep===2){
+    if(isKon) anaRenderAhspBody();
+    else anaRenderStep2Body();   // tabel Analisa Harga Satuan (Umum) di langkah 2
   }
 }
 function anaActionsHtml(o){
@@ -14504,7 +14572,7 @@ function anaNext(){
     anaOnInfoChange();
     if(!String(st.info.nama||'').trim()){ toast('Nama Pekerjaan wajib diisi','warn'); return; }
     if(!st.info.dpId && !anaEditId){ toast('Pilih Data Pekerjaan terlebih dahulu','warn'); return; }
-    anaEnsure(); anaStep=2;   // hanya Konstruksi yang punya langkah ke-2 (AHSP)
+    anaEnsure(); anaStep=2;   // langkah ke-2: Umum → Analisa Harga Satuan, Konstruksi → AHSP
   }
   renderAnalisaForm(); anaScrollTop();
 }
