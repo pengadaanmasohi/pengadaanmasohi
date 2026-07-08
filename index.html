@@ -2415,6 +2415,9 @@ html,body{background:#e9eef1}
 <style id="rho-ui-css">
 /* ===================== Referensi Harga Online (UI) ===================== */
 .rho-item-list{display:flex;flex-direction:column;gap:10px}
+.rho-ongkir-bar{display:flex;gap:14px;flex-wrap:wrap;justify-content:flex-end;margin:0 0 14px}
+.rho-ongkir-bar .field{min-width:180px;margin:0}
+input.rho-input-locked{background:#f1f4f6;color:#9aa7ad;cursor:not-allowed;border-style:dashed}
 .rho-item-row{display:flex;align-items:center;gap:12px;background:linear-gradient(180deg,#ffffff,#f6fbfc);border:1px solid #dbe7ea;border-radius:12px;padding:9px 12px}
 .rho-item-row:hover{border-color:#bcd6d9;box-shadow:0 3px 10px rgba(16,40,50,.07)}
 .rho-item-no{flex:0 0 auto;width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--teal),var(--cyan));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12.5px;font-family:'Plus Jakarta Sans'}
@@ -2446,7 +2449,7 @@ table.rho-matrix input:focus{outline:none;border-color:var(--teal);box-shadow:0 
 .rho-foto-cell{position:relative;width:150px;height:120px;margin:0 auto;border:2px dashed #b9d3d7;border-radius:11px;background:#f4fafb;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;transition:.15s;outline:none}
 .rho-foto-cell:hover{border-color:var(--teal);background:#edf7f8}
 .rho-foto-cell:focus,.rho-foto-cell.is-focus{border-color:var(--teal);border-style:solid;box-shadow:0 0 0 3px rgba(14,124,134,.18);background:#fff}
-.rho-foto-cell img{width:100%;height:100%;object-fit:contain;background:#fff;display:block}
+.rho-foto-cell img{width:100%;height:100%;object-fit:cover;object-position:center;background:#fff;display:block}
 .rho-foto-empty{display:flex;flex-direction:column;align-items:center;gap:5px;color:#7f9aa0;padding:6px;text-align:center;pointer-events:none}
 .rho-foto-empty svg{width:26px;height:26px;opacity:.75}
 .rho-foto-empty span{font-size:9.5px;font-weight:700;line-height:1.25}
@@ -2459,7 +2462,7 @@ table.rho-matrix input:focus{outline:none;border-color:var(--teal);box-shadow:0 
 .rho-ref-chip{display:inline-block;font-size:9px;font-weight:700;color:var(--teal-dark);background:var(--teal-soft);padding:2px 8px;border-radius:20px;margin-top:4px}
 
 /* PDF foto dalam dokumen */
-.rho-pdf-foto{width:100%;max-width:150px;height:96px;object-fit:contain;background:#fff;display:block;margin:0 auto;border:1px solid #e2eaec;border-radius:4px}
+.rho-pdf-foto{width:100%;max-width:150px;height:96px;object-fit:cover;object-position:center;background:#fff;display:block;margin:0 auto;border:1px solid #e2eaec;border-radius:4px}
 .rho-pdf-foto-empty{display:block;text-align:center;color:#9aabb0;font-style:italic;font-size:10px;padding:24px 4px}
 @media(max-width:640px){
   .rho-foto-cell{width:120px;height:96px}
@@ -11694,7 +11697,7 @@ const RHO_INFO_FIELDS = [
    items     : ['Nama barang', ...] sepanjang Jumlah Barang/Jasa (1..150)
    refs      : { itemIdx:[ {foto,link,harga,berat,ongkir}, ... ] }  panjang = jumlahRef
 */
-function rhoBlankState(){ return { info:{}, jumlahRef:1, items:[''], refs:{} }; }
+function rhoBlankState(){ return { info:{}, jumlahRef:1, items:[''], refs:{}, ongkirMode:'beda', ongkirSama:'' }; }
 let rhoState = rhoBlankState();
 let rhoStep = 1;              // 1..2
 let rhoEditId = null;
@@ -11713,6 +11716,8 @@ function rhoEnsureRefs(){
   if(!st.refs || typeof st.refs!=='object' || Array.isArray(st.refs)) st.refs={};
   const K=Math.max(1,Math.min(10, parseInt(st.jumlahRef,10)||1)); st.jumlahRef=K;
   if(!Array.isArray(st.items) || !st.items.length) st.items=[''];
+  if(st.ongkirMode!=='sama') st.ongkirMode='beda';
+  if(st.ongkirSama==null) st.ongkirSama='';
   st.items.forEach((_,i)=>{
     const arr=Array.isArray(st.refs[i])?st.refs[i]:[];
     const next=[];
@@ -11720,6 +11725,12 @@ function rhoEnsureRefs(){
     st.refs[i]=next;
   });
   Object.keys(st.refs).forEach(k=>{ if(parseInt(k,10)>=st.items.length) delete st.refs[k]; });
+  if(st.ongkirMode==='sama') rhoSyncOngkirSama();   // pastikan sel baru ikut terisi nilai ongkir seragam
+}
+/* Terapkan nilai Harga Ongkir (1 Kg) ke SEMUA sel Ongkos Kirim (dipakai saat Penetapan Ongkir = Sama) */
+function rhoSyncOngkirSama(){
+  const st=rhoState; const v=st.ongkirSama;
+  Object.keys(st.refs).forEach(i=>{ (st.refs[i]||[]).forEach(c=>{ c.ongkir=v; }); });
 }
 
 /* ---------- Penyimpanan (Supabase + fallback lokal) ---------- */
@@ -11793,7 +11804,9 @@ function rhoRecordToState(rec){
     info: Object.assign({}, base.info, s.info||{}),
     jumlahRef: Math.max(1,Math.min(10, parseInt(s.jumlahRef,10)||1)),
     items: (Array.isArray(s.items)&&s.items.length)?s.items.slice():[''],
-    refs: {}
+    refs: {},
+    ongkirMode: s.ongkirMode==='sama' ? 'sama' : 'beda',
+    ongkirSama: s.ongkirSama!=null ? s.ongkirSama : ''
   };
   if(s.refs && typeof s.refs==='object'){
     Object.keys(s.refs).forEach(k=>{
@@ -11903,10 +11916,12 @@ function rhoItemMatrixHtml(i){
   body+='</tr>';
   // Ongkos Kirim (1 kg)
   body+='<tr><td class="rho-c-lbl">Ongkos Kirim<span class="rho-c-sub">per 1 kg</span></td>';
-  for(let r=0;r<K;r++){ const v=cells[r]?cells[r].ongkir:''; body+='<td><input type="text" inputmode="numeric" id="rho-ongkir-'+i+'-'+r+'" data-i="'+i+'" data-r="'+r+'" placeholder="Rp" value="'+rupiahInputText(v)+'" oninput="rhoOnMoney(this,\'ongkir\')"></td>'; }
+  { const locked=st.ongkirMode==='sama';
+    for(let r=0;r<K;r++){ const v=cells[r]?cells[r].ongkir:''; body+='<td><input type="text" inputmode="numeric" id="rho-ongkir-'+i+'-'+r+'" data-i="'+i+'" data-r="'+r+'" placeholder="Rp" value="'+rupiahInputText(v)+'"'+(locked?' disabled class="rho-input-locked"':'')+' oninput="rhoOnMoney(this,\'ongkir\')"></td>'; }
+  }
   body+='</tr>';
   // Estimasi Ongkos Kirim (otomatis)
-  body+='<tr class="rho-autorow"><td class="rho-c-lbl">Estimasi Ongkos Kirim<span class="rho-c-sub">Berat × Ongkos Kirim</span></td>';
+  body+='<tr class="rho-autorow"><td class="rho-c-lbl">Estimasi Ongkir<span class="rho-c-sub">Berat × Ongkir</span></td>';
   for(let r=0;r<K;r++) body+='<td><span class="rho-auto-val" id="rho-est-'+i+'-'+r+'">'+rhoRp(rhoCalcEst(i,r))+'</span></td>';
   body+='</tr>';
   // Harga Total (otomatis)
@@ -11917,9 +11932,44 @@ function rhoItemMatrixHtml(i){
   return '<div class="rho-item-card"><div class="rho-item-head"><span class="rho-h-no">'+(i+1)+'</span><span class="rho-h-name">'+fkEsc(name)+'</span><span class="rho-h-tag">'+K+' Referensi</span></div>'+
     '<div class="rho-matrix-wrap"><table class="rho-matrix">'+head+body+'</table></div></div>';
 }
+function rhoOngkirBarHtml(){
+  const st=rhoState; const isSama=st.ongkirMode==='sama';
+  return '<div class="rho-ongkir-bar">'+
+    '<div class="field"><label>Penetapan Ongkir</label>'+
+      '<select id="rho-ongkirmode" onchange="rhoOnOngkirModeChange(this)">'+
+        '<option value="beda"'+(isSama?'':' selected')+'>Berbeda</option>'+
+        '<option value="sama"'+(isSama?' selected':'')+'>Sama</option>'+
+      '</select>'+
+    '</div>'+
+    '<div class="field'+(isSama?'':' locked')+'"><label>Harga Ongkir (1 Kg)</label>'+
+      '<input type="text" inputmode="numeric" id="rho-ongkirsama" placeholder="Rp" value="'+rupiahInputText(st.ongkirSama)+'"'+(isSama?'':' disabled')+' oninput="rhoOnOngkirSamaChange(this)"></div>'+
+  '</div>';
+}
+function rhoOnOngkirModeChange(el){
+  const st=rhoState;
+  st.ongkirMode = el.value==='sama' ? 'sama' : 'beda';
+  if(st.ongkirMode==='sama') rhoSyncOngkirSama();
+  else st.ongkirSama='';   // Berbeda → Harga Ongkir (1 Kg) terkunci tanpa isian
+  rhoSaveState();
+  renderRhoForm();
+}
+function rhoOnOngkirSamaChange(el){
+  onRupiahInput(el);
+  const st=rhoState;
+  st.ongkirSama=parseRupiah(el.value);
+  if(st.ongkirMode==='sama'){
+    rhoSyncOngkirSama();
+    Object.keys(st.refs).forEach(k=>{ const i=+k; (st.refs[i]||[]).forEach((c,r)=>{
+      const inp=document.getElementById('rho-ongkir-'+i+'-'+r); if(inp) inp.value=rupiahInputText(c.ongkir);
+      rhoRecalcCell(i,r);
+    }); });
+  }
+  rhoSaveState();
+}
 function rhoPanelHtml(){
   const st=rhoState;
-  let html='<div class="rho-hint">Tempel foto produk dengan cara: klik kotak foto lalu tekan <b>Ctrl + V</b> (bisa hasil <i>print screen</i> atau salinan gambar dari halaman produk). Foto akan otomatis diseragamkan ukurannya. Kolom <b>Estimasi Ongkos Kirim</b> dan <b>Harga Total</b> terisi otomatis.</div>';
+  let html=rhoOngkirBarHtml();
+  html+='<div class="rho-hint">Tempel foto produk dengan cara: klik kotak foto lalu tekan <b>Ctrl + V</b> (bisa hasil <i>print screen</i> atau salinan gambar dari halaman produk). Foto akan otomatis diseragamkan ukurannya. Kolom <b>Estimasi Ongkir</b> dan <b>Harga Total</b> terisi otomatis.</div>';
   html+='<div class="rho-panel">';
   st.items.forEach((nm,i)=>{ html+=rhoItemMatrixHtml(i); });
   html+='</div>';
@@ -11937,7 +11987,9 @@ function rhoOnBerat(el){
   if(rhoState.refs[i]&&rhoState.refs[i][r]){ rhoState.refs[i][r].berat=v; rhoSaveState(); rhoRecalcCell(i,r); }
 }
 
-/* ---- Foto: fokus, tempel (paste), normalisasi ukuran, hapus ---- */
+/* ---- Foto: fokus, tempel (paste), normalisasi ukuran, hapus ----
+   Gambar dipotong (crop) mengisi PENUH lebar & tinggi kotak (mode "cover"),
+   sesuai rasio kotak pengisian foto (.rho-foto-cell), tanpa sisa ruang kosong. */
 function rhoFotoClick(el){ try{ el.focus(); }catch(e){} }
 const RHO_IMG_W=400, RHO_IMG_H=320;
 function rhoNormalizeImage(src, cb){
@@ -11945,8 +11997,8 @@ function rhoNormalizeImage(src, cb){
   img.onload=function(){
     try{
       const cv=document.createElement('canvas'); cv.width=RHO_IMG_W; cv.height=RHO_IMG_H;
-      const ctx=cv.getContext('2d'); ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,RHO_IMG_W,RHO_IMG_H);
-      const s=Math.min(RHO_IMG_W/img.width, RHO_IMG_H/img.height);
+      const ctx=cv.getContext('2d');
+      const s=Math.max(RHO_IMG_W/img.width, RHO_IMG_H/img.height);   // "cover": isi penuh, potong kelebihan
       const w=Math.max(1,Math.round(img.width*s)), h=Math.max(1,Math.round(img.height*s));
       const x=Math.round((RHO_IMG_W-w)/2), y=Math.round((RHO_IMG_H-h)/2);
       try{ ctx.imageSmoothingQuality='high'; }catch(e){}
@@ -12182,7 +12234,7 @@ function rhoBuildDocHtml(){
     let rowBerat='<tr><td class="lbl">Berat Barang (kg)</td>';
     for(let r=0;r<K;r++){ const v=cells[r]?cells[r].berat:''; const n=rhoNum(v); rowBerat+='<td class="num">'+(n>0?(fkEsc(String(v))+' kg'):'-')+'</td>'; }
     rowBerat+='</tr>';
-    let rowEst='<tr class="auto"><td class="lbl">Estimasi Ongkos Kirim</td>';
+    let rowEst='<tr class="auto"><td class="lbl">Estimasi Ongkir</td>';
     for(let r=0;r<K;r++) rowEst+='<td class="num">'+rhoRp(rhoCalcEst(i,r))+'</td>';
     rowEst+='</tr>';
     let rowTot='<tr class="auto tot"><td class="lbl">Harga Total</td>';
@@ -12238,7 +12290,7 @@ function rhoExtraDocCss(){
   'table.rho-doc-tbl td.lnk a{color:#0b6a73;text-decoration:none}'+
   'table.rho-doc-tbl tr.auto td{background:#fbfdf4}'+
   'table.rho-doc-tbl tr.tot td{background:#eef8f1;color:#0d7a3f;font-weight:800}'+
-  '.rho-pdf-foto{width:100%;max-width:150px;height:92px;object-fit:contain;background:#fff;display:block;margin:0 auto}'+
+  '.rho-pdf-foto{width:100%;max-width:150px;height:92px;object-fit:cover;object-position:center;background:#fff;display:block;margin:0 auto}'+
   '.rho-pdf-foto-empty{color:#9aabb0;font-style:italic;font-size:9px}';
 }
 function rhoStandaloneDocHtml(){
