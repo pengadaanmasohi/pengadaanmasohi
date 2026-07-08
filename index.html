@@ -2447,6 +2447,10 @@ tbody tr:hover{background:#eef5f6 !important}
 .fkl-chk .pill.ada{background:#e0f5ea;color:#127a43;border:1px solid #a8dcc0}
 .fkl-chk .pill.no{background:#fce4e4;color:#b02626;border:1px solid #edbcbc}
 .fkl-chk .pill.nn{background:#eef2f4;color:#98a6ab;border:1px solid #dde5e8}
+.fkl-chk td.kt,.fkl-chk th.kt{width:34%;text-align:left}
+.fkl-chk.pnw-hasil{margin-top:2px}
+.fkl-chk.pnw-hasil th.ck,.fkl-chk.pnw-hasil td.ck{width:150px}
+.fkl-chk.pnw-hasil td.kt{white-space:normal}
 /* Hasil pemeriksaan */
 .fkl-doc .hasil{display:flex;align-items:center;gap:14px;padding:14px 18px;border-radius:11px;margin-top:2px}
 .fkl-doc .hasil .hi{flex:0 0 auto;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center}
@@ -2653,15 +2657,17 @@ table.ana-uraian td.c-calc{text-align:right;font-weight:800;color:#0b6a73;white-
 .ana-res td.c-inf input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,124,134,.15)}
 .ana-res td.c-inf .c-inf-suf{color:#9aa7ab;font-weight:700;margin-left:4px}
 .ana-res-wrap{overflow-x:auto}
-table.ana-res{width:100%;border-collapse:separate;border-spacing:0;min-width:760px}
-table.ana-res thead th{background:#eef6f7;color:#5a6b70;font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:.3px;padding:8px 10px;text-align:center;white-space:nowrap;border-bottom:1px solid #e2edee}
+table.ana-res{width:100%;border-collapse:collapse;border-spacing:0;min-width:760px}
+/* Grid penuh 1px #dce6e9 (vertikal + horizontal) — sama seperti tabel Monitoring/Daftar Pekerjaan */
+table.ana-res th,table.ana-res td{border:1px solid #dce6e9}
+table.ana-res thead th{background:linear-gradient(180deg,#12909c,#0b6b74);color:#fff;font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:.3px;padding:8px 10px;text-align:center;white-space:nowrap;border-color:#0b6b74}
 table.ana-res thead th.c-ur{text-align:center}
 table.ana-res thead th.c-no{text-align:center;width:40px}
-table.ana-res tbody td{padding:8px 10px;font-size:12px;border-bottom:1px solid #eef4f5;text-align:right;white-space:nowrap;color:#2b3f48}
+table.ana-res tbody td{padding:8px 10px;font-size:12px;text-align:right;white-space:nowrap;color:#2b3f48}
+table.ana-res tbody tr:nth-child(even) td{background:#f6fafb}
 table.ana-res tbody td.c-no{text-align:center;font-weight:800;color:#0b6a73}
 table.ana-res tbody td.c-ur{text-align:left;font-weight:600}
-table.ana-res tbody td.c-res{font-weight:800;color:#0b3d42;background:#f2fafb}
-table.ana-res tbody tr:last-child td{border-bottom:none}
+table.ana-res tbody td.c-res{font-weight:800;color:#0b3d42;background:#eef7f8}
 .ana-res-hint{padding:10px 15px;font-size:11px;color:#5a6b70;background:#f6fafb;border-top:1px solid #eef4f5;line-height:1.55}
 .ana-res-hint b{color:var(--teal-dark)}
 .ana-method-chip{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;color:#0b6a73;background:#dff1f2;padding:2px 8px;border-radius:20px;margin-left:6px}
@@ -8944,7 +8950,6 @@ function jpStandaloneDocHtml(){
     '</body></html>';
 }
 function jpPrint(){
-  if(!(jpState&&jpState.dpId) && !jpEditId){ toast('Tidak dapat melanjutkan : Pilih pekerjaan terlebih dahulu','warn'); return; }
   if(!jpState || !jpState.tglMulai){ toast('Isi Tanggal Mulai terlebih dahulu','warn'); return; }
   const old=document.getElementById('jp-print-frame'); if(old) old.remove();
   const ifr=document.createElement('iframe');
@@ -9005,7 +9010,6 @@ async function refreshDataJadwal(){
 /* Simpan (atau perbarui) jadwal yang sedang disusun di halaman Tentukan Jadwal */
 async function jpSaveRecord(){
   if(!requireInput()) return;
-  if(!(jpState&&jpState.dpId) && !jpEditId){ toast('Tidak dapat melanjutkan : Pilih pekerjaan terlebih dahulu','warn'); return; }
   if(!jpState || !jpState.tglMulai){ toast('Isi Tanggal Mulai terlebih dahulu','warn'); return; }
   const rows=jpCompute();
   const akhirTerakhir = rows.length ? rows[rows.length-1].akhir : null;
@@ -10839,7 +10843,6 @@ function fklUpdateStatus(){
 function fklNext(){
   if(fklStep===1){
     fklOnInfoChange();
-    if(!fklState[fklModul].info.dpId && !fklEditId){ toast('Tidak dapat melanjutkan : Pilih pekerjaan terlebih dahulu','warn'); return; }
     fklStep=2; renderFormKelengkapan(); fklScrollTop(); return;
   }
   if(fklStep===2){
@@ -11018,9 +11021,20 @@ function fklBuildDocHtml(){
   }).join('');
 
   const hasilLengkap = c.lengkap;
-  const hasilBadge = hasilLengkap
-    ? '<div class="hasil ok"><span class="hi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></span><div><div class="ht">DOKUMEN LENGKAP</div><div class="hs">Seluruh dokumen yang diperiksa dinyatakan tersedia</div></div></div>'
-    : '<div class="hasil no"><span class="hi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6 6 18M6 6l12 12"/></svg></span><div><div class="ht">DOKUMEN TIDAK LENGKAP</div><div class="hs">Terdapat dokumen yang belum tersedia ('+c.tidak+' tidak ada'+(c.belum? ', '+c.belum+' belum ditandai':'')+')</div></div></div>';
+  // Hasil Pemeriksaan (poin C) — bergaya sama seperti tabel pada Pembukaan Penawaran.
+  const hasilStatus = hasilLengkap
+    ? '<span class="pill ada">Lengkap</span>'
+    : '<span class="pill no">Tidak Lengkap</span>';
+  const hasilKet = hasilLengkap
+    ? 'Seluruh dokumen yang diperiksa dinyatakan lengkap'
+    : ('Terdapat '+c.tidak+' dari '+c.total+' dokumen yang tidak ada'+(c.belum?(' ('+c.belum+' belum ditandai)'):''));
+  const hasilNama = (info.nama && String(info.nama).trim()) ? String(info.nama) : 'Kelengkapan Dokumen Pengadaan';
+  const hasilBlock = '<table class="fkl-chk pnw-hasil"><thead><tr>'+
+    '<th class="no">No</th><th class="nm">Nama Pekerjaan</th>'+
+    '<th class="ck">Hasil Pemeriksaan</th><th class="kt">Keterangan</th>'+
+    '</tr></thead><tbody>'+
+    '<tr><td class="no">1</td><td class="nm">'+fkEsc(hasilNama.toUpperCase())+'</td><td class="ck">'+hasilStatus+'</td><td class="kt">'+fkEsc(hasilKet)+'</td></tr>'+
+    '</tbody></table>';
 
   return ''+
   '<div class="fkl-doc">'+
@@ -11055,7 +11069,7 @@ function fklBuildDocHtml(){
     '</tbody></table>'+
 
     '<div class="fkl-sec-h"><span class="rn">C</span>Hasil Pemeriksaan</div>'+
-    hasilBadge+
+    hasilBlock+
 
     '<div class="fkl-doc-foot">'+
       '<div class="ttd-date">Masohi, '+fkEsc(tglTerima)+'</div>'+
@@ -11119,12 +11133,23 @@ function fklOpenPreview(){
    judul tab utama selama proses cetak berlangsung, lalu mengembalikannya
    setelah selesai. Dipakai oleh semua fungsi *Print() dokumen (fkl, pnw,
    rho, hps, ana, jk) agar konsisten di semua PDF. */
+const APP_PAGE_TITLE='Monitoring Pengadaan Masohi';
 function withHiddenPageTitle(fn){
-  const origTitle=document.title;
-  document.title='\u200B';   // zero-width space — bukan spasi biasa/string kosong
+  const ZW='\u200B';
+  // Jangan pernah menangkap placeholder zero-width sebagai judul asli. Bila cetak
+  // dipanggil dua kali beruntun (sebelum restore sebelumnya jalan), judul tab bisa
+  // tersimpan '\u200B' lalu dikembalikan sebagai kosong → tab jadi hilang permanen.
+  const realTitle=(document.title && document.title!==ZW) ? document.title : APP_PAGE_TITLE;
+  document.title=ZW;   // zero-width space — bukan spasi biasa/string kosong
   let done=false;
-  const restore=()=>{ if(done) return; done=true; document.title=origTitle; window.removeEventListener('afterprint', restore); };
+  const restore=()=>{
+    if(done) return; done=true;
+    document.title=realTitle;
+    window.removeEventListener('afterprint', restore);
+    window.removeEventListener('focus', restore);
+  };
   window.addEventListener('afterprint', restore);
+  window.addEventListener('focus', restore);   // saat dialog cetak ditutup, window fokus lagi → judul pulih
   try{ fn(); } finally { setTimeout(restore, 4000); }
 }
 /* Cetak dokumen (mencetak isi dokumen yang sama dengan pratinjau) */
@@ -11715,7 +11740,6 @@ function pnwNext(){
   const st=pnwState;
   if(pnwStep===1){
     pnwOnInfoChange();
-    if(!st.info.dpId && !pnwEditId){ toast('Tidak dapat melanjutkan : Pilih pekerjaan terlebih dahulu','warn'); return; }
     if(!String(st.info.nama||'').trim()){ toast('Nama Pekerjaan wajib diisi','warn'); return; }
     if(!st.info.penyampaian){ toast('Pilih Metode Penyampaian Dokumen','warn'); return; }
     pnwStep=2;
@@ -11993,7 +12017,6 @@ function pnwBuildDocHtml(sk){
       infoRow('Tgl. Anggaran', info.tgl_anggaran?pnwDateLong(info.tgl_anggaran):'-')+
       infoRow('Jenis Anggaran', info.jenis_anggaran)+
       infoRow('Metode Pengadaan', info.metode)+
-      infoRow('Metode Penyampaian', info.penyampaian)+
     '</tbody></table>'+
 
     '<div class="fkl-sec-h"><span class="rn">B</span>Pemeriksaan Kelengkapan Dokumen Penawaran</div>'+
@@ -12281,7 +12304,7 @@ function rhoDpBarHtml(){
   const dipilih = info.dpId ? String(info.dpNama||info.nama||'').trim() : '';
   const sub = dipilih
     ? ('Data pekerjaan terisi otomatis & terkunci dari: <b style="color:var(--teal-dark)">'+fkEsc(dipilih)+'</b>')
-    : 'Wajib pilih Data Pekerjaan terlebih dahulu — kolom Nama/Lokasi/Nilai/No. Anggaran/Tgl. Anggaran/Metode akan otomatis terisi.';
+    : 'Opsional — pilih Data Pekerjaan agar kolom Nama/Lokasi/Nilai/No. Anggaran/Tgl. Anggaran/Metode terisi otomatis, atau isi manual pada kolom di bawah.';
   let btns='<button type="button" class="btn btn-teal" style="padding:8px 14px;font-size:11.5px" onclick="rhoPilihDp()">'+
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>'+(dipilih?'Ganti Data Pekerjaan':'Pilih Data Pekerjaan')+'</button>';
   if(dipilih) btns+='<button type="button" class="btn btn-unpick" style="padding:8px 14px;font-size:11.5px" onclick="rhoLepasDp()">'+
@@ -12570,7 +12593,6 @@ function rhoNext(){
   const st=rhoState;
   if(rhoStep===1){
     rhoOnInfoChange();
-    if(!st.info.dpId && !rhoEditId){ toast('Tidak dapat melanjutkan : Pilih pekerjaan terlebih dahulu','warn'); return; }
     if(!String(st.info.nama||'').trim()){ toast('Nama Pekerjaan wajib diisi','warn'); return; }
     rhoEnsureRefs(); rhoStep=2;
   }
@@ -12752,8 +12774,6 @@ function rhoBuildDocHtml(){
       infoRow('Tgl. Anggaran', info.tgl_anggaran?pnwDateLong(info.tgl_anggaran):'-')+
       infoRow('Jenis Anggaran', info.jenis_anggaran)+
       infoRow('Metode Pengadaan', info.metode)+
-      infoRow('Jumlah Barang/Jasa', String((st.items||[]).length)+' item')+
-      infoRow('Jumlah Referensi', String(K)+' referensi')+
     '</tbody></table>'+
     '<div class="fkl-sec-h"><span class="rn">B</span>Referensi Harga Barang/Jasa</div>'+
     itemBlocks+
@@ -13344,7 +13364,7 @@ function hpsDpBarHtml(){
   const dipilih = info.dpId ? String(info.dpNama||info.nama||'').trim() : '';
   const sub = dipilih
     ? ('Data pekerjaan terisi otomatis & terkunci dari: <b style="color:var(--teal-dark)">'+fkEsc(dipilih)+'</b>')
-    : 'Wajib pilih Data Pekerjaan terlebih dahulu — kolom Nama/Lokasi/Nilai/No. Anggaran/Tgl. Anggaran/Metode akan otomatis terisi.';
+    : 'Opsional — pilih Data Pekerjaan agar kolom Nama/Lokasi/Nilai/No. Anggaran/Tgl. Anggaran/Metode terisi otomatis, atau isi manual pada kolom di bawah.';
   let btns='<button type="button" class="btn btn-teal" style="padding:8px 14px;font-size:11.5px" onclick="hpsPilihDp()">'+
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>'+(dipilih?'Ganti Data Pekerjaan':'Pilih Data Pekerjaan')+'</button>';
   if(dipilih) btns+='<button type="button" class="btn btn-unpick" style="padding:8px 14px;font-size:11.5px" onclick="hpsLepasDp()">'+
@@ -13668,7 +13688,6 @@ function hpsNext(){
   const st=hpsState;
   if(hpsStep===1){
     hpsOnInfoChange();
-    if(!st.info.dpId && !hpsEditId){ toast('Tidak dapat melanjutkan : Pilih pekerjaan terlebih dahulu','warn'); return; }
     if(!String(st.info.nama||'').trim()){ toast('Nama Pekerjaan wajib diisi','warn'); return; }
     hpsEnsureItems(); hpsStep=2;
   }
@@ -13893,8 +13912,6 @@ function hpsBuildDocHtml(){
       infoRow('No. Anggaran', info.no_anggaran)+
       infoRow('Tgl. Anggaran', info.tgl_anggaran?pnwDateLong(info.tgl_anggaran):'-')+
       infoRow('Metode Pengadaan', info.metode)+
-      infoRow('Tgl. HPS', info.tgl_hps?pnwDateLong(info.tgl_hps):'-')+
-      infoRow('Jumlah Barang/Jasa', String((st.items||[]).length)+' item')+
     '</tbody></table>'+
     '<div class="fkl-sec-h"><span class="rn">B</span>Uraian Pekerjaan &amp; Rincian Harga</div>'+
     tbl+
@@ -14305,7 +14322,7 @@ function anaDpBarHtml(){
   const dipilih = info.dpId ? String(info.dpNama||info.nama||'').trim() : '';
   const sub = dipilih
     ? ('Data pekerjaan terisi otomatis & terkunci dari: <b style="color:var(--teal-dark)">'+fkEsc(dipilih)+'</b>')
-    : 'Wajib pilih Data Pekerjaan terlebih dahulu — kolom Nama/Lokasi/Nilai/No. Anggaran/Tgl. Anggaran/Metode akan otomatis terisi.';
+    : 'Opsional — pilih Data Pekerjaan agar kolom Nama/Lokasi/Nilai/No. Anggaran/Tgl. Anggaran/Metode terisi otomatis, atau isi manual pada kolom di bawah.';
   let btns='<button type="button" class="btn btn-teal" style="padding:8px 14px;font-size:11.5px" onclick="anaPilihDp()">'+
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>'+(dipilih?'Ganti Data Pekerjaan':'Pilih Data Pekerjaan')+'</button>';
   if(dipilih) btns+='<button type="button" class="btn btn-unpick" style="padding:8px 14px;font-size:11.5px" onclick="anaLepasDp()">'+
@@ -14728,8 +14745,7 @@ function anaRenderResult(){
   body.innerHTML='<div class="ana-res-wrap"><table class="ana-res"><thead><tr>'+
       '<th class="c-no">No</th><th class="c-ur">Uraian Pekerjaan</th><th class="c-mtd">Metode Perhitungan</th>'+infHead+
       '<th>Harga Sat. Barang'+priceSuffix+'</th><th>Harga Sat. Jasa'+priceSuffix+'</th><th>Harga Satuan (Total)</th>'+
-    '</tr></thead><tbody>'+(rows||'<tr><td colspan="'+cols+'" style="text-align:center;color:#9aa7ab">Belum ada data</td></tr>')+'</tbody></table></div>'+
-    '<div class="ana-res-hint">'+modeTxt+rokHint+infHint+' Nilai <b>0 / kosong</b> diabaikan dalam perhitungan (rata-rata dihitung hanya dari referensi yang terisi).</div>';
+    '</tr></thead><tbody>'+(rows||'<tr><td colspan="'+cols+'" style="text-align:center;color:#9aa7ab">Belum ada data</td></tr>')+'</tbody></table></div>';
 }
 
 /* ---------- Render form ---------- */
@@ -14847,7 +14863,6 @@ function anaNext(){
   const st=anaState;
   if(anaStep===1){
     anaOnInfoChange();
-    if(!st.info.dpId && !anaEditId){ toast('Tidak dapat melanjutkan : Pilih pekerjaan terlebih dahulu','warn'); return; }
     if(!String(st.info.nama||'').trim()){ toast('Nama Pekerjaan wajib diisi','warn'); return; }
     anaEnsure(); anaStep=2;
   } else if(anaStep < anaMaxStep()){
@@ -15038,7 +15053,6 @@ function anaBuildDocHargaSatuan(st){
       infoRow('No. Anggaran', info.no_anggaran)+
       infoRow('Tgl. Anggaran', info.tgl_anggaran?pnwDateLong(info.tgl_anggaran):'-')+
       infoRow('Metode Pengadaan', info.metode)+
-      infoRow('Jenis Pekerjaan', 'Pekerjaan Konstruksi')+
     '</tbody></table>'+
     '<div class="fkl-sec-h"><span class="rn">B</span>Harga Satuan</div>'+
     hsTbl+
@@ -15172,17 +15186,12 @@ function anaBuildDocHtmlUmum(st){
       infoRow('No. Anggaran', info.no_anggaran)+
       infoRow('Tgl. Anggaran', info.tgl_anggaran?pnwDateLong(info.tgl_anggaran):'-')+
       infoRow('Metode Pengadaan', info.metode)+
-      infoRow('Jumlah Barang/Jasa', String(struct.length)+' item')+
-      infoRow('Jumlah Referensi', String(nRef)+' referensi')+
-      infoRow('Jenis Pekerjaan', jenisTxt+(rok>0?(' — ROK '+rok+'%'):''))+
-      infoRow('Metode Perhitungan', st.metodeRef==='Sama'?('Sama — '+st.metodeAll+' (semua uraian)'):'Berbeda (per uraian)')+
     '</tbody></table>'+
     '<div class="fkl-sec-h"><span class="rn">B</span>Analisa Harga Satuan</div>'+
     tblAnalisa+
     '<div class="ana-doc-note">Nilai 0 / kosong diabaikan dalam perhitungan. Cara perhitungan tiap uraian ditunjukkan pada kolom <b>Metode</b> di tabel Hasil Analisa Harga Satuan.</div>'+
     '<div class="fkl-sec-h ana-hasil-sec"><span class="rn">C</span>Hasil Analisa Harga Satuan'+hasilTitleSuffix+'</div>'+
     tblHasil+
-    '<div class="ana-doc-note">'+(rok>0?('Harga hasil analisa sudah termasuk ROK '+rok+'% ('+jenisTxt+').'):('Belum ada penambahan ROK ('+jenisTxt+').'))+'</div>'+
   '</div>';
 }
 function anaRpDoc(n){ n=Math.round(anaNum(n)); return n>0 ? n.toLocaleString('id-ID') : '-'; }
