@@ -11009,7 +11009,7 @@ function fklBuildDocHtml(){
   const def=FKL_DOCS[fklModul], st=fklActiveState(), info=st.info||{};
   const list=fklSelectedDocs(), c=fklCountAda();
   const fmtNilai = (info.nilai!=='' && info.nilai!=null && info.nilai!=='') ? 'Rp '+Number(info.nilai).toLocaleString('id-ID') : '-';
-  const tglTerima = info.tgl_terima ? fklDateLong(info.tgl_terima) : '..........................';
+  const tglTerima = info.tgl_terima ? pnwDateLong(info.tgl_terima) : '..........................';
   const infoRow=(k,v)=>'<tr><td class="k">'+k+'</td><td class="s">:</td><td class="v">'+fkEsc(v||'-')+'</td></tr>';
 
   const chkRows=list.map((nama,i)=>{
