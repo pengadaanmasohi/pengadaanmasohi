@@ -376,6 +376,46 @@ td.cell-center{text-align:center}
 .table-wrap td.col-no,.table-wrap td.col-nama-freeze{background-clip:padding-box;position:sticky}
 .table-wrap td.col-no::before,.table-wrap td.col-nama-freeze::before{
   content:"";position:absolute;top:0;bottom:0;left:1px;right:1px;background:inherit;z-index:-1}
+/* Freeze pane horizontal (kolom No. & Nama Pekerjaan menempel di kiri) HANYA berlaku
+   untuk menu Monitoring — Daftar Pekerjaan (Kontrak Rinci #view-list, Pengadaan Langsung
+   #view-list-pl, Tender #view-list-tender). Di menu lain kolom mengalir normal (tidak
+   dibekukan ke kiri); baris judul tetap menempel di atas mengikuti aturan umum. */
+#view-fk-input .table-wrap th.col-no,#view-fk-input .table-wrap th.col-nama-freeze,
+#view-fk-view .table-wrap th.col-no,#view-fk-view .table-wrap th.col-nama-freeze,
+#view-pn-lihat .table-wrap th.col-no,#view-pn-lihat .table-wrap th.col-nama-freeze,
+#view-fkl-view .table-wrap th.col-no,#view-fkl-view .table-wrap th.col-nama-freeze,
+#view-pnw-view .table-wrap th.col-no,#view-pnw-view .table-wrap th.col-nama-freeze,
+#view-rho-view .table-wrap th.col-no,#view-rho-view .table-wrap th.col-nama-freeze,
+#view-dp-view .table-wrap th.col-no,#view-dp-view .table-wrap th.col-nama-freeze,
+#view-hps-view .table-wrap th.col-no,#view-hps-view .table-wrap th.col-nama-freeze,
+#view-analisa-view .table-wrap th.col-no,#view-analisa-view .table-wrap th.col-nama-freeze,
+#view-jadwal-view .table-wrap th.col-no,#view-jadwal-view .table-wrap th.col-nama-freeze{
+  left:auto!important;z-index:6!important;
+}
+#view-fk-input .table-wrap td.col-no,#view-fk-input .table-wrap td.col-nama-freeze,
+#view-fk-view .table-wrap td.col-no,#view-fk-view .table-wrap td.col-nama-freeze,
+#view-pn-lihat .table-wrap td.col-no,#view-pn-lihat .table-wrap td.col-nama-freeze,
+#view-fkl-view .table-wrap td.col-no,#view-fkl-view .table-wrap td.col-nama-freeze,
+#view-pnw-view .table-wrap td.col-no,#view-pnw-view .table-wrap td.col-nama-freeze,
+#view-rho-view .table-wrap td.col-no,#view-rho-view .table-wrap td.col-nama-freeze,
+#view-dp-view .table-wrap td.col-no,#view-dp-view .table-wrap td.col-nama-freeze,
+#view-hps-view .table-wrap td.col-no,#view-hps-view .table-wrap td.col-nama-freeze,
+#view-analisa-view .table-wrap td.col-no,#view-analisa-view .table-wrap td.col-nama-freeze,
+#view-jadwal-view .table-wrap td.col-no,#view-jadwal-view .table-wrap td.col-nama-freeze{
+  position:static!important;left:auto!important;z-index:auto!important;
+}
+#view-fk-input .table-wrap td.col-no::before,#view-fk-input .table-wrap td.col-nama-freeze::before,
+#view-fk-view .table-wrap td.col-no::before,#view-fk-view .table-wrap td.col-nama-freeze::before,
+#view-pn-lihat .table-wrap td.col-no::before,#view-pn-lihat .table-wrap td.col-nama-freeze::before,
+#view-fkl-view .table-wrap td.col-no::before,#view-fkl-view .table-wrap td.col-nama-freeze::before,
+#view-pnw-view .table-wrap td.col-no::before,#view-pnw-view .table-wrap td.col-nama-freeze::before,
+#view-rho-view .table-wrap td.col-no::before,#view-rho-view .table-wrap td.col-nama-freeze::before,
+#view-dp-view .table-wrap td.col-no::before,#view-dp-view .table-wrap td.col-nama-freeze::before,
+#view-hps-view .table-wrap td.col-no::before,#view-hps-view .table-wrap td.col-nama-freeze::before,
+#view-analisa-view .table-wrap td.col-no::before,#view-analisa-view .table-wrap td.col-nama-freeze::before,
+#view-jadwal-view .table-wrap td.col-no::before,#view-jadwal-view .table-wrap td.col-nama-freeze::before{
+  content:none!important;
+}
 /* #1 & #2: Freeze pane horizontal (kolom No. & Nama Pekerjaan menempel di kiri)
    kini berlaku pada SEMUA tabel — Monitoring, File Kontrak, Penetapan – Lihat Nomor,
    dan Kelengkapan – Lihat Data — memakai aturan freeze dasar di atas. */
@@ -2471,7 +2511,7 @@ input.rho-input-locked{background:#f1f4f6;color:#9aa7ad;cursor:not-allowed;borde
 .rho-panel{display:flex;flex-direction:column;gap:16px}
 .rho-item-card{background:linear-gradient(180deg,#ffffff,#fafdfe);border:1px solid #dde9eb;border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(16,40,50,.05)}
 .rho-item-head{display:flex;align-items:center;gap:11px;padding:12px 16px;background:linear-gradient(90deg,#0E7C86,#0b6a73);color:#fff}
-.rho-item-head .rho-h-no{flex:0 0 auto;width:26px;height:26px;border-radius:7px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px}
+.rho-item-head .rho-h-no{flex:0 0 auto;width:26px;height:26px;border-radius:7px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13.5px;letter-spacing:.2px}
 .rho-item-head .rho-h-name{font-weight:800;font-size:13.5px;letter-spacing:.2px}
 .rho-item-head .rho-h-tag{margin-left:auto;font-size:10px;font-weight:700;background:rgba(255,255,255,.16);padding:3px 10px;border-radius:20px}
 .rho-matrix-wrap{overflow-x:auto;padding:12px 14px 16px}
@@ -2585,18 +2625,19 @@ table.hps-uraian td.hps-cell-locked input,table.hps-uraian td.hps-cell-locked te
 
 /* Tabel input analisa per-referensi */
 .ana-uraian-wrap{overflow-x:auto;border:1px solid #dde9eb;border-radius:14px;box-shadow:0 2px 8px rgba(16,40,50,.05)}
-table.ana-uraian{border-collapse:separate;border-spacing:0;width:100%;min-width:1020px}
+table.ana-uraian{border-collapse:separate;border-spacing:0;width:100%;min-width:980px}
 table.ana-uraian thead th{background:linear-gradient(90deg,#0E7C86,#0b6a73);color:#fff;font-weight:800;font-size:10.5px;text-transform:uppercase;letter-spacing:.2px;padding:9px 8px;text-align:center;white-space:nowrap;vertical-align:middle}
-table.ana-uraian thead th.c-ur{text-align:left;min-width:220px}
+table.ana-uraian thead th.c-ur{text-align:center;min-width:300px}
 table.ana-uraian tbody td{border-bottom:1px solid #e8f0f1;padding:7px 8px;vertical-align:middle;font-size:12px}
 table.ana-uraian tbody tr:last-child td{border-bottom:none}
 table.ana-uraian tbody tr:nth-child(even){background:#f8fbfc}
-table.ana-uraian td.c-no{text-align:center;font-weight:800;color:#0b6a73;width:40px}
+table.ana-uraian td.c-no,table.ana-uraian thead th.c-no{width:22px;min-width:22px;max-width:26px;padding-left:4px;padding-right:4px}
+table.ana-uraian td.c-no{text-align:center;font-weight:800;color:#0b6a73}
 table.ana-uraian textarea,table.ana-uraian input,table.ana-uraian select{width:100%;border:1px solid #cdd9de;border-radius:9px;padding:7px 8px;font-size:12px;background:#fff;font-family:inherit;color:var(--ink)}
 table.ana-uraian textarea{resize:vertical;min-height:36px;line-height:1.45}
 table.ana-uraian td.c-kel input{min-width:92px}
-table.ana-uraian td.c-sat input{text-align:center;min-width:58px}
-table.ana-uraian td.c-vol input{text-align:center;min-width:58px}
+table.ana-uraian td.c-sat input{text-align:center;min-width:29px}
+table.ana-uraian td.c-vol input{text-align:center;min-width:29px}
 table.ana-uraian td.c-money input{text-align:right;min-width:118px}
 table.ana-uraian td.c-method select{min-width:120px}
 table.ana-uraian textarea:focus,table.ana-uraian input:focus,table.ana-uraian select:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,124,134,.15)}
@@ -2613,8 +2654,8 @@ table.ana-uraian td.c-calc{text-align:right;font-weight:800;color:#0b6a73;white-
 .ana-res td.c-inf .c-inf-suf{color:#9aa7ab;font-weight:700;margin-left:4px}
 .ana-res-wrap{overflow-x:auto}
 table.ana-res{width:100%;border-collapse:separate;border-spacing:0;min-width:760px}
-table.ana-res thead th{background:#eef6f7;color:#5a6b70;font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:.3px;padding:8px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid #e2edee}
-table.ana-res thead th.c-ur{text-align:left}
+table.ana-res thead th{background:#eef6f7;color:#5a6b70;font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:.3px;padding:8px 10px;text-align:center;white-space:nowrap;border-bottom:1px solid #e2edee}
+table.ana-res thead th.c-ur{text-align:center}
 table.ana-res thead th.c-no{text-align:center;width:40px}
 table.ana-res tbody td{padding:8px 10px;font-size:12px;border-bottom:1px solid #eef4f5;text-align:right;white-space:nowrap;color:#2b3f48}
 table.ana-res tbody td.c-no{text-align:center;font-weight:800;color:#0b6a73}
@@ -3989,7 +4030,6 @@ table.ana-uraian tbody tr:last-child td{ border-bottom:1px solid #dce6e9; }
               <th>Metode Pengadaan</th>
               <th style="text-align:center">Jml Barang/Jasa</th>
               <th style="text-align:center">Jml Referensi</th>
-              <th class="col-date">Tgl. Analisa</th>
               <th style="text-align:center;min-width:150px">Aksi</th>
             </tr>
           </thead>
@@ -13978,8 +14018,7 @@ const ANA_INFO_FIELDS = [
   {key:'nilai',        label:'Perkiraan Nilai Pekerjaan', type:'num'},
   {key:'no_anggaran',  label:'No. Anggaran',              type:'text'},
   {key:'tgl_anggaran', label:'Tgl. Anggaran',             type:'date'},
-  {key:'metode',       label:'Metode Pengadaan',          type:'select', options:PNW_METODE},
-  {key:'tgl_analisa',  label:'Tgl. Analisa',              type:'date'}
+  {key:'metode',       label:'Metode Pengadaan',          type:'select', options:PNW_METODE}
 ];
 /* Field bersama (sumbernya dari Data Pekerjaan, ditampilkan terkunci) vs
    field khusus dokumen Analisa ini saja (tetap dapat diisi manual). */
@@ -14871,7 +14910,7 @@ function anaViewRows(){
   return rows;
 }
 function anaEmptyRow(){
-  return '<tr><td colspan="8"><div class="empty">'+
+  return '<tr><td colspan="7"><div class="empty">'+
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/></svg>'+
     '<div>Data tidak tersedia</div></div></td></tr>';
 }
@@ -14895,7 +14934,6 @@ function renderAnalisaView(){
     const metode=r.metode||info.metode||'';
     const ji=(r.jumlah_item!=null)?r.jumlah_item:(stt.jumlahItem||0);
     const jr=(r.jumlah_referensi!=null)?r.jumlah_referensi:(stt.jumlahRef||0);
-    const tgl=r.tgl_analisa||info.tgl_analisa||'';
     const rid=fkEsc(String(r.id));
     return '<tr>'+
       '<td class="col-no">'+(start+i+1)+'</td>'+
@@ -14904,7 +14942,6 @@ function renderAnalisaView(){
       '<td>'+fkEsc(metode||'—')+'</td>'+
       '<td style="text-align:center">'+ji+'</td>'+
       '<td style="text-align:center">'+jr+'</td>'+
-      '<td class="col-date">'+fkEsc(tgl?anaDateLong(tgl):'—')+'</td>'+
       '<td><div class="action-cell" style="justify-content:center">'+
         '<button class="act act-edit" title="Edit" onclick="openAnalisaInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
         '<button class="act act-view" title="Cetak (Pratinjau PDF)" onclick="anaPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
@@ -14994,7 +15031,6 @@ function anaBuildDocHargaSatuan(st){
       infoRow('No. Anggaran', info.no_anggaran)+
       infoRow('Tgl. Anggaran', info.tgl_anggaran?pnwDateLong(info.tgl_anggaran):'-')+
       infoRow('Metode Pengadaan', info.metode)+
-      infoRow('Tgl. Analisa', info.tgl_analisa?pnwDateLong(info.tgl_analisa):'-')+
       infoRow('Jenis Pekerjaan', 'Pekerjaan Konstruksi')+
     '</tbody></table>'+
     '<div class="fkl-sec-h"><span class="rn">B</span>Harga Satuan</div>'+
@@ -15127,7 +15163,6 @@ function anaBuildDocHtmlUmum(st){
       infoRow('No. Anggaran', info.no_anggaran)+
       infoRow('Tgl. Anggaran', info.tgl_anggaran?pnwDateLong(info.tgl_anggaran):'-')+
       infoRow('Metode Pengadaan', info.metode)+
-      infoRow('Tgl. Analisa', info.tgl_analisa?pnwDateLong(info.tgl_analisa):'-')+
       infoRow('Jumlah Barang/Jasa', String(struct.length)+' item')+
       infoRow('Jumlah Referensi', String(nRef)+' referensi')+
       infoRow('Jenis Pekerjaan', jenisTxt+(rok>0?(' — ROK '+rok+'%'):''))+
@@ -15136,8 +15171,7 @@ function anaBuildDocHtmlUmum(st){
     '<div class="fkl-sec-h"><span class="rn">B</span>Analisa Harga Satuan</div>'+
     tblAnalisa+
     '<div class="ana-doc-note">Nilai 0 / kosong diabaikan dalam perhitungan. Kolom <b>Metode</b> menunjukkan cara perhitungan tiap uraian.</div>'+
-    '<div class="ana-hasil-break"></div>'+
-    '<div class="fkl-sec-h"><span class="rn">C</span>Hasil Analisa Harga Satuan'+rokHdr+'</div>'+
+    '<div class="fkl-sec-h ana-hasil-sec"><span class="rn">C</span>Hasil Analisa Harga Satuan'+rokHdr+'</div>'+
     tblHasil+
     '<div class="ana-doc-note">'+(rok>0?('Harga hasil analisa sudah termasuk ROK '+rok+'% ('+jenisTxt+').'):('Belum ada penambahan ROK ('+jenisTxt+').'))+'</div>'+
   '</div>';
@@ -15151,7 +15185,7 @@ function anaExtraDocCss(){
   'table.ana-doc-tbl th.no,table.ana-doc-tbl td.no{width:22px;min-width:22px}'+
   'table.ana-doc-tbl th.st,table.ana-doc-tbl td.st{width:32px;min-width:30px}'+
   'table.ana-doc-tbl th.vl,table.ana-doc-tbl td.vl{width:42px;min-width:38px}'+
-  '.ana-hasil-break{page-break-before:always;break-before:page;height:0;margin:0;border:0}'+
+  '.ana-hasil-sec{page-break-before:always;break-before:page}'+
   'table.ana-doc-tbl thead th{background:linear-gradient(90deg,#0E7C86,#0b6a73);color:#fff;font-weight:800;text-align:center;letter-spacing:.2px;border-color:#0b6a73;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   'table.ana-doc-tbl tbody tr:nth-child(even):not(.grp):not(.ana-ahsp-spacer) td{background:#f6fafb;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   'table.ana-doc-tbl td.no{text-align:center;font-weight:700}'+
