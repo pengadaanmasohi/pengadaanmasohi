@@ -13901,8 +13901,8 @@ function anaRecordToState(rec){
 function anaStepperHtml(){
   const st=anaState;
   const steps = st.jenis==='Konstruksi'
-    ? [['1','Data Pekerjaan'],['2','Harga Satuan'],['3','Analisa Harga Satuan Pekerjaan']]
-    : [['1','Data Pekerjaan'],['2','Analisa Harga Satuan']];
+    ? [['1','Data Pekerjaan & Harga Satuan'],['2','Analisa Harga Satuan Pekerjaan']]
+    : [['1','Analisa Harga Satuan']];
   return '<div class="fkl-stepper">'+steps.map((s,i)=>{
     const n=i+1;
     const cls = n<anaStep ? 'done' : (n===anaStep ? 'active' : '');
@@ -13911,7 +13911,7 @@ function anaStepperHtml(){
     return '<div class="fkl-step '+cls+'"><div class="fkl-step-dot">'+mark+'</div><div class="fkl-step-name">'+s[1]+'</div></div>'+line;
   }).join('')+'</div>';
 }
-function anaMaxStep(){ return anaState.jenis==='Konstruksi'?3:2; }
+function anaMaxStep(){ return anaState.jenis==='Konstruksi'?2:1; }
 /* Selector Jenis Pekerjaan — tampil di kanan atas kartu Data Pekerjaan (Langkah 1),
    menentukan alur 2 langkah (Umum) atau 3 langkah (Konstruksi). */
 function anaJenisTopHtml(){
@@ -14011,11 +14011,10 @@ function anaLepasDp(){
   anaSaveState(); renderAnalisaForm();
   toast('Pilihan Data Pekerjaan dilepas','ok');
 }
-function anaOnJumlahItemChange(el){ anaState.jumlahItem=Math.max(1,Math.min(ANA_MAX_ITEM,parseInt(el.value,10)||1)); anaEnsure(); anaSaveState(); }
+function anaOnJumlahItemChange(el){ anaState.jumlahItem=Math.max(1,Math.min(ANA_MAX_ITEM,parseInt(el.value,10)||1)); anaEnsure(); anaSaveState(); renderAnalisaForm(); }
 function anaOnJumlahRefChange(el){
   anaState.jumlahRef=Math.max(1,Math.min(ANA_MAX_REF,parseInt(el.value,10)||1)); anaEnsure(); anaSaveState();
-  // perbarui grid sumber referensi seketika
-  const wrap=document.getElementById('ana-sumber-wrap'); if(wrap) wrap.innerHTML=anaSumberGridHtml();
+  renderAnalisaForm();   // perbarui grid sumber referensi + tabel Analisa Harga Satuan seketika (halaman gabungan)
 }
 function anaOnSumber(el){ const i=+el.dataset.i; if(anaState.sumber[i]!=null||i<anaState.jumlahRef){ anaState.sumber[i]=el.value; anaSaveState(); } }
 
@@ -14392,53 +14391,60 @@ function renderAnalisaForm(){
   const cont=document.getElementById('ana-content'); if(!cont) return;
   const st=anaState; const isKon=(st.jenis==='Konstruksi'); const kst=st.konstruksi;
   let html=anaStepperHtml();
+  // Kartu Data Pekerjaan — kini SELALU berada di atas langkah pertama (digabung
+  // dengan Analisa Harga Satuan), baik untuk Pekerjaan Umum maupun Konstruksi.
+  const dpCardHtml =
+    '<div class="form-card"><div class="form-section-title" style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:10px">'+
+      '<span style="display:flex;align-items:center;gap:8px">'+KR_SECTION_ICON+'Data Pekerjaan</span>'+anaTopControlsHtml()+'</div>'+
+    (st.info.dpId ? (
+      '<div class="form-flow" style="--cols:4">'+
+        ANA_DP_FIELDS.map(anaInfoInputHtml).join('')+
+        ANA_OWN_FIELDS.map(anaInfoInputHtml).join('')+
+        (!isKon ? (anaCountItemFieldHtml()+anaCountRefFieldHtml()) : '')+
+      '</div>'
+    ) : '')+
+    '</div>';
+
   if(anaStep===1){
-    if(sub) sub.textContent='Langkah 1 dari '+anaMaxStep()+' — Pilih data pekerjaan'+(isKon?'':' , jumlah barang/jasa & referensi');
-    html+='<div class="form-card"><div class="form-section-title" style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:10px">'+
-      '<span style="display:flex;align-items:center;gap:8px">'+KR_SECTION_ICON+'Data Pekerjaan</span>'+anaTopControlsHtml()+'</div>';
-    if(st.info.dpId){
-      html+='<div class="form-flow" style="--cols:4">';
-      html+=ANA_DP_FIELDS.map(anaInfoInputHtml).join('');
-      html+=ANA_OWN_FIELDS.map(anaInfoInputHtml).join('');
-      if(!isKon){ html+=anaCountItemFieldHtml(); html+=anaCountRefFieldHtml(); }
-      html+='</div>';
+    if(isKon){
+      // KONSTRUKSI — Langkah 1 (dari 2): Data Pekerjaan + Harga Satuan
+      if(sub) sub.textContent='Langkah 1 dari 2 — Data Pekerjaan & Harga Satuan';
+      html+=dpCardHtml;
+      if(st.info.dpId){
+        html+='<div class="form-card"><div class="form-section-title">'+ANA_SEC_ICON+'Harga Satuan <span class="fkl-count-chip">'+kst.items.length+' uraian</span>'+
+          '<button type="button" class="ana-ahsp-add" style="margin-left:auto" onclick="anaKonAddRow()">+ Tambah Baris</button></div>'+
+          '<div id="ana-kon-table-wrap">'+anaKonTableHtml()+'</div></div>';
+      }
+      html+=anaActionsHtml({back:false, save:true, next:true});
+    } else {
+      // UMUM — SATU langkah penuh: Data Pekerjaan + Sumber Referensi + Analisa Harga Satuan
+      if(sub) sub.textContent='Isi Data Pekerjaan, sumber referensi & Analisa Harga Satuan';
+      html+=dpCardHtml;
+      if(st.info.dpId){
+        html+='<div class="form-card"><div class="form-section-title">'+ANA_REF_ICON+'Sumber Referensi <span class="fkl-count-chip">'+st.jumlahRef+' referensi</span></div>'+
+          '<div class="hps-hint">Isi nama/sumber tiap referensi (mis. Toko A, e-Katalog, Survei Pasar). Jumlah kotak menyesuaikan <b>Jumlah Referensi</b>. Nama ini muncul sebagai pilihan pada bagian Analisa Harga Satuan.</div>'+
+          '<div id="ana-sumber-wrap">'+anaSumberGridHtml()+'</div></div>';
+        html+='<div class="form-card"><div class="form-section-title">'+ANA_SEC_ICON+'Analisa Harga Satuan '+
+          '<span class="fkl-count-chip">'+st.jumlahItem+' uraian • '+st.jumlahRef+' referensi</span></div>'+
+          '<div class="hps-hint">Pilih <b>Referensi</b> (kanan atas) untuk mengisi harganya. Kolom <b>Kelompok/Uraian/Sat/Vol</b> berlaku sama untuk semua referensi; <b>Harga Satuan</b> diisi per referensi. <b>Metode Perhitungan: Sama</b> → satu metode (Rata-rata/Terendah) untuk semua uraian; <b>Berbeda</b> → metode diatur per uraian. Nilai 0/kosong diabaikan.</div>'+
+          '<div id="ana-step2-body"></div>'+
+          anaResultCardHtml()+'</div>';
+      }
+      html+=anaActionsHtml({back:false, save:true});
     }
-    html+='</div>';
-    if(!isKon && st.info.dpId){
-      html+='<div class="form-card"><div class="form-section-title">'+ANA_REF_ICON+'Sumber Referensi <span class="fkl-count-chip">'+st.jumlahRef+' referensi</span></div>'+
-        '<div class="hps-hint">Isi nama/sumber tiap referensi (mis. Toko A, e-Katalog, Survei Pasar). Jumlah kotak menyesuaikan <b>Jumlah Referensi</b>. Nama ini muncul sebagai pilihan pada langkah Analisa Harga Satuan.</div>'+
-        '<div id="ana-sumber-wrap">'+anaSumberGridHtml()+'</div></div>';
-    }
-    html+=anaActionsHtml({back:false, next:true});
   } else if(anaStep===2 && isKon){
-    if(sub) sub.textContent='Langkah 2 dari 3 — Harga Satuan (Kelompok/Uraian/Satuan/Harga Barang/Harga Jasa/Sumber Referensi)';
-    html+='<div class="form-card"><div class="form-section-title">'+ANA_SEC_ICON+'Harga Satuan <span class="fkl-count-chip">'+kst.items.length+' uraian</span>'+
-      '<button type="button" class="ana-ahsp-add" style="margin-left:auto" onclick="anaKonAddRow()">+ Tambah Baris</button></div>'+
-      '<div id="ana-kon-table-wrap">'+anaKonTableHtml()+'</div></div>';
-    html+=anaActionsHtml({back:true, save:true, next:true});
-  } else if(anaStep===3 && isKon){
-    if(sub) sub.textContent='Langkah 3 dari 3 — Analisa Harga Satuan Pekerjaan (Tenaga Kerja, Bahan, Peralatan)';
+    // KONSTRUKSI — Langkah 2 (dari 2): Analisa Harga Satuan Pekerjaan (AHSP)
+    if(sub) sub.textContent='Langkah 2 dari 2 — Analisa Harga Satuan Pekerjaan (Tenaga Kerja, Bahan, Peralatan)';
     html+='<div class="form-card"><div class="form-section-title">'+ANA_SEC_ICON+'Analisa Harga Satuan Pekerjaan</div>'+
       '<div id="ana-ahsp-body"></div></div>';
-    html+=anaActionsHtml({back:true, save:true});
-  } else {
-    if(sub) sub.textContent='Langkah 2 dari 2 — Isi harga per referensi, tentukan metode perhitungan';
-    html+='<div class="form-card"><div class="form-section-title">'+ANA_SEC_ICON+'Analisa Harga Satuan '+
-      '<span class="fkl-count-chip">'+st.jumlahItem+' uraian • '+st.jumlahRef+' referensi</span></div>'+
-      '<div class="hps-hint">Pilih <b>Referensi</b> (kanan atas) untuk mengisi harganya. Kolom <b>Kelompok/Uraian/Sat/Vol</b> berlaku sama untuk semua referensi; <b>Harga Satuan</b> diisi per referensi. <b>Metode Perhitungan: Sama</b> → satu metode (Rata-rata/Terendah) untuk semua uraian; <b>Berbeda</b> → metode diatur per uraian. Nilai 0/kosong diabaikan.</div>'+
-      '<div id="ana-step2-body"></div>'+
-      anaResultCardHtml()+'</div>';
     html+=anaActionsHtml({back:true, save:true});
   }
   cont.innerHTML=html;
   if(anaStep===1){
     ANA_INFO_FIELDS.forEach(f=>{ const el=document.getElementById('ana-'+f.key); if(!el) return; const v=st.info[f.key]; el.value=(f.type==='num')?rupiahInputText(v):(v!=null?v:''); });
+    if(!isKon && st.info.dpId){ anaRenderStep2Body(); }   // tabel Analisa Harga Satuan (Umum) pada halaman gabungan
   } else if(anaStep===2 && isKon){
-    // Bagian 2 Konstruksi sudah dirender langsung sebagai string, tidak perlu langkah tambahan
-  } else if(anaStep===3 && isKon){
     anaRenderAhspBody();
-  } else {
-    anaRenderStep2Body();
   }
 }
 function anaActionsHtml(o){
@@ -14457,9 +14463,7 @@ function anaNext(){
   if(anaStep===1){
     anaOnInfoChange();
     if(!st.info.dpId || !String(st.info.nama||'').trim()){ toast('Pilih Data Pekerjaan terlebih dahulu','warn'); return; }
-    anaEnsure(); anaStep=2;
-  } else if(anaStep===2 && st.jenis==='Konstruksi'){
-    anaStep=3;
+    anaEnsure(); anaStep=2;   // hanya Konstruksi yang punya langkah ke-2 (AHSP)
   }
   renderAnalisaForm(); anaScrollTop();
 }
@@ -14508,7 +14512,7 @@ async function anaSimpan(){
   }catch(err){ console.error(err); toast('Gagal menyimpan: '+errMsg(err),'err'); return; }
   toast(anaEditId?'Data berhasil diperbarui':'Data berhasil disimpan','ok');
   const savedId = anaEditId || (saved && saved.id);
-  const savedSection = (st.jenis==='Konstruksi' && anaStep===3) ? 'ahsp' : 'harga';
+  const savedSection = (st.jenis==='Konstruksi' && anaStep===2) ? 'ahsp' : 'harga';
   anaEditId=null; anaState=anaBlankState(); anaSaveState(); anaStep=1;
   showView('analisa-view');
   setTimeout(()=>{ if(savedId!=null) anaPreviewRecord(savedId, savedSection); }, 420);
