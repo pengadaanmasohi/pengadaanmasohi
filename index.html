@@ -2808,24 +2808,6 @@ table.hps-uraian td.c-act{width:64px;text-align:center;white-space:nowrap;paddin
                     </button>
                   </div>
                 </div>
-                <!-- Perhitungan HPS: submenu Hitung HPS / Lihat HPS -->
-                <div class="topnav-sub" data-sub="hps-perhitungan" data-role="admin">
-                  <button class="topnav-subtrigger" type="button" onclick="toggleFkSub(event,'hps-perhitungan')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 10h2M14 10h2M8 14h2M14 14h2M8 18h2"/></svg>
-                    <span class="sub-label">Perhitungan HPS</span>
-                    <svg class="caret2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
-                  </button>
-                  <div class="topnav-subdrop">
-                    <button class="topnav-item" data-view="form-hps" data-role="admin" onclick="openHpsInput()">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                      Hitung HPS
-                    </button>
-                    <button class="topnav-item" data-view="hps-view" data-role="admin" onclick="openHpsView()">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                      Lihat HPS
-                    </button>
-                  </div>
-                </div>
                 <!-- Analisa Harga Satuan: submenu Analisa Harga / Lihat Analisa -->
                 <div class="topnav-sub" data-sub="hps-analisa" data-role="admin">
                   <button class="topnav-subtrigger" type="button" onclick="toggleFkSub(event,'hps-analisa')">
@@ -2841,6 +2823,24 @@ table.hps-uraian td.c-act{width:64px;text-align:center;white-space:nowrap;paddin
                     <button class="topnav-item" data-view="analisa-view" data-role="admin" onclick="openAnalisaView()">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                       Lihat Analisa
+                    </button>
+                  </div>
+                </div>
+                <!-- Perhitungan HPS: submenu Hitung HPS / Lihat HPS -->
+                <div class="topnav-sub" data-sub="hps-perhitungan" data-role="admin">
+                  <button class="topnav-subtrigger" type="button" onclick="toggleFkSub(event,'hps-perhitungan')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 10h2M14 10h2M8 14h2M14 14h2M8 18h2"/></svg>
+                    <span class="sub-label">Perhitungan HPS</span>
+                    <svg class="caret2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
+                  </button>
+                  <div class="topnav-subdrop">
+                    <button class="topnav-item" data-view="form-hps" data-role="admin" onclick="openHpsInput()">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                      Hitung HPS
+                    </button>
+                    <button class="topnav-item" data-view="hps-view" data-role="admin" onclick="openHpsView()">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                      Lihat HPS
                     </button>
                   </div>
                 </div>
@@ -8445,14 +8445,16 @@ function renderHariLibur(){
   }).join('') : hlEmptyRow();
 
   cont.innerHTML = ''+
-    '<div class="panel">'+
+    '<div class="form-card">'+
       '<div class="form-section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Tambah Tanggal Libur</div>'+
-      '<div class="hl-toolbar" style="margin-top:10px">'+
+      '<div class="form-flow" style="--cols:4">'+
         '<div class="field"><label>Tanggal</label><input type="date" id="hl-tgl"></div>'+
-        '<div class="field" style="flex:2 1 260px"><label>Keterangan</label><input type="text" id="hl-ket" placeholder="mis. Hari Kemerdekaan RI" onkeydown="if(event.key===\'Enter\'){event.preventDefault();hlAdd();}"></div>'+
-        '<button class="btn btn-teal" onclick="hlAdd()">'+
-          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Tambah Tanggal'+
-        '</button>'+
+        '<div class="field" style="grid-column:span 2"><label>Keterangan</label><input type="text" id="hl-ket" placeholder="mis. Hari Kemerdekaan RI" onkeydown="if(event.key===\'Enter\'){event.preventDefault();hlAdd();}"></div>'+
+        '<div class="field"><label>&nbsp;</label>'+
+          '<button class="btn btn-teal" style="width:100%;justify-content:center" onclick="hlAdd()">'+
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Tambah Tanggal'+
+          '</button>'+
+        '</div>'+
       '</div>'+
     '</div>'+
     '<div class="hl-tpl-bar">'+
@@ -12066,6 +12068,28 @@ function rhoStepperHtml(){
 }
 
 /* ================= LANGKAH 1: DATA PEKERJAAN ================= */
+/* Kunci Data Pekerjaan yang bisa diisikan otomatis ke form Referensi Harga Online.
+   (jenis_anggaran tidak ada di Data Pekerjaan, jadi tidak ikut diisi otomatis) */
+const RHO_DP_KEYS = ['nama','lokasi','nilai','no_anggaran','tgl_anggaran','metode'];
+/* Bar opsional "Pilih Pekerjaan" — mengambil data dari menu Data Pekerjaan (HPS). */
+function rhoDpBarHtml(){
+  return '<div class="hps-analisa-bar">'+
+    '<div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg></div>'+
+    '<div class="tx"><b>Ambil dari Data Pekerjaan</b><span>Isi otomatis kolom Nama/Lokasi/Nilai/No. Anggaran/Tgl. Anggaran/Metode dari data yang tersimpan di <b>Harga Perkiraan Sendiri &rsaquo; Data Pekerjaan</b>. Kolom tetap dapat diubah manual.</span></div>'+
+    '<button type="button" class="btn btn-teal" style="padding:8px 14px;font-size:11.5px" onclick="rhoPilihDp()">'+
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>Pilih Pekerjaan</button>'+
+  '</div>';
+}
+function rhoPilihDp(){ openDpPicker('rho'); }
+/* Dipanggil oleh dpPickerSelect() saat sebuah Data Pekerjaan dipilih untuk Referensi Harga Online */
+function rhoApplyDp(rec){
+  const st=rhoState; st.info=st.info||{};
+  const info=(rec&&rec.state&&rec.state.info)||{};
+  RHO_DP_KEYS.forEach(k=>{ const v=(info[k]!=null?info[k]:(rec[k]!=null?rec[k]:'')); if(v!=='' && v!=null) st.info[k]=v; });
+  rhoSaveState();
+  renderRhoForm();
+  toast('Data pekerjaan diterapkan: '+(rec.nama_pekerjaan||info.nama||''),'ok');
+}
 function rhoInfoInputHtml(f){
   const id='rho-'+f.key;
   const span=f.span?(' style="grid-column:span '+f.span+'"'):'';
@@ -12289,12 +12313,13 @@ function renderRhoForm(){
   let html=rhoStepperHtml();
   if(rhoStep===1){
     if(sub) sub.textContent='Langkah 1 dari 2 — Lengkapi data pekerjaan & daftar barang/jasa';
-    html+='<div class="form-card"><div class="form-section-title">'+KR_SECTION_ICON+'Data Pekerjaan</div><div class="form-flow" style="--cols:4">';
+    html+='<div class="form-card"><div class="form-section-title">'+KR_SECTION_ICON+'Data Pekerjaan</div>';
+    html+=rhoDpBarHtml();
+    html+='<div class="form-flow" style="--cols:4">';
     html+=RHO_INFO_FIELDS.map(rhoInfoInputHtml).join('');
     html+=rhoCountFieldsHtml();
     html+='</div></div>';
     html+='<div class="form-card"><div class="form-section-title">'+FKL_SEC_ICON+'Nama Barang/Material <span class="fkl-count-chip">'+st.items.length+' item</span></div>'+
-      '<div class="rho-hint">Isi nama tiap barang/material. Jumlah baris mengikuti pilihan <b>Jumlah Barang/Jasa</b>.</div>'+
       rhoItemListHtml()+'</div>';
     html+=rhoActionsHtml({back:false});
   } else {
@@ -12598,6 +12623,7 @@ const DP_INFO_FIELDS = [
   {key:'nilai',        label:'Perkiraan Nilai Pekerjaan', type:'num'},
   {key:'no_anggaran',  label:'No. Anggaran',              type:'text'},
   {key:'tgl_anggaran', label:'Tgl. Anggaran',             type:'date'},
+  {key:'tgl_hps',      label:'Tgl. HPS',                  type:'date'},
   {key:'metode',       label:'Metode Pengadaan',          type:'select', options:PNW_METODE},
   {key:'pengguna',     label:'Nama Pengguna (Manager)',            type:'text', span:2},
   {key:'pejabat',      label:'Nama Pejabat Pelaksana Pengadaan',   type:'text', span:2}
@@ -12829,6 +12855,7 @@ function dpPickerSelect(id){
   const rec=(records_dp||[]).find(r=>String(r.id)===String(id)); if(!rec) return;
   if(_dpPickerTarget==='hps' && typeof hpsApplyDp==='function') hpsApplyDp(rec);
   else if(_dpPickerTarget==='ana' && typeof anaApplyDp==='function') anaApplyDp(rec);
+  else if(_dpPickerTarget==='rho' && typeof rhoApplyDp==='function') rhoApplyDp(rec);
   closeDpPicker();
 }
 
@@ -12990,7 +13017,9 @@ function hpsStepperHtml(){
 /* Field Data Pekerjaan (nama/lokasi/nilai/no_anggaran/tgl_anggaran/metode) kini
    SELALU bersumber dari menu Data Pekerjaan (dipilih lewat "Pilih Data Pekerjaan"),
    sehingga otomatis terisi & terkunci di sini (tidak diketik manual lagi). */
-const HPS_DP_KEYS = DP_SHARED_KEYS;   // ['nama','lokasi','nilai','no_anggaran','tgl_anggaran','metode']
+/* Tgl. HPS tetap milik dokumen HPS (diisi manual di form Hitung HPS), jadi TIDAK
+   diambil/dikunci dari Data Pekerjaan meskipun kini tersedia juga di Data Pekerjaan. */
+const HPS_DP_KEYS = DP_SHARED_KEYS.filter(k=>k!=='tgl_hps');   // nama/lokasi/nilai/no_anggaran/tgl_anggaran/metode/pengguna/pejabat
 function hpsIsLocked(key){ return !!(hpsState.info && hpsState.info.dpId) && HPS_DP_KEYS.indexOf(key)>=0; }
 const HPS_LOCK_BADGE='<span class="lock-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Dari Analisa</span>';
 function hpsInfoInputHtml(f){
