@@ -509,10 +509,18 @@ td.cell-center{text-align:center}
 .dp-reveal.dp-reveal-d3{animation-delay:.26s}
 @media(prefers-reduced-motion:reduce){ .dp-reveal{animation-duration:.01s!important;animation-delay:0s!important} }
 .form-card .form-section-title{margin:0 0 18px;padding:14px 0 11px}
-.dp-pick-btn{margin-left:auto;appearance:none;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:7px;background:linear-gradient(135deg,#0E7C86,#0b3d42);color:#fff;font-family:'Plus Jakarta Sans';font-weight:800;font-size:10.5px;letter-spacing:.5px;text-transform:uppercase;padding:9px 15px;border-radius:10px;box-shadow:0 4px 12px rgba(11,61,66,.22);transition:transform .15s ease,box-shadow .2s ease;white-space:nowrap}
+.dp-pick-btn{appearance:none;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:7px;background:linear-gradient(135deg,#0E7C86,#0b3d42);color:#fff;font-family:'Plus Jakarta Sans';font-weight:800;font-size:10.5px;letter-spacing:.5px;text-transform:uppercase;padding:9px 15px;border-radius:10px;box-shadow:0 4px 12px rgba(11,61,66,.22);transition:transform .15s ease,box-shadow .2s ease;white-space:nowrap}
 .dp-pick-btn:hover{transform:translateY(-1px);box-shadow:0 7px 16px rgba(11,61,66,.3)}
 .dp-pick-btn:active{transform:translateY(0) scale(.97)}
 .dp-pick-btn svg{width:15px;height:15px;flex:0 0 auto}
+.dp-pick-wrap{margin-left:auto;display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.dp-unpick-btn{appearance:none;cursor:pointer;display:inline-flex;align-items:center;gap:6px;background:#fff;color:#b02626;border:1.5px solid #edbcbc;font-family:'Plus Jakarta Sans';font-weight:800;font-size:10.5px;letter-spacing:.5px;text-transform:uppercase;padding:8px 13px;border-radius:10px;transition:transform .15s ease,background .2s ease;white-space:nowrap}
+.dp-unpick-btn:hover{background:#fce4e4;transform:translateY(-1px)}
+.dp-unpick-btn:active{transform:translateY(0) scale(.97)}
+.dp-unpick-btn svg{width:14px;height:14px;flex:0 0 auto}
+.hps-pick-row{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin-top:6px}
+.hps-pick-row .field{flex:1 1 360px;min-width:240px;margin:0}
+.hps-pick-btn{flex:0 0 auto;height:46px;align-self:flex-end}
 .form-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px 30px}
 /* Baris Kontrak Rinci: Tgl Terbit & Tgl Berakhir = 1/3 Nama Penyedia, Nilai = 1/2 Nama Penyedia */
 .grid-kr{display:grid;grid-template-columns:2fr 2fr 3fr 6fr;gap:10px 30px;margin-top:16px}
@@ -2560,13 +2568,18 @@ table.hps-uraian td.hps-cell-locked input,table.hps-uraian td.hps-cell-locked te
 .ana-ref-cell input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,124,134,.15)}
 
 /* Toolbar Analisa Harga Satuan (langkah 2): pemilih Referensi + Metode Perhitungan */
-.ana-toolbar{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;justify-content:flex-end;margin:0 0 14px}
-.ana-toolbar .ana-tb-field{display:flex;flex-direction:column;gap:4px;min-width:170px}
+.ana-toolbar{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;justify-content:stretch;margin:0 0 14px;background:linear-gradient(180deg,#f3fafb,#e9f5f6);border:1px solid #d4e6e9;border-radius:14px;padding:14px 16px;box-shadow:0 2px 8px rgba(16,40,50,.05)}
+.ana-toolbar .ana-tb-field{display:flex;flex-direction:column;gap:5px;flex:1 1 0;min-width:150px}
 .ana-toolbar .ana-tb-field label{font-size:10px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;color:#7c8a8f}
-.ana-toolbar .ana-tb-field select{border:1px solid #cdd9de;border-radius:9px;padding:8px 10px;font-size:12px;background:#fff;color:var(--ink);font-family:inherit}
-.ana-toolbar .ana-tb-field select:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,124,134,.15)}
+.ana-toolbar .ana-tb-field select,.ana-toolbar .ana-tb-field input{width:100%;box-sizing:border-box;height:40px;border:1px solid #cdd9de;border-radius:9px;padding:8px 12px;font-size:12.5px;background:#fff;color:var(--ink);font-family:inherit}
+.ana-toolbar .ana-tb-field select:focus,.ana-toolbar .ana-tb-field input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,124,134,.15)}
 .ana-ref-pill{margin-right:auto;display:flex;align-items:center;gap:8px;background:linear-gradient(180deg,#f3fbfc,#e9f6f7);border:1px dashed #a9d3d8;border-radius:11px;padding:8px 12px;font-size:11px;color:var(--teal-dark);font-weight:700}
 .ana-ref-pill b{font-family:'Plus Jakarta Sans';font-weight:800}
+.ana-dp-rokinf{display:flex;gap:14px;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px dashed #dbe6e9}
+.ana-dp-rokinf .ana-tb-field{display:flex;flex-direction:column;gap:5px;flex:0 1 240px;min-width:190px}
+.ana-dp-rokinf .ana-tb-field label{font-size:10px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;color:#7c8a8f}
+.ana-dp-rokinf .ana-tb-field select,.ana-dp-rokinf .ana-tb-field input{width:100%;box-sizing:border-box;height:40px;border:1px solid #cdd9de;border-radius:9px;padding:8px 12px;font-size:12.5px;background:#fff;color:var(--ink);font-family:inherit}
+.ana-dp-rokinf .ana-tb-field select:focus,.ana-dp-rokinf .ana-tb-field input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,124,134,.15)}
 
 /* Tabel input analisa per-referensi */
 .ana-uraian-wrap{overflow-x:auto;border:1px solid #dde9eb;border-radius:14px;box-shadow:0 2px 8px rgba(16,40,50,.05)}
@@ -2591,6 +2604,11 @@ table.ana-uraian td.c-calc{text-align:right;font-weight:800;color:#0b6a73;white-
 .ana-res-card{margin-top:16px;border:1px solid #dde9eb;border-radius:14px;overflow:hidden}
 .ana-res-head{display:flex;align-items:center;gap:9px;padding:11px 15px;background:linear-gradient(90deg,#0E7C86,#0b6a73);color:#fff;font-weight:800;font-size:12.5px}
 .ana-res-head svg{width:16px;height:16px}
+.ana-res td.c-mtd,.ana-res th.c-mtd{text-align:center}
+.ana-res td.c-inf,.ana-res th.c-inf{text-align:center;width:98px;white-space:nowrap}
+.ana-res td.c-inf input{width:54px;text-align:center;border:1px solid #cdd9de;border-radius:8px;padding:5px 6px;font-size:11.5px;font-family:inherit}
+.ana-res td.c-inf input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,124,134,.15)}
+.ana-res td.c-inf .c-inf-suf{color:#9aa7ab;font-weight:700;margin-left:4px}
 .ana-res-wrap{overflow-x:auto}
 table.ana-res{width:100%;border-collapse:separate;border-spacing:0;min-width:760px}
 table.ana-res thead th{background:#eef6f7;color:#5a6b70;font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:.3px;padding:8px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid #e2edee}
@@ -4043,12 +4061,12 @@ table.ana-uraian tbody tr:last-child td{ border-bottom:1px solid #dce6e9; }
         <p>Rekap gabungan Data Pekerjaan, Perhitungan HPS &amp; Analisa Harga Satuan berdasarkan Nama Pekerjaan</p>
       </div>
     </div>
-    <div class="panel">
+    <div class="form-card">
       <div class="form-section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg> Pilih Nama Pekerjaan</div>
-      <div class="hl-toolbar" style="margin-top:10px">
-        <div class="field" style="flex:2 1 320px"><label>Nama Pekerjaan</label><select id="rekap-dp-select"><option value="">— Pilih Nama Pekerjaan —</option></select></div>
-        <button class="btn btn-teal" onclick="rekapTampilkan()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg> Tampilkan Data
+      <div class="hps-pick-row">
+        <div class="field"><label>Nama Pekerjaan</label><select id="rekap-dp-select"><option value="">— Pilih Nama Pekerjaan —</option></select></div>
+        <button class="btn btn-teal hps-pick-btn" onclick="hpsShowComposite()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg> Tampilkan HPS
         </button>
       </div>
     </div>
@@ -8793,13 +8811,13 @@ function renderJadwalKerja(){
     '<div class="form-card">'+
       '<div class="form-section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg> Data Pekerjaan'+dpPickBtnHtml('jadwal')+'</div>'+
       '<div class="form-flow" style="--cols:4">'+
-        '<div class="field" style="grid-column:span 4"><label>Nama Pekerjaan (opsional)</label><input type="text" value="'+fkEsc(st.namaPekerjaan)+'" oninput="jpSet(\'namaPekerjaan\',this.value)" placeholder="Untuk header saat dicetak &amp; nama pada daftar Lihat Jadwal"></div>'+
-        '<div class="field" style="grid-column:span 2"><label>Lokasi Pekerjaan</label><input type="text" value="'+fkEsc(st.lokasi||'')+'" onchange="jpSet(\'lokasi\',this.value)"></div>'+
-        '<div class="field"><label>Nilai Pekerjaan</label><input type="text" inputmode="numeric" placeholder="Rp" value="'+rupiahInputText(st.nilai)+'" oninput="onRupiahInput(this)" onchange="jpSetNilai(this)"></div>'+
-        '<div class="field"><label>No. Anggaran</label><input type="text" value="'+fkEsc(st.noAnggaran||'')+'" onchange="jpSet(\'noAnggaran\',this.value)"></div>'+
-        '<div class="field"><label>Tgl. Anggaran</label><input type="date" value="'+fkEsc(st.tglAnggaran||'')+'" onchange="jpSet(\'tglAnggaran\',this.value)"></div>'+
-        '<div class="field"><label>Jenis Anggaran</label><select onchange="jpSet(\'jenisAnggaran\',this.value)"><option value="">— Pilih —</option>'+FKL_JENIS_ANGGARAN.map(o=>'<option'+(st.jenisAnggaran===o?' selected':'')+'>'+fkEsc(o)+'</option>').join('')+'</select></div>'+
-        '<div class="field" style="grid-column:span 2"><label>Metode Pengadaan</label><select onchange="jpSet(\'metode\',this.value)"><option value="">— Pilih —</option>'+FKL_METODE.map(o=>'<option'+(st.metode===o?' selected':'')+'>'+fkEsc(o)+'</option>').join('')+'</select></div>'+
+        '<div class="field'+(st.dpId?' is-locked':'')+'" style="grid-column:span 4"><label>Nama Pekerjaan (opsional)</label><input type="text" value="'+fkEsc(st.namaPekerjaan)+'"'+(st.dpId?' disabled':'')+' oninput="jpSet(\'namaPekerjaan\',this.value)" placeholder="Untuk header saat dicetak &amp; nama pada daftar Lihat Jadwal"></div>'+
+        '<div class="field'+(st.dpId?' is-locked':'')+'" style="grid-column:span 2"><label>Lokasi Pekerjaan</label><input type="text" value="'+fkEsc(st.lokasi||'')+'"'+(st.dpId?' disabled':'')+' onchange="jpSet(\'lokasi\',this.value)"></div>'+
+        '<div class="field'+(st.dpId?' is-locked':'')+'"><label>Nilai Pekerjaan</label><input type="text" inputmode="numeric" placeholder="Rp" value="'+rupiahInputText(st.nilai)+'"'+(st.dpId?' disabled':'')+' oninput="onRupiahInput(this)" onchange="jpSetNilai(this)"></div>'+
+        '<div class="field'+(st.dpId?' is-locked':'')+'"><label>No. Anggaran</label><input type="text" value="'+fkEsc(st.noAnggaran||'')+'"'+(st.dpId?' disabled':'')+' onchange="jpSet(\'noAnggaran\',this.value)"></div>'+
+        '<div class="field'+(st.dpId?' is-locked':'')+'"><label>Tgl. Anggaran</label><input type="date" value="'+fkEsc(st.tglAnggaran||'')+'"'+(st.dpId?' disabled':'')+' onchange="jpSet(\'tglAnggaran\',this.value)"></div>'+
+        '<div class="field'+(st.dpId?' is-locked':'')+'"><label>Jenis Anggaran</label><select'+(st.dpId?' disabled':'')+' onchange="jpSet(\'jenisAnggaran\',this.value)"><option value="">— Pilih —</option>'+FKL_JENIS_ANGGARAN.map(o=>'<option'+(st.jenisAnggaran===o?' selected':'')+'>'+fkEsc(o)+'</option>').join('')+'</select></div>'+
+        '<div class="field'+(st.dpId?' is-locked':'')+'" style="grid-column:span 2"><label>Metode Pengadaan</label><select'+(st.dpId?' disabled':'')+' onchange="jpSet(\'metode\',this.value)"><option value="">— Pilih —</option>'+FKL_METODE.map(o=>'<option'+(st.metode===o?' selected':'')+'>'+fkEsc(o)+'</option>').join('')+'</select></div>'+
         '<div class="field"><label>Tanggal Mulai</label><input type="date" value="'+fkEsc(st.tglMulai)+'" onchange="jpSet(\'tglMulai\',this.value)"></div>'+
         '<div class="field"><label>Jam Mulai</label><input type="time" value="'+fkEsc(st.jamMulai)+'" onchange="jpSet(\'jamMulai\',this.value)"></div>'+
         '<div class="field"><label>Jam Kerja Mulai</label><input type="time" value="'+fkEsc(st.jamKerjaMulai)+'" onchange="jpSet(\'jamKerjaMulai\',this.value)"></div>'+
@@ -8814,7 +8832,7 @@ function renderJadwalKerja(){
       '</table></div>'+
       '<div class="jp-actions">'+
         '<button class="btn btn-teal" onclick="jpAddTahap()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Tambah Tahapan</button>'+
-        '<button class="btn btn-teal" onclick="jpPrint()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg> Cetak / PDF</button>'+
+        '<button class="btn btn-teal" onclick="jpPrint()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg> Cetak / PDF</button>'+
         '<button class="btn btn-green" onclick="jpSaveRecord()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> '+(jpEditId?'Simpan Perubahan':'Simpan Jadwal')+'</button>'+
       '</div>'+
     '</div>';
@@ -8884,6 +8902,7 @@ function jpStandaloneDocHtml(){
     '</body></html>';
 }
 function jpPrint(){
+  if(!(jpState&&jpState.dpId) && !jpEditId){ toast('Tidak dapat melanjutkan : Pilih pekerjaan terlebih dahulu','warn'); return; }
   if(!jpState || !jpState.tglMulai){ toast('Isi Tanggal Mulai terlebih dahulu','warn'); return; }
   const old=document.getElementById('jp-print-frame'); if(old) old.remove();
   const ifr=document.createElement('iframe');
@@ -8944,6 +8963,7 @@ async function refreshDataJadwal(){
 /* Simpan (atau perbarui) jadwal yang sedang disusun di halaman Tentukan Jadwal */
 async function jpSaveRecord(){
   if(!requireInput()) return;
+  if(!(jpState&&jpState.dpId) && !jpEditId){ toast('Tidak dapat melanjutkan : Pilih pekerjaan terlebih dahulu','warn'); return; }
   if(!jpState || !jpState.tglMulai){ toast('Isi Tanggal Mulai terlebih dahulu','warn'); return; }
   const rows=jpCompute();
   const akhirTerakhir = rows.length ? rows[rows.length-1].akhir : null;
@@ -10600,15 +10620,18 @@ function fklStepperHtml(){
 }
 
 /* ---------- Field input ---------- */
+const FKL_DP_LOCK_KEYS=['nama','lokasi','nilai','no_anggaran','tgl_anggaran','jenis_anggaran','metode'];
+function fklIsLocked(key){ const st=fklState[fklModul]; return !!(st && st.info && st.info.dpId) && FKL_DP_LOCK_KEYS.indexOf(key)>=0; }
 function fklInfoInputHtml(f){
   const id='fkl-'+f.key;
   const span=f.span?(' style="grid-column:span '+f.span+'"'):'';
+  const locked=fklIsLocked(f.key); const dis=locked?' disabled':'';
   let ctl;
-  if(f.type==='select') ctl='<select id="'+id+'" onchange="fklOnInfoChange()"><option value="">— Pilih —</option>'+(f.options||[]).map(o=>'<option>'+fkEsc(o)+'</option>').join('')+'</select>';
-  else if(f.type==='num') ctl='<input id="'+id+'" type="text" inputmode="numeric" placeholder="Rp" oninput="onRupiahInput(this)" onchange="fklOnInfoChange()">';
-  else if(f.type==='date') ctl='<input id="'+id+'" type="date" onchange="fklOnInfoChange()">';
-  else ctl='<input id="'+id+'" type="text"'+(f.ph?' placeholder="'+fkEsc(f.ph)+'"':'')+' oninput="fklOnInfoChange()">';
-  return '<div class="field"'+span+'><label>'+fkEsc(f.label)+'</label>'+ctl+'</div>';
+  if(f.type==='select') ctl='<select id="'+id+'"'+dis+' onchange="fklOnInfoChange()"><option value="">— Pilih —</option>'+(f.options||[]).map(o=>'<option>'+fkEsc(o)+'</option>').join('')+'</select>';
+  else if(f.type==='num') ctl='<input id="'+id+'" type="text" inputmode="numeric" placeholder="Rp"'+dis+' oninput="onRupiahInput(this)" onchange="fklOnInfoChange()">';
+  else if(f.type==='date') ctl='<input id="'+id+'" type="date"'+dis+' onchange="fklOnInfoChange()">';
+  else ctl='<input id="'+id+'" type="text"'+dis+(f.ph?' placeholder="'+fkEsc(f.ph)+'"':'')+' oninput="fklOnInfoChange()">';
+  return '<div class="field'+(locked?' is-locked':'')+'"'+span+'><label>'+fkEsc(f.label)+'</label>'+ctl+(locked?DP_LOCK_BADGE:'')+'</div>';
 }
 
 /* ---------- Langkah 2: pilih dokumen ---------- */
@@ -10721,6 +10744,7 @@ const FKL_IC_SAVE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 function fklOnInfoChange(){
   const st=fklState[fklModul];
   FKL_INFO_FIELDS.forEach(f=>{
+    if(fklIsLocked(f.key)) return;
     const el=document.getElementById('fkl-'+f.key); if(!el) return;
     st.info[f.key] = (f.type==='num') ? parseRupiah(el.value) : el.value.trim();
   });
@@ -10773,6 +10797,7 @@ function fklUpdateStatus(){
 function fklNext(){
   if(fklStep===1){
     fklOnInfoChange();
+    if(!fklState[fklModul].info.dpId && !fklEditId){ toast('Tidak dapat melanjutkan : Pilih pekerjaan terlebih dahulu','warn'); return; }
     fklStep=2; renderFormKelengkapan(); fklScrollTop(); return;
   }
   if(fklStep===2){
@@ -11033,7 +11058,7 @@ function fklOpenPreview(){
     const btn=document.createElement('button');
     btn.id='fkl-preview-print'; btn.className='btn btn-teal';
     btn.style.padding='8px 14px'; btn.style.fontSize='11px';
-    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>Cetak / PDF';
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>Cetak / PDF';
     btn.onclick=fklPrint;
     actions.insertBefore(btn, actions.firstChild);
   }
@@ -11231,18 +11256,21 @@ function pnwStepperHtml(){
 }
 
 /* ================= LANGKAH 1: DATA PEKERJAAN ================= */
+const PNW_DP_LOCK_KEYS=['nama','lokasi','nilai','no_anggaran','tgl_anggaran','jenis_anggaran','metode'];
+function pnwIsLocked(key){ return !!(pnwState.info && pnwState.info.dpId) && PNW_DP_LOCK_KEYS.indexOf(key)>=0; }
 function pnwInfoInputHtml(f){
   const id='pnw-'+f.key;
   const span=f.span?(' style="grid-column:span '+f.span+'"'):'';
+  const locked=pnwIsLocked(f.key); const dis=locked?' disabled':'';
   let ctl;
   if(f.type==='select'){
     const extra = f.key==='penyampaian' ? ' onchange="pnwOnPenyampaianChange()"' : ' onchange="pnwOnInfoChange()"';
-    ctl='<select id="'+id+'"'+extra+'><option value="">— Pilih —</option>'+(f.options||[]).map(o=>'<option>'+fkEsc(o)+'</option>').join('')+'</select>';
+    ctl='<select id="'+id+'"'+dis+extra+'><option value="">— Pilih —</option>'+(f.options||[]).map(o=>'<option>'+fkEsc(o)+'</option>').join('')+'</select>';
   }
-  else if(f.type==='num') ctl='<input id="'+id+'" type="text" inputmode="numeric" placeholder="Rp" oninput="onRupiahInput(this)" onchange="pnwOnInfoChange()">';
-  else if(f.type==='date') ctl='<input id="'+id+'" type="date" onchange="pnwOnInfoChange()">';
-  else ctl='<input id="'+id+'" type="text" oninput="pnwOnInfoChange()">';
-  return '<div class="field"'+span+'><label>'+fkEsc(f.label)+'</label>'+ctl+'</div>';
+  else if(f.type==='num') ctl='<input id="'+id+'" type="text" inputmode="numeric" placeholder="Rp"'+dis+' oninput="onRupiahInput(this)" onchange="pnwOnInfoChange()">';
+  else if(f.type==='date') ctl='<input id="'+id+'" type="date"'+dis+' onchange="pnwOnInfoChange()">';
+  else ctl='<input id="'+id+'" type="text"'+dis+' oninput="pnwOnInfoChange()">';
+  return '<div class="field'+(locked?' is-locked':'')+'"'+span+'><label>'+fkEsc(f.label)+'</label>'+ctl+(locked?DP_LOCK_BADGE:'')+'</div>';
 }
 function pnwPenyediaFieldsHtml(){
   const st=pnwState, n=st.penyedia.length;
@@ -11610,6 +11638,7 @@ function pnwActionsHtml(o){
 function pnwOnInfoChange(){
   const st=pnwState;
   PNW_INFO_FIELDS.forEach(f=>{
+    if(pnwIsLocked(f.key)) return;
     const el=document.getElementById('pnw-'+f.key); if(!el) return;
     st.info[f.key] = (f.type==='num') ? parseRupiah(el.value) : el.value.trim();
   });
@@ -11644,6 +11673,7 @@ function pnwNext(){
   const st=pnwState;
   if(pnwStep===1){
     pnwOnInfoChange();
+    if(!st.info.dpId && !pnwEditId){ toast('Tidak dapat melanjutkan : Pilih pekerjaan terlebih dahulu','warn'); return; }
     if(!String(st.info.nama||'').trim()){ toast('Nama Pekerjaan wajib diisi','warn'); return; }
     if(!st.info.penyampaian){ toast('Pilih Metode Penyampaian Dokumen','warn'); return; }
     pnwStep=2;
@@ -11985,7 +12015,7 @@ function pnwOpenPreview(){
     const btn=document.createElement('button');
     btn.id='pnw-preview-print'; btn.className='btn btn-teal';
     btn.style.padding='8px 14px'; btn.style.fontSize='11px';
-    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>Cetak / PDF';
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>Cetak / PDF';
     btn.onclick=pnwPrint;
     actions.insertBefore(btn, actions.firstChild);
   }
@@ -12030,7 +12060,7 @@ const RHO_INFO_FIELDS = [
    items     : ['Nama barang', ...] sepanjang Jumlah Barang/Jasa (1..150)
    refs      : { itemIdx:[ {foto,link,harga,berat,ongkir}, ... ] }  panjang = jumlahRef
 */
-function rhoBlankState(){ return { info:{}, jumlahRef:1, items:[''], refs:{}, ongkirMode:'beda', ongkirSama:'' }; }
+function rhoBlankState(){ return { info:{}, jumlahRef:1, items:[''], sumber:[''], refs:{}, ongkirMode:'beda', ongkirSama:'' }; }
 let rhoState = rhoBlankState();
 let rhoStep = 1;              // 1..2
 let rhoEditId = null;
@@ -12050,6 +12080,8 @@ function rhoEnsureRefs(){
   if(!st.refs || typeof st.refs!=='object' || Array.isArray(st.refs)) st.refs={};
   const K=Math.max(1,Math.min(10, parseInt(st.jumlahRef,10)||1)); st.jumlahRef=K;
   if(!Array.isArray(st.items) || !st.items.length) st.items=[''];
+  if(!Array.isArray(st.sumber)) st.sumber=[];
+  { const curS=st.sumber.slice(); st.sumber=[]; for(let r=0;r<K;r++) st.sumber.push(curS[r]!=null?curS[r]:''); }
   if(st.ongkirMode!=='sama') st.ongkirMode='beda';
   if(st.ongkirSama==null) st.ongkirSama='';
   st.items.forEach((_,i)=>{
@@ -12127,6 +12159,7 @@ function rhoRecordToState(rec){
     info: Object.assign({}, base.info, s.info||{}),
     jumlahRef: Math.max(1,Math.min(10, parseInt(s.jumlahRef,10)||1)),
     items: (Array.isArray(s.items)&&s.items.length)?s.items.slice():[''],
+    sumber: Array.isArray(s.sumber)?s.sumber.slice():[''],
     refs: {},
     ongkirMode: s.ongkirMode==='sama' ? 'sama' : 'beda',
     ongkirSama: s.ongkirSama!=null ? s.ongkirSama : ''
@@ -12156,7 +12189,7 @@ function rhoStepperHtml(){
    Pekerjaan dipilih — sama seperti Perhitungan HPS & Analisa Harga Satuan.
    DP_SHARED_KEYS dirujuk saat pemanggilan (bukan saat definisi) karena modul
    Data Pekerjaan berada setelah blok ini. */
-function rhoIsLocked(key){ return false; }
+function rhoIsLocked(key){ return !!(rhoState.info && rhoState.info.dpId) && DP_SHARED_KEYS.indexOf(key)>=0; }
 function rhoInfoInputHtml(f){
   const id='rho-'+f.key;
   const locked=rhoIsLocked(f.key);
@@ -12184,6 +12217,17 @@ function rhoItemListHtml(){
     '<input type="text" data-i="'+i+'" placeholder="Nama barang/material ke-'+(i+1)+'" value="'+fkEsc(nm||'')+'" oninput="rhoOnItemNama(this)"></div>').join('');
   return '<div class="rho-item-list">'+rows+'</div>';
 }
+/* Label kolom referensi: nama sumber yg diinput (fallback "Referensi N") */
+function rhoRefLabel(r){ const st=rhoActiveState(); const v=(st.sumber&&st.sumber[r]!=null)?String(st.sumber[r]).trim():''; return v?v:('Referensi '+(r+1)); }
+/* Daftar input Nama Referensi (jumlah mengikuti Jumlah Referensi) */
+function rhoSumberListHtml(){
+  const st=rhoState; const K=st.jumlahRef; if(!Array.isArray(st.sumber)) st.sumber=[];
+  let rows='';
+  for(let r=0;r<K;r++){ rows+='<div class="rho-item-row"><span class="rho-item-no">'+(r+1)+'</span>'+
+    '<input type="text" data-r="'+r+'" placeholder="Nama referensi ke-'+(r+1)+' (mis. Shopee, e-Katalog)" value="'+fkEsc(st.sumber[r]||'')+'" oninput="rhoOnSumber(this)"></div>'; }
+  return '<div class="rho-item-list">'+rows+'</div>';
+}
+function rhoOnSumber(el){ const r=+el.dataset.r; const st=rhoState; if(!Array.isArray(st.sumber)) st.sumber=[]; st.sumber[r]=el.value; rhoSaveState(); }
 function rhoOnInfoChange(){
   const st=rhoState;
   RHO_INFO_FIELDS.forEach(f=>{ if(rhoIsLocked(f.key)) return; const el=document.getElementById('rho-'+f.key); if(!el) return; st.info[f.key]=(f.type==='num')?parseRupiah(el.value):el.value.trim(); });
@@ -12228,7 +12272,7 @@ function rhoLepasDp(){
 }
 function rhoOnJumlahRefChange(el){
   const n=Math.max(1,Math.min(10,parseInt(el.value,10)||1));
-  rhoState.jumlahRef=n; rhoEnsureRefs(); rhoSaveState();
+  rhoState.jumlahRef=n; rhoEnsureRefs(); rhoSaveState(); renderRhoForm();
 }
 function rhoOnJumlahItemChange(el){
   const n=Math.max(1,Math.min(150,parseInt(el.value,10)||1));
@@ -12259,8 +12303,10 @@ function rhoFotoCellHtml(i,r){
 function rhoItemMatrixHtml(i){
   const st=rhoState; const K=st.jumlahRef; const name=(st.items[i]&&st.items[i].trim())?st.items[i]:('Barang/Material '+(i+1));
   const cells=st.refs[i]||[];
+  // Berat barang seragam: samakan seluruh referensi dengan Referensi 1 (hanya Ref 1 yang bisa diedit).
+  if(cells.length){ const b0=(cells[0]&&cells[0].berat!=null)?cells[0].berat:''; for(let r=1;r<K;r++){ if(cells[r]) cells[r].berat=b0; } }
   let head='<thead><tr><th class="rho-c-lbl">Keterangan</th>';
-  for(let r=0;r<K;r++) head+='<th>Referensi '+(r+1)+'</th>';
+  for(let r=0;r<K;r++) head+='<th>'+fkEsc(rhoRefLabel(r))+'</th>';
   head+='</tr></thead>';
   let body='<tbody>';
   // baris 1: Nama Barang/Material (otomatis dari langkah 1)
@@ -12277,9 +12323,9 @@ function rhoItemMatrixHtml(i){
   body+='<tr><td class="rho-c-lbl">Harga Satuan</td>';
   for(let r=0;r<K;r++){ const v=cells[r]?cells[r].harga:''; body+='<td><input type="text" inputmode="numeric" id="rho-harga-'+i+'-'+r+'" data-i="'+i+'" data-r="'+r+'" placeholder="Rp" value="'+rupiahInputText(v)+'" oninput="rhoOnMoney(this,\'harga\')"></td>'; }
   body+='</tr>';
-  // Berat Barang (kg)
+  // Berat Barang (kg) — hanya Referensi 1 dapat diisi; referensi lain terkunci & mengikuti Referensi 1
   body+='<tr><td class="rho-c-lbl">Berat Barang<span class="rho-c-sub">dalam kilogram (kg)</span></td>';
-  for(let r=0;r<K;r++){ const v=cells[r]?cells[r].berat:''; body+='<td><input type="text" inputmode="decimal" id="rho-berat-'+i+'-'+r+'" data-i="'+i+'" data-r="'+r+'" placeholder="kg" value="'+fkEsc(rhoBeratText(v))+'" oninput="rhoOnBerat(this)"></td>'; }
+  for(let r=0;r<K;r++){ const v=cells[r]?cells[r].berat:''; const lk=r>0; body+='<td><input type="text" inputmode="decimal" id="rho-berat-'+i+'-'+r+'" data-i="'+i+'" data-r="'+r+'" placeholder="kg" value="'+fkEsc(rhoBeratText(v))+'"'+(lk?' disabled class="rho-input-locked"':'')+' oninput="rhoOnBerat(this)"></td>'; }
   body+='</tr>';
   // Ongkos Kirim (1 kg)
   body+='<tr><td class="rho-c-lbl">Ongkos Kirim<span class="rho-c-sub">per 1 kg</span></td>';
@@ -12350,8 +12396,17 @@ function rhoOnBerat(el){
   let v=el.value.replace(/[^0-9.,]/g,'').replace(/,/g,'.');
   const parts=v.split('.'); if(parts.length>2) v=parts[0]+'.'+parts.slice(1).join('');
   el.value=v;
-  const i=+el.dataset.i,r=+el.dataset.r;
-  if(rhoState.refs[i]&&rhoState.refs[i][r]){ rhoState.refs[i][r].berat=v; rhoSaveState(); rhoRecalcCell(i,r); }
+  const i=+el.dataset.i; const st=rhoState; if(!st.refs[i]) return;
+  // Berat sama untuk semua referensi: terapkan nilai ke seluruh referensi item ini,
+  // perbarui input yang terkunci, lalu hitung ulang estimasi & total tiap referensi.
+  const K=st.jumlahRef;
+  for(let rr=0;rr<K;rr++){
+    if(!st.refs[i][rr]) continue;
+    st.refs[i][rr].berat=v;
+    if(rr!==+el.dataset.r){ const inp=document.getElementById('rho-berat-'+i+'-'+rr); if(inp) inp.value=v; }
+    rhoRecalcCell(i,rr);
+  }
+  rhoSaveState();
 }
 
 /* ---- Foto: fokus, tempel (paste), normalisasi ukuran, hapus ----
@@ -12434,6 +12489,11 @@ function renderRhoForm(){
     }
     html+='</div>';
     if(showBody){
+      html+='<div class="form-card"><div class="form-section-title">'+FKL_SEC_ICON+'Nama Referensi <span class="fkl-count-chip">'+st.jumlahRef+' referensi</span></div>'+
+        '<div class="rho-hint">Isi nama tiap sumber referensi (mis. Shopee, Tokopedia, e-Katalog). Nama ini menjadi judul kolom pada tabel Pengisian Referensi &amp; dokumen PDF. Jumlah kotak mengikuti <b>Jumlah Referensi</b>.</div>'+
+        rhoSumberListHtml()+'</div>';
+    }
+    if(showBody){
       html+='<div class="form-card'+rev2+'"><div class="form-section-title">'+FKL_SEC_ICON+'Nama Barang/Material <span class="fkl-count-chip">'+st.items.length+' item</span></div>'+
         '<div class="rho-hint">Isi nama tiap barang/material. Jumlah baris mengikuti pilihan <b>Jumlah Barang/Jasa</b>.</div>'+
         rhoItemListHtml()+'</div>';
@@ -12465,6 +12525,7 @@ function rhoNext(){
   const st=rhoState;
   if(rhoStep===1){
     rhoOnInfoChange();
+    if(!st.info.dpId && !rhoEditId){ toast('Tidak dapat melanjutkan : Pilih pekerjaan terlebih dahulu','warn'); return; }
     if(!String(st.info.nama||'').trim()){ toast('Nama Pekerjaan wajib diisi','warn'); return; }
     rhoEnsureRefs(); rhoStep=2;
   }
@@ -12602,7 +12663,7 @@ function rhoBuildDocHtml(){
     const name=(nm&&nm.trim())?nm:('Barang/Material '+(i+1));
     const cells=(st.refs && st.refs[i])?st.refs[i]:[];
     let th='<tr><th class="lbl">Keterangan</th>';
-    for(let r=0;r<K;r++) th+='<th>Referensi '+(r+1)+'</th>';
+    for(let r=0;r<K;r++) th+='<th>'+fkEsc(rhoRefLabel(r))+'</th>';
     th+='</tr>';
     let rowFoto='<tr><td class="lbl">Foto Produk</td>';
     for(let r=0;r<K;r++){ const f=cells[r]?cells[r].foto:''; rowFoto+='<td class="foto">'+(f?'<img class="rho-pdf-foto" src="'+f+'">':'<span class="rho-pdf-foto-empty">–</span>')+'</td>'; }
@@ -12703,7 +12764,7 @@ function rhoOpenPreview(){
     const btn=document.createElement('button');
     btn.id='rho-preview-print'; btn.className='btn btn-teal';
     btn.style.padding='8px 14px'; btn.style.fontSize='11px';
-    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>Cetak / PDF';
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>Cetak / PDF';
     btn.onclick=rhoPrint;
     actions.insertBefore(btn, actions.firstChild);
   }
@@ -12741,6 +12802,7 @@ const DP_INFO_FIELDS = [
   {key:'nilai',        label:'Perkiraan Nilai Pekerjaan', type:'num'},
   {key:'no_anggaran',  label:'No. Anggaran',              type:'text'},
   {key:'tgl_anggaran', label:'Tgl. Anggaran',             type:'date'},
+  {key:'jenis_anggaran',label:'Jenis Anggaran',           type:'select', options:['Operasi','Investasi']},
   {key:'metode',       label:'Metode Pengadaan',          type:'select', options:PNW_METODE},
   {key:'pengguna',     label:'Nama Pengguna (Manager)',            type:'text', span:2},
   {key:'pejabat',      label:'Nama Pejabat Pelaksana Pengadaan',   type:'text', span:2}
@@ -12968,16 +13030,64 @@ function dpPickerSelect(id){
   closeDpPicker();
 }
 /* Tombol seragam "Pilih Pekerjaan" (pojok kanan atas kartu Data Pekerjaan). */
+function dpTargetPicked(target){
+  try{
+    if(target==='rho') return !!(rhoState&&rhoState.info&&rhoState.info.dpId);
+    if(target==='hps') return !!(hpsState&&hpsState.info&&hpsState.info.dpId);
+    if(target==='ana') return !!(anaState&&anaState.info&&anaState.info.dpId);
+    if(target==='pnw') return !!(pnwState&&pnwState.info&&pnwState.info.dpId);
+    if(target==='fkl') return !!(fklState&&fklState[fklModul]&&fklState[fklModul].info&&fklState[fklModul].info.dpId);
+    if(target==='jadwal') return !!(jpState&&jpState.dpId);
+  }catch(e){}
+  return false;
+}
 function dpPickBtnHtml(target){
-  return '<button type="button" class="dp-pick-btn" onclick="openDpPicker(\''+target+'\')">'+
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>Pilih Pekerjaan'+
+  const picked=dpTargetPicked(target);
+  let h='<span class="dp-pick-wrap">';
+  h+='<button type="button" class="dp-pick-btn" onclick="openDpPicker(\''+target+'\')">'+
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>'+(picked?'Ganti Pekerjaan':'Pilih Pekerjaan')+
   '</button>';
+  if(picked) h+='<button type="button" class="dp-unpick-btn" onclick="dpCancelPick(\''+target+'\')">'+
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>Batalkan Pilihan'+
+  '</button>';
+  h+='</span>';
+  return h;
+}
+/* Batalkan pilihan pekerjaan → lepas tautan & kosongkan field dari Data Pekerjaan */
+function dpCancelPick(target){
+  if(target==='rho' && typeof rhoLepasDp==='function') rhoLepasDp();
+  else if(target==='hps' && typeof hpsLepasDp==='function') hpsLepasDp();
+  else if(target==='ana' && typeof anaLepasDp==='function') anaLepasDp();
+  else if(target==='pnw') pnwCancelDp();
+  else if(target==='fkl') fklCancelDp();
+  else if(target==='jadwal') jadwalCancelDp();
+}
+function pnwCancelDp(){
+  const st=pnwState; if(!st.info) return;
+  delete st.info.dpId; delete st.info.dpNama;
+  ['nama','lokasi','nilai','no_anggaran','tgl_anggaran','jenis_anggaran','metode'].forEach(k=>{ st.info[k]=''; });
+  pnwSaveState(); if(typeof renderPnwForm==='function') renderPnwForm();
+  toast('Pilihan pekerjaan dibatalkan','ok');
+}
+function fklCancelDp(){
+  const st=fklState[fklModul]; if(!st||!st.info) return;
+  delete st.info.dpId;
+  ['nama','lokasi','nilai','no_anggaran','tgl_anggaran','jenis_anggaran','metode'].forEach(k=>{ st.info[k]=''; });
+  fklSaveState(); if(typeof renderFormKelengkapan==='function') renderFormKelengkapan();
+  toast('Pilihan pekerjaan dibatalkan','ok');
+}
+function jadwalCancelDp(){
+  if(!jpState) return;
+  delete jpState.dpId;
+  jpState.namaPekerjaan=''; jpState.lokasi=''; jpState.nilai=''; jpState.noAnggaran=''; jpState.tglAnggaran=''; jpState.jenisAnggaran=''; jpState.metode='';
+  if(typeof renderJadwalKerja==='function') renderJadwalKerja();
+  toast('Pilihan pekerjaan dibatalkan','ok');
 }
 /* Terapkan Data Pekerjaan terpilih ke modul Pembukaan Penawaran */
 function pnwApplyDp(rec){
   const st=pnwState; st.info=st.info||{};
   const info=(rec.state&&rec.state.info)||{};
-  ['nama','lokasi','nilai','no_anggaran','tgl_anggaran','metode'].forEach(k=>{ if(info[k]!=null&&info[k]!=='') st.info[k]=info[k]; });
+  ['nama','lokasi','nilai','no_anggaran','tgl_anggaran','jenis_anggaran','metode'].forEach(k=>{ if(info[k]!=null&&info[k]!=='') st.info[k]=info[k]; });
   st.info.dpId=String(rec.id);
   pnwSaveState();
   if(typeof renderPnwForm==='function') renderPnwForm();
@@ -12987,7 +13097,8 @@ function pnwApplyDp(rec){
 function fklApplyDp(rec){
   const st=fklState[fklModul]; st.info=st.info||{};
   const info=(rec.state&&rec.state.info)||{};
-  ['nama','lokasi','nilai','no_anggaran','tgl_anggaran','metode'].forEach(k=>{ if(info[k]!=null&&info[k]!=='') st.info[k]=info[k]; });
+  ['nama','lokasi','nilai','no_anggaran','tgl_anggaran','jenis_anggaran','metode'].forEach(k=>{ if(info[k]!=null&&info[k]!=='') st.info[k]=info[k]; });
+  st.info.dpId=String(rec.id);
   fklSaveState();
   if(typeof renderFormKelengkapan==='function') renderFormKelengkapan();
   toast('Data pekerjaan diterapkan: '+(rec.nama_pekerjaan||info.nama||''),'ok');
@@ -13002,6 +13113,8 @@ function jadwalApplyDp(rec){
   if(info.no_anggaran!=null&&info.no_anggaran!=='') jpState.noAnggaran=info.no_anggaran;
   if(info.tgl_anggaran!=null&&info.tgl_anggaran!=='') jpState.tglAnggaran=info.tgl_anggaran;
   if(info.metode!=null&&info.metode!=='') jpState.metode=info.metode;
+  if(info.jenis_anggaran!=null&&info.jenis_anggaran!=='') jpState.jenisAnggaran=info.jenis_anggaran;
+  jpState.dpId=String(rec.id);
   if(typeof renderJadwalKerja==='function') renderJadwalKerja();
   toast('Data pekerjaan diterapkan: '+(rec.nama_pekerjaan||info.nama||''),'ok');
 }
@@ -13155,7 +13268,7 @@ function hpsStepperHtml(){
    SELALU bersumber dari menu Data Pekerjaan (dipilih lewat "Pilih Data Pekerjaan"),
    sehingga otomatis terisi & terkunci di sini (tidak diketik manual lagi). */
 const HPS_DP_KEYS = DP_SHARED_KEYS;   // ['nama','lokasi','nilai','no_anggaran','tgl_anggaran','metode']
-function hpsIsLocked(key){ return false; }
+function hpsIsLocked(key){ return !!(hpsState.info && hpsState.info.dpId) && HPS_DP_KEYS.indexOf(key)>=0; }
 const HPS_LOCK_BADGE='<span class="lock-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Dari Analisa</span>';
 function hpsInfoInputHtml(f){
   const id='hps-'+f.key;
@@ -13510,6 +13623,7 @@ function hpsNext(){
   const st=hpsState;
   if(hpsStep===1){
     hpsOnInfoChange();
+    if(!st.info.dpId && !hpsEditId){ toast('Tidak dapat melanjutkan : Pilih pekerjaan terlebih dahulu','warn'); return; }
     if(!String(st.info.nama||'').trim()){ toast('Nama Pekerjaan wajib diisi','warn'); return; }
     hpsEnsureItems(); hpsStep=2;
   }
@@ -13819,7 +13933,7 @@ function hpsOpenPreview(){
     const btn=document.createElement('button');
     btn.id='hps-preview-print'; btn.className='btn btn-teal';
     btn.style.padding='8px 14px'; btn.style.fontSize='11px';
-    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>Cetak / PDF';
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>Cetak / PDF';
     btn.onclick=hpsPrint;
     actions.insertBefore(btn, actions.firstChild);
   }
@@ -13866,7 +13980,7 @@ const ANA_INFO_FIELDS = [
    field khusus dokumen Analisa ini saja (tetap dapat diisi manual). */
 const ANA_DP_FIELDS  = ANA_INFO_FIELDS.filter(f=>f.key!=='tgl_analisa');
 const ANA_OWN_FIELDS = ANA_INFO_FIELDS.filter(f=>f.key==='tgl_analisa');
-function anaIsLocked(key){ return false; }
+function anaIsLocked(key){ return !!(anaState.info && anaState.info.dpId) && DP_SHARED_KEYS.indexOf(key)>=0; }
 
 const ANA_MAX_ITEM = 150;   // jumlah barang/jasa (uraian)
 const ANA_MAX_REF  = 20;    // jumlah referensi
@@ -13927,7 +14041,7 @@ function anaBlankState(){ return {
   info:{}, jumlahItem:1, jumlahRef:1,
   sumber:[''], refs:[anaBlankRef()],
   metodeRef:'Sama', metodeAll:'Rata-rata', aktifRef:0,
-  jenis:'Umum', rok:'',
+  jenis:'Umum', rok:'', inflasi:'Tidak', inflasiVals:[],
   konstruksi:{ jumlahItem:1, items:[anaBlankKonItem()] },
   ahsp: anaBlankAhsp()
 }; }
@@ -14056,6 +14170,8 @@ function anaRecordToState(rec){
     aktifRef: parseInt(s.aktifRef,10)||0,
     jenis: s.jenis==='Konstruksi'?'Konstruksi':'Umum',
     rok: (s.rok!=null?s.rok:''),
+    inflasi: s.inflasi==='Ya'?'Ya':'Tidak',
+    inflasiVals: Array.isArray(s.inflasiVals)?s.inflasiVals.slice():[],
     konstruksi: (s.konstruksi&&typeof s.konstruksi==='object') ? {
       jumlahItem: Math.max(1,Math.min(ANA_MAX_ITEM, parseInt(s.konstruksi.jumlahItem,10)||1)),
       items: Array.isArray(s.konstruksi.items)&&s.konstruksi.items.length ? s.konstruksi.items.map(anaNormKonItem) : [anaBlankKonItem()]
@@ -14071,7 +14187,7 @@ function anaRecordToState(rec){
 function anaStepperHtml(){
   const st=anaState;
   const steps = st.jenis==='Konstruksi'
-    ? [['1','Data Pekerjaan & Harga Satuan'],['2','Analisa Harga Satuan Pekerjaan']]
+    ? [['1','Data Pekerjaan'],['2','Harga Satuan'],['3','Analisa Harga Satuan Pekerjaan']]
     : [['1','Data Pekerjaan & Sumber Referensi'],['2','Analisa Harga Satuan']];
   return '<div class="fkl-stepper">'+steps.map((s,i)=>{
     const n=i+1;
@@ -14081,7 +14197,7 @@ function anaStepperHtml(){
     return '<div class="fkl-step '+cls+'"><div class="fkl-step-dot">'+mark+'</div><div class="fkl-step-name">'+s[1]+'</div></div>'+line;
   }).join('')+'</div>';
 }
-function anaMaxStep(){ return 2; }
+function anaMaxStep(){ return anaState.jenis==='Konstruksi' ? 3 : 2; }
 /* Selector Jenis Pekerjaan — tampil di kanan atas kartu Data Pekerjaan (Langkah 1),
    menentukan alur 2 langkah (Umum) atau 3 langkah (Konstruksi). */
 function anaJenisTopHtml(){
@@ -14378,10 +14494,7 @@ function anaToolbarHtml(){
   const st=anaState;
   let refOpts=''; for(let r=0;r<st.jumlahRef;r++) refOpts+='<option value="'+r+'"'+(r===st.aktifRef?' selected':'')+'>'+fkEsc(anaRefLabel(r))+'</option>';
   let html='<div class="ana-toolbar">';
-  html+='<div class="ana-ref-pill">'+ANA_REF_ICON+'<span>Mengisi data untuk: <b>'+fkEsc(anaRefLabel(st.aktifRef))+'</b></span></div>';
   html+='<div class="ana-tb-field"><label>Referensi</label><select id="ana-aktifref" onchange="anaOnAktifRef(this)">'+refOpts+'</select></div>';
-  html+='<div class="ana-tb-field"><label>ROK (%) — maks 10%</label>'+
-        '<input id="ana-rok" type="text" inputmode="decimal" placeholder="0" value="'+fkEsc(st.rok!==''&&st.rok!=null?String(st.rok):'')+'" oninput="anaOnRok(this)"></div>';
   html+='<div class="ana-tb-field"><label>Metode Perhitungan</label><select id="ana-metoderef" onchange="anaOnMetodeRef(this)">'+
         '<option value="Sama"'+(st.metodeRef==='Sama'?' selected':'')+'>Sama</option>'+
         '<option value="Berbeda"'+(st.metodeRef==='Berbeda'?' selected':'')+'>Berbeda</option></select></div>';
@@ -14393,12 +14506,33 @@ function anaToolbarHtml(){
   html+='</div>';
   return html;
 }
+function anaRokInflasiFieldsHtml(){
+  const st=anaState;
+  const rokVal=(st.rok!==''&&st.rok!=null)?String(st.rok):'';
+  return '<div class="ana-tb-field"><label id="ana-rok-label">ROK ('+fkEsc(rokVal)+'%)</label>'+
+      '<input id="ana-rok" type="text" inputmode="decimal" placeholder="0" value="'+fkEsc(rokVal)+'" oninput="anaOnRok(this)"></div>'+
+    '<div class="ana-tb-field"><label>Inflasi?</label><select id="ana-inflasi" onchange="anaOnInflasi(this)">'+
+      '<option value="Tidak"'+(st.inflasi!=='Ya'?' selected':'')+'>Tidak</option>'+
+      '<option value="Ya"'+(st.inflasi==='Ya'?' selected':'')+'>Ya</option></select></div>';
+}
+function anaOnInflasi(el){ anaState.inflasi=(el.value==='Ya')?'Ya':'Tidak'; anaSaveState(); anaRenderResult(); }
+function anaOnInflasiVal(el){
+  let v=el.value.replace(/[^0-9.,]/g,'').replace(/,/g,'.'); const parts=v.split('.'); if(parts.length>2) v=parts[0]+'.'+parts.slice(1).join(''); el.value=v;
+  const i=+el.dataset.i; if(!Array.isArray(anaState.inflasiVals)) anaState.inflasiVals=[];
+  anaState.inflasiVals[i]=(v===''?'':(parseFloat(v)||0)); anaSaveState();
+  const res=anaResultFor(i);
+  const hb=document.getElementById('ana-hb-'+i); if(hb) hb.textContent=anaRp(res.hargaBarang);
+  const hj=document.getElementById('ana-hj-'+i); if(hj) hj.textContent=anaRp(res.hargaJasa);
+  const tt=document.getElementById('ana-tot-'+i); if(tt) tt.textContent=anaRp(res.total);
+}
 function anaOnAktifRef(el){ anaState.aktifRef=Math.max(0,Math.min(anaState.jumlahRef-1,parseInt(el.value,10)||0)); anaSaveState(); anaRenderStep2Body(); }
 function anaOnRok(el){
   let v=el.value.replace(/[^0-9.,]/g,'').replace(/,/g,'.');
   const parts=v.split('.'); if(parts.length>2) v=parts[0]+'.'+parts.slice(1).join('');
   let num=parseFloat(v); if(!isNaN(num)&&num>10){ v=String(10); }
-  el.value=v; anaState.rok=(v===''?'':(parseFloat(v)||0)); anaSaveState(); anaRenderResult();
+  el.value=v; anaState.rok=(v===''?'':(parseFloat(v)||0)); anaSaveState();
+  const lb=document.getElementById('ana-rok-label'); if(lb) lb.textContent='ROK ('+(v===''?'':v)+'%)';
+  anaRenderResult();
 }
 function anaOnMetodeRef(el){ anaState.metodeRef=(el.value==='Berbeda')?'Berbeda':'Sama'; anaSaveState(); anaRenderStep2Body(); }
 function anaOnMetodeAll(el){ anaState.metodeAll=(el.value==='Terendah')?'Terendah':'Rata-rata'; anaSaveState(); anaRenderResult(); }
@@ -14481,8 +14615,10 @@ function anaResultFor(i){
   // Terapkan ROK (%) ke Harga Barang & Jasa masing-masing
   const rok=anaNum(anaState.rok);
   if(rok>0){ hb=hb*(1+rok/100); hj=hj*(1+rok/100); }
+  const inf=(anaState.inflasi==='Ya')?anaNum((anaState.inflasiVals||[])[i]):0;
+  if(inf>0){ hb=hb*(1+inf/100); hj=hj*(1+inf/100); }
   hb=Math.round(hb); hj=Math.round(hj);
-  return {method, hargaBarang:hb, hargaJasa:hj, total:hb+hj};
+  return {method, hargaBarang:hb, hargaJasa:hj, total:hb+hj, inflasi:inf};
 }
 
 /* Versi umum dari anaResultFor() yang bekerja pada state Analisa APAPUN (mis. state
@@ -14498,8 +14634,10 @@ function anaResultForState(state, i){
   let hb=calc(collect('hargaBarang')), hj=calc(collect('hargaJasa'));
   const rok=anaNum(state.rok);
   if(rok>0){ hb=hb*(1+rok/100); hj=hj*(1+rok/100); }
+  const inf=(state.inflasi==='Ya')?anaNum((state.inflasiVals||[])[i]):0;
+  if(inf>0){ hb=hb*(1+inf/100); hj=hj*(1+inf/100); }
   hb=Math.round(hb); hj=Math.round(hj);
-  return {method, hargaBarang:hb, hargaJasa:hj, total:hb+hj};
+  return {method, hargaBarang:hb, hargaJasa:hj, total:hb+hj, inflasi:inf};
 }
 
 /* Kartu hasil analisa (per uraian: harga barang & jasa hasil metode + total). */
@@ -14512,34 +14650,42 @@ function anaRenderResult(){
   const body=document.getElementById('ana-res-body'); if(!body) return;
   const st=anaState;
   const struct=(st.refs[0]&&st.refs[0].items)||[];
+  const infOn=(st.inflasi==='Ya');
   let rows='';
   struct.forEach((it,i)=>{
     const res=anaResultFor(i);
     const uraian=(it.uraian||'').trim()||('Uraian ke-'+(i+1));
     const sat=(it.sat||'').trim();
+    const infVal=(st.inflasiVals&&st.inflasiVals[i]!=null&&st.inflasiVals[i]!=='')?String(st.inflasiVals[i]):'';
+    const infCell=infOn?('<td class="c-inf"><input type="text" inputmode="decimal" placeholder="0" data-i="'+i+'" value="'+fkEsc(infVal)+'" oninput="anaOnInflasiVal(this)"><span class="c-inf-suf">%</span></td>'):'';
     rows+='<tr>'+
       '<td class="c-no">'+(i+1)+'</td>'+
-      '<td class="c-ur">'+fkEsc(uraian)+(sat?(' <span style="color:#9aa7ab;font-weight:600">('+fkEsc(sat)+')</span>'):'')+
-        '<span class="ana-method-chip">'+res.method+'</span></td>'+
-      '<td>'+anaRp(res.hargaBarang)+'</td>'+
-      '<td>'+anaRp(res.hargaJasa)+'</td>'+
-      '<td class="c-res">'+anaRp(res.total)+'</td>'+
+      '<td class="c-ur">'+fkEsc(uraian)+(sat?(' <span style="color:#9aa7ab;font-weight:600">('+fkEsc(sat)+')</span>'):'')+'</td>'+
+      '<td class="c-mtd"><span class="ana-method-chip">'+res.method+'</span></td>'+
+      infCell+
+      '<td id="ana-hb-'+i+'">'+anaRp(res.hargaBarang)+'</td>'+
+      '<td id="ana-hj-'+i+'">'+anaRp(res.hargaJasa)+'</td>'+
+      '<td class="c-res" id="ana-tot-'+i+'">'+anaRp(res.total)+'</td>'+
     '</tr>';
   });
   const modeTxt = st.metodeRef==='Sama'
     ? ('Metode <b>'+st.metodeAll+'</b> diterapkan ke semua uraian.')
     : 'Metode ditentukan <b>per uraian</b> pada kolom Metode Perhitungan.';
   const rok=anaNum(st.rok);
-  const rokSuffix = rok>0 ? (' <span style="color:#0b6a73;font-weight:800">(+ ROK '+ (Number.isInteger(rok)?rok:rok) +'%)</span>') : '';
+  const suffixInner = (rok>0?('+ ROK '+rok+'%'):'') + (infOn?((rok>0?' ':'')+'+ Inflasi'):'');
+  const priceSuffix = suffixInner ? (' <span style="color:#0b6a73;font-weight:800">('+suffixInner+')</span>') : '';
   const jenisTxt = st.jenis==='Konstruksi' ? 'Pekerjaan Konstruksi (ROK 1–15%)' : 'Pekerjaan Umum (ROK 1–10%)';
   const rokHint = rok>0
     ? (' ROK <b>'+rok+'%</b> ditambahkan ke Harga Barang &amp; Jasa masing-masing ('+jenisTxt+').')
     : (' ROK belum diisi — '+jenisTxt+'.');
+  const infHint = infOn ? ' Inflasi (%) per uraian ikut ditambahkan ke Harga Barang &amp; Jasa.' : '';
+  const infHead = infOn ? '<th class="c-inf">Inflasi (%)</th>' : '';
+  const cols = infOn ? 7 : 6;
   body.innerHTML='<div class="ana-res-wrap"><table class="ana-res"><thead><tr>'+
-      '<th class="c-no">No</th><th class="c-ur">Uraian Pekerjaan</th>'+
-      '<th>Harga Sat. Barang'+rokSuffix+'</th><th>Harga Sat. Jasa'+rokSuffix+'</th><th>Harga Satuan (Total)</th>'+
-    '</tr></thead><tbody>'+(rows||'<tr><td colspan="5" style="text-align:center;color:#9aa7ab">Belum ada data</td></tr>')+'</tbody></table></div>'+
-    '<div class="ana-res-hint">'+modeTxt+rokHint+' Nilai <b>0 / kosong</b> diabaikan dalam perhitungan (rata-rata dihitung hanya dari referensi yang terisi).</div>';
+      '<th class="c-no">No</th><th class="c-ur">Uraian Pekerjaan</th><th class="c-mtd">Metode Perhitungan</th>'+infHead+
+      '<th>Harga Sat. Barang'+priceSuffix+'</th><th>Harga Sat. Jasa'+priceSuffix+'</th><th>Harga Satuan (Total)</th>'+
+    '</tr></thead><tbody>'+(rows||'<tr><td colspan="'+cols+'" style="text-align:center;color:#9aa7ab">Belum ada data</td></tr>')+'</tbody></table></div>'+
+    '<div class="ana-res-hint">'+modeTxt+rokHint+infHint+' Nilai <b>0 / kosong</b> diabaikan dalam perhitungan (rata-rata dihitung hanya dari referensi yang terisi).</div>';
 }
 
 /* ---------- Render form ---------- */
@@ -14578,21 +14724,17 @@ function renderAnalisaForm(){
         ANA_DP_FIELDS.map(anaInfoInputHtml).join('')+
         ANA_OWN_FIELDS.map(anaInfoInputHtml).join('')+
         (!isKon ? (anaCountItemFieldHtml()+anaCountRefFieldHtml()) : '')+
-      '</div>'
+      '</div>'+
+      (!isKon ? ('<div class="ana-dp-rokinf">'+anaRokInflasiFieldsHtml()+'</div>') : '')
     ) : '')+
     '</div>';
 
   if(anaStep===1){
     if(isKon){
-      // KONSTRUKSI — Langkah 1 (dari 2): Data Pekerjaan + Harga Satuan
-      if(sub) sub.textContent='Langkah 1 dari 2 — Data Pekerjaan & Harga Satuan';
+      // KONSTRUKSI — Langkah 1 (dari 3): Data Pekerjaan
+      if(sub) sub.textContent='Langkah 1 dari 3 — Data Pekerjaan';
       html+=dpCardHtml;
-      if(showBody){
-        html+='<div class="form-card'+rev2+'"><div class="form-section-title">'+ANA_SEC_ICON+'Harga Satuan <span class="fkl-count-chip">'+kst.items.length+' uraian</span>'+
-          '<button type="button" class="ana-ahsp-add" style="margin-left:auto" onclick="anaKonAddRow()">+ Tambah Baris</button></div>'+
-          '<div id="ana-kon-table-wrap">'+anaKonTableHtml()+'</div></div>';
-      }
-      html+=anaActionsHtml({back:false, save:true, next:true});
+      html+=anaActionsHtml({back:false, next:true});
     } else {
       // UMUM — Langkah 1 (dari 2): Data Pekerjaan + Sumber Referensi
       if(sub) sub.textContent='Langkah 1 dari 2 — Data Pekerjaan & Sumber Referensi';
@@ -14606,11 +14748,12 @@ function renderAnalisaForm(){
     }
   } else if(anaStep===2){
     if(isKon){
-      // KONSTRUKSI — Langkah 2 (dari 2): Analisa Harga Satuan Pekerjaan (AHSP)
-      if(sub) sub.textContent='Langkah 2 dari 2 — Analisa Harga Satuan Pekerjaan (Tenaga Kerja, Bahan, Peralatan)';
-      html+='<div class="form-card"><div class="form-section-title">'+ANA_SEC_ICON+'Analisa Harga Satuan Pekerjaan</div>'+
-        '<div id="ana-ahsp-body"></div></div>';
-      html+=anaActionsHtml({back:true, save:true});
+      // KONSTRUKSI — Langkah 2 (dari 3): Harga Satuan
+      if(sub) sub.textContent='Langkah 2 dari 3 — Harga Satuan';
+      html+='<div class="form-card"><div class="form-section-title">'+ANA_SEC_ICON+'Harga Satuan <span class="fkl-count-chip">'+kst.items.length+' uraian</span>'+
+        '<button type="button" class="ana-ahsp-add" style="margin-left:auto" onclick="anaKonAddRow()">+ Tambah Baris</button></div>'+
+        '<div id="ana-kon-table-wrap">'+anaKonTableHtml()+'</div></div>';
+      html+=anaActionsHtml({back:true, next:true});
     } else {
       // UMUM — Langkah 2 (dari 2): Analisa Harga Satuan + Hasil
       if(sub) sub.textContent='Langkah 2 dari 2 — Analisa Harga Satuan';
@@ -14621,14 +14764,21 @@ function renderAnalisaForm(){
         anaResultCardHtml()+'</div>';
       html+=anaActionsHtml({back:true, save:true});
     }
+  } else if(anaStep===3){
+    // KONSTRUKSI — Langkah 3 (dari 3): Analisa Harga Satuan Pekerjaan (AHSP)
+    if(sub) sub.textContent='Langkah 3 dari 3 — Analisa Harga Satuan Pekerjaan (Tenaga Kerja, Bahan, Peralatan)';
+    html+='<div class="form-card"><div class="form-section-title">'+ANA_SEC_ICON+'Analisa Harga Satuan Pekerjaan</div>'+
+      '<div id="ana-ahsp-body"></div></div>';
+    html+=anaActionsHtml({back:true, save:true});
   }
   cont.innerHTML=html;
   anaRevealPick=false;   // animasi reveal hanya dijalankan sekali
   if(anaStep===1){
     ANA_INFO_FIELDS.forEach(f=>{ const el=document.getElementById('ana-'+f.key); if(!el) return; const v=st.info[f.key]; el.value=(f.type==='num')?rupiahInputText(v):(v!=null?v:''); });
   } else if(anaStep===2){
-    if(isKon) anaRenderAhspBody();
-    else anaRenderStep2Body();   // tabel Analisa Harga Satuan (Umum) di langkah 2
+    if(!isKon) anaRenderStep2Body();   // Umum: tabel Analisa Harga Satuan (Konstruksi: Harga Satuan inline)
+  } else if(anaStep===3){
+    anaRenderAhspBody();   // Konstruksi: AHSP
   }
 }
 function anaActionsHtml(o){
@@ -14636,7 +14786,7 @@ function anaActionsHtml(o){
   let left='<button class="btn btn-ghost" onclick="anaBatal()">'+FKL_IC_X+'Batal</button>';
   let right='';
   if(o.back) right+='<button class="btn btn-light" onclick="anaBack()">'+FKL_IC_BACK+'Kembali</button>';
-  if(o.save) right+='<button class="btn btn-green" onclick="anaSimpan()">'+FKL_IC_SAVE+'Simpan &amp; Lihat PDF</button>';
+  if(o.save) right+='<button class="btn btn-green" onclick="anaSimpan()">'+FKL_IC_SAVE+'Simpan dan Lihat</button>';
   if(o.next) right+='<button class="btn btn-teal" onclick="anaNext()">Selanjutnya'+FKL_IC_NEXT+'</button>';
   return '<div class="fkl-actions"><div class="fkl-actions-left">'+left+'</div><div class="fkl-actions-right">'+right+'</div></div>';
 }
@@ -14646,8 +14796,11 @@ function anaNext(){
   const st=anaState;
   if(anaStep===1){
     anaOnInfoChange();
+    if(!st.info.dpId && !anaEditId){ toast('Tidak dapat melanjutkan : Pilih pekerjaan terlebih dahulu','warn'); return; }
     if(!String(st.info.nama||'').trim()){ toast('Nama Pekerjaan wajib diisi','warn'); return; }
-    anaEnsure(); anaStep=2;   // langkah ke-2: Umum → Analisa Harga Satuan, Konstruksi → AHSP
+    anaEnsure(); anaStep=2;
+  } else if(anaStep < anaMaxStep()){
+    anaStep++;
   }
   renderAnalisaForm(); anaScrollTop();
 }
@@ -14696,7 +14849,7 @@ async function anaSimpan(){
   }catch(err){ console.error(err); toast('Gagal menyimpan: '+errMsg(err),'err'); return; }
   toast(anaEditId?'Data berhasil diperbarui':'Data berhasil disimpan','ok');
   const savedId = anaEditId || (saved && saved.id);
-  const savedSection = (st.jenis==='Konstruksi' && anaStep===2) ? 'ahsp' : 'harga';
+  const savedSection = (st.jenis==='Konstruksi' && anaStep===3) ? 'ahsp' : 'harga';
   anaEditId=null; anaState=anaBlankState(); anaSaveState(); anaStep=1;
   showView('analisa-view');
   setTimeout(()=>{ if(savedId!=null) anaPreviewRecord(savedId, savedSection); }, 420);
@@ -14749,7 +14902,7 @@ function renderAnalisaView(){
       '<td class="col-date">'+fkEsc(tgl?anaDateLong(tgl):'—')+'</td>'+
       '<td><div class="action-cell" style="justify-content:center">'+
         '<button class="act act-edit" title="Edit" onclick="openAnalisaInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
-        '<button class="act act-view" title="Cetak (Pratinjau PDF)" onclick="anaPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg></button>'+
+        '<button class="act act-view" title="Cetak (Pratinjau PDF)" onclick="anaPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
         '<button class="act act-del" title="Hapus" onclick="anaDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>'+
       '</div></td>'+
     '</tr>';
@@ -14909,14 +15062,18 @@ function anaBuildDocHtmlUmum(st){
   }
   const colCount = 4 /*no,ur,sat,vol*/ + nRef*2 + 4 /*metode,hasilB,hasilJ,total*/;
 
-  let bodyRows='';
+  const infOn=(st.inflasi==='Ya');
+  const colA = 4 + nRef*2 + 1;   // no,ur,sat,vol + ref*2 + metode
+  const colH = 4 + 1 + (infOn?1:0) + 3;   // no,ur,sat,vol + metode + inflasi? + hasilB,hasilJ,total
+  let rowsA='', rowsH='';
   let groupIdx=0, curGroup=null, noInGroup=0;
   struct.forEach((it,i)=>{
     const kel=String(it.kelompok||'').trim(); const kelKey=kel.toUpperCase();
     if(kel && kelKey!==curGroup){
       curGroup=kelKey; noInGroup=0;
       const letter=String.fromCharCode(65+(groupIdx%26)); groupIdx++;
-      bodyRows+='<tr class="grp"><td class="no">'+letter+'</td><td class="gname" colspan="'+(colCount-1)+'">'+fkEsc(kelKey)+'</td></tr>';
+      rowsA+='<tr class="grp"><td class="no">'+letter+'</td><td class="gname" colspan="'+(colA-1)+'">'+fkEsc(kelKey)+'</td></tr>';
+      rowsH+='<tr class="grp"><td class="no">'+letter+'</td><td class="gname" colspan="'+(colH-1)+'">'+fkEsc(kelKey)+'</td></tr>';
     }
     noInGroup++;
     const uraian=(it.uraian&&String(it.uraian).trim())?it.uraian:('Uraian '+(i+1));
@@ -14928,37 +15085,21 @@ function anaBuildDocHtmlUmum(st){
       const rit=(st.refs[r]&&st.refs[r].items[i])||{};
       refCells+='<td class="num">'+anaRpDoc(rit.hargaBarang)+'</td><td class="num">'+anaRpDoc(rit.hargaJasa)+'</td>';
     }
-    bodyRows+='<tr>'+
-      '<td class="no">'+noInGroup+'</td>'+
-      '<td class="ur">'+fkEsc(uraian)+'</td>'+
-      '<td class="st">'+fkEsc(String(sat))+'</td>'+
-      '<td class="vl">'+fkEsc(String(vol))+'</td>'+
-      refCells+
-      '<td class="mtd">'+res.method+'</td>'+
-      '<td class="num tot">'+anaRpDoc(res.hargaBarang)+'</td>'+
-      '<td class="num tot">'+anaRpDoc(res.hargaJasa)+'</td>'+
-      '<td class="num tot2">'+anaRpDoc(res.total)+'</td>'+
-    '</tr>';
+    const lead='<td class="no">'+noInGroup+'</td><td class="ur">'+fkEsc(uraian)+'</td><td class="st">'+fkEsc(String(sat))+'</td><td class="vl">'+fkEsc(String(vol))+'</td>';
+    rowsA+='<tr>'+lead+refCells+'<td class="mtd">'+res.method+'</td></tr>';
+    rowsH+='<tr>'+lead+'<td class="mtd">'+res.method+'</td>'+(infOn?('<td class="num">'+(res.inflasi>0?(res.inflasi+'%'):'-')+'</td>'):'')+'<td class="num tot">'+anaRpDoc(res.hargaBarang)+'</td><td class="num tot">'+anaRpDoc(res.hargaJasa)+'</td><td class="num tot2">'+anaRpDoc(res.total)+'</td></tr>';
   });
-  if(!bodyRows) bodyRows='<tr><td colspan="'+colCount+'" style="text-align:center;color:#889">Belum ada data</td></tr>';
-
-  const tbl=
-    '<table class="ana-doc-tbl">'+
-      '<thead>'+
-        '<tr>'+
-          '<th rowspan="2">No.</th>'+
-          '<th class="ur" rowspan="2">Uraian Pekerjaan</th>'+
-          '<th rowspan="2">Sat</th>'+
-          '<th rowspan="2">Vol</th>'+
-          refHead1+
-          '<th rowspan="2">Metode</th>'+
-          '<th colspan="2">Hasil Analisa'+rokHdr+'</th>'+
-          '<th rowspan="2">Harga Satuan<br>(Total)</th>'+
-        '</tr>'+
-        '<tr>'+refHead2+'<th>Barang (Rp)</th><th>Jasa (Rp)</th></tr>'+
-      '</thead>'+
-      '<tbody>'+bodyRows+'</tbody>'+
-    '</table>';
+  if(!rowsA){ rowsA='<tr><td colspan="'+colA+'" style="text-align:center;color:#889">Belum ada data</td></tr>'; rowsH='<tr><td colspan="'+colH+'" style="text-align:center;color:#889">Belum ada data</td></tr>'; }
+  const tblAnalisa=
+    '<table class="ana-doc-tbl"><thead>'+
+      '<tr><th class="no" rowspan="2">No.</th><th class="ur" rowspan="2">Uraian Pekerjaan</th><th class="st" rowspan="2">Sat</th><th class="vl" rowspan="2">Vol</th>'+refHead1+'<th rowspan="2">Metode</th></tr>'+
+      '<tr>'+refHead2+'</tr>'+
+    '</thead><tbody>'+rowsA+'</tbody></table>';
+  const tblHasil=
+    '<table class="ana-doc-tbl"><thead>'+
+      '<tr><th class="no" rowspan="2">No.</th><th class="ur" rowspan="2">Uraian Pekerjaan</th><th class="st" rowspan="2">Sat</th><th class="vl" rowspan="2">Vol</th><th rowspan="2">Metode</th>'+(infOn?'<th rowspan="2">Inflasi</th>':'')+'<th colspan="2">Hasil Analisa'+rokHdr+(infOn?' + Inflasi':'')+'</th><th rowspan="2">Harga Satuan<br>(Total)</th></tr>'+
+      '<tr><th>Barang (Rp)</th><th>Jasa (Rp)</th></tr>'+
+    '</thead><tbody>'+rowsH+'</tbody></table>';
 
   return ''+
   '<div class="fkl-doc pnw-doc ana-doc">'+
@@ -14988,17 +15129,25 @@ function anaBuildDocHtmlUmum(st){
       infoRow('Metode Perhitungan', st.metodeRef==='Sama'?('Sama — '+st.metodeAll+' (semua uraian)'):'Berbeda (per uraian)')+
     '</tbody></table>'+
     '<div class="fkl-sec-h"><span class="rn">2</span>Analisa Harga Satuan</div>'+
-    tbl+
-    '<div class="ana-doc-note">Nilai 0 / kosong diabaikan dalam perhitungan. '+
-      (rok>0?('Harga hasil analisa sudah termasuk ROK '+rok+'% ('+jenisTxt+').'):('Belum ada penambahan ROK ('+jenisTxt+').'))+'</div>'+
+    tblAnalisa+
+    '<div class="ana-doc-note">Nilai 0 / kosong diabaikan dalam perhitungan. Kolom <b>Metode</b> menunjukkan cara perhitungan tiap uraian.</div>'+
+    '<div class="ana-hasil-break"></div>'+
+    '<div class="fkl-sec-h"><span class="rn">3</span>Hasil Analisa Harga Satuan'+rokHdr+'</div>'+
+    tblHasil+
+    '<div class="ana-doc-note">'+(rok>0?('Harga hasil analisa sudah termasuk ROK '+rok+'% ('+jenisTxt+').'):('Belum ada penambahan ROK ('+jenisTxt+').'))+'</div>'+
   '</div>';
 }
 function anaRpDoc(n){ n=Math.round(anaNum(n)); return n>0 ? n.toLocaleString('id-ID') : '-'; }
 function anaExtraDocCss(){
   return ''+
   'table.ana-doc-tbl{width:100%;border-collapse:collapse;table-layout:auto;margin:2px 0 8px}'+
-  'table.ana-doc-tbl th,table.ana-doc-tbl td{border:1px solid #7d979c;padding:4px 6px;font-size:8.2px;line-height:1.35;vertical-align:middle;word-wrap:break-word;overflow-wrap:anywhere}'+
-  'table.ana-doc-tbl thead th{background:linear-gradient(90deg,#0E7C86,#0b6a73);color:#fff;font-weight:800;text-align:center;letter-spacing:.2px;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  'table.ana-doc-tbl th,table.ana-doc-tbl td{border:1px solid #dbe6e9;padding:4px 6px;font-size:8.2px;line-height:1.35;vertical-align:middle;word-wrap:break-word;overflow-wrap:anywhere}'+
+  'table.ana-doc-tbl{border:1px solid #cdd9dc;border-radius:6px;overflow:hidden}'+
+  'table.ana-doc-tbl th.no,table.ana-doc-tbl td.no{width:22px;min-width:22px}'+
+  'table.ana-doc-tbl th.st,table.ana-doc-tbl td.st{width:32px;min-width:30px}'+
+  'table.ana-doc-tbl th.vl,table.ana-doc-tbl td.vl{width:42px;min-width:38px}'+
+  '.ana-hasil-break{page-break-before:always;break-before:page;height:0;margin:0;border:0}'+
+  'table.ana-doc-tbl thead th{background:linear-gradient(90deg,#0E7C86,#0b6a73);color:#fff;font-weight:800;text-align:center;letter-spacing:.2px;border-color:#0b6a73;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   'table.ana-doc-tbl tbody tr:nth-child(even):not(.grp):not(.ana-ahsp-spacer) td{background:#f6fafb;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   'table.ana-doc-tbl td.no{text-align:center;font-weight:700}'+
   'table.ana-doc-tbl td.ur{text-align:left;min-width:120px}'+
@@ -15056,7 +15205,7 @@ function anaOpenPreview(section){
     const btn=document.createElement('button');
     btn.id='ana-preview-print'; btn.className='btn btn-teal';
     btn.style.padding='8px 14px'; btn.style.fontSize='11px';
-    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>Cetak / PDF';
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>Cetak / PDF';
     btn.onclick=anaPrint;
     actions.insertBefore(btn, actions.firstChild);
   }
@@ -15088,7 +15237,7 @@ function anaPrint(){
 
 function openRekapHps(){
   if(!isAdmin()){ toast('Menu ini hanya untuk akun admin','warn'); return; }
-  Promise.all([refreshDataDp(), refreshDataHps(), refreshDataAnalisa()]).then(()=>showView('rekap-hps'));
+  Promise.all([refreshDataDp(), refreshDataHps(), refreshDataAnalisa(), refreshDataJadwal(), refreshDataRho()]).then(()=>showView('rekap-hps'));
 }
 function renderRekapHps(){
   const sel=document.getElementById('rekap-dp-select');
@@ -15155,9 +15304,272 @@ function rekapTampilkan(){
       '</table></div>'+
     '</div>'+
     '<div class="jp-actions"><button class="btn btn-teal" onclick="rekapPrint()">'+
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg> Lihat Pdf'+
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg> Lihat Pdf'+
     '</button></div>';
 }
+/* ================= COMPOSITE HPS PDF (Tampilkan HPS) ================= */
+/* Susun satu dokumen PDF gabungan berisi cover estetik + dokumen tiap modul,
+   dihubungkan berdasarkan Nama Pekerjaan yang dipilih dari Data Pekerjaan. */
+const HPSC_YEAR = (function(){ return '2026'; })();
+function hpscYear(dp){ const t=dp&&dp.tgl_anggaran?String(dp.tgl_anggaran):''; const y=t.slice(0,4); return (/^\d{4}$/.test(y))?y:HPSC_YEAR; }
+function hpscRpFull(n){ const v=Number(n); if(!v||isNaN(v)) return '-'; return 'Rp '+v.toLocaleString('id-ID'); }
+/* ikon garis sederhana untuk kartu cover */
+const HPSC_IC = {
+  work:'<path d="M4 7h16a1 1 0 0 1 1 1v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a1 1 0 0 1 1-1Z"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/>',
+  loc:'<path d="M12 21s-7-5.686-7-11a7 7 0 0 1 14 0c0 5.314-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/>',
+  doc:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/>',
+  cal:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+  tag:'<path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0l-7.2-7.2A2 2 0 0 1 2.8 12V4.8A2 2 0 0 1 4.8 2.8H12a2 2 0 0 1 1.4.6l7.2 7.2a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1.5" fill="currentColor" stroke="none"/>',
+  chart:'<path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/>',
+  bldg:'<rect x="5" y="3" width="14" height="18" rx="1.5"/><path d="M9 7h.01M12 7h.01M15 7h.01M9 11h.01M12 11h.01M15 11h.01M10 21v-4h4v4"/>'
+};
+function hpscCss(){
+  return ''+
+  '.hpsc-page{position:relative;width:210mm;min-height:296mm;background:#fff;margin:0 auto;page-break-after:always;break-after:page;overflow:hidden;display:flex;flex-direction:column;font-family:Carlito,Calibri,"Plus Jakarta Sans",Arial,sans-serif;color:#16242c}'+
+  '.hpsc-page:last-child{page-break-after:auto}'+
+  '.hpsc-head{position:relative;background:linear-gradient(120deg,#0b3d42 0%,#0E7C86 55%,#12a0a0 100%);color:#fff;padding:34px 40px 30px;overflow:hidden}'+
+  '.hpsc-head::after{content:"";position:absolute;right:-90px;top:-90px;width:340px;height:340px;border-radius:50%;border:38px solid rgba(255,255,255,.06)}'+
+  '.hpsc-head::before{content:"";position:absolute;right:40px;bottom:-40px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.10),transparent 68%)}'+
+  '.hpsc-brand{display:flex;align-items:center;justify-content:space-between;gap:16px;position:relative;z-index:2}'+
+  '.hpsc-brand-l{display:flex;align-items:center;gap:14px}'+
+  '.hpsc-logo{width:52px;height:52px;background:#fff;border-radius:12px;display:flex;align-items:center;justify-content:center;padding:6px;box-shadow:0 6px 16px rgba(0,0,0,.18)}'+
+  '.hpsc-logo img{width:100%;height:100%;object-fit:contain}'+
+  '.hpsc-org1{font-size:15px;font-weight:800;letter-spacing:.3px;line-height:1.1}'+
+  '.hpsc-org2{font-size:10px;font-weight:700;letter-spacing:3px;opacity:.85;margin-top:2px}'+
+  '.hpsc-year{border:1.5px solid rgba(255,255,255,.45);border-radius:30px;padding:8px 18px;font-size:10px;font-weight:800;letter-spacing:2px;color:#fff;white-space:nowrap}'+
+  '.hpsc-kicker{margin-top:30px;font-size:11px;font-weight:800;letter-spacing:6px;opacity:.8;position:relative;z-index:2}'+
+  '.hpsc-title{margin-top:8px;font-size:38px;font-weight:800;letter-spacing:.5px;line-height:1.05;position:relative;z-index:2}'+
+  '.hpsc-title small{display:block;font-size:24px;font-weight:800}'+
+  '.hpsc-goldbar{height:8px;background:linear-gradient(90deg,#F6B40E,#ffd35a)}'+
+  '.hpsc-body{flex:1;padding:34px 40px 20px;display:flex;flex-direction:column;gap:16px}'+
+  '.hpsc-nomor{display:flex;align-items:center;gap:12px;background:#fff8e6;border:1px solid #f0d98a;border-radius:12px;padding:13px 18px}'+
+  '.hpsc-nomor .lb{font-size:10px;font-weight:800;letter-spacing:2px;color:#8a6d00}'+
+  '.hpsc-nomor .vl{font-size:13px;font-weight:800;color:#5c4a00;letter-spacing:.3px}'+
+  '.hpsc-card{display:flex;align-items:flex-start;gap:16px;border:1px solid #e2ebed;border-left:5px solid #0E7C86;border-radius:12px;padding:16px 18px;background:#fbfdfd}'+
+  '.hpsc-ic{flex:0 0 auto;width:42px;height:42px;border-radius:11px;background:#e3f2f3;color:#0b6a73;display:flex;align-items:center;justify-content:center}'+
+  '.hpsc-ic svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}'+
+  '.hpsc-ctx .cl{font-size:10px;font-weight:800;letter-spacing:2.5px;color:#5b7075}'+
+  '.hpsc-ctx .cv{font-size:16px;font-weight:800;color:#12333a;margin-top:3px;line-height:1.25}'+
+  '.hpsc-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}'+
+  '.hpsc-mini{position:relative;border:1px solid #e4edee;border-radius:13px;padding:13px 16px 14px 20px;background:linear-gradient(180deg,#ffffff,#f5fafa);box-shadow:0 2px 6px rgba(11,61,66,.04);overflow:hidden}'+
+  '.hpsc-mini::before{content:"";position:absolute;left:0;top:11px;bottom:11px;width:3.5px;border-radius:4px;background:linear-gradient(180deg,#0E7C86,#22b0ad)}'+
+  '.hpsc-mini .cl{font-size:8.5px;font-weight:800;letter-spacing:1.8px;color:#4f8288;text-transform:uppercase}'+
+  '.hpsc-mini .cv{font-size:14.5px;font-weight:800;color:#12333a;margin-top:5px;line-height:1.25;word-break:break-word}'+
+  '.hpsc-mini.rp::before{background:linear-gradient(180deg,#F6B40E,#ffd35a)}'+
+  '.hpsc-mini.rp .cv{color:#0b6a73;font-size:16px;letter-spacing:.2px}'+
+  '.hpsc-sec .bdg.bdg-i{font-size:12px;font-style:italic;font-family:Georgia,serif}'+
+  '.hpsc-sec{display:flex;align-items:center;gap:11px;margin:6px 0 2px}'+
+  '.hpsc-sec .bdg{width:26px;height:26px;border-radius:8px;background:#0E7C86;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800}'+
+  '.hpsc-sec .st{font-size:13px;font-weight:800;letter-spacing:2px;color:#12333a}'+
+  '.hpsc-money{display:flex;align-items:center;justify-content:space-between;border:1px solid #e2ebed;border-radius:11px;padding:13px 18px;background:#fbfdfd}'+
+  '.hpsc-money.hi{background:#e8f6f6;border-color:#bfe0e2}'+
+  '.hpsc-money .k{font-size:12.5px;font-weight:700;color:#3a5157}'+
+  '.hpsc-money .v{font-size:17px;font-weight:800;color:#0b6a73}'+
+  '.hpsc-money .v small{font-size:11px;font-weight:700;color:#7c9297;margin-right:3px}'+
+  '.hpsc-reflist{display:flex;flex-direction:column;gap:8px}'+
+  '.hpsc-ref{display:flex;align-items:center;gap:12px;border:1px solid #e2ebed;border-radius:11px;padding:11px 15px;background:#fbfdfd}'+
+  '.hpsc-ref .ic{width:30px;height:30px;border-radius:8px;background:#e3f2f3;color:#0b6a73;display:flex;align-items:center;justify-content:center}'+
+  '.hpsc-ref .ic svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2}'+
+  '.hpsc-ref .nm{flex:1;font-size:13px;font-weight:800;color:#12333a}'+
+  '.hpsc-ref .rf{font-size:10px;font-weight:800;letter-spacing:1px;color:#5b7075}'+
+  '.hpsc-note{display:flex;align-items:flex-start;gap:12px;border:1px dashed #bfe0e2;border-radius:11px;padding:13px 16px;background:#f2fafa}'+
+  '.hpsc-note .t{font-size:12.5px;font-weight:800;color:#12333a}'+
+  '.hpsc-note .s{font-size:10.5px;color:#5b7075;margin-top:2px}'+
+  '.hpsc-doclist{display:grid;grid-template-columns:1fr 1fr;gap:11px}'+
+  '.hpsc-doc{position:relative;display:flex;align-items:center;gap:13px;border:1px solid #e4edee;border-radius:13px;padding:13px 16px 13px 20px;background:linear-gradient(180deg,#ffffff,#f5fafa);box-shadow:0 2px 6px rgba(11,61,66,.04);overflow:hidden}'+
+  '.hpsc-doc::before{content:"";position:absolute;left:0;top:11px;bottom:11px;width:3.5px;border-radius:4px;background:linear-gradient(180deg,#0E7C86,#22b0ad)}'+
+  '.hpsc-doc .n{width:28px;height:28px;border-radius:8px;background:#0E7C86;color:#fff;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:0 0 auto}'+
+  '.hpsc-doc .tx b{display:block;font-size:15px;font-weight:800;color:#12333a;line-height:1.25}'+
+  '.hpsc-doc .tx span{font-size:11px;color:#6a8087;margin-top:2px;display:block}'+
+  '.hpsc-foot{background:linear-gradient(120deg,#0b3d42,#0E7C86);color:#fff;padding:16px 40px;display:flex;align-items:center;justify-content:space-between;gap:16px}'+
+  '.hpsc-foot-l{display:flex;align-items:center;gap:12px}'+
+  '.hpsc-foot-logo{width:34px;height:34px;background:#fff;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:4px}'+
+  '.hpsc-foot-logo img{width:100%;height:100%;object-fit:contain}'+
+  '.hpsc-foot-adr b{display:block;font-size:11px;font-weight:800}'+
+  '.hpsc-foot-adr span{font-size:9.5px;opacity:.85}'+
+  '.hpsc-web{border:1px solid rgba(255,255,255,.4);border-radius:30px;padding:6px 15px;font-size:10.5px;font-weight:800;white-space:nowrap}'+
+  '@media print{.hpsc-page{margin:0}}';
+}
+function hpscHead(kicker, title){
+  return '<div class="hpsc-head">'+
+    '<div class="hpsc-brand"><div class="hpsc-brand-l">'+
+      '<div class="hpsc-logo"><img src="'+FKL_LOGO_SRC+'" alt="PLN"></div>'+
+      '<div><div class="hpsc-org1">PT PLN (PERSERO)</div><div class="hpsc-org2">UP3 MASOHI</div></div>'+
+    '</div><div class="hpsc-year">TAHUN ANGGARAN '+HPSC_YEAR+'</div></div>'+
+    '<div class="hpsc-kicker">'+fkEsc(kicker)+'</div>'+
+    '<div class="hpsc-title">'+title+'</div>'+
+  '</div><div class="hpsc-goldbar"></div>';
+}
+function hpscFoot(){
+  return '<div class="hpsc-foot"><div class="hpsc-foot-l">'+
+    '<div class="hpsc-foot-logo"><img src="'+FKL_LOGO_SRC+'" alt="PLN"></div>'+
+    '<div class="hpsc-foot-adr"><b>Jl. Abdullah Soulissa No 1, Masohi, Kec. Kota Masohi</b><span>Kab. Maluku Tengah, Prov. Maluku 97513</span></div>'+
+  '</div><div class="hpsc-web">www.pln.co.id</div></div>';
+}
+function hpscCard(icKey, label, value){
+  return '<div class="hpsc-card"><div class="hpsc-ic"><svg viewBox="0 0 24 24">'+HPSC_IC[icKey]+'</svg></div>'+
+    '<div class="hpsc-ctx"><div class="cl">'+fkEsc(label)+'</div><div class="cv">'+fkEsc(value||'—')+'</div></div></div>';
+}
+function hpscPage(kicker, title, bodyHtml){
+  return '<div class="hpsc-page">'+hpscHead(kicker,title)+'<div class="hpsc-body">'+bodyHtml+'</div>'+hpscFoot()+'</div>';
+}
+/* Cover 1 — indeks "Menu Cover HPS" / Empat Dokumen + data pekerjaan */
+function hpscCoverIndex(dp, tglHps, nomor){
+  const jenis=(dp.state&&dp.state.info&&dp.state.info.jenis_anggaran)||dp.jenis_anggaran||'';
+  const docs=[['1','Cover HPS','Sampul utama HPS'],['2','Review Pengadaan','Ringkasan harga & referensi'],['3','Jadwal Pengadaan','Tahapan proses pengadaan'],['4','Referensi Harga','Kumpulan referensi harga']];
+  const docHtml=docs.map(d=>'<div class="hpsc-doc"><div class="n">'+d[0]+'</div><div class="tx"><b>'+d[1]+'</b><span>'+d[2]+'</span></div></div>').join('');
+  const mini=(cl,cv,extra)=>'<div class="hpsc-mini'+(extra?' '+extra:'')+'"><div class="cl">'+cl+'</div><div class="cv">'+cv+'</div></div>';
+  const body=''+
+    '<div class="hpsc-sec"><span class="bdg">4</span><span class="st">EMPAT DOKUMEN</span></div>'+
+    '<div class="hpsc-doclist">'+docHtml+'</div>'+
+    '<div class="hpsc-sec" style="margin-top:8px"><span class="bdg bdg-i">i</span><span class="st">DATA PEKERJAAN</span></div>'+
+    hpscCard('work','PEKERJAAN', dp.nama_pekerjaan)+
+    '<div class="hpsc-grid">'+
+      mini('Lokasi Pekerjaan', fkEsc(dp.lokasi||'—'))+
+      mini('Perkiraan Nilai', hpscRpFull(dp.nilai), 'rp')+
+      mini('No. Anggaran', fkEsc(dp.no_anggaran||'—'))+
+      mini('Tgl. Anggaran', fkEsc(dp.tgl_anggaran?pnwDateLong(dp.tgl_anggaran):'—'))+
+      mini('No. HPS', fkEsc(nomor||'—'))+
+      mini('Tgl. HPS', fkEsc(tglHps?pnwDateLong(tglHps):'—'))+
+      mini('Jenis Anggaran', fkEsc(jenis||'—'))+
+      mini('Metode Pengadaan', fkEsc(dp.metode||'—'))+
+    '</div>';
+  return hpscPage('DOKUMEN HPS','Menu Cover HPS', body);
+}
+/* Cover — HPS */
+function hpscCoverHps(dp, nomor){
+  const body=''+
+    '<div class="hpsc-nomor"><div class="hpsc-ic" style="width:34px;height:34px"><svg viewBox="0 0 24 24">'+HPSC_IC.tag+'</svg></div><div><div class="lb">NOMOR</div><div class="vl">'+fkEsc(nomor||'—')+'</div></div></div>'+
+    hpscCard('work','PEKERJAAN', dp.nama_pekerjaan)+
+    hpscCard('loc','LOKASI', dp.lokasi);
+  return hpscPage('DOKUMEN PENGADAAN','HARGA PERKIRAAN<small>SENDIRI (HPS)</small>', body);
+}
+/* Cover — Review Pengadaan */
+function hpscCoverReview(dp, hpsTotal, refNames){
+  const refHtml=(refNames&&refNames.length)? refNames.map((nm,i)=>'<div class="hpsc-ref"><div class="ic"><svg viewBox="0 0 24 24">'+HPSC_IC.bldg+'</svg></div><div class="nm">'+fkEsc(nm)+'</div><div class="rf">Ref '+(i+1)+'</div></div>').join('')
+    : '<div class="hpsc-ref"><div class="nm" style="color:#7c9297;font-weight:700">Belum ada referensi harga</div></div>';
+  const body=''+
+    hpscCard('work','PEKERJAAN', dp.nama_pekerjaan)+
+    '<div class="hpsc-sec"><span class="bdg">A</span><span class="st">HARGA (+ PPN 12%)</span></div>'+
+    '<div class="hpsc-money"><div class="k">Pagu Anggaran</div><div class="v"><small>Rp</small>'+(Number(dp.nilai)?Number(dp.nilai).toLocaleString('id-ID'):'-')+'</div></div>'+
+    '<div class="hpsc-money hi"><div class="k">HPS</div><div class="v"><small>Rp</small>'+(Number(hpsTotal)?Number(hpsTotal).toLocaleString('id-ID'):'-')+'</div></div>'+
+    '<div class="hpsc-sec"><span class="bdg">B</span><span class="st">REFERENSI HARGA</span></div>'+
+    '<div class="hpsc-reflist">'+refHtml+'</div>'+
+    '<div class="hpsc-sec"><span class="bdg">C</span><span class="st">PENGGUNAAN ROK</span></div>'+
+    '<div class="hpsc-note"><div class="hpsc-ic" style="width:34px;height:34px"><svg viewBox="0 0 24 24">'+HPSC_IC.chart+'</svg></div><div><div class="t">Terpakai sesuai analisa</div><div class="s">Nilai ROK mengikuti hasil Analisa Harga Satuan (otomatis).</div></div></div>';
+  return hpscPage('ANALISA PENGADAAN','REVIEW PENGADAAN', body);
+}
+/* Cover — Jadwal / Referensi (pola sama) */
+function hpscCoverSimple(kicker, title, dp, dokLabel){
+  const body=''+
+    '<div class="hpsc-nomor"><div class="hpsc-ic" style="width:34px;height:34px"><svg viewBox="0 0 24 24">'+HPSC_IC.tag+'</svg></div><div><div class="lb">TAHUN ANGGARAN</div><div class="vl">'+HPSC_YEAR+'</div></div></div>'+
+    hpscCard('work','PEKERJAAN', dp.nama_pekerjaan)+
+    hpscCard('loc','LOKASI', dp.lokasi)+
+    hpscCard('doc','DOKUMEN', dokLabel);
+  return hpscPage(kicker, title, body);
+}
+/* Ambil fragmen dokumen modul lewat preview-state sementara */
+function hpscModuleFrag(kind, rec){
+  if(!rec) return '';
+  try{
+    if(kind==='hps'){ const sv=hpsPreviewState; hpsPreviewState=hpsRecordToState(rec); const h=hpsBuildDocHtml(); hpsPreviewState=sv; return h; }
+    if(kind==='ana'){ const sv=anaPreviewState; anaPreviewState=anaRecordToState(rec); const h=anaBuildDocHtml(); anaPreviewState=sv; return h; }
+    if(kind==='rho'){ const sv=rhoPreviewState; rhoPreviewState=rhoRecordToState(rec); const h=rhoBuildDocHtml(); rhoPreviewState=sv; return h; }
+    if(kind==='jadwal'){ const sv=jpState; jpState=jpRecordToState(rec); const full=jpStandaloneDocHtml(); jpState=sv; const m=full.match(/<body>([\s\S]*)<\/body>/i); return m?m[1]:''; }
+  }catch(e){ console.error('hpscModuleFrag',kind,e); return '<div class="hpsc-page"><div class="hpsc-body"><p style="padding:40px;color:#b02626">Gagal memuat dokumen '+kind+'.</p></div></div>'; }
+  return '';
+}
+function hpscModulePage(frag){ return frag ? '<div class="fkl-print-page hpsc-modpage">'+frag+'</div>' : ''; }
+function hpscAllCss(){
+  const base=(document.getElementById('fkl-doc-css')||{}).textContent||'';
+  let x='';
+  try{ x+=pnwExtraDocCss(); }catch(e){}
+  try{ x+=rhoExtraDocCss(); }catch(e){}
+  try{ x+=hpsExtraDocCss(); }catch(e){}
+  try{ x+=anaExtraDocCss(); }catch(e){}
+  try{ x+=jpExtraDocCss(); }catch(e){}
+  return base + x + hpscCss() + '.hpsc-modpage{page-break-after:always;break-after:page}.hpsc-modpage:last-child{page-break-after:auto}';
+}
+/* Cari record modul yang cocok berdasarkan Nama Pekerjaan */
+function hpscMatch(list, nama){
+  const nm=String(nama||'').trim().toLowerCase(); if(!nm) return null;
+  return (list||[]).find(r=>String(r.nama_pekerjaan||'').trim().toLowerCase()===nm) || null;
+}
+function hpscBuild(dp){
+  const nama=dp.nama_pekerjaan;
+  const hpsRec=hpscMatch(records_hps, nama);
+  const anaRec=hpscMatch(records_ana, nama);
+  const jadwalRec=hpscMatch(records_jadwal, nama);
+  const rhoRec=hpscMatch(records_rho, nama);
+  const hpsTotal=hpsRec?hpsRec.nilai_total:0;
+  const tglHps=hpsRec?hpsRec.tgl_hps:'';
+  const nomor=hpsRec?((hpsRec.state&&hpsRec.state.info&&hpsRec.state.info.nomor)||hpsRec.nomor||''):'';
+  let refNames=[];
+  const anaS=(anaRec&&anaRec.state&&Array.isArray(anaRec.state.sumber))?anaRec.state.sumber:[];
+  const rhoS=(rhoRec&&rhoRec.state&&Array.isArray(rhoRec.state.sumber))?rhoRec.state.sumber:[];
+  (anaS.length?anaS:rhoS).forEach(x=>{ if(x&&String(x).trim()) refNames.push(String(x).trim()); });
+  let pages='';
+  pages+=hpscCoverIndex(dp, tglHps, nomor);                            // 1
+  pages+=hpscCoverHps(dp, nomor);                                      // 2
+  pages+=hpscCoverReview(dp, hpsTotal, refNames);                     // 3
+  pages+=hpscModulePage(hpscModuleFrag('hps', hpsRec));               // 4
+  pages+=hpscModulePage(hpscModuleFrag('ana', anaRec));               // 5
+  pages+=hpscCoverSimple('RENCANA PELAKSANAAN','JADWAL PENGADAAN', dp, 'Jadwal & Tahapan Proses Pengadaan'); // 6
+  pages+=hpscModulePage(hpscModuleFrag('jadwal', jadwalRec));         // 7
+  pages+=hpscCoverSimple('SUMBER HARGA','REFERENSI HARGA', dp, 'Kumpulan Referensi Harga Barang / Jasa');    // 8
+  if(rhoRec) pages+=hpscModulePage(hpscModuleFrag('rho', rhoRec));    // 9 (opsional)
+  return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>&#8203;</title>'+
+    '<style>'+hpscAllCss()+'</style></head><body>'+pages+'</body></html>';
+}
+function hpsShowComposite(){
+  const sel=document.getElementById('rekap-dp-select'); const id=sel?sel.value:'';
+  if(!id){ toast('Pilih Nama Pekerjaan terlebih dahulu','warn'); return; }
+  Promise.all([refreshDataDp(),refreshDataHps(),refreshDataAnalisa(),refreshDataJadwal(),refreshDataRho()]).then(()=>{
+    const dp=(records_dp||[]).find(r=>String(r.id)===String(id));
+    if(!dp){ toast('Data pekerjaan tidak ditemukan','warn'); return; }
+    const html=hpscBuild(dp);
+    hpscOpenPreview(html, dp.nama_pekerjaan);
+  }).catch(err=>{ console.error(err); toast('Gagal memuat data: '+errMsg(err),'err'); });
+}
+function hpscOpenPreview(html, nama){
+  const ov=document.getElementById('pn-preview-overlay'); if(!ov){ hpscPrintHtml(html); return; }
+  const _mdl=ov.querySelector('.pn-preview-modal'); if(_mdl) _mdl.classList.remove('is-max');
+  if(typeof pnPreviewResetMaxBtn==='function') pnPreviewResetMaxBtn();
+  const titleEl=document.getElementById('pn-preview-title');
+  if(titleEl) titleEl.textContent='Pratinjau — HPS: '+(nama||'');
+  const body=document.getElementById('pn-preview-body');
+  if(body){
+    body.classList.add('fkl-preview-body');
+    body.innerHTML='<iframe id="hpsc-preview-frame" title="Pratinjau HPS"></iframe>';
+    const ifr=document.getElementById('hpsc-preview-frame');
+    const doc=ifr.contentWindow.document; doc.open(); doc.write(html); doc.close();
+  }
+  const actions=document.querySelector('#pn-preview-overlay .pn-preview-head-actions');
+  ['fkl-preview-print','pnw-preview-print','rho-preview-print','hps-preview-print','ana-preview-print'].forEach(bid=>{ const b=document.getElementById(bid); if(b) b.remove(); });
+  if(actions && !document.getElementById('hpsc-preview-print')){
+    const btn=document.createElement('button');
+    btn.id='hpsc-preview-print'; btn.className='btn btn-teal';
+    btn.style.padding='8px 14px'; btn.style.fontSize='11px';
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>Cetak / PDF';
+    btn.onclick=function(){ hpscPrintHtml(html); };
+    actions.insertBefore(btn, actions.firstChild);
+  }
+  ov.classList.add('show');
+}
+function hpscPrintHtml(html){
+  const old=document.getElementById('hpsc-print-frame'); if(old) old.remove();
+  const ifr=document.createElement('iframe');
+  ifr.id='hpsc-print-frame'; ifr.setAttribute('aria-hidden','true');
+  ifr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+  document.body.appendChild(ifr);
+  const doc=ifr.contentWindow.document; doc.open(); doc.write(html); doc.close();
+  const go=()=>{ withHiddenPageTitle(()=>{ try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }catch(e){ try{ window.print(); }catch(_){} } }); setTimeout(()=>{ const f=document.getElementById('hpsc-print-frame'); if(f) f.remove(); },1800); };
+  const imgs=doc.images?Array.from(doc.images):[];
+  if(imgs.length){ let n=imgs.length; const dec=()=>{ if(--n<=0) setTimeout(go,80); }; imgs.forEach(im=>{ if(im.complete) dec(); else { im.onload=dec; im.onerror=dec; } }); setTimeout(go,1500); }
+  else setTimeout(go,150);
+}
+/* ================= AKHIR COMPOSITE HPS PDF ================= */
+
 /* ---- Cetak / PDF rekap gabungan ---- */
 function rekapExtraDocCss(){
   return ''+
