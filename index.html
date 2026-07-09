@@ -14993,26 +14993,38 @@ function anaRenderStep2Body(){
 }
 
 /* ================= TEMPLATE EXCEL (Download / Upload) — LANGKAH 2 =================
-   Kolom mengikuti PERSIS judul tabel pada tampilan Analisa Harga Satuan, berurutan:
-   No | Kelompok | Uraian Pekerjaan | Sat | Vol | Harga Sat. Barang (Rp) | Harga Sat. Jasa (Rp)
-   Bentuk & gaya file dibuat sama seperti Template Input Pekerjaan di Monitoring
-   (header teal, border tipis, zebra, sheet Petunjuk). Harga mengikuti REFERENSI aktif;
-   kolom Kelompok/Uraian/Sat/Vol berlaku sama untuk semua referensi. */
-const ANA_TPL_COLS = [
-  {key:'no',          label:'No'},
-  {key:'kelompok',    label:'Kelompok'},
-  {key:'uraian',      label:'Uraian Pekerjaan'},
-  {key:'sat',         label:'Sat'},
-  {key:'vol',         label:'Vol'},
-  {key:'hargaBarang', label:'Harga Sat. Barang (Rp)'},
-  {key:'hargaJasa',   label:'Harga Sat. Jasa (Rp)'}
-];
-const ANA_TPL_WIDTH = {no:6, kelompok:18, uraian:44, sat:8, vol:11, hargaBarang:22, hargaJasa:22};
+   SATU file mencakup SEMUA referensi sekaligus. Kolom, berurutan:
+   No | Kelompok | Uraian Pekerjaan | Sat | Vol |
+   [Harga Sat. Barang (Rp) (Ref 1) | Harga Sat. Jasa (Rp) (Ref 1)] | … sebanyak Jumlah Referensi.
+   Nama referensi pada judul kolom mengikuti "Sumber Referensi"; bila belum diisi
+   ditandai "(Referensi N (Sesuaikan Dengan Nama))". Gaya file sama seperti Template
+   Input Pekerjaan di Monitoring (header teal, border tipis, zebra, sheet Petunjuk).
+   Kolom Kelompok/Uraian/Sat/Vol berlaku sama untuk semua referensi. */
+function anaTplRefName(st,r){
+  const s=(st.sumber&&st.sumber[r]!=null)?String(st.sumber[r]).trim():'';
+  return s ? s : ('Referensi '+(r+1)+' (Sesuaikan Dengan Nama)');
+}
+/* Susun deskriptor kolom template mengikuti jumlah referensi. */
+function anaTplBuildCols(st){
+  const cols=[
+    {label:'No',               w:6,  kind:'no'},
+    {label:'Kelompok',         w:18, kind:'kelompok'},
+    {label:'Uraian Pekerjaan', w:44, kind:'uraian'},
+    {label:'Sat',              w:9,  kind:'sat'},
+    {label:'Vol',              w:11, kind:'vol'}
+  ];
+  for(let r=0;r<st.jumlahRef;r++){
+    const nm=anaTplRefName(st,r);
+    cols.push({label:'Harga Sat. Barang (Rp) ('+nm+')', w:22, kind:'barang', ref:r});
+    cols.push({label:'Harga Sat. Jasa (Rp) ('+nm+')',   w:22, kind:'jasa',   ref:r});
+  }
+  return cols;
+}
 
 function anaTemplateBarHtml(){
   return '<div class="hl-tpl-bar" style="margin-top:4px">'+
     '<div class="hl-tpl-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>'+
-    '<div class="hl-tpl-txt"><b>Template Pengisian Analisa</b><span>Unduh format Excel (No, Kelompok, Uraian Pekerjaan, Sat, Vol, Harga Sat. Barang, Harga Sat. Jasa), isi harganya, lalu unggah kembali. <b>Harga mengikuti Referensi terpilih</b> pada pemilih di atas tabel.</span></div>'+
+    '<div class="hl-tpl-txt"><b>Template Pengisian Analisa</b><span>Unduh SATU file berisi kolom Harga Barang &amp; Jasa untuk <b>semua referensi sekaligus</b> (mengikuti Jumlah Referensi), isi harganya, lalu unggah kembali. Kolom Kelompok/Uraian/Sat/Vol berlaku sama untuk semua referensi.</span></div>'+
     '<div class="hl-tpl-actions">'+
       '<button type="button" class="btn btn-amber" onclick="anaDownloadTemplate()">'+
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'+
@@ -15029,77 +15041,82 @@ async function anaDownloadTemplate(){
   if(!requireInput()) return;
   if(!window.ExcelJS){ toast('Library Excel belum termuat, coba lagi','warn'); return; }
   anaEnsure();
-  const st=anaState; const r=st.aktifRef; const ref=st.refs[r]||anaBlankRef();
-  const refName=anaRefLabel(r);
-  const namaPek=String((st.info&&st.info.nama)||'').trim();
-  const COLS=ANA_TPL_COLS; const n=st.jumlahItem;
+  const st=anaState; const namaPek=String((st.info&&st.info.nama)||'').trim();
+  const cols=anaTplBuildCols(st); const n=st.jumlahItem; const NC=cols.length;
 
   const wb=new ExcelJS.Workbook();
   const wsD=wb.addWorksheet('Data');
-  wsD.addRow(COLS.map(c=>c.label));
-  wsD.columns=COLS.map(c=>({width:ANA_TPL_WIDTH[c.key]||16}));
+  wsD.addRow(cols.map(c=>c.label));
+  wsD.columns=cols.map(c=>({width:c.w||16}));
 
   const thin={style:'thin',color:{argb:'FFBFCAD0'}};
   const allBorder={top:thin,left:thin,bottom:thin,right:thin};
 
-  // Judul tabel (baris 1) — teal, teks putih tebal
-  const headRow=wsD.getRow(1); headRow.height=30;
-  for(let c=1;c<=COLS.length;c++){
+  // Judul tabel (baris 1) — teal, teks putih tebal, dibungkus (wrap)
+  const headRow=wsD.getRow(1); headRow.height=60;
+  for(let c=1;c<=NC;c++){
     const cell=wsD.getCell(1,c);
     cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0E7C86'}};
-    cell.font={bold:true,color:{argb:'FFFFFFFF'},size:11};
+    cell.font={bold:true,color:{argb:'FFFFFFFF'},size:10.5};
     cell.alignment={wrapText:true,vertical:'middle',horizontal:'center'};
     cell.border=allBorder;
   }
-  // Isi data existing referensi aktif (struktur + harga yang sudah terisi)
+  // Isi data yang sudah ada (struktur dari referensi-0; harga per referensi)
+  const ref0=st.refs[0]||anaBlankRef();
   for(let i=0;i<n;i++){
-    const it=ref.items[i]||{};
+    const base=ref0.items[i]||{};
     const row=wsD.getRow(i+2);
-    row.getCell(1).value=i+1;
-    row.getCell(2).value=it.kelompok||'';
-    row.getCell(3).value=it.uraian||'';
-    row.getCell(4).value=it.sat||'';
-    row.getCell(5).value=(it.vol!==''&&it.vol!=null)?anaNum(it.vol):'';
-    const hb=anaNum(it.hargaBarang); row.getCell(6).value=hb>0?hb:'';
-    const hj=anaNum(it.hargaJasa);   row.getCell(7).value=hj>0?hj:'';
+    cols.forEach((c,ci)=>{
+      const cell=row.getCell(ci+1);
+      if(c.kind==='no') cell.value=i+1;
+      else if(c.kind==='kelompok') cell.value=base.kelompok||'';
+      else if(c.kind==='uraian')   cell.value=base.uraian||'';
+      else if(c.kind==='sat')      cell.value=base.sat||'';
+      else if(c.kind==='vol')      cell.value=(base.vol!==''&&base.vol!=null)?anaNum(base.vol):'';
+      else if(c.kind==='barang'){ const it=(st.refs[c.ref]&&st.refs[c.ref].items[i])||{}; const v=anaNum(it.hargaBarang); cell.value=v>0?v:''; }
+      else if(c.kind==='jasa'){   const it=(st.refs[c.ref]&&st.refs[c.ref].items[i])||{}; const v=anaNum(it.hargaJasa);   cell.value=v>0?v:''; }
+    });
   }
-  // Border + zebra + format kolom (isian s.d. baris n+1)
+  // Border + zebra + format kolom
   for(let rr=2;rr<=n+1;rr++){
-    for(let c=1;c<=COLS.length;c++){
+    for(let c=1;c<=NC;c++){
       const cell=wsD.getCell(rr,c);
       cell.border=allBorder;
-      cell.alignment={vertical:'middle'};
+      const kind=cols[c-1].kind;
+      if(kind==='no'||kind==='sat') cell.alignment={vertical:'middle',horizontal:'center'};
+      else if(kind==='vol'){ cell.numFmt='#,##0.###'; cell.alignment={vertical:'middle',horizontal:'center'}; }
+      else if(kind==='barang'||kind==='jasa'){ cell.numFmt=ACCT_NODEC; cell.alignment={vertical:'middle',horizontal:'right'}; }
+      else cell.alignment={vertical:'middle'};
       if(rr%2===1) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F7F8'}};
     }
-    wsD.getCell(rr,1).alignment={vertical:'middle',horizontal:'center'};
-    wsD.getCell(rr,4).alignment={vertical:'middle',horizontal:'center'};
-    wsD.getCell(rr,5).numFmt='#,##0.###'; wsD.getCell(rr,5).alignment={vertical:'middle',horizontal:'center'};
-    wsD.getCell(rr,6).numFmt=ACCT_NODEC;  wsD.getCell(rr,6).alignment={vertical:'middle',horizontal:'right'};
-    wsD.getCell(rr,7).numFmt=ACCT_NODEC;  wsD.getCell(rr,7).alignment={vertical:'middle',horizontal:'right'};
   }
-  wsD.views=[{state:'frozen',ySplit:1}];
+  // Bekukan header + 5 kolom pertama agar Kelompok/Uraian tetap terlihat saat menggeser ke kanan
+  wsD.views=[{state:'frozen', xSplit:5, ySplit:1}];
 
   // Sheet Petunjuk
   const wsG=wb.addWorksheet('Petunjuk');
-  wsG.columns=[{width:26},{width:88}];
-  [['PETUNJUK PENGISIAN',''],['',''],
+  wsG.columns=[{width:30},{width:90}];
+  const petunjuk=[['PETUNJUK PENGISIAN',''],['',''],
    ['Pekerjaan', namaPek||'—'],
-   ['Referensi (aktif)', refName+'  (harga yang Anda isi masuk ke referensi ini)'],
+   ['Jumlah Referensi', String(st.jumlahRef)+'  (tiap referensi punya sepasang kolom Harga Barang & Jasa)'],
    ['',''],
    ['No','Nomor urut uraian. Jangan diubah — dipakai untuk mencocokkan baris.'],
    ['Kelompok','Kelompok uraian (mis. MATERIAL). Berlaku sama untuk semua referensi.'],
    ['Uraian Pekerjaan','Nama barang/jasa/pekerjaan. Berlaku sama untuk semua referensi.'],
-   ['Sat','Satuan (mis. Bh, m, m2, unit). Berlaku sama untuk semua referensi.'],
+   ['Sat','Satuan (mis. Buah, Pack, m, unit). Berlaku sama untuk semua referensi.'],
    ['Vol','Volume. Ketik angka saja (mis. 10 atau 2.5). Berlaku sama untuk semua referensi.'],
-   ['Harga Sat. Barang (Rp)','Harga satuan barang untuk Referensi aktif. Ketik angka saja (mis. 150000).'],
-   ['Harga Sat. Jasa (Rp)','Harga satuan jasa untuk Referensi aktif. Ketik angka saja (mis. 50000).'],
    ['',''],
-   ['Catatan','Isi data mulai baris ke-2. Nilai 0/kosong diabaikan saat perhitungan.'],
-   ['','Untuk mengisi referensi lain: ganti pemilih Referensi di aplikasi, unduh template lagi.'],
-   ['','Jangan mengubah judul kolom pada sheet "Data".'],
-  ].forEach(row=>wsG.addRow(row));
+   ['Kolom Harga per Referensi','Isi Harga Barang & Jasa pada kolom referensi masing-masing. Ketik angka saja (mis. 150000).']
+  ];
+  for(let r=0;r<st.jumlahRef;r++) petunjuk.push(['  • Referensi '+(r+1), anaTplRefName(st,r)]);
+  petunjuk.push(['','']);
+  petunjuk.push(['Catatan','Isi data mulai baris ke-2. Nilai 0/kosong diabaikan saat perhitungan.']);
+  petunjuk.push(['','Ganti nama pada judul kolom (dalam kurung) bila ingin, tanpa mengubah kata "Harga Sat. Barang/Jasa".']);
+  petunjuk.push(['','Jangan menghapus kolom No. Satu file ini mencakup semua referensi sekaligus.']);
+  petunjuk.forEach(row=>wsG.addRow(row));
   wsG.getCell('A1').font={bold:true,size:14,color:{argb:'FF0E7C86'}};
-  for(let rr=3;rr<=16;rr++){ wsG.getCell('A'+rr).font={bold:true,color:{argb:'FF095E66'}}; wsG.getCell('A'+rr).alignment={vertical:'top'}; wsG.getCell('B'+rr).alignment={vertical:'top',wrapText:true}; }
+  const lastG=petunjuk.length;
+  for(let rr=3;rr<=lastG;rr++){ const a=wsG.getCell('A'+rr); if(String(a.value||'').trim()!==''){ a.font={bold:true,color:{argb:'FF095E66'}}; } a.alignment={vertical:'top'}; wsG.getCell('B'+rr).alignment={vertical:'top',wrapText:true}; }
 
   try{
     const buf=await wb.xlsx.writeBuffer();
@@ -15107,10 +15124,10 @@ async function anaDownloadTemplate(){
     const url=URL.createObjectURL(blob);
     const clean=s=>String(s||'').replace(/[\\/:*?"<>|]+/g,'_').replace(/\s+/g,'_').slice(0,40);
     const a=document.createElement('a');
-    a.href=url; a.download='Template_Analisa_Harga_Satuan_'+(clean(namaPek)||'Pekerjaan')+'_'+(clean(refName)||'Referensi')+'.xlsx';
+    a.href=url; a.download='Template_Analisa_Harga_Satuan_'+(clean(namaPek)||'Pekerjaan')+'.xlsx';
     document.body.appendChild(a); a.click(); a.remove();
     URL.revokeObjectURL(url);
-    toast('Template diunduh untuk referensi: '+refName,'ok');
+    toast('Template diunduh — '+st.jumlahRef+' referensi dalam satu file','ok');
   }catch(err){ console.error(err); toast('Gagal membuat template: '+errMsg(err),'warn'); }
 }
 
@@ -15122,32 +15139,55 @@ function anaHandleUpload(ev){
   reader.onload=e=>{
     try{
       anaEnsure();
+      const st=anaState;
       const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
       const sheetName=wb.SheetNames.includes('Data')?'Data':wb.SheetNames[0];
       const ws=wb.Sheets[sheetName];
       const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
       if(rows.length<2){ toast('File kosong / tidak ada data','warn'); ev.target.value=''; return; }
       const head=rows[0].map(h=>String(h==null?'':h).trim().toLowerCase());
-      const findCol=(...alts)=>{
-        for(const a of alts){ const idx=head.indexOf(a.toLowerCase()); if(idx>=0) return idx; }
-        for(const a of alts){ const idx=head.findIndex(h=>h.indexOf(a.toLowerCase())>=0); if(idx>=0) return idx; }
-        return -1;
-      };
-      const cNo =findCol('no');
-      const cKel=findCol('kelompok');
-      const cUr =findCol('uraian pekerjaan','uraian');
-      const cSat=findCol('sat','satuan');
-      const cVol=findCol('vol','volume');
-      const cHB =findCol('harga sat. barang (rp)','harga sat. barang','harga barang','barang');
-      const cHJ =findCol('harga sat. jasa (rp)','harga sat. jasa','harga jasa','jasa');
-      if(cKel<0&&cUr<0&&cHB<0&&cHJ<0){ toast('Header tidak dikenali. Gunakan template resmi.','warn'); ev.target.value=''; return; }
 
-      const st=anaState;
-      // Kumpulkan baris data (lewati baris kosong)
+      // --- Klasifikasi kolom ---
+      let cNo=-1,cKel=-1,cUr=-1,cSat=-1,cVol=-1;
+      const hargaCols=[];               // {ci, kind:'barang'|'jasa', ref}
+      let barangSeq=0, jasaSeq=0;
+      // Petakan sebuah judul kolom harga ke indeks referensi.
+      const refFromHeader=(h,kind)=>{
+        // Ambil "token" = bagian setelah "Harga Sat. Barang/Jasa (Rp)" (biasanya nama referensi dalam kurung)
+        let token=h.replace(/^harga\s*sat\.?\s*(barang|jasa)\s*(\(rp\))?/,'').trim();
+        token=token.replace(/^\(+|\)+$/g,'').trim();
+        if(token===''){ return st.aktifRef; }                 // template lama (satu pasang) → referensi aktif
+        const m=token.match(/referensi\s*(\d+)/);
+        if(m) return Math.max(0, parseInt(m[1],10)-1);         // "(Referensi N …)"
+        for(let r=0;r<st.jumlahRef;r++){                        // cocokkan nama Sumber Referensi
+          const nm=(st.sumber&&st.sumber[r]!=null)?String(st.sumber[r]).trim().toLowerCase():'';
+          if(nm && token.indexOf(nm)>=0) return r;
+        }
+        return (kind==='barang'?barangSeq++:jasaSeq++);         // cadangan: urutan kemunculan
+      };
+      head.forEach((h,ci)=>{
+        if(h==='') return;
+        if(h.indexOf('harga')>=0 && h.indexOf('barang')>=0){ hargaCols.push({ci, kind:'barang', ref:refFromHeader(h,'barang')}); return; }
+        if(h.indexOf('harga')>=0 && h.indexOf('jasa')>=0){   hargaCols.push({ci, kind:'jasa',   ref:refFromHeader(h,'jasa')});   return; }
+        if(cNo<0  && h==='no'){ cNo=ci; return; }
+        if(cKel<0 && h.indexOf('kelompok')>=0){ cKel=ci; return; }
+        if(cUr<0  && h.indexOf('uraian')>=0){ cUr=ci; return; }
+        if(cVol<0 && (h==='vol'||h.indexOf('volume')>=0)){ cVol=ci; return; }
+        if(cSat<0 && (h==='sat'||h==='sat.'||h.indexOf('satuan')>=0)){ cSat=ci; return; }
+      });
+      if(cKel<0&&cUr<0&&hargaCols.length===0){ toast('Header tidak dikenali. Gunakan template resmi.','warn'); ev.target.value=''; return; }
+
+      // Tambah jumlah referensi bila file memuat lebih banyak (maks 20)
+      let maxRef=st.jumlahRef-1; hargaCols.forEach(hc=>{ if(hc.ref>maxRef) maxRef=hc.ref; });
+      const needRef=Math.min(ANA_MAX_REF, Math.max(st.jumlahRef, maxRef+1));
+      if(needRef!==st.jumlahRef){ st.jumlahRef=needRef; anaEnsure(); }
+
+      // --- Kumpulkan baris data ---
+      const dataCols=[cKel,cUr,cSat,cVol].concat(hargaCols.map(h=>h.ci)).filter(x=>x>=0);
       const dataRows=[];
       for(let rIdx=1;rIdx<rows.length;rIdx++){
         const row=rows[rIdx]; if(!row) continue;
-        const empty=[cKel,cUr,cSat,cVol,cHB,cHJ].every(ci=> ci<0 || String(row[ci]==null?'':row[ci]).trim()==='');
+        const empty=dataCols.every(ci=> String(row[ci]==null?'':row[ci]).trim()==='');
         if(empty) continue;
         let idx;
         if(cNo>=0){ const num=parseInt(String(row[cNo]==null?'':row[cNo]).replace(/[^\d]/g,''),10); idx=(num>=1)?(num-1):dataRows.length; }
@@ -15156,40 +15196,38 @@ function anaHandleUpload(ev){
       }
       if(!dataRows.length){ toast('Tidak ada baris data untuk diimpor','warn'); ev.target.value=''; return; }
 
-      // Sesuaikan Jumlah Barang/Jasa bila baris terunggah melebihi grid (maks 150)
+      // Tambah jumlah uraian bila baris melebihi grid (maks 150)
       let maxIdx=0; dataRows.forEach(d=>{ if(d.idx>maxIdx) maxIdx=d.idx; });
-      const need=Math.min(ANA_MAX_ITEM, Math.max(st.jumlahItem, maxIdx+1));
-      if(need!==st.jumlahItem){ st.jumlahItem=need; anaEnsure(); }
+      const needItem=Math.min(ANA_MAX_ITEM, Math.max(st.jumlahItem, maxIdx+1));
+      if(needItem!==st.jumlahItem){ st.jumlahItem=needItem; anaEnsure(); }
 
-      const r=st.aktifRef;
+      const refsTouched={};
       let filled=0, skipped=0;
       dataRows.forEach(d=>{
         if(d.idx<0||d.idx>=st.jumlahItem){ skipped++; return; }
-        const rawKel=cKel<0?'':d.row[cKel];
-        const rawUr =cUr<0 ?'':d.row[cUr];
-        const rawSat=cSat<0?'':d.row[cSat];
-        const rawVol=cVol<0?'':d.row[cVol];
-        const rawHB =cHB<0 ?'':d.row[cHB];
-        const rawHJ =cHJ<0 ?'':d.row[cHJ];
-        // Kolom struktur (kelompok/uraian/sat/vol) → semua referensi (konsisten antar sumber)
+        // Struktur (kelompok/uraian/sat/vol) → semua referensi
         st.refs.forEach(rf=>{
           const it=rf.items[d.idx]; if(!it) return;
-          if(cKel>=0) it.kelompok=String(rawKel==null?'':rawKel).trim();
-          if(cUr >=0) it.uraian =String(rawUr==null?'':rawUr).trim();
-          if(cSat>=0) it.sat    =String(rawSat==null?'':rawSat).trim();
-          if(cVol>=0){ let v=String(rawVol==null?'':rawVol).replace(/[^0-9.,]/g,'').replace(/,/g,'.'); const p=v.split('.'); if(p.length>2) v=p[0]+'.'+p.slice(1).join(''); it.vol=v; }
+          if(cKel>=0) it.kelompok=String(d.row[cKel]==null?'':d.row[cKel]).trim();
+          if(cUr >=0) it.uraian =String(d.row[cUr]==null?'':d.row[cUr]).trim();
+          if(cSat>=0) it.sat    =String(d.row[cSat]==null?'':d.row[cSat]).trim();
+          if(cVol>=0){ let v=String(d.row[cVol]==null?'':d.row[cVol]).replace(/[^0-9.,]/g,'').replace(/,/g,'.'); const p=v.split('.'); if(p.length>2) v=p[0]+'.'+p.slice(1).join(''); it.vol=v; }
         });
-        // Harga → hanya referensi aktif
-        const it=st.refs[r].items[d.idx];
-        if(it){
-          if(cHB>=0){ const s=String(rawHB==null?'':rawHB).trim(); it.hargaBarang=(s===''?'':parseRupiah(rawHB)); }
-          if(cHJ>=0){ const s=String(rawHJ==null?'':rawHJ).trim(); it.hargaJasa  =(s===''?'':parseRupiah(rawHJ)); }
-        }
+        // Harga → referensi masing-masing
+        hargaCols.forEach(hc=>{
+          if(hc.ref<0||hc.ref>=st.jumlahRef) return;
+          const it=st.refs[hc.ref].items[d.idx]; if(!it) return;
+          const raw=d.row[hc.ci]; const s=String(raw==null?'':raw).trim();
+          const val=(s===''?'':parseRupiah(raw));
+          if(hc.kind==='barang') it.hargaBarang=val; else it.hargaJasa=val;
+          refsTouched[hc.ref]=true;
+        });
         filled++;
       });
       anaSaveState();
       if(anaStep===2 && st.jenis!=='Konstruksi') renderAnalisaForm(); else anaRenderStep2Body();
-      let msg='Data referensi "'+anaRefLabel(r)+'" berhasil diperbarui ('+filled+' uraian)';
+      const nRefTouched=Object.keys(refsTouched).length;
+      let msg=filled+' uraian diperbarui'+(nRefTouched?(' untuk '+nRefTouched+' referensi'):'');
       if(skipped>0) msg+=' — '+skipped+' baris dilewati (di luar jangkauan)';
       toast(msg,'ok');
     }catch(err){ console.error(err); toast('Gagal membaca file Excel','warn'); }
