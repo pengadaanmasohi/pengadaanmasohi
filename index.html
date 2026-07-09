@@ -2520,20 +2520,22 @@ input.rho-input-locked{background:#f1f4f6;color:#9aa7ad;cursor:not-allowed;borde
 
 /* Panel pengisian referensi */
 .rho-panel{display:flex;flex-direction:column;gap:16px}
-.rho-item-card{background:linear-gradient(180deg,#ffffff,#fafdfe);border:1px solid #dde9eb;border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(16,40,50,.05)}
-.rho-item-head{display:flex;align-items:center;gap:11px;padding:12px 16px;background:linear-gradient(90deg,#0E7C86,#0b6a73);color:#fff}
-.rho-item-head .rho-h-no{flex:0 0 auto;width:26px;height:26px;border-radius:7px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13.5px;letter-spacing:.2px}
-.rho-item-head .rho-h-name{font-weight:800;font-size:13.5px;letter-spacing:.2px}
-.rho-item-head .rho-h-tag{margin-left:auto;font-size:10px;font-weight:700;background:rgba(255,255,255,.16);padding:3px 10px;border-radius:20px}
-.rho-matrix-wrap{overflow-x:auto;padding:12px 14px 16px}
-table.rho-matrix{border-collapse:separate;border-spacing:0;width:100%;min-width:560px}
-table.rho-matrix th,table.rho-matrix td{border:1px solid #e3edef;padding:8px 10px;vertical-align:middle;font-size:12px}
+.rho-item-card{background:#ffffff;border:1px solid #cfe0e3;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(16,40,50,.05)}
+.rho-item-head{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#e3f2f3;border-bottom:1px solid #bfe0e2;color:#0b3d42;text-transform:uppercase}
+.rho-item-head .rho-h-no{flex:0 0 auto;width:24px;height:24px;border-radius:6px;background:#0E7C86;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;letter-spacing:.2px}
+.rho-item-head .rho-h-name{font-weight:800;font-size:12.5px;letter-spacing:.2px}
+.rho-item-head .rho-h-tag{margin-left:auto;font-size:9.5px;font-weight:700;color:var(--teal-dark);background:#d3ebee;padding:3px 10px;border-radius:20px;text-transform:none}
+.rho-matrix-wrap{overflow-x:auto;padding:10px 12px 12px}
+table.rho-matrix{border-collapse:collapse;width:100%;min-width:560px}
+table.rho-matrix th,table.rho-matrix td{border:1px solid #cfe0e3;padding:6px 8px;vertical-align:middle;font-size:12px}
 table.rho-matrix thead th{background:#eef6f7;color:#0b3d42;font-weight:800;font-size:11px;text-transform:uppercase;letter-spacing:.3px;text-align:center;white-space:nowrap}
 table.rho-matrix thead th.rho-c-lbl{text-align:left;min-width:150px;background:#e3f2f3}
-table.rho-matrix td.rho-c-lbl{background:#f6fafb;font-weight:700;color:#2b3f48;min-width:150px}
+table.rho-matrix td.rho-c-lbl{background:#f1f6f7;font-weight:700;color:#0b3d42;min-width:150px}
 table.rho-matrix td.rho-c-lbl .rho-c-sub{display:block;font-weight:500;font-size:9.5px;color:#7c8a8f;margin-top:1px}
-table.rho-matrix tr.rho-namarow td{background:#eaf5f6;color:#0b3d42;font-weight:800;font-size:12.5px;text-align:center}
+table.rho-matrix tr.rho-namarow td{background:#e8f4f5;color:#0b3d42;font-weight:800;font-size:12.5px;text-align:center}
 table.rho-matrix tr.rho-autorow td:not(.rho-c-lbl){background:#fbfdf4}
+table.rho-matrix tr.rho-totrow td{background:#eef8f1}
+table.rho-matrix tr.rho-totrow td.rho-c-lbl{background:#e6f4ec;color:#0d7a3f}
 table.rho-matrix input{width:100%;border:1px solid #cdd9de;border-radius:9px;padding:8px 9px;font-size:12px;background:#fff;font-family:inherit}
 table.rho-matrix input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,124,134,.15)}
 .rho-auto-val{display:block;text-align:right;font-weight:800;color:#0b6a73;font-size:12.5px;white-space:nowrap}
@@ -2789,14 +2791,18 @@ table.rho-matrix th, table.rho-matrix td{ border:1px solid #dce6e9; }
 
 /* Header: gradient teal 180° + teks putih (sama seperti Monitoring) */
 table.hps-uraian thead th,
-table.ana-uraian thead th,
-table.rho-matrix thead th{
+table.ana-uraian thead th{
   background:linear-gradient(180deg,#12909c,#0b6b74);
+  color:#fff; border-color:#0b6b74;
+}
+/* RHO — samakan header input dengan tampilan dokumen/PDF (teal rata) */
+table.rho-matrix thead th{
+  background:#0E7C86;
   color:#fff; border-color:#0b6b74;
 }
 /* Kolom label pertama rho-matrix ikut header teal saat di baris thead */
 table.rho-matrix thead th.rho-c-lbl{
-  background:linear-gradient(180deg,#12909c,#0b6b74); color:#fff;
+  background:#0b6a73; color:#fff;
 }
 
 /* Baris genap diberi arsiran halus seperti Monitoring (untuk tabel baris-vertikal) */
@@ -12431,7 +12437,7 @@ function rhoItemMatrixHtml(i){
   const cells=st.refs[i]||[];
   // Berat barang seragam: samakan seluruh referensi dengan Referensi 1 (hanya Ref 1 yang bisa diedit).
   if(cells.length){ const b0=(cells[0]&&cells[0].berat!=null)?cells[0].berat:''; for(let r=1;r<K;r++){ if(cells[r]) cells[r].berat=b0; } }
-  let head='<thead><tr><th class="rho-c-lbl">Keterangan</th>';
+  let head='<thead><tr><th class="rho-c-lbl">Uraian</th>';
   for(let r=0;r<K;r++) head+='<th>'+fkEsc(rhoRefLabel(r))+'</th>';
   head+='</tr></thead>';
   let body='<tbody>';
@@ -12464,7 +12470,7 @@ function rhoItemMatrixHtml(i){
   for(let r=0;r<K;r++) body+='<td><span class="rho-auto-val" id="rho-est-'+i+'-'+r+'">'+rhoRp(rhoCalcEst(i,r))+'</span></td>';
   body+='</tr>';
   // Harga Total (otomatis)
-  body+='<tr class="rho-autorow"><td class="rho-c-lbl">Harga Total<span class="rho-c-sub">Harga Satuan + Estimasi Ongkir</span></td>';
+  body+='<tr class="rho-autorow rho-totrow"><td class="rho-c-lbl">Harga Total<span class="rho-c-sub">Harga Satuan + Estimasi Ongkir</span></td>';
   for(let r=0;r<K;r++) body+='<td><span class="rho-auto-val rho-total-val" id="rho-tot-'+i+'-'+r+'">'+rhoRp(rhoCalcTot(i,r))+'</span></td>';
   body+='</tr>';
   body+='</tbody>';
@@ -12893,7 +12899,7 @@ function rhoBuildDocHtml(){
   const itemBlocks=(st.items||[]).map((nm,i)=>{
     const name=(nm&&nm.trim())?nm:('Barang/Material '+(i+1));
     const cells=(st.refs && st.refs[i])?st.refs[i]:[];
-    let th='<tr><th class="lbl">Keterangan</th>';
+    let th='<tr><th class="lbl">Uraian</th>';
     for(let r=0;r<K;r++) th+='<th>'+fkEsc(rhoRefLabel(r))+'</th>';
     th+='</tr>';
     let rowFoto='<tr><td class="lbl">Foto Produk</td>';
