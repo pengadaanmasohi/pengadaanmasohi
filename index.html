@@ -2839,6 +2839,22 @@ table.ana-uraian tbody tr:nth-child(even){ background:#f6fafb; }
 /* Pastikan garis bawah baris terakhir tetap tampil (grid penuh) */
 table.hps-uraian tbody tr:last-child td,
 table.ana-uraian tbody tr:last-child td{ border-bottom:1px solid #dce6e9; }
+
+/* =================================================================
+   Hilangkan BORDER PALING LUAR (atas/bawah/kiri/kanan) pada tabel —
+   garis dalam (antar sel) tetap ada. Berlaku utk tabel grid & Hasil Analisa.
+   ================================================================= */
+.hps-uraian-wrap,.ana-uraian-wrap{ border:none; }
+.ana-res-card{ border:none; }
+table.hps-uraian,table.ana-uraian,table.rho-matrix,table.ana-res{ border:none; }
+/* atas: buang border atas header */
+table.hps-uraian thead th,table.ana-uraian thead th,table.rho-matrix thead th,table.ana-res thead th{ border-top:none; }
+/* kiri: buang border kiri kolom pertama */
+table.hps-uraian tr>*:first-child,table.ana-uraian tr>*:first-child,table.rho-matrix tr>*:first-child,table.ana-res tr>*:first-child{ border-left:none; }
+/* kanan: buang border kanan kolom terakhir */
+table.hps-uraian tr>*:last-child,table.ana-uraian tr>*:last-child,table.rho-matrix tr>*:last-child,table.ana-res tr>*:last-child{ border-right:none; }
+/* bawah: buang border bawah baris terakhir */
+table.hps-uraian tbody tr:last-child td,table.ana-uraian tbody tr:last-child td,table.rho-matrix tbody tr:last-child td,table.ana-res tbody tr:last-child td{ border-bottom:none; }
 </style>
 </head>
 <body>
@@ -11574,6 +11590,14 @@ function pnwProfilDoDelete(name){
   let list=pnwProfilAll(); list=list.filter(x=>String(x.name)!==String(name));
   if(pnwProfilStore(list)){ toast('Profil "'+name+'" dihapus','ok'); if(list.length) pnwProfilOpenLoad(); else pnwProfilClose(); }
 }
+/* Batalkan profil: kosongkan kembali uraian persyaratan ke tampilan default */
+function pnwProfilCancel(){
+  const st=pnwState;
+  st.syarat={};
+  pnwEnsureSyarat();
+  pnwSaveState(); renderPnwForm();
+  toast('Profil dibatalkan — isian dikembalikan ke default','ok');
+}
 
 /* ================= LANGKAH 4: PEMERIKSAAN ================= */
 /* kunci pemeriksaan per baris persyaratan */
@@ -11798,6 +11822,7 @@ function renderPnwForm(){
         '<span class="pnw-profil-bar">'+
           '<button type="button" class="btn btn-amber pnw-profil-btn" onclick="pnwProfilOpenSave()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Simpan Profil</button>'+
           '<button type="button" class="btn btn-teal pnw-profil-btn" onclick="pnwProfilOpenLoad()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Muat Profil</button>'+
+          '<button type="button" class="btn btn-ghost pnw-profil-btn" onclick="pnwProfilCancel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Batalkan Profil</button>'+
         '</span>'+
       '</div>'+body+'</div>';
     html+=pnwActionsHtml({back:true});
@@ -13855,9 +13880,16 @@ function hpsTerbilangRupiah(n){
 function hpsResyncLockedHarga(st){
   st=st||hpsState;
   if(!st.info||!st.info.analisaId||st.info.analisaJenis!=='Umum') return;
-  const rec=(typeof records_ana!=='undefined'&&records_ana||[]).find(r=>String(r.id)===String(st.info.analisaId));
-  if(!rec) return;
-  const aSt=(rec.state&&typeof rec.state==='object')?rec.state:{};
+  let aSt=null;
+  // Utamakan state Analisa yang SEDANG dibuka di editor bila mengacu ke analisa yang sama,
+  // agar perubahan (mis. ROK) langsung tercermin di HPS tanpa perlu menyimpan ulang.
+  if(typeof anaEditId!=='undefined' && anaEditId!=null && String(anaEditId)===String(st.info.analisaId) && anaState && typeof anaState==='object'){
+    aSt=anaState;
+  } else {
+    const rec=(typeof records_ana!=='undefined'&&records_ana||[]).find(r=>String(r.id)===String(st.info.analisaId));
+    if(!rec) return;
+    aSt=(rec.state&&typeof rec.state==='object')?rec.state:{};
+  }
   const struct=(aSt.refs&&aSt.refs[0]&&Array.isArray(aSt.refs[0].items))?aSt.refs[0].items:[];
   let changed=false;
   (st.items||[]).forEach((item,i)=>{
@@ -13891,14 +13923,7 @@ function hpsUraianTableHtml(){
       '<td class="c-calc" id="hps-jt-'+i+'">'+hpsRp(hpsItemTotal(it))+'</td>'+
     '</tr>';
   });
-  let note='';
-  if(itemsLocked){
-    note='<div class="hps-lock-note">'+HPS_LOCK_BADGE+'<span>Kolom <b>Kelompok/Uraian/Sat/Vol</b> terkunci — otomatis terisi dari Analisa'+
-      (hargaLocked
-        ? ' terpilih. Kolom <b>Harga Barang &amp; Jasa</b> juga ikut terkunci (sudah termasuk ROK), karena Analisa berkategori <b>Pekerjaan Umum</b>.'
-        : ' terpilih. Kolom <b>Harga Barang &amp; Jasa</b> tetap dapat diisi manual, karena Analisa berkategori <b>Pekerjaan Konstruksi</b> (harga tidak ikut terkunci).')+
-      '</span></div>';
-  }
+  const note='';
   return note+'<div class="hps-uraian-wrap"><table class="hps-uraian"><thead>'+
     '<tr><th class="c-no">No</th><th>Kelompok</th><th class="c-ur">Uraian Pekerjaan</th><th>Sat</th><th>Vol</th>'+
       '<th>Harga<br>Barang</th><th>Harga<br>Jasa</th><th>Jumlah Total<br>(Rp)</th></tr>'+
@@ -13981,7 +14006,6 @@ function renderHpsForm(){
     if(sub) sub.textContent='Langkah 2 dari 2 — Uraian pekerjaan, satuan, volume & harga satuan';
     html+='<div class="form-card"><div class="form-section-title">'+FKL_SEC_ICON+'Uraian Pekerjaan <span class="fkl-count-chip">'+st.items.length+' item</span></div>'+
       hpsAnalisaBarHtml()+
-      '<div class="hps-hint"><b>Jumlah Harga</b> = Volume × Harga Satuan (Material/Jasa) &nbsp;•&nbsp; <b>Jumlah Total</b> = Jumlah Harga Material + Jasa. Bila memilih <b>Analisa</b> di atas, kolom <b>Kelompok/Uraian/Sat/Vol</b> otomatis terisi &amp; terkunci; kolom <b>Harga Satuan</b> ikut terisi &amp; terkunci hanya bila Analisa berkategori <b>Pekerjaan Umum</b> (sudah termasuk ROK) — untuk kategori <b>Pekerjaan Konstruksi</b>, harga tetap diisi manual. Tanpa Analisa, semua kolom dapat diisi manual; isi kolom <b>Kelompok</b> (mis. MATERIAL / JASA) bila ingin dokumen dikelompokkan.</div>'+
       hpsUraianTableHtml()+
       hpsSummaryPanelHtml()+'</div>';
     html+=hpsActionsHtml({back:true, save:true});
@@ -14007,9 +14031,7 @@ function hpsAnalisaBarHtml(){
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.8L7 14.3"/></svg>'+(dipilih?'Ganti Analisa':'Pilih Analisa')+'</button>';
   if(dipilih) btns+='<button type="button" class="btn btn-unpick" style="padding:8px 14px;font-size:11.5px" onclick="hpsLepasAnalisa()">'+
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M18 6 6 18M6 6l12 12"/></svg>Lepas Pilihan</button>';
-  return '<div class="hps-analisa-bar">'+
-    '<div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.8L7 14.3"/></svg></div>'+
-    '<div class="tx"><b>Pilih Analisa</b><span>'+sub+'</span></div>'+btns+
+  return '<div class="hps-analisa-bar" style="justify-content:flex-end">'+btns+
   '</div>';
 }
 
@@ -15226,7 +15248,7 @@ function anaTplBuildCols(st){
 function anaTemplateBarHtml(){
   return '<div class="hl-tpl-bar" style="margin-top:4px">'+
     '<div class="hl-tpl-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>'+
-    '<div class="hl-tpl-txt"><b>Template Pengisian Analisa</b><span>Unduh SATU file berisi kolom Harga Barang &amp; Jasa untuk <b>semua referensi sekaligus</b> (mengikuti Jumlah Referensi), isi harganya, lalu unggah kembali. Kolom Kelompok/Uraian/Sat/Vol berlaku sama untuk semua referensi.</span></div>'+
+    '<div class="hl-tpl-txt"><b>Template Pengisian Analisa</b><span>Unduh SATU file harga untuk <b>semua referensi sekaligus</b>, isi harganya, lalu unggah kembali.</span></div>'+
     '<div class="hl-tpl-actions">'+
       '<button type="button" class="btn btn-amber" onclick="anaDownloadTemplate()">'+
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'+
@@ -15502,7 +15524,6 @@ function renderAnalisaForm(){
       if(sub) sub.textContent='Langkah 2 dari 3 — Analisa Harga Satuan';
       html+='<div class="form-card"><div class="form-section-title">'+ANA_SEC_ICON+'Analisa Harga Satuan '+
         '<span class="fkl-count-chip">'+st.jumlahItem+' uraian • '+st.jumlahRef+' referensi</span></div>'+
-        '<div class="hps-hint">Pilih <b>Referensi</b> (kanan atas) untuk mengisi harganya. Kolom <b>Kelompok/Uraian/Sat/Vol</b> berlaku sama untuk semua referensi; <b>Harga Satuan</b> diisi per referensi. <b>Metode Perhitungan: Sama</b> → satu metode (Rata-rata/Terendah) untuk semua uraian; <b>Berbeda</b> → metode diatur per uraian. Nilai 0/kosong diabaikan.</div>'+
         anaTemplateBarHtml()+
         '<div id="ana-step2-body"></div></div>';
       html+=anaActionsHtml({back:true, next:true});
