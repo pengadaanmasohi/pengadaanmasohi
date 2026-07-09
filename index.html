@@ -2081,6 +2081,27 @@ tr.hl-weekend td{background:#f5f8fb}
 .pnw-sampul-band:first-child{margin-top:0}
 .pnw-kat-card{border:1px solid var(--line);border-radius:12px;padding:14px 15px;margin-bottom:14px;background:linear-gradient(180deg,#fff,#fbfdfe)}
 .pnw-kat-card:last-child{margin-bottom:0}
+/* Profil Persyaratan — tombol header + modal simpan/muat */
+.pnw-syarat-title{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.pnw-syarat-title-txt{display:flex;align-items:center;gap:8px}
+.pnw-profil-bar{display:flex;gap:8px;flex-wrap:wrap}
+.pnw-profil-btn{display:inline-flex;align-items:center;gap:7px;font-size:12px;padding:8px 13px}
+.pnw-profil-btn svg{width:15px;height:15px}
+.pnw-profil-ov{display:none;position:fixed;inset:0;z-index:9999;background:rgba(16,40,50,.5);align-items:center;justify-content:center;padding:18px}
+.pnw-profil-modal{width:100%;max-width:440px;background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(16,40,50,.35);padding:22px 22px 18px;max-height:86vh;overflow:auto}
+.pnw-profil-head{display:flex;align-items:center;gap:9px;font-family:'Plus Jakarta Sans';font-weight:800;font-size:16px;color:#0b3d42}
+.pnw-profil-head svg{width:20px;height:20px;color:var(--teal-dark)}
+.pnw-profil-sub{font-size:12.5px;color:#5a6b70;margin:8px 0 14px;line-height:1.5}
+.pnw-profil-input{width:100%;box-sizing:border-box;height:42px;border:1px solid #cdd9de;border-radius:10px;padding:9px 13px;font-size:13px;font-family:inherit;color:var(--ink)}
+.pnw-profil-input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,124,134,.15)}
+.pnw-profil-existing{font-size:11.5px;color:#7c8a8f;margin-top:10px;line-height:1.5}
+.pnw-profil-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:18px}
+.pnw-profil-list{display:flex;flex-direction:column;gap:9px;margin-bottom:4px}
+.pnw-profil-item{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid #e2ecee;border-radius:11px;padding:11px 13px;background:linear-gradient(180deg,#fff,#fafdfd)}
+.pnw-profil-item-name{font-weight:700;font-size:13px;color:#233a41;word-break:break-word}
+.pnw-profil-item-meta{font-size:11px;color:#8a99a0;margin-top:2px}
+.pnw-profil-item-btns{display:flex;gap:6px;flex-shrink:0}
+.pnw-profil-mini{padding:6px 12px;font-size:11.5px}
 .pnw-kat-head{font-family:'Plus Jakarta Sans';font-weight:800;font-size:12px;color:var(--teal-dark);margin-bottom:8px;display:flex;align-items:center;gap:8px}
 .pnw-kat-head::before{content:"";width:8px;height:8px;border-radius:3px;background:linear-gradient(135deg,var(--teal),var(--cyan))}
 .pnw-lock-note{font-size:10.5px;color:var(--muted);margin:-2px 0 10px;line-height:1.5}
@@ -2144,18 +2165,19 @@ tr.hl-weekend td{background:#f5f8fb}
 .pnw-stab.on{background:linear-gradient(135deg,rgba(14,124,134,.10),rgba(18,169,181,.06));border-color:var(--teal);color:var(--teal-dark);box-shadow:inset 0 0 0 1px var(--teal)}
 .pnw-stab.on .pnw-stab-dot{background:linear-gradient(135deg,var(--teal),var(--cyan))}
 /* Tabel pemeriksaan */
-.pnw-table-wrap{padding:16px 20px 20px}
-.pnw-periksa-table{width:100%;border-collapse:separate;border-spacing:0;font-size:12px;border:1px solid #e6eef0;border-radius:12px;overflow:hidden}
+.pnw-table-wrap{padding:16px 20px 20px;overflow-x:hidden}
+.pnw-periksa-table{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:12px;border:1px solid #e6eef0;border-radius:12px;overflow:hidden}
 .pnw-periksa-table th{background:linear-gradient(180deg,#0E7C86,#0b6c74);color:#eafcfd;font-family:'Plus Jakarta Sans';font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:.6px;padding:12px 13px;text-align:left;border:none}
-.pnw-periksa-table th.pnw-no{text-align:center}
+.pnw-periksa-table th.pnw-no{text-align:center;color:#eafcfd}
 .pnw-periksa-table td{padding:11px 13px;border-bottom:1px solid #eef3f4;vertical-align:middle;background:#fff;transition:background .15s}
 .pnw-periksa-table tbody tr:last-child td{border-bottom:none}
-.pnw-periksa-table th.pnw-no,.pnw-periksa-table td.pnw-no{width:24px;text-align:center;color:var(--muted);font-weight:800;padding-left:6px;padding-right:6px}
-.pnw-periksa-table td.pnw-uraian{color:#233a41;font-weight:600}
-.pnw-periksa-table th.pnw-ck,.pnw-periksa-table td.pnw-ck{width:160px;text-align:center}
-.pnw-periksa-table td.pnw-ck .fkl-ada-opts{justify-content:center}
-.pnw-periksa-table th.pnw-ket,.pnw-periksa-table td.pnw-ket{width:26%}
-.pnw-periksa-table td.pnw-ket input{width:100%}
+.pnw-periksa-table th.pnw-no,.pnw-periksa-table td.pnw-no{width:46px;min-width:42px;max-width:52px;text-align:center;font-weight:800;padding-left:6px;padding-right:6px}
+.pnw-periksa-table td.pnw-no{color:var(--muted)}
+.pnw-periksa-table th.pnw-uraian,.pnw-periksa-table td.pnw-uraian{color:#233a41;font-weight:600;white-space:normal;word-break:break-word;overflow-wrap:break-word;line-height:1.4}
+.pnw-periksa-table th.pnw-ck,.pnw-periksa-table td.pnw-ck{width:176px;text-align:center}
+.pnw-periksa-table td.pnw-ck .fkl-ada-opts{justify-content:center;flex-wrap:wrap}
+.pnw-periksa-table th.pnw-ket,.pnw-periksa-table td.pnw-ket{width:240px}
+.pnw-periksa-table td.pnw-ket input{width:100%;box-sizing:border-box}
 .pnw-periksa-table tr.is-ada td{background:#f4fbf7}
 .pnw-periksa-table tr.is-no td{background:#fdf6f6}
 .pnw-periksa-table tr.pnw-cat-row td{background:linear-gradient(90deg,var(--teal-soft),#f7fcfc);padding:9px 13px;border-bottom:1px solid #d8e9ea}
@@ -11487,6 +11509,72 @@ function pnwSyaratAdd(sk,kat){ const st=pnwState; st.syarat[sk]=st.syarat[sk]||{
 function pnwSyaratDel(sk,kat,i){ const st=pnwState; const arr=st.syarat[sk][kat]||[]; if(arr.length<=1){ toast('Minimal satu baris persyaratan','warn'); return; } arr.splice(i,1); pnwSaveState(); renderPnwForm(); }
 function pnwOnSyaratInput(el){ const st=pnwState; const sk=el.dataset.sk, kat=el.dataset.kat, i=+el.dataset.i; st.syarat[sk]=st.syarat[sk]||{}; st.syarat[sk][kat]=st.syarat[sk][kat]||[]; st.syarat[sk][kat][i]=el.value; pnwSaveState(); }
 
+/* ================= PROFIL PERSYARATAN (Simpan / Muat) =================
+   Menyimpan daftar kategori + uraian persyaratan agar tidak perlu diketik ulang
+   untuk pengadaan dengan persyaratan yang sama. Disimpan di localStorage browser
+   (bertahan antar-sesi), terpisah dari data pekerjaan yang tersimpan di Supabase. */
+const PNW_PROFIL_KEY='pnw_syarat_profiles_v1';
+function pnwProfilAll(){ try{ const r=localStorage.getItem(PNW_PROFIL_KEY); const a=r?JSON.parse(r):[]; return Array.isArray(a)?a:[]; }catch(e){ return []; } }
+function pnwProfilStore(list){ try{ localStorage.setItem(PNW_PROFIL_KEY, JSON.stringify(list)); return true; }catch(e){ toast('Gagal menyimpan profil di penyimpanan browser','err'); return false; } }
+function pnwProfilSnapshot(){ const st=pnwState; return { pilih: JSON.parse(JSON.stringify(st.pilih||{})), syarat: JSON.parse(JSON.stringify(st.syarat||{})) }; }
+function pnwProfilCount(snap){ let n=0; Object.values((snap&&snap.syarat)||{}).forEach(katObj=>Object.values(katObj||{}).forEach(arr=>{ (arr||[]).forEach(v=>{ if(String(v==null?'':v).trim()) n++; }); })); return n; }
+function pnwProfilOverlay(inner){
+  let ov=document.getElementById('pnw-profil-ov');
+  if(!ov){ ov=document.createElement('div'); ov.id='pnw-profil-ov'; ov.className='pnw-profil-ov'; document.body.appendChild(ov); ov.onclick=(e)=>{ if(e.target===ov) pnwProfilClose(); }; }
+  ov.innerHTML='<div class="pnw-profil-modal" role="dialog">'+inner+'</div>'; ov.style.display='flex';
+}
+function pnwProfilClose(){ const ov=document.getElementById('pnw-profil-ov'); if(ov) ov.style.display='none'; }
+function pnwProfilOpenSave(){
+  const cnt=pnwProfilCount(pnwProfilSnapshot());
+  if(!cnt){ toast('Belum ada uraian persyaratan untuk disimpan','warn'); return; }
+  const list=pnwProfilAll();
+  const existing = list.length ? ('<div class="pnw-profil-existing">Profil tersimpan: '+list.map(p=>fkEsc(p.name)).join(' &middot; ')+'</div>') : '';
+  pnwProfilOverlay(
+    '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Simpan Profil Persyaratan</div>'+
+    '<div class="pnw-profil-sub">Menyimpan <b>'+cnt+'</b> uraian persyaratan (beserta kategori terpilih) agar bisa dipakai lagi tanpa mengetik ulang.</div>'+
+    '<input id="pnw-profil-name" class="pnw-profil-input" type="text" placeholder="Nama profil (mis. Pengadaan Barang Standar)" maxlength="60" onkeydown="if(event.key===\'Enter\')pnwProfilDoSave()">'+
+    existing+
+    '<div class="pnw-profil-actions"><button type="button" class="btn btn-ghost" onclick="pnwProfilClose()">Batal</button>'+
+    '<button type="button" class="btn btn-teal" onclick="pnwProfilDoSave()">Simpan Profil</button></div>'
+  );
+  setTimeout(()=>{ const el=document.getElementById('pnw-profil-name'); if(el) el.focus(); },60);
+}
+function pnwProfilDoSave(){
+  const el=document.getElementById('pnw-profil-name'); const name=(el&&el.value||'').trim();
+  if(!name){ toast('Isi nama profil dulu','warn'); if(el) el.focus(); return; }
+  const list=pnwProfilAll(); const snap=pnwProfilSnapshot(); snap.name=name; snap.savedAt=Date.now(); snap.count=pnwProfilCount(snap);
+  const idx=list.findIndex(p=>String(p.name).toLowerCase()===name.toLowerCase());
+  if(idx>=0) list[idx]=snap; else list.push(snap);
+  if(pnwProfilStore(list)){ toast('Profil "'+name+'" tersimpan','ok'); pnwProfilClose(); }
+}
+function pnwProfilOpenLoad(){
+  const list=pnwProfilAll();
+  if(!list.length){ toast('Belum ada profil. Simpan dulu lewat tombol "Simpan Profil".','warn'); return; }
+  const items=list.slice().sort((a,b)=>(b.savedAt||0)-(a.savedAt||0)).map(p=>
+    '<div class="pnw-profil-item"><div class="pnw-profil-item-info"><div class="pnw-profil-item-name">'+fkEsc(p.name)+'</div>'+
+    '<div class="pnw-profil-item-meta">'+(p.count||0)+' persyaratan</div></div>'+
+    '<div class="pnw-profil-item-btns"><button type="button" class="btn btn-teal pnw-profil-mini" onclick="pnwProfilDoLoad(\''+fkEscJs(p.name)+'\')">Muat</button>'+
+    '<button type="button" class="btn btn-ghost pnw-profil-mini" onclick="pnwProfilDoDelete(\''+fkEscJs(p.name)+'\')">Hapus</button></div></div>'
+  ).join('');
+  pnwProfilOverlay(
+    '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Muat Profil Persyaratan</div>'+
+    '<div class="pnw-profil-sub">Pilih profil untuk mengisi uraian persyaratan. <b>Isian saat ini akan diganti.</b></div>'+
+    '<div class="pnw-profil-list">'+items+'</div>'+
+    '<div class="pnw-profil-actions"><button type="button" class="btn btn-ghost" onclick="pnwProfilClose()">Tutup</button></div>'
+  );
+}
+function pnwProfilDoLoad(name){
+  const p=pnwProfilAll().find(x=>String(x.name)===String(name)); if(!p){ toast('Profil tidak ditemukan','warn'); return; }
+  pnwState.pilih = JSON.parse(JSON.stringify(p.pilih||{}));
+  pnwState.syarat = JSON.parse(JSON.stringify(p.syarat||{}));
+  pnwEnsureSyarat(); pnwSaveState(); pnwProfilClose(); renderPnwForm();
+  toast('Profil "'+name+'" dimuat','ok');
+}
+function pnwProfilDoDelete(name){
+  let list=pnwProfilAll(); list=list.filter(x=>String(x.name)!==String(name));
+  if(pnwProfilStore(list)){ toast('Profil "'+name+'" dihapus','ok'); if(list.length) pnwProfilOpenLoad(); else pnwProfilClose(); }
+}
+
 /* ================= LANGKAH 4: PEMERIKSAAN ================= */
 /* kunci pemeriksaan per baris persyaratan */
 function pnwRowKey(kat, baris){ return kat+'||'+baris; }
@@ -11705,7 +11793,13 @@ function renderPnwForm(){
     let body='';
     pnwSampulList(st).forEach(sk=>{ body+=pnwSyaratGroupHtml(sk); });
     if(!body) body='<div class="fkl-empty-note">Belum ada kategori dipilih. Kembali ke langkah <b>Pilihan Kategori</b>.</div>';
-    html+='<div class="form-card"><div class="form-section-title">'+FKL_SEC_ICON+'Pengisian Persyaratan</div>'+body+'</div>';
+    html+='<div class="form-card"><div class="form-section-title pnw-syarat-title">'+
+        '<span class="pnw-syarat-title-txt">'+FKL_SEC_ICON+'Pengisian Persyaratan</span>'+
+        '<span class="pnw-profil-bar">'+
+          '<button type="button" class="btn btn-amber pnw-profil-btn" onclick="pnwProfilOpenSave()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Simpan Profil</button>'+
+          '<button type="button" class="btn btn-teal pnw-profil-btn" onclick="pnwProfilOpenLoad()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Muat Profil</button>'+
+        '</span>'+
+      '</div>'+body+'</div>';
     html+=pnwActionsHtml({back:true});
   }
   else{
@@ -13755,8 +13849,29 @@ function hpsTerbilangRupiah(n){
 }
 
 /* ================= LANGKAH 2: URAIAN PEKERJAAN (gaya RAB/HPS) ================= */
+/* Selalu selaraskan Harga Barang/Jasa terkunci dengan hasil Analisa terbaru (sudah termasuk
+   ROK + Inflasi) sebelum tabel dirender — agar nilai HPS = "Jumlah Harga Barang/Jasa" pada
+   Hasil Analisa, bukan nilai lama yang tersimpan saat pertama diimpor. */
+function hpsResyncLockedHarga(st){
+  st=st||hpsState;
+  if(!st.info||!st.info.analisaId||st.info.analisaJenis!=='Umum') return;
+  const rec=(typeof records_ana!=='undefined'&&records_ana||[]).find(r=>String(r.id)===String(st.info.analisaId));
+  if(!rec) return;
+  const aSt=(rec.state&&typeof rec.state==='object')?rec.state:{};
+  const struct=(aSt.refs&&aSt.refs[0]&&Array.isArray(aSt.refs[0].items))?aSt.refs[0].items:[];
+  let changed=false;
+  (st.items||[]).forEach((item,i)=>{
+    if(i>=struct.length) return;
+    const res=anaResultForState(aSt,i);
+    const nm=(res.hargaBarang||''), nj=(res.hargaJasa||'');
+    if(item.hargaMat!==nm){ item.hargaMat=nm; changed=true; }
+    if(item.hargaJasa!==nj){ item.hargaJasa=nj; changed=true; }
+  });
+  if(changed && st===hpsState) hpsSaveState();
+}
 function hpsUraianTableHtml(){
   const st=hpsState;
+  hpsResyncLockedHarga(st);
   const itemsLocked=hpsItemsLocked();
   const hargaLocked=hpsHargaLocked();
   const dis1=itemsLocked?' disabled':'';
@@ -14128,7 +14243,7 @@ function hpsDeleteRecord(id){
 
 /* ================= DOKUMEN PDF ================= */
 function hpsBuildDocHtml(){
-  const st=hpsActiveState(); const info=st.info||{};
+  const st=hpsActiveState(); hpsResyncLockedHarga(st); const info=st.info||{};
   const fmtNilai=(info.nilai!==''&&info.nilai!=null)?('Rp '+Number(info.nilai).toLocaleString('id-ID')):'-';
   const infoRow=(k,v)=>'<tr><td class="k">'+k+'</td><td class="s">:</td><td class="v">'+fkEsc(v||'-')+'</td></tr>';
 
