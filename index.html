@@ -13201,7 +13201,7 @@ function rhoExtraDocCss(){
   '.rho-doc-item-h{display:flex;align-items:center;gap:8px;font-family:"Plus Jakarta Sans",sans-serif;font-weight:800;font-size:12px;color:#0b3d42;background:#e3f2f3;border:1px solid #bfe0e2;border-radius:6px;padding:6px 10px;margin-bottom:6px;text-transform:uppercase}'+
   '.rho-doc-item-h .rn{flex:0 0 auto;color:#0b3d42;font-family:"Plus Jakarta Sans",sans-serif;font-weight:800;font-size:12px;line-height:1;background:none;border:0;padding:0;margin:0}'+
   '.rho-doc,.rho-doc *{-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
-  'table.rho-doc-tbl{width:100%;border-collapse:collapse;table-layout:fixed;margin-bottom:4px;border:1.5px solid #0b6a73}'+
+  'table.rho-doc-tbl{width:100%;border-collapse:collapse;table-layout:fixed;margin-bottom:4px;border:1px solid #0b6a73}'+
   'table.rho-doc-tbl th,table.rho-doc-tbl td{border:1px solid #cfe0e3;padding:5px 7px;font-size:10px;vertical-align:middle;word-wrap:break-word;overflow-wrap:anywhere}'+
   'table.rho-doc-tbl thead th{background:#0E7C86;color:#fff;font-weight:800;text-transform:uppercase;letter-spacing:.2px;text-align:center;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   'table.rho-doc-tbl thead th.lbl,table.rho-doc-tbl td.lbl{width:118px;text-align:left}'+
@@ -14310,7 +14310,7 @@ function hpsBuildDocHtml(){
 
   const tbl=
     '<table class="hps-doc-tbl">'+
-      '<colgroup><col style="width:4%"><col style="width:26%"><col style="width:5%"><col style="width:6%"><col style="width:11%"><col style="width:11%"><col style="width:12%"><col style="width:11%"><col style="width:14%"></colgroup>'+
+      '<colgroup><col style="width:5%"><col style="width:30%"><col style="width:5%"><col style="width:5%"><col style="width:11%"><col style="width:11%"><col style="width:11%"><col style="width:11%"><col style="width:11%"></colgroup>'+
       '<thead>'+
         '<tr>'+
           '<th class="no" rowspan="2">No.</th>'+
@@ -14384,6 +14384,7 @@ function hpsExtraDocCss(){
   'table.hps-doc-tbl thead th{background:#0E7C86;color:#fff;font-weight:800;text-align:center;letter-spacing:.2px;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   'table.hps-doc-tbl thead th.ur{text-align:center}'+
   'table.hps-doc-tbl thead tr.numh td{background:#e7f2f3;color:#0b3d42;font-weight:700;text-align:center;font-style:italic;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  'table.hps-doc-tbl thead th.no{white-space:nowrap}'+
   'table.hps-doc-tbl td.no{text-align:center;font-weight:700}'+
   'table.hps-doc-tbl td.ur{text-align:left}'+
   'table.hps-doc-tbl td.st,table.hps-doc-tbl td.vl{text-align:center}'+
@@ -15906,7 +15907,9 @@ function anaExtraDocCss(){
   'table.ana-doc-tbl{width:100%;border-collapse:collapse;table-layout:auto;margin:2px 0 8px}'+
   'table.ana-doc-tbl th,table.ana-doc-tbl td{border:1px solid #dbe6e9;padding:4px 6px;font-size:8.2px;line-height:1.35;vertical-align:middle;word-wrap:break-word;overflow-wrap:break-word}'+
   'table.ana-doc-tbl thead th{white-space:normal;word-break:keep-all}'+
-  'table.ana-doc-tbl{border:1.5px solid #0b6a73;border-radius:6px;overflow:hidden}'+
+  'table.ana-doc-tbl{border:1.5px solid #0b6a73}'+
+  'table.ana-doc-tbl thead tr:last-child th{border-bottom:2px solid #0b6a73}'+
+  'table.ana-doc-tbl thead tr:first-child th[rowspan]{border-bottom:2px solid #0b6a73}'+
   'table.ana-hasil-tbl th.mtd,table.ana-hasil-tbl td.mtd,table.ana-hasil-tbl th.rok,table.ana-hasil-tbl td.rok,table.ana-hasil-tbl th.inf,table.ana-hasil-tbl td.inf{white-space:nowrap}'+
   'table.ana-doc-tbl td.rok,table.ana-doc-tbl td.inf{text-align:center;font-weight:700;color:#0b3d42}'+
   /* Kolom Jumlah Harga: cukup memuat nominal miliaran & judul maksimal 2 baris, tidak melebar berlebihan */
@@ -15915,7 +15918,7 @@ function anaExtraDocCss(){
   'table.ana-doc-tbl th.st,table.ana-doc-tbl td.st{width:40px;min-width:38px;white-space:nowrap;text-align:center}'+
   'table.ana-doc-tbl th.vl,table.ana-doc-tbl td.vl{width:42px;min-width:38px}'+
   '.ana-hasil-sec{page-break-before:always;break-before:page}'+
-  'table.ana-doc-tbl thead th{background:linear-gradient(90deg,#0E7C86,#0b6a73);color:#fff;font-weight:800;text-align:center;letter-spacing:.2px;border-color:#0b6a73;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  'table.ana-doc-tbl thead th{background:#0E7C86;color:#fff;font-weight:800;text-align:center;letter-spacing:.2px;border-color:#0b6a73;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   'table.ana-doc-tbl tbody tr:nth-child(even):not(.grp):not(.ana-ahsp-spacer) td{background:#f6fafb;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   'table.ana-doc-tbl td.no{text-align:center;font-weight:700}'+
   'table.ana-doc-tbl th.ur,table.ana-doc-tbl td.ur{width:100%}'+
