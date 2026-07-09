@@ -2663,6 +2663,8 @@ table.ana-uraian td.c-calc{text-align:right;font-weight:800;color:#0b6a73;white-
 .ana-res td.c-mtd,.ana-res th.c-mtd{text-align:center;width:104px;min-width:88px;max-width:112px}
 .ana-res th.c-mtd{white-space:normal;line-height:1.2}
 .ana-res td.c-mtd{white-space:normal}
+.ana-res td.c-rok,.ana-res th.c-rok{text-align:center;white-space:nowrap;width:74px;min-width:64px}
+.ana-res td.c-rok{font-weight:700;color:#0b6a73}
 .ana-res td.c-inf,.ana-res th.c-inf{text-align:center;width:98px;white-space:nowrap}
 .ana-res td.c-inf input{width:54px;text-align:center;border:1px solid #cdd9de;border-radius:8px;padding:5px 6px;font-size:11.5px;font-family:inherit}
 .ana-res td.c-inf input:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,124,134,.15)}
@@ -13853,7 +13855,7 @@ function renderHpsForm(){
     if(showBody){
       html+='<div class="form-flow'+rev+'" style="--cols:4">';
       html+=HPS_DP_FIELDS.map(hpsInfoInputHtml).join('');
-      html+=HPS_OWN_FIELDS.map(hpsInfoInputHtml).join('');
+      // Field "Tgl. HPS" tidak lagi ditampilkan di form — tanggal HPS otomatis mengikuti Nomor/Penetapan HPS.
       html+=hpsCountFieldHtml();
       html+='</div>';
     }
@@ -14410,7 +14412,7 @@ function anaBlankState(){ return {
   info:{}, jumlahItem:1, jumlahRef:1,
   sumber:[''], refs:[anaBlankRef()],
   metodeRef:'Sama', metodeAll:'Rata-rata', aktifRef:0,
-  jenis:'Umum', rok:'', inflasi:'Tidak', inflasiVals:[],
+  jenis:'Umum', rok:'', inflasi:'Tidak', inflasiVals:[], inflasiNilai:'',
   konstruksi:{ jumlahItem:1, items:[anaBlankKonItem()] },
   ahsp: anaBlankAhsp()
 }; }
@@ -14541,6 +14543,7 @@ function anaRecordToState(rec){
     rok: (s.rok!=null?s.rok:''),
     inflasi: s.inflasi==='Ya'?'Ya':'Tidak',
     inflasiVals: Array.isArray(s.inflasiVals)?s.inflasiVals.slice():[],
+    inflasiNilai: (s.inflasiNilai!=null?s.inflasiNilai:''),
     konstruksi: (s.konstruksi&&typeof s.konstruksi==='object') ? {
       jumlahItem: Math.max(1,Math.min(ANA_MAX_ITEM, parseInt(s.konstruksi.jumlahItem,10)||1)),
       items: Array.isArray(s.konstruksi.items)&&s.konstruksi.items.length ? s.konstruksi.items.map(anaNormKonItem) : [anaBlankKonItem()]
@@ -14878,13 +14881,26 @@ function anaToolbarHtml(){
 function anaRokInflasiFieldsHtml(){
   const st=anaState;
   const rokVal=(st.rok!==''&&st.rok!=null)?String(st.rok):'';
+  const infNilai=(st.inflasiNilai!==''&&st.inflasiNilai!=null)?String(st.inflasiNilai):'';
   return '<div class="ana-tb-field"><label id="ana-rok-label">ROK ('+fkEsc(rokVal)+'%)</label>'+
       '<input id="ana-rok" type="text" inputmode="decimal" placeholder="0" value="'+fkEsc(rokVal)+'" oninput="anaOnRok(this)"></div>'+
     '<div class="ana-tb-field"><label>Inflasi?</label><select id="ana-inflasi" onchange="anaOnInflasi(this)">'+
       '<option value="Tidak"'+(st.inflasi!=='Ya'?' selected':'')+'>Tidak</option>'+
-      '<option value="Ya"'+(st.inflasi==='Ya'?' selected':'')+'>Ya</option></select></div>';
+      '<option value="Ya"'+(st.inflasi==='Ya'?' selected':'')+'>Ya</option></select></div>'+
+    (st.inflasi==='Ya'?('<div class="ana-tb-field"><label>Nilai Inflasi</label>'+
+      '<input id="ana-inflasi-nilai" type="text" inputmode="decimal" placeholder="Masukkan nilai inflasi" value="'+fkEsc(infNilai)+'" oninput="anaOnInflasiNilai(this)"></div>'):'');
 }
-function anaOnInflasi(el){ anaState.inflasi=(el.value==='Ya')?'Ya':'Tidak'; anaSaveState(); anaRenderResult(); }
+function anaOnInflasi(el){
+  anaState.inflasi=(el.value==='Ya')?'Ya':'Tidak'; anaSaveState();
+  const box=document.getElementById('ana-dp-rokinf'); if(box) box.innerHTML=anaRokInflasiFieldsHtml();
+  anaRenderResult();
+}
+/* Nilai Inflasi global (satu nilai untuk semua uraian) — tampil bila Inflasi? = Ya. */
+function anaOnInflasiNilai(el){
+  let v=el.value.replace(/[^0-9.,]/g,'').replace(/,/g,'.'); const parts=v.split('.'); if(parts.length>2) v=parts[0]+'.'+parts.slice(1).join(''); el.value=v;
+  anaState.inflasiNilai=(v===''?'':(parseFloat(v)||0)); anaSaveState();
+  anaRenderResult();
+}
 function anaOnInflasiVal(el){
   let v=el.value.replace(/[^0-9.,]/g,'').replace(/,/g,'.'); const parts=v.split('.'); if(parts.length>2) v=parts[0]+'.'+parts.slice(1).join(''); el.value=v;
   const i=+el.dataset.i; if(!Array.isArray(anaState.inflasiVals)) anaState.inflasiVals=[];
@@ -14984,7 +15000,7 @@ function anaResultFor(i){
   // Terapkan ROK (%) ke Harga Barang & Jasa masing-masing
   const rok=anaNum(anaState.rok);
   if(rok>0){ hb=hb*(1+rok/100); hj=hj*(1+rok/100); }
-  const inf=(anaState.inflasi==='Ya')?anaNum((anaState.inflasiVals||[])[i]):0;
+  const inf=(anaState.inflasi==='Ya')?anaNum(anaState.inflasiNilai):0;
   if(inf>0){ hb=hb*(1+inf/100); hj=hj*(1+inf/100); }
   hb=Math.round(hb); hj=Math.round(hj);
   return {method, hargaBarang:hb, hargaJasa:hj, total:hb+hj, inflasi:inf};
@@ -15003,7 +15019,7 @@ function anaResultForState(state, i){
   let hb=calc(collect('hargaBarang')), hj=calc(collect('hargaJasa'));
   const rok=anaNum(state.rok);
   if(rok>0){ hb=hb*(1+rok/100); hj=hj*(1+rok/100); }
-  const inf=(state.inflasi==='Ya')?anaNum((state.inflasiVals||[])[i]):0;
+  const inf=(state.inflasi==='Ya')?anaNum(state.inflasiNilai):0;
   if(inf>0){ hb=hb*(1+inf/100); hj=hj*(1+inf/100); }
   hb=Math.round(hb); hj=Math.round(hj);
   return {method, hargaBarang:hb, hargaJasa:hj, total:hb+hj, inflasi:inf};
@@ -15025,12 +15041,12 @@ function anaRenderResult(){
     const res=anaResultFor(i);
     const uraian=(it.uraian||'').trim()||('Uraian ke-'+(i+1));
     const sat=(it.sat||'').trim();
-    const infVal=(st.inflasiVals&&st.inflasiVals[i]!=null&&st.inflasiVals[i]!=='')?String(st.inflasiVals[i]):'';
-    const infCell=infOn?('<td class="c-inf"><input type="text" inputmode="decimal" placeholder="0" data-i="'+i+'" value="'+fkEsc(infVal)+'" oninput="anaOnInflasiVal(this)"><span class="c-inf-suf">%</span></td>'):'';
+    const infCell=infOn?('<td class="c-inf">'+anaPct(anaNum(st.inflasiNilai),'–')+'</td>'):'';
     rows+='<tr>'+
       '<td class="c-no">'+(i+1)+'</td>'+
       '<td class="c-ur">'+fkEsc(uraian)+(sat?(' <span style="color:#9aa7ab;font-weight:600">('+fkEsc(sat)+')</span>'):'')+'</td>'+
       '<td class="c-mtd"><span class="ana-method-chip">'+res.method+'</span></td>'+
+      '<td class="c-rok">'+anaPct(anaNum(st.rok),'–')+'</td>'+
       infCell+
       '<td id="ana-hb-'+i+'">'+anaRp(res.hargaBarang)+'</td>'+
       '<td id="ana-hj-'+i+'">'+anaRp(res.hargaJasa)+'</td>'+
@@ -15048,10 +15064,10 @@ function anaRenderResult(){
     : (' ROK belum diisi — '+jenisTxt+'.');
   const infHint = infOn ? ' Inflasi (%) per uraian ikut ditambahkan ke Harga Barang &amp; Jasa.' : '';
   const infHead = infOn ? '<th class="c-inf">Inflasi (%)</th>' : '';
-  const cols = infOn ? 6 : 5;
+  const cols = infOn ? 7 : 6;
   body.innerHTML='<div class="ana-res-wrap"><table class="ana-res"><thead><tr>'+
-      '<th class="c-no">No</th><th class="c-ur">Uraian Pekerjaan</th><th class="c-mtd">Metode Perhitungan</th>'+infHead+
-      '<th>Jumlah Harga Barang'+priceSuffix+'</th><th>Jumlah Harga Jasa'+priceSuffix+'</th>'+
+      '<th class="c-no">No</th><th class="c-ur">Uraian Pekerjaan</th><th class="c-mtd">Metode Perhitungan</th><th class="c-rok">ROK</th>'+infHead+
+      '<th>Jumlah Harga Barang</th><th>Jumlah Harga Jasa</th>'+
     '</tr></thead><tbody>'+(rows||'<tr><td colspan="'+cols+'" style="text-align:center;color:#9aa7ab">Belum ada data</td></tr>')+'</tbody></table></div>';
 }
 
@@ -15336,7 +15352,7 @@ function renderAnalisaForm(){
         ANA_OWN_FIELDS.map(anaInfoInputHtml).join('')+
         (!isKon ? (anaCountItemFieldHtml()+anaCountRefFieldHtml()) : '')+
       '</div>'+
-      (!isKon ? ('<div class="ana-dp-rokinf">'+anaRokInflasiFieldsHtml()+'</div>') : '')
+      (!isKon ? ('<div class="ana-dp-rokinf" id="ana-dp-rokinf">'+anaRokInflasiFieldsHtml()+'</div>') : '')
     ) : '')+
     '</div>';
 
@@ -15668,9 +15684,12 @@ function anaBuildDocHtmlUmum(st){
 
   /* ---- Tabel referensi: tampilkan harga tiap referensi (Barang & Jasa) + hasil ---- */
   /* Kolom: No | Uraian | Sat | Vol | [Ref1 B, Ref1 J] ... | Metode | Hasil B | Hasil J | Total */
+  // Nama referensi mengikuti "Sumber Referensi" yang diinput pada record ini (st.sumber),
+  // bukan global anaState — agar preview/cetak record tersimpan menampilkan nama yang benar.
+  const refLabelOf=(r)=>{ const s=(st.sumber&&st.sumber[r]!=null?String(st.sumber[r]):'').trim(); return s?s:('Referensi '+(r+1)); };
   let refHead1='', refHead2='';
   for(let r=0;r<nRef;r++){
-    refHead1+='<th colspan="2">'+fkEsc(anaRefLabel(r))+'</th>';
+    refHead1+='<th colspan="2">'+fkEsc(refLabelOf(r))+'</th>';
     refHead2+='<th>Harga Barang</th><th>Harga Jasa</th>';
   }
   const colCount = 4 /*no,ur,sat,vol*/ + nRef*2 + 4 /*metode,hasilB,hasilJ,total*/;
@@ -15679,9 +15698,8 @@ function anaBuildDocHtmlUmum(st){
   // Suffix (+ROK/+Inflasi) hanya ditempel pada JUDUL section Hasil Analisa, bukan pada judul kolom tabel.
   const hasilSuffixParts=[]; if(rok>0) hasilSuffixParts.push('+ROK '+rok+'%'); if(infOn) hasilSuffixParts.push('+Inflasi');
   const hasilTitleSuffix = hasilSuffixParts.length ? (' ('+hasilSuffixParts.join(' ')+')') : '';
-  const rokSuf = rok>0 ? (' (+ROK '+rok+'%)') : '';   // ditampilkan pada judul kolom Jumlah Harga di PDF
   const colA = 4 + nRef*2;   // no,ur,sat,vol + ref*2 (kolom Metode dihapus dari tabel Analisa)
-  const colH = 4 + 1 + (infOn?1:0) + 2;   // no,ur,sat,vol + metode + inflasi? + jumlahHargaBarang,jumlahHargaJasa
+  const colH = 4 + 1 + 1 + (infOn?1:0) + 2;   // no,ur,sat,vol + metode + ROK + inflasi? + jumlahHargaBarang,jumlahHargaJasa
   let rowsA='', rowsH='';
   let groupIdx=0, curGroup=null, noInGroup=0;
   struct.forEach((it,i)=>{
@@ -15704,7 +15722,7 @@ function anaBuildDocHtmlUmum(st){
     }
     const lead='<td class="no">'+noInGroup+'</td><td class="ur">'+fkEsc(uraian)+'</td><td class="st">'+fkEsc(String(sat))+'</td><td class="vl">'+fkEsc(String(vol))+'</td>';
     rowsA+='<tr>'+lead+refCells+'</tr>';
-    rowsH+='<tr>'+lead+'<td class="mtd">'+res.method+'</td>'+(infOn?('<td class="num">'+(res.inflasi>0?(res.inflasi+'%'):'-')+'</td>'):'')+'<td class="num tot">'+anaRpDoc(res.hargaBarang)+'</td><td class="num tot">'+anaRpDoc(res.hargaJasa)+'</td></tr>';
+    rowsH+='<tr>'+lead+'<td class="mtd">'+res.method+'</td><td class="rok">'+anaPct(rok,'-')+'</td>'+(infOn?('<td class="num">'+anaPct(res.inflasi,'-')+'</td>'):'')+'<td class="num tot">'+anaRpDoc(res.hargaBarang)+'</td><td class="num tot">'+anaRpDoc(res.hargaJasa)+'</td></tr>';
   });
   if(!rowsA){ rowsA='<tr><td colspan="'+colA+'" style="text-align:center;color:#889">Belum ada data</td></tr>'; rowsH='<tr><td colspan="'+colH+'" style="text-align:center;color:#889">Belum ada data</td></tr>'; }
   const tblAnalisa=
@@ -15713,8 +15731,8 @@ function anaBuildDocHtmlUmum(st){
       '<tr>'+refHead2+'</tr>'+
     '</thead><tbody>'+rowsA+'</tbody></table>';
   const tblHasil=
-    '<table class="ana-doc-tbl"><thead>'+
-      '<tr><th class="no">No.</th><th class="ur">Uraian Pekerjaan</th><th class="st">Sat</th><th class="vl">Vol</th><th>Metode</th>'+(infOn?'<th>Inflasi</th>':'')+'<th>Jumlah Harga Barang'+rokSuf+'</th><th>Jumlah Harga Jasa'+rokSuf+'</th></tr>'+
+    '<table class="ana-doc-tbl ana-hasil-tbl"><thead>'+
+      '<tr><th class="no">No.</th><th class="ur">Uraian Pekerjaan</th><th class="st">Sat</th><th class="vl">Vol</th><th class="mtd">Metode</th><th class="rok">ROK</th>'+(infOn?'<th class="inf">Inflasi</th>':'')+'<th class="jh">Jumlah Harga Barang</th><th class="jh">Jumlah Harga Jasa</th></tr>'+
     '</thead><tbody>'+rowsH+'</tbody></table>';
 
   return ''+
@@ -15746,11 +15764,17 @@ function anaBuildDocHtmlUmum(st){
   '</div>';
 }
 function anaRpDoc(n){ n=Math.round(anaNum(n)); return n>0 ? n.toLocaleString('id-ID') : '-'; }
+/* Format persen dua desimal gaya Indonesia, mis. 10 → "10,00%". Kosong/0 → dash. */
+function anaPct(v,dash){ v=anaNum(v); return v>0 ? (v.toLocaleString('id-ID',{minimumFractionDigits:2,maximumFractionDigits:2})+'%') : (dash||'-'); }
 function anaExtraDocCss(){
   return ''+
   'table.ana-doc-tbl{width:100%;border-collapse:collapse;table-layout:auto;margin:2px 0 8px}'+
   'table.ana-doc-tbl th,table.ana-doc-tbl td{border:1px solid #dbe6e9;padding:4px 6px;font-size:8.2px;line-height:1.35;vertical-align:middle;word-wrap:break-word;overflow-wrap:anywhere}'+
-  'table.ana-doc-tbl{border:1px solid #cdd9dc;border-radius:6px;overflow:hidden}'+
+  'table.ana-doc-tbl{border:1.5px solid #0b6a73;border-radius:6px;overflow:hidden}'+
+  'table.ana-hasil-tbl th.mtd,table.ana-hasil-tbl td.mtd,table.ana-hasil-tbl th.rok,table.ana-hasil-tbl td.rok,table.ana-hasil-tbl th.inf,table.ana-hasil-tbl td.inf{white-space:nowrap}'+
+  'table.ana-doc-tbl td.rok,table.ana-doc-tbl td.inf{text-align:center;font-weight:700;color:#0b3d42}'+
+  /* Kolom Jumlah Harga: cukup memuat nominal miliaran & judul maksimal 2 baris, tidak melebar berlebihan */
+  'table.ana-doc-tbl th.jh{width:1%;min-width:82px}'+
   'table.ana-doc-tbl th.no,table.ana-doc-tbl td.no{width:28px;min-width:28px;white-space:nowrap;word-break:keep-all;overflow-wrap:normal}'+
   'table.ana-doc-tbl th.st,table.ana-doc-tbl td.st{width:32px;min-width:30px}'+
   'table.ana-doc-tbl th.vl,table.ana-doc-tbl td.vl{width:42px;min-width:38px}'+
@@ -15758,7 +15782,8 @@ function anaExtraDocCss(){
   'table.ana-doc-tbl thead th{background:linear-gradient(90deg,#0E7C86,#0b6a73);color:#fff;font-weight:800;text-align:center;letter-spacing:.2px;border-color:#0b6a73;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   'table.ana-doc-tbl tbody tr:nth-child(even):not(.grp):not(.ana-ahsp-spacer) td{background:#f6fafb;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   'table.ana-doc-tbl td.no{text-align:center;font-weight:700}'+
-  'table.ana-doc-tbl td.ur{text-align:left;min-width:120px}'+
+  'table.ana-doc-tbl th.ur,table.ana-doc-tbl td.ur{text-align:left;width:100%}'+
+  'table.ana-doc-tbl td.ur{min-width:90px}'+
   'table.ana-doc-tbl td.st,table.ana-doc-tbl td.vl,table.ana-doc-tbl td.mtd{text-align:center}'+
   'table.ana-doc-tbl td.mtd{font-size:7.6px;color:#0b3d42;font-weight:700}'+
   'table.ana-doc-tbl td.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}'+
