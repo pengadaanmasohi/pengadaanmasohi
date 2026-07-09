@@ -15447,7 +15447,7 @@ function hpscCss(){
   '.hpsc-foot-adr span{font-size:9.5px;opacity:.85}'+
   '.hpsc-web{border:1px solid rgba(255,255,255,.4);border-radius:30px;padding:6px 15px;font-size:10.5px;font-weight:800;white-space:nowrap}'+
   '.hpsc-page,.hpsc-page *,.hpsc-modpage,.hpsc-modpage *{-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
-  '@media print{.hpsc-page{margin:0}}';
+  '@media print{@page{size:A4;margin:0}html,body{margin:0;padding:0}.hpsc-page{margin:0}}';
 }
 function hpscHead(kicker, title){
   return '<div class="hpsc-head">'+
