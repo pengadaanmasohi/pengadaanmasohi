@@ -2512,6 +2512,10 @@ input.rho-input-locked{background:#f1f4f6;color:#9aa7ad;cursor:not-allowed;borde
 .rho-item-row:hover{border-color:#bcd6d9;box-shadow:0 3px 10px rgba(16,40,50,.07)}
 .rho-item-no{flex:0 0 auto;width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--teal),var(--cyan));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12.5px;font-family:'Plus Jakarta Sans'}
 .rho-item-row input{flex:1 1 auto;width:100%}
+.rho-item-del{flex:0 0 auto;width:32px;height:32px;border-radius:8px;border:1px solid #f0d4d4;background:#fdf4f4;color:#c0392b;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;transition:.15s}
+.rho-item-del svg{width:16px;height:16px}
+.rho-item-del:hover{background:#b02626;border-color:#b02626;color:#fff;box-shadow:0 3px 10px rgba(176,38,38,.22)}
+.rho-item-del:disabled{opacity:.4;cursor:not-allowed;background:#f4f6f7;border-color:#e2e8ea;color:#9aa7ad;box-shadow:none}
 .rho-hint{font-size:10.5px;color:var(--muted);margin:2px 0 12px;line-height:1.6}
 
 /* Panel pengisian referensi */
@@ -12302,12 +12306,14 @@ function rhoCountFieldsHtml(){
   let refOpts=''; for(let i=1;i<=10;i++)  refOpts+='<option value="'+i+'"'+(i===st.jumlahRef?' selected':'')+'>'+i+' Referensi</option>';
   let itmOpts=''; for(let i=1;i<=150;i++) itmOpts+='<option value="'+i+'"'+(i===st.items.length?' selected':'')+'>'+i+' Item</option>';
   return '<div class="field"><label>Jumlah Referensi</label><select id="rho-jumlahref" onchange="rhoOnJumlahRefChange(this)">'+refOpts+'</select></div>'+
-         '<div class="field"><label>Jumlah Barang/Jasa</label><select id="rho-jumlahitem" onchange="rhoOnJumlahItemChange(this)">'+itmOpts+'</select></div>';
+         '<div class="field"><label>Jumlah Barang/Material</label><select id="rho-jumlahitem" onchange="rhoOnJumlahItemChange(this)">'+itmOpts+'</select></div>';
 }
 function rhoItemListHtml(){
   const st=rhoState;
+  const many=st.items.length>1;
   const rows=st.items.map((nm,i)=>'<div class="rho-item-row"><span class="rho-item-no">'+(i+1)+'</span>'+
-    '<input type="text" data-i="'+i+'" placeholder="Nama barang/material ke-'+(i+1)+'" value="'+fkEsc(nm||'')+'" oninput="rhoOnItemNama(this)"></div>').join('');
+    '<input type="text" data-i="'+i+'" placeholder="Nama barang/material ke-'+(i+1)+'" value="'+fkEsc(nm||'')+'" oninput="rhoOnItemNama(this)">'+
+    '<button type="button" class="rho-item-del" title="Hapus barang/material ini"'+(many?'':' disabled')+' onclick="rhoDeleteItem('+i+')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button></div>').join('');
   return '<div class="rho-item-list">'+rows+'</div>';
 }
 /* Label kolom referensi: nama sumber yg diinput (fallback "Referensi N") */
@@ -12373,6 +12379,33 @@ function rhoOnJumlahItemChange(el){
   st.items=next; rhoEnsureRefs(); rhoSaveState(); renderRhoForm();
 }
 function rhoOnItemNama(el){ const i=+el.dataset.i; rhoState.items[i]=el.value; rhoSaveState(); }
+/* Hapus satu barang/material. Setelah dihapus, Jumlah Barang/Material otomatis
+   berkurang (mengikuti panjang daftar terbaru) dan struktur referensi ikut digeser. */
+function rhoDeleteItem(i){
+  const st=rhoState;
+  if(!Array.isArray(st.items)) return;
+  i=parseInt(i,10); if(isNaN(i)||i<0||i>=st.items.length) return;
+  if(st.items.length<=1){ toast('Minimal harus ada 1 barang/material','warn'); return; }
+  const nama=String(st.items[i]||'').trim();
+  const doDel=()=>{
+    // Geser referensi: buang key i, key > i turun satu tingkat.
+    const oldRefs=(st.refs&&typeof st.refs==='object')?st.refs:{};
+    const newRefs={};
+    st.items.forEach((_,idx)=>{
+      if(idx<i) newRefs[idx]=oldRefs[idx];
+      else if(idx>i) newRefs[idx-1]=oldRefs[idx];
+    });
+    st.items.splice(i,1);
+    st.refs=newRefs;
+    rhoEnsureRefs(); rhoSaveState(); renderRhoForm();
+    toast('Barang/material dihapus','ok');
+  };
+  if(nama){
+    openConfirm({icon:'del',title:'Hapus Barang/Material',text:'Hapus "'+nama+'" dari daftar? Jumlah Barang/Material akan menyesuaikan.',onYes:doDel});
+  }else{
+    doDel();
+  }
+}
 
 /* ================= LANGKAH 2: PENGISIAN REFERENSI ================= */
 function rhoNum(v){ if(v===''||v==null) return 0; if(typeof v==='number') return v; const n=parseFloat(String(v).replace(/,/g,'.')); return isNaN(n)?0:n; }
@@ -12631,7 +12664,7 @@ function renderRhoForm(){
     }
     if(showBody){
       html+='<div class="form-card'+rev2+'"><div class="form-section-title">'+FKL_SEC_ICON+'Nama Barang/Material <span class="fkl-count-chip">'+st.items.length+' item</span></div>'+
-        '<div class="rho-hint">Isi nama tiap barang/material. Jumlah baris mengikuti pilihan <b>Jumlah Barang/Jasa</b>.</div>'+
+        '<div class="rho-hint">Isi nama tiap barang/material. Jumlah baris mengikuti pilihan <b>Jumlah Barang/Material</b>. Klik ikon <b>hapus</b> di kanan baris untuk menghapus item — jumlah akan menyesuaikan otomatis.</div>'+
         rhoItemListHtml()+'</div>';
     }
     html+=rhoActionsHtml({back:false});
