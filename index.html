@@ -3881,7 +3881,11 @@ table.ana-uraian tbody tr:last-child td{ border-bottom:1px solid #dce6e9; }
       <div>
         <h2>Referensi Harga Online — Lihat Harga <span class="count-badge" id="rho-view-count">0</span></h2>
       </div>
-      <div class="filter-field toolbar-search pn-search-right search-elegant pn-head-search">
+      <div class="filter-field toolbar-search pn-search-right search-elegant pn-head-search" style="display:flex;align-items:center;gap:10px">
+        <button type="button" class="btn btn-ghost" onclick="rhoKompresFotoTersimpan()" title="Kompres ulang semua foto tersimpan agar lebih ringan" style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6v6H9z"/><path d="M3 9h2M19 9h2M3 15h2M19 15h2M9 3v2M9 19v2M15 3v2M15 19v2"/></svg>
+          Kompres Foto
+        </button>
         <div class="search-elegant-box">
           <svg class="search-elegant-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
           <input id="rho-view-search" type="text" placeholder="Cari Nama Pekerjaan" oninput="renderRhoView()">
@@ -12504,7 +12508,32 @@ function rhoOnBerat(el){
    sisi terpanjang agar ukuran data tetap wajar. Saat ditampilkan/dicetak kotak
    memakai object-fit:contain sehingga seluruh gambar terlihat. */
 function rhoFotoClick(el){ try{ el.focus(); }catch(e){} }
-const RHO_IMG_MAX=1600;   // batas sisi terpanjang (px) — hanya untuk memperkecil, tidak pernah memperbesar
+/* ---------- Kompresi foto ----------
+   Foto produk hanya ditampilkan pada sel ~150px dan di PDF ~150px, jadi tidak perlu
+   resolusi besar. Kita perkecil sisi terpanjang & pakai kualitas JPEG adaptif:
+   mulai dari kualitas tinggi lalu turunkan bertahap sampai di bawah target ukuran. */
+const RHO_IMG_MAX=1000;                 // batas sisi terpanjang (px) — hanya memperkecil, tak pernah memperbesar
+const RHO_IMG_TARGET_BYTES=130*1024;    // target lunak ukuran per foto (~130 KB)
+const RHO_IMG_Q_START=0.82;             // kualitas awal
+const RHO_IMG_Q_MIN=0.55;               // kualitas minimum
+
+/* Perkiraan ukuran byte dari sebuah data URL (base64). */
+function rhoDataUrlBytes(u){
+  if(!u || typeof u!=='string') return 0;
+  const i=u.indexOf(','); const b=i>=0?u.slice(i+1):u;
+  return Math.floor(b.length*0.75);
+}
+/* Encode canvas ke JPEG dengan kualitas adaptif agar di bawah target ukuran. */
+function rhoEncodeCanvas(cv){
+  let q=RHO_IMG_Q_START;
+  let out=cv.toDataURL('image/jpeg',q);
+  while(rhoDataUrlBytes(out)>RHO_IMG_TARGET_BYTES && q>RHO_IMG_Q_MIN){
+    q=Math.max(RHO_IMG_Q_MIN, Math.round((q-0.1)*100)/100);
+    out=cv.toDataURL('image/jpeg',q);
+  }
+  return out;
+}
+/* Perkecil + kompres sebuah sumber gambar (data URL / blob URL) menjadi JPEG ringan. */
 function rhoNormalizeImage(src, cb){
   const img=new Image();
   img.onload=function(){
@@ -12517,11 +12546,26 @@ function rhoNormalizeImage(src, cb){
       const ctx=cv.getContext('2d');
       try{ ctx.imageSmoothingQuality='high'; }catch(e){}
       ctx.drawImage(img,0,0,w,h);   // seluruh gambar, tanpa dipotong
-      cb(cv.toDataURL('image/jpeg',0.92));
+      cb(rhoEncodeCanvas(cv));
     }catch(err){ cb(src); }
   };
   img.onerror=function(){ cb(src); };
   img.src=src;
+}
+/* Kompres ulang sebuah data URL foto yang SUDAH tersimpan.
+   Kembalikan hasil hanya bila benar-benar lebih kecil, agar foto yang sudah ringan
+   tidak diproses ulang (menghindari penurunan kualitas & penulisan sia-sia). */
+function rhoRecompressStored(dataUrl){
+  return new Promise(resolve=>{
+    if(!dataUrl || typeof dataUrl!=='string' || dataUrl.indexOf('data:image')!==0){ resolve(dataUrl); return; }
+    const before=rhoDataUrlBytes(dataUrl);
+    rhoNormalizeImage(dataUrl, function(out){
+      const after=rhoDataUrlBytes(out);
+      // Terima hasil hanya bila menyusut minimal 5%.
+      if(out && out.indexOf('data:image')===0 && after>0 && after < before*0.95){ resolve(out); }
+      else resolve(dataUrl);
+    });
+  });
 }
 function rhoSetFoto(i,r,url){
   const st=rhoState; if(!st.refs[i]||!st.refs[i][r]) return;
@@ -12660,6 +12704,69 @@ async function rhoSimpan(){
   showView('rho-view');
   // Tampilkan pratinjau PDF dokumen yang baru disimpan
   setTimeout(()=>{ if(savedId!=null) rhoPreviewRecord(savedId); }, 420);
+}
+
+/* ---------- Kompres foto yang sudah tersimpan ----------
+   Menjelajah semua record RHO, mengompres ulang setiap foto (data URL) yang masih
+   berukuran besar, lalu menyimpan kembali ke Supabase. Aman dijalankan berulang:
+   foto yang sudah ringan otomatis dilewati. */
+function rhoFmtKB(bytes){ return (bytes/1024).toFixed(0)+' KB'; }
+async function rhoKompresFotoTersimpan(){
+  if(!isAdmin()){ toast('Menu ini hanya untuk akun admin','warn'); return; }
+  const recs=(records_rho||[]).slice();
+  let totalFoto=0;
+  recs.forEach(rec=>{
+    const s=rec&&rec.state;
+    if(s&&s.refs&&typeof s.refs==='object'){
+      Object.keys(s.refs).forEach(k=>{ (s.refs[k]||[]).forEach(c=>{ if(c&&typeof c.foto==='string'&&c.foto.indexOf('data:image')===0) totalFoto++; }); });
+    }
+  });
+  if(!totalFoto){ toast('Tidak ada foto tersimpan untuk dikompres','warn'); return; }
+  openConfirm({
+    icon:'save',
+    title:'Kompres Foto Tersimpan',
+    text:'Ditemukan '+totalFoto+' foto pada data tersimpan. Foto akan dikompres agar lebih ringan lalu disimpan ulang. Lanjutkan?',
+    onYes:async()=>{
+      let done=0, changedRecords=0, bytesBefore=0, bytesAfter=0;
+      showLoader('Menyiapkan kompresi foto…');
+      try{
+        for(const rec of recs){
+          const s=rec&&rec.state;
+          if(!s||!s.refs||typeof s.refs!=='object') continue;
+          let recChanged=false;
+          for(const k of Object.keys(s.refs)){
+            const arr=s.refs[k]; if(!Array.isArray(arr)) continue;
+            for(const c of arr){
+              if(!c||typeof c.foto!=='string'||c.foto.indexOf('data:image')!==0) continue;
+              const before=rhoDataUrlBytes(c.foto);
+              showLoader('Mengompres foto '+(done+1)+' / '+totalFoto+'…');
+              const out=await rhoRecompressStored(c.foto);
+              const after=rhoDataUrlBytes(out);
+              bytesBefore+=before; bytesAfter+=after;
+              if(out!==c.foto){ c.foto=out; recChanged=true; }
+              done++;
+              // Beri jeda kecil agar UI/loader sempat ter-update.
+              await new Promise(r=>setTimeout(r,0));
+            }
+          }
+          if(recChanged){
+            showLoader('Menyimpan data '+rec.nama_pekerjaan+'…');
+            try{ await StoreRho.update(rec.id, { state: JSON.parse(JSON.stringify(s)) }); changedRecords++; }
+            catch(err){ console.error('Gagal simpan record',rec.id,err); }
+          }
+        }
+        await refreshDataRho();
+        renderRhoView();
+      }catch(err){ console.error(err); hideLoader(); toast('Terjadi kesalahan saat kompresi: '+errMsg(err),'err'); return; }
+      hideLoader();
+      const saved=Math.max(0,bytesBefore-bytesAfter);
+      if(changedRecords>0){
+        toast('Selesai. '+done+' foto diperiksa, '+changedRecords+' data diperbarui. Hemat '+rhoFmtKB(saved)+' (dari '+rhoFmtKB(bytesBefore)+' menjadi '+rhoFmtKB(bytesAfter)+').','ok');
+      }else{
+        toast('Selesai. '+done+' foto diperiksa — semuanya sudah ringan, tidak ada yang perlu dikompres.','ok');
+      }
+    }
+  });
 }
 
 /* ================= LIHAT HARGA ================= */
