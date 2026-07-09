@@ -1377,6 +1377,86 @@ td{padding:2px 4px}
 /* Filter dashboard: kapsul rapi */
 #view-dashboard .filter-field select{border-radius:11px;font-weight:600}
 
+/* =====================================================================
+   ✦ PENYESUAIAN TAMPILAN DASHBOARD SESUAI DESAIN
+   (subtitle, label filter, pil %, kartu berwarna, badge panel)
+   ===================================================================== */
+/* Subtitle di bawah judul */
+#view-dashboard .dash-subtitle{margin-top:6px;color:var(--muted);font-weight:500;letter-spacing:.1px}
+
+/* Label filter ditampilkan kembali (JENIS DATA / ANGGARAN / TAHUN) */
+#view-dashboard .dash-filter-bar .filter-field{align-items:flex-start}
+#view-dashboard .dash-filter-bar .filter-field label{
+  display:block;text-transform:uppercase;font-size:10.5px;font-weight:800;
+  letter-spacing:1px;color:var(--muted);text-align:left;align-self:auto;margin:0 0 3px 2px;
+}
+#view-dashboard .dash-filter-bar .filter-field label::before{content:none}
+
+/* Baris angka + pil persentase pada kartu KPI */
+#view-dashboard .v-wrap{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+#view-dashboard .v-pill{
+  font-size:12px;font-weight:800;letter-spacing:.2px;line-height:1;
+  padding:4px 9px;border-radius:20px;
+  color:var(--teal-dark);background:color-mix(in srgb,var(--teal) 12%,#fff);
+  border:1px solid color-mix(in srgb,var(--teal) 22%,transparent);
+  -webkit-text-fill-color:initial;
+}
+
+/* Kartu Terkontrak — nuansa hijau */
+#view-dashboard .card.card-green{
+  background:linear-gradient(180deg,#eefaf2 0%,#ffffff 52%,#fbfefc 100%);
+  border-color:#c6e9d5;
+}
+#view-dashboard .card.card-green .v{background:linear-gradient(180deg,#1e8a52,#25a35d);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+#view-dashboard .card.card-green .v-pill{color:#1e8a52;background:#e3f6ea;border-color:#bfe6cf}
+
+/* Kartu On Progress — nuansa kuning */
+#view-dashboard .card.card-amber{
+  background:linear-gradient(180deg,#fff6e3 0%,#ffffff 52%,#fffdf6 100%);
+  border-color:#f0dcac;
+}
+#view-dashboard .card.card-amber .v{background:linear-gradient(180deg,#b5771c,#d99a1c);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+#view-dashboard .card.card-amber .v-pill{color:#b5771c;background:#fdf1d6;border-color:#f0dcac}
+
+/* Kartu Gagal/Batal — nuansa merah (PL & Tender) */
+#view-dashboard .card.card-rose{
+  background:linear-gradient(180deg,#fdeeee 0%,#ffffff 52%,#fffafa 100%);
+  border-color:#f2c9c9;
+}
+#view-dashboard .card.card-rose .v{background:linear-gradient(180deg,#c0392b,#d9534f);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+#view-dashboard .card.card-rose .v-pill{color:#c0392b;background:#fbe1e1;border-color:#f2c9c9}
+
+/* Kartu Nilai Pekerjaan — kartu teal gelap dengan angka kuning */
+#view-dashboard .card.card-dark{
+  background:linear-gradient(150deg,#0b3b41 0%,#0e5b62 55%,#0f6d75 100%);
+  border-color:#0b3b41;color:#eafafb;
+  box-shadow:0 1px 2px rgba(11,59,65,.20),0 16px 34px rgba(11,59,65,.28),inset 0 1px 0 rgba(255,255,255,.08);
+}
+#view-dashboard .card.card-dark::before{background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent)}
+#view-dashboard .card.card-dark .accent{display:none}
+#view-dashboard .card.card-dark .k{color:rgba(223,243,244,.82)}
+#view-dashboard .card.card-dark .v{background:none;-webkit-background-clip:border-box;background-clip:border-box;-webkit-text-fill-color:var(--yellow);color:var(--yellow)}
+#view-dashboard .card.card-dark .sub{color:rgba(223,243,244,.85)}
+#view-dashboard .card.card-dark .sub::before{background:var(--yellow);opacity:.9}
+#view-dashboard .card.card-dark .card-ic{color:var(--yellow);background:rgba(255,255,255,.14);box-shadow:inset 0 0 0 1px rgba(255,255,255,.22)}
+#view-dashboard .card.card-dark::after{background:radial-gradient(circle,rgba(255,255,255,.12),transparent 70%);opacity:.7}
+#view-dashboard .card.card-dark:hover{border-color:#0e5b62;box-shadow:0 4px 10px rgba(11,59,65,.22),0 24px 48px rgba(11,59,65,.34),inset 0 1px 0 rgba(255,255,255,.10)}
+#view-dashboard .card.card-dark:hover .card-ic{box-shadow:inset 0 0 0 1px rgba(255,255,255,.34),0 8px 18px rgba(0,0,0,.2)}
+
+/* Header panel: titik aksen kiri + badge kanan */
+#view-dashboard .panel-head .ph-title{flex:0 1 auto}
+#view-dashboard .panel-head .ph-dot{
+  width:9px;height:9px;border-radius:50%;flex:0 0 9px;
+  background:linear-gradient(135deg,var(--teal),var(--cyan));
+  box-shadow:0 0 0 3px rgba(22,169,181,.14);
+}
+#view-dashboard .panel-head .ph-badge{
+  margin-left:auto;font-size:11px;font-weight:700;letter-spacing:.2px;
+  color:var(--teal-dark);background:color-mix(in srgb,var(--teal) 12%,#fff);
+  border:1px solid color-mix(in srgb,var(--teal) 22%,transparent);
+  padding:4px 12px;border-radius:20px;
+}
+
 /* ===== Filter Dashboard — tanpa background (transparan) ===== */
 .dash-filter-bar{
   position:relative;
@@ -3134,10 +3214,11 @@ table.ana-uraian tbody tr:last-child td{ border-bottom:1px solid #dce6e9; }
     <div class="page-head">
       <div>
         <h2 id="dash-title">Dashboard</h2>
+        <p id="dash-subtitle" class="dash-subtitle">Ringkasan realisasi pengadaan &amp; nilai kontrak per bidang pelaksana</p>
       </div>
       <div class="dash-filter-bar">
         <div class="filter-field">
-          <label>Jenis Pekerjaan</label>
+          <label>Jenis Data</label>
           <select id="dash-filter-jenis" onchange="changeDashJenis()">
             <option value="kr">SPBJ / Kontrak Rinci</option>
             <option value="pl">Pengadaan Langsung</option>
@@ -3167,11 +3248,11 @@ table.ana-uraian tbody tr:last-child td{ border-bottom:1px solid #dce6e9; }
 
     <div class="split">
       <div class="panel">
-        <div class="panel-head">Pekerjaan per Bidang Pelaksana</div>
+        <div class="panel-head"><span class="ph-dot"></span><span class="ph-title">Pekerjaan per Bidang Pelaksana</span><span class="ph-badge">7 Bidang</span></div>
         <div class="panel-body" id="chart-bidang"></div>
       </div>
       <div class="panel">
-        <div class="panel-head">Nilai Pekerjaan per Bidang Pelaksana</div>
+        <div class="panel-head"><span class="ph-dot"></span><span class="ph-title">Nilai Pekerjaan per Bidang Pelaksana</span><span class="ph-badge">Rupiah</span></div>
         <div class="panel-body" id="chart-anggaran"></div>
       </div>
     </div>
@@ -6018,9 +6099,9 @@ function renderDashboard(){
 
   // Subtitle & label status
   const meta = {
-    kr:     {label:'SPBJ / Kontrak Rinci', title:'Kontrak Rinci',       sub:'Ringkasan monitoring SPBJ / Kontrak Rinci UP3 Masohi'},
-    pl:     {label:'Pengadaan Langsung',   title:'Pengadaan Langsung',  sub:'Ringkasan monitoring Pengadaan Langsung UP3 Masohi'},
-    tender: {label:'Tender',               title:'Tender',              sub:'Ringkasan monitoring Tender UP3 Masohi'},
+    kr:     {label:'SPBJ / Kontrak Rinci', title:'Kontrak Rinci',       sub:'Ringkasan realisasi pengadaan & nilai kontrak per bidang pelaksana'},
+    pl:     {label:'Pengadaan Langsung',   title:'Pengadaan Langsung',  sub:'Ringkasan realisasi Pengadaan Langsung & nilai kontrak per bidang pelaksana'},
+    tender: {label:'Tender',               title:'Tender',              sub:'Ringkasan realisasi Tender & nilai kontrak per bidang pelaksana'},
   }[jenis];
   const titleEl=document.getElementById('dash-title'); if(titleEl) titleEl.textContent = meta && meta.title ? ('Dashboard '+meta.title) : 'Dashboard';
   const subEl=document.getElementById('dash-subtitle'); if(subEl) subEl.textContent=meta.sub;
@@ -6046,25 +6127,28 @@ function renderDashboard(){
   const totHPS=Math.round(data.reduce((s,r)=>s+dashHPS(r),0));
 
   // Kartu ringkasan (baris status)
+  const pctTk = total>0 ? Math.round(terkontrak/total*100) : 0;
+  const pctPr = total>0 ? Math.round(prog/total*100) : 0;
+  const pctGg = total>0 ? Math.round(gagal/total*100) : 0;
   const cards=[
     {k:'Total Pekerjaan', v:total, sub:ft?`Tahun ${ft}`:'Seluruh data pekerjaan', c:'var(--teal)'},
-    {k:'Terkontrak',      v:terkontrak, sub:jenis==='kr'?'Sudah selesai / terkontrak':'Sudah terkontrak', c:'var(--green)'},
-    {k:'On Progress',     v:prog, sub:'Sedang berjalan', c:'var(--yellow)'},
+    {k:'Terkontrak',      v:terkontrak, sub:jenis==='kr'?'Sudah selesai / terkontrak':'Sudah terkontrak', c:'var(--green)', variant:'green', pill:pctTk+'%'},
+    {k:'On Progress',     v:prog, sub:'Sedang berjalan', c:'var(--yellow)', variant:'amber', pill:pctPr+'%'},
   ];
   if(jenis!=='kr'){
-    cards.push({k:'Gagal / Batal', v:gagal, sub:'Pengadaan gagal / dibatalkan', c:'var(--red)'});
+    cards.push({k:'Gagal / Batal', v:gagal, sub:'Pengadaan gagal / dibatalkan', c:'var(--red)', variant:'rose', pill:pctGg+'%'});
   }else{
-    // KR tidak punya RAB/HPS → Nilai Pekerjaan tetap di baris status
-    cards.push({k:'Nilai Pekerjaan', v:rupiah(nilai)||'Rp 0', sub:'Akumulasi nilai pekerjaan', c:'var(--teal-dark)', vs:'font-size:18px;line-height:1.2;word-break:break-word'});
+    // KR tidak punya RAB/HPS → Nilai Pekerjaan tampil sebagai kartu teal gelap
+    cards.push({k:'Nilai Pekerjaan', v:rupiah(nilai)||'Rp 0', sub:'Akumulasi nilai pekerjaan', c:'var(--teal-dark)', variant:'dark', vs:'font-size:20px;line-height:1.15;word-break:break-word'});
   }
 
   document.getElementById('dash-cards').innerHTML=cards.map(c=>`
-    <div class="card" style="--card-accent:${c.c}"><div class="accent" style="background:${c.c}"></div>
+    <div class="card${c.variant?' card-'+c.variant:''}" style="--card-accent:${c.c}"><div class="accent" style="background:${c.c}"></div>
       <div class="card-head">
         <div class="card-ic" style="--ic:${c.c}">${cardIcon(c.k)}</div>
         <div class="k">${c.k}</div>
       </div>
-      <div class="v" style="${c.vs||''}">${c.v}</div><div class="sub">${c.sub}</div>
+      <div class="v-wrap"><div class="v" style="${c.vs||''}">${c.v}</div>${c.pill?`<span class="v-pill">${c.pill}</span>`:''}</div><div class="sub">${c.sub}</div>
     </div>`).join('');
 
   // Baris nilai (khusus PL & Tender): Nilai RAB, Nilai HPS, Nilai Pekerjaan, Efisiensi Kontrak vs HPS
