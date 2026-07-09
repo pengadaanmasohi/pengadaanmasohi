@@ -15217,7 +15217,6 @@ function anaBuildDocHtmlUmum(st){
     '</tbody></table>'+
     '<div class="fkl-sec-h"><span class="rn">B</span>Analisa Harga Satuan</div>'+
     tblAnalisa+
-    '<div class="ana-doc-note">Nilai 0 / kosong diabaikan dalam perhitungan. Cara perhitungan tiap uraian ditunjukkan pada kolom <b>Metode</b> di tabel Hasil Analisa Harga Satuan.</div>'+
     '<div class="fkl-sec-h ana-hasil-sec"><span class="rn">C</span>Hasil Analisa Harga Satuan'+hasilTitleSuffix+'</div>'+
     tblHasil+
   '</div>';
@@ -15587,18 +15586,19 @@ function hpscMatch(list, nama){
   const nm=String(nama||'').trim().toLowerCase(); if(!nm) return null;
   return (list||[]).find(r=>String(r.nama_pekerjaan||'').trim().toLowerCase()===nm) || null;
 }
-/* Ambil nomor HPS yang diterbitkan lewat menu "Ambil Nomor" (records_penetapan),
-   dicocokkan berdasarkan Nama Pekerjaan. Inilah tautan antara nomor HPS yang diambil
-   di Penetapan Nomor dengan nomor HPS yang tampil di Rekap HPS. */
-function hpscPenetapanNomor(nama){
-  const nm=String(nama||'').trim().toLowerCase(); if(!nm) return '';
+/* Ambil dokumen HPS yang diterbitkan lewat menu "Ambil Nomor" (records_penetapan),
+   dicocokkan berdasarkan Nama Pekerjaan. Inilah tautan antara nomor & tanggal terbit
+   HPS di Penetapan Nomor dengan yang tampil di Rekap HPS. Mengembalikan objek dokumen
+   {no, tgl_terbit, ...} atau null bila belum ada. */
+function hpscPenetapanHpsDoc(nama){
+  const nm=String(nama||'').trim().toLowerCase(); if(!nm) return null;
   for(const r of (records_penetapan||[])){
     if(String(r.nama_pekerjaan||'').trim().toLowerCase()!==nm) continue;
     const docs=Array.isArray(r.dokumen)?r.dokumen:[];
     const hit=docs.find(d=>String(d.code||'').toUpperCase()==='HPS' || String(d.key||'').toUpperCase()==='HPS' || String(d.key||'').toUpperCase()==='T_HPS');
-    if(hit && hit.no) return hit.no;
+    if(hit && (hit.no || hit.tgl_terbit)) return hit;
   }
-  return '';
+  return null;
 }
 function hpscBuild(dp){
   const nama=dp.nama_pekerjaan;
@@ -15606,9 +15606,10 @@ function hpscBuild(dp){
   const anaRec=hpscMatch(records_ana, nama);
   const jadwalRec=hpscMatch(records_jadwal, nama);
   const rhoRec=hpscMatch(records_rho, nama);
+  const penHps=hpscPenetapanHpsDoc(nama);   // dokumen HPS dari Penetapan Nomor (bila ada)
   const hpsTotal=hpsRec?hpsRec.nilai_total:0;
-  const tglHps=hpsRec?hpsRec.tgl_hps:'';
-  const nomor=hpscPenetapanNomor(nama) || (hpsRec?((hpsRec.state&&hpsRec.state.info&&hpsRec.state.info.nomor)||hpsRec.nomor||''):'');
+  const tglHps=(penHps&&penHps.tgl_terbit) || (hpsRec?hpsRec.tgl_hps:'');
+  const nomor=(penHps&&penHps.no) || (hpsRec?((hpsRec.state&&hpsRec.state.info&&hpsRec.state.info.nomor)||hpsRec.nomor||''):'');
   let refNames=[];
   const anaS=(anaRec&&anaRec.state&&Array.isArray(anaRec.state.sumber))?anaRec.state.sumber:[];
   const rhoS=(rhoRec&&rhoRec.state&&Array.isArray(rhoRec.state.sumber))?rhoRec.state.sumber:[];
