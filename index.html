@@ -549,7 +549,7 @@ td.cell-center{text-align:center}
 .dp-reveal.dp-reveal-d3{animation-delay:.26s}
 @media(prefers-reduced-motion:reduce){ .dp-reveal{animation-duration:.01s!important;animation-delay:0s!important} }
 .form-card .form-section-title{margin:0 0 18px;padding:14px 0 11px}
-.dp-pick-btn{appearance:none;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:7px;background:linear-gradient(135deg,#0E7C86,#0b3d42);color:#fff;font-family:'Plus Jakarta Sans';font-weight:800;font-size:10.5px;letter-spacing:.5px;text-transform:uppercase;padding:9px 15px;border-radius:10px;box-shadow:0 4px 12px rgba(11,61,66,.22);transition:transform .15s ease,box-shadow .2s ease;white-space:nowrap}
+.dp-pick-btn{appearance:none;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:7px;background:linear-gradient(135deg,#12a3ad,#0E7C86);color:#fff;font-family:'Plus Jakarta Sans';font-weight:800;font-size:10.5px;letter-spacing:.5px;text-transform:uppercase;padding:9px 15px;border-radius:10px;box-shadow:0 4px 12px rgba(11,61,66,.22);transition:transform .15s ease,box-shadow .2s ease;white-space:nowrap}
 .dp-pick-btn:hover{transform:translateY(-1px);box-shadow:0 7px 16px rgba(11,61,66,.3)}
 .dp-pick-btn:active{transform:translateY(0) scale(.97)}
 .dp-pick-btn svg{width:15px;height:15px;flex:0 0 auto}
@@ -1620,6 +1620,9 @@ body.nav-open{overflow:hidden}
 .form-section-title{font-size:12.5px;color:var(--teal-dark);border-image:linear-gradient(90deg,var(--teal),var(--cyan),transparent) 1}
 /* Badge nomor otomatis di depan judul section (I, II, ...) */
 .form-section-title svg{color:var(--teal);opacity:.9}
+/* Ikon tombol Pilih/Ganti & Batalkan Pilihan tetap memakai warna tombolnya sendiri
+   (putih / merah), jangan ikut diwarnai teal oleh aturan judul section di atas. */
+.form-section-title .dp-pick-btn svg,.form-section-title .dp-unpick-btn svg{color:inherit;opacity:1}
 .field label{font-size:11px;color:#2b3f48}
 .field input,.field select,.field textarea{border-color:#cdd9de;background:linear-gradient(180deg,#ffffff,#fafdfe);border-radius:11px;padding:10px 12px;box-shadow:0 1px 2px rgba(16,40,50,.06),inset 0 1px 0 rgba(255,255,255,.6)}
 .field input:hover,.field select:hover{border-color:#a7bec5;box-shadow:0 2px 7px rgba(16,40,50,.09),inset 0 1px 0 rgba(255,255,255,.6)}
@@ -2487,13 +2490,13 @@ html,body{background:#e9eef1}
 .fkl-chk thead th,.fkl-sec-h .rn,.fkl-doc-band,.fkl-doc .hasil,.fkl-chk .pill,.fkl-doc-logo img,.fkl-chk tbody tr:nth-child(even) td,.fkl-doc-org .l1,.fkl-doc-org .l2{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 @media print{
   html,body{background:#fff;margin:0;padding:0}
-  /* Margin atas/bawah halaman diberi sedikit ruang (9mm) lewat @page agar HEADER &
-     FOOTER tiap halaman tidak menempel/rapat di tepi kertas — termasuk pada halaman
-     ke-2 dst. saat konten terpotong (page-break). Sisi kiri/kanan tetap 0 dan diatur
-     lewat padding halaman. Padding atas/bawah dikurangi (10mm) agar total tepi
-     halaman pertama/terakhir tetap proporsional (±19mm). Berlaku untuk semua PDF. */
-  .fkl-print-page{width:auto;min-height:0;margin:0;padding:10mm 15mm 10mm;box-shadow:none}
-  @page{size:A4;margin:9mm 0}
+  /* Sama seperti Rekap HPS: header/footer bawaan browser dimatikan (margin @page default 0),
+     lalu konten diberi jarak tepi lewat named-page 'fklbody' — 12mm atas/bawah + 15mm kiri/kanan.
+     Margin @page berlaku di SETIAP halaman fisik (termasuk halaman lanjutan saat konten
+     terpotong), jadi bagian header & footer dokumen tidak pernah menempel ke tepi kertas. */
+  .fkl-print-page{width:auto;min-height:0;margin:0;padding:0 15mm;box-shadow:none;page:fklbody}
+  @page{size:A4;margin:0}
+  @page fklbody{size:A4;margin:12mm 0}
 }
 
 </style>
@@ -10017,13 +10020,37 @@ function pnDocToggleAll(){
   const btn=document.querySelector('.pn-check-all'); if(btn) btn.textContent=allOn?'Pilih Semua':'Kosongkan';
   pnDocUpdateCount();
 }
+/* Tautkan Data Pekerjaan ke halaman Ambil Nomor → nama pekerjaan dikunci agar
+   PERSIS sama dengan yang dipakai di Rekap HPS, sehingga nomor HPS yang diambil di
+   sini otomatis terhubung ke pekerjaan tersebut pada Rekap HPS (dicocokkan by nama). */
+function pnApplyDp(rec){
+  if(!rec) return;
+  const kv=(document.getElementById('pn-uni-klas')||{}).value||'';
+  pnState.ambil.dpId=String(rec.id);
+  pnState.ambil.dpNama=rec.nama_pekerjaan||((rec.state&&rec.state.info&&rec.state.info.nama))||'';
+  renderPnAmbil();
+  const kEl=document.getElementById('pn-uni-klas'); if(kEl && kv) kEl.value=kv;
+  toast('Data pekerjaan diterapkan: '+pnState.ambil.dpNama,'ok');
+}
+function pnLepasDp(){
+  const kv=(document.getElementById('pn-uni-klas')||{}).value||'';
+  delete pnState.ambil.dpId; delete pnState.ambil.dpNama;
+  renderPnAmbil();
+  const kEl=document.getElementById('pn-uni-klas'); if(kEl && kv) kEl.value=kv;
+  toast('Pilihan pekerjaan dibatalkan','ok');
+}
 function pnAmbilUnifiedFormHtml(){
   const klasOpts   = PN_KLAS_OPTS.map(o=>'<option value="'+o.kode+'">'+o.label+'</option>').join('');
+  const linked = !!(pnState.ambil && pnState.ambil.dpId);
+  const dpNama = linked ? (pnState.ambil.dpNama||'') : '';
+  const namaField = linked
+    ? '<input id="pn-uni-nama" type="text" class="rho-input-locked" value="'+fkEsc(dpNama)+'" readonly title="Nama mengikuti Data Pekerjaan terpilih">'
+    : '<input id="pn-uni-nama" type="text">';
   return '' +
   '<div class="form-card">' +
-    '<div class="form-section-title">'+KR_SECTION_ICON+'Data Pekerjaan</div>' +
+    '<div class="form-section-title">'+KR_SECTION_ICON+'Data Pekerjaan'+dpPickBtnHtml('pn')+'</div>' +
     '<div class="form-flow" style="--cols:3">' +
-      '<div class="field"><label>Nama Pekerjaan <span class="req">*</span></label><input id="pn-uni-nama" type="text"></div>' +
+      '<div class="field"><label>Nama Pekerjaan <span class="req">*</span></label>'+namaField+'</div>' +
       '<div class="field"><label>Kode Klasifikasi <span class="req">*</span></label><select id="pn-uni-klas"><option value="">— Pilih —</option>'+klasOpts+'</select></div>' +
       '<div class="field pn-doc-bar-field"><label>&nbsp;</label>' +
         '<div class="pn-doc-bar">' +
@@ -10130,8 +10157,10 @@ async function pnAmbil(){
   }
   if(!ok) return;
   toast('Nomor berhasil ditetapkan','ok');
-  // kosongkan isian agar siap penetapan berikutnya
-  if(el('pn-uni-nama')) el('pn-uni-nama').value='';
+  // kosongkan isian agar siap penetapan berikutnya (nama dipertahankan bila
+  // sedang tertaut ke Data Pekerjaan agar tautan ke Rekap HPS tetap konsisten)
+  const pnLinked=!!(pnState.ambil && pnState.ambil.dpId);
+  if(el('pn-uni-nama') && !pnLinked) el('pn-uni-nama').value='';
   if(el('pn-uni-klas')) el('pn-uni-klas').value='';
   document.querySelectorAll('.pn-doc-check').forEach(b=>b.checked=false);
   const allBtn=document.querySelector('.pn-check-all'); if(allBtn) allBtn.textContent='Pilih Semua';
@@ -11136,21 +11165,16 @@ function fklOpenPreview(){
 const APP_PAGE_TITLE='Monitoring Pengadaan Masohi';
 function withHiddenPageTitle(fn){
   const ZW='\u200B';
-  // Jangan pernah menangkap placeholder zero-width sebagai judul asli. Bila cetak
-  // dipanggil dua kali beruntun (sebelum restore sebelumnya jalan), judul tab bisa
-  // tersimpan '\u200B' lalu dikembalikan sebagai kosong → tab jadi hilang permanen.
-  const realTitle=(document.title && document.title!==ZW) ? document.title : APP_PAGE_TITLE;
-  document.title=ZW;   // zero-width space — bukan spasi biasa/string kosong
-  let done=false;
-  const restore=()=>{
-    if(done) return; done=true;
-    document.title=realTitle;
-    window.removeEventListener('afterprint', restore);
-    window.removeEventListener('focus', restore);
-  };
-  window.addEventListener('afterprint', restore);
-  window.addEventListener('focus', restore);   // saat dialog cetak ditutup, window fokus lagi → judul pulih
-  try{ fn(); } finally { setTimeout(restore, 4000); }
+  // Judul tab aplikasi dijaga SELALU tampil (tidak pernah dikosongkan). Header cetak
+  // tetap bersih karena tiap dokumen dicetak lewat iframe yang sudah punya <title>
+  // zero-width sendiri, jadi judul tab induk tak perlu diubah saat mencetak. Ini juga
+  // mencegah bug lama: tab jadi kosong permanen bila proses restore gagal.
+  if(!document.title || document.title===ZW) document.title=APP_PAGE_TITLE;
+  try{ fn(); }
+  finally{
+    if(!document.title || document.title===ZW) document.title=APP_PAGE_TITLE;
+    setTimeout(()=>{ if(!document.title || document.title===ZW) document.title=APP_PAGE_TITLE; }, 1500);
+  }
 }
 /* Cetak dokumen (mencetak isi dokumen yang sama dengan pratinjau) */
 function fklPrint(){
@@ -13093,6 +13117,7 @@ function dpPickerSelect(id){
   else if(_dpPickerTarget==='pnw' && typeof pnwApplyDp==='function') pnwApplyDp(rec);
   else if(_dpPickerTarget==='fkl' && typeof fklApplyDp==='function') fklApplyDp(rec);
   else if(_dpPickerTarget==='jadwal' && typeof jadwalApplyDp==='function') jadwalApplyDp(rec);
+  else if(_dpPickerTarget==='pn' && typeof pnApplyDp==='function') pnApplyDp(rec);
   closeDpPicker();
 }
 /* Tombol seragam "Pilih Pekerjaan" (pojok kanan atas kartu Data Pekerjaan). */
@@ -13104,6 +13129,7 @@ function dpTargetPicked(target){
     if(target==='pnw') return !!(pnwState&&pnwState.info&&pnwState.info.dpId);
     if(target==='fkl') return !!(fklState&&fklState[fklModul]&&fklState[fklModul].info&&fklState[fklModul].info.dpId);
     if(target==='jadwal') return !!(jpState&&jpState.dpId);
+    if(target==='pn') return !!(typeof pnState!=='undefined'&&pnState.ambil&&pnState.ambil.dpId);
   }catch(e){}
   return false;
 }
@@ -13127,6 +13153,7 @@ function dpCancelPick(target){
   else if(target==='pnw') pnwCancelDp();
   else if(target==='fkl') fklCancelDp();
   else if(target==='jadwal') jadwalCancelDp();
+  else if(target==='pn' && typeof pnLepasDp==='function') pnLepasDp();
 }
 function pnwCancelDp(){
   const st=pnwState; if(!st.info) return;
@@ -15560,6 +15587,19 @@ function hpscMatch(list, nama){
   const nm=String(nama||'').trim().toLowerCase(); if(!nm) return null;
   return (list||[]).find(r=>String(r.nama_pekerjaan||'').trim().toLowerCase()===nm) || null;
 }
+/* Ambil nomor HPS yang diterbitkan lewat menu "Ambil Nomor" (records_penetapan),
+   dicocokkan berdasarkan Nama Pekerjaan. Inilah tautan antara nomor HPS yang diambil
+   di Penetapan Nomor dengan nomor HPS yang tampil di Rekap HPS. */
+function hpscPenetapanNomor(nama){
+  const nm=String(nama||'').trim().toLowerCase(); if(!nm) return '';
+  for(const r of (records_penetapan||[])){
+    if(String(r.nama_pekerjaan||'').trim().toLowerCase()!==nm) continue;
+    const docs=Array.isArray(r.dokumen)?r.dokumen:[];
+    const hit=docs.find(d=>String(d.code||'').toUpperCase()==='HPS' || String(d.key||'').toUpperCase()==='HPS' || String(d.key||'').toUpperCase()==='T_HPS');
+    if(hit && hit.no) return hit.no;
+  }
+  return '';
+}
 function hpscBuild(dp){
   const nama=dp.nama_pekerjaan;
   const hpsRec=hpscMatch(records_hps, nama);
@@ -15568,7 +15608,7 @@ function hpscBuild(dp){
   const rhoRec=hpscMatch(records_rho, nama);
   const hpsTotal=hpsRec?hpsRec.nilai_total:0;
   const tglHps=hpsRec?hpsRec.tgl_hps:'';
-  const nomor=hpsRec?((hpsRec.state&&hpsRec.state.info&&hpsRec.state.info.nomor)||hpsRec.nomor||''):'';
+  const nomor=hpscPenetapanNomor(nama) || (hpsRec?((hpsRec.state&&hpsRec.state.info&&hpsRec.state.info.nomor)||hpsRec.nomor||''):'');
   let refNames=[];
   const anaS=(anaRec&&anaRec.state&&Array.isArray(anaRec.state.sumber))?anaRec.state.sumber:[];
   const rhoS=(rhoRec&&rhoRec.state&&Array.isArray(rhoRec.state.sumber))?rhoRec.state.sumber:[];
@@ -15589,7 +15629,7 @@ function hpscBuild(dp){
 function hpsShowComposite(){
   const sel=document.getElementById('rekap-dp-select'); const id=sel?sel.value:'';
   if(!id){ toast('Pilih Nama Pekerjaan terlebih dahulu','warn'); return; }
-  Promise.all([refreshDataDp(),refreshDataHps(),refreshDataAnalisa(),refreshDataJadwal(),refreshDataRho()]).then(()=>{
+  Promise.all([refreshDataDp(),refreshDataHps(),refreshDataAnalisa(),refreshDataJadwal(),refreshDataRho(),refreshDataPenetapan()]).then(()=>{
     const dp=(records_dp||[]).find(r=>String(r.id)===String(id));
     if(!dp){ toast('Data pekerjaan tidak ditemukan','warn'); return; }
     const html=hpscBuild(dp);
