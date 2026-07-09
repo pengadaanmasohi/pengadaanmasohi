@@ -2585,7 +2585,8 @@ table.hps-uraian thead th.c-ur{text-align:left;min-width:220px}
 table.hps-uraian tbody td{border-bottom:1px solid #e8f0f1;padding:7px 8px;vertical-align:middle;font-size:12px}
 table.hps-uraian tbody tr:last-child td{border-bottom:none}
 table.hps-uraian tbody tr:nth-child(even){background:#f8fbfc}
-table.hps-uraian td.c-no{text-align:center;font-weight:800;color:#0b6a73;width:44px}
+table.hps-uraian th.c-no,table.hps-uraian td.c-no{text-align:center;font-weight:800;color:#0b6a73;width:46px;min-width:40px;max-width:52px}
+table.hps-uraian td.c-ur{width:100%}
 table.hps-uraian textarea,table.hps-uraian input{width:100%;border:1px solid #cdd9de;border-radius:9px;padding:7px 8px;font-size:12px;background:#fff;font-family:inherit;color:var(--ink)}
 table.hps-uraian textarea{resize:vertical;min-height:36px;line-height:1.45}
 table.hps-uraian td.c-kel input{min-width:96px}
@@ -15769,14 +15770,15 @@ function anaPct(v,dash){ v=anaNum(v); return v>0 ? (v.toLocaleString('id-ID',{mi
 function anaExtraDocCss(){
   return ''+
   'table.ana-doc-tbl{width:100%;border-collapse:collapse;table-layout:auto;margin:2px 0 8px}'+
-  'table.ana-doc-tbl th,table.ana-doc-tbl td{border:1px solid #dbe6e9;padding:4px 6px;font-size:8.2px;line-height:1.35;vertical-align:middle;word-wrap:break-word;overflow-wrap:anywhere}'+
+  'table.ana-doc-tbl th,table.ana-doc-tbl td{border:1px solid #dbe6e9;padding:4px 6px;font-size:8.2px;line-height:1.35;vertical-align:middle;word-wrap:break-word;overflow-wrap:break-word}'+
+  'table.ana-doc-tbl thead th{white-space:normal;word-break:keep-all}'+
   'table.ana-doc-tbl{border:1.5px solid #0b6a73;border-radius:6px;overflow:hidden}'+
   'table.ana-hasil-tbl th.mtd,table.ana-hasil-tbl td.mtd,table.ana-hasil-tbl th.rok,table.ana-hasil-tbl td.rok,table.ana-hasil-tbl th.inf,table.ana-hasil-tbl td.inf{white-space:nowrap}'+
   'table.ana-doc-tbl td.rok,table.ana-doc-tbl td.inf{text-align:center;font-weight:700;color:#0b3d42}'+
   /* Kolom Jumlah Harga: cukup memuat nominal miliaran & judul maksimal 2 baris, tidak melebar berlebihan */
   'table.ana-doc-tbl th.jh{width:1%;min-width:82px}'+
   'table.ana-doc-tbl th.no,table.ana-doc-tbl td.no{width:28px;min-width:28px;white-space:nowrap;word-break:keep-all;overflow-wrap:normal}'+
-  'table.ana-doc-tbl th.st,table.ana-doc-tbl td.st{width:32px;min-width:30px}'+
+  'table.ana-doc-tbl th.st,table.ana-doc-tbl td.st{width:40px;min-width:38px;white-space:nowrap;text-align:center}'+
   'table.ana-doc-tbl th.vl,table.ana-doc-tbl td.vl{width:42px;min-width:38px}'+
   '.ana-hasil-sec{page-break-before:always;break-before:page}'+
   'table.ana-doc-tbl thead th{background:linear-gradient(90deg,#0E7C86,#0b6a73);color:#fff;font-weight:800;text-align:center;letter-spacing:.2px;border-color:#0b6a73;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
@@ -15786,7 +15788,7 @@ function anaExtraDocCss(){
   'table.ana-doc-tbl td.ur{min-width:90px}'+
   'table.ana-doc-tbl td.st,table.ana-doc-tbl td.vl,table.ana-doc-tbl td.mtd{text-align:center}'+
   'table.ana-doc-tbl td.mtd{font-size:7.6px;color:#0b3d42;font-weight:700}'+
-  'table.ana-doc-tbl td.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}'+
+  'table.ana-doc-tbl td.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;min-width:54px}'+
   'table.ana-doc-tbl td.num.tot{font-weight:800;color:#0b3d42;background:#f2f7f8;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   'table.ana-doc-tbl td.num.tot2{font-weight:800;color:#0d7a3f;background:#e7f6ec;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   'table.ana-doc-tbl tr.grp td{background:#dcecee;font-weight:800;color:#0b3d42;text-transform:uppercase;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
