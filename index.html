@@ -13777,13 +13777,13 @@ function hpsUraianTableHtml(){
   if(itemsLocked){
     note='<div class="hps-lock-note">'+HPS_LOCK_BADGE+'<span>Kolom <b>Kelompok/Uraian/Sat/Vol</b> terkunci — otomatis terisi dari Analisa'+
       (hargaLocked
-        ? ' terpilih. Kolom <b>Harga Sat. Material &amp; Jasa</b> juga ikut terkunci (sudah termasuk ROK), karena Analisa berkategori <b>Pekerjaan Umum</b>.'
-        : ' terpilih. Kolom <b>Harga Sat. Material &amp; Jasa</b> tetap dapat diisi manual, karena Analisa berkategori <b>Pekerjaan Konstruksi</b> (harga tidak ikut terkunci).')+
+        ? ' terpilih. Kolom <b>Harga Barang &amp; Jasa</b> juga ikut terkunci (sudah termasuk ROK), karena Analisa berkategori <b>Pekerjaan Umum</b>.'
+        : ' terpilih. Kolom <b>Harga Barang &amp; Jasa</b> tetap dapat diisi manual, karena Analisa berkategori <b>Pekerjaan Konstruksi</b> (harga tidak ikut terkunci).')+
       '</span></div>';
   }
   return note+'<div class="hps-uraian-wrap"><table class="hps-uraian"><thead>'+
     '<tr><th class="c-no">No</th><th>Kelompok</th><th class="c-ur">Uraian Pekerjaan</th><th>Sat</th><th>Vol</th>'+
-      '<th>Harga Sat.<br>Material (Rp)</th><th>Harga Sat.<br>Jasa (Rp)</th><th>Jumlah Total<br>(Rp)</th></tr>'+
+      '<th>Harga<br>Barang</th><th>Harga<br>Jasa</th><th>Jumlah Total<br>(Rp)</th></tr>'+
     '</thead><tbody>'+rows+'</tbody></table></div>';
 }
 function hpsRecalcRow(i){
@@ -13820,7 +13820,7 @@ function hpsRenderSummary(){
     '<td class="val">'+hpsRp(tot)+'</td></tr>';
   body.innerHTML='<table class="hps-sum"><thead><tr>'+
       '<td class="lbl" style="color:#7c8a8f;font-weight:800;font-size:10.5px;text-transform:uppercase">Uraian</td>'+
-      '<td class="val" style="color:#7c8a8f;font-weight:800;font-size:10.5px;text-transform:uppercase">Material</td>'+
+      '<td class="val" style="color:#7c8a8f;font-weight:800;font-size:10.5px;text-transform:uppercase">Barang</td>'+
       '<td class="val" style="color:#7c8a8f;font-weight:800;font-size:10.5px;text-transform:uppercase">Jasa</td>'+
       '<td class="val" style="color:#7c8a8f;font-weight:800;font-size:10.5px;text-transform:uppercase">Total</td></tr></thead><tbody>'+
       row('Jumlah', s.jM, s.jJ, s.jT)+
@@ -14184,8 +14184,8 @@ function hpsBuildDocHtml(){
           '<th rowspan="2">Jumlah Total<br>(Rp)</th>'+
         '</tr>'+
         '<tr>'+
-          '<th>Material (Rp)</th><th>Jasa (Rp)</th>'+
-          '<th>Material (Rp)</th><th>Jasa (Rp)</th>'+
+          '<th>Barang (Rp)</th><th>Jasa (Rp)</th>'+
+          '<th>Barang (Rp)</th><th>Jasa (Rp)</th>'+
         '</tr>'+
         '<tr class="numh">'+
           '<td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td>'+
