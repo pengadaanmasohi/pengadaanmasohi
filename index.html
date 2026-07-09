@@ -12190,7 +12190,7 @@ function rhoEnsureRefs(){
   st.items.forEach((_,i)=>{
     const arr=Array.isArray(st.refs[i])?st.refs[i]:[];
     const next=[];
-    for(let r=0;r<K;r++){ const c=arr[r]||{}; next.push({foto:c.foto||'', link:c.link||'', harga:(c.harga!=null?c.harga:''), berat:(c.berat!=null?c.berat:''), ongkir:(c.ongkir!=null?c.ongkir:'')}); }
+    for(let r=0;r<K;r++){ const c=arr[r]||{}; next.push({foto:c.foto||'', fotoPath:c.fotoPath||'', link:c.link||'', harga:(c.harga!=null?c.harga:''), berat:(c.berat!=null?c.berat:''), ongkir:(c.ongkir!=null?c.ongkir:'')}); }
     st.refs[i]=next;
   });
   Object.keys(st.refs).forEach(k=>{ if(parseInt(k,10)>=st.items.length) delete st.refs[k]; });
@@ -12238,6 +12238,42 @@ async function refreshDataRho(){
   catch(err){ console.error(err); records_rho = records_rho||[]; }
 }
 
+/* ---- Foto produk di Supabase Storage (bukan base64 di kolom state) ----
+   Solusi permanen agar baris DB ringan: foto diunggah ke bucket publik lalu
+   yang disimpan di state hanya URL-nya. Aman mundur: bila bucket belum dibuat
+   / upload gagal, pemanggil mempertahankan base64 sebagai cadangan. */
+const RHO_BUCKET = 'rho-foto';   // WAJIB dibuat sebagai bucket PUBLIC di Supabase Storage
+function rhoUid(){ try{ if(window.crypto&&crypto.randomUUID) return 'rho_'+crypto.randomUUID(); }catch(e){} return 'rho_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,10); }
+function rhoIsDataUrl(s){ return typeof s==='string' && s.indexOf('data:image')===0; }
+function rhoIsHttpUrl(s){ return typeof s==='string' && /^https?:\/\//i.test(s); }
+function rhoDataUrlToBlob(dataUrl){
+  const s=String(dataUrl||''); const i=s.indexOf(',');
+  const meta=(i>=0?s.slice(0,i):''); const b64=(i>=0?s.slice(i+1):s);
+  const mime=(meta.match(/data:([^;]+)/)||[])[1]||'image/jpeg';
+  return fkB64ToBlob(b64, mime);
+}
+const StoreRhoFoto = {
+  async uploadDataUrl(dataUrl, path){
+    if(!rhoSupaReady()) throw new Error('Koneksi Supabase tidak tersedia');
+    const blob=rhoDataUrlToBlob(dataUrl);
+    const up=await db.storage.from(RHO_BUCKET).upload(path, blob, {contentType:blob.type||'image/jpeg', upsert:true});
+    if(up.error) throw up.error;
+    const pub=db.storage.from(RHO_BUCKET).getPublicUrl(path);
+    const url=pub&&pub.data&&pub.data.publicUrl;
+    if(!url) throw new Error('URL publik tidak tersedia');
+    return {url, path};
+  },
+  async removeFolder(key){
+    if(!rhoSupaReady()||!key) return;
+    try{
+      const ls=await db.storage.from(RHO_BUCKET).list(key,{limit:1000});
+      if(ls&&!ls.error&&Array.isArray(ls.data)&&ls.data.length){
+        await db.storage.from(RHO_BUCKET).remove(ls.data.map(o=>key+'/'+o.name));
+      }
+    }catch(e){ console.error('Bersihkan folder foto gagal',e); }
+  }
+};
+
 /* ---------- Buka form / lihat data ---------- */
 function openRhoInput(editId){
   if(!isAdmin()){ toast('Menu ini hanya untuk akun admin','warn'); return; }
@@ -12269,7 +12305,7 @@ function rhoRecordToState(rec){
   };
   if(s.refs && typeof s.refs==='object'){
     Object.keys(s.refs).forEach(k=>{
-      if(Array.isArray(s.refs[k])) st.refs[k]=s.refs[k].map(c=>({foto:c.foto||'', link:c.link||'', harga:(c.harga!=null?c.harga:''), berat:(c.berat!=null?c.berat:''), ongkir:(c.ongkir!=null?c.ongkir:'')}));
+      if(Array.isArray(s.refs[k])) st.refs[k]=s.refs[k].map(c=>({foto:c.foto||'', fotoPath:c.fotoPath||'', link:c.link||'', harga:(c.harga!=null?c.harga:''), berat:(c.berat!=null?c.berat:''), ongkir:(c.ongkir!=null?c.ongkir:'')}));
     });
   }
   return st;
@@ -12615,7 +12651,7 @@ function rhoSetFoto(i,r,url){
 }
 function rhoClearFoto(e,i,r){
   if(e){ e.stopPropagation(); e.preventDefault(); }
-  const st=rhoState; if(st.refs[i]&&st.refs[i][r]){ st.refs[i][r].foto=''; rhoSaveState(); }
+  const st=rhoState; if(st.refs[i]&&st.refs[i][r]){ st.refs[i][r].foto=''; st.refs[i][r].fotoPath=''; rhoSaveState(); }
   const cell=document.getElementById('rho-foto-'+i+'-'+r);
   if(cell){ cell.classList.remove('has-img'); cell.innerHTML=rhoFotoInnerEmpty(); }
 }
@@ -12720,6 +12756,31 @@ async function rhoSimpan(){
   const st=rhoState; const info=st.info||{}; const nama=String(info.nama||'').trim();
   if(!nama){ toast('Nama Pekerjaan wajib diisi','warn'); rhoStep=1; renderRhoForm(); return; }
   rhoEnsureRefs();
+  // ---- Unggah foto ke Storage: ganti data-URL (base64) menjadi URL ringan ----
+  // Membuat baris DB kecil sehingga Simpan & Muat jauh lebih cepat. Bila Supabase
+  // belum siap / bucket belum ada / upload gagal → base64 dipertahankan (cadangan).
+  if(rhoSupaReady()){
+    if(!st.info.fotoKey) st.info.fotoKey=rhoUid();
+    const key=st.info.fotoKey;
+    const jobs=[];
+    Object.keys(st.refs).forEach(k=>{ (st.refs[k]||[]).forEach((c,r)=>{ if(c&&rhoIsDataUrl(c.foto)) jobs.push({i:+k, r:r, c:c}); }); });
+    if(jobs.length){
+      let done=0, failed=0;
+      showLoader('Menyiapkan unggah foto…');
+      for(const job of jobs){
+        done++; showLoader('Mengunggah foto '+done+' / '+jobs.length+'…');
+        const path=key+'/r'+job.r+'_i'+job.i+'.jpg';
+        try{
+          const res=await StoreRhoFoto.uploadDataUrl(job.c.foto, path);
+          job.c.foto=res.url+'?v='+Date.now();   // cache-bust saat foto ditimpa
+          job.c.fotoPath=path;
+        }catch(err){ console.error('Upload foto gagal',path,err); failed++; /* biarkan base64 sebagai cadangan */ }
+        await new Promise(r=>setTimeout(r,0));
+      }
+      hideLoader();
+      if(failed>0) toast(failed+' foto gagal diunggah — disimpan sebagai gambar tertanam (cadangan). Pastikan bucket "'+RHO_BUCKET+'" ada & publik.','warn');
+    }
+  }
   const rec={
     nama_pekerjaan: nama,
     lokasi: info.lokasi||'',
@@ -12882,8 +12943,10 @@ function rhoDeleteRecord(id){
   openConfirm({ icon:'del', title:'Hapus Data',
     text:'Hapus data referensi harga "'+(rec.nama_pekerjaan||(rec.state&&rec.state.info&&rec.state.info.nama)||'')+'"?',
     onYes:async()=>{
+      const fotoKey=(rec&&rec.state&&rec.state.info&&rec.state.info.fotoKey)||null;
       try{ await withActionLoader('Menghapus', async()=>{ await StoreRho.remove(id); await refreshDataRho(); }); }
       catch(err){ console.error(err); toast('Gagal menghapus: '+errMsg(err),'err'); return; }
+      if(fotoKey) StoreRhoFoto.removeFolder(fotoKey);   // bersihkan objek foto (best-effort)
       toast('Data dihapus','ok'); renderRhoView();
     }
   });
