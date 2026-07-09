@@ -15511,9 +15511,9 @@ function hpscCoverIndex(dp, tglHps, nomor){
   const docHtml=docs.map(d=>'<div class="hpsc-doc"><div class="n">'+d[0]+'</div><div class="tx"><b>'+d[1]+'</b><span>'+d[2]+'</span></div></div>').join('');
   const mini=(cl,cv,extra)=>'<div class="hpsc-mini'+(extra?' '+extra:'')+'"><div class="cl">'+cl+'</div><div class="cv">'+cv+'</div></div>';
   const body=''+
-    '<div class="hpsc-sec"><span class="bdg">4</span><span class="st">EMPAT DOKUMEN</span></div>'+
+    '<div class="hpsc-sec"><span class="bdg">A</span><span class="st">EMPAT DOKUMEN</span></div>'+
     '<div class="hpsc-doclist">'+docHtml+'</div>'+
-    '<div class="hpsc-sec" style="margin-top:8px"><span class="bdg bdg-i">i</span><span class="st">DATA PEKERJAAN</span></div>'+
+    '<div class="hpsc-sec" style="margin-top:8px"><span class="bdg">B</span><span class="st">DATA PEKERJAAN</span></div>'+
     hpscCard('work','PEKERJAAN', dp.nama_pekerjaan)+
     '<div class="hpsc-grid">'+
       mini('Lokasi Pekerjaan', fkEsc(dp.lokasi||'—'))+
@@ -15533,7 +15533,7 @@ function hpscCoverHps(dp, nomor){
     '<div class="hpsc-nomor"><div class="hpsc-ic" style="width:34px;height:34px"><svg viewBox="0 0 24 24">'+HPSC_IC.tag+'</svg></div><div><div class="lb">NOMOR</div><div class="vl">'+fkEsc(nomor||'—')+'</div></div></div>'+
     hpscCard('work','PEKERJAAN', dp.nama_pekerjaan)+
     hpscCard('loc','LOKASI', dp.lokasi);
-  return hpscPage('DOKUMEN PENGADAAN','HARGA PERKIRAAN<small>SENDIRI (HPS)</small>', body);
+  return hpscPage('DOKUMEN PENGADAAN','<span style="font-size:32px;white-space:nowrap">HARGA PERKIRAAN SENDIRI (HPS)</span>', body);
 }
 /* Cover — Review Pengadaan */
 function hpscCoverReview(dp, hpsTotal, refNames){
