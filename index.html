@@ -14035,23 +14035,25 @@ const HPS_OWN_FIELDS = HPS_INFO_FIELDS.filter(f=>f.key==='tgl_hps');
      Judul     → teks SELALU dicetak HURUF BESAR semua, bernomor sesuai gaya (A/a/I/i)
      Sub-Judul → teks apa adanya (sesuai huruf besar/kecil yang diinput), bernomor terpisah
    Nomor urut item dimulai ulang pada tiap kelompok terdalam yang aktif. */
-const JS_NUM_STYLES=[['A','A, B, C'],['a','a, b, c'],['I','I, II, III'],['i','i, ii, iii']];
+/* Gaya penomoran Judul/Sub-Judul. Nilai '' = tanpa nomor (baris judul tampil polos). */
+const JS_NUM_STYLES=[['','—'],['A','A, B, C'],['a','a, b, c'],['I','I, II, III'],['i','i, ii, iii']];
 function jsAlphaNum(n){ let x=Math.max(1,parseInt(n,10)||1), s=''; while(x>0){ const m=(x-1)%26; s=String.fromCharCode(65+m)+s; x=Math.floor((x-1)/26); } return s; }
 function jsRomanNum(n){ let x=Math.max(1,parseInt(n,10)||1), s=''; [[1000,'M'],[900,'CM'],[500,'D'],[400,'CD'],[100,'C'],[90,'XC'],[50,'L'],[40,'XL'],[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']].forEach(function(p){ while(x>=p[0]){ s+=p[1]; x-=p[0]; } }); return s; }
 function jsNumFmt(style,n){
+  if(style==='') return '';                 // tanpa nomor
   if(style==='a') return jsAlphaNum(n).toLowerCase();
   if(style==='I') return jsRomanNum(n);
   if(style==='i') return jsRomanNum(n).toLowerCase();
   return jsAlphaNum(n);
 }
-function jsNumStyleOk(v,dflt){ return (['A','a','I','i'].indexOf(v)>=0)?v:(dflt||'A'); }
+function jsNumStyleOk(v,dflt){ return (['','A','a','I','i'].indexOf(v)>=0)?v:((dflt!=null)?dflt:''); }
 function jsOn(v){ return v==='Ya'; }
 /* Konfigurasi judul/sub-judul dari sebuah state (HPS atau Analisa) */
 function jsCfg(st){
   st=st||{};
   return {
-    judulOn: jsOn(st.judulOn), judulNum: jsNumStyleOk(st.judulNum,'A'),
-    subOn:   jsOn(st.subjudulOn), subNum: jsNumStyleOk(st.subjudulNum,'a')
+    judulOn: jsOn(st.judulOn), judulNum: jsNumStyleOk(st.judulNum,''),
+    subOn:   jsOn(st.subjudulOn), subNum: jsNumStyleOk(st.subjudulNum,'')
   };
 }
 /* Telusuri items → panggil out.judul(no,teks) / out.sub(no,teks) / out.item(no,it,idx) */
@@ -14072,9 +14074,9 @@ function jsWalk(items,cfg,out){
 }
 /* Dropdown gaya penomoran — "selebar 1 abjad" (kotak kecil) */
 function jsNumSelectHtml(id,val,handler){
-  val=jsNumStyleOk(val,'A');
-  return '<select class="js-numsel" id="'+id+'" onchange="'+handler+'(this)" title="Gaya penomoran">'+
-    JS_NUM_STYLES.map(function(o){ return '<option value="'+o[0]+'"'+(o[0]===val?' selected':'')+'>'+o[0]+'</option>'; }).join('')+'</select>';
+  val=jsNumStyleOk(val,'');
+  return '<select class="js-numsel" id="'+id+'" onchange="'+handler+'(this)" title="Gaya penomoran (— = tanpa nomor)">'+
+    JS_NUM_STYLES.map(function(o){ return '<option value="'+o[0]+'"'+(o[0]===val?' selected':'')+' title="'+o[1]+'">'+(o[0]||'&mdash;')+'</option>'; }).join('')+'</select>';
 }
 function jsYaTidakHtml(id,val,handler){
   return '<select id="'+id+'" onchange="'+handler+'(this)">'+
@@ -14084,7 +14086,7 @@ function jsYaTidakHtml(id,val,handler){
 
 function hpsBlankItem(){ return {judul:'', subjudul:'', uraian:'', sat:'', vol:'', hargaMat:'', hargaJasa:''}; }
 function hpsNormItem(c){ c=c||{}; return {judul:(c.judul!=null?c.judul:(c.kelompok||'')), subjudul:c.subjudul||'', uraian:c.uraian||'', sat:c.sat||'', vol:(c.vol!=null?c.vol:''), hargaMat:(c.hargaMat!=null?c.hargaMat:''), hargaJasa:(c.hargaJasa!=null?c.hargaJasa:'')}; }
-function hpsBlankState(){ return { info:{}, jumlahItem:1, judulOn:'Tidak', judulNum:'A', subjudulOn:'Tidak', subjudulNum:'a', items:[hpsBlankItem()] }; }
+function hpsBlankState(){ return { info:{}, jumlahItem:1, judulOn:'Tidak', judulNum:'', subjudulOn:'Tidak', subjudulNum:'', items:[hpsBlankItem()] }; }
 let hpsState = hpsBlankState();
 let hpsStep = 1;              // 1..2
 let hpsEditId = null;
@@ -14103,7 +14105,7 @@ function hpsEnsureItems(){
   const st=hpsState;
   if(st.judulOn!=='Ya') st.judulOn='Tidak';
   if(st.subjudulOn!=='Ya') st.subjudulOn='Tidak';
-  st.judulNum=jsNumStyleOk(st.judulNum,'A'); st.subjudulNum=jsNumStyleOk(st.subjudulNum,'a');
+  st.judulNum=jsNumStyleOk(st.judulNum,''); st.subjudulNum=jsNumStyleOk(st.subjudulNum,'');
   const n=Math.max(1,Math.min(150, parseInt(st.jumlahItem,10)|| (Array.isArray(st.items)?st.items.length:1) ||1)); st.jumlahItem=n;
   if(!Array.isArray(st.items)) st.items=[];
   const cur=st.items.slice(); const next=[];
@@ -14181,9 +14183,9 @@ function hpsRecordToState(rec){
     info: Object.assign({}, base.info, s.info||{}),
     jumlahItem: Math.max(1,Math.min(150, parseInt(s.jumlahItem,10)|| (Array.isArray(s.items)?s.items.length:1) ||1)),
     judulOn: (s.judulOn==='Ya')?'Ya':'Tidak',
-    judulNum: jsNumStyleOk(s.judulNum,'A'),
+    judulNum: jsNumStyleOk(s.judulNum,''),
     subjudulOn: (s.subjudulOn==='Ya')?'Ya':'Tidak',
-    subjudulNum: jsNumStyleOk(s.subjudulNum,'a'),
+    subjudulNum: jsNumStyleOk(s.subjudulNum,''),
     items: (Array.isArray(s.items)&&s.items.length)?s.items.map(hpsNormItem):[hpsBlankItem()]
   };
   return st;
@@ -14240,8 +14242,8 @@ function hpsJudulFieldsHtml(){
 }
 function hpsOnJudulOn(el){ if(hpsItemsLocked()){ el.value=hpsState.judulOn; toast('Mengikuti Analisa terpilih','warn'); return; } hpsState.judulOn=(el.value==='Ya')?'Ya':'Tidak'; hpsSaveState(); renderHpsForm(); }
 function hpsOnSubOn(el){ if(hpsItemsLocked()){ el.value=hpsState.subjudulOn; toast('Mengikuti Analisa terpilih','warn'); return; } hpsState.subjudulOn=(el.value==='Ya')?'Ya':'Tidak'; hpsSaveState(); renderHpsForm(); }
-function hpsOnJudulNum(el){ hpsState.judulNum=jsNumStyleOk(el.value,'A'); hpsSaveState(); }
-function hpsOnSubNum(el){ hpsState.subjudulNum=jsNumStyleOk(el.value,'a'); hpsSaveState(); }
+function hpsOnJudulNum(el){ hpsState.judulNum=jsNumStyleOk(el.value,''); hpsSaveState(); }
+function hpsOnSubNum(el){ hpsState.subjudulNum=jsNumStyleOk(el.value,''); hpsSaveState(); }
 
 function hpsOnInfoChange(){
   const st=hpsState;
@@ -14557,9 +14559,9 @@ function hpsAmbilAnalisa(id){
     : ((aSt.refs&&aSt.refs[0]&&Array.isArray(aSt.refs[0].items))?aSt.refs[0].items:[]);
   // Ikuti pengaturan Judul / Sub-Judul dari Analisa terpilih
   st.judulOn    = (aSt.judulOn==='Ya')?'Ya':'Tidak';
-  st.judulNum   = jsNumStyleOk(aSt.judulNum,'A');
+  st.judulNum   = jsNumStyleOk(aSt.judulNum,'');
   st.subjudulOn = (aSt.subjudulOn==='Ya')?'Ya':'Tidak';
-  st.subjudulNum= jsNumStyleOk(aSt.subjudulNum,'a');
+  st.subjudulNum= jsNumStyleOk(aSt.subjudulNum,'');
   if(struct.length){
     st.items=struct.map((it,i)=>{
       const res=hargaLocked?anaResultForState(aSt,i):null;
@@ -15020,7 +15022,7 @@ function anaBlankState(){ return {
   sumber:[''], refs:[anaBlankRef()],
   metodeRef:'Sama', metodeAll:'Rata-rata', aktifRef:0,
   jenis:'Umum', rokOn:'Tidak', rok:'', inflasi:'Tidak', inflasiVals:[], inflasiNilai:'',
-  judulOn:'Tidak', judulNum:'A', subjudulOn:'Tidak', subjudulNum:'a',
+  judulOn:'Tidak', judulNum:'', subjudulOn:'Tidak', subjudulNum:'',
   konstruksi:{ jumlahItem:1, items:[anaBlankKonItem()] },
   ahsp: anaBlankAhsp()
 }; }
@@ -15060,7 +15062,7 @@ function anaEnsure(){
   // Judul / Sub-Judul
   if(st.judulOn!=='Ya') st.judulOn='Tidak';
   if(st.subjudulOn!=='Ya') st.subjudulOn='Tidak';
-  st.judulNum=jsNumStyleOk(st.judulNum,'A'); st.subjudulNum=jsNumStyleOk(st.subjudulNum,'a');
+  st.judulNum=jsNumStyleOk(st.judulNum,''); st.subjudulNum=jsNumStyleOk(st.subjudulNum,'');
   // jenis pekerjaan & ROK (%)
   if(st.jenis!=='Konstruksi') st.jenis='Umum';
   if(st.rokOn==null) st.rokOn=(anaNum(st.rok)>0)?'Ya':'Tidak';   // migrasi data lama
@@ -15162,9 +15164,9 @@ function anaRecordToState(rec){
     inflasiVals: Array.isArray(s.inflasiVals)?s.inflasiVals.slice():[],
     inflasiNilai: (s.inflasiNilai!=null?s.inflasiNilai:''),
     judulOn: (s.judulOn==='Ya')?'Ya':'Tidak',
-    judulNum: jsNumStyleOk(s.judulNum,'A'),
+    judulNum: jsNumStyleOk(s.judulNum,''),
     subjudulOn: (s.subjudulOn==='Ya')?'Ya':'Tidak',
-    subjudulNum: jsNumStyleOk(s.subjudulNum,'a'),
+    subjudulNum: jsNumStyleOk(s.subjudulNum,''),
     konstruksi: (s.konstruksi&&typeof s.konstruksi==='object') ? {
       jumlahItem: Math.max(1,Math.min(ANA_MAX_ITEM, parseInt(s.konstruksi.jumlahItem,10)||1)),
       items: Array.isArray(s.konstruksi.items)&&s.konstruksi.items.length ? s.konstruksi.items.map(anaNormKonItem) : [anaBlankKonItem()]
@@ -15539,8 +15541,8 @@ function anaJudulFieldsHtml(){
 }
 function anaOnJudulOn(el){ anaState.judulOn=(el.value==='Ya')?'Ya':'Tidak'; anaSaveState(); renderAnalisaForm(); }
 function anaOnSubOn(el){ anaState.subjudulOn=(el.value==='Ya')?'Ya':'Tidak'; anaSaveState(); renderAnalisaForm(); }
-function anaOnJudulNum(el){ anaState.judulNum=jsNumStyleOk(el.value,'A'); anaSaveState(); }
-function anaOnSubNum(el){ anaState.subjudulNum=jsNumStyleOk(el.value,'a'); anaSaveState(); }
+function anaOnJudulNum(el){ anaState.judulNum=jsNumStyleOk(el.value,''); anaSaveState(); }
+function anaOnSubNum(el){ anaState.subjudulNum=jsNumStyleOk(el.value,''); anaSaveState(); }
 
 function anaOnInflasi(el){
   anaState.inflasi=(el.value==='Ya')?'Ya':'Tidak';
