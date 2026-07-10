@@ -9296,7 +9296,10 @@ function jpExtraDocCss(){
   '.jp-doc-wrap{border-left:4px solid #0E7C86}'+
   'table.jp-doc-tbl{width:100%;border-collapse:collapse;margin:0;border:1.5px solid #0b6a73}'+
   'table.jp-doc-tbl th,table.jp-doc-tbl td{border:1px solid #7d97ab;padding:6px 8px;font-size:9.5px;vertical-align:middle}'+
-  'table.jp-doc-tbl thead th{background:#0E7C86;color:#fff;font-weight:800;text-align:center;text-transform:uppercase;letter-spacing:.2px;border-color:#0b6a73;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  'table.jp-doc-tbl thead th{background:#0E7C86;color:#fff;font-weight:700;text-align:center;text-transform:uppercase;letter-spacing:0;border-color:#5aa8ae;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  'table.jp-doc-tbl thead th:first-child{border-left-color:#0E7C86}'+
+  'table.jp-doc-tbl thead th:last-child{border-right-color:#0E7C86}'+
+  'table.jp-doc-tbl thead tr:last-child th{border-bottom:1.5px solid #0b6a73}'+
   'table.jp-doc-tbl td.no,table.jp-doc-tbl td.awal,table.jp-doc-tbl td.akhir,table.jp-doc-tbl td.durasi{text-align:center;white-space:nowrap}'+
   'table.jp-doc-tbl tr.hi td{background:#f2ecd9;-webkit-print-color-adjust:exact;print-color-adjust:exact}';
 }
@@ -15011,8 +15014,11 @@ function hpsBuildDocHtml(){
 function hpsExtraDocCss(){
   return ''+
   'table.hps-doc-tbl{width:100%;border-collapse:collapse;table-layout:fixed;margin:2px 0 8px}'+
-  'table.hps-doc-tbl thead th{border-color:#0E7C86}'+
-  'table.hps-doc-tbl thead tr:last-child th{border-bottom:1px solid #0b6a73}'+
+  'table.hps-doc-tbl thead th{border-color:#5aa8ae}'+
+  'table.hps-doc-tbl thead tr:first-child th{border-top-color:#0E7C86}'+
+  'table.hps-doc-tbl thead th:first-child{border-left-color:#0E7C86}'+
+  'table.hps-doc-tbl thead th:last-child{border-right-color:#0E7C86}'+
+  'table.hps-doc-tbl thead tr:last-child th{border-bottom:1.5px solid #0b6a73}'+
   'table.hps-doc-tbl th,table.hps-doc-tbl td{border:1px solid #7d979c;padding:3px 5px;font-size:8.7px;line-height:1.3;vertical-align:middle;word-wrap:break-word;overflow-wrap:anywhere}'+
   'table.hps-doc-tbl thead th{background:#0E7C86;color:#fff;font-weight:700;text-align:center;letter-spacing:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   'table.hps-doc-tbl thead th.ur{text-align:center}'+
@@ -16649,11 +16655,15 @@ function anaExtraDocCss(){
   'table.ana-doc-tbl th,table.ana-doc-tbl td{border:1px solid #dbe6e9;padding:4px 6px;font-size:8.2px;line-height:1.35;vertical-align:middle;word-wrap:break-word;overflow-wrap:break-word}'+
   'table.ana-doc-tbl thead th{white-space:normal;word-break:keep-all}'+
   'table.ana-doc-tbl{border:1px solid #0b6a73}'+
-  /* Header dibuat rata (flat): garis antar-sel disamakan dengan warna latarnya
-     agar tidak menimbulkan kesan bevel/timbul. Hanya batas bawah header yang tegas. */
-  'table.ana-doc-tbl thead th{border-color:#0E7C86}'+
-  'table.ana-doc-tbl thead tr:last-child th{border-bottom:1px solid #0b6a73}'+
-  'table.ana-doc-tbl thead tr:first-child th[rowspan]{border-bottom:1px solid #0b6a73}'+
+  /* Header tetap rata (tanpa kesan bevel): sekat antar-sel memakai garis TERANG,
+     bukan garis gelap. Warna solid (#5aa8ae) dipilih agar pasti ikut tercetak —
+     warna semi-transparan sering diabaikan saat cetak/PDF. */
+  'table.ana-doc-tbl thead th{border-color:#5aa8ae}'+
+  'table.ana-doc-tbl thead tr:first-child th{border-top-color:#0E7C86}'+
+  'table.ana-doc-tbl thead th:first-child{border-left-color:#0E7C86}'+
+  'table.ana-doc-tbl thead th:last-child{border-right-color:#0E7C86}'+
+  'table.ana-doc-tbl thead tr:last-child th{border-bottom:1.5px solid #0b6a73}'+
+  'table.ana-doc-tbl thead tr:first-child th[rowspan]{border-bottom:1.5px solid #0b6a73}'+
   'table.ana-hasil-tbl th.mtd,table.ana-hasil-tbl td.mtd,table.ana-hasil-tbl th.rok,table.ana-hasil-tbl td.rok,table.ana-hasil-tbl th.inf,table.ana-hasil-tbl td.inf{white-space:nowrap}'+
   'table.ana-doc-tbl td.rok,table.ana-doc-tbl td.inf{text-align:center;font-weight:700;color:#0b3d42}'+
   /* Kolom Jumlah Harga: cukup memuat nominal miliaran & judul maksimal 2 baris, tidak melebar berlebihan */
@@ -16670,7 +16680,7 @@ function anaExtraDocCss(){
   'table.ana-hasil-tbl{break-inside:auto;page-break-inside:auto}'+
   'table.ana-hasil-tbl tr{break-inside:avoid;page-break-inside:avoid}'+
   'table.ana-hasil-tbl thead{display:table-header-group}'+
-  'table.ana-doc-tbl thead th{background:#0E7C86;color:#fff;font-weight:700;text-align:center;letter-spacing:0;border-color:#0E7C86;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  'table.ana-doc-tbl thead th{background:#0E7C86;color:#fff;font-weight:700;text-align:center;letter-spacing:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   'table.ana-doc-tbl tbody tr:nth-child(even):not(.grp):not(.ana-ahsp-spacer) td{background:#f6fafb;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   'table.ana-doc-tbl td.no{text-align:center;font-weight:700}'+
   'table.ana-doc-tbl th.ur,table.ana-doc-tbl td.ur{width:100%}'+
@@ -17190,7 +17200,10 @@ function rekapExtraDocCss(){
   '.rekap-sec{font-weight:800;font-size:12px;color:#0d2a30;margin:14px 0 6px}'+
   'table.rekap-tbl{width:100%;border-collapse:collapse;margin:0 0 10px;border:1.5px solid #0b6a73}'+
   'table.rekap-tbl th,table.rekap-tbl td{border:1px solid #7d97ab;padding:6px 8px;font-size:9.5px;vertical-align:middle}'+
-  'table.rekap-tbl thead th{background:#0E7C86;color:#fff;font-weight:800;text-align:center;text-transform:uppercase;letter-spacing:.2px;border-color:#0b6a73;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  'table.rekap-tbl thead th{background:#0E7C86;color:#fff;font-weight:700;text-align:center;text-transform:uppercase;letter-spacing:0;border-color:#5aa8ae;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  'table.rekap-tbl thead th:first-child{border-left-color:#0E7C86}'+
+  'table.rekap-tbl thead th:last-child{border-right-color:#0E7C86}'+
+  'table.rekap-tbl thead tr:last-child th{border-bottom:1.5px solid #0b6a73}'+
   'table.rekap-tbl td.no,table.rekap-tbl td.tgl{text-align:center;white-space:nowrap}'+
   'table.rekap-tbl td.num{text-align:right;white-space:nowrap}';
 }
