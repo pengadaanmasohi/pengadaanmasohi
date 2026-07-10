@@ -2798,6 +2798,13 @@ table.ana-res tbody tr:nth-child(even) td{background:#f6fafb}
 table.ana-res tbody td.c-no{text-align:center;font-weight:800;color:#0b6a73}
 table.ana-res tbody td.c-ur{text-align:left;font-weight:600}
 table.ana-res tbody td.c-res{font-weight:800;color:#0b3d42;background:#eef7f8}
+/* Lebar kolom: Uraian Pekerjaan menyerap seluruh sisa ruang; kolom lain menyusut
+   secukupnya (width:1% + nowrap) sehingga kolom harga tidak melebar berlebihan. */
+table.ana-res th.c-ur,table.ana-res td.c-ur{width:100%}
+table.ana-res th.c-mtd,table.ana-res td.c-mtd,
+table.ana-res th.c-rok,table.ana-res td.c-rok,
+table.ana-res th.c-inf,table.ana-res td.c-inf{width:1%;white-space:nowrap}
+table.ana-res th.c-money,table.ana-res td.c-money{width:1%;min-width:118px;white-space:nowrap}
 .ana-res-hint{padding:10px 15px;font-size:11px;color:#5a6b70;background:#f6fafb;border-top:1px solid #eef4f5;line-height:1.55}
 .ana-res-hint b{color:var(--teal-dark)}
 .ana-method-chip{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;color:#0b6a73;background:#dff1f2;padding:2px 8px;border-radius:20px;margin-left:6px}
@@ -14557,10 +14564,12 @@ function hpsAmbilAnalisa(id){
   const struct = (st.info.analisaJenis==='Konstruksi')
     ? ((aSt.konstruksi&&Array.isArray(aSt.konstruksi.items))?aSt.konstruksi.items:[])
     : ((aSt.refs&&aSt.refs[0]&&Array.isArray(aSt.refs[0].items))?aSt.refs[0].items:[]);
-  // Ikuti pengaturan Judul / Sub-Judul dari Analisa terpilih
-  st.judulOn    = (aSt.judulOn==='Ya')?'Ya':'Tidak';
+  // Ikuti pengaturan Judul / Sub-Judul dari Analisa terpilih.
+  // Analisa berkategori "Pekerjaan Konstruksi" tidak mengenal Judul/Sub-Judul.
+  const _pakaiJudul = (st.info.analisaJenis!=='Konstruksi');
+  st.judulOn    = (_pakaiJudul && aSt.judulOn==='Ya')?'Ya':'Tidak';
   st.judulNum   = jsNumStyleOk(aSt.judulNum,'');
-  st.subjudulOn = (aSt.subjudulOn==='Ya')?'Ya':'Tidak';
+  st.subjudulOn = (_pakaiJudul && aSt.subjudulOn==='Ya')?'Ya':'Tidak';
   st.subjudulNum= jsNumStyleOk(aSt.subjudulNum,'');
   if(struct.length){
     st.items=struct.map((it,i)=>{
@@ -15059,9 +15068,10 @@ function anaEnsure(){
   if(st.metodeRef!=='Berbeda') st.metodeRef='Sama';
   if(st.metodeAll!=='Terendah') st.metodeAll='Rata-rata';
   st.aktifRef=Math.max(0,Math.min(nRef-1, parseInt(st.aktifRef,10)||0));
-  // Judul / Sub-Judul
+  // Judul / Sub-Judul — HANYA berlaku untuk Pekerjaan Umum
   if(st.judulOn!=='Ya') st.judulOn='Tidak';
   if(st.subjudulOn!=='Ya') st.subjudulOn='Tidak';
+  if(st.jenis==='Konstruksi'){ st.judulOn='Tidak'; st.subjudulOn='Tidak'; }
   st.judulNum=jsNumStyleOk(st.judulNum,''); st.subjudulNum=jsNumStyleOk(st.subjudulNum,'');
   // jenis pekerjaan & ROK (%)
   if(st.jenis!=='Konstruksi') st.jenis='Umum';
@@ -15163,9 +15173,9 @@ function anaRecordToState(rec){
     inflasi: s.inflasi==='Ya'?'Ya':'Tidak',
     inflasiVals: Array.isArray(s.inflasiVals)?s.inflasiVals.slice():[],
     inflasiNilai: (s.inflasiNilai!=null?s.inflasiNilai:''),
-    judulOn: (s.judulOn==='Ya')?'Ya':'Tidak',
+    judulOn: (s.jenis!=='Konstruksi' && s.judulOn==='Ya')?'Ya':'Tidak',
     judulNum: jsNumStyleOk(s.judulNum,''),
-    subjudulOn: (s.subjudulOn==='Ya')?'Ya':'Tidak',
+    subjudulOn: (s.jenis!=='Konstruksi' && s.subjudulOn==='Ya')?'Ya':'Tidak',
     subjudulNum: jsNumStyleOk(s.subjudulNum,''),
     konstruksi: (s.konstruksi&&typeof s.konstruksi==='object') ? {
       jumlahItem: Math.max(1,Math.min(ANA_MAX_ITEM, parseInt(s.konstruksi.jumlahItem,10)||1)),
@@ -15309,15 +15319,14 @@ function anaKonRemoveRow(i){
   st.items.splice(i,1); st.jumlahItem=st.items.length; anaSaveState();
   const wrap=document.getElementById('ana-kon-table-wrap'); if(wrap) wrap.innerHTML=anaKonTableHtml();
 }
+/* Pekerjaan Konstruksi tidak memakai Judul/Sub-Judul — tabel tanpa kedua kolom itu. */
 function anaKonTableHtml(){
   const st=anaState.konstruksi;
-  const jOn=jsOn(anaState.judulOn), sOn=jsOn(anaState.subjudulOn);
   let rows='';
   st.items.forEach((it,i)=>{
     rows+='<tr>'+
       '<td class="c-no">'+(i+1)+'</td>'+
-      (jOn?('<td class="c-kel"><input type="text" data-i="'+i+'" placeholder="mis. PEKERJAAN PERSIAPAN" value="'+fkEsc(it.judul||'')+'" oninput="anaOnKonCell(this,\'judul\')"></td>'):'')+
-      (sOn?('<td class="c-kel"><input type="text" data-i="'+i+'" placeholder="mis. Material Utama" value="'+fkEsc(it.subjudul||'')+'" oninput="anaOnKonCell(this,\'subjudul\')"></td>'):'')+
+
       '<td class="c-ur"><textarea data-i="'+i+'" rows="1" placeholder="Uraian pekerjaan ke-'+(i+1)+'" oninput="anaOnKonCell(this,\'uraian\')">'+fkEsc(it.uraian||'')+'</textarea></td>'+
       '<td class="c-sat"><input type="text" data-i="'+i+'" placeholder="Bh" value="'+fkEsc(it.sat||'')+'" oninput="anaOnKonCell(this,\'sat\')"></td>'+
       '<td class="c-money"><input type="text" inputmode="numeric" id="ana-kon-hb-'+i+'" data-i="'+i+'" placeholder="Rp" value="'+rupiahInputText(it.hargaBarang)+'" oninput="anaOnKonHargaBarang(this)"></td>'+
@@ -15328,7 +15337,7 @@ function anaKonTableHtml(){
     '</tr>';
   });
   return '<div class="hps-uraian-wrap"><table class="hps-uraian"><thead>'+
-    '<tr><th class="c-no">No</th>'+(jOn?'<th>Judul</th>':'')+(sOn?'<th>Sub-Judul</th>':'')+'<th class="c-ur">Uraian Pekerjaan</th><th>Satuan</th>'+
+    '<tr><th class="c-no">No</th><th class="c-ur">Uraian Pekerjaan</th><th>Satuan</th>'+
       '<th>Harga Barang<br>(Rp)</th><th>Harga Jasa<br>(Rp)</th><th class="c-ref">Sumber Referensi</th><th></th></tr>'+
     '</thead><tbody>'+rows+'</tbody></table></div>';
 }
@@ -15512,9 +15521,9 @@ function anaRokInflasiFieldsHtml(){
   const rokVal=(st.rok!==''&&st.rok!=null)?String(st.rok):'';
   const infNilai=(st.inflasiNilai!==''&&st.inflasiNilai!=null)?String(st.inflasiNilai):'';
   const rokMax=(st.jenis==='Konstruksi')?15:10;
-  return '<div class="ana-tb-field js-judul-field"><label id="ana-rok-label">ROK?'+(rokOn&&rokVal!==''?' ('+fkEsc(rokVal)+'%)':'')+'</label>'+
+  return '<div class="ana-tb-field js-judul-field"><label id="ana-rok-label">ROK? (maks '+rokMax+'%)</label>'+
       '<div class="js-judul-row">'+jsYaTidakHtml('ana-rokon',st.rokOn,'anaOnRokOn')+
-        (rokOn?('<input class="js-numbox js-num2" id="ana-rok" type="text" inputmode="decimal" maxlength="5" placeholder="0" title="Maks '+rokMax+'%" value="'+fkEsc(rokVal)+'" oninput="anaOnRok(this)">'):'')+
+        (rokOn?('<input class="js-numbox js-num2" id="ana-rok" type="text" inputmode="decimal" maxlength="5" placeholder="0" title="Maksimal '+rokMax+'% ('+(st.jenis==='Konstruksi'?'Pekerjaan Konstruksi':'Pekerjaan Umum')+')" value="'+fkEsc(rokVal)+'" oninput="anaOnRok(this)">'):'')+
       '</div></div>'+
     '<div class="ana-tb-field js-judul-field"><label>Inflasi?</label>'+
       '<div class="js-judul-row">'+jsYaTidakHtml('ana-inflasi',st.inflasi,'anaOnInflasi')+
@@ -15570,9 +15579,10 @@ function anaOnAktifRef(el){ anaState.aktifRef=Math.max(0,Math.min(anaState.jumla
 function anaOnRok(el){
   let v=el.value.replace(/[^0-9.,]/g,'').replace(/,/g,'.');
   const parts=v.split('.'); if(parts.length>2) v=parts[0]+'.'+parts.slice(1).join('');
-  let num=parseFloat(v); if(!isNaN(num)&&num>10){ v=String(10); }
+  // Batas ROK mengikuti Jenis Pekerjaan: Pekerjaan Umum 10%, Pekerjaan Konstruksi 15%
+  const rokMax=(anaState.jenis==='Konstruksi')?15:10;
+  let num=parseFloat(v); if(!isNaN(num)&&num>rokMax){ v=String(rokMax); }
   el.value=v; anaState.rok=(v===''?'':(parseFloat(v)||0)); anaSaveState();
-  const lb=document.getElementById('ana-rok-label'); if(lb) lb.textContent='ROK?'+(v===''?'':(' ('+v+'%)'));
   anaRenderResult();
 }
 function anaOnMetodeRef(el){ anaState.metodeRef=(el.value==='Berbeda')?'Berbeda':'Sama'; anaSaveState(); anaRenderStep2Body(); }
@@ -15706,8 +15716,8 @@ function anaRenderResult(){
       '<td class="c-mtd"><span class="ana-method-chip">'+res.method+'</span></td>'+
       '<td class="c-rok">'+anaPct(anaNum(st.rok),'–')+'</td>'+
       infCell+
-      '<td id="ana-hb-'+i+'">'+anaRp(res.hargaBarang)+'</td>'+
-      '<td id="ana-hj-'+i+'">'+anaRp(res.hargaJasa)+'</td>'+
+      '<td class="c-money" id="ana-hb-'+i+'">'+anaRp(res.hargaBarang)+'</td>'+
+      '<td class="c-money" id="ana-hj-'+i+'">'+anaRp(res.hargaJasa)+'</td>'+
     '</tr>';
   });
   const modeTxt = st.metodeRef==='Sama'
@@ -15725,7 +15735,7 @@ function anaRenderResult(){
   const cols = infOn ? 7 : 6;
   body.innerHTML='<div class="ana-res-wrap"><table class="ana-res"><thead><tr>'+
       '<th class="c-no">No</th><th class="c-ur">Uraian Pekerjaan</th><th class="c-mtd">Metode Perhitungan</th><th class="c-rok">ROK</th>'+infHead+
-      '<th>Harga Satuan Barang</th><th>Harga Satuan Jasa</th>'+
+      '<th class="c-money">Harga Satuan Barang</th><th class="c-money">Harga Satuan Jasa</th>'+
     '</tr></thead><tbody>'+(rows||'<tr><td colspan="'+cols+'" style="text-align:center;color:#9aa7ab">Belum ada data</td></tr>')+'</tbody></table></div>';
 }
 
@@ -16021,7 +16031,7 @@ function renderAnalisaForm(){
         ANA_OWN_FIELDS.map(anaInfoInputHtml).join('')+
         (!isKon ? (anaCountItemFieldHtml()+anaCountRefFieldHtml()) : '')+
       '</div>'+
-      ('<div class="ana-dp-rokinf" id="ana-dp-rokinf">'+(!isKon?anaRokInflasiFieldsHtml():'')+anaJudulFieldsHtml()+'</div>')
+      (!isKon ? ('<div class="ana-dp-rokinf" id="ana-dp-rokinf">'+anaRokInflasiFieldsHtml()+anaJudulFieldsHtml()+'</div>') : '')
     ) : '')+
     '</div>';
 
@@ -16250,9 +16260,7 @@ function anaBuildDocHargaSatuan(st){
   const infoRow=(k,v)=>'<tr><td class="k">'+k+'</td><td class="s">:</td><td class="v">'+fkEsc(v||'-')+'</td></tr>';
   const items=kst.items||[];
   let hsRows='';
-  jsWalk(items,jsCfg(st),{
-    judul:(no,txt)=>{ hsRows+='<tr class="grp"><td class="no">'+fkEsc(no)+'</td><td class="gname" colspan="5">'+fkEsc(txt)+'</td></tr>'; },
-    sub:(no,txt)=>{ hsRows+='<tr class="grp sub"><td class="no">'+fkEsc(no)+'</td><td class="gname" colspan="5">'+fkEsc(txt)+'</td></tr>'; },
+  jsWalk(items,{judulOn:false,subOn:false},{
     item:(noInGroup,it,i)=>{
     const uraian=(it.uraian&&String(it.uraian).trim())?it.uraian:('Uraian '+(i+1));
     const sat=(it.sat!=null&&String(it.sat).trim())?it.sat:'-';
