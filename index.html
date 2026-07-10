@@ -14283,13 +14283,23 @@ function hpsApplyDp(rec){
   st.info.dpNama=rec.nama_pekerjaan||info.nama||'';
   hpsSaveState();
   hpsRevealPick=true;   // pemicu animasi reveal konten di bawah tombol
-  renderHpsForm();
-  toast('Data pekerjaan diterapkan: '+st.info.dpNama,'ok');
+  // Tautkan otomatis ke Analisa milik Data Pekerjaan ini. Kategori "Pekerjaan Umum"
+  // langsung mengisi & mengunci Jumlah Barang/Jasa + Uraian Pekerjaan + harga;
+  // kategori "Pekerjaan Konstruksi" tidak (semua tetap manual).
+  refreshDataAnalisa().then(()=>{
+    const aRec=hpsCariAnalisaUntukDp(st.info.dpId, st.info.dpNama);
+    if(aRec) hpsTerapkanAnalisa(aRec);
+    renderHpsForm();
+    if(aRec && st.info.analisaJenis==='Umum') toast('Data pekerjaan & analisa diterapkan: '+st.info.dpNama,'ok');
+    else toast('Data pekerjaan diterapkan: '+st.info.dpNama,'ok');
+  }).catch(()=>{ renderHpsForm(); toast('Data pekerjaan diterapkan: '+st.info.dpNama,'ok'); });
 }
 /* Lepas pilihan Data Pekerjaan → kembali ke kondisi belum dipilih (wajib pilih ulang) */
 function hpsLepasDp(){
   const st=hpsState; if(!st.info) return;
   delete st.info.dpId; delete st.info.dpNama;
+  // Tautan Analisa ikut dilepas: kunci Jumlah Barang/Jasa & Uraian Pekerjaan dibuka kembali
+  delete st.info.analisaId; delete st.info.analisaNama; delete st.info.analisaJenis;
   HPS_DP_KEYS.forEach(k=>{ st.info[k]=''; });
   hpsSaveState(); renderHpsForm();
   toast('Pilihan Data Pekerjaan dilepas','ok');
@@ -14555,6 +14565,13 @@ function hpsHargaLocked(){ return hpsItemsLocked(); }
    Material & Jasa — sudah termasuk ROK — ikut terkunci hanya bila kategori Analisa "Umum"). */
 function hpsAmbilAnalisa(id){
   const rec=(records_ana||[]).find(r=>String(r.id)===String(id)); if(!rec) return;
+  hpsTerapkanAnalisa(rec);
+  closeHpsAnaPicker();
+  renderHpsForm();
+  toast('Data pekerjaan diambil dari analisa: '+(hpsState.info.analisaNama||''),'ok');
+}
+/* Terapkan sebuah record Analisa ke hpsState (tanpa menyentuh UI). */
+function hpsTerapkanAnalisa(rec){
   const aSt=(rec.state&&typeof rec.state==='object')?rec.state:{};
   const aInfo=aSt.info||{};
   const st=hpsState; st.info=st.info||{};
@@ -14592,9 +14609,14 @@ function hpsAmbilAnalisa(id){
     st.jumlahItem=st.items.length;
   }
   hpsSaveState();
-  closeHpsAnaPicker();
-  renderHpsForm();
-  toast('Data pekerjaan diambil dari analisa: '+(st.info.analisaNama||''),'ok');
+}
+/* Cari Analisa tersimpan yang tertaut ke Data Pekerjaan (dpId), cadangan: Nama Pekerjaan. */
+function hpsCariAnalisaUntukDp(dpId, nama){
+  const list=(typeof records_ana!=='undefined' && records_ana) ? records_ana : [];
+  const byDp=list.find(r=>{ const i=(r.state&&r.state.info)||{}; return i.dpId && String(i.dpId)===String(dpId); });
+  if(byDp) return byDp;
+  const nm=String(nama||'').trim().toLowerCase(); if(!nm) return null;
+  return list.find(r=>String(r.nama_pekerjaan||'').trim().toLowerCase()===nm) || null;
 }
 /* Lepas pilihan analisa → kolom kembali bisa diinput (nilai tetap, tidak dihapus). */
 function hpsLepasAnalisa(){
