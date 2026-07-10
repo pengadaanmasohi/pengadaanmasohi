@@ -18102,7 +18102,8 @@ function spkDocCss(){
   '.spk-toc h2{font-size:18px;font-weight:800;color:#154A7C;margin:0 0 4px}'+
   '.spk-toc .hr{height:2px;background:#154A7C;margin-bottom:10px}'+
   '.spk-toc .row{display:flex;align-items:baseline;gap:8px;padding:6px 2px;border-bottom:1px solid #EEF1F4}'+
-  '.spk-toc .nm{font-weight:600}.spk-toc .nm .no{color:#154A7C;font-weight:800;margin-right:6px;display:inline-block;min-width:22px}'+
+  '.spk-toc .nm{font-weight:600}.spk-toc .nm .no{color:#154A7C;font-weight:800;display:inline-block;width:0.6cm;margin-right:0.15cm;text-align:left}'+
+  '.spk-toc .nm .no.r{text-align:right}'+
   '.spk-toc .dot{flex:1;border-bottom:1.4px dotted #C7D0D8;transform:translateY(-3px)}'+
   '.spk-toc .pg{color:#6B7885;font-weight:700}'+
   /* Judul & nomor SPK di halaman isi (seperti sebelumnya, navy) */
@@ -18116,8 +18117,10 @@ function spkDocCss(){
      - Jarak dari akhir klausul ke judul klausul baru = 12 pt */
   '.spk-clause{margin:0}'+
   '.spk-clause,.spk-clause *,.spk-cl,.spk-cl *,.spk-cl-h,.spk-cl-h *{font-family:Arial,Helvetica,sans-serif}'+
-  '.spk-cl-h{font-weight:700;font-size:11pt;color:#000;line-height:1.15;text-transform:uppercase;text-align:left;margin:12pt 0 0;padding-left:1.9em;text-indent:-1.9em}'+
-  '.spk-cl-h .n{display:inline-block;width:1.9em;text-indent:0}'+
+  '.spk-cl-h{font-weight:700;font-size:11pt;color:#000;line-height:1.15;text-transform:uppercase;text-align:left;margin:12pt 0 0;padding-left:0.75cm;text-indent:-0.75cm}'+
+  '.spk-cl-h .n{display:inline-block;width:0.75cm;text-indent:0;text-align:left}'+
+  /* Perataan nomor tunggal: 2 digit (mis. 10.) rata kanan agar teks tetap sejajar */
+  '.spk-clause .n.r,.spk-cl-h .n.r{text-align:right;padding-right:0.15cm;box-sizing:border-box}'+
   '.spk-cl{margin:0;font-size:11pt;color:#000;line-height:1.15}'+
   /* Isi klausul menjorok sejajar dengan teks judul (di kanan nomor) */
   '.spk-clause .spk-cl{padding-left:1.9em}'+
@@ -18126,6 +18129,11 @@ function spkDocCss(){
   '.spk-cl p.kldesc{margin-left:1.9em}'+
   '.spk-cl p.kl1{margin-left:2.3em;text-indent:-2.3em}'+
   '.spk-cl p.kl2{margin-left:3.9em;text-indent:-1.6em}'+
+  /* Paragraf ber-nomor TUNGGAL: jarak nomor->teks diseragamkan ke 0,75cm,
+     posisi kiri nomor tiap level dipertahankan (kl1 & kl2 tetap bertingkat) */
+  '.spk-cl p.kl1.spk-sl{margin-left:0.75cm;text-indent:-0.75cm;padding-left:0}'+
+  '.spk-cl p.kl2.spk-sl{margin-left:4.2em;text-indent:-0.75cm;padding-left:0}'+
+  '.spk-cl p.spk-sl .n{display:inline-block;width:0.75cm;text-indent:0;text-align:left}'+
   /* Baris "Label : nilai" agar sejajar seperti Word */
   '.spk-cl .spk-kv{display:flex;margin:0 0 4pt;line-height:1.15}'+
   '.spk-cl .spk-kv .k{flex:0 0 34%;max-width:34%}'+
@@ -18165,6 +18173,21 @@ function spkDocCss(){
     '.spk-page.spk-flow{height:auto;overflow:visible}'+
   '}';
 }
+/* Membungkus penomoran TUNGGAL (mis. "1.", "10.", "a.", "I.") pada awal paragraf
+   kl1/kl2 ke dalam <span class="n"> agar jarak nomor->teks seragam (mengikuti
+   penggaris Word) dan perataannya mengikuti aturan: nomor 1 digit = rata kiri,
+   nomor 2 digit = rata kanan. Penomoran majemuk (mis. "1.1.", "11.1.1.") sengaja
+   TIDAK diproses karena hanya berlaku untuk nomor tunggal. */
+function spkNumberFix(html){
+  return String(html||'').replace(
+    /<p class="(kl1|kl2)">([0-9]+|[A-Za-z])\.(&nbsp;|\s)/g,
+    function(m, cls, tok, sp){
+      const isNum = /^[0-9]+$/.test(tok);
+      const right = isNum && parseInt(tok,10) >= 10;   // 2 digit -> rata kanan
+      return '<p class="'+cls+' spk-sl"><span class="n'+(right?' r':'')+'">'+tok+'.</span>'+sp;
+    }
+  );
+}
 function spkDocHtml(data, klausul){
   const ctx=spkBuildCtx(data||{});
   const esc=fkEsc;
@@ -18198,15 +18221,15 @@ function spkDocHtml(data, klausul){
       '<div class="r"><b>SPK No. '+esc(data.nomor_kontrak||'')+'</b><br>'+esc(ctx.tanggal_kontrak_pjg||'')+'</div></div>';
   // DAFTAR ISI (dipertahankan seperti desain sebelumnya)
   const tocRows = (klausul||[]).map((k,i)=>
-    '<div class="row"><span class="nm"><span class="no">'+(i+1)+'.</span>'+esc(k.judul||'')+'</span><span class="dot"></span><span class="pg"></span></div>'
+    '<div class="row"><span class="nm"><span class="no'+((i+1)>=10?' r':'')+'">'+(i+1)+'.</span>'+esc(k.judul||'')+'</span><span class="dot"></span><span class="pg"></span></div>'
   ).join('');
   const toc=
     '<section class="spk-page">'+hd+'<div class="spk-toc"><h2>DAFTAR ISI</h2><div class="hr"></div>'+tocRows+'</div></section>';
   // ISI: preamble + klausul + tanda tangan
-  const preamble = spkTidyKeyValue(spkMerge(SPK_PREAMBLE_TPL, ctx));
+  const preamble = spkNumberFix(spkTidyKeyValue(spkMerge(SPK_PREAMBLE_TPL, ctx)));
   const clausesHtml = (klausul||[]).map((k,i)=>
-    '<div class="spk-clause"><div class="spk-cl-h"><span class="n">'+(i+1)+'.</span>'+esc(String(k.judul||'').toUpperCase())+'</div>'+
-    '<div class="spk-cl">'+spkTidyKeyValue(spkMerge(k.isi||'', ctx))+'</div></div>'
+    '<div class="spk-clause"><div class="spk-cl-h"><span class="n'+((i+1)>=10?' r':'')+'">'+(i+1)+'.</span>'+esc(String(k.judul||'').toUpperCase())+'</div>'+
+    '<div class="spk-cl">'+spkNumberFix(spkTidyKeyValue(spkMerge(k.isi||'', ctx)))+'</div></div>'
   ).join('');
   const sign=
     '<table class="spk-sign"><tr>'+
