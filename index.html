@@ -3090,24 +3090,13 @@ table.hps-uraian tbody tr:last-child td,table.ana-uraian tbody tr:last-child td,
           </div>
         </div>
 
-        <!-- ===== File Kontrak ===== -->
-        <div class="topnav-group" data-group="filekontrak">
-          <button class="topnav-trigger" type="button" onclick="toggleTopGroup(event,'filekontrak')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/><path d="M12 11v6M9 14h6"/></svg>
-            File Kontrak
-            <svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
-          </button>
-          <div class="topnav-dropdown">
-            <button class="topnav-item" data-view="fk-input" data-role="admin user" onclick="openFkInput('kr')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-              Input Kontrak
-            </button>
-            <button class="topnav-item" data-view="fk-view" onclick="openFkView('kr')">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-              Lihat Kontrak
-            </button>
-          </div>
-        </div>
+        <!-- ===== File Kontrak (satu menu, seperti Monitoring) =====
+             Klik File Kontrak langsung membuka daftar kontrak. Input Kontrak kini
+             diakses lewat tombol "Tambah Data" di dalam halaman daftar. -->
+        <button class="topnav-link" data-view="fk-view" onclick="openFkView('kr')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/><path d="M12 11v6M9 14h6"/></svg>
+          File Kontrak
+        </button>
 
       </nav>
 
@@ -3753,6 +3742,10 @@ table.hps-uraian tbody tr:last-child td,table.ana-uraian tbody tr:last-child td,
         <button class="btn btn-red" onclick="fkResetView()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
           Reset
+        </button>
+        <button class="btn btn-teal role-keepspace" data-role="admin user" onclick="fkTambahData()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          Tambah Data
         </button>
       </div>
     </div>
@@ -5358,6 +5351,7 @@ function showView(name, loaderMsg, noLoader){
           let on = l.dataset.view===name;
           if(l.dataset.view==='list' && monitorViews.includes(name)) on=true; // Monitoring induk tetap aktif
           if(l.dataset.view==='input' && inputViews.includes(name)) on=true;  // (kompatibilitas) Input Pekerjaan induk tetap aktif
+          if(l.dataset.view==='fk-view' && (name==='fk-view'||name==='fk-input')) on=true; // File Kontrak induk tetap aktif
           l.classList.toggle('active', on);
         });
         // tandai & buka grup yang memuat view aktif (akordeon tetap terbuka)
@@ -9480,6 +9474,9 @@ function fkFilterInput(){ fkState.input.page=1; renderFkInput(); }
 function fkFilterView(){ fkState.view.page=1; renderFkView(); }
 function fkResetInput(){ fkClearFilters('input'); fkState.input.page=1; renderFkInput(); }
 function fkResetView(){ fkClearFilters('view'); fkState.view.page=1; renderFkView(); }
+/* Tombol "Tambah Data" pada File Kontrak — Lihat Kontrak:
+   mengalihkan ke halaman Input Kontrak dengan modul yang sedang dibuka. */
+function fkTambahData(){ openFkInput((fkState&&fkState.view&&fkState.view.modul)||'kr'); }
 /* Tandai item nav + segmented control yang aktif sesuai modul terpilih */
 function fkMarkActive(mode, modul){
   document.querySelectorAll('.topnav-item[data-view="fk-'+mode+'"]').forEach(b=>{
