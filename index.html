@@ -2258,9 +2258,10 @@ tr.hl-weekend td{background:#f5f8fb}
 .fkl-doc-org .l2{font-weight:700;font-size:11px;color:#22343a;text-transform:uppercase;letter-spacing:.2px}
 .fkl-doc-org .l3{font-size:10px;color:#7c8a8f;margin-top:2px}
 .fkl-doc-band{height:3px;border-radius:3px;background:linear-gradient(90deg,#0E7C86,#12b3c0 55%,#F6B40E);margin-bottom:20px}
-/* Judul dibuat shrink-to-fit (display:table + margin auto) agar garis bawahnya
-   hanya selebar teks judul, bukan selebar halaman. */
-.fkl-doc-title{display:table;margin:0 auto 7px;text-align:center;font-weight:800;font-size:19px;line-height:1.28;letter-spacing:.6px;color:#0d2a30;text-transform:uppercase;border-bottom:2px solid #0d2a30;padding-bottom:5px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.fkl-doc-title{text-align:center;font-weight:800;font-size:19px;line-height:1.28;letter-spacing:.6px;color:#0d2a30;margin:0 0 10px;text-transform:uppercase}
+/* Varian judul bergaris bawah + baris Nomor — HANYA dipakai dokumen HPS & Rekap HPS.
+   display:table + margin auto membuat garis hanya selebar teks judul. */
+.fkl-doc-title.has-rule{display:table;margin:0 auto 7px;padding-bottom:5px;border-bottom:2px solid #0d2a30;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .fkl-doc-titlerule{display:none}
 .fkl-doc-docno{text-align:center;font-weight:700;font-size:12px;letter-spacing:.35px;color:#0d2a30;margin:0}
 .fkl-doc-titlegap{height:18px}
@@ -2498,9 +2499,10 @@ tbody tr:hover{background:#eef5f6 !important}
 .fkl-doc-org .l2{font-weight:700;font-size:11px;color:#22343a;text-transform:uppercase;letter-spacing:.2px}
 .fkl-doc-org .l3{font-size:10px;color:#7c8a8f;margin-top:2px}
 .fkl-doc-band{height:3px;border-radius:3px;background:linear-gradient(90deg,#0E7C86,#12b3c0 55%,#F6B40E);margin-bottom:20px}
-/* Judul dibuat shrink-to-fit (display:table + margin auto) agar garis bawahnya
-   hanya selebar teks judul, bukan selebar halaman. */
-.fkl-doc-title{display:table;margin:0 auto 7px;text-align:center;font-weight:800;font-size:19px;line-height:1.28;letter-spacing:.6px;color:#0d2a30;text-transform:uppercase;border-bottom:2px solid #0d2a30;padding-bottom:5px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.fkl-doc-title{text-align:center;font-weight:800;font-size:19px;line-height:1.28;letter-spacing:.6px;color:#0d2a30;margin:0 0 10px;text-transform:uppercase}
+/* Varian judul bergaris bawah + baris Nomor — HANYA dipakai dokumen HPS & Rekap HPS.
+   display:table + margin auto membuat garis hanya selebar teks judul. */
+.fkl-doc-title.has-rule{display:table;margin:0 auto 7px;padding-bottom:5px;border-bottom:2px solid #0d2a30;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .fkl-doc-titlerule{display:none}
 .fkl-doc-docno{text-align:center;font-weight:700;font-size:12px;letter-spacing:.35px;color:#0d2a30;margin:0}
 .fkl-doc-titlegap{height:18px}
@@ -9296,7 +9298,8 @@ function jpBuildDocHtml(){
         '</div>'+
       '</div>'+
       '<div class="fkl-doc-band"></div>'+
-      fklDocTitleBlock('JADWAL PELAKSANAAN PEKERJAAN', (jpState.info&&jpState.info.nama)||'', ['HPS','T_HPS'])+
+      '<h1 class="fkl-doc-title">JADWAL PELAKSANAAN PEKERJAAN</h1>'+
+      '<div class="fkl-doc-titlegap"></div>'+
       (st.namaPekerjaan? '<div class="jp-doc-nama">'+fkEsc(st.namaPekerjaan)+'</div>' : '')+
       '<div class="jp-doc-wrap"><table class="jp-doc-tbl"><thead><tr><th class="no">No</th><th class="nm">Tahapan Pengadaan</th><th class="awal">Awal</th><th class="akhir">Akhir</th><th class="durasi">Durasi</th><th class="ket">Keterangan</th></tr></thead><tbody>'+body+'</tbody></table></div>'+
     '</div>';
@@ -11439,7 +11442,8 @@ function fklBuildDocHtml(){
       '</div>'+
     '</div>'+
     '<div class="fkl-doc-band"></div>'+
-    fklDocTitleBlock('FORM PEMERIKSAAN KELENGKAPAN<br>DOKUMEN PENGADAAN', info.nama, ['HPS','T_HPS'])+
+    '<h1 class="fkl-doc-title">FORM PEMERIKSAAN KELENGKAPAN<br>DOKUMEN PENGADAAN</h1>'+
+    '<div class="fkl-doc-titlegap"></div>'+
 
     '<div class="fkl-sec-h"><span class="rn">A</span>Uraian Pekerjaan</div>'+
     '<table class="fkl-info"><tbody>'+
@@ -11502,7 +11506,7 @@ function fklDocNomorText(nama, codes){
 }
 /* Blok judul seragam: JUDUL → garis bawah → Nomor dokumen → jarak */
 function fklDocTitleBlock(titleHtml, nama, codes){
-  return '<h1 class="fkl-doc-title">'+titleHtml+'</h1>'+
+  return '<h1 class="fkl-doc-title has-rule">'+titleHtml+'</h1>'+
     '<div class="fkl-doc-docno">'+fkEsc(fklDocNomorText(nama, codes))+'</div>'+
     '<div class="fkl-doc-titlegap"></div>';
 }
@@ -12526,7 +12530,8 @@ function pnwBuildDocHtml(sk){
       '</div>'+
     '</div>'+
     '<div class="fkl-doc-band"></div>'+
-    fklDocTitleBlock(judul, info.nama, ['BAPP','BAPP.PL','T_BAPP','T_BAPP_S1','HPS'])+
+    '<h1 class="fkl-doc-title">'+judul+'</h1>'+
+    '<div class="fkl-doc-titlegap"></div>'+
 
     '<div class="fkl-sec-h"><span class="rn">A</span>Uraian Pekerjaan</div>'+
     '<table class="fkl-info"><tbody>'+
@@ -13548,7 +13553,8 @@ function rhoBuildDocHtml(){
       '</div>'+
     '</div>'+
     '<div class="fkl-doc-band"></div>'+
-    fklDocTitleBlock('REFERENSI HARGA ONLINE', info.nama, ['HPS','T_HPS'])+
+    '<h1 class="fkl-doc-title">REFERENSI HARGA ONLINE</h1>'+
+    '<div class="fkl-doc-titlegap"></div>'+
     '<div class="fkl-sec-h"><span class="rn">A</span>Uraian Pekerjaan</div>'+
     '<table class="fkl-info"><tbody>'+
       infoRow('Nama Pekerjaan', info.nama)+
@@ -16227,7 +16233,8 @@ function anaBuildDocHargaSatuan(st){
       '</div>'+
     '</div>'+
     '<div class="fkl-doc-band"></div>'+
-    fklDocTitleBlock('HARGA SATUAN — PEKERJAAN KONSTRUKSI', info.nama, ['HPS','T_HPS'])+
+    '<h1 class="fkl-doc-title">HARGA SATUAN — PEKERJAAN KONSTRUKSI</h1>'+
+    '<div class="fkl-doc-titlegap"></div>'+
     '<div class="fkl-sec-h"><span class="rn">A</span>Data Pekerjaan</div>'+
     '<table class="fkl-info"><tbody>'+
       infoRow('Nama Pekerjaan', info.nama)+
@@ -16282,7 +16289,8 @@ function anaBuildDocAhsp(st){
       '</div>'+
     '</div>'+
     '<div class="fkl-doc-band"></div>'+
-    fklDocTitleBlock('ANALISA HARGA SATUAN PEKERJAAN', info.nama, ['HPS','T_HPS'])+
+    '<h1 class="fkl-doc-title">ANALISA HARGA SATUAN PEKERJAAN</h1>'+
+    '<div class="fkl-doc-titlegap"></div>'+
     '<div class="ana-ahsp-doc-info">'+fkEsc(info.nama||'-')+' • '+fkEsc(info.lokasi||'-')+'</div>'+
     layersHtml+
   '</div>';
@@ -16360,7 +16368,8 @@ function anaBuildDocHtmlUmum(st){
       '</div>'+
     '</div>'+
     '<div class="fkl-doc-band"></div>'+
-    fklDocTitleBlock('ANALISA HARGA SATUAN', info.nama, ['HPS','T_HPS'])+
+    '<h1 class="fkl-doc-title">ANALISA HARGA SATUAN</h1>'+
+    '<div class="fkl-doc-titlegap"></div>'+
     '<div class="fkl-sec-h"><span class="rn">A</span>Data Pekerjaan</div>'+
     '<table class="fkl-info"><tbody>'+
       infoRow('Nama Pekerjaan', info.nama)+
