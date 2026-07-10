@@ -12217,7 +12217,11 @@ function pnwExtraDocCss(){
   '.pnw-penyedia-block{margin:6px 0 14px}'+
   '.pnw-penyedia-name{font-family:"Plus Jakarta Sans",sans-serif;font-weight:800;font-size:12px;letter-spacing:.4px;color:#0b3d42;background:#e3f2f3;border:1px solid #bfe0e2;border-radius:6px;padding:6px 10px;margin-bottom:6px;text-transform:uppercase}'+
   '.fkl-chk td.kt,.fkl-chk th.kt{width:22%;text-align:left}'+
-  '.fkl-chk tr.cat td{background:#f1f6f7;font-weight:700;color:#0b3d42;font-size:10.5px;text-transform:uppercase;letter-spacing:.3px}'+
+  /* Baris judul kategori persyaratan — dibedakan jelas dari isi persyaratan */
+  '.fkl-chk tr.cat td{background:linear-gradient(90deg,#dff0f1,#eef7f8);color:#0b3d42;font-weight:800;font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;padding:7px 12px 7px 14px;border-top:1.5px solid #0b6a73;border-bottom:1px solid #9fc7cb;border-right:none;position:relative;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  '.fkl-chk tr.cat td::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:#0E7C86}'+
+  '.fkl-chk tr.cat:first-child td{border-top:none}'+
+  '.fkl-chk tr.cat + tr td{border-top:none}'+
   '.ttd.ttd-single{width:auto}'+
   '.ttd.ttd-single td{width:280px;text-align:center;vertical-align:top;padding-top:4px}'+
   '.pnw-doc .fkl-chk thead th{text-align:center;white-space:normal;line-height:1.22;vertical-align:middle}'+
