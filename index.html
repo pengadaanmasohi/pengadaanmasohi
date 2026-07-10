@@ -2687,9 +2687,16 @@ table.hps-uraian textarea,table.hps-uraian input{width:100%;border:1px solid #cd
 table.hps-uraian textarea{resize:vertical;min-height:36px;line-height:1.45}
 table.hps-uraian td.c-kel input{min-width:96px}
 /* Judul? / Sub-Judul? — dropdown Ya/Tidak + kotak kecil (selebar 1 abjad) gaya penomoran */
-.js-judul-row{display:flex;align-items:center;gap:6px}
-.js-judul-row>select:first-child{flex:1 1 auto;min-width:0}
-select.js-numsel{flex:0 0 auto;width:56px;min-width:56px;text-align:center;font-weight:800;letter-spacing:.5px;padding-left:6px;padding-right:6px}
+/* Judul? / Sub-Judul? — saat "Ya", dropdown gaya penomoran (selebar 1 abjad) muncul
+   DI DALAM lebar field itu sendiri: Ya/Tidak menyusut, kotak kecil menempati sisanya.
+   Lebar total field tidak berubah, jadi tidak ada field lain yang bergeser. */
+.js-judul-row{display:flex;align-items:center;gap:6px;width:100%}
+/* Spesifisitas dinaikkan agar tidak dikalahkan `.field select{width:100%}` /
+   `.ana-dp-rokinf .ana-tb-field select{width:100%}` */
+.field > .js-judul-row > select,
+.ana-tb-field > .js-judul-row > select{flex:1 1 auto;width:auto;min-width:0}
+.field > .js-judul-row > select.js-numsel,
+.ana-tb-field > .js-judul-row > select.js-numsel{flex:0 0 58px;width:58px;min-width:58px;text-align:center;font-weight:800;letter-spacing:.5px;padding-left:8px;padding-right:8px}
 table.hps-uraian td.c-sat input{text-align:center;min-width:64px}
 table.hps-uraian td.c-vol input{text-align:center;min-width:64px}
 table.hps-uraian td.c-money input{text-align:right;min-width:120px}
