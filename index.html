@@ -4032,7 +4032,7 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
               <th class="col-nama-freeze">Nama Pekerjaan</th>
               <th class="fkl-col-lokasi">Lokasi Pekerjaan</th>
               <th>Metode Pengadaan</th>
-              <th class="col-num" style="text-align:right">Perkiraan Nilai (Rp)</th>
+              <th class="col-num" style="text-align:right">Rencana Anggaran Biaya (Rp)</th>
               <th style="text-align:center;min-width:120px">Aksi</th>
             </tr>
           </thead>
@@ -11663,7 +11663,7 @@ const PNW_HARGA_LOCK = ['Surat Penawaran','Nilai RAB','Jangka Waktu Pelaksanaan'
 const PNW_INFO_FIELDS = [
   {key:'nama',          label:'Nama Pekerjaan',        type:'text', span:2},
   {key:'lokasi',        label:'Lokasi Pekerjaan',      type:'text', span:2},
-  {key:'nilai',         label:'Perkiraan Nilai Pekerjaan', type:'num'},
+  {key:'nilai',         label:'Rencana Anggaran Biaya', type:'num'},
   {key:'no_anggaran',   label:'No. Anggaran',          type:'text'},
   {key:'tgl_anggaran',  label:'Tgl. Anggaran',         type:'date'},
   {key:'jenis_anggaran',label:'Jenis Anggaran',        type:'select', options:PNW_JENIS_ANGGARAN},
@@ -12564,7 +12564,7 @@ function pnwBuildDocHtml(sk){
     '<table class="fkl-info"><tbody>'+
       infoRow('Nama Pekerjaan', info.nama)+
       infoRow('Lokasi Pekerjaan', info.lokasi)+
-      infoRow('Perkiraan Nilai', fmtNilai)+
+      infoRow('Rencana Anggaran Biaya', fmtNilai)+
       infoRow('No. Anggaran', info.no_anggaran)+
       infoRow('Tgl. Anggaran', info.tgl_anggaran?pnwDateLong(info.tgl_anggaran):'-')+
       infoRow('Jenis Anggaran', info.jenis_anggaran)+
@@ -12662,7 +12662,7 @@ function fkEscJs(s){ return String(s==null?'':s).replace(/\\/g,'\\\\').replace(/
 const RHO_INFO_FIELDS = [
   {key:'nama',          label:'Nama Pekerjaan',            type:'text', span:2},
   {key:'lokasi',        label:'Lokasi Pekerjaan',          type:'text', span:2},
-  {key:'nilai',         label:'Perkiraan Nilai Pekerjaan', type:'num'},
+  {key:'nilai',         label:'Rencana Anggaran Biaya', type:'num'},
   {key:'no_anggaran',   label:'No. Anggaran',              type:'text'},
   {key:'tgl_anggaran',  label:'Tgl. Anggaran',             type:'date'},
   {key:'jenis_anggaran',label:'Jenis Anggaran',            type:'select', options:PNW_JENIS_ANGGARAN},
@@ -13586,7 +13586,7 @@ function rhoBuildDocHtml(){
     '<table class="fkl-info"><tbody>'+
       infoRow('Nama Pekerjaan', info.nama)+
       infoRow('Lokasi Pekerjaan', info.lokasi)+
-      infoRow('Perkiraan Nilai', fmtNilai)+
+      infoRow('Rencana Anggaran Biaya', fmtNilai)+
       infoRow('No. Anggaran', info.no_anggaran)+
       infoRow('Tgl. Anggaran', info.tgl_anggaran?pnwDateLong(info.tgl_anggaran):'-')+
       infoRow('Jenis Anggaran', info.jenis_anggaran)+
@@ -13678,7 +13678,7 @@ function rhoPrint(){
 const DP_INFO_FIELDS = [
   {key:'nama',         label:'Nama Pekerjaan',            type:'text', span:2},
   {key:'lokasi',       label:'Lokasi Pekerjaan',          type:'text', span:2},
-  {key:'nilai',        label:'Perkiraan Nilai Pekerjaan', type:'num'},
+  {key:'nilai',        label:'Rencana Anggaran Biaya', type:'num'},
   {key:'no_anggaran',  label:'No. Anggaran',              type:'text'},
   {key:'tgl_anggaran', label:'Tgl. Anggaran',             type:'date'},
   {key:'jenis_anggaran',label:'Jenis Anggaran',           type:'select', options:['Operasi','Investasi']},
@@ -14024,7 +14024,7 @@ function hpsDateFull(s){
 const HPS_INFO_FIELDS = [
   {key:'nama',         label:'Nama Pekerjaan',            type:'text', span:2},
   {key:'lokasi',       label:'Lokasi Pekerjaan',          type:'text', span:2},
-  {key:'nilai',        label:'Perkiraan Nilai Pekerjaan', type:'num'},
+  {key:'nilai',        label:'Rencana Anggaran Biaya', type:'num'},
   {key:'no_anggaran',  label:'No. Anggaran',              type:'text'},
   {key:'tgl_anggaran', label:'Tgl. Anggaran',             type:'date'},
   {key:'metode',       label:'Metode Pengadaan',          type:'select', options:PNW_METODE},
@@ -14999,7 +14999,7 @@ function hpsBuildDocHtml(){
     '<table class="fkl-info"><tbody>'+
       infoRow('Nama Pekerjaan', info.nama)+
       infoRow('Lokasi Pekerjaan', info.lokasi)+
-      infoRow('Perkiraan Nilai Pekerjaan', fmtNilai)+
+      infoRow('Rencana Anggaran Biaya', fmtNilai)+
       infoRow('No. Anggaran', info.no_anggaran)+
       infoRow('Tgl. Anggaran', info.tgl_anggaran?pnwDateLong(info.tgl_anggaran):'-')+
       infoRow('Metode Pengadaan', info.metode)+
@@ -15011,9 +15011,10 @@ function hpsBuildDocHtml(){
 function hpsExtraDocCss(){
   return ''+
   'table.hps-doc-tbl{width:100%;border-collapse:collapse;table-layout:fixed;margin:2px 0 8px}'+
-  'table.hps-doc-tbl thead th{border-color:#0b6a73}'+
+  'table.hps-doc-tbl thead th{border-color:#0E7C86}'+
+  'table.hps-doc-tbl thead tr:last-child th{border-bottom:1px solid #0b6a73}'+
   'table.hps-doc-tbl th,table.hps-doc-tbl td{border:1px solid #7d979c;padding:3px 5px;font-size:8.7px;line-height:1.3;vertical-align:middle;word-wrap:break-word;overflow-wrap:anywhere}'+
-  'table.hps-doc-tbl thead th{background:#0E7C86;color:#fff;font-weight:800;text-align:center;letter-spacing:.2px;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  'table.hps-doc-tbl thead th{background:#0E7C86;color:#fff;font-weight:700;text-align:center;letter-spacing:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   'table.hps-doc-tbl thead th.ur{text-align:center}'+
   'table.hps-doc-tbl thead tr.numh td{background:#e7f2f3;color:#0b3d42;font-weight:700;text-align:center;font-style:italic;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   'table.hps-doc-tbl thead th.no{white-space:nowrap}'+
@@ -15116,7 +15117,7 @@ const ANA_REF_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
 const ANA_INFO_FIELDS = [
   {key:'nama',         label:'Nama Pekerjaan',            type:'text', span:2},
   {key:'lokasi',       label:'Lokasi Pekerjaan',          type:'text', span:2},
-  {key:'nilai',        label:'Perkiraan Nilai Pekerjaan', type:'num'},
+  {key:'nilai',        label:'Rencana Anggaran Biaya', type:'num'},
   {key:'no_anggaran',  label:'No. Anggaran',              type:'text'},
   {key:'tgl_anggaran', label:'Tgl. Anggaran',             type:'date'},
   {key:'metode',       label:'Metode Pengadaan',          type:'select', options:PNW_METODE}
@@ -16474,7 +16475,7 @@ function anaBuildDocHargaSatuan(st){
     '<table class="fkl-info"><tbody>'+
       infoRow('Nama Pekerjaan', info.nama)+
       infoRow('Lokasi Pekerjaan', info.lokasi)+
-      infoRow('Perkiraan Nilai Pekerjaan', fmtNilai)+
+      infoRow('Rencana Anggaran Biaya', fmtNilai)+
       infoRow('No. Anggaran', info.no_anggaran)+
       infoRow('Tgl. Anggaran', info.tgl_anggaran?pnwDateLong(info.tgl_anggaran):'-')+
       infoRow('Metode Pengadaan', info.metode)+
@@ -16628,7 +16629,7 @@ function anaBuildDocHtmlUmum(st){
     '<table class="fkl-info"><tbody>'+
       infoRow('Nama Pekerjaan', info.nama)+
       infoRow('Lokasi Pekerjaan', info.lokasi)+
-      infoRow('Perkiraan Nilai Pekerjaan', fmtNilai)+
+      infoRow('Rencana Anggaran Biaya', fmtNilai)+
       infoRow('No. Anggaran', info.no_anggaran)+
       infoRow('Tgl. Anggaran', info.tgl_anggaran?pnwDateLong(info.tgl_anggaran):'-')+
       infoRow('Metode Pengadaan', info.metode)+
@@ -16648,8 +16649,11 @@ function anaExtraDocCss(){
   'table.ana-doc-tbl th,table.ana-doc-tbl td{border:1px solid #dbe6e9;padding:4px 6px;font-size:8.2px;line-height:1.35;vertical-align:middle;word-wrap:break-word;overflow-wrap:break-word}'+
   'table.ana-doc-tbl thead th{white-space:normal;word-break:keep-all}'+
   'table.ana-doc-tbl{border:1px solid #0b6a73}'+
-  'table.ana-doc-tbl thead tr:last-child th{border-bottom:2px solid #0b6a73}'+
-  'table.ana-doc-tbl thead tr:first-child th[rowspan]{border-bottom:2px solid #0b6a73}'+
+  /* Header dibuat rata (flat): garis antar-sel disamakan dengan warna latarnya
+     agar tidak menimbulkan kesan bevel/timbul. Hanya batas bawah header yang tegas. */
+  'table.ana-doc-tbl thead th{border-color:#0E7C86}'+
+  'table.ana-doc-tbl thead tr:last-child th{border-bottom:1px solid #0b6a73}'+
+  'table.ana-doc-tbl thead tr:first-child th[rowspan]{border-bottom:1px solid #0b6a73}'+
   'table.ana-hasil-tbl th.mtd,table.ana-hasil-tbl td.mtd,table.ana-hasil-tbl th.rok,table.ana-hasil-tbl td.rok,table.ana-hasil-tbl th.inf,table.ana-hasil-tbl td.inf{white-space:nowrap}'+
   'table.ana-doc-tbl td.rok,table.ana-doc-tbl td.inf{text-align:center;font-weight:700;color:#0b3d42}'+
   /* Kolom Jumlah Harga: cukup memuat nominal miliaran & judul maksimal 2 baris, tidak melebar berlebihan */
@@ -16666,7 +16670,7 @@ function anaExtraDocCss(){
   'table.ana-hasil-tbl{break-inside:auto;page-break-inside:auto}'+
   'table.ana-hasil-tbl tr{break-inside:avoid;page-break-inside:avoid}'+
   'table.ana-hasil-tbl thead{display:table-header-group}'+
-  'table.ana-doc-tbl thead th{background:#0E7C86;color:#fff;font-weight:800;text-align:center;letter-spacing:.2px;border-color:#0b6a73;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  'table.ana-doc-tbl thead th{background:#0E7C86;color:#fff;font-weight:700;text-align:center;letter-spacing:0;border-color:#0E7C86;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   'table.ana-doc-tbl tbody tr:nth-child(even):not(.grp):not(.ana-ahsp-spacer) td{background:#f6fafb;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   'table.ana-doc-tbl td.no{text-align:center;font-weight:700}'+
   'table.ana-doc-tbl th.ur,table.ana-doc-tbl td.ur{width:100%}'+
@@ -16801,7 +16805,7 @@ function rekapTampilkan(){
       '<div class="form-flow" style="--cols:4">'+
         '<div class="field" style="grid-column:span 2"><label>Nama Pekerjaan</label><div class="rekap-static">'+fkEsc(dp.nama_pekerjaan||'—')+'</div></div>'+
         '<div class="field" style="grid-column:span 2"><label>Lokasi Pekerjaan</label><div class="rekap-static">'+fkEsc(dp.lokasi||'—')+'</div></div>'+
-        '<div class="field"><label>Perkiraan Nilai Pekerjaan</label><div class="rekap-static">'+hpsRp(dp.nilai)+'</div></div>'+
+        '<div class="field"><label>Rencana Anggaran Biaya</label><div class="rekap-static">'+hpsRp(dp.nilai)+'</div></div>'+
         '<div class="field"><label>No. Anggaran</label><div class="rekap-static">'+fkEsc(dp.no_anggaran||'—')+'</div></div>'+
         '<div class="field"><label>Tgl. Anggaran</label><div class="rekap-static">'+fkEsc(dp.tgl_anggaran?pnwDateLong(dp.tgl_anggaran):'—')+'</div></div>'+
         '<div class="field"><label>Metode Pengadaan</label><div class="rekap-static">'+fkEsc(dp.metode||'—')+'</div></div>'+
@@ -16958,7 +16962,7 @@ function hpscCoverIndex(dp, tglHps, nomor){
     hpscCard('work','PEKERJAAN', dp.nama_pekerjaan)+
     '<div class="hpsc-grid">'+
       mini('Lokasi Pekerjaan', fkEsc(dp.lokasi||'—'))+
-      mini('Perkiraan Nilai', hpscRpFull(dp.nilai), 'rp')+
+      mini('Rencana Anggaran Biaya', hpscRpFull(dp.nilai), 'rp')+
       mini('No. Anggaran', fkEsc(dp.no_anggaran||'—'))+
       mini('Tgl. Anggaran', fkEsc(dp.tgl_anggaran?pnwDateLong(dp.tgl_anggaran):'—'))+
       mini('No. HPS', fkEsc(nomor||'—'))+
@@ -17222,7 +17226,7 @@ function rekapStandaloneDocHtml(dp, hpsList, anaList){
       '<table class="fkl-info"><tbody>'+
         infoRow('Nama Pekerjaan', dp.nama_pekerjaan)+
         infoRow('Lokasi Pekerjaan', dp.lokasi)+
-        infoRow('Perkiraan Nilai', hpsRpDoc(dp.nilai))+
+        infoRow('Rencana Anggaran Biaya', hpsRpDoc(dp.nilai))+
         infoRow('No. Anggaran', dp.no_anggaran)+
         infoRow('Tgl. Anggaran', dp.tgl_anggaran?pnwDateLong(dp.tgl_anggaran):'-')+
         infoRow('Metode Pengadaan', dp.metode)+
