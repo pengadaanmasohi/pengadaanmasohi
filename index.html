@@ -14497,8 +14497,10 @@ function hpsAnalisaBarHtml(){
   const dipilih=(info.analisaId)?String(info.analisaNama||'').trim():'';
   const jenisTxt = dipilih ? (info.analisaJenis==='Konstruksi'?'Pekerjaan Konstruksi':'Pekerjaan Umum') : '';
   const sub = dipilih
-    ? ('Uraian Pekerjaan (Judul/Sub-Judul/Uraian/Sat/Vol) terisi otomatis &amp; terkunci dari analisa: <b style="color:var(--teal-dark)">'+fkEsc(dipilih)+'</b> — kategori <b>'+jenisTxt+'</b>'+(info.analisaJenis==='Konstruksi'?' (harga diisi manual)':' (harga ikut terkunci, sudah termasuk ROK)'))
-    : 'Opsional — ambil Uraian Pekerjaan (Kelompok/Uraian/Sat/Vol, & harga untuk kategori Pekerjaan Umum) otomatis dari data Analisa Harga tersimpan.';
+    ? (info.analisaJenis==='Konstruksi'
+        ? ('Tertaut ke analisa: <b style="color:var(--teal-dark)">'+fkEsc(dipilih)+'</b> — kategori <b>'+jenisTxt+'</b>. Jumlah Barang/Jasa &amp; Uraian Pekerjaan diisi manual (analisa berbasis AHSP).')
+        : ('Jumlah Barang/Jasa &amp; Uraian Pekerjaan (Judul/Sub-Judul/Uraian/Sat/Vol) terisi otomatis &amp; terkunci dari analisa: <b style="color:var(--teal-dark)">'+fkEsc(dipilih)+'</b> — kategori <b>'+jenisTxt+'</b> (harga ikut terkunci, sudah termasuk ROK)'))
+    : 'Opsional — untuk kategori <b>Pekerjaan Umum</b>, Jumlah Barang/Jasa, Uraian Pekerjaan &amp; harga terisi otomatis dari Analisa Harga tersimpan.';
   let btns='';
   btns+='<button type="button" class="btn btn-teal" style="padding:8px 14px;font-size:11.5px" onclick="hpsPilihAnalisa()">'+
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.8L7 14.3"/></svg>'+(dipilih?'Ganti Analisa':'Pilih Analisa')+'</button>';
@@ -14540,11 +14542,13 @@ function renderHpsAnaPickerList(){
 }
 /* Apakah kolom Kelompok/Uraian/Sat/Vol pada tabel Uraian Pekerjaan HPS sedang terkunci
    (otomatis terisi dari Analisa yang dipilih). Berlaku untuk SEMUA kategori (Umum & Konstruksi). */
-function hpsItemsLocked(){ return !!(hpsState.info && hpsState.info.analisaId); }
-/* Apakah Harga Sat. Material & Harga Sat. Jasa ikut terkunci (otomatis terisi dari hasil Analisa).
-   Untuk saat ini HANYA berlaku bila Analisa yang dipilih berkategori "Pekerjaan Umum".
-   Bila kategorinya "Pekerjaan Konstruksi", harga TIDAK ikut terkunci — tetap diisi manual. */
-function hpsHargaLocked(){ return hpsItemsLocked() && hpsState.info.analisaJenis==='Umum'; }
+/* Uraian Pekerjaan (Jumlah Barang/Jasa, Judul/Sub-Judul, Uraian, Sat, Vol) terisi
+   otomatis & terkunci HANYA bila Analisa yang dipilih berkategori "Pekerjaan Umum".
+   Untuk "Pekerjaan Konstruksi" strukturnya tidak diimpor — semua diisi manual,
+   karena analisanya berbasis AHSP (bukan daftar barang/jasa). */
+function hpsItemsLocked(){ return !!(hpsState.info && hpsState.info.analisaId && hpsState.info.analisaJenis==='Umum'); }
+/* Harga Sat. Barang & Jasa ikut terkunci pada kondisi yang sama (sudah termasuk ROK). */
+function hpsHargaLocked(){ return hpsItemsLocked(); }
 
 /* Ambil data pekerjaan dari analisa terpilih → isi & kunci kolom yang sama pada HPS,
    termasuk baris Uraian Pekerjaan (Kelompok/Uraian/Sat/Vol selalu ikut terkunci; Harga Sat.
@@ -14558,12 +14562,13 @@ function hpsAmbilAnalisa(id){
   st.info.analisaNama=rec.nama_pekerjaan||aInfo.nama||'';
   st.info.analisaJenis=(aSt.jenis==='Konstruksi')?'Konstruksi':'Umum';
   const hargaLocked=(st.info.analisaJenis==='Umum');
+  const pakaiStruktur=hargaLocked;   // Konstruksi: struktur tidak diimpor
   // Struktur Kelompok/Uraian/Sat berbeda sumbernya tergantung jenis Analisa:
   // Umum → sama di semua referensi (refs[0].items, termasuk Vol & hasil harga rata-rata/terendah + ROK);
   // Konstruksi → tabel Harga Satuan (konstruksi.items, tanpa Vol karena tidak dikumpulkan di sana).
-  const struct = (st.info.analisaJenis==='Konstruksi')
-    ? ((aSt.konstruksi&&Array.isArray(aSt.konstruksi.items))?aSt.konstruksi.items:[])
-    : ((aSt.refs&&aSt.refs[0]&&Array.isArray(aSt.refs[0].items))?aSt.refs[0].items:[]);
+  const struct = pakaiStruktur
+    ? ((aSt.refs&&aSt.refs[0]&&Array.isArray(aSt.refs[0].items))?aSt.refs[0].items:[])
+    : [];
   // Ikuti pengaturan Judul / Sub-Judul dari Analisa terpilih.
   // Analisa berkategori "Pekerjaan Konstruksi" tidak mengenal Judul/Sub-Judul.
   const _pakaiJudul = (st.info.analisaJenis!=='Konstruksi');
@@ -14571,7 +14576,7 @@ function hpsAmbilAnalisa(id){
   st.judulNum   = jsNumStyleOk(aSt.judulNum,'');
   st.subjudulOn = (_pakaiJudul && aSt.subjudulOn==='Ya')?'Ya':'Tidak';
   st.subjudulNum= jsNumStyleOk(aSt.subjudulNum,'');
-  if(struct.length){
+  if(pakaiStruktur && struct.length){
     st.items=struct.map((it,i)=>{
       const res=hargaLocked?anaResultForState(aSt,i):null;
       return {
@@ -15521,20 +15526,17 @@ function anaRokInflasiFieldsHtml(){
   const rokVal=(st.rok!==''&&st.rok!=null)?String(st.rok):'';
   const infNilai=(st.inflasiNilai!==''&&st.inflasiNilai!=null)?String(st.inflasiNilai):'';
   const rokMax=(st.jenis==='Konstruksi')?15:10;
-  return '<div class="ana-tb-field js-judul-field"><label id="ana-rok-label">ROK? (maks '+rokMax+'%)</label>'+
+  return '<div class="field js-judul-field"><label id="ana-rok-label">ROK? (maks '+rokMax+'%)</label>'+
       '<div class="js-judul-row">'+jsYaTidakHtml('ana-rokon',st.rokOn,'anaOnRokOn')+
         (rokOn?('<input class="js-numbox js-num2" id="ana-rok" type="text" inputmode="decimal" maxlength="5" placeholder="0" title="Maksimal '+rokMax+'% ('+(st.jenis==='Konstruksi'?'Pekerjaan Konstruksi':'Pekerjaan Umum')+')" value="'+fkEsc(rokVal)+'" oninput="anaOnRok(this)">'):'')+
       '</div></div>'+
-    '<div class="ana-tb-field js-judul-field"><label>Inflasi?</label>'+
+    '<div class="field js-judul-field"><label>Inflasi?</label>'+
       '<div class="js-judul-row">'+jsYaTidakHtml('ana-inflasi',st.inflasi,'anaOnInflasi')+
         (infOn?('<input class="js-numbox js-num4" id="ana-inflasi-nilai" type="text" inputmode="decimal" maxlength="6" placeholder="0" title="Nilai inflasi (%)" value="'+fkEsc(infNilai)+'" oninput="anaOnInflasiNilai(this)">'):'')+
       '</div></div>';
 }
 /* Isi ulang baris ROK/Inflasi (+Judul/Sub-Judul bila Pekerjaan Umum) */
-function anaRefreshRokInfBox(){
-  const box=document.getElementById('ana-dp-rokinf'); if(!box) return;
-  box.innerHTML=anaRokInflasiFieldsHtml()+((anaState.jenis!=='Konstruksi')?anaJudulFieldsHtml():'');
-}
+function anaRefreshRokInfBox(){ renderAnalisaForm(); }
 /* ROK? = Tidak → nilai ROK dikosongkan & tidak ikut dihitung */
 function anaOnRokOn(el){
   const on=(el.value==='Ya');
@@ -15548,7 +15550,7 @@ function anaOnRokOn(el){
 function anaJudulFieldsHtml(){
   const st=anaState;
   const f=(lbl,idOn,vOn,hOn,idN,vN,hN)=>
-    '<div class="ana-tb-field js-judul-field"><label>'+lbl+'</label>'+
+    '<div class="field js-judul-field"><label>'+lbl+'</label>'+
       '<div class="js-judul-row">'+jsYaTidakHtml(idOn,vOn,hOn)+(jsOn(vOn)?jsNumSelectHtml(idN,vN,hN):'')+'</div></div>';
   return f('Judul?','ana-judulon',st.judulOn,'anaOnJudulOn','ana-judulnum',st.judulNum,'anaOnJudulNum')+
          f('Sub-Judul?','ana-subon',st.subjudulOn,'anaOnSubOn','ana-subnum',st.subjudulNum,'anaOnSubNum');
@@ -16031,12 +16033,17 @@ function renderAnalisaForm(){
     '<div class="form-card"><div class="form-section-title" style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:10px">'+
       '<span style="display:flex;align-items:center;gap:8px">'+KR_SECTION_ICON+'Data Pekerjaan</span>'+anaTopControlsHtml()+'</div>'+
     (showBody ? (
+      // Semua field Data Pekerjaan berada dalam SATU grid 4 kolom — termasuk
+      // Jumlah Referensi, ROK?, Inflasi?, dan (khusus Umum) Judul?/Sub-Judul? —
+      // sehingga tiap baris selalu terisi 4 field pada kedua jenis pekerjaan.
       '<div class="form-flow'+rev1+'" style="--cols:4">'+
         ANA_DP_FIELDS.map(anaInfoInputHtml).join('')+
         ANA_OWN_FIELDS.map(anaInfoInputHtml).join('')+
-        (!isKon ? (anaCountItemFieldHtml()+anaCountRefFieldHtml()) : anaCountRefFieldHtml())+
-      '</div>'+
-      ('<div class="ana-dp-rokinf" id="ana-dp-rokinf">'+anaRokInflasiFieldsHtml()+(!isKon?anaJudulFieldsHtml():'')+'</div>')
+        (!isKon ? anaCountItemFieldHtml() : '')+
+        anaCountRefFieldHtml()+
+        anaRokInflasiFieldsHtml()+
+        (!isKon ? anaJudulFieldsHtml() : '')+
+      '</div>'
     ) : '')+
     '</div>';
 
