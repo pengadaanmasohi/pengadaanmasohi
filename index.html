@@ -2227,10 +2227,12 @@ tr.hl-weekend td{background:#f5f8fb}
 .fkl-info td.v{font-weight:700;color:#1a2b31}
 /* Tabel kelengkapan dokumen */
 .fkl-chk{width:100%;border-collapse:separate;border-spacing:0;margin-top:2px;border:1.5px solid #0b6a73;border-radius:9px;overflow:hidden}
-.fkl-chk thead th{background:linear-gradient(180deg,#0E7C86,#0b6a73);color:#fff;font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;padding:9px 12px;text-align:left}
+.fkl-chk thead th{background:linear-gradient(180deg,#0E7C86,#0b6a73);color:#fff;font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;padding:9px 12px;text-align:center;border-right:1px solid rgba(255,255,255,.3)}
+.fkl-chk thead th:last-child{border-right:none}
 .fkl-chk th.no,.fkl-chk td.no{width:44px;text-align:center}
 .fkl-chk th.ck,.fkl-chk td.ck{width:190px;text-align:center}.fkl-chk th.ck{padding-top:7px;padding-bottom:7px}.fkl-chk th.ck .ck-main{display:block;line-height:1.2;white-space:nowrap}
-.fkl-chk tbody td{padding:8px 12px;font-size:12.5px;border-top:1px solid #e7eef0;color:#22343a}
+.fkl-chk tbody td{padding:8px 12px;font-size:12.5px;border-top:1px solid #bcd6d9;border-right:1px solid #bcd6d9;color:#22343a}
+.fkl-chk tbody td:last-child{border-right:none}
 .fkl-chk tbody tr:nth-child(even) td{background:#f6fafb}
 .fkl-chk td.nm{font-weight:600}
 .fkl-chk td.empty{text-align:center;color:#9aabb0;font-style:italic;padding:14px}
@@ -2254,11 +2256,11 @@ tr.hl-weekend td{background:#f5f8fb}
 .fkl-doc-foot{margin-top:26px}
 .fkl-doc-foot .ttd-title{font-weight:800;font-size:12px;color:#0d2a30;text-transform:uppercase;letter-spacing:.3px;text-align:right}
 .fkl-doc-foot .ttd-date{text-align:right;font-size:12px;color:#22343a;margin:4px 0 8px;font-weight:600}
-.fkl-doc-foot .ttd{width:70%;margin-left:auto;border-collapse:collapse}
-.fkl-doc-foot .ttd td{width:50%;text-align:center;vertical-align:top;padding:0 8px}
+.fkl-doc-foot .ttd{width:88%;margin-left:auto;border-collapse:collapse}
+.fkl-doc-foot .ttd td{width:50%;text-align:center;vertical-align:top;padding:0 26px}
 .fkl-doc-foot .ttd .role{font-size:12px;color:#22343a;font-weight:600}
 .fkl-doc-foot .ttd .gap{height:58px}
-.fkl-doc-foot .ttd .nm{font-weight:800;font-size:12.5px;color:#0d2a30;padding-top:5px;display:inline-block;min-width:150px}
+.fkl-doc-foot .ttd .nm{font-weight:800;font-size:12.5px;color:#0d2a30;padding-top:5px;display:inline-block;min-width:150px;text-transform:uppercase}
 .fkl-doc-foot .ttd .sub{font-size:10px;color:#7c8a8f;margin-top:2px}
 /* ===== Print ===== (pencetakan dokumen kelengkapan memakai iframe terisolasi, lihat fklPrint) */
 
@@ -2461,10 +2463,12 @@ tbody tr:hover{background:#eef5f6 !important}
 .fkl-info td.v{font-weight:700;color:#1a2b31}
 /* Tabel kelengkapan dokumen */
 .fkl-chk{width:100%;border-collapse:separate;border-spacing:0;margin-top:2px;border:1.5px solid #0b6a73;border-radius:9px;overflow:hidden}
-.fkl-chk thead th{background:linear-gradient(180deg,#0E7C86,#0b6a73);color:#fff;font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;padding:9px 12px;text-align:left}
+.fkl-chk thead th{background:linear-gradient(180deg,#0E7C86,#0b6a73);color:#fff;font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;padding:9px 12px;text-align:center;border-right:1px solid rgba(255,255,255,.3)}
+.fkl-chk thead th:last-child{border-right:none}
 .fkl-chk th.no,.fkl-chk td.no{width:44px;text-align:center}
 .fkl-chk th.ck,.fkl-chk td.ck{width:190px;text-align:center}.fkl-chk th.ck{padding-top:7px;padding-bottom:7px}.fkl-chk th.ck .ck-main{display:block;line-height:1.2;white-space:nowrap}
-.fkl-chk tbody td{padding:8px 12px;font-size:12.5px;border-top:1px solid #e7eef0;color:#22343a}
+.fkl-chk tbody td{padding:8px 12px;font-size:12.5px;border-top:1px solid #bcd6d9;border-right:1px solid #bcd6d9;color:#22343a}
+.fkl-chk tbody td:last-child{border-right:none}
 .fkl-chk tbody tr:nth-child(even) td{background:#f6fafb}
 .fkl-chk td.nm{font-weight:600}
 .fkl-chk td.empty{text-align:center;color:#9aabb0;font-style:italic;padding:14px}
@@ -2472,7 +2476,13 @@ tbody tr:hover{background:#eef5f6 !important}
 .fkl-chk .pill.ada{background:#e0f5ea;color:#127a43;border:1px solid #a8dcc0}
 .fkl-chk .pill.no{background:#fce4e4;color:#b02626;border:1px solid #edbcbc}
 .fkl-chk .pill.nn{background:#eef2f4;color:#98a6ab;border:1px solid #dde5e8}
-.fkl-chk td.kt,.fkl-chk th.kt{width:34%;text-align:left}
+.fkl-chk td.kt,.fkl-chk th.kt{width:34%}
+.fkl-chk td.kt{text-align:left}
+.fkl-chk td.no,.fkl-chk td.ck{text-align:center}
+/* Tabel B: kolom Kelengkapan digeser ke kiri, kolom Keterangan di kanan */
+.fkl-chk.fkl-chk-b th.ck,.fkl-chk.fkl-chk-b td.ck{width:168px}
+.fkl-chk.fkl-chk-b th.kt,.fkl-chk.fkl-chk-b td.kt{width:24%}
+.fkl-chk thead th,.fkl-chk tbody td{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .fkl-chk.pnw-hasil{margin-top:2px}
 .fkl-chk.pnw-hasil th.ck,.fkl-chk.pnw-hasil td.ck{width:150px}
 .fkl-chk.pnw-hasil td.kt{white-space:normal}
@@ -2492,18 +2502,18 @@ tbody tr:hover{background:#eef5f6 !important}
 .fkl-doc-foot{margin-top:26px}
 .fkl-doc-foot .ttd-title{font-weight:800;font-size:12px;color:#0d2a30;text-transform:uppercase;letter-spacing:.3px;text-align:right}
 .fkl-doc-foot .ttd-date{text-align:right;font-size:12px;color:#22343a;margin:4px 0 8px;font-weight:600}
-.fkl-doc-foot .ttd{width:70%;margin-left:auto;border-collapse:collapse}
-.fkl-doc-foot .ttd td{width:50%;text-align:center;vertical-align:top;padding:0 8px}
+.fkl-doc-foot .ttd{width:88%;margin-left:auto;border-collapse:collapse}
+.fkl-doc-foot .ttd td{width:50%;text-align:center;vertical-align:top;padding:0 26px}
 .fkl-doc-foot .ttd .role{font-size:12px;color:#22343a;font-weight:600}
 .fkl-doc-foot .ttd .gap{height:58px}
-.fkl-doc-foot .ttd .nm{font-weight:800;font-size:12.5px;color:#0d2a30;padding-top:5px;display:inline-block;min-width:150px}
+.fkl-doc-foot .ttd .nm{font-weight:800;font-size:12.5px;color:#0d2a30;padding-top:5px;display:inline-block;min-width:150px;text-transform:uppercase}
 .fkl-doc-foot .ttd .sub{font-size:10px;color:#7c8a8f;margin-top:2px}
 /* ===== Print ===== */
 
 /* --- Layout halaman A4 untuk cetak & pratinjau paginasi --- */
 html,body{background:#e9eef1}
 *{box-sizing:border-box}
-.fkl-print-page{background:#fff;width:210mm;min-height:297mm;margin:0 auto 16px;padding:16mm 15mm;box-shadow:0 10px 30px rgba(20,50,60,.18);position:relative}
+.fkl-print-page{background:#fff;width:210mm;min-height:297mm;margin:0 auto 16px;padding:12mm 15mm;box-shadow:0 10px 30px rgba(20,50,60,.18);position:relative}
 .fkl-print-page .fkl-doc{padding:0;overflow:visible}
 .fkl-chk{break-inside:auto;page-break-inside:auto}
 .fkl-chk tr{break-inside:avoid;page-break-inside:avoid}
@@ -2517,6 +2527,7 @@ html,body{background:#e9eef1}
      Margin @page berlaku di SETIAP halaman fisik (termasuk halaman lanjutan saat konten
      terpotong), jadi bagian header & footer dokumen tidak pernah menempel ke tepi kertas. */
   .fkl-print-page{width:auto;min-height:0;margin:0;padding:0 15mm;box-shadow:none;page:fklbody}
+  body > .fkl-doc{padding:0 15mm;page:fklbody}
   @page{size:A4;margin:0}
   @page fklbody{size:A4;margin:12mm 0}
 }
@@ -8979,7 +8990,7 @@ function jpStandaloneDocHtml(){
     '<meta name="viewport" content="width=device-width, initial-scale=1">'+
     '<title>&#8203;</title>'+
     '<style>'+css+'</style></head><body>'+
-    '<div class="fkl-doc">'+
+    '<div class="fkl-print-page"><div class="fkl-doc">'+
       '<div class="fkl-doc-head">'+
         '<div class="fkl-doc-logo"><img src="'+FKL_LOGO_SRC+'" alt="Logo PLN"></div>'+
         '<div class="fkl-doc-org">'+
@@ -8993,7 +9004,7 @@ function jpStandaloneDocHtml(){
       '<div class="fkl-doc-titlegap"></div>'+
       (st.namaPekerjaan? '<div class="jp-doc-nama">'+fkEsc(st.namaPekerjaan)+'</div>' : '')+
       '<div class="jp-doc-wrap"><table class="jp-doc-tbl"><thead><tr><th class="no">No</th><th class="nm">Tahapan Pengadaan</th><th class="awal">Awal</th><th class="akhir">Akhir</th><th class="durasi">Durasi</th><th class="ket">Keterangan</th></tr></thead><tbody>'+body+'</tbody></table></div>'+
-    '</div>'+
+    '</div></div>'+
     '</body></html>';
 }
 function jpPrint(){
@@ -11090,7 +11101,8 @@ function fklBuildDocHtml(){
     const cell = val===true
       ? '<span class="pill ada">Ada</span>'
       : (val===false ? '<span class="pill no">Tidak Ada</span>' : '<span class="pill nn">–</span>');
-    return '<tr><td class="no">'+(i+1)+'</td><td class="nm">'+fkEsc(nama)+'</td><td class="ck">'+cell+'</td></tr>';
+    const ketDok = (st.ket && st.ket[nama]) ? String(st.ket[nama]) : '';
+    return '<tr><td class="no">'+(i+1)+'</td><td class="nm">'+fkEsc(nama)+'</td><td class="ck">'+cell+'</td><td class="kt">'+fkEsc(ketDok)+'</td></tr>';
   }).join('');
 
   const hasilLengkap = c.lengkap;
@@ -11106,7 +11118,7 @@ function fklBuildDocHtml(){
     '<th class="no">No</th><th class="nm">Nama Pekerjaan</th>'+
     '<th class="ck">Hasil Pemeriksaan</th><th class="kt">Keterangan</th>'+
     '</tr></thead><tbody>'+
-    '<tr><td class="no">1</td><td class="nm">'+fkEsc(hasilNama.toUpperCase())+'</td><td class="ck">'+hasilStatus+'</td><td class="kt">'+fkEsc(hasilKet)+'</td></tr>'+
+    '<tr><td class="no">1</td><td class="nm">'+fkEsc(hasilNama)+'</td><td class="ck">'+hasilStatus+'</td><td class="kt">'+fkEsc(hasilKet)+'</td></tr>'+
     '</tbody></table>';
 
   return ''+
@@ -11131,14 +11143,14 @@ function fklBuildDocHtml(){
       infoRow('Lokasi Pekerjaan', info.lokasi)+
       infoRow('Nilai Pekerjaan', fmtNilai)+
       infoRow('No. Anggaran', info.no_anggaran)+
-      infoRow('Tgl. Anggaran', info.tgl_anggaran?fklDateLong(info.tgl_anggaran):'-')+
+      infoRow('Tgl. Anggaran', info.tgl_anggaran?pnwDateLong(info.tgl_anggaran):'-')+
       infoRow('Jenis Anggaran', info.jenis_anggaran)+
       infoRow('Metode Pengadaan', info.metode)+
     '</tbody></table>'+
 
     '<div class="fkl-sec-h"><span class="rn">B</span>Kelengkapan Dokumen</div>'+
-    '<table class="fkl-chk"><thead><tr><th class="no">No</th><th class="nm">Jenis Dokumen</th><th class="ck"><span class="ck-main">Kelengkapan Dokumen</span></th></tr></thead><tbody>'+
-      (chkRows||'<tr><td colspan="3" class="empty">Data tidak tersedia</td></tr>')+
+    '<table class="fkl-chk fkl-chk-b"><thead><tr><th class="no">No</th><th class="nm">Jenis Dokumen</th><th class="ck"><span class="ck-main">Kelengkapan Dokumen</span></th><th class="kt">Keterangan</th></tr></thead><tbody>'+
+      (chkRows||'<tr><td colspan="4" class="empty">Data tidak tersedia</td></tr>')+
     '</tbody></table>'+
 
     '<div class="fkl-sec-h"><span class="rn">C</span>Hasil Pemeriksaan</div>'+
@@ -16261,7 +16273,7 @@ function hpscModuleFrag(kind, rec){
     if(kind==='hps'){ const sv=hpsPreviewState; hpsPreviewState=hpsRecordToState(rec); const h=hpsBuildDocHtml(); hpsPreviewState=sv; return h; }
     if(kind==='ana'){ const sv=anaPreviewState; anaPreviewState=anaRecordToState(rec); const h=anaBuildDocHtml(); anaPreviewState=sv; return h; }
     if(kind==='rho'){ const sv=rhoPreviewState; rhoPreviewState=rhoRecordToState(rec); const h=rhoBuildDocHtml(); rhoPreviewState=sv; return h; }
-    if(kind==='jadwal'){ const sv=jpState; jpState=jpRecordToState(rec); const full=jpStandaloneDocHtml(); jpState=sv; const m=full.match(/<body>([\s\S]*)<\/body>/i); return m?m[1]:''; }
+    if(kind==='jadwal'){ const sv=jpState; jpState=jpRecordToState(rec); const full=jpStandaloneDocHtml(); jpState=sv; const m=full.match(/<body>([\s\S]*)<\/body>/i); let frag=m?m[1]:''; const mp=frag.match(/^\s*<div class="fkl-print-page">([\s\S]*)<\/div>\s*$/i); if(mp) frag=mp[1]; return frag; }
   }catch(e){ console.error('hpscModuleFrag',kind,e); return '<div class="hpsc-page"><div class="hpsc-body"><p style="padding:40px;color:#b02626">Gagal memuat dokumen '+kind+'.</p></div></div>'; }
   return '';
 }
