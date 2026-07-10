@@ -2936,23 +2936,12 @@ table.hps-uraian tbody tr:last-child td,table.ana-uraian tbody tr:last-child td,
               Kelengkapan Dokumen Pengadaan
             </button>
             <!-- Pembukaan Penawaran: submenu Input Data / Lihat Data -->
-            <div class="topnav-sub" data-sub="pembukaan" data-role="admin">
-              <button class="topnav-subtrigger" type="button" onclick="toggleFkSub(event,'pembukaan')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16a1 1 0 0 1 1 1v3H3V5a1 1 0 0 1 1-1Z"/><path d="M3 8v11a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V8"/><path d="M9 13h6"/></svg>
-                <span class="sub-label">Pembukaan Penawaran</span>
-                <svg class="caret2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
-              </button>
-              <div class="topnav-subdrop">
-                <button class="topnav-item" data-view="form-pembukaan" data-role="admin" onclick="openPnwInput()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                  Pemeriksaan Dokumen
-                </button>
-                <button class="topnav-item" data-view="pnw-view" data-role="admin" onclick="openPnwView()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                  Lihat Hasil Pemeriksaan
-                </button>
-              </div>
-            </div>
+            <!-- Pembukaan Penawaran: satu menu (tanpa submenu Pemeriksaan/Lihat Hasil).
+                 Pemeriksaan Dokumen diakses lewat tombol "Tambah Data" di halaman daftar. -->
+            <button class="topnav-item" data-view="pnw-view" data-role="admin" onclick="openPnwView()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16a1 1 0 0 1 1 1v3H3V5a1 1 0 0 1 1-1Z"/><path d="M3 8v11a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V8"/><path d="M9 13h6"/></svg>
+              Pembukaan Penawaran
+            </button>
             <!-- Harga Perkiraan Sendiri: submenu Perhitungan HPS (Hitung HPS / Lihat HPS) -->
             <div class="topnav-sub" data-sub="hps" data-role="admin">
               <button class="topnav-subtrigger" type="button" onclick="toggleFkSub(event,'hps')">
@@ -3878,6 +3867,10 @@ table.hps-uraian tbody tr:last-child td,table.ana-uraian tbody tr:last-child td,
           <input id="pnw-view-search" type="text" placeholder="Cari Nama Pekerjaan" oninput="renderPnwView()">
         </div>
       </div>
+      <button class="btn btn-teal head-add-btn" data-role="admin" onclick="openPnwInput()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        Tambah Data
+      </button>
     </div>
     <div class="panel">
       <div class="table-wrap">
@@ -5350,6 +5343,7 @@ function showView(name, loaderMsg, noLoader){
           if(l.dataset.view==='fk-view' && (name==='fk-view'||name==='fk-input')) on=true; // File Kontrak induk tetap aktif
           if(l.dataset.view==='dp-view' && (name==='dp-view'||name==='form-dp')) on=true; // Data Pekerjaan induk tetap aktif
           if(l.dataset.view==='fkl-view' && (name==='fkl-view'||name==='form-kelengkapan')) on=true; // Kelengkapan induk tetap aktif
+          if(l.dataset.view==='pnw-view' && (name==='pnw-view'||name==='form-pembukaan')) on=true; // Pembukaan Penawaran induk tetap aktif
           l.classList.toggle('active', on);
         });
         // tandai & buka grup yang memuat view aktif (akordeon tetap terbuka)
@@ -5358,6 +5352,7 @@ function showView(name, loaderMsg, noLoader){
           let has=[...grp.querySelectorAll('.topnav-item')].some(it=>it.dataset.view===name);
           if(name==='form-dp') has = has || [...grp.querySelectorAll('.topnav-item')].some(it=>it.dataset.view==='dp-view');
           if(name==='form-kelengkapan') has = has || [...grp.querySelectorAll('.topnav-item')].some(it=>it.dataset.view==='fkl-view');
+          if(name==='form-pembukaan') has = has || [...grp.querySelectorAll('.topnav-item')].some(it=>it.dataset.view==='pnw-view');
           // Grup Monitoring mencakup Input Pekerjaan (input/-pl/-tender) & Daftar Pekerjaan (list/-pl/-tender)
           if(grp.dataset.group==='monitor' && monitorAll.includes(name)) has=true;
           grp.classList.toggle('has-active', has);
@@ -11852,12 +11847,12 @@ function pnwPenyampaianNoteText(){
 }
 function pnwActionsHtml(o){
   o=o||{};
-  let left='<button class="btn btn-ghost" onclick="pnwBatal()">'+FKL_IC_X+'Batal</button>';
-  let right='';
+  // Batal (merah) berdampingan dengan tombol navigasi di pojok kanan
+  let right='<button class="btn btn-red" onclick="pnwBatal()">'+FKL_IC_X+'Batal</button>';
   if(o.back) right+='<button class="btn btn-light" onclick="pnwBack()">'+FKL_IC_BACK+(pnwStep===4?'Sebelumnya':'Kembali')+'</button>';
   if(o.save) right+='<button class="btn btn-green" onclick="pnwSimpan()">'+FKL_IC_SAVE+'Simpan</button>';
   else right+='<button class="btn btn-teal" onclick="pnwNext()">Selanjutnya'+FKL_IC_NEXT+'</button>';
-  return '<div class="fkl-actions"><div class="fkl-actions-left">'+left+'</div><div class="fkl-actions-right">'+right+'</div></div>';
+  return '<div class="fkl-actions"><div class="fkl-actions-right">'+right+'</div></div>';
 }
 
 /* ---------- Interaksi langkah 1 ---------- */
