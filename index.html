@@ -10926,7 +10926,7 @@ function pnPreviewResetMaxBtn(){
   const icon=document.getElementById('pn-preview-max-icon');
   if(icon) icon.innerHTML='<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>';  // maximize
 }
-function closePnPreview(){ const ov=document.getElementById('pn-preview-overlay'); if(ov) ov.classList.remove('show'); const modal=ov&&ov.querySelector('.pn-preview-modal'); if(modal) modal.classList.remove('is-max'); pnPreviewResetMaxBtn(); const b=document.getElementById('pn-preview-body'); if(b){ b.innerHTML=''; b.classList.remove('fkl-preview-body'); b.classList.remove('has-tabs'); } const fp=document.getElementById('fkl-preview-print'); if(fp) fp.remove(); const pp=document.getElementById('pnw-preview-print'); if(pp) pp.remove(); const rp=document.getElementById('rho-preview-print'); if(rp) rp.remove(); const hp=document.getElementById('hps-preview-print'); if(hp) hp.remove(); const cp=document.getElementById('hpsc-preview-print'); if(cp) cp.remove(); const ap=document.getElementById('ana-preview-print'); if(ap) ap.remove(); if(typeof fklPreviewState!=='undefined') fklPreviewState=null; if(typeof pnwPreviewState!=='undefined') pnwPreviewState=null; if(typeof rhoPreviewState!=='undefined') rhoPreviewState=null; if(typeof hpsPreviewState!=='undefined') hpsPreviewState=null; if(typeof anaPreviewState!=='undefined') anaPreviewState=null; pnCleanupPreview(); }
+function closePnPreview(){ const ov=document.getElementById('pn-preview-overlay'); if(ov) ov.classList.remove('show'); const modal=ov&&ov.querySelector('.pn-preview-modal'); if(modal) modal.classList.remove('is-max'); pnPreviewResetMaxBtn(); const b=document.getElementById('pn-preview-body'); if(b){ b.innerHTML=''; b.classList.remove('fkl-preview-body'); b.classList.remove('has-tabs'); } const fp=document.getElementById('fkl-preview-print'); if(fp) fp.remove(); const pp=document.getElementById('pnw-preview-print'); if(pp) pp.remove(); const rp=document.getElementById('rho-preview-print'); if(rp) rp.remove(); const hp=document.getElementById('hps-preview-print'); if(hp) hp.remove(); const cp=document.getElementById('hpsc-preview-print'); if(cp) cp.remove(); const ap=document.getElementById('ana-preview-print'); if(ap) ap.remove(); const sp=document.getElementById('spk-preview-print'); if(sp) sp.remove(); if(typeof fklPreviewState!=='undefined') fklPreviewState=null; if(typeof pnwPreviewState!=='undefined') pnwPreviewState=null; if(typeof rhoPreviewState!=='undefined') rhoPreviewState=null; if(typeof hpsPreviewState!=='undefined') hpsPreviewState=null; if(typeof anaPreviewState!=='undefined') anaPreviewState=null; pnCleanupPreview(); }
 
 /* ---- Upload / Download / Hapus lampiran (per masing-masing nomor dokumen) ---- */
 let pnUploadCtx=null;
@@ -17710,18 +17710,18 @@ const SPK_FIELDS_FLAT = SPK_FIELD_GROUPS.reduce((a,g)=>a.concat(g.fields),[]);
 
 /* ---------- Preamble (pembuka) — memakai placeholder ---------- */
 const SPK_PREAMBLE_TPL =
- '<p class="kl0">Pada hari ini <b>{{hari_ttd}}</b>, tanggal {{tgl_kontrak_terbilang}} ({{tgl_kontrak_num}}), kami yang bertanda tangan dibawah ini :</p>'+
- '<p class="kl1">I. PT PLN (PERSERO):</p>'+
- '<p class="kl0">{{p1_akta}} Dalam hal ini diwakili oleh <b>{{p1_wakil}}</b> selaku {{p1_jabatan}} berdasarkan {{p1_sk}}. Bertindak untuk dan atas nama {{p1_nama_singkat}} yang berkedudukan di {{p1_alamat}}, selanjutnya dalam Perjanjian ini disebut sebagai (&ldquo;PIHAK PERTAMA&rdquo;);</p>'+
- '<p class="kl1">II. {{p2_nama}}:</p>'+
- '<p class="kl0">{{p2_akta}} Dalam hal ini diwakili oleh <b>{{p2_wakil}}</b> selaku {{p2_jabatan}} berdasarkan {{p2_akta_jabatan}}. Bertindak untuk dan atas nama {{p2_nama_hormat}} yang berkedudukan di {{p2_alamat}}, selanjutnya dalam Perjanjian ini disebut sebagai (&ldquo;PIHAK KEDUA&rdquo;).</p>'+
- '<p class="kl0">Berdasarkan :</p>'+
- '<p class="kl2">1. Undangan kepada Penyedia Barang/Jasa melalui E-Procurement dengan paket pengadaan Nomor: {{dasar_undangan_no}} pada tanggal {{dasar_undangan_tgl}};</p>'+
- '<p class="kl2">2. Surat Penawaran Harga PIHAK KEDUA Nomor: {{dasar_penawaran_no}} tanggal {{dasar_penawaran_tgl_pjg}};</p>'+
- '<p class="kl2">3. Berita Acara Pembukaan Penawaran Nomor: {{dasar_bapp_no}} tanggal {{dasar_bapp_tgl_pjg}};</p>'+
- '<p class="kl2">4. Berita Acara Evaluasi Penawaran Nomor: {{dasar_bae_no}} tanggal {{dasar_bae_tgl_pjg}};</p>'+
- '<p class="kl2">5. Berita Acara Klarifikasi dan Negosiasi Nomor: {{dasar_bakn_no}} tanggal {{dasar_bakn_tgl_pjg}}.</p>'+
- '<p class="kl0">Maka dengan ini PIHAK PERTAMA menugaskan kepada PIHAK KEDUA untuk melaksanakan pekerjaan sebagaimana tersebut dalam ketentuan sebagai berikut :</p>';
+ '<p class="kl0">Pada hari ini <b>{{hari_ttd}}, tanggal {{tgl_kontrak_terbilang}} ({{tgl_kontrak_num}})</b>, kami yang bertanda tangan dibawah ini :</p>'+
+ '<div class="spk-party"><div class="spk-party-h"><span class="n">I.</span>PT PLN (PERSERO):</div>'+
+ '<p class="spk-party-d">{{p1_akta}} Dalam hal ini diwakili oleh <b>{{p1_wakil}}</b> selaku {{p1_jabatan}} berdasarkan {{p1_sk}}. Bertindak untuk dan atas nama {{p1_nama_singkat}} yang berkedudukan di {{p1_alamat}}, selanjutnya dalam Perjanjian ini disebut sebagai (<b>&ldquo;PIHAK PERTAMA&rdquo;</b>);</p></div>'+
+ '<div class="spk-party"><div class="spk-party-h"><span class="n">II.</span>{{p2_nama}}:</div>'+
+ '<p class="spk-party-d">{{p2_akta}} Dalam hal ini diwakili oleh <b>{{p2_wakil}}</b> selaku {{p2_jabatan}} berdasarkan {{p2_akta_jabatan}}. Bertindak untuk dan atas nama {{p2_nama_hormat}} yang berkedudukan di {{p2_alamat}}, selanjutnya dalam Perjanjian ini disebut sebagai (<b>&ldquo;PIHAK KEDUA&rdquo;</b>).</p></div>'+
+ '<p class="kl0 spk-berdasar"><b><u>Berdasarkan :</u></b></p>'+
+ '<p class="spk-dlist"><span class="n">1.</span>Undangan kepada Penyedia Barang/Jasa melalui E-Procurement dengan paket pengadaan Nomor: {{dasar_undangan_no}} pada tanggal {{dasar_undangan_tgl}};</p>'+
+ '<p class="spk-dlist"><span class="n">2.</span>Surat Penawaran Harga <b>PIHAK KEDUA</b> Nomor: {{dasar_penawaran_no}} tanggal {{dasar_penawaran_tgl_pjg}};</p>'+
+ '<p class="spk-dlist"><span class="n">3.</span>Berita Acara Pembukaan Penawaran Nomor: {{dasar_bapp_no}} tanggal {{dasar_bapp_tgl_pjg}};</p>'+
+ '<p class="spk-dlist"><span class="n">4.</span>Berita Acara Evaluasi Penawaran Nomor: {{dasar_bae_no}} tanggal {{dasar_bae_tgl_pjg}};</p>'+
+ '<p class="spk-dlist"><span class="n">5.</span>Berita Acara Klarifikasi dan Negosiasi Nomor: {{dasar_bakn_no}} tanggal {{dasar_bakn_tgl_pjg}}.</p>'+
+ '<p class="kl0">Maka dengan ini <b>PIHAK PERTAMA</b> menugaskan kepada <b>PIHAK KEDUA</b> untuk melaksanakan pekerjaan sebagaimana tersebut dalam ketentuan sebagai berikut :</p>';
 
 /* ---------- Util angka & tanggal ---------- */
 function spkNum(v){ const n=Number(String(v==null?'':v).replace(/[^0-9.-]/g,'')); return isFinite(n)?n:0; }
@@ -17762,6 +17762,14 @@ function spkMerge(tpl, ctx){
     if(Object.prototype.hasOwnProperty.call(ctx,k)) return (ctx[k]==null?'':String(ctx[k]));
     return m;
   });
+}
+/* Rapikan pola "Label / : / nilai" (tiga paragraf berurutan) menjadi satu baris
+   sejajar seperti tampilan Word — dipakai pada blok Nama/Lokasi Pekerjaan dsb. */
+function spkTidyKeyValue(html){
+  return String(html||'').replace(
+    /<p class="kl0">([^<:]{1,45})<\/p>\s*<p class="kl0">:<\/p>\s*<p class="kl0">([^<]*)<\/p>/g,
+    '<div class="spk-kv"><span class="k">$1</span><span class="s">:</span><span class="v">$2</span></div>'
+  );
 }
 
 /* ================= PENYIMPANAN (Supabase) ================= */
@@ -18061,13 +18069,15 @@ function spkPreviewCurrent(){
 /* ================= DOKUMEN KONTRAK (cover + daftar isi + isi) ================= */
 function spkDocCss(){
   return ''+
-  '@page{size:A4;margin:14mm 16mm}'+
+  /* Cover, Daftar Isi, & Kop dipertahankan seperti desain sebelumnya (navy).
+     Hanya ISI kontrak yang dirapikan mengikuti tampilan Word (Arial). */
+  '@page{size:A4;margin:16mm 16mm}'+
   '*{box-sizing:border-box}'+
   'body{font-family:"Times New Roman",Georgia,serif;color:#1c1c1c;margin:0;font-size:11.5px;line-height:1.5}'+
   '.spk-doc{}'+
-  '.spk-page{padding:0 0 6mm;page-break-after:always}'+
+  '.spk-page{page-break-after:always}'+
   '.spk-page:last-child{page-break-after:auto}'+
-  /* Cover */
+  /* Cover (seperti sebelumnya) */
   '.spk-cv{min-height:250mm;display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:16mm}'+
   '.spk-cv img{width:80px;margin-bottom:20px}'+
   '.spk-cv .t{font-size:23px;font-weight:800;color:#154A7C;letter-spacing:.05em}'+
@@ -18080,7 +18090,7 @@ function spkDocCss(){
   '.spk-cv td.v{font-weight:600;font-size:11.5px}'+
   '.spk-cv td.v.hi{color:#154A7C;font-weight:700}'+
   '.spk-cv tr:first-child td{border-top:1px solid #E2E7EB}'+
-  /* Header/footer isi */
+  /* Kop halaman isi (seperti sebelumnya) */
   '.spk-hd{display:flex;justify-content:space-between;align-items:center;padding-bottom:6px;border-bottom:2px solid #154A7C;margin-bottom:12px}'+
   '.spk-hd .l{display:flex;align-items:center;gap:9px}'+
   '.spk-hd img{width:34px}'+
@@ -18088,28 +18098,55 @@ function spkDocCss(){
   '.spk-hd .o span{display:block;font-size:8.6px;color:#6B7885}'+
   '.spk-hd .r{text-align:right;font-size:8.6px;color:#6B7885;line-height:1.5}'+
   '.spk-hd .r b{color:#222}'+
-  /* Daftar isi */
+  /* Daftar isi (seperti sebelumnya) */
   '.spk-toc h2{font-size:18px;font-weight:800;color:#154A7C;margin:0 0 4px}'+
   '.spk-toc .hr{height:2px;background:#154A7C;margin-bottom:10px}'+
   '.spk-toc .row{display:flex;align-items:baseline;gap:8px;padding:6px 2px;border-bottom:1px solid #EEF1F4}'+
-  '.spk-toc .nm{font-weight:600}.spk-toc .nm .no{color:#154A7C;font-weight:800;margin-right:6px}'+
+  '.spk-toc .nm{font-weight:600}.spk-toc .nm .no{color:#154A7C;font-weight:800;margin-right:6px;display:inline-block;min-width:22px}'+
   '.spk-toc .dot{flex:1;border-bottom:1.4px dotted #C7D0D8;transform:translateY(-3px)}'+
   '.spk-toc .pg{color:#6B7885;font-weight:700}'+
-  /* Isi */
+  /* Judul & nomor SPK di halaman isi (seperti sebelumnya, navy) */
   '.spk-title{text-align:center;font-weight:800;font-size:15px;color:#154A7C;margin:4px 0 2px;letter-spacing:.02em}'+
   '.spk-subno{text-align:center;font-size:11px;margin-bottom:12px;color:#333}'+
-  '.spk-cl{margin:0 0 10px}'+
-  '.spk-cl-h{font-weight:800;font-size:12px;color:#12303f;background:#eef3f7;border-left:4px solid #154A7C;padding:5px 9px;margin:14px 0 7px}'+
-  '.spk-cl p{margin:0 0 5px;text-align:justify}'+
+  /* ====== ISI KONTRAK — dirapikan mengikuti Word (Arial) ======
+     - Spasi baris & paragraf 1,15
+     - Rata kanan-kiri (justify)
+     - Judul klausul: penomoran + "tab", baris berikut menjorok mengikuti
+       teks sesudah nomor (hanging indent)
+     - Jarak dari akhir klausul ke judul klausul baru = 12 pt */
+  '.spk-clause{margin:0}'+
+  '.spk-clause,.spk-clause *,.spk-cl,.spk-cl *,.spk-cl-h,.spk-cl-h *{font-family:Arial,Helvetica,sans-serif}'+
+  '.spk-cl-h{font-weight:700;font-size:11pt;color:#000;line-height:1.15;text-transform:uppercase;text-align:left;margin:12pt 0 0;padding-left:1.9em;text-indent:-1.9em}'+
+  '.spk-cl-h .n{display:inline-block;width:1.9em;text-indent:0}'+
+  '.spk-cl{margin:0;font-size:11pt;color:#000;line-height:1.15}'+
+  /* Isi klausul menjorok sejajar dengan teks judul (di kanan nomor) */
+  '.spk-clause .spk-cl{padding-left:1.9em}'+
+  '.spk-cl p{margin:0 0 4pt;text-align:justify;line-height:1.15}'+
   '.spk-cl p.kl0{}'+
-  '.spk-cl p.kl1{padding-left:16px}'+
-  '.spk-cl p.kl2{padding-left:32px}'+
-  '.spk-info{border-collapse:collapse;margin:2px 0 8px}'+
-  '.spk-info td{padding:2px 6px;vertical-align:top;font-size:11.5px}'+
-  '.spk-sign{margin-top:26px;width:100%;border-collapse:collapse}'+
-  '.spk-sign td{width:50%;text-align:center;vertical-align:top;font-size:11.5px;padding:4px}'+
-  '.spk-sign .role{font-weight:700}.spk-sign .nm{font-weight:800;text-decoration:underline;margin-top:60px}'+
-  '.spk-sign .jab{color:#333}';
+  '.spk-cl p.kldesc{margin-left:1.9em}'+
+  '.spk-cl p.kl1{margin-left:2.3em;text-indent:-2.3em}'+
+  '.spk-cl p.kl2{margin-left:3.9em;text-indent:-1.6em}'+
+  /* Baris "Label : nilai" agar sejajar seperti Word */
+  '.spk-cl .spk-kv{display:flex;margin:0 0 4pt;line-height:1.15}'+
+  '.spk-cl .spk-kv .k{flex:0 0 34%;max-width:34%}'+
+  '.spk-cl .spk-kv .s{flex:0 0 auto;width:1.2em}'+
+  '.spk-cl .spk-kv .v{flex:1;text-align:justify}'+
+  /* Blok PIHAK pada pembuka: label (I./II.) menggantung, deskripsi sejajar di bawah label */
+  '.spk-cl .spk-party{margin:0 0 9pt}'+
+  '.spk-cl .spk-party-h{font-weight:700;line-height:1.15;padding-left:1.9em;text-indent:-1.9em;margin:0}'+
+  '.spk-cl .spk-party-h .n{display:inline-block;width:1.9em;text-indent:0}'+
+  '.spk-cl .spk-party-d{margin:0;padding-left:1.9em;text-align:justify;line-height:1.15}'+
+  /* "Berdasarkan :" rata margin kiri (sejajar "Pada hari ini"), jarak 12 pt dari blok pihak */
+  '.spk-cl p.spk-berdasar{margin-top:12pt;margin-left:0;padding-left:0}'+
+  /* Daftar "Berdasarkan": nomor tunggal (1. a. I.) dengan jarak tab ~0,7 cm,
+     baris sambungan sejajar teks di atasnya (mengikuti penggaris Word) */
+  '.spk-cl p.spk-dlist{margin:0 0 4pt;padding-left:0.7cm;text-indent:-0.7cm;text-align:justify;line-height:1.15}'+
+  '.spk-cl p.spk-dlist .n{display:inline-block;width:0.7cm;text-indent:0}'+
+  /* Blok tanda tangan akhir */
+  '.spk-sign{margin-top:30px;width:100%;border-collapse:collapse}'+
+  '.spk-sign td{width:50%;text-align:center;vertical-align:top;font-size:11pt;padding:4px}'+
+  '.spk-sign .role{font-weight:700}.spk-sign .nm{font-weight:700;text-decoration:underline;margin-top:70px}'+
+  '.spk-sign .jab{color:#000}';
 }
 function spkDocHtml(data, klausul){
   const ctx=spkBuildCtx(data||{});
@@ -18137,22 +18174,22 @@ function spkDocHtml(data, klausul){
         cvRow('Akhir Pekerjaan', ctx.akhir_pekerjaan_pjg)+
       '</table>'+
     '</div></section>';
-  // header untuk halaman isi
+  // Kop halaman isi (dipertahankan seperti desain sebelumnya)
   const hd=
     '<div class="spk-hd"><div class="l">'+(SPK_LOGO_SRC?'<img src="'+SPK_LOGO_SRC+'" alt="PLN">':'')+
       '<div class="o"><b>PT PLN (PERSERO)</b><span>Unit Pelaksana Pelayanan Pelanggan Masohi</span></div></div>'+
       '<div class="r"><b>SPK No. '+esc(data.nomor_kontrak||'')+'</b><br>'+esc(ctx.tanggal_kontrak_pjg||'')+'</div></div>';
-  // DAFTAR ISI
+  // DAFTAR ISI (dipertahankan seperti desain sebelumnya)
   const tocRows = (klausul||[]).map((k,i)=>
     '<div class="row"><span class="nm"><span class="no">'+(i+1)+'.</span>'+esc(k.judul||'')+'</span><span class="dot"></span><span class="pg"></span></div>'
   ).join('');
   const toc=
     '<section class="spk-page">'+hd+'<div class="spk-toc"><h2>DAFTAR ISI</h2><div class="hr"></div>'+tocRows+'</div></section>';
   // ISI: preamble + klausul + tanda tangan
-  const preamble = spkMerge(SPK_PREAMBLE_TPL, ctx);
+  const preamble = spkTidyKeyValue(spkMerge(SPK_PREAMBLE_TPL, ctx));
   const clausesHtml = (klausul||[]).map((k,i)=>
-    '<div class="spk-cl-h">'+(i+1)+'. '+esc(String(k.judul||'').toUpperCase())+'</div>'+
-    '<div class="spk-cl">'+spkMerge(k.isi||'', ctx)+'</div>'
+    '<div class="spk-clause"><div class="spk-cl-h"><span class="n">'+(i+1)+'.</span>'+esc(String(k.judul||'').toUpperCase())+'</div>'+
+    '<div class="spk-cl">'+spkTidyKeyValue(spkMerge(k.isi||'', ctx))+'</div></div>'
   ).join('');
   const sign=
     '<table class="spk-sign"><tr>'+
@@ -18170,31 +18207,40 @@ function spkDocHtml(data, klausul){
   return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><title>&#8203;</title><style>'+spkDocCss()+'</style></head><body><div class="spk-doc">'+cover+toc+isi+'</div></body></html>';
 }
 
-/* ---------- Pratinjau (modal iframe) & Cetak ---------- */
+/* ---------- Pratinjau & Cetak ----------
+   Memakai modal pratinjau bersama (pn-preview-overlay) yang sama persis dengan
+   Rekap HPS: header dengan tombol Perbesar + Cetak/PDF + tutup, isi berupa iframe. */
 let spkPreviewData=null, spkPreviewKlausul=null;
 function spkOpenPreview(data, klausul){
   spkPreviewData=data; spkPreviewKlausul=klausul;
-  let ov=document.getElementById('spk-preview-overlay');
-  if(!ov){
-    ov=document.createElement('div'); ov.id='spk-preview-overlay'; ov.className='spk-ov';
-    ov.innerHTML=
-      '<div class="spk-ov-modal">'+
-        '<div class="spk-ov-head"><span class="spk-ov-title">Pratinjau Surat Perintah Kerja</span>'+
-          '<div class="spk-ov-actions">'+
-            '<button class="btn btn-teal btn-sm" onclick="spkPrint()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg> Cetak / PDF</button>'+
-            '<button class="btn btn-ghost btn-sm" onclick="spkClosePreview()">Tutup</button>'+
-          '</div>'+
-        '</div>'+
-        '<div class="spk-ov-body"><iframe id="spk-preview-frame" title="Pratinjau SPK"></iframe></div>'+
-      '</div>';
-    document.body.appendChild(ov);
-    ov.addEventListener('click', e=>{ if(e.target.id==='spk-preview-overlay') spkClosePreview(); });
+  const html=spkDocHtml(data, klausul);
+  const ov=document.getElementById('pn-preview-overlay');
+  if(!ov){ spkPrint(); return; }   // fallback: langsung cetak bila modal tak ada
+  const _mdl=ov.querySelector('.pn-preview-modal'); if(_mdl) _mdl.classList.remove('is-max');
+  if(typeof pnPreviewResetMaxBtn==='function') pnPreviewResetMaxBtn();
+  const titleEl=document.getElementById('pn-preview-title');
+  if(titleEl) titleEl.textContent='Pratinjau — SPK: '+((data&&data.nomor_kontrak)||(data&&data.nama_pekerjaan)||'');
+  const body=document.getElementById('pn-preview-body');
+  if(body){
+    body.classList.add('fkl-preview-body');
+    body.innerHTML='<iframe id="fkl-preview-frame" title="Pratinjau SPK"></iframe>';
+    const ifr=document.getElementById('fkl-preview-frame');
+    const doc=ifr.contentWindow.document; doc.open(); doc.write(html); doc.close();
   }
-  const ifr=document.getElementById('spk-preview-frame');
-  const doc=ifr.contentWindow.document; doc.open(); doc.write(spkDocHtml(data, klausul)); doc.close();
+  // Sisipkan tombol Cetak/PDF khusus SPK ke header modal bersama (hapus tombol modul lain)
+  const actions=document.querySelector('#pn-preview-overlay .pn-preview-head-actions');
+  ['fkl-preview-print','pnw-preview-print','rho-preview-print','hps-preview-print','ana-preview-print','hpsc-preview-print','spk-preview-print'].forEach(bid=>{ const b=document.getElementById(bid); if(b) b.remove(); });
+  if(actions){
+    const btn=document.createElement('button');
+    btn.id='spk-preview-print'; btn.className='btn btn-teal';
+    btn.style.padding='8px 14px'; btn.style.fontSize='11px';
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>Cetak / PDF';
+    btn.onclick=function(){ spkPrint(); };
+    actions.insertBefore(btn, actions.firstChild);
+  }
   ov.classList.add('show');
 }
-function spkClosePreview(){ const ov=document.getElementById('spk-preview-overlay'); if(ov) ov.classList.remove('show'); }
+function spkClosePreview(){ if(typeof closePnPreview==='function') closePnPreview(); }
 function spkPrint(){
   const data=spkPreviewData||{}, klausul=spkPreviewKlausul||[];
   const old=document.getElementById('spk-print-frame'); if(old) old.remove();
