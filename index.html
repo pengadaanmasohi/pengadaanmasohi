@@ -18146,7 +18146,24 @@ function spkDocCss(){
   '.spk-sign{margin-top:30px;width:100%;border-collapse:collapse}'+
   '.spk-sign td{width:50%;text-align:center;vertical-align:top;font-size:11pt;padding:4px}'+
   '.spk-sign .role{font-weight:700}.spk-sign .nm{font-weight:700;text-decoration:underline;margin-top:70px}'+
-  '.spk-sign .jab{color:#000}';
+  '.spk-sign .jab{color:#000}'+
+  /* ===== Seragamkan SELURUH teks ISI kontrak = Arial 11pt =====
+     Mencakup preamble, semua klausul (judul & isi), daftar, blok pihak, baris
+     "Label : nilai", dan blok tanda tangan. Ketebalan/format (bold, garis bawah)
+     tetap dipertahankan; hanya jenis huruf & ukuran yang diseragamkan. */
+  '.spk-flow .spk-cl,.spk-flow .spk-cl *,.spk-flow .spk-clause,.spk-flow .spk-clause *,.spk-flow .spk-cl-h,.spk-flow .spk-cl-h *,.spk-flow .spk-sign,.spk-flow .spk-sign *{font-family:Arial,Helvetica,sans-serif;font-size:11pt}'+
+  /* ===== Tampilan PRATINJAU di layar (bukan cetak) =====
+     Menampilkan tiap bagian sebagai lembar A4 putih (210×297mm) di atas latar
+     abu-abu, dengan bayangan & margin dalam 2,54cm — meniru gaya pratinjau
+     Rekap HPS agar terlihat rapi seperti hasil cetak. Blok ini HANYA berlaku di
+     layar; saat mencetak, margin diatur oleh @page sehingga tidak berlipat. */
+  '@media screen{'+
+    'html,body{background:#54585c}'+
+    'body{margin:0;padding:24px 0}'+
+    '.spk-doc{margin:0 auto}'+
+    '.spk-page{width:210mm;min-height:297mm;background:#fff;margin:0 auto 22px;padding:2.54cm;box-shadow:0 8px 30px rgba(10,20,28,.34);overflow:hidden}'+
+    '.spk-page.spk-flow{height:auto;overflow:visible}'+
+  '}';
 }
 function spkDocHtml(data, klausul){
   const ctx=spkBuildCtx(data||{});
@@ -18197,7 +18214,7 @@ function spkDocHtml(data, klausul){
       '<td><div class="role">PIHAK KEDUA</div><div>'+esc(data.p2_nama_hormat||'')+'</div><div class="nm">'+esc(data.p2_wakil||'')+'</div><div class="jab">'+esc(data.p2_jabatan||'')+'</div></td>'+
     '</tr></table>';
   const isi=
-    '<section class="spk-page">'+hd+
+    '<section class="spk-page spk-flow">'+hd+
       '<div class="spk-title">SURAT PERINTAH KERJA</div>'+
       '<div class="spk-subno">'+esc(data.nomor_kontrak||'')+'</div>'+
       '<div class="spk-cl">'+preamble+'</div>'+
