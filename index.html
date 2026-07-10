@@ -14818,6 +14818,27 @@ function hpsBuildDocHtml(){
     sumRow('PPn 12%', s.ppnM, s.ppnJ, s.ppnT)+
     sumRow('Jumlah Total', s.totM, s.totJ, s.totT, 'grand');
   const terbilangRow='<tr class="terb"><td colspan="9"><b>Terbilang :</b> '+fkEsc(hpsTerbilangRupiah(s.totT))+'</td></tr>';
+  const pengguna=(info.pengguna&&String(info.pengguna).trim())?String(info.pengguna).trim():'(..........................)';
+  const pejabat=(info.pejabat&&String(info.pejabat).trim())?String(info.pejabat).trim().toUpperCase():'(..........................)';
+  const _tglDoc=hpsTglEfektif(info.nama, info.tgl_hps);
+  const tglFull=_tglDoc?hpsDateFull(_tglDoc):'..........................';
+  /* Blok tanda tangan menyatu sebagai baris terakhir tabel — tidak bisa terpisah ke
+     halaman sendiri, dan tidak ada celah untuk menyisipkan baris data di bawahnya. */
+  const ttdRow=
+    '<tr class="ttd-row"><td colspan="9">'+
+      '<table class="ttd"><tbody><tr>'+
+        '<td><div class="hps-topgap"></div>'+
+          '<div class="role">Disetujui oleh,</div>'+
+          '<div class="role2">Manager</div>'+
+          '<div class="gap"></div>'+
+          '<div class="nm">'+fkEsc(pengguna)+'</div></td>'+
+        '<td><div class="ttd-date">Masohi, '+fkEsc(tglFull)+'</div>'+
+          '<div class="role">Disusun oleh,</div>'+
+          '<div class="role2">Pejabat Pelaksana Pengadaan</div>'+
+          '<div class="gap"></div>'+
+          '<div class="nm nm-up">'+fkEsc(pejabat)+'</div></td>'+
+      '</tr></tbody></table>'+
+    '</td></tr>';
 
   const tbl=
     '<table class="hps-doc-tbl">'+
@@ -14841,13 +14862,9 @@ function hpsBuildDocHtml(){
           '<td>7 = 4 x 5</td><td>8 = 4 x 6</td><td>9 = 7 + 8</td>'+
         '</tr>'+
       '</thead>'+
-      '<tbody>'+bodyRows+sumRows+terbilangRow+'</tbody>'+
+      '<tbody>'+bodyRows+sumRows+terbilangRow+ttdRow+'</tbody>'+
     '</table>';
 
-  const pengguna=(info.pengguna&&String(info.pengguna).trim())?String(info.pengguna).trim():'(..........................)';
-  const pejabat=(info.pejabat&&String(info.pejabat).trim())?String(info.pejabat).trim().toUpperCase():'(..........................)';
-  const _tglDoc=hpsTglEfektif(info.nama, info.tgl_hps);
-  const tglFull=_tglDoc?hpsDateFull(_tglDoc):'..........................';
 
   return ''+
   '<div class="fkl-doc pnw-doc hps-doc">'+
@@ -14872,20 +14889,6 @@ function hpsBuildDocHtml(){
     '</tbody></table>'+
     '<div class="fkl-sec-h"><span class="rn">B</span>Uraian Pekerjaan &amp; Rincian Harga</div>'+
     tbl+
-    '<div class="fkl-doc-foot hps-foot">'+
-      '<table class="ttd"><tbody><tr>'+
-        '<td><div class="hps-topgap"></div>'+
-          '<div class="role">Disetujui oleh,</div>'+
-          '<div class="role2">Manager</div>'+
-          '<div class="gap"></div>'+
-          '<div class="nm">'+fkEsc(pengguna)+'</div></td>'+
-        '<td><div class="ttd-date">Masohi, '+fkEsc(tglFull)+'</div>'+
-          '<div class="role">Disusun oleh,</div>'+
-          '<div class="role2">Pejabat Pelaksana Pengadaan</div>'+
-          '<div class="gap"></div>'+
-          '<div class="nm nm-up">'+fkEsc(pejabat)+'</div></td>'+
-      '</tr></tbody></table>'+
-    '</div>'+
   '</div>';
 }
 function hpsExtraDocCss(){
@@ -14912,16 +14915,21 @@ function hpsExtraDocCss(){
   'table.hps-doc-tbl tr.terb td{text-align:left;background:#fbfdf4;font-weight:600;color:#22343a;padding:5px 7px}'+
   'table.hps-doc-tbl tr.terb td b{color:#0b3d42}'+
   'table.hps-doc-tbl tr.grp,table.hps-doc-tbl tr.sum,table.hps-doc-tbl tr.terb{break-inside:avoid;page-break-inside:avoid}'+
+  /* Baris tanda tangan menyatu dengan tabel: tanpa arsiran zebra, tanpa padding sel
+     tabel, dan tidak boleh terpotong antar-halaman. */
+  'table.hps-doc-tbl tr.ttd-row{break-inside:avoid;page-break-inside:avoid}'+
+  'table.hps-doc-tbl tr.ttd-row > td{padding:14px 10px 10px;background:#fff;border-top:1.5px solid #0b6a73;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  'table.hps-doc-tbl tr.ttd-row table.ttd,table.hps-doc-tbl tr.ttd-row table.ttd td{border:none;background:transparent;padding:0}'+
   '.hps-foot{margin-top:26px;break-inside:avoid;page-break-inside:avoid}'+
-  '.hps-foot .ttd{width:100%;margin:0;border-collapse:collapse}'+
-  '.hps-foot .ttd td{width:50%;text-align:center;vertical-align:top;padding:0 12px}'+
-  '.hps-foot .ttd-date{text-align:center;font-size:12px;color:#22343a;font-weight:600;margin:0 0 6px}'+
-  '.hps-foot .hps-topgap{height:24px}'+
-  '.hps-foot .role{font-size:12px;color:#22343a;font-weight:600}'+
-  '.hps-foot .role2{font-size:12px;color:#0d2a30;font-weight:800;margin-top:1px}'+
-  '.hps-foot .gap{height:66px}'+
-  '.hps-foot .nm{font-weight:800;font-size:12.5px;color:#0d2a30;display:inline-block;min-width:180px;padding-top:5px}'+
-  '.hps-foot .nm.nm-up{text-transform:uppercase}';
+  '.hps-foot .ttd,tr.ttd-row .ttd{width:100%;margin:0;border-collapse:collapse}'+
+  '.hps-foot .ttd td,tr.ttd-row .ttd td{width:50%;text-align:center;vertical-align:top;padding:0 12px}'+
+  '.hps-foot .ttd-date,tr.ttd-row .ttd-date{text-align:center;font-size:12px;color:#22343a;font-weight:600;margin:0 0 6px}'+
+  '.hps-foot .hps-topgap,tr.ttd-row .hps-topgap{height:24px}'+
+  '.hps-foot .role,tr.ttd-row .role{font-size:12px;color:#22343a;font-weight:600}'+
+  '.hps-foot .role2,tr.ttd-row .role2{font-size:12px;color:#0d2a30;font-weight:800;margin-top:1px}'+
+  '.hps-foot .gap,tr.ttd-row .gap{height:66px}'+
+  '.hps-foot .nm,tr.ttd-row .nm{font-weight:800;font-size:12.5px;color:#0d2a30;display:inline-block;min-width:180px;padding-top:5px}'+
+  '.hps-foot .nm.nm-up,tr.ttd-row .nm.nm-up{text-transform:uppercase}';
 }
 function hpsStandaloneDocHtml(){
   return fklDocShell(hpsExtraDocCss(), hpsBuildDocHtml());
