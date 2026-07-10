@@ -2697,6 +2697,14 @@ table.hps-uraian td.c-kel input{min-width:96px}
 .ana-tb-field > .js-judul-row > select{flex:1 1 auto;width:auto;min-width:0}
 .field > .js-judul-row > select.js-numsel,
 .ana-tb-field > .js-judul-row > select.js-numsel{flex:0 0 58px;width:58px;min-width:58px;text-align:center;font-weight:800;letter-spacing:.5px;padding-left:8px;padding-right:8px}
+/* Kotak angka sempit (ROK 2 digit, Inflasi 4 digit) — juga dipotong dari lebar
+   field induknya, sehingga tata letak kolom tidak bergeser saat dipilih "Ya". */
+.field > .js-judul-row > input.js-numbox,
+.ana-tb-field > .js-judul-row > input.js-numbox{flex:0 0 auto;text-align:center;font-weight:800;letter-spacing:.4px;padding-left:8px;padding-right:8px}
+.field > .js-judul-row > input.js-num2,
+.ana-tb-field > .js-judul-row > input.js-num2{width:56px;min-width:56px}
+.field > .js-judul-row > input.js-num4,
+.ana-tb-field > .js-judul-row > input.js-num4{width:80px;min-width:80px}
 table.hps-uraian td.c-sat input{text-align:center;min-width:64px}
 table.hps-uraian td.c-vol input{text-align:center;min-width:64px}
 table.hps-uraian td.c-money input{text-align:right;min-width:120px}
@@ -15011,7 +15019,7 @@ function anaBlankState(){ return {
   info:{}, jumlahItem:1, jumlahRef:1,
   sumber:[''], refs:[anaBlankRef()],
   metodeRef:'Sama', metodeAll:'Rata-rata', aktifRef:0,
-  jenis:'Umum', rok:'', inflasi:'Tidak', inflasiVals:[], inflasiNilai:'',
+  jenis:'Umum', rokOn:'Tidak', rok:'', inflasi:'Tidak', inflasiVals:[], inflasiNilai:'',
   judulOn:'Tidak', judulNum:'A', subjudulOn:'Tidak', subjudulNum:'a',
   konstruksi:{ jumlahItem:1, items:[anaBlankKonItem()] },
   ahsp: anaBlankAhsp()
@@ -15055,6 +15063,9 @@ function anaEnsure(){
   st.judulNum=jsNumStyleOk(st.judulNum,'A'); st.subjudulNum=jsNumStyleOk(st.subjudulNum,'a');
   // jenis pekerjaan & ROK (%)
   if(st.jenis!=='Konstruksi') st.jenis='Umum';
+  if(st.rokOn==null) st.rokOn=(anaNum(st.rok)>0)?'Ya':'Tidak';   // migrasi data lama
+  if(st.rokOn!=='Ya') st.rokOn='Tidak';
+  if(st.rokOn!=='Ya') st.rok='';                                  // ROK? = Tidak → tidak dihitung
   const rokMax=(st.jenis==='Konstruksi')?15:10;
   if(st.rok!==''&&st.rok!=null){ let rk=anaNum(st.rok); if(rk<0) rk=0; if(rk>rokMax) rk=rokMax; st.rok=(rk===0&&String(st.rok).trim()==='')?'':rk; }
   // ---- Pekerjaan Konstruksi: Bagian 2 (Harga Satuan) & Bagian 3 (AHSP) ----
@@ -15145,6 +15156,8 @@ function anaRecordToState(rec){
     aktifRef: parseInt(s.aktifRef,10)||0,
     jenis: s.jenis==='Konstruksi'?'Konstruksi':'Umum',
     rok: (s.rok!=null?s.rok:''),
+    // Kompatibilitas data lama: rokOn belum ada → dianggap "Ya" bila nilai ROK terisi
+    rokOn: (s.rokOn!=null ? (s.rokOn==='Ya'?'Ya':'Tidak') : ((anaNum(s.rok)>0)?'Ya':'Tidak')),
     inflasi: s.inflasi==='Ya'?'Ya':'Tidak',
     inflasiVals: Array.isArray(s.inflasiVals)?s.inflasiVals.slice():[],
     inflasiNilai: (s.inflasiNilai!=null?s.inflasiNilai:''),
@@ -15488,17 +15501,32 @@ function anaToolbarHtml(){
   html+='</div>';
   return html;
 }
+/* ROK? & Inflasi? — pola sama seperti Judul?/Sub-Judul?: dropdown Ya/Tidak, dan bila
+   "Ya" muncul kotak angka sempit yang dipotong dari lebar field itu sendiri
+   (ROK selebar 2 digit, Nilai Inflasi selebar 4 digit). */
 function anaRokInflasiFieldsHtml(){
   const st=anaState;
+  const rokOn=jsOn(st.rokOn), infOn=jsOn(st.inflasi);
   const rokVal=(st.rok!==''&&st.rok!=null)?String(st.rok):'';
   const infNilai=(st.inflasiNilai!==''&&st.inflasiNilai!=null)?String(st.inflasiNilai):'';
-  return '<div class="ana-tb-field"><label id="ana-rok-label">ROK ('+fkEsc(rokVal)+'%)</label>'+
-      '<input id="ana-rok" type="text" inputmode="decimal" placeholder="0" value="'+fkEsc(rokVal)+'" oninput="anaOnRok(this)"></div>'+
-    '<div class="ana-tb-field"><label>Inflasi?</label><select id="ana-inflasi" onchange="anaOnInflasi(this)">'+
-      '<option value="Tidak"'+(st.inflasi!=='Ya'?' selected':'')+'>Tidak</option>'+
-      '<option value="Ya"'+(st.inflasi==='Ya'?' selected':'')+'>Ya</option></select></div>'+
-    (st.inflasi==='Ya'?('<div class="ana-tb-field"><label>Nilai Inflasi</label>'+
-      '<input id="ana-inflasi-nilai" type="text" inputmode="decimal" placeholder="Masukkan nilai inflasi" value="'+fkEsc(infNilai)+'" oninput="anaOnInflasiNilai(this)"></div>'):'');
+  const rokMax=(st.jenis==='Konstruksi')?15:10;
+  return '<div class="ana-tb-field js-judul-field"><label id="ana-rok-label">ROK?'+(rokOn&&rokVal!==''?' ('+fkEsc(rokVal)+'%)':'')+'</label>'+
+      '<div class="js-judul-row">'+jsYaTidakHtml('ana-rokon',st.rokOn,'anaOnRokOn')+
+        (rokOn?('<input class="js-numbox js-num2" id="ana-rok" type="text" inputmode="decimal" maxlength="5" placeholder="0" title="Maks '+rokMax+'%" value="'+fkEsc(rokVal)+'" oninput="anaOnRok(this)">'):'')+
+      '</div></div>'+
+    '<div class="ana-tb-field js-judul-field"><label>Inflasi?</label>'+
+      '<div class="js-judul-row">'+jsYaTidakHtml('ana-inflasi',st.inflasi,'anaOnInflasi')+
+        (infOn?('<input class="js-numbox js-num4" id="ana-inflasi-nilai" type="text" inputmode="decimal" maxlength="6" placeholder="0" title="Nilai inflasi (%)" value="'+fkEsc(infNilai)+'" oninput="anaOnInflasiNilai(this)">'):'')+
+      '</div></div>';
+}
+/* ROK? = Tidak → nilai ROK dikosongkan & tidak ikut dihitung */
+function anaOnRokOn(el){
+  const on=(el.value==='Ya');
+  anaState.rokOn=on?'Ya':'Tidak';
+  if(!on) anaState.rok='';
+  anaSaveState();
+  const box=document.getElementById('ana-dp-rokinf'); if(box) box.innerHTML=anaRokInflasiFieldsHtml()+anaJudulFieldsHtml();
+  anaRenderResult();
 }
 /* Field Judul? & Sub-Judul? — tampil pada kartu Data Pekerjaan (Umum & Konstruksi) */
 function anaJudulFieldsHtml(){
@@ -15515,7 +15543,9 @@ function anaOnJudulNum(el){ anaState.judulNum=jsNumStyleOk(el.value,'A'); anaSav
 function anaOnSubNum(el){ anaState.subjudulNum=jsNumStyleOk(el.value,'a'); anaSaveState(); }
 
 function anaOnInflasi(el){
-  anaState.inflasi=(el.value==='Ya')?'Ya':'Tidak'; anaSaveState();
+  anaState.inflasi=(el.value==='Ya')?'Ya':'Tidak';
+  if(anaState.inflasi!=='Ya') anaState.inflasiNilai='';
+  anaSaveState();
   const box=document.getElementById('ana-dp-rokinf'); if(box) box.innerHTML=anaRokInflasiFieldsHtml()+anaJudulFieldsHtml();
   anaRenderResult();
 }
@@ -15540,7 +15570,7 @@ function anaOnRok(el){
   const parts=v.split('.'); if(parts.length>2) v=parts[0]+'.'+parts.slice(1).join('');
   let num=parseFloat(v); if(!isNaN(num)&&num>10){ v=String(10); }
   el.value=v; anaState.rok=(v===''?'':(parseFloat(v)||0)); anaSaveState();
-  const lb=document.getElementById('ana-rok-label'); if(lb) lb.textContent='ROK ('+(v===''?'':v)+'%)';
+  const lb=document.getElementById('ana-rok-label'); if(lb) lb.textContent='ROK?'+(v===''?'':(' ('+v+'%)'));
   anaRenderResult();
 }
 function anaOnMetodeRef(el){ anaState.metodeRef=(el.value==='Berbeda')?'Berbeda':'Sama'; anaSaveState(); anaRenderStep2Body(); }
