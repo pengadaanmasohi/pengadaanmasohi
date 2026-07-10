@@ -2564,16 +2564,24 @@ html,body{background:#e9eef1}
 .fkl-sec-h{break-after:avoid;page-break-after:avoid}
 .fkl-doc-foot{break-inside:avoid;page-break-inside:avoid}
 .fkl-chk thead th,.fkl-sec-h .rn,.fkl-doc-band,.fkl-doc .hasil,.fkl-chk .pill,.fkl-doc-logo img,.fkl-chk tbody tr:nth-child(even) td,.fkl-doc-org .l1,.fkl-doc-org .l2{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+/* Pembungkus halaman cetak: thead/tfoot dipakai sebagai "margin atas/bawah" yang
+   OTOMATIS BERULANG di setiap halaman fisik. Dengan cara ini @page tetap bisa
+   memakai margin:0 (sehingga header/footer bawaan browser — tanggal, URL, nomor
+   halaman — tidak ikut tercetak), namun konten tetap punya jarak tepi 12mm
+   atas/bawah persis seperti tampilan Rekap HPS. */
+table.fkl-page-wrap{width:100%;border-collapse:collapse;background:transparent;border:0}
+table.fkl-page-wrap > thead > tr > td,
+table.fkl-page-wrap > tbody > tr > td,
+table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
+.fkl-vspace{height:0;line-height:0;font-size:0}
 @media print{
   html,body{background:#fff;margin:0;padding:0}
-  /* Sama seperti Rekap HPS: header/footer bawaan browser dimatikan (margin @page default 0),
-     lalu konten diberi jarak tepi lewat named-page 'fklbody' — 12mm atas/bawah + 15mm kiri/kanan.
-     Margin @page berlaku di SETIAP halaman fisik (termasuk halaman lanjutan saat konten
-     terpotong), jadi bagian header & footer dokumen tidak pernah menempel ke tepi kertas. */
-  .fkl-print-page{width:auto;min-height:0;margin:0;padding:0 15mm;box-shadow:none;page:fklbody}
-  body > .fkl-doc{padding:0 15mm;page:fklbody}
+  /* margin:0 → header/footer bawaan browser dimatikan pada seluruh halaman */
   @page{size:A4;margin:0}
-  @page fklbody{size:A4;margin:12mm 0}
+  /* jarak tepi atas/bawah 12mm, diulang tiap halaman lewat thead/tfoot */
+  .fkl-vspace{height:12mm}
+  .fkl-print-page{width:auto;min-height:0;margin:0;padding:0 15mm;box-shadow:none}
+  body > .fkl-doc{padding:0 15mm}
 }
 
 </style>
@@ -2668,6 +2676,10 @@ table.hps-uraian td.c-ur{width:100%}
 table.hps-uraian textarea,table.hps-uraian input{width:100%;border:1px solid #cdd9de;border-radius:9px;padding:7px 8px;font-size:12px;background:#fff;font-family:inherit;color:var(--ink)}
 table.hps-uraian textarea{resize:vertical;min-height:36px;line-height:1.45}
 table.hps-uraian td.c-kel input{min-width:96px}
+/* Judul? / Sub-Judul? — dropdown Ya/Tidak + kotak kecil (selebar 1 abjad) gaya penomoran */
+.js-judul-row{display:flex;align-items:center;gap:6px}
+.js-judul-row>select:first-child{flex:1 1 auto;min-width:0}
+select.js-numsel{flex:0 0 auto;width:56px;min-width:56px;text-align:center;font-weight:800;letter-spacing:.5px;padding-left:6px;padding-right:6px}
 table.hps-uraian td.c-sat input{text-align:center;min-width:64px}
 table.hps-uraian td.c-vol input{text-align:center;min-width:64px}
 table.hps-uraian td.c-money input{text-align:right;min-width:120px}
@@ -2886,7 +2898,7 @@ table.rho-matrix thead th{
 }
 /* Kolom label pertama rho-matrix ikut header teal saat di baris thead */
 table.rho-matrix thead th.rho-c-lbl{
-  background:#0b6a73; color:#fff;
+  background:#0b6a73; color:#fff; text-align:center;
 }
 
 /* Baris genap diberi arsiran halus seperti Monitoring (untuk tabel baris-vertikal) */
@@ -10732,7 +10744,7 @@ function pnPreviewResetMaxBtn(){
   const icon=document.getElementById('pn-preview-max-icon');
   if(icon) icon.innerHTML='<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>';  // maximize
 }
-function closePnPreview(){ const ov=document.getElementById('pn-preview-overlay'); if(ov) ov.classList.remove('show'); const modal=ov&&ov.querySelector('.pn-preview-modal'); if(modal) modal.classList.remove('is-max'); pnPreviewResetMaxBtn(); const b=document.getElementById('pn-preview-body'); if(b){ b.innerHTML=''; b.classList.remove('fkl-preview-body'); b.classList.remove('has-tabs'); } const fp=document.getElementById('fkl-preview-print'); if(fp) fp.remove(); const pp=document.getElementById('pnw-preview-print'); if(pp) pp.remove(); const rp=document.getElementById('rho-preview-print'); if(rp) rp.remove(); const hp=document.getElementById('hps-preview-print'); if(hp) hp.remove(); const ap=document.getElementById('ana-preview-print'); if(ap) ap.remove(); if(typeof fklPreviewState!=='undefined') fklPreviewState=null; if(typeof pnwPreviewState!=='undefined') pnwPreviewState=null; if(typeof rhoPreviewState!=='undefined') rhoPreviewState=null; if(typeof hpsPreviewState!=='undefined') hpsPreviewState=null; if(typeof anaPreviewState!=='undefined') anaPreviewState=null; pnCleanupPreview(); }
+function closePnPreview(){ const ov=document.getElementById('pn-preview-overlay'); if(ov) ov.classList.remove('show'); const modal=ov&&ov.querySelector('.pn-preview-modal'); if(modal) modal.classList.remove('is-max'); pnPreviewResetMaxBtn(); const b=document.getElementById('pn-preview-body'); if(b){ b.innerHTML=''; b.classList.remove('fkl-preview-body'); b.classList.remove('has-tabs'); } const fp=document.getElementById('fkl-preview-print'); if(fp) fp.remove(); const pp=document.getElementById('pnw-preview-print'); if(pp) pp.remove(); const rp=document.getElementById('rho-preview-print'); if(rp) rp.remove(); const hp=document.getElementById('hps-preview-print'); if(hp) hp.remove(); const cp=document.getElementById('hpsc-preview-print'); if(cp) cp.remove(); const ap=document.getElementById('ana-preview-print'); if(ap) ap.remove(); if(typeof fklPreviewState!=='undefined') fklPreviewState=null; if(typeof pnwPreviewState!=='undefined') pnwPreviewState=null; if(typeof rhoPreviewState!=='undefined') rhoPreviewState=null; if(typeof hpsPreviewState!=='undefined') hpsPreviewState=null; if(typeof anaPreviewState!=='undefined') anaPreviewState=null; pnCleanupPreview(); }
 
 /* ---- Upload / Download / Hapus lampiran (per masing-masing nomor dokumen) ---- */
 let pnUploadCtx=null;
@@ -11466,7 +11478,11 @@ function fklDocShell(extraCss, innerHtml){
     '<meta name="viewport" content="width=device-width, initial-scale=1">'+
     '<title>&#8203;</title>'+
     '<style>'+fklDocBaseCss()+(extraCss||'')+'</style></head><body>'+
-    '<div class="fkl-print-page">'+innerHtml+'</div>'+
+    '<table class="fkl-page-wrap">'+
+      '<thead><tr><td><div class="fkl-vspace"></div></td></tr></thead>'+
+      '<tbody><tr><td><div class="fkl-print-page">'+innerHtml+'</div></td></tr></tbody>'+
+      '<tfoot><tr><td><div class="fkl-vspace"></div></td></tr></tfoot>'+
+    '</table>'+
     '</body></html>';
 }
 
@@ -11491,7 +11507,9 @@ function fklOpenPreview(){
   }
   /* Tombol aksi pada header pratinjau: sisipkan tombol Cetak khusus FKL bila belum ada */
   const actions=document.querySelector('#pn-preview-overlay .pn-preview-head-actions');
+  { const _c=document.getElementById('hpsc-preview-print'); if(_c) _c.remove(); }
   const _oldPnw=document.getElementById('pnw-preview-print'); if(_oldPnw) _oldPnw.remove();
+  const _oldHpsc=document.getElementById('hpsc-preview-print'); if(_oldHpsc) _oldHpsc.remove();
   if(actions && !document.getElementById('fkl-preview-print')){
     const btn=document.createElement('button');
     btn.id='fkl-preview-print'; btn.className='btn btn-teal';
@@ -12539,6 +12557,7 @@ function pnwOpenPreview(){
     const doc=ifr.contentWindow.document; doc.open(); doc.write(pnwStandaloneDocHtml()); doc.close();
   }
   const actions=document.querySelector('#pn-preview-overlay .pn-preview-head-actions');
+  { const _c=document.getElementById('hpsc-preview-print'); if(_c) _c.remove(); }
   // hapus tombol cetak FKL bila ada agar tidak bentrok
   const oldFkl=document.getElementById('fkl-preview-print'); if(oldFkl) oldFkl.remove();
   if(actions && !document.getElementById('pnw-preview-print')){
@@ -13549,6 +13568,7 @@ function rhoOpenPreview(){
     const doc=ifr.contentWindow.document; doc.open(); doc.write(rhoStandaloneDocHtml()); doc.close();
   }
   const actions=document.querySelector('#pn-preview-overlay .pn-preview-head-actions');
+  { const _c=document.getElementById('hpsc-preview-print'); if(_c) _c.remove(); }
   const oldFkl=document.getElementById('fkl-preview-print'); if(oldFkl) oldFkl.remove();
   const oldPnw=document.getElementById('pnw-preview-print'); if(oldPnw) oldPnw.remove();
   if(actions && !document.getElementById('rho-preview-print')){
@@ -13955,9 +13975,62 @@ const HPS_OWN_FIELDS = HPS_INFO_FIELDS.filter(f=>f.key==='tgl_hps');
                hargaMat/hargaJasa = Harga Satuan (Material/Jasa) — nantinya
                terisi otomatis dari modul Analisa (masih dalam pengembangan).
 */
-function hpsBlankItem(){ return {kelompok:'', uraian:'', sat:'', vol:'', hargaMat:'', hargaJasa:''}; }
-function hpsNormItem(c){ c=c||{}; return {kelompok:c.kelompok||'', uraian:c.uraian||'', sat:c.sat||'', vol:(c.vol!=null?c.vol:''), hargaMat:(c.hargaMat!=null?c.hargaMat:''), hargaJasa:(c.hargaJasa!=null?c.hargaJasa:'')}; }
-function hpsBlankState(){ return { info:{}, jumlahItem:1, items:[hpsBlankItem()] }; }
+
+/* ================= JUDUL & SUB-JUDUL (penomoran bersama HPS + Analisa) =================
+   Menggantikan kolom "Kelompok" lama. Dua tingkat pengelompokan:
+     Judul     → teks SELALU dicetak HURUF BESAR semua, bernomor sesuai gaya (A/a/I/i)
+     Sub-Judul → teks apa adanya (sesuai huruf besar/kecil yang diinput), bernomor terpisah
+   Nomor urut item dimulai ulang pada tiap kelompok terdalam yang aktif. */
+const JS_NUM_STYLES=[['A','A, B, C'],['a','a, b, c'],['I','I, II, III'],['i','i, ii, iii']];
+function jsAlphaNum(n){ let x=Math.max(1,parseInt(n,10)||1), s=''; while(x>0){ const m=(x-1)%26; s=String.fromCharCode(65+m)+s; x=Math.floor((x-1)/26); } return s; }
+function jsRomanNum(n){ let x=Math.max(1,parseInt(n,10)||1), s=''; [[1000,'M'],[900,'CM'],[500,'D'],[400,'CD'],[100,'C'],[90,'XC'],[50,'L'],[40,'XL'],[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']].forEach(function(p){ while(x>=p[0]){ s+=p[1]; x-=p[0]; } }); return s; }
+function jsNumFmt(style,n){
+  if(style==='a') return jsAlphaNum(n).toLowerCase();
+  if(style==='I') return jsRomanNum(n);
+  if(style==='i') return jsRomanNum(n).toLowerCase();
+  return jsAlphaNum(n);
+}
+function jsNumStyleOk(v,dflt){ return (['A','a','I','i'].indexOf(v)>=0)?v:(dflt||'A'); }
+function jsOn(v){ return v==='Ya'; }
+/* Konfigurasi judul/sub-judul dari sebuah state (HPS atau Analisa) */
+function jsCfg(st){
+  st=st||{};
+  return {
+    judulOn: jsOn(st.judulOn), judulNum: jsNumStyleOk(st.judulNum,'A'),
+    subOn:   jsOn(st.subjudulOn), subNum: jsNumStyleOk(st.subjudulNum,'a')
+  };
+}
+/* Telusuri items → panggil out.judul(no,teks) / out.sub(no,teks) / out.item(no,it,idx) */
+function jsWalk(items,cfg,out){
+  let jIdx=0,sIdx=0,iNo=0,curJ=null,curS=null;
+  (items||[]).forEach(function(it,idx){
+    if(cfg.judulOn){
+      const j=String((it&&it.judul)||'').trim();
+      if(j && j.toUpperCase()!==curJ){ curJ=j.toUpperCase(); jIdx++; sIdx=0; iNo=0; curS=null; if(out.judul) out.judul(jsNumFmt(cfg.judulNum,jIdx), curJ); }
+    }
+    if(cfg.subOn){
+      const sb=String((it&&it.subjudul)||'').trim();
+      if(sb && sb!==curS){ curS=sb; sIdx++; iNo=0; if(out.sub) out.sub(jsNumFmt(cfg.subNum,sIdx), sb); }
+    }
+    iNo++;
+    if(out.item) out.item(iNo,it,idx);
+  });
+}
+/* Dropdown gaya penomoran — "selebar 1 abjad" (kotak kecil) */
+function jsNumSelectHtml(id,val,handler){
+  val=jsNumStyleOk(val,'A');
+  return '<select class="js-numsel" id="'+id+'" onchange="'+handler+'(this)" title="Gaya penomoran">'+
+    JS_NUM_STYLES.map(function(o){ return '<option value="'+o[0]+'"'+(o[0]===val?' selected':'')+'>'+o[0]+'</option>'; }).join('')+'</select>';
+}
+function jsYaTidakHtml(id,val,handler){
+  return '<select id="'+id+'" onchange="'+handler+'(this)">'+
+    '<option value="Tidak"'+(!jsOn(val)?' selected':'')+'>Tidak</option>'+
+    '<option value="Ya"'+(jsOn(val)?' selected':'')+'>Ya</option></select>';
+}
+
+function hpsBlankItem(){ return {judul:'', subjudul:'', uraian:'', sat:'', vol:'', hargaMat:'', hargaJasa:''}; }
+function hpsNormItem(c){ c=c||{}; return {judul:(c.judul!=null?c.judul:(c.kelompok||'')), subjudul:c.subjudul||'', uraian:c.uraian||'', sat:c.sat||'', vol:(c.vol!=null?c.vol:''), hargaMat:(c.hargaMat!=null?c.hargaMat:''), hargaJasa:(c.hargaJasa!=null?c.hargaJasa:'')}; }
+function hpsBlankState(){ return { info:{}, jumlahItem:1, judulOn:'Tidak', judulNum:'A', subjudulOn:'Tidak', subjudulNum:'a', items:[hpsBlankItem()] }; }
 let hpsState = hpsBlankState();
 let hpsStep = 1;              // 1..2
 let hpsEditId = null;
@@ -13974,6 +14047,9 @@ function hpsMarkActive(){ document.querySelectorAll('.topnav-item[data-view="for
 /* Pastikan panjang items sesuai jumlahItem */
 function hpsEnsureItems(){
   const st=hpsState;
+  if(st.judulOn!=='Ya') st.judulOn='Tidak';
+  if(st.subjudulOn!=='Ya') st.subjudulOn='Tidak';
+  st.judulNum=jsNumStyleOk(st.judulNum,'A'); st.subjudulNum=jsNumStyleOk(st.subjudulNum,'a');
   const n=Math.max(1,Math.min(150, parseInt(st.jumlahItem,10)|| (Array.isArray(st.items)?st.items.length:1) ||1)); st.jumlahItem=n;
   if(!Array.isArray(st.items)) st.items=[];
   const cur=st.items.slice(); const next=[];
@@ -14040,6 +14116,10 @@ function hpsRecordToState(rec){
   const st={
     info: Object.assign({}, base.info, s.info||{}),
     jumlahItem: Math.max(1,Math.min(150, parseInt(s.jumlahItem,10)|| (Array.isArray(s.items)?s.items.length:1) ||1)),
+    judulOn: (s.judulOn==='Ya')?'Ya':'Tidak',
+    judulNum: jsNumStyleOk(s.judulNum,'A'),
+    subjudulOn: (s.subjudulOn==='Ya')?'Ya':'Tidak',
+    subjudulNum: jsNumStyleOk(s.subjudulNum,'a'),
     items: (Array.isArray(s.items)&&s.items.length)?s.items.map(hpsNormItem):[hpsBlankItem()]
   };
   return st;
@@ -14082,6 +14162,23 @@ function hpsCountFieldHtml(){
   let opts=''; for(let i=1;i<=150;i++) opts+='<option value="'+i+'"'+(i===st.items.length?' selected':'')+'>'+i+' Item</option>';
   return '<div class="field'+(locked?' is-locked':'')+'"><label>Jumlah Barang/Jasa</label><select id="hps-jumlahitem"'+(locked?' disabled':'')+' onchange="hpsOnJumlahItemChange(this)">'+opts+'</select>'+(locked?HPS_LOCK_BADGE:'')+'</div>';
 }
+/* Dua field baru pada Data Pekerjaan: Judul? & Sub-Judul? (+ dropdown gaya penomoran) */
+function hpsJudulFieldsHtml(){
+  const st=hpsState; const locked=hpsItemsLocked();
+  const dis=locked?' data-locked="1"':'';
+  const f=(lbl,idOn,vOn,hOn,idN,vN,hN)=>
+    '<div class="field js-judul-field'+(locked?' is-locked':'')+'"><label>'+lbl+'</label>'+
+      '<div class="js-judul-row">'+jsYaTidakHtml(idOn,vOn,hOn)+
+        (jsOn(vOn)?jsNumSelectHtml(idN,vN,hN):'')+'</div>'+
+      (locked?HPS_LOCK_BADGE:'')+'</div>';
+  return f('Judul?','hps-judulon',st.judulOn,'hpsOnJudulOn','hps-judulnum',st.judulNum,'hpsOnJudulNum')+
+         f('Sub-Judul?','hps-subon',st.subjudulOn,'hpsOnSubOn','hps-subnum',st.subjudulNum,'hpsOnSubNum');
+}
+function hpsOnJudulOn(el){ if(hpsItemsLocked()){ el.value=hpsState.judulOn; toast('Mengikuti Analisa terpilih','warn'); return; } hpsState.judulOn=(el.value==='Ya')?'Ya':'Tidak'; hpsSaveState(); renderHpsForm(); }
+function hpsOnSubOn(el){ if(hpsItemsLocked()){ el.value=hpsState.subjudulOn; toast('Mengikuti Analisa terpilih','warn'); return; } hpsState.subjudulOn=(el.value==='Ya')?'Ya':'Tidak'; hpsSaveState(); renderHpsForm(); }
+function hpsOnJudulNum(el){ hpsState.judulNum=jsNumStyleOk(el.value,'A'); hpsSaveState(); }
+function hpsOnSubNum(el){ hpsState.subjudulNum=jsNumStyleOk(el.value,'a'); hpsSaveState(); }
+
 function hpsOnInfoChange(){
   const st=hpsState;
   HPS_INFO_FIELDS.forEach(f=>{ if(hpsIsLocked(f.key)) return; const el=document.getElementById('hps-'+f.key); if(!el) return; st.info[f.key]=(f.type==='num')?parseRupiah(el.value):el.value.trim(); });
@@ -14209,11 +14306,13 @@ function hpsUraianTableHtml(){
   const disH=hargaLocked?' disabled':'';
   const clsKUSV=itemsLocked?' hps-cell-locked':'';
   const clsHarga=hargaLocked?' hps-cell-locked':'';
+  const jOn=jsOn(st.judulOn), sOn=jsOn(st.subjudulOn);
   let rows='';
   st.items.forEach((it,i)=>{
     rows+='<tr>'+
       '<td class="c-no">'+(i+1)+'</td>'+
-      '<td class="c-kel'+clsKUSV+'"><input type="text" data-i="'+i+'" placeholder="mis. MATERIAL" value="'+fkEsc(it.kelompok||'')+'" oninput="hpsOnKelompok(this)"'+dis1+'></td>'+
+      (jOn?('<td class="c-kel'+clsKUSV+'"><input type="text" data-i="'+i+'" placeholder="mis. PEKERJAAN PERSIAPAN" value="'+fkEsc(it.judul||'')+'" oninput="hpsOnJudul(this)"'+dis1+'></td>'):'')+
+      (sOn?('<td class="c-kel'+clsKUSV+'"><input type="text" data-i="'+i+'" placeholder="mis. Material Utama" value="'+fkEsc(it.subjudul||'')+'" oninput="hpsOnSubjudul(this)"'+dis1+'></td>'):'')+
       '<td class="c-ur'+clsKUSV+'"><textarea data-i="'+i+'" rows="1" placeholder="Uraian pekerjaan / barang / jasa ke-'+(i+1)+'" oninput="hpsOnUraian(this)"'+dis1+'>'+fkEsc(it.uraian||'')+'</textarea></td>'+
       '<td class="c-sat'+clsKUSV+'"><input type="text" data-i="'+i+'" placeholder="Bh" value="'+fkEsc(it.sat||'')+'" oninput="hpsOnSat(this)"'+dis1+'></td>'+
       '<td class="c-vol'+clsKUSV+'"><input type="text" inputmode="decimal" data-i="'+i+'" placeholder="0" value="'+fkEsc(it.vol!=null?String(it.vol):'')+'" oninput="hpsOnVol(this)"'+dis1+'></td>'+
@@ -14224,7 +14323,7 @@ function hpsUraianTableHtml(){
   });
   const note='';
   return note+'<div class="hps-uraian-wrap"><table class="hps-uraian"><thead>'+
-    '<tr><th class="c-no">No</th><th>Kelompok</th><th class="c-ur">Uraian Pekerjaan</th><th>Sat</th><th>Vol</th>'+
+    '<tr><th class="c-no">No</th>'+(jOn?'<th>Judul</th>':'')+(sOn?'<th>Sub-Judul</th>':'')+'<th class="c-ur">Uraian Pekerjaan</th><th>Sat</th><th>Vol</th>'+
       '<th>Harga<br>Barang</th><th>Harga<br>Jasa</th><th>Jumlah Total<br>(Rp)</th></tr>'+
     '</thead><tbody>'+rows+'</tbody></table></div>';
 }
@@ -14233,7 +14332,8 @@ function hpsRecalcRow(i){
   const c=document.getElementById('hps-jt-'+i); if(c) c.innerHTML=hpsRp(hpsItemTotal(it));
   hpsRenderSummary();
 }
-function hpsOnKelompok(el){ if(hpsItemsLocked()) return; const i=+el.dataset.i; if(hpsState.items[i]){ hpsState.items[i].kelompok=el.value; hpsSaveState(); } }
+function hpsOnJudul(el){ if(hpsItemsLocked()) return; const i=+el.dataset.i; if(hpsState.items[i]){ hpsState.items[i].judul=el.value; hpsSaveState(); } }
+function hpsOnSubjudul(el){ if(hpsItemsLocked()) return; const i=+el.dataset.i; if(hpsState.items[i]){ hpsState.items[i].subjudul=el.value; hpsSaveState(); } }
 function hpsOnUraian(el){ if(hpsItemsLocked()) return; const i=+el.dataset.i; if(hpsState.items[i]){ hpsState.items[i].uraian=el.value; hpsSaveState(); } }
 function hpsOnSat(el){ if(hpsItemsLocked()) return; const i=+el.dataset.i; if(hpsState.items[i]){ hpsState.items[i].sat=el.value; hpsSaveState(); } }
 function hpsOnVol(el){
@@ -14297,6 +14397,7 @@ function renderHpsForm(){
       html+=HPS_DP_FIELDS.map(hpsInfoInputHtml).join('');
       // Field "Tgl. HPS" tidak lagi ditampilkan di form — tanggal HPS otomatis mengikuti Nomor/Penetapan HPS.
       html+=hpsCountFieldHtml();
+      html+=hpsJudulFieldsHtml();
       html+='</div>';
     }
     html+='</div>';
@@ -14323,7 +14424,7 @@ function hpsAnalisaBarHtml(){
   const dipilih=(info.analisaId)?String(info.analisaNama||'').trim():'';
   const jenisTxt = dipilih ? (info.analisaJenis==='Konstruksi'?'Pekerjaan Konstruksi':'Pekerjaan Umum') : '';
   const sub = dipilih
-    ? ('Uraian Pekerjaan (Kelompok/Uraian/Sat/Vol) terisi otomatis &amp; terkunci dari analisa: <b style="color:var(--teal-dark)">'+fkEsc(dipilih)+'</b> — kategori <b>'+jenisTxt+'</b>'+(info.analisaJenis==='Konstruksi'?' (harga diisi manual)':' (harga ikut terkunci, sudah termasuk ROK)'))
+    ? ('Uraian Pekerjaan (Judul/Sub-Judul/Uraian/Sat/Vol) terisi otomatis &amp; terkunci dari analisa: <b style="color:var(--teal-dark)">'+fkEsc(dipilih)+'</b> — kategori <b>'+jenisTxt+'</b>'+(info.analisaJenis==='Konstruksi'?' (harga diisi manual)':' (harga ikut terkunci, sudah termasuk ROK)'))
     : 'Opsional — ambil Uraian Pekerjaan (Kelompok/Uraian/Sat/Vol, & harga untuk kategori Pekerjaan Umum) otomatis dari data Analisa Harga tersimpan.';
   let btns='';
   btns+='<button type="button" class="btn btn-teal" style="padding:8px 14px;font-size:11.5px" onclick="hpsPilihAnalisa()">'+
@@ -14390,11 +14491,17 @@ function hpsAmbilAnalisa(id){
   const struct = (st.info.analisaJenis==='Konstruksi')
     ? ((aSt.konstruksi&&Array.isArray(aSt.konstruksi.items))?aSt.konstruksi.items:[])
     : ((aSt.refs&&aSt.refs[0]&&Array.isArray(aSt.refs[0].items))?aSt.refs[0].items:[]);
+  // Ikuti pengaturan Judul / Sub-Judul dari Analisa terpilih
+  st.judulOn    = (aSt.judulOn==='Ya')?'Ya':'Tidak';
+  st.judulNum   = jsNumStyleOk(aSt.judulNum,'A');
+  st.subjudulOn = (aSt.subjudulOn==='Ya')?'Ya':'Tidak';
+  st.subjudulNum= jsNumStyleOk(aSt.subjudulNum,'a');
   if(struct.length){
     st.items=struct.map((it,i)=>{
       const res=hargaLocked?anaResultForState(aSt,i):null;
       return {
-        kelompok: it.kelompok||'',
+        judul: it.judul||'',
+        subjudul: it.subjudul||'',
         uraian: it.uraian||'',
         sat: it.sat||'',
         vol: it.vol!=null?it.vol:'',
@@ -14576,18 +14683,13 @@ function hpsBuildDocHtml(){
   const fmtNilai=(info.nilai!==''&&info.nilai!=null)?('Rp '+Number(info.nilai).toLocaleString('id-ID')):'-';
   const infoRow=(k,v)=>'<tr><td class="k">'+k+'</td><td class="s">:</td><td class="v">'+fkEsc(v||'-')+'</td></tr>';
 
-  /* ---- Baris item + kelompok (A, B, ...) ---- */
+  /* ---- Baris item + Judul / Sub-Judul (bernomor sesuai gaya terpilih) ---- */
   let bodyRows='';
-  let groupIdx=0, curGroup=null, noInGroup=0;
-  (st.items||[]).forEach((it,idx)=>{
-    const kel=String(it.kelompok||'').trim();
-    const kelKey=kel.toUpperCase();
-    if(kel && kelKey!==curGroup){
-      curGroup=kelKey; noInGroup=0;
-      const letter=String.fromCharCode(65+(groupIdx%26)); groupIdx++;
-      bodyRows+='<tr class="grp"><td class="no">'+letter+'</td><td class="gname" colspan="8">'+fkEsc(kelKey)+'</td></tr>';
-    }
-    noInGroup++;
+  const cfg=jsCfg(st);
+  jsWalk(st.items,cfg,{
+    judul:(no,txt)=>{ bodyRows+='<tr class="grp"><td class="no">'+fkEsc(no)+'</td><td class="gname" colspan="8">'+fkEsc(txt)+'</td></tr>'; },
+    sub:(no,txt)=>{ bodyRows+='<tr class="grp sub"><td class="no">'+fkEsc(no)+'</td><td class="gname" colspan="8">'+fkEsc(txt)+'</td></tr>'; },
+    item:(noInGroup,it,idx)=>{
     const uraian=(it.uraian&&String(it.uraian).trim())?it.uraian:('Barang/Jasa '+(idx+1));
     const sat=(it.sat!=null&&String(it.sat).trim())?it.sat:'-';
     const vol=(it.vol!=null&&String(it.vol).trim())?it.vol:'-';
@@ -14602,7 +14704,7 @@ function hpsBuildDocHtml(){
       '<td class="num">'+hpsRpDoc(hpsItemJasa(it))+'</td>'+
       '<td class="num tot">'+hpsRpDoc(hpsItemTotal(it))+'</td>'+
     '</tr>';
-  });
+  }});
 
   const s=hpsSummary(st);
   const sumRow=(lbl,mat,jasa,tot,cls)=>'<tr class="sum'+(cls?' '+cls:'')+'">'+
@@ -14701,6 +14803,7 @@ function hpsExtraDocCss(){
   'table.hps-doc-tbl td.num.tot{font-weight:800;color:#0b3d42}'+
   'table.hps-doc-tbl tr.grp td{background:#dcecee;font-weight:800;color:#0b3d42;text-transform:uppercase;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   'table.hps-doc-tbl tr.grp td.gname{text-align:left;letter-spacing:.3px}'+
+  'table.hps-doc-tbl tr.grp.sub td{background:#eef5f6;text-transform:none;font-weight:700;font-style:italic}'+
   'table.hps-doc-tbl tr.sum td{background:#f2f7f8;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   'table.hps-doc-tbl tr.sum td.sum-lbl{text-align:right;font-weight:800;color:#0d2a30;text-transform:none}'+
   'table.hps-doc-tbl tr.sum td.num{font-weight:800;color:#0b3d42}'+
@@ -14737,6 +14840,7 @@ function hpsOpenPreview(){
     const doc=ifr.contentWindow.document; doc.open(); doc.write(hpsStandaloneDocHtml()); doc.close();
   }
   const actions=document.querySelector('#pn-preview-overlay .pn-preview-head-actions');
+  { const _c=document.getElementById('hpsc-preview-print'); if(_c) _c.remove(); }
   const oldFkl=document.getElementById('fkl-preview-print'); if(oldFkl) oldFkl.remove();
   const oldPnw=document.getElementById('pnw-preview-print'); if(oldPnw) oldPnw.remove();
   const oldRho=document.getElementById('rho-preview-print'); if(oldRho) oldRho.remove();
@@ -14798,9 +14902,9 @@ const ANA_MAX_REF  = 20;    // jumlah referensi
 /* ---------- Struktur data per referensi ----------
    Tiap referensi punya array items sepanjang jumlahItem:
    { kelompok, uraian, sat, vol, hargaBarang, hargaJasa, method } (method dipakai saat metodeRef='Berbeda') */
-function anaBlankRefItem(){ return {kelompok:'', uraian:'', sat:'', vol:'', hargaBarang:'', hargaJasa:'', method:'Rata-rata'}; }
+function anaBlankRefItem(){ return {judul:'', subjudul:'', uraian:'', sat:'', vol:'', hargaBarang:'', hargaJasa:'', method:'Rata-rata'}; }
 function anaNormRefItem(c){ c=c||{}; return {
-  kelompok:c.kelompok||'', uraian:c.uraian||'', sat:c.sat||'',
+  judul:(c.judul!=null?c.judul:(c.kelompok||'')), subjudul:c.subjudul||'', uraian:c.uraian||'', sat:c.sat||'',
   vol:(c.vol!=null?c.vol:''),
   hargaBarang:(c.hargaBarang!=null?c.hargaBarang:''),
   hargaJasa:(c.hargaJasa!=null?c.hargaJasa:''),
@@ -14810,9 +14914,9 @@ function anaBlankRef(){ return { items:[anaBlankRefItem()] }; }
 
 /* ---------- Struktur khusus "Pekerjaan Konstruksi" ---------- */
 /* Bagian 2 — Harga Satuan: Kelompok/Uraian/Satuan diisi manual, Harga Barang (Rp) & Harga Jasa (Rp) manual. */
-function anaBlankKonItem(){ return {kelompok:'', uraian:'', sat:'', hargaBarang:'', hargaJasa:'', sumberRef:''}; }
+function anaBlankKonItem(){ return {judul:'', subjudul:'', uraian:'', sat:'', hargaBarang:'', hargaJasa:'', sumberRef:''}; }
 function anaNormKonItem(c){ c=c||{}; return {
-  kelompok:c.kelompok||'', uraian:c.uraian||'', sat:c.sat||'',
+  judul:(c.judul!=null?c.judul:(c.kelompok||'')), subjudul:c.subjudul||'', uraian:c.uraian||'', sat:c.sat||'',
   hargaBarang:(c.hargaBarang!=null?c.hargaBarang:''),
   hargaJasa:(c.hargaJasa!=null?c.hargaJasa:''),
   sumberRef:c.sumberRef||''
@@ -14852,6 +14956,7 @@ function anaBlankState(){ return {
   sumber:[''], refs:[anaBlankRef()],
   metodeRef:'Sama', metodeAll:'Rata-rata', aktifRef:0,
   jenis:'Umum', rok:'', inflasi:'Tidak', inflasiVals:[], inflasiNilai:'',
+  judulOn:'Tidak', judulNum:'A', subjudulOn:'Tidak', subjudulNum:'a',
   konstruksi:{ jumlahItem:1, items:[anaBlankKonItem()] },
   ahsp: anaBlankAhsp()
 }; }
@@ -14888,6 +14993,10 @@ function anaEnsure(){
   if(st.metodeRef!=='Berbeda') st.metodeRef='Sama';
   if(st.metodeAll!=='Terendah') st.metodeAll='Rata-rata';
   st.aktifRef=Math.max(0,Math.min(nRef-1, parseInt(st.aktifRef,10)||0));
+  // Judul / Sub-Judul
+  if(st.judulOn!=='Ya') st.judulOn='Tidak';
+  if(st.subjudulOn!=='Ya') st.subjudulOn='Tidak';
+  st.judulNum=jsNumStyleOk(st.judulNum,'A'); st.subjudulNum=jsNumStyleOk(st.subjudulNum,'a');
   // jenis pekerjaan & ROK (%)
   if(st.jenis!=='Konstruksi') st.jenis='Umum';
   const rokMax=(st.jenis==='Konstruksi')?15:10;
@@ -14983,6 +15092,10 @@ function anaRecordToState(rec){
     inflasi: s.inflasi==='Ya'?'Ya':'Tidak',
     inflasiVals: Array.isArray(s.inflasiVals)?s.inflasiVals.slice():[],
     inflasiNilai: (s.inflasiNilai!=null?s.inflasiNilai:''),
+    judulOn: (s.judulOn==='Ya')?'Ya':'Tidak',
+    judulNum: jsNumStyleOk(s.judulNum,'A'),
+    subjudulOn: (s.subjudulOn==='Ya')?'Ya':'Tidak',
+    subjudulNum: jsNumStyleOk(s.subjudulNum,'a'),
     konstruksi: (s.konstruksi&&typeof s.konstruksi==='object') ? {
       jumlahItem: Math.max(1,Math.min(ANA_MAX_ITEM, parseInt(s.konstruksi.jumlahItem,10)||1)),
       items: Array.isArray(s.konstruksi.items)&&s.konstruksi.items.length ? s.konstruksi.items.map(anaNormKonItem) : [anaBlankKonItem()]
@@ -15127,11 +15240,13 @@ function anaKonRemoveRow(i){
 }
 function anaKonTableHtml(){
   const st=anaState.konstruksi;
+  const jOn=jsOn(anaState.judulOn), sOn=jsOn(anaState.subjudulOn);
   let rows='';
   st.items.forEach((it,i)=>{
     rows+='<tr>'+
       '<td class="c-no">'+(i+1)+'</td>'+
-      '<td class="c-kel"><input type="text" data-i="'+i+'" placeholder="mis. MATERIAL" value="'+fkEsc(it.kelompok||'')+'" oninput="anaOnKonCell(this,\'kelompok\')"></td>'+
+      (jOn?('<td class="c-kel"><input type="text" data-i="'+i+'" placeholder="mis. PEKERJAAN PERSIAPAN" value="'+fkEsc(it.judul||'')+'" oninput="anaOnKonCell(this,\'judul\')"></td>'):'')+
+      (sOn?('<td class="c-kel"><input type="text" data-i="'+i+'" placeholder="mis. Material Utama" value="'+fkEsc(it.subjudul||'')+'" oninput="anaOnKonCell(this,\'subjudul\')"></td>'):'')+
       '<td class="c-ur"><textarea data-i="'+i+'" rows="1" placeholder="Uraian pekerjaan ke-'+(i+1)+'" oninput="anaOnKonCell(this,\'uraian\')">'+fkEsc(it.uraian||'')+'</textarea></td>'+
       '<td class="c-sat"><input type="text" data-i="'+i+'" placeholder="Bh" value="'+fkEsc(it.sat||'')+'" oninput="anaOnKonCell(this,\'sat\')"></td>'+
       '<td class="c-money"><input type="text" inputmode="numeric" id="ana-kon-hb-'+i+'" data-i="'+i+'" placeholder="Rp" value="'+rupiahInputText(it.hargaBarang)+'" oninput="anaOnKonHargaBarang(this)"></td>'+
@@ -15142,7 +15257,7 @@ function anaKonTableHtml(){
     '</tr>';
   });
   return '<div class="hps-uraian-wrap"><table class="hps-uraian"><thead>'+
-    '<tr><th class="c-no">No</th><th>Kelompok</th><th class="c-ur">Uraian Pekerjaan</th><th>Satuan</th>'+
+    '<tr><th class="c-no">No</th>'+(jOn?'<th>Judul</th>':'')+(sOn?'<th>Sub-Judul</th>':'')+'<th class="c-ur">Uraian Pekerjaan</th><th>Satuan</th>'+
       '<th>Harga Barang<br>(Rp)</th><th>Harga Jasa<br>(Rp)</th><th class="c-ref">Sumber Referensi</th><th></th></tr>'+
     '</thead><tbody>'+rows+'</tbody></table></div>';
 }
@@ -15329,9 +15444,23 @@ function anaRokInflasiFieldsHtml(){
     (st.inflasi==='Ya'?('<div class="ana-tb-field"><label>Nilai Inflasi</label>'+
       '<input id="ana-inflasi-nilai" type="text" inputmode="decimal" placeholder="Masukkan nilai inflasi" value="'+fkEsc(infNilai)+'" oninput="anaOnInflasiNilai(this)"></div>'):'');
 }
+/* Field Judul? & Sub-Judul? — tampil pada kartu Data Pekerjaan (Umum & Konstruksi) */
+function anaJudulFieldsHtml(){
+  const st=anaState;
+  const f=(lbl,idOn,vOn,hOn,idN,vN,hN)=>
+    '<div class="ana-tb-field js-judul-field"><label>'+lbl+'</label>'+
+      '<div class="js-judul-row">'+jsYaTidakHtml(idOn,vOn,hOn)+(jsOn(vOn)?jsNumSelectHtml(idN,vN,hN):'')+'</div></div>';
+  return f('Judul?','ana-judulon',st.judulOn,'anaOnJudulOn','ana-judulnum',st.judulNum,'anaOnJudulNum')+
+         f('Sub-Judul?','ana-subon',st.subjudulOn,'anaOnSubOn','ana-subnum',st.subjudulNum,'anaOnSubNum');
+}
+function anaOnJudulOn(el){ anaState.judulOn=(el.value==='Ya')?'Ya':'Tidak'; anaSaveState(); renderAnalisaForm(); }
+function anaOnSubOn(el){ anaState.subjudulOn=(el.value==='Ya')?'Ya':'Tidak'; anaSaveState(); renderAnalisaForm(); }
+function anaOnJudulNum(el){ anaState.judulNum=jsNumStyleOk(el.value,'A'); anaSaveState(); }
+function anaOnSubNum(el){ anaState.subjudulNum=jsNumStyleOk(el.value,'a'); anaSaveState(); }
+
 function anaOnInflasi(el){
   anaState.inflasi=(el.value==='Ya')?'Ya':'Tidak'; anaSaveState();
-  const box=document.getElementById('ana-dp-rokinf'); if(box) box.innerHTML=anaRokInflasiFieldsHtml();
+  const box=document.getElementById('ana-dp-rokinf'); if(box) box.innerHTML=anaRokInflasiFieldsHtml()+anaJudulFieldsHtml();
   anaRenderResult();
 }
 /* Nilai Inflasi global (satu nilai untuk semua uraian) — tampil bila Inflasi? = Ya. */
@@ -15366,12 +15495,14 @@ function anaOnMetodeAll(el){ anaState.metodeAll=(el.value==='Terendah')?'Terenda
 function anaUraianTableHtml(){
   const st=anaState; const r=st.aktifRef; const ref=st.refs[r]||anaBlankRef();
   const showMethod=(st.metodeRef==='Berbeda');
+  const jOn=jsOn(st.judulOn), sOn=jsOn(st.subjudulOn);
   let rows='';
   ref.items.forEach((it,i)=>{
     const m=(st.refs[0]&&st.refs[0].items[i]&&st.refs[0].items[i].method)||'Rata-rata';
     rows+='<tr>'+
       '<td class="c-no">'+(i+1)+'</td>'+
-      '<td class="c-kel"><input type="text" data-i="'+i+'" placeholder="mis. MATERIAL" value="'+fkEsc(it.kelompok||'')+'" oninput="anaOnCell(this,\'kelompok\')"></td>'+
+      (jOn?('<td class="c-kel"><input type="text" data-i="'+i+'" placeholder="mis. PEKERJAAN PERSIAPAN" value="'+fkEsc(it.judul||'')+'" oninput="anaOnCell(this,\'judul\')"></td>'):'')+
+      (sOn?('<td class="c-kel"><input type="text" data-i="'+i+'" placeholder="mis. Material Utama" value="'+fkEsc(it.subjudul||'')+'" oninput="anaOnCell(this,\'subjudul\')"></td>'):'')+
       '<td class="c-ur"><textarea data-i="'+i+'" rows="1" placeholder="Uraian pekerjaan / barang / jasa ke-'+(i+1)+'" oninput="anaOnCell(this,\'uraian\')">'+fkEsc(it.uraian||'')+'</textarea></td>'+
       '<td class="c-sat"><input type="text" data-i="'+i+'" placeholder="Bh" value="'+fkEsc(it.sat||'')+'" oninput="anaOnCell(this,\'sat\')"></td>'+
       '<td class="c-vol"><input type="text" inputmode="decimal" data-i="'+i+'" placeholder="0" value="'+fkEsc(it.vol!=null?String(it.vol):'')+'" oninput="anaOnVol(this)"></td>'+
@@ -15383,7 +15514,7 @@ function anaUraianTableHtml(){
     '</tr>';
   });
   return '<div class="ana-uraian-wrap"><table class="ana-uraian"><thead>'+
-    '<tr><th class="c-no">No</th><th>Kelompok</th><th class="c-ur">Uraian Pekerjaan</th><th>Sat</th><th>Vol</th>'+
+    '<tr><th class="c-no">No</th>'+(jOn?'<th>Judul</th>':'')+(sOn?'<th>Sub-Judul</th>':'')+'<th class="c-ur">Uraian Pekerjaan</th><th>Sat</th><th>Vol</th>'+
       '<th>Harga<br>Barang</th><th>Harga<br>Jasa</th>'+
       (showMethod?'<th>Metode<br>Perhitungan</th>':'')+'</tr>'+
     '</thead><tbody>'+rows+'</tbody></table></div>';
@@ -15392,7 +15523,7 @@ function anaUraianTableHtml(){
    disalin ke semua referensi agar konsisten antar sumber. */
 function anaOnCell(el,key){
   const i=+el.dataset.i; const st=anaState;
-  if(key==='kelompok'||key==='uraian'||key==='sat'){
+  if(key==='judul'||key==='subjudul'||key==='uraian'||key==='sat'){
     st.refs.forEach(rf=>{ if(rf.items[i]) rf.items[i][key]=el.value; });
   }else{
     const ref=st.refs[st.aktifRef]; if(ref&&ref.items[i]) ref.items[i][key]=el.value;
@@ -15532,12 +15663,15 @@ function anaTplRefName(st,r){
 /* Susun deskriptor kolom template mengikuti jumlah referensi. */
 function anaTplBuildCols(st){
   const cols=[
-    {label:'No',               w:6,  kind:'no'},
-    {label:'Kelompok',         w:18, kind:'kelompok'},
+    {label:'No',               w:6,  kind:'no'}
+  ];
+  if(jsOn(st.judulOn))    cols.push({label:'Judul',     w:22, kind:'judul'});
+  if(jsOn(st.subjudulOn)) cols.push({label:'Sub-Judul', w:22, kind:'subjudul'});
+  cols.push(...[
     {label:'Uraian Pekerjaan', w:44, kind:'uraian'},
     {label:'Sat',              w:9,  kind:'sat'},
     {label:'Vol',              w:11, kind:'vol'}
-  ];
+  ]);
   for(let r=0;r<st.jumlahRef;r++){
     const nm=anaTplRefName(st,r);
     cols.push({label:'Harga Barang ('+nm+')', w:22, kind:'barang', ref:r});
@@ -15594,7 +15728,8 @@ async function anaDownloadTemplate(){
     cols.forEach((c,ci)=>{
       const cell=row.getCell(ci+1);
       if(c.kind==='no') cell.value=i+1;
-      else if(c.kind==='kelompok') cell.value=base.kelompok||'';
+      else if(c.kind==='judul')    cell.value=base.judul||'';
+      else if(c.kind==='subjudul') cell.value=base.subjudul||'';
       else if(c.kind==='uraian')   cell.value=base.uraian||'';
       else if(c.kind==='sat')      cell.value=base.sat||'';
       else if(c.kind==='vol')      cell.value=(base.vol!==''&&base.vol!=null)?anaNum(base.vol):'';
@@ -15616,7 +15751,7 @@ async function anaDownloadTemplate(){
     }
   }
   // Bekukan header + 5 kolom pertama agar Kelompok/Uraian tetap terlihat saat menggeser ke kanan
-  wsD.views=[{state:'frozen', xSplit:5, ySplit:1}];
+  wsD.views=[{state:'frozen', xSplit:Math.min(6,4+(jsOn(st.judulOn)?1:0)+(jsOn(st.subjudulOn)?1:0)), ySplit:1}];
 
   // Sheet Petunjuk
   const wsG=wb.addWorksheet('Petunjuk');
@@ -15626,7 +15761,8 @@ async function anaDownloadTemplate(){
    ['Jumlah Referensi', String(st.jumlahRef)+'  (tiap referensi punya sepasang kolom Harga Barang & Jasa)'],
    ['',''],
    ['No','Nomor urut uraian. Jangan diubah — dipakai untuk mencocokkan baris.'],
-   ['Kelompok','Kelompok uraian (mis. MATERIAL). Berlaku sama untuk semua referensi.'],
+   ['Judul','Judul kelompok pekerjaan. SELALU dicetak huruf besar semua pada dokumen. Kosongkan bila melanjutkan judul di atasnya.'],
+   ['Sub-Judul','Sub-judul di bawah judul. Dicetak sesuai huruf besar/kecil yang diketik. Kosongkan bila melanjutkan sub-judul di atasnya.'],
    ['Uraian Pekerjaan','Nama barang/jasa/pekerjaan. Berlaku sama untuk semua referensi.'],
    ['Sat','Satuan (mis. Buah, Pack, m, unit). Berlaku sama untuk semua referensi.'],
    ['Vol','Volume. Ketik angka saja (mis. 10 atau 2.5). Berlaku sama untuk semua referensi.'],
@@ -15673,7 +15809,7 @@ function anaHandleUpload(ev){
       const head=rows[0].map(h=>String(h==null?'':h).trim().toLowerCase());
 
       // --- Klasifikasi kolom ---
-      let cNo=-1,cKel=-1,cUr=-1,cSat=-1,cVol=-1;
+      let cNo=-1,cJud=-1,cSub=-1,cUr=-1,cSat=-1,cVol=-1;
       const hargaCols=[];               // {ci, kind:'barang'|'jasa', ref}
       let barangSeq=0, jasaSeq=0;
       // Petakan sebuah judul kolom harga ke indeks referensi.
@@ -15695,12 +15831,14 @@ function anaHandleUpload(ev){
         if(h.indexOf('harga')>=0 && h.indexOf('barang')>=0){ hargaCols.push({ci, kind:'barang', ref:refFromHeader(h,'barang')}); return; }
         if(h.indexOf('harga')>=0 && h.indexOf('jasa')>=0){   hargaCols.push({ci, kind:'jasa',   ref:refFromHeader(h,'jasa')});   return; }
         if(cNo<0  && h==='no'){ cNo=ci; return; }
-        if(cKel<0 && h.indexOf('kelompok')>=0){ cKel=ci; return; }
+        if(cSub<0 && (h.indexOf('sub-judul')>=0||h.indexOf('sub judul')>=0||h.indexOf('subjudul')>=0)){ cSub=ci; return; }
+        if(cJud<0 && h.indexOf('judul')>=0){ cJud=ci; return; }
+        if(cJud<0 && h.indexOf('kelompok')>=0){ cJud=ci; return; }   // kompatibilitas template lama
         if(cUr<0  && h.indexOf('uraian')>=0){ cUr=ci; return; }
         if(cVol<0 && (h==='vol'||h.indexOf('volume')>=0)){ cVol=ci; return; }
         if(cSat<0 && (h==='sat'||h==='sat.'||h.indexOf('satuan')>=0)){ cSat=ci; return; }
       });
-      if(cKel<0&&cUr<0&&hargaCols.length===0){ toast('Header tidak dikenali. Gunakan template resmi.','warn'); ev.target.value=''; return; }
+      if(cJud<0&&cSub<0&&cUr<0&&hargaCols.length===0){ toast('Header tidak dikenali. Gunakan template resmi.','warn'); ev.target.value=''; return; }
 
       // Tambah jumlah referensi bila file memuat lebih banyak (maks 20)
       let maxRef=st.jumlahRef-1; hargaCols.forEach(hc=>{ if(hc.ref>maxRef) maxRef=hc.ref; });
@@ -15708,7 +15846,7 @@ function anaHandleUpload(ev){
       if(needRef!==st.jumlahRef){ st.jumlahRef=needRef; anaEnsure(); }
 
       // --- Kumpulkan baris data ---
-      const dataCols=[cKel,cUr,cSat,cVol].concat(hargaCols.map(h=>h.ci)).filter(x=>x>=0);
+      const dataCols=[cJud,cSub,cUr,cSat,cVol].concat(hargaCols.map(h=>h.ci)).filter(x=>x>=0);
       const dataRows=[];
       for(let rIdx=1;rIdx<rows.length;rIdx++){
         const row=rows[rIdx]; if(!row) continue;
@@ -15730,10 +15868,11 @@ function anaHandleUpload(ev){
       let filled=0, skipped=0;
       dataRows.forEach(d=>{
         if(d.idx<0||d.idx>=st.jumlahItem){ skipped++; return; }
-        // Struktur (kelompok/uraian/sat/vol) → semua referensi
+        // Struktur (judul/sub-judul/uraian/sat/vol) → semua referensi
         st.refs.forEach(rf=>{
           const it=rf.items[d.idx]; if(!it) return;
-          if(cKel>=0) it.kelompok=String(d.row[cKel]==null?'':d.row[cKel]).trim();
+          if(cJud>=0) it.judul   =String(d.row[cJud]==null?'':d.row[cJud]).trim();
+          if(cSub>=0) it.subjudul=String(d.row[cSub]==null?'':d.row[cSub]).trim();
           if(cUr >=0) it.uraian =String(d.row[cUr]==null?'':d.row[cUr]).trim();
           if(cSat>=0) it.sat    =String(d.row[cSat]==null?'':d.row[cSat]).trim();
           if(cVol>=0){ let v=String(d.row[cVol]==null?'':d.row[cVol]).replace(/[^0-9.,]/g,'').replace(/,/g,'.'); const p=v.split('.'); if(p.length>2) v=p[0]+'.'+p.slice(1).join(''); it.vol=v; }
@@ -15791,7 +15930,7 @@ function renderAnalisaForm(){
         ANA_OWN_FIELDS.map(anaInfoInputHtml).join('')+
         (!isKon ? (anaCountItemFieldHtml()+anaCountRefFieldHtml()) : '')+
       '</div>'+
-      (!isKon ? ('<div class="ana-dp-rokinf" id="ana-dp-rokinf">'+anaRokInflasiFieldsHtml()+'</div>') : '')
+      ('<div class="ana-dp-rokinf" id="ana-dp-rokinf">'+(!isKon?anaRokInflasiFieldsHtml():'')+anaJudulFieldsHtml()+'</div>')
     ) : '')+
     '</div>';
 
@@ -16019,21 +16158,17 @@ function anaBuildDocHargaSatuan(st){
   const fmtNilai=(info.nilai!==''&&info.nilai!=null)?('Rp '+Number(info.nilai).toLocaleString('id-ID')):'-';
   const infoRow=(k,v)=>'<tr><td class="k">'+k+'</td><td class="s">:</td><td class="v">'+fkEsc(v||'-')+'</td></tr>';
   const items=kst.items||[];
-  let groupIdx=0, curGroup=null, noInGroup=0, hsRows='';
-  items.forEach((it,i)=>{
-    const kel=String(it.kelompok||'').trim(); const kelKey=kel.toUpperCase();
-    if(kel && kelKey!==curGroup){
-      curGroup=kelKey; noInGroup=0;
-      const letter=String.fromCharCode(65+(groupIdx%26)); groupIdx++;
-      hsRows+='<tr class="grp"><td class="no">'+letter+'</td><td class="gname" colspan="5">'+fkEsc(kelKey)+'</td></tr>';
-    }
-    noInGroup++;
+  let hsRows='';
+  jsWalk(items,jsCfg(st),{
+    judul:(no,txt)=>{ hsRows+='<tr class="grp"><td class="no">'+fkEsc(no)+'</td><td class="gname" colspan="5">'+fkEsc(txt)+'</td></tr>'; },
+    sub:(no,txt)=>{ hsRows+='<tr class="grp sub"><td class="no">'+fkEsc(no)+'</td><td class="gname" colspan="5">'+fkEsc(txt)+'</td></tr>'; },
+    item:(noInGroup,it,i)=>{
     const uraian=(it.uraian&&String(it.uraian).trim())?it.uraian:('Uraian '+(i+1));
     const sat=(it.sat!=null&&String(it.sat).trim())?it.sat:'-';
     hsRows+='<tr><td class="no">'+noInGroup+'</td><td class="ur">'+fkEsc(uraian)+'</td><td class="st">'+fkEsc(String(sat))+'</td>'+
       '<td class="num">'+anaRpDoc(it.hargaBarang)+'</td><td class="num">'+anaRpDoc(it.hargaJasa)+'</td>'+
       '<td class="ur">'+fkEsc(it.sumberRef||'-')+'</td></tr>';
-  });
+  }});
   if(!hsRows) hsRows='<tr><td colspan="6" style="text-align:center;color:#889">Belum ada data</td></tr>';
   const hsTbl='<table class="ana-doc-tbl"><thead><tr><th>No.</th><th class="ur">Uraian Pekerjaan</th><th>Satuan</th>'+
     '<th>Harga Barang (Rp)</th><th>Harga Jasa (Rp)</th><th class="ur">Sumber Referensi</th></tr></thead><tbody>'+hsRows+'</tbody></table>';
@@ -16139,16 +16274,16 @@ function anaBuildDocHtmlUmum(st){
   const colA = 4 + nRef*2;   // no,ur,sat,vol + ref*2 (kolom Metode dihapus dari tabel Analisa)
   const colH = 4 + 1 + 1 + (infOn?1:0) + 2;   // no,ur,sat,vol + metode + ROK + inflasi? + jumlahHargaBarang,jumlahHargaJasa
   let rowsA='', rowsH='';
-  let groupIdx=0, curGroup=null, noInGroup=0;
-  struct.forEach((it,i)=>{
-    const kel=String(it.kelompok||'').trim(); const kelKey=kel.toUpperCase();
-    if(kel && kelKey!==curGroup){
-      curGroup=kelKey; noInGroup=0;
-      const letter=String.fromCharCode(65+(groupIdx%26)); groupIdx++;
-      rowsA+='<tr class="grp"><td class="no">'+letter+'</td><td class="gname" colspan="'+(colA-1)+'">'+fkEsc(kelKey)+'</td></tr>';
-      rowsH+='<tr class="grp"><td class="no">'+letter+'</td><td class="gname" colspan="'+(colH-1)+'">'+fkEsc(kelKey)+'</td></tr>';
-    }
-    noInGroup++;
+  jsWalk(struct,jsCfg(st),{
+    judul:(no,txt)=>{
+      rowsA+='<tr class="grp"><td class="no">'+fkEsc(no)+'</td><td class="gname" colspan="'+(colA-1)+'">'+fkEsc(txt)+'</td></tr>';
+      rowsH+='<tr class="grp"><td class="no">'+fkEsc(no)+'</td><td class="gname" colspan="'+(colH-1)+'">'+fkEsc(txt)+'</td></tr>';
+    },
+    sub:(no,txt)=>{
+      rowsA+='<tr class="grp sub"><td class="no">'+fkEsc(no)+'</td><td class="gname" colspan="'+(colA-1)+'">'+fkEsc(txt)+'</td></tr>';
+      rowsH+='<tr class="grp sub"><td class="no">'+fkEsc(no)+'</td><td class="gname" colspan="'+(colH-1)+'">'+fkEsc(txt)+'</td></tr>';
+    },
+    item:(noInGroup,it,i)=>{
     const uraian=(it.uraian&&String(it.uraian).trim())?it.uraian:('Uraian '+(i+1));
     const sat=(it.sat!=null&&String(it.sat).trim())?it.sat:'-';
     const vol=(it.vol!=null&&String(it.vol).trim())?it.vol:'-';
@@ -16161,7 +16296,7 @@ function anaBuildDocHtmlUmum(st){
     const lead='<td class="no">'+noInGroup+'</td><td class="ur">'+fkEsc(uraian)+'</td><td class="st">'+fkEsc(String(sat))+'</td><td class="vl">'+fkEsc(String(vol))+'</td>';
     rowsA+='<tr>'+lead+refCells+'</tr>';
     rowsH+='<tr>'+lead+'<td class="mtd">'+res.method+'</td><td class="rok">'+anaPct(rok,'-')+'</td>'+(infOn?('<td class="num">'+anaPct(res.inflasi,'-')+'</td>'):'')+'<td class="num tot">'+anaRpDoc(res.hargaBarang)+'</td><td class="num tot">'+anaRpDoc(res.hargaJasa)+'</td></tr>';
-  });
+  }});
   if(!rowsA){ rowsA='<tr><td colspan="'+colA+'" style="text-align:center;color:#889">Belum ada data</td></tr>'; rowsH='<tr><td colspan="'+colH+'" style="text-align:center;color:#889">Belum ada data</td></tr>'; }
   const tblAnalisa=
     '<table class="ana-doc-tbl"><thead>'+
@@ -16233,6 +16368,7 @@ function anaExtraDocCss(){
   'table.ana-doc-tbl td.num.tot2{font-weight:800;color:#0d7a3f;background:#e7f6ec;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   'table.ana-doc-tbl tr.grp td{background:#dcecee;font-weight:800;color:#0b3d42;text-transform:uppercase;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   'table.ana-doc-tbl tr.grp td.gname{text-align:left;letter-spacing:.3px}'+
+  'table.ana-doc-tbl tr.grp.sub td{background:#eef5f6;text-transform:none;font-weight:700;font-style:italic}'+
   'table.ana-doc-tbl tr.grp{break-inside:avoid;page-break-inside:avoid}'+
   'tr.ana-ahsp-spacer td{border:none;height:6px;padding:0}'+
   '.ana-ahsp-doc-info{font-size:9.5px;color:#33474d;margin:0 0 8px;font-weight:700}'+
@@ -16268,6 +16404,7 @@ function anaOpenPreview(section){
     const doc=ifr.contentWindow.document; doc.open(); doc.write(anaStandaloneDocHtml(anaPreviewSection)); doc.close();
   }
   const actions=document.querySelector('#pn-preview-overlay .pn-preview-head-actions');
+  { const _c=document.getElementById('hpsc-preview-print'); if(_c) _c.remove(); }
   ['fkl-preview-print','pnw-preview-print','rho-preview-print','hps-preview-print'].forEach(id=>{ const b=document.getElementById(id); if(b) b.remove(); });
   if(actions && !document.getElementById('ana-preview-print')){
     const btn=document.createElement('button');
@@ -16467,10 +16604,9 @@ function hpscCss(){
   '.hpsc-page,.hpsc-page *,.hpsc-modpage,.hpsc-modpage *{-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   '@media print{'+
     '@page{size:A4;margin:0}'+
-    '@page hpscbody{size:A4;margin:12mm 0}'+
     'html,body{margin:0;padding:0}'+
     '.hpsc-page{margin:0;box-shadow:none}'+
-    '.hpsc-modpage{page:hpscbody;padding-top:0;padding-bottom:0}'+
+    '.hpsc-modpage{padding:0;box-shadow:none}'+
   '}';
 }
 function hpscHead(kicker, title){
@@ -16603,7 +16739,14 @@ function hpscModuleFrag(kind, rec){
   try{ return hpscExtractDocFrag(mod.doc(rec)); }
   catch(e){ console.error('hpscModuleFrag',kind,e); return '<div class="hpsc-page"><div class="hpsc-body"><p style="padding:40px;color:#b02626">Gagal memuat dokumen '+kind+'.</p></div></div>'; }
 }
-function hpscModulePage(frag){ return frag ? '<div class="fkl-print-page hpsc-modpage">'+frag+'</div>' : ''; }
+function hpscModulePage(frag){
+  return frag ? ('<div class="hpsc-modpage">'+
+    '<table class="fkl-page-wrap">'+
+      '<thead><tr><td><div class="fkl-vspace"></div></td></tr></thead>'+
+      '<tbody><tr><td><div class="fkl-print-page">'+frag+'</div></td></tr></tbody>'+
+      '<tfoot><tr><td><div class="fkl-vspace"></div></td></tr></tfoot>'+
+    '</table></div>') : '';
+}
 function hpscAllCss(){
   const base=(document.getElementById('fkl-doc-css')||{}).textContent||'';
   let x='';
@@ -16666,8 +16809,9 @@ function hpsShowComposite(){
     hpscOpenPreview(html, dp.nama_pekerjaan);
   }).catch(err=>{ console.error(err); toast('Gagal memuat data: '+errMsg(err),'err'); });
 }
+/* Rekap HPS gabungan: HANYA pratinjau — fungsi Cetak / PDF dihilangkan. */
 function hpscOpenPreview(html, nama){
-  const ov=document.getElementById('pn-preview-overlay'); if(!ov){ hpscPrintHtml(html); return; }
+  const ov=document.getElementById('pn-preview-overlay'); if(!ov){ toast('Pratinjau tidak tersedia','warn'); return; }
   const _mdl=ov.querySelector('.pn-preview-modal'); if(_mdl) _mdl.classList.remove('is-max');
   if(typeof pnPreviewResetMaxBtn==='function') pnPreviewResetMaxBtn();
   const titleEl=document.getElementById('pn-preview-title');
@@ -16679,49 +16823,11 @@ function hpscOpenPreview(html, nama){
     const ifr=document.getElementById('hpsc-preview-frame');
     const doc=ifr.contentWindow.document; doc.open(); doc.write(html); doc.close();
   }
-  const actions=document.querySelector('#pn-preview-overlay .pn-preview-head-actions');
-  ['fkl-preview-print','pnw-preview-print','rho-preview-print','hps-preview-print','ana-preview-print'].forEach(bid=>{ const b=document.getElementById(bid); if(b) b.remove(); });
-  if(actions && !document.getElementById('hpsc-preview-print')){
-    const btn=document.createElement('button');
-    btn.id='hpsc-preview-print'; btn.className='btn btn-teal';
-    btn.style.padding='8px 14px'; btn.style.fontSize='11px';
-    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>Cetak / PDF';
-    btn.onclick=function(){ hpscPrintHtml(html); };
-    actions.insertBefore(btn, actions.firstChild);
-  }
+  ['fkl-preview-print','pnw-preview-print','rho-preview-print','hps-preview-print','ana-preview-print','hpsc-preview-print'].forEach(bid=>{ const b=document.getElementById(bid); if(b) b.remove(); });
   ov.classList.add('show');
 }
-function hpscPrintHtml(html){
-  const old=document.getElementById('hpsc-print-frame'); if(old) old.remove();
-  const ifr=document.createElement('iframe');
-  ifr.id='hpsc-print-frame'; ifr.setAttribute('aria-hidden','true');
-  ifr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
-  document.body.appendChild(ifr);
-  const doc=ifr.contentWindow.document; doc.open(); doc.write(html); doc.close();
+/* (Fungsi cetak Rekap HPS gabungan dihapus — dokumen ini hanya bisa dipratinjau.) */
 
-  // Iframe TIDAK boleh dibuang lewat timer: dialog "Simpan sebagai PDF" masih
-  // memakainya, sehingga penghapusan dini membuat dialog cetak tertutup sendiri.
-  // Iframe baru dibersihkan setelah dialog benar-benar selesai (afterprint),
-  // dengan cadangan berupa event focus bila browser tak mengirim afterprint.
-  let sudahCetak=false, sudahBersih=false;
-  const bersihkan=()=>{
-    if(sudahBersih) return; sudahBersih=true;
-    window.removeEventListener('focus', onFocus);
-    setTimeout(()=>{ const f=document.getElementById('hpsc-print-frame'); if(f) f.remove(); }, 400);
-  };
-  const onFocus=()=>{ setTimeout(bersihkan, 600); };
-  const go=()=>{
-    if(sudahCetak) return; sudahCetak=true;      // cegah print() terpanggil dua kali
-    const w=ifr.contentWindow;
-    try{ w.onafterprint=bersihkan; }catch(e){}
-    try{ w.addEventListener('afterprint', bersihkan); }catch(e){}
-    window.addEventListener('focus', onFocus);
-    withHiddenPageTitle(()=>{ try{ w.focus(); w.print(); }catch(e){ try{ window.print(); }catch(_){} } });
-  };
-  const imgs=doc.images?Array.from(doc.images):[];
-  if(imgs.length){ let n=imgs.length; const dec=()=>{ if(--n<=0) setTimeout(go,80); }; imgs.forEach(im=>{ if(im.complete) dec(); else { im.onload=dec; im.onerror=dec; } }); setTimeout(go,1500); }
-  else setTimeout(go,150);
-}
 /* ================= AKHIR COMPOSITE HPS PDF ================= */
 
 /* ---- Cetak / PDF rekap gabungan ---- */
