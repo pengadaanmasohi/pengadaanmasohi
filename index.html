@@ -2095,6 +2095,8 @@ tr.hl-weekend td{background:#f5f8fb}
 .pnw-profil-bar{display:flex;gap:8px;flex-wrap:wrap}
 .pnw-profil-btn{display:inline-flex;align-items:center;gap:7px;font-size:12px;padding:8px 13px}
 .pnw-profil-btn svg{width:15px;height:15px}
+/* Ikon tombol profil mengikuti warna teks tombol (bukan teal dari .form-section-title svg) */
+.form-section-title .pnw-profil-btn svg{color:inherit;stroke:currentColor;opacity:1}
 .pnw-profil-ov{display:none;position:fixed;inset:0;z-index:9999;background:rgba(16,40,50,.5);align-items:center;justify-content:center;padding:18px}
 .pnw-profil-modal{width:100%;max-width:440px;background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(16,40,50,.35);padding:22px 22px 18px;max-height:86vh;overflow:auto}
 .pnw-profil-head{display:flex;align-items:center;gap:9px;font-family:'Plus Jakarta Sans';font-weight:800;font-size:16px;color:#0b3d42}
@@ -2175,16 +2177,20 @@ tr.hl-weekend td{background:#f5f8fb}
 /* Tabel pemeriksaan */
 .pnw-table-wrap{padding:16px 20px 20px;overflow-x:hidden}
 .pnw-periksa-table{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:12px;border:1px solid #e6eef0;border-radius:12px;overflow:hidden}
-.pnw-periksa-table th{background:linear-gradient(180deg,#0E7C86,#0b6c74);color:#eafcfd;font-family:'Plus Jakarta Sans';font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:.6px;padding:12px 13px;text-align:left;border:none}
+.pnw-periksa-table th{background:linear-gradient(180deg,#0E7C86,#0b6c74);color:#eafcfd!important;font-family:'Plus Jakarta Sans';font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:.6px;padding:12px 13px;text-align:center;border:none;white-space:nowrap}
 .pnw-periksa-table th.pnw-no{text-align:center;color:#eafcfd}
 .pnw-periksa-table td{padding:11px 13px;border-bottom:1px solid #eef3f4;vertical-align:middle;background:#fff;transition:background .15s}
 .pnw-periksa-table tbody tr:last-child td{border-bottom:none}
 .pnw-periksa-table th.pnw-no,.pnw-periksa-table td.pnw-no{width:46px;min-width:42px;max-width:52px;text-align:center;font-weight:800;padding-left:6px;padding-right:6px}
 .pnw-periksa-table td.pnw-no{color:var(--muted)}
-.pnw-periksa-table th.pnw-uraian,.pnw-periksa-table td.pnw-uraian{color:#233a41;font-weight:600;white-space:normal;word-break:break-word;overflow-wrap:break-word;line-height:1.4}
-.pnw-periksa-table th.pnw-ck,.pnw-periksa-table td.pnw-ck{width:176px;text-align:center}
-.pnw-periksa-table td.pnw-ck .fkl-ada-opts{justify-content:center;flex-wrap:wrap}
+.pnw-periksa-table th.pnw-uraian{text-align:left}
+.pnw-periksa-table td.pnw-uraian{color:#233a41;font-weight:600;white-space:normal;word-break:break-word;overflow-wrap:break-word;line-height:1.4;text-align:left}
+.pnw-periksa-table th.pnw-ck,.pnw-periksa-table td.pnw-ck{width:216px;min-width:216px;text-align:center}
+/* Tombol Ada / Tidak Ada tetap satu baris (tidak wrap) */
+.pnw-periksa-table td.pnw-ck .fkl-ada-opts{justify-content:center;flex-wrap:nowrap}
+.pnw-periksa-table td.pnw-ck .fkl-ada-btn{white-space:nowrap;padding:6px 10px}
 .pnw-periksa-table th.pnw-ket,.pnw-periksa-table td.pnw-ket{width:240px}
+.pnw-periksa-table td.pnw-ket{text-align:left}
 .pnw-periksa-table td.pnw-ket input{width:100%;box-sizing:border-box}
 .pnw-periksa-table tr.is-ada td{background:#f4fbf7}
 .pnw-periksa-table tr.is-no td{background:#fdf6f6}
