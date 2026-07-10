@@ -17100,8 +17100,9 @@ function hpsShowComposite(){
   }).catch(err=>{ console.error(err); toast('Gagal memuat data: '+errMsg(err),'err'); });
 }
 /* Rekap HPS gabungan: HANYA pratinjau — fungsi Cetak / PDF dihilangkan. */
+/* Rekap HPS gabungan: pratinjau + tombol Cetak / PDF khusus dokumen ini. */
 function hpscOpenPreview(html, nama){
-  const ov=document.getElementById('pn-preview-overlay'); if(!ov){ toast('Pratinjau tidak tersedia','warn'); return; }
+  const ov=document.getElementById('pn-preview-overlay'); if(!ov){ hpscPrintHtml(html); return; }
   const _mdl=ov.querySelector('.pn-preview-modal'); if(_mdl) _mdl.classList.remove('is-max');
   if(typeof pnPreviewResetMaxBtn==='function') pnPreviewResetMaxBtn();
   const titleEl=document.getElementById('pn-preview-title');
@@ -17113,10 +17114,50 @@ function hpscOpenPreview(html, nama){
     const ifr=document.getElementById('hpsc-preview-frame');
     const doc=ifr.contentWindow.document; doc.open(); doc.write(html); doc.close();
   }
+  // Tombol cetak modul lain dibersihkan agar tidak muncul dua tombol berdampingan
+  const actions=document.querySelector('#pn-preview-overlay .pn-preview-head-actions');
   ['fkl-preview-print','pnw-preview-print','rho-preview-print','hps-preview-print','ana-preview-print','hpsc-preview-print'].forEach(bid=>{ const b=document.getElementById(bid); if(b) b.remove(); });
+  if(actions){
+    const btn=document.createElement('button');
+    btn.id='hpsc-preview-print'; btn.className='btn btn-teal';
+    btn.style.padding='8px 14px'; btn.style.fontSize='11px';
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>Cetak / PDF';
+    btn.onclick=function(){ hpscPrintHtml(html); };
+    actions.insertBefore(btn, actions.firstChild);
+  }
   ov.classList.add('show');
 }
-/* (Fungsi cetak Rekap HPS gabungan dihapus — dokumen ini hanya bisa dipratinjau.) */
+/* Cetak Rekap HPS gabungan lewat iframe terisolasi.
+   Iframe TIDAK dibuang lewat timer: dialog "Simpan sebagai PDF" masih memakainya,
+   sehingga penghapusan dini membuat dialog tertutup sendiri. Pembersihan menunggu
+   'afterprint', dengan cadangan event 'focus' bila browser tak mengirimkannya. */
+function hpscPrintHtml(html){
+  const old=document.getElementById('hpsc-print-frame'); if(old) old.remove();
+  const ifr=document.createElement('iframe');
+  ifr.id='hpsc-print-frame'; ifr.setAttribute('aria-hidden','true');
+  ifr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+  document.body.appendChild(ifr);
+  const doc=ifr.contentWindow.document; doc.open(); doc.write(html); doc.close();
+
+  let sudahCetak=false, sudahBersih=false;
+  const bersihkan=()=>{
+    if(sudahBersih) return; sudahBersih=true;
+    window.removeEventListener('focus', onFocus);
+    setTimeout(()=>{ const f=document.getElementById('hpsc-print-frame'); if(f) f.remove(); }, 400);
+  };
+  const onFocus=()=>{ setTimeout(bersihkan, 600); };
+  const go=()=>{
+    if(sudahCetak) return; sudahCetak=true;      // cegah print() terpanggil dua kali
+    const w=ifr.contentWindow;
+    try{ w.onafterprint=bersihkan; }catch(e){}
+    try{ w.addEventListener('afterprint', bersihkan); }catch(e){}
+    window.addEventListener('focus', onFocus);
+    withHiddenPageTitle(()=>{ try{ w.focus(); w.print(); }catch(e){ try{ window.print(); }catch(_){} } });
+  };
+  const imgs=doc.images?Array.from(doc.images):[];
+  if(imgs.length){ let n=imgs.length; const dec=()=>{ if(--n<=0) setTimeout(go,80); }; imgs.forEach(im=>{ if(im.complete) dec(); else { im.onload=dec; im.onerror=dec; } }); setTimeout(go,1500); }
+  else setTimeout(go,150);
+}
 
 /* ================= AKHIR COMPOSITE HPS PDF ================= */
 
