@@ -8619,17 +8619,22 @@ function renderHariLibur(){
     '</tr>';
   }).join('') : hlEmptyRow();
 
+  // Tata letak disamakan dengan form Input Data Pekerjaan:
+  // form-card + form-flow (grid kolom), tombol aksi di pojok kanan bawah.
   cont.innerHTML = ''+
-    '<div class="panel">'+
+    '<div class="form-card">'+
       '<div class="form-section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Tambah Tanggal Libur</div>'+
-      '<div class="hl-toolbar" style="margin-top:10px">'+
+      '<div class="hps-hint">Tanggal yang ditambahkan di sini akan dilompati saat perhitungan <b>hari kerja</b> pada Jadwal Pelaksanaan Pengadaan.</div>'+
+      '<div class="form-flow" style="--cols:4">'+
         '<div class="field"><label>Tanggal</label><input type="date" id="hl-tgl"></div>'+
-        '<div class="field" style="flex:2 1 260px"><label>Keterangan</label><input type="text" id="hl-ket" placeholder="mis. Hari Kemerdekaan RI" onkeydown="if(event.key===\'Enter\'){event.preventDefault();hlAdd();}"></div>'+
-        '<button class="btn btn-teal" onclick="hlAdd()">'+
-          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Tambah Tanggal'+
-        '</button>'+
+        '<div class="field" style="flex:0 1 calc(3 * ((100% - 90px) / 4) + 60px)"><label>Keterangan</label><input type="text" id="hl-ket" placeholder="mis. Hari Kemerdekaan RI" onkeydown="if(event.key===\'Enter\'){event.preventDefault();hlAdd();}"></div>'+
       '</div>'+
     '</div>'+
+    '<div class="fkl-actions"><div class="fkl-actions-right">'+
+      '<button class="btn btn-teal" onclick="hlAdd()">'+
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Tambah Tanggal'+
+      '</button>'+
+    '</div></div>'+
     '<div class="hl-tpl-bar">'+
       '<div class="hl-tpl-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>'+
       '<div class="hl-tpl-txt"><b>Template Pengisian Hari Libur</b><span>Unduh format Excel, isi data, lalu unggah kembali untuk menambah banyak data sekaligus</span></div>'+
@@ -8879,6 +8884,22 @@ function jpFmtDT(d){
   return pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear()+'  '+pad(d.getHours())+':'+pad(d.getMinutes());
 }
 function jpFmtJam(d){ const pad=n=>String(n).padStart(2,'0'); return pad(d.getHours())+':'+pad(d.getMinutes()); }
+/* ---- Util hari kerja (melompati Sabtu/Minggu & hari libur nasional) ---- */
+function jpDateOnly(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+function jpSameDate(a,b){ return a && b && jpDateOnly(a).getTime()===jpDateOnly(b).getTime(); }
+/* Maju n hari kerja dari d (jam dipertahankan). n=0 -> tanggal sama. */
+function jpAddWorkDays(d, n){
+  const r=new Date(d); let sisa=Math.max(0, Number(n)||0), guard=0;
+  while(sisa>0 && guard<3000){ guard++; do{ r.setDate(r.getDate()+1); }while(!jpIsWorkDay(r)); sisa--; }
+  return r;
+}
+/* Berapa langkah hari kerja dari a ke b (tanggal saja). b<=a -> 0. */
+function jpWorkDaysBetween(a, b){
+  if(!a || !b) return 0;
+  let cur=jpDateOnly(a); const end=jpDateOnly(b); let n=0, guard=0;
+  while(cur.getTime() < end.getTime() && guard<3000){ guard++; do{ cur.setDate(cur.getDate()+1); }while(!jpIsWorkDay(cur)); n++; }
+  return n;
+}
 /* Format tanggal panjang: 10 Juli 2026 */
 function jpFmtTglPanjang(d){ if(!d) return '—'; return d.getDate()+' '+(PNW_BULAN[d.getMonth()]||'')+' '+d.getFullYear(); }
 /* Selisih dua tanggal -> {hari,jam,menit} (durasi kalender) */
@@ -9004,10 +9025,39 @@ function jpMoveTahap(i, dir){
 const JP_PROFIL_KEY='jp_jadwal_profiles_v1';
 function jpProfilAll(){ try{ const r=localStorage.getItem(JP_PROFIL_KEY); const a=r?JSON.parse(r):[]; return Array.isArray(a)?a:[]; }catch(e){ return []; } }
 function jpProfilStore(list){ try{ localStorage.setItem(JP_PROFIL_KEY, JSON.stringify(list)); return true; }catch(e){ toast('Gagal menyimpan profil di penyimpanan browser','err'); return false; } }
-/* Snapshot: nama tahapan + keterangan + jam awal + durasi tiap tahapan */
+/* Snapshot profil = SIFAT jadwal, bukan tanggal mati. Tiap tahapan merekam:
+   - nama & keterangan
+   - awalJam (jam mulai tahapan)
+   - awalRel: hubungan TANGGAL AWAL terhadap tahapan sebelumnya
+       'anchor' : tahapan pertama (jadi titik acuan)
+       'awal'   : tanggal awalnya SAMA dengan tanggal awal tahapan sebelumnya
+                  (mis. Undangan & Pendaftaran mulai di tanggal yang sama)
+       'akhir'  : tanggal awalnya SAMA dengan tanggal akhir tahapan sebelumnya (nyambung)
+       'offset' : awalOffset hari kerja SETELAH akhir tahapan sebelumnya
+   - hariKerja : jumlah hari kerja dari Awal ke Akhir tahapan itu
+   - menitOffset: selisih jam pada hari yang sama (mis. 08:00->12:00 = 240 menit).
+     Boleh negatif bila jam akhir lebih awal dari jam mulai.
+   Dengan cara ini, "akhir Pendaftaran = 1 hari kerja sebelum akhir Upload Dokumen"
+   ikut terekam sebagai: Upload mulai di akhir Pendaftaran, durasi 1 hari kerja. */
 function jpProfilSnapshot(){
   const rows=jpCompute();
-  return { tahapan: rows.map(r=>({ nama:r.nama||'', ket:r.ket||'', awalJam:r.awalJam||'08:00', hari:r.hari||0, jam:r.jam||0, menit:r.menit||0 })) };
+  const tahapan = rows.map((r,i)=>{
+    const t={ nama:r.nama||'', ket:r.ket||'', awalJam:r.awalJam||'08:00', awalRel:'anchor', awalOffset:0, hariKerja:0, menitOffset:0 };
+    if(r.awal && r.akhir){
+      t.hariKerja = jpWorkDaysBetween(r.awal, r.akhir);
+      const base = jpAddWorkDays(r.awal, t.hariKerja);
+      t.menitOffset = Math.round((r.akhir.getTime() - base.getTime())/60000);
+    }
+    const prev = i>0 ? rows[i-1] : null;
+    if(prev && r.awal){
+      if(jpSameDate(r.awal, prev.awal))       t.awalRel='awal';
+      else if(jpSameDate(r.awal, prev.akhir)) t.awalRel='akhir';
+      else if(prev.akhir){ t.awalRel='offset'; t.awalOffset=jpWorkDaysBetween(prev.akhir, r.awal); }
+      else t.awalRel='akhir';
+    }else if(i>0){ t.awalRel='akhir'; }
+    return t;
+  });
+  return { tahapan };
 }
 function jpProfilOverlay(inner){
   let ov=document.getElementById('pnw-profil-ov');
@@ -9023,7 +9073,7 @@ function jpProfilOpenSave(){
   const existing = list.length ? ('<div class="pnw-profil-existing">Profil tersimpan: '+list.map(p=>fkEsc(p.name)).join(' &middot; ')+'</div>') : '';
   jpProfilOverlay(
     '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Simpan Profil Jadwal</div>'+
-    '<div class="pnw-profil-sub">Menyimpan <b>'+cnt+'</b> <b>Tahapan Pengadaan</b> beserta <b>Keterangan</b>, <b>Jam Awal</b> &amp; <b>Durasi (Hari/Jam/Menit)</b>. Tanggal tidak ikut tersimpan.</div>'+
+    '<div class="pnw-profil-sub">Menyimpan <b>'+cnt+'</b> Tahapan Pengadaan beserta <b>Keterangan</b>, <b>Jam Awal</b>, <b>durasi dalam hari kerja</b>, dan <b>hubungan antar tahapan</b> (mulai bersamaan / menyambung / berjarak N hari kerja). Tanggal tidak ikut tersimpan.</div>'+
     '<input id="jp-profil-name" class="pnw-profil-input" type="text" placeholder="Nama profil (mis. Pengadaan Langsung Standar)" maxlength="60" onkeydown="if(event.key===\'Enter\')jpProfilDoSave()">'+
     existing+
     '<div class="pnw-profil-actions"><button type="button" class="btn btn-ghost" onclick="jpProfilClose()">Batal</button>'+
@@ -9051,7 +9101,7 @@ function jpProfilOpenLoad(){
   ).join('');
   jpProfilOverlay(
     '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6M9 14h6"/></svg>Muat Profil Jadwal</div>'+
-    '<div class="pnw-profil-sub">Tahapan Pengadaan, Keterangan, Jam Awal &amp; Durasi akan diganti. Tanggal dihitung ulang berurutan dari Awal tahapan pertama. <b>Isian saat ini akan diganti.</b></div>'+
+    '<div class="pnw-profil-sub">Tanggal dihitung ulang dari <b>Awal tahapan pertama</b> yang sedang terisi, mengikuti sifat yang terekam (hari kerja, Sabtu/Minggu &amp; hari libur dilompati). <b>Isian saat ini akan diganti.</b></div>'+
     '<div class="pnw-profil-list">'+items+'</div>'+
     '<div class="pnw-profil-actions"><button type="button" class="btn btn-ghost" onclick="jpProfilClose()">Tutup</button></div>'
   );
@@ -9060,27 +9110,46 @@ function jpProfilDoDelete(name){
   let list=jpProfilAll(); list=list.filter(x=>String(x.name)!==String(name));
   if(jpProfilStore(list)){ toast('Profil "'+name+'" dihapus','ok'); if(list.length) jpProfilOpenLoad(); else jpProfilClose(); }
 }
-/* Terapkan profil: nama + jam awal + durasi; tanggal dihitung berantai */
+/* Terapkan profil: rekonstruksi tanggal dari SIFAT yang terekam.
+   Titik acuan = tanggal Awal tahapan pertama yang sedang aktif di layar. */
 function jpProfilDoLoad(name){
   const p=jpProfilAll().find(x=>String(x.name)===String(name));
   if(!p || !Array.isArray(p.tahapan) || !p.tahapan.length){ toast('Profil tidak ditemukan','warn'); return; }
   const lama=jpState.tahapan||[];
-  const tglAwal = (lama[0] && lama[0].awalTgl) ? lama[0].awalTgl : '';
-  let cur = tglAwal ? jpCombine(tglAwal, p.tahapan[0].awalJam || '08:00') : null;
-  jpState.tahapan = p.tahapan.map(t=>{
-    const base = jpTahapNorm({ nama:t.nama, ket:t.ket, awalJam:t.awalJam||'08:00' });
-    if(!cur) return base;                       // belum ada tanggal awal -> hanya nama, keterangan & jam
-    const awal = jpCombine(hlToISO(cur), t.awalJam || '08:00');
-    const akhir = new Date(awal.getTime());
-    akhir.setDate(akhir.getDate() + (Number(t.hari)||0));
-    akhir.setMinutes(akhir.getMinutes() + (Number(t.jam)||0)*60 + (Number(t.menit)||0));
-    cur = new Date(akhir.getTime());            // tahap berikutnya mulai di tanggal akhir tahap ini
-    return jpTahapNorm({
-      nama:t.nama, ket:t.ket, awalJam:t.awalJam||'08:00',
+  const tglAnchor = (lama[0] && lama[0].awalTgl) ? lama[0].awalTgl : '';
+  const hasil=[]; let prevAwal=null, prevAkhir=null;
+  p.tahapan.forEach((t,i)=>{
+    const jam = t.awalJam || '08:00';
+    // profil format lama (hari/jam/menit kalender) -> konversi seadanya
+    const hariKerja   = (t.hariKerja!=null)   ? Number(t.hariKerja)   : Number(t.hari||0);
+    const menitOffset = (t.menitOffset!=null) ? Number(t.menitOffset) : ((Number(t.jam)||0)*60 + (Number(t.menit)||0));
+    if(!tglAnchor){                       // belum ada tanggal acuan -> hanya nama, keterangan & jam
+      hasil.push(jpTahapNorm({nama:t.nama, ket:t.ket, awalJam:jam}));
+      return;
+    }
+    // 1) tentukan TANGGAL awal berdasarkan relasi ke tahapan sebelumnya
+    let awal;
+    if(i===0 || !prevAwal){
+      awal = jpCombine(tglAnchor, jam);
+    }else if(t.awalRel==='awal'){
+      awal = jpCombine(hlToISO(prevAwal), jam);                         // mulai bareng tahap sebelumnya
+    }else if(t.awalRel==='offset'){
+      awal = jpCombine(hlToISO(jpAddWorkDays(prevAkhir, t.awalOffset||0)), jam);
+    }else{                                                              // 'akhir' (default): nyambung
+      awal = jpCombine(hlToISO(prevAkhir), jam);
+    }
+    awal = jpEnsureWorkStart(awal);                                     // jangan jatuh di libur
+    // 2) akhir = maju N hari kerja, lalu geser sesuai selisih jam
+    const akhir = jpAddWorkDays(awal, hariKerja);
+    akhir.setMinutes(akhir.getMinutes() + menitOffset);
+    prevAwal=new Date(awal); prevAkhir=new Date(akhir);
+    hasil.push(jpTahapNorm({
+      nama:t.nama, ket:t.ket, awalJam:jpFmtJam(awal),
       awalTgl: hlToISO(awal),
       akhirTgl: hlToISO(akhir), akhirJam: jpFmtJam(akhir)
-    });
+    }));
   });
+  jpState.tahapan = hasil;
   jpState.profilLoaded = true;   // tombol "Batalkan Profil" baru muncul di sini
   jpProfilClose(); renderJadwalKerja();
   toast('Profil "'+name+'" dimuat','ok');
@@ -9104,10 +9173,9 @@ function jpExtraDocCss(){
   'table.jp-doc-tbl td.no,table.jp-doc-tbl td.awal,table.jp-doc-tbl td.akhir,table.jp-doc-tbl td.durasi{text-align:center;white-space:nowrap}'+
   'table.jp-doc-tbl tr.hi td{background:#f2ecd9;-webkit-print-color-adjust:exact;print-color-adjust:exact}';
 }
-function jpStandaloneDocHtml(){
+/* Isi dokumen Jadwal (dipakai pratinjau, cetak, & Rekap HPS lewat shell bersama) */
+function jpBuildDocHtml(){
   const st=jpState; const rows=jpCompute();
-  const cssEl=document.getElementById('fkl-doc-css');
-  const css=(cssEl?cssEl.textContent:'') + jpExtraDocCss();
   const body=rows.map((r,i)=>{
     const hasKet=!!(r.ket && r.ket.trim());
     return '<tr'+(hasKet?' class="hi"':'')+'>'+
@@ -9119,11 +9187,8 @@ function jpStandaloneDocHtml(){
       '<td class="ket">'+fkEsc(r.ket||'')+'</td>'+
     '</tr>';
   }).join('');
-  return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8">'+
-    '<meta name="viewport" content="width=device-width, initial-scale=1">'+
-    '<title>&#8203;</title>'+
-    '<style>'+css+'</style></head><body>'+
-    '<div class="fkl-print-page"><div class="fkl-doc">'+
+  return ''+
+    '<div class="fkl-doc">'+
       '<div class="fkl-doc-head">'+
         '<div class="fkl-doc-logo"><img src="'+FKL_LOGO_SRC+'" alt="Logo PLN"></div>'+
         '<div class="fkl-doc-org">'+
@@ -9137,8 +9202,10 @@ function jpStandaloneDocHtml(){
       '<div class="fkl-doc-titlegap"></div>'+
       (st.namaPekerjaan? '<div class="jp-doc-nama">'+fkEsc(st.namaPekerjaan)+'</div>' : '')+
       '<div class="jp-doc-wrap"><table class="jp-doc-tbl"><thead><tr><th class="no">No</th><th class="nm">Tahapan Pengadaan</th><th class="awal">Awal</th><th class="akhir">Akhir</th><th class="durasi">Durasi</th><th class="ket">Keterangan</th></tr></thead><tbody>'+body+'</tbody></table></div>'+
-    '</div></div>'+
-    '</body></html>';
+    '</div>';
+}
+function jpStandaloneDocHtml(){
+  return fklDocShell(jpExtraDocCss(), jpBuildDocHtml());
 }
 function jpPrint(){
   if(!jpState || !jpAdaJadwal()){ toast('Isi Awal & Akhir minimal satu tahapan terlebih dahulu','warn'); return; }
@@ -11307,16 +11374,27 @@ function fklBuildDocHtml(){
   '</div>';
 }
 
-/* Bangun HTML dokumen lengkap (mandiri) untuk pratinjau iframe & cetak */
-function fklStandaloneDocHtml(){
-  const cssEl=document.getElementById('fkl-doc-css');
-  const css=cssEl?cssEl.textContent:'';
+/* ============ SHELL DOKUMEN BERSAMA ============
+   SATU tempat yang membentuk kerangka dokumen (doctype, <style>, pembungkus
+   .fkl-print-page). Dipakai oleh SEMUA modul, dan dokumen yang sama itu pula
+   yang ditulis ke iframe pratinjau MAUPUN iframe cetak. Karena pratinjau dan
+   Cetak/PDF membaca hasil fungsi yang sama, perubahan di satu sisi pasti ikut
+   di sisi lain — tidak mungkin melenceng.
+   - extraCss  : CSS tambahan milik modul (boleh kosong)
+   - innerHtml : isi dokumen (biasanya <div class="fkl-doc">…</div>)  */
+function fklDocBaseCss(){ const el=document.getElementById('fkl-doc-css'); return el?el.textContent:''; }
+function fklDocShell(extraCss, innerHtml){
   return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8">'+
     '<meta name="viewport" content="width=device-width, initial-scale=1">'+
     '<title>&#8203;</title>'+
-    '<style>'+css+'</style></head><body>'+
-    '<div class="fkl-print-page">'+fklBuildDocHtml()+'</div>'+
+    '<style>'+fklDocBaseCss()+(extraCss||'')+'</style></head><body>'+
+    '<div class="fkl-print-page">'+innerHtml+'</div>'+
     '</body></html>';
+}
+
+/* Bangun HTML dokumen lengkap (mandiri) untuk pratinjau iframe & cetak */
+function fklStandaloneDocHtml(){
+  return fklDocShell('', fklBuildDocHtml());
 }
 
 function fklOpenPreview(){
@@ -12346,14 +12424,7 @@ function pnwBuildDocHtml(sk){
   '</div>';
 }
 function pnwStandaloneDocHtml(){
-  const cssEl=document.getElementById('fkl-doc-css');
-  const css=(cssEl?cssEl.textContent:'') + pnwExtraDocCss();
-  return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8">'+
-    '<meta name="viewport" content="width=device-width, initial-scale=1">'+
-    '<title>&#8203;</title>'+
-    '<style>'+css+'</style></head><body>'+
-    '<div class="fkl-print-page">'+pnwBuildDocHtml(pnwPreviewSampul)+'</div>'+
-    '</body></html>';
+  return fklDocShell(pnwExtraDocCss(), pnwBuildDocHtml(pnwPreviewSampul));
 }
 function pnwExtraDocCss(){
   return ''+
@@ -13384,14 +13455,7 @@ function rhoExtraDocCss(){
   '.rho-pdf-foto-empty{color:#9aabb0;font-style:italic;font-size:9px}';
 }
 function rhoStandaloneDocHtml(){
-  const cssEl=document.getElementById('fkl-doc-css');
-  const css=(cssEl?cssEl.textContent:'') + rhoExtraDocCss();
-  return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8">'+
-    '<meta name="viewport" content="width=device-width, initial-scale=1">'+
-    '<title>&#8203;</title>'+
-    '<style>'+css+'</style></head><body>'+
-    '<div class="fkl-print-page">'+rhoBuildDocHtml()+'</div>'+
-    '</body></html>';
+  return fklDocShell(rhoExtraDocCss(), rhoBuildDocHtml());
 }
 function rhoOpenPreview(){
   const ov=document.getElementById('pn-preview-overlay'); if(!ov) return;
@@ -14579,14 +14643,7 @@ function hpsExtraDocCss(){
   '.hps-foot .nm.nm-up{text-transform:uppercase}';
 }
 function hpsStandaloneDocHtml(){
-  const cssEl=document.getElementById('fkl-doc-css');
-  const css=(cssEl?cssEl.textContent:'') + hpsExtraDocCss();
-  return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8">'+
-    '<meta name="viewport" content="width=device-width, initial-scale=1">'+
-    '<title>&#8203;</title>'+
-    '<style>'+css+'</style></head><body>'+
-    '<div class="fkl-print-page">'+hpsBuildDocHtml()+'</div>'+
-    '</body></html>';
+  return fklDocShell(hpsExtraDocCss(), hpsBuildDocHtml());
 }
 function hpsOpenPreview(){
   const ov=document.getElementById('pn-preview-overlay'); if(!ov) return;
@@ -16105,14 +16162,7 @@ function anaExtraDocCss(){
 }
 let anaPreviewSection='harga'; // 'harga' | 'ahsp' — dokumen mana yang sedang ditampilkan di modal pratinjau (khusus Konstruksi)
 function anaStandaloneDocHtml(section){
-  const cssEl=document.getElementById('fkl-doc-css');
-  const css=(cssEl?cssEl.textContent:'') + anaExtraDocCss();
-  return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8">'+
-    '<meta name="viewport" content="width=device-width, initial-scale=1">'+
-    '<title>&#8203;</title>'+
-    '<style>'+css+'</style></head><body>'+
-    '<div class="fkl-print-page">'+anaBuildDocHtml(section)+'</div>'+
-    '</body></html>';
+  return fklDocShell(anaExtraDocCss(), anaBuildDocHtml(section));
 }
 function anaSwitchPreviewSection(section){
   anaOpenPreview(section);
@@ -16265,14 +16315,16 @@ const HPSC_IC = {
 };
 function hpscCss(){
   return ''+
-  '.hpsc-page{position:relative;width:210mm;min-height:296mm;background:#fff;margin:0 auto;page-break-after:always;break-after:page;overflow:hidden;display:flex;flex-direction:column;font-family:Carlito,Calibri,"Plus Jakarta Sans",Arial,sans-serif;color:#16242c}'+
+  /* Tinggi persis A4 (297mm) agar footer menempel ke tepi bawah tanpa celah kertas putih */
+  '.hpsc-page{position:relative;width:210mm;height:297mm;min-height:297mm;background:#fff;margin:0 auto 16px;box-shadow:0 10px 30px rgba(20,50,60,.18);page-break-after:always;break-after:page;overflow:hidden;display:flex;flex-direction:column;font-family:Carlito,Calibri,"Plus Jakarta Sans",Arial,sans-serif;color:#16242c}'+
   '.hpsc-page:last-child{page-break-after:auto}'+
   '.hpsc-head{position:relative;background:linear-gradient(120deg,#0b3d42 0%,#0E7C86 55%,#12a0a0 100%);color:#fff;padding:34px 40px 30px;overflow:hidden}'+
   '.hpsc-head::after{content:"";position:absolute;right:-90px;top:-90px;width:340px;height:340px;border-radius:50%;border:38px solid rgba(255,255,255,.06)}'+
   '.hpsc-head::before{content:"";position:absolute;right:40px;bottom:-40px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.10),transparent 68%)}'+
   '.hpsc-brand{display:flex;align-items:center;justify-content:space-between;gap:16px;position:relative;z-index:2}'+
   '.hpsc-brand-l{display:flex;align-items:center;gap:14px}'+
-  '.hpsc-logo{width:52px;height:52px;background:#fff;border-radius:12px;display:flex;align-items:center;justify-content:center;padding:6px;box-shadow:0 6px 16px rgba(0,0,0,.18)}'+
+  /* Logo PLN tampil langsung di atas header (blok kuning kontras dgn teal), tanpa plat putih */
+  '.hpsc-logo{width:56px;height:56px;background:none;border:none;border-radius:0;display:flex;align-items:center;justify-content:center;padding:0;box-shadow:none}'+
   '.hpsc-logo img{width:100%;height:100%;object-fit:contain}'+
   '.hpsc-org1{font-size:15px;font-weight:800;letter-spacing:.3px;line-height:1.1}'+
   '.hpsc-org2{font-size:10px;font-weight:700;letter-spacing:3px;opacity:.85;margin-top:2px}'+
@@ -16306,13 +16358,19 @@ function hpscCss(){
   '.hpsc-money .k{font-size:12.5px;font-weight:700;color:#3a5157}'+
   '.hpsc-money .v{font-size:17px;font-weight:800;color:#0b6a73}'+
   '.hpsc-money .v small{font-size:11px;font-weight:700;color:#7c9297;margin-right:3px}'+
+  /* Baris Selisih = Rencana Anggaran Biaya - HPS */
+  '.hpsc-money.sel{background:#f4faf6;border-color:#cfe6d6}'+
+  '.hpsc-money.sel .v{color:#0d7a3f}'+
+  '.hpsc-money .k .sub{display:block;font-size:9.5px;font-weight:600;color:#7c9297;margin-top:2px}'+
+  '.hpsc-money.sel.hpsc-money-minus{background:#fdf3f3;border-color:#edbcbc}'+
+  '.hpsc-money.sel.hpsc-money-minus .v{color:#b02626}'+
   '.hpsc-reflist{display:flex;flex-direction:column;gap:8px}'+
   '.hpsc-ref{display:flex;align-items:center;gap:12px;border:1px solid #e2ebed;border-radius:11px;padding:11px 15px;background:#fbfdfd}'+
   '.hpsc-ref .ic{width:30px;height:30px;border-radius:8px;background:#e3f2f3;color:#0b6a73;display:flex;align-items:center;justify-content:center}'+
   '.hpsc-ref .ic svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2}'+
   '.hpsc-ref .nm{flex:1;font-size:13px;font-weight:800;color:#12333a}'+
   '.hpsc-ref .rf{font-size:10px;font-weight:800;letter-spacing:1px;color:#5b7075}'+
-  '.hpsc-note{display:flex;align-items:flex-start;gap:12px;border:1px dashed #bfe0e2;border-radius:11px;padding:13px 16px;background:#f2fafa}'+
+  '.hpsc-note{display:flex;align-items:center;gap:12px;border:1px dashed #bfe0e2;border-radius:11px;padding:13px 16px;background:#f2fafa}'+
   '.hpsc-note .t{font-size:12.5px;font-weight:800;color:#12333a}'+
   '.hpsc-note .s{font-size:10.5px;color:#5b7075;margin-top:2px}'+
   '.hpsc-doclist{display:grid;grid-template-columns:1fr 1fr;gap:11px}'+
@@ -16323,7 +16381,7 @@ function hpscCss(){
   '.hpsc-doc .tx span{font-size:11px;color:#6a8087;margin-top:2px;display:block}'+
   '.hpsc-foot{background:linear-gradient(120deg,#0b3d42,#0E7C86);color:#fff;padding:16px 40px;display:flex;align-items:center;justify-content:space-between;gap:16px}'+
   '.hpsc-foot-l{display:flex;align-items:center;gap:12px}'+
-  '.hpsc-foot-logo{width:34px;height:34px;background:#fff;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:4px}'+
+  '.hpsc-foot-logo{width:36px;height:36px;background:none;border:none;border-radius:0;display:flex;align-items:center;justify-content:center;padding:0}'+
   '.hpsc-foot-logo img{width:100%;height:100%;object-fit:contain}'+
   '.hpsc-foot-adr b{display:block;font-size:11px;font-weight:800}'+
   '.hpsc-foot-adr span{font-size:9.5px;opacity:.85}'+
@@ -16333,7 +16391,7 @@ function hpscCss(){
     '@page{size:A4;margin:0}'+
     '@page hpscbody{size:A4;margin:12mm 0}'+
     'html,body{margin:0;padding:0}'+
-    '.hpsc-page{margin:0}'+
+    '.hpsc-page{margin:0;box-shadow:none}'+
     '.hpsc-modpage{page:hpscbody;padding-top:0;padding-bottom:0}'+
   '}';
 }
@@ -16360,7 +16418,7 @@ function hpscCard(icKey, label, value){
 function hpscPage(kicker, title, bodyHtml){
   return '<div class="hpsc-page">'+hpscHead(kicker,title)+'<div class="hpsc-body">'+bodyHtml+'</div>'+hpscFoot()+'</div>';
 }
-/* Cover 1 — indeks "Menu Cover HPS" / Empat Dokumen + data pekerjaan */
+/* Cover 1 — indeks "Cover HPS" / Empat Dokumen + data pekerjaan */
 function hpscCoverIndex(dp, tglHps, nomor){
   const jenis=(dp.state&&dp.state.info&&dp.state.info.jenis_anggaran)||dp.jenis_anggaran||'';
   const docs=[['1','Cover HPS','Sampul utama HPS'],['2','Review Pengadaan','Ringkasan harga & referensi'],['3','Jadwal Pengadaan','Tahapan proses pengadaan'],['4','Referensi Harga','Kumpulan referensi harga']];
@@ -16381,7 +16439,7 @@ function hpscCoverIndex(dp, tglHps, nomor){
       mini('Jenis Anggaran', fkEsc(jenis||'—'))+
       mini('Metode Pengadaan', fkEsc(dp.metode||'—'))+
     '</div>';
-  return hpscPage('DOKUMEN HPS','Menu Cover HPS', body);
+  return hpscPage('DOKUMEN HPS','Cover HPS', body);
 }
 /* Cover — HPS */
 function hpscCoverHps(dp, nomor){
@@ -16398,16 +16456,29 @@ function hpscCoverReview(dp, hpsTotal, refNames, rok){
   const body=''+
     hpscCard('work','PEKERJAAN', dp.nama_pekerjaan)+
     '<div class="hpsc-sec"><span class="bdg">A</span><span class="st">HARGA (+ PPN 12%)</span></div>'+
-    '<div class="hpsc-money"><div class="k">Pagu Anggaran</div><div class="v"><small>Rp</small>'+(Number(dp.nilai)?Number(dp.nilai).toLocaleString('id-ID'):'-')+'</div></div>'+
-    '<div class="hpsc-money hi"><div class="k">HPS</div><div class="v"><small>Rp</small>'+(Number(hpsTotal)?Number(hpsTotal).toLocaleString('id-ID'):'-')+'</div></div>'+
+    (function(){
+      const rab = Number(dp.nilai)||0;
+      const hps = Number(hpsTotal)||0;
+      const selisih = rab - hps;                       // Rencana Anggaran Biaya - HPS
+      const rp = n => (n ? Math.abs(n).toLocaleString('id-ID') : '-');
+      // selisih negatif (HPS melebihi RAB) ditandai merah agar mudah terlihat
+      const minus = selisih < 0;
+      const selKelas = minus ? ' hpsc-money-minus' : '';
+      const selTanda = (selisih && minus) ? '-' : '';
+      return ''+
+        '<div class="hpsc-money"><div class="k">Rencana Anggaran Biaya</div><div class="v"><small>Rp</small>'+(rab?rab.toLocaleString('id-ID'):'-')+'</div></div>'+
+        '<div class="hpsc-money hi"><div class="k">HPS</div><div class="v"><small>Rp</small>'+(hps?hps.toLocaleString('id-ID'):'-')+'</div></div>'+
+        '<div class="hpsc-money sel'+selKelas+'"><div class="k">Selisih <span class="sub">(Rencana Anggaran Biaya &minus; HPS)</span></div>'+
+          '<div class="v"><small>Rp</small>'+selTanda+rp(selisih)+'</div></div>';
+    })()+
     '<div class="hpsc-sec"><span class="bdg">B</span><span class="st">REFERENSI HARGA</span></div>'+
     '<div class="hpsc-reflist">'+refHtml+'</div>'+
     '<div class="hpsc-sec"><span class="bdg">C</span><span class="st">PENGGUNAAN ROK</span></div>'+
     (function(){
       const rokN=anaNum(rok);
       const inner = rokN>0
-        ? '<div class="t">Penggunaan ROK sebesar '+anaPct(rokN)+'</div><div class="s">Nilai ROK mengikuti hasil Analisa Harga Satuan (otomatis).</div>'
-        : '<div class="t">ROK tidak dipergunakan untuk pekerjaan ini</div><div class="s">Analisa Harga Satuan untuk pekerjaan ini tidak menggunakan ROK (0%).</div>';
+        ? '<div class="t">Penggunaan ROK sebesar '+anaPct(rokN)+'</div>'
+        : '<div class="t">ROK tidak dipergunakan untuk pekerjaan ini</div>';
       return '<div class="hpsc-note"><div class="hpsc-ic" style="width:34px;height:34px"><svg viewBox="0 0 24 24">'+HPSC_IC.chart+'</svg></div><div>'+inner+'</div></div>';
     })();
   return hpscPage('ANALISA PENGADAAN','REVIEW PENGADAAN', body);
@@ -16421,26 +16492,44 @@ function hpscCoverSimple(kicker, title, dp, dokLabel){
     hpscCard('doc','DOKUMEN', dokLabel);
   return hpscPage(kicker, title, body);
 }
-/* Ambil fragmen dokumen modul lewat preview-state sementara */
+/* ============ SUMBER TUNGGAL DOKUMEN MODUL ============
+   Rekap HPS TIDAK lagi menyusun ulang markup/CSS-nya sendiri. Ia memanggil
+   fungsi dokumen mandiri (*StandaloneDocHtml) yang persis sama dipakai tombol
+   "Cetak / PDF" tiap menu, lalu mengambil isi <body>-nya. Konsekuensinya:
+   setiap perubahan pada preview/cetak sebuah menu otomatis ikut di Rekap HPS,
+   tanpa perlu menyentuh kode Rekap HPS.
+   - css : fungsi CSS tambahan milik modul (digabung ke hpscAllCss)
+   - doc : membangun dokumen mandiri modul dari sebuah record tersimpan */
+const HPSC_DOC_MODULES = {
+  pnw:    { css: ()=>pnwExtraDocCss(), doc: null },
+  rho:    { css: ()=>rhoExtraDocCss(),
+            doc: rec=>{ const sv=rhoPreviewState; rhoPreviewState=rhoRecordToState(rec); const h=rhoStandaloneDocHtml(); rhoPreviewState=sv; return h; } },
+  hps:    { css: ()=>hpsExtraDocCss(),
+            doc: rec=>{ const sv=hpsPreviewState; hpsPreviewState=hpsRecordToState(rec); const h=hpsStandaloneDocHtml(); hpsPreviewState=sv; return h; } },
+  ana:    { css: ()=>anaExtraDocCss(),
+            doc: rec=>{ const sv=anaPreviewState; anaPreviewState=anaRecordToState(rec); const h=anaStandaloneDocHtml(anaPreviewSection); anaPreviewState=sv; return h; } },
+  jadwal: { css: ()=>jpExtraDocCss(),
+            doc: rec=>{ const sv=jpState; jpState=jpRecordToState(rec); const h=jpStandaloneDocHtml(); jpState=sv; return h; } }
+};
+/* Ambil isi <body> dari dokumen mandiri, lalu lepas pembungkus .fkl-print-page
+   (Rekap HPS memasang pembungkusnya sendiri lewat hpscModulePage). */
+function hpscExtractDocFrag(html){
+  const m=String(html||'').match(/<body[^>]*>([\s\S]*)<\/body>/i);
+  let frag = m ? m[1].trim() : '';
+  const mp = frag.match(/^<div class="fkl-print-page"[^>]*>([\s\S]*)<\/div>$/i);
+  return mp ? mp[1].trim() : frag;
+}
 function hpscModuleFrag(kind, rec){
-  if(!rec) return '';
-  try{
-    if(kind==='hps'){ const sv=hpsPreviewState; hpsPreviewState=hpsRecordToState(rec); const h=hpsBuildDocHtml(); hpsPreviewState=sv; return h; }
-    if(kind==='ana'){ const sv=anaPreviewState; anaPreviewState=anaRecordToState(rec); const h=anaBuildDocHtml(); anaPreviewState=sv; return h; }
-    if(kind==='rho'){ const sv=rhoPreviewState; rhoPreviewState=rhoRecordToState(rec); const h=rhoBuildDocHtml(); rhoPreviewState=sv; return h; }
-    if(kind==='jadwal'){ const sv=jpState; jpState=jpRecordToState(rec); const full=jpStandaloneDocHtml(); jpState=sv; const m=full.match(/<body>([\s\S]*)<\/body>/i); let frag=m?m[1]:''; const mp=frag.match(/^\s*<div class="fkl-print-page">([\s\S]*)<\/div>\s*$/i); if(mp) frag=mp[1]; return frag; }
-  }catch(e){ console.error('hpscModuleFrag',kind,e); return '<div class="hpsc-page"><div class="hpsc-body"><p style="padding:40px;color:#b02626">Gagal memuat dokumen '+kind+'.</p></div></div>'; }
-  return '';
+  const mod=HPSC_DOC_MODULES[kind];
+  if(!rec || !mod || !mod.doc) return '';
+  try{ return hpscExtractDocFrag(mod.doc(rec)); }
+  catch(e){ console.error('hpscModuleFrag',kind,e); return '<div class="hpsc-page"><div class="hpsc-body"><p style="padding:40px;color:#b02626">Gagal memuat dokumen '+kind+'.</p></div></div>'; }
 }
 function hpscModulePage(frag){ return frag ? '<div class="fkl-print-page hpsc-modpage">'+frag+'</div>' : ''; }
 function hpscAllCss(){
   const base=(document.getElementById('fkl-doc-css')||{}).textContent||'';
   let x='';
-  try{ x+=pnwExtraDocCss(); }catch(e){}
-  try{ x+=rhoExtraDocCss(); }catch(e){}
-  try{ x+=hpsExtraDocCss(); }catch(e){}
-  try{ x+=anaExtraDocCss(); }catch(e){}
-  try{ x+=jpExtraDocCss(); }catch(e){}
+  Object.keys(HPSC_DOC_MODULES).forEach(k=>{ try{ x+=HPSC_DOC_MODULES[k].css(); }catch(e){ console.error('hpscAllCss',k,e); } });
   return base + x + hpscCss() + '.hpsc-modpage{page-break-after:always;break-after:page}.hpsc-modpage:last-child{page-break-after:auto}';
 }
 /* Cari record modul yang cocok berdasarkan Nama Pekerjaan */
@@ -16531,7 +16620,26 @@ function hpscPrintHtml(html){
   ifr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
   document.body.appendChild(ifr);
   const doc=ifr.contentWindow.document; doc.open(); doc.write(html); doc.close();
-  const go=()=>{ withHiddenPageTitle(()=>{ try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }catch(e){ try{ window.print(); }catch(_){} } }); setTimeout(()=>{ const f=document.getElementById('hpsc-print-frame'); if(f) f.remove(); },1800); };
+
+  // Iframe TIDAK boleh dibuang lewat timer: dialog "Simpan sebagai PDF" masih
+  // memakainya, sehingga penghapusan dini membuat dialog cetak tertutup sendiri.
+  // Iframe baru dibersihkan setelah dialog benar-benar selesai (afterprint),
+  // dengan cadangan berupa event focus bila browser tak mengirim afterprint.
+  let sudahCetak=false, sudahBersih=false;
+  const bersihkan=()=>{
+    if(sudahBersih) return; sudahBersih=true;
+    window.removeEventListener('focus', onFocus);
+    setTimeout(()=>{ const f=document.getElementById('hpsc-print-frame'); if(f) f.remove(); }, 400);
+  };
+  const onFocus=()=>{ setTimeout(bersihkan, 600); };
+  const go=()=>{
+    if(sudahCetak) return; sudahCetak=true;      // cegah print() terpanggil dua kali
+    const w=ifr.contentWindow;
+    try{ w.onafterprint=bersihkan; }catch(e){}
+    try{ w.addEventListener('afterprint', bersihkan); }catch(e){}
+    window.addEventListener('focus', onFocus);
+    withHiddenPageTitle(()=>{ try{ w.focus(); w.print(); }catch(e){ try{ window.print(); }catch(_){} } });
+  };
   const imgs=doc.images?Array.from(doc.images):[];
   if(imgs.length){ let n=imgs.length; const dec=()=>{ if(--n<=0) setTimeout(go,80); }; imgs.forEach(im=>{ if(im.complete) dec(); else { im.onload=dec; im.onerror=dec; } }); setTimeout(go,1500); }
   else setTimeout(go,150);
@@ -16549,8 +16657,6 @@ function rekapExtraDocCss(){
   'table.rekap-tbl td.num{text-align:right;white-space:nowrap}';
 }
 function rekapStandaloneDocHtml(dp, hpsList, anaList){
-  const cssEl=document.getElementById('fkl-doc-css');
-  const css=(cssEl?cssEl.textContent:'') + rekapExtraDocCss();
   const infoRow=(k,v)=>'<tr><td class="k">'+k+'</td><td class="s">:</td><td class="v">'+fkEsc(v||'-')+'</td></tr>';
   const hpsBody = hpsList.length ? hpsList.map((r,i)=>'<tr>'+
       '<td class="no">'+(i+1)+'</td>'+
@@ -16566,10 +16672,7 @@ function rekapStandaloneDocHtml(dp, hpsList, anaList){
       '<td class="num">'+hpsRpDoc(r.nilai_total)+'</td>'+
     '</tr>').join('')
     : '<tr><td colspan="4" style="text-align:center;font-style:italic;color:#7d97ab">Belum ada data</td></tr>';
-  return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8">'+
-    '<meta name="viewport" content="width=device-width, initial-scale=1">'+
-    '<title>&#8203;</title>'+
-    '<style>'+css+'</style></head><body>'+
+  return fklDocShell(rekapExtraDocCss(), ''+
     '<div class="fkl-doc">'+
       '<div class="fkl-doc-head">'+
         '<div class="fkl-doc-logo"><img src="'+FKL_LOGO_SRC+'" alt="Logo PLN"></div>'+
@@ -16595,8 +16698,7 @@ function rekapStandaloneDocHtml(dp, hpsList, anaList){
       '<table class="rekap-tbl"><thead><tr><th style="width:34px">No</th><th>Tgl. HPS</th><th style="width:90px">Jumlah Item</th><th style="width:150px">Nilai HPS (Rp)</th></tr></thead><tbody>'+hpsBody+'</tbody></table>'+
       '<div class="rekap-sec">C. Analisa Harga Satuan</div>'+
       '<table class="rekap-tbl"><thead><tr><th style="width:34px">No</th><th>Tgl. Analisa</th><th style="width:90px">Jumlah Item</th><th style="width:150px">Nilai (Rp)</th></tr></thead><tbody>'+anaBody+'</tbody></table>'+
-    '</div>'+
-    '</body></html>';
+    '</div>');
 }
 function rekapPrint(){
   const id=_rekapCurrentDpId; if(!id){ toast('Tampilkan data terlebih dahulu','warn'); return; }
