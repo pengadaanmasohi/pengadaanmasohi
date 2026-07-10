@@ -14004,13 +14004,12 @@ function jadwalApplyDp(rec){
 
 /* Nama hari (untuk baris "Masohi, Hari, Tanggal Tahun" pada blok TTD) */
 const HPS_HARI=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+/* Tanggal panjang untuk baris tanda tangan — tanpa nama hari, mis. "9 Juli 2026". */
 function hpsDateFull(s){
   if(!s) return '';
   const p=String(s).split('-'); if(p.length!==3) return s;
   const y=+p[0], m=+p[1], d=+p[2];
-  const dt=new Date(y, m-1, d);
-  const hari=isNaN(dt.getTime())?'':(HPS_HARI[dt.getDay()]||'');
-  return (hari?hari+', ':'')+d+' '+(PNW_BULAN[m-1]||'')+' '+y;
+  return d+' '+(PNW_BULAN[m-1]||'')+' '+y;
 }
 
 /* Field data pekerjaan (langkah 1). Nama Pengguna & Pejabat kini bagian dari
@@ -14580,20 +14579,19 @@ function hpsTerapkanAnalisa(rec){
   st.info.analisaJenis=(aSt.jenis==='Konstruksi')?'Konstruksi':'Umum';
   const hargaLocked=(st.info.analisaJenis==='Umum');
   const pakaiStruktur=hargaLocked;   // Konstruksi: struktur tidak diimpor
-  // Struktur Kelompok/Uraian/Sat berbeda sumbernya tergantung jenis Analisa:
-  // Umum → sama di semua referensi (refs[0].items, termasuk Vol & hasil harga rata-rata/terendah + ROK);
-  // Konstruksi → tabel Harga Satuan (konstruksi.items, tanpa Vol karena tidak dikumpulkan di sana).
-  const struct = pakaiStruktur
-    ? ((aSt.refs&&aSt.refs[0]&&Array.isArray(aSt.refs[0].items))?aSt.refs[0].items:[])
-    : [];
-  // Ikuti pengaturan Judul / Sub-Judul dari Analisa terpilih.
-  // Analisa berkategori "Pekerjaan Konstruksi" tidak mengenal Judul/Sub-Judul.
-  const _pakaiJudul = (st.info.analisaJenis!=='Konstruksi');
-  st.judulOn    = (_pakaiJudul && aSt.judulOn==='Ya')?'Ya':'Tidak';
+  // Umum → struktur diambil dari refs[0].items (sama di semua referensi), lengkap dengan
+  //         Vol serta harga hasil rata-rata/terendah + ROK.
+  // Konstruksi → tidak diimpor: analisanya berbasis AHSP, bukan daftar barang/jasa.
+  //         Jumlah Barang/Jasa, Judul?, Sub-Judul?, dan Uraian Pekerjaan tetap diisi manual,
+  //         dan pilihan yang sudah dibuat pengguna TIDAK ditimpa.
+  if(!pakaiStruktur){ hpsSaveState(); return; }
+  const struct = (aSt.refs&&aSt.refs[0]&&Array.isArray(aSt.refs[0].items))?aSt.refs[0].items:[];
+  // Ikuti pengaturan Judul / Sub-Judul dari Analisa terpilih (khusus Pekerjaan Umum)
+  st.judulOn    = (aSt.judulOn==='Ya')?'Ya':'Tidak';
   st.judulNum   = jsNumStyleOk(aSt.judulNum,'');
-  st.subjudulOn = (_pakaiJudul && aSt.subjudulOn==='Ya')?'Ya':'Tidak';
+  st.subjudulOn = (aSt.subjudulOn==='Ya')?'Ya':'Tidak';
   st.subjudulNum= jsNumStyleOk(aSt.subjudulNum,'');
-  if(pakaiStruktur && struct.length){
+  if(struct.length){
     st.items=struct.map((it,i)=>{
       const res=hargaLocked?anaResultForState(aSt,i):null;
       return {
