@@ -1723,9 +1723,12 @@ tbody tr{animation:rowIn .3s ease both}
 tr.jp-row-hi td{background:#f2ecd9}
 .jp-in-nama,.jp-in-ket{width:100%;border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-family:'Plus Jakarta Sans';font-size:11.5px;transition:border-color .15s ease,box-shadow .15s ease}
 .jp-in-nama:focus,.jp-in-ket:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px var(--teal-soft)}
-.jp-durasi{white-space:nowrap}
-.jp-dur-in{width:44px;border:1px solid var(--line);border-radius:6px;padding:4px 6px;font-size:11px;margin-right:2px}
-.jp-durasi span{font-size:9.5px;color:var(--muted);margin-right:8px}
+/* Kolom Awal / Akhir: input Tanggal + Jam berdampingan */
+.jp-dt{white-space:nowrap}
+.jp-dt input{border:1px solid var(--line);border-radius:7px;padding:5px 7px;font-size:11px;background:#fff;width:auto;display:inline-block}
+.jp-dt .jp-dt-tgl{width:126px;margin-right:5px}
+.jp-dt .jp-dt-jam{width:84px}
+.jp-table thead th small{display:block;font-size:8.5px;font-weight:700;letter-spacing:.2px;opacity:.8;text-transform:none;margin-top:1px}
 .jp-awal-val{font-weight:700;color:#0d2a30;font-size:11.5px;white-space:nowrap}
 .jp-aksi{display:flex;gap:4px;justify-content:center}
 .jp-aksi button{border:none;background:var(--teal-soft);color:var(--teal-dark);border-radius:8px;width:26px;height:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
@@ -1738,6 +1741,15 @@ tr.jp-row-hi td{background:#f2ecd9}
 .jp-summary-card .ic svg{width:18px;height:18px}
 .jp-summary-card .txt b{display:block;font-size:12.5px;font-weight:800;color:#0d2a30;line-height:1.3}
 .jp-summary-card .txt span{display:block;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--muted)}
+/* Kartu ke-3: tombol aksi Profil Jadwal (Simpan / Muat / Batalkan) */
+.jp-profil-card{gap:8px;flex-wrap:wrap;justify-content:center}
+.jp-profil-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:10px;padding:7px 11px;font-family:'Plus Jakarta Sans';font-weight:800;font-size:10.5px;cursor:pointer;transition:.15s;background:#fff;color:#33454b;white-space:nowrap}
+.jp-profil-btn svg{width:15px;height:15px;flex:0 0 auto}
+.jp-profil-btn:hover{transform:translateY(-1px)}
+.jp-profil-btn.is-save{background:linear-gradient(135deg,var(--yellow,#F6B40E),#ffd35a);border-color:#e2a70c;color:#5c4a00}
+.jp-profil-btn.is-load{background:linear-gradient(135deg,var(--teal),var(--teal-dark));border-color:#0b6a73;color:#fff}
+.jp-profil-btn.is-cancel{background:linear-gradient(135deg,#d33a3a,#e25151);border-color:#c33;color:#fff}
+@media(max-width:760px){.jp-profil-btn span{display:none}.jp-profil-btn{padding:8px 10px}}
 .jp-actions{margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
 /* Hari Libur — tabel & toolbar dirapikan */
 tr.hl-weekend td{background:#f5f8fb}
@@ -8757,21 +8769,31 @@ function hlHandleUpload(ev){
    Perhitungan Akhir memakai jam kerja (Jam Kerja Mulai–Selesai) dan otomatis
    melompati Sabtu, Minggu, & hari libur nasional (dari modul Hari Libur). */
 const JP_DEFAULT_TAHAPAN = [
-  {nama:'Undangan Pengadaan',              hari:1, jam:7, menit:0,  ket:''},
-  {nama:'Pendaftaran',                     hari:2, jam:7, menit:0,  ket:''},
-  {nama:'Upload Dokumen Penawaran',        hari:1, jam:7, menit:0,  ket:''},
-  {nama:'Pembukaan Dokumen Penawaran',     hari:0, jam:4, menit:0,  ket:''},
-  {nama:'Evaluasi Penawaran',              hari:0, jam:2, menit:30, ket:''},
-  {nama:'Klarifikasi dan Negosiasi Harga', hari:0, jam:7, menit:0,  ket:''},
-  {nama:'Penandatanganan Kontrak / SPK',   hari:0, jam:7, menit:0,  ket:''}
+  {nama:'Undangan Pengadaan',              awalTgl:'', awalJam:'08:00', akhirTgl:'', akhirJam:'15:00', ket:''},
+  {nama:'Pendaftaran',                     awalTgl:'', awalJam:'08:00', akhirTgl:'', akhirJam:'15:00', ket:''},
+  {nama:'Upload Dokumen Penawaran',        awalTgl:'', awalJam:'08:00', akhirTgl:'', akhirJam:'15:00', ket:''},
+  {nama:'Pembukaan Dokumen Penawaran',     awalTgl:'', awalJam:'08:00', akhirTgl:'', akhirJam:'12:00', ket:''},
+  {nama:'Evaluasi Penawaran',              awalTgl:'', awalJam:'08:00', akhirTgl:'', akhirJam:'10:30', ket:''},
+  {nama:'Klarifikasi dan Negosiasi Harga', awalTgl:'', awalJam:'08:00', akhirTgl:'', akhirJam:'15:00', ket:''},
+  {nama:'Penandatanganan Kontrak / SPK',   awalTgl:'', awalJam:'08:00', akhirTgl:'', akhirJam:'15:00', ket:''}
 ];
+/* Normalkan satu tahapan ke bentuk baru (awal/akhir manual).
+   Data lama memakai durasi hari/jam/menit — dikonversi lewat jpMigrateTahapan(). */
+function jpTahapNorm(t){
+  t=t||{};
+  return {
+    nama: t.nama||'',
+    awalTgl: t.awalTgl||'', awalJam: t.awalJam||'08:00',
+    akhirTgl: t.akhirTgl||'', akhirJam: t.akhirJam||'15:00',
+    ket: t.ket||''
+  };
+}
 let jpState = null;
 let jpEditId = null;   // id data jadwal tersimpan yang sedang diubah (null = jadwal baru)
 function jpBlankState(){
   return {
     namaPekerjaan:'', lokasi:'', nilai:'', noAnggaran:'', tglAnggaran:'', jenisAnggaran:'', metode:'',
-    tglMulai:'', jamMulai:'08:00',
-    jamKerjaMulai:'08:00', jamKerjaSelesai:'15:00',
+    profilLoaded:false,
     tahapan: JP_DEFAULT_TAHAPAN.map(t=>Object.assign({}, t))
   };
 }
@@ -8787,12 +8809,33 @@ function jpRecordToState(rec){
     tglAnggaran: s.tglAnggaran || '',
     jenisAnggaran: s.jenisAnggaran || '',
     metode: s.metode || '',
-    tglMulai: s.tglMulai || rec.tgl_mulai || '',
-    jamMulai: s.jamMulai || base.jamMulai,
-    jamKerjaMulai: s.jamKerjaMulai || base.jamKerjaMulai,
-    jamKerjaSelesai: s.jamKerjaSelesai || base.jamKerjaSelesai,
-    tahapan: (Array.isArray(s.tahapan) && s.tahapan.length) ? s.tahapan.map(t=>Object.assign({}, t)) : base.tahapan
+    profilLoaded: false,
+    tahapan: jpMigrateTahapan(s, rec, base)
   };
+}
+/* Data jadwal versi lama menyimpan durasi (hari/jam/menit) + tglMulai/jam kerja.
+   Konversi sekali ke bentuk baru: tiap tahapan punya Awal & Akhir sendiri. */
+function jpMigrateTahapan(s, rec, base){
+  const arr = (Array.isArray(s.tahapan) && s.tahapan.length) ? s.tahapan : null;
+  if(!arr) return base.tahapan;
+  const sudahBaru = arr.some(t=>t && (t.awalTgl || t.akhirTgl));
+  if(sudahBaru) return arr.map(jpTahapNorm);
+  const tglMulai = s.tglMulai || (rec && rec.tgl_mulai) || '';
+  const punyaDurasi = arr.some(t=>t && (t.hari!=null || t.jam!=null || t.menit!=null));
+  if(!tglMulai || !punyaDurasi) return arr.map(jpTahapNorm);
+  // hitung ulang memakai algoritma lama, lalu simpan hasilnya sebagai tanggal/jam
+  const jkm = s.jamKerjaMulai || '08:00', jks = s.jamKerjaSelesai || '15:00';
+  let cur = jpEnsureWorkStart(jpCombine(tglMulai, s.jamMulai || '08:00'));
+  return arr.map(t=>{
+    const awal = new Date(cur);
+    const akhir = jpAddDurasi(awal, t.hari, t.jam, t.menit, jkm, jks);
+    cur = new Date(akhir);
+    return jpTahapNorm({
+      nama: t.nama, ket: t.ket,
+      awalTgl: hlToISO(awal),  awalJam: jpFmtJam(awal),
+      akhirTgl: hlToISO(akhir), akhirJam: jpFmtJam(akhir)
+    });
+  });
 }
 /* editId diisi bila membuka jadwal yang sudah tersimpan (dari Lihat Jadwal / tombol Ubah) */
 function openJadwalKerja(editId){
@@ -8845,22 +8888,32 @@ function jpFmtDT(d){
   const pad=n=>String(n).padStart(2,'0');
   return pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear()+'  '+pad(d.getHours())+':'+pad(d.getMinutes());
 }
+function jpFmtJam(d){ const pad=n=>String(n).padStart(2,'0'); return pad(d.getHours())+':'+pad(d.getMinutes()); }
+/* Format tanggal panjang: 10 Juli 2026 */
+function jpFmtTglPanjang(d){ if(!d) return '—'; return d.getDate()+' '+(PNW_BULAN[d.getMonth()]||'')+' '+d.getFullYear(); }
+/* Selisih dua tanggal -> {hari,jam,menit} (durasi kalender) */
+function jpDiffDurasi(a, b){
+  if(!a || !b) return null;
+  let ms = b.getTime() - a.getTime(); if(ms<0) ms=0;
+  const menitTotal = Math.round(ms/60000);
+  return { hari: Math.floor(menitTotal/1440), jam: Math.floor((menitTotal%1440)/60), menit: menitTotal%60 };
+}
 function jpDTLocal(d){
   const pad=n=>String(n).padStart(2,'0');
   return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());
 }
 /* Hitung Awal/Akhir semua tahapan berdasarkan jpState saat ini */
 function jpCompute(){
-  const st=jpState; if(!st || !st.tglMulai) return [];
-  let awalPertama=jpEnsureWorkStart(jpCombine(st.tglMulai, st.jamMulai));
-  const rows=[];
-  st.tahapan.forEach((t,i)=>{
-    const awal = i===0 ? awalPertama : new Date(rows[i-1].akhir);
-    const akhir=jpAddDurasi(awal, t.hari, t.jam, t.menit, st.jamKerjaMulai, st.jamKerjaSelesai);
-    rows.push(Object.assign({}, t, {awal, akhir}));
+  const st=jpState; if(!st || !Array.isArray(st.tahapan)) return [];
+  return st.tahapan.map(t=>{
+    const awal  = t.awalTgl  ? jpCombine(t.awalTgl,  t.awalJam  || '00:00') : null;
+    const akhir = t.akhirTgl ? jpCombine(t.akhirTgl, t.akhirJam || '00:00') : null;
+    const d = jpDiffDurasi(awal, akhir);
+    return Object.assign({}, t, {awal, akhir, hari:d?d.hari:0, jam:d?d.jam:0, menit:d?d.menit:0});
   });
-  return rows;
 }
+/* Ada minimal satu tahapan dengan Awal & Akhir terisi? */
+function jpAdaJadwal(){ return jpCompute().some(r=>r.awal && r.akhir); }
 
 /* ---- Render halaman (form + tabel tahapan yang bisa diedit langsung) ---- */
 function renderJadwalKerja(){
@@ -8874,12 +8927,13 @@ function renderJadwalKerja(){
     return '<tr class="'+(hasKet?'jp-row-hi':'')+'">'+
       '<td class="col-no">'+(i+1)+'</td>'+
       '<td><input type="text" class="jp-in-nama" value="'+fkEsc(t.nama)+'" oninput="jpSetTahap('+i+',\'nama\',this.value)"></td>'+
-      '<td class="jp-awal"><div class="jp-awal-val">'+fkEsc(jpFmtDT(r.awal))+'</div></td>'+
-      '<td class="jp-akhir">'+fkEsc(jpFmtDT(r.akhir))+'</td>'+
-      '<td class="jp-durasi">'+
-        '<input type="number" min="0" class="jp-dur-in" value="'+t.hari+'" oninput="jpSetTahap('+i+',\'hari\',this.value)"><span>Hari</span>'+
-        '<input type="number" min="0" class="jp-dur-in" value="'+t.jam+'" oninput="jpSetTahap('+i+',\'jam\',this.value)"><span>Jam</span>'+
-        '<input type="number" min="0" class="jp-dur-in" value="'+t.menit+'" oninput="jpSetTahap('+i+',\'menit\',this.value)"><span>Menit</span>'+
+      '<td class="jp-dt">'+
+        '<input type="date" class="jp-dt-tgl" value="'+fkEsc(t.awalTgl||'')+'" onchange="jpSetTahap('+i+',\'awalTgl\',this.value)">'+
+        '<input type="time" class="jp-dt-jam" value="'+fkEsc(t.awalJam||'')+'" onchange="jpSetTahap('+i+',\'awalJam\',this.value)">'+
+      '</td>'+
+      '<td class="jp-dt">'+
+        '<input type="date" class="jp-dt-tgl" value="'+fkEsc(t.akhirTgl||'')+'" onchange="jpSetTahap('+i+',\'akhirTgl\',this.value)">'+
+        '<input type="time" class="jp-dt-jam" value="'+fkEsc(t.akhirJam||'')+'" onchange="jpSetTahap('+i+',\'akhirJam\',this.value)">'+
       '</td>'+
       '<td><input type="text" class="jp-in-ket" value="'+fkEsc(t.ket)+'" oninput="jpSetTahap('+i+',\'ket\',this.value)" placeholder="Keterangan (opsional)"></td>'+
       '<td class="jp-aksi">'+
@@ -8890,35 +8944,43 @@ function renderJadwalKerja(){
     '</tr>';
   }).join('');
 
-  const first=rows[0], last=rows[rows.length-1];
+  // Kartu ringkasan: Rencana Terkontrak | Durasi Pengadaan | Aksi Profil Jadwal
+  const awalSemua = rows.map(r=>r.awal).filter(Boolean);
+  const akhirSemua = rows.map(r=>r.akhir).filter(Boolean);
+  const mulai  = awalSemua.length  ? new Date(Math.min.apply(null, awalSemua.map(d=>d.getTime())))  : null;
+  const selesai= akhirSemua.length ? new Date(Math.max.apply(null, akhirSemua.map(d=>d.getTime()))) : null;
+  const totDur = jpDiffDurasi(mulai, selesai);
+  const btnBatal = st.profilLoaded
+    ? '<button type="button" class="jp-profil-btn is-cancel" title="Batalkan Profil" onclick="jpProfilCancel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg><span>Batalkan Profil</span></button>'
+    : '';
   const summaryHtml = ''+
     '<div class="jp-summary">'+
-      '<div class="jp-summary-card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div><div class="txt"><b>'+(first?fkEsc(jpFmtDT(first.awal)):'—')+'</b><span>Mulai Pelaksanaan</span></div></div>'+
-      '<div class="jp-summary-card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg></div><div class="txt"><b>'+(last?fkEsc(jpFmtDT(last.akhir)):'—')+'</b><span>Estimasi Selesai</span></div></div>'+
-      '<div class="jp-summary-card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/></svg></div><div class="txt"><b>'+st.tahapan.length+' Tahapan</b><span>Total Tahapan Pengadaan</span></div></div>'+
+      '<div class="jp-summary-card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg></div><div class="txt"><b>'+(selesai?fkEsc(jpFmtTglPanjang(selesai)):'—')+'</b><span>Rencana Terkontrak</span></div></div>'+
+      '<div class="jp-summary-card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></div><div class="txt"><b>'+(totDur?fkEsc(jpFmtDurasi(totDur.hari,totDur.jam,totDur.menit)):'0 Jam')+'</b><span>Durasi Pengadaan</span></div></div>'+
+      '<div class="jp-summary-card jp-profil-card">'+
+        '<button type="button" class="jp-profil-btn is-save" title="Simpan Profil" onclick="jpProfilOpenSave()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg><span>Simpan Profil</span></button>'+
+        '<button type="button" class="jp-profil-btn is-load" title="Muat Profil" onclick="jpProfilOpenLoad()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6M9 14h6"/></svg><span>Muat Profil</span></button>'+
+        btnBatal+
+      '</div>'+
     '</div>';
 
   cont.innerHTML = ''+
     '<div class="form-card">'+
       '<div class="form-section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg> Data Pekerjaan'+dpPickBtnHtml('jadwal')+'</div>'+
       '<div class="form-flow" style="--cols:4">'+
-        '<div class="field'+(st.dpId?' is-locked':'')+'" style="grid-column:span 4"><label>Nama Pekerjaan (opsional)</label><input type="text" value="'+fkEsc(st.namaPekerjaan)+'"'+(st.dpId?' disabled':'')+' oninput="jpSet(\'namaPekerjaan\',this.value)" placeholder="Untuk header saat dicetak &amp; nama pada daftar Lihat Jadwal"></div>'+
+        '<div class="field'+(st.dpId?' is-locked':'')+'" style="grid-column:span 4"><label>Nama Pekerjaan</label><input type="text" value="'+fkEsc(st.namaPekerjaan)+'"'+(st.dpId?' disabled':'')+' oninput="jpSet(\'namaPekerjaan\',this.value)"></div>'+
         '<div class="field'+(st.dpId?' is-locked':'')+'" style="grid-column:span 2"><label>Lokasi Pekerjaan</label><input type="text" value="'+fkEsc(st.lokasi||'')+'"'+(st.dpId?' disabled':'')+' onchange="jpSet(\'lokasi\',this.value)"></div>'+
         '<div class="field'+(st.dpId?' is-locked':'')+'"><label>Nilai Pekerjaan</label><input type="text" inputmode="numeric" placeholder="Rp" value="'+rupiahInputText(st.nilai)+'"'+(st.dpId?' disabled':'')+' oninput="onRupiahInput(this)" onchange="jpSetNilai(this)"></div>'+
         '<div class="field'+(st.dpId?' is-locked':'')+'"><label>No. Anggaran</label><input type="text" value="'+fkEsc(st.noAnggaran||'')+'"'+(st.dpId?' disabled':'')+' onchange="jpSet(\'noAnggaran\',this.value)"></div>'+
         '<div class="field'+(st.dpId?' is-locked':'')+'"><label>Tgl. Anggaran</label><input type="date" value="'+fkEsc(st.tglAnggaran||'')+'"'+(st.dpId?' disabled':'')+' onchange="jpSet(\'tglAnggaran\',this.value)"></div>'+
         '<div class="field'+(st.dpId?' is-locked':'')+'"><label>Jenis Anggaran</label><select'+(st.dpId?' disabled':'')+' onchange="jpSet(\'jenisAnggaran\',this.value)"><option value="">— Pilih —</option>'+FKL_JENIS_ANGGARAN.map(o=>'<option'+(st.jenisAnggaran===o?' selected':'')+'>'+fkEsc(o)+'</option>').join('')+'</select></div>'+
         '<div class="field'+(st.dpId?' is-locked':'')+'" style="grid-column:span 2"><label>Metode Pengadaan</label><select'+(st.dpId?' disabled':'')+' onchange="jpSet(\'metode\',this.value)"><option value="">— Pilih —</option>'+FKL_METODE.map(o=>'<option'+(st.metode===o?' selected':'')+'>'+fkEsc(o)+'</option>').join('')+'</select></div>'+
-        '<div class="field"><label>Tanggal Mulai</label><input type="date" value="'+fkEsc(st.tglMulai)+'" onchange="jpSet(\'tglMulai\',this.value)"></div>'+
-        '<div class="field"><label>Jam Mulai</label><input type="time" value="'+fkEsc(st.jamMulai)+'" onchange="jpSet(\'jamMulai\',this.value)"></div>'+
-        '<div class="field"><label>Jam Kerja Mulai</label><input type="time" value="'+fkEsc(st.jamKerjaMulai)+'" onchange="jpSet(\'jamKerjaMulai\',this.value)"></div>'+
-        '<div class="field"><label>Jam Kerja Selesai</label><input type="time" value="'+fkEsc(st.jamKerjaSelesai)+'" onchange="jpSet(\'jamKerjaSelesai\',this.value)"></div>'+
       '</div>'+
     '</div>'+
     summaryHtml+
     '<div class="panel" style="margin-top:16px">'+
       '<div class="table-wrap"><table class="jp-table">'+
-        '<thead><tr><th class="col-no">No</th><th>Tahapan Pengadaan</th><th>Awal</th><th>Akhir</th><th>Durasi</th><th>Keterangan</th><th style="width:104px">Aksi</th></tr></thead>'+
+        '<thead><tr><th class="col-no">No</th><th>Tahapan Pengadaan</th><th>Awal<small>Tanggal &amp; Jam</small></th><th>Akhir<small>Tanggal &amp; Jam</small></th><th>Keterangan</th><th style="width:104px">Aksi</th></tr></thead>'+
         '<tbody>'+bodyRows+'</tbody>'+
       '</table></div>'+
       '<div class="jp-actions">'+
@@ -8931,10 +8993,9 @@ function renderJadwalKerja(){
 function jpSet(key, val){ jpState[key]=val; renderJadwalKerja(); }
 function jpSetNilai(el){ jpState.nilai=parseRupiah(el.value); }
 function jpSetTahap(i, key, val){
-  if(key==='hari'||key==='jam'||key==='menit') val=Math.max(0, parseInt(val,10)||0);
   jpState.tahapan[i][key]=val; renderJadwalKerja();
 }
-function jpAddTahap(){ jpState.tahapan.push({nama:'Tahapan Baru', hari:0, jam:1, menit:0, ket:''}); renderJadwalKerja(); }
+function jpAddTahap(){ jpState.tahapan.push(jpTahapNorm({nama:'Tahapan Baru'})); renderJadwalKerja(); }
 function jpDelTahap(i){
   if(jpState.tahapan.length<=1){ toast('Minimal harus ada 1 tahapan','warn'); return; }
   jpState.tahapan.splice(i,1); renderJadwalKerja();
@@ -8943,6 +9004,103 @@ function jpMoveTahap(i, dir){
   const j=i+dir; if(j<0 || j>=jpState.tahapan.length) return;
   const arr=jpState.tahapan; const tmp=arr[i]; arr[i]=arr[j]; arr[j]=tmp;
   renderJadwalKerja();
+}
+
+/* ================= PROFIL JADWAL (Simpan / Muat / Batalkan) =================
+   Yang disimpan pada tiap tahapan HANYA: nama, Jam Awal, dan Durasi (Hari/Jam/Menit).
+   Tanggal tidak ikut tersimpan — saat profil dimuat, tanggal dihitung ulang
+   berurutan mulai dari Awal tahapan pertama yang sedang aktif. Disimpan di
+   localStorage browser, terpisah dari data jadwal di Supabase. */
+const JP_PROFIL_KEY='jp_jadwal_profiles_v1';
+function jpProfilAll(){ try{ const r=localStorage.getItem(JP_PROFIL_KEY); const a=r?JSON.parse(r):[]; return Array.isArray(a)?a:[]; }catch(e){ return []; } }
+function jpProfilStore(list){ try{ localStorage.setItem(JP_PROFIL_KEY, JSON.stringify(list)); return true; }catch(e){ toast('Gagal menyimpan profil di penyimpanan browser','err'); return false; } }
+/* Snapshot: nama + jam awal + durasi tiap tahapan */
+function jpProfilSnapshot(){
+  const rows=jpCompute();
+  return { tahapan: rows.map(r=>({ nama:r.nama||'', awalJam:r.awalJam||'08:00', hari:r.hari||0, jam:r.jam||0, menit:r.menit||0 })) };
+}
+function jpProfilOverlay(inner){
+  let ov=document.getElementById('pnw-profil-ov');
+  if(!ov){ ov=document.createElement('div'); ov.id='pnw-profil-ov'; ov.className='pnw-profil-ov'; document.body.appendChild(ov); }
+  ov.onclick=(e)=>{ if(e.target===ov) jpProfilClose(); };
+  ov.innerHTML='<div class="pnw-profil-modal" role="dialog">'+inner+'</div>'; ov.style.display='flex';
+}
+function jpProfilClose(){ const ov=document.getElementById('pnw-profil-ov'); if(ov) ov.style.display='none'; }
+function jpProfilOpenSave(){
+  if(!jpState || !jpState.tahapan.length){ toast('Belum ada tahapan untuk disimpan','warn'); return; }
+  const snap=jpProfilSnapshot(); const cnt=snap.tahapan.length;
+  const list=jpProfilAll();
+  const existing = list.length ? ('<div class="pnw-profil-existing">Profil tersimpan: '+list.map(p=>fkEsc(p.name)).join(' &middot; ')+'</div>') : '';
+  jpProfilOverlay(
+    '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Simpan Profil Jadwal</div>'+
+    '<div class="pnw-profil-sub">Menyimpan <b>'+cnt+'</b> tahapan beserta <b>Jam Awal</b> &amp; <b>Durasi (Hari/Jam/Menit)</b>. Tanggal tidak ikut tersimpan.</div>'+
+    '<input id="jp-profil-name" class="pnw-profil-input" type="text" placeholder="Nama profil (mis. Pengadaan Langsung Standar)" maxlength="60" onkeydown="if(event.key===\'Enter\')jpProfilDoSave()">'+
+    existing+
+    '<div class="pnw-profil-actions"><button type="button" class="btn btn-ghost" onclick="jpProfilClose()">Batal</button>'+
+    '<button type="button" class="btn btn-teal" onclick="jpProfilDoSave()">Simpan Profil</button></div>'
+  );
+  setTimeout(()=>{ const el=document.getElementById('jp-profil-name'); if(el) el.focus(); },60);
+}
+function jpProfilDoSave(){
+  const el=document.getElementById('jp-profil-name'); const name=(el&&el.value||'').trim();
+  if(!name){ toast('Isi nama profil dulu','warn'); if(el) el.focus(); return; }
+  const list=jpProfilAll(); const snap=jpProfilSnapshot();
+  snap.name=name; snap.savedAt=Date.now(); snap.count=snap.tahapan.length;
+  const idx=list.findIndex(p=>String(p.name).toLowerCase()===name.toLowerCase());
+  if(idx>=0) list[idx]=snap; else list.push(snap);
+  if(jpProfilStore(list)){ toast('Profil "'+name+'" tersimpan','ok'); jpProfilClose(); }
+}
+function jpProfilOpenLoad(){
+  const list=jpProfilAll();
+  if(!list.length){ toast('Belum ada profil. Simpan dulu lewat tombol "Simpan Profil".','warn'); return; }
+  const items=list.slice().sort((a,b)=>(b.savedAt||0)-(a.savedAt||0)).map(p=>
+    '<div class="pnw-profil-item"><div class="pnw-profil-item-info"><div class="pnw-profil-item-name">'+fkEsc(p.name)+'</div>'+
+    '<div class="pnw-profil-item-meta">'+(p.count||0)+' tahapan</div></div>'+
+    '<div class="pnw-profil-item-btns"><button type="button" class="btn btn-teal pnw-profil-mini" onclick="jpProfilDoLoad(\''+fkEscJs(p.name)+'\')">Muat</button>'+
+    '<button type="button" class="btn btn-ghost pnw-profil-mini" onclick="jpProfilDoDelete(\''+fkEscJs(p.name)+'\')">Hapus</button></div></div>'
+  ).join('');
+  jpProfilOverlay(
+    '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6M9 14h6"/></svg>Muat Profil Jadwal</div>'+
+    '<div class="pnw-profil-sub">Tahapan, Jam Awal &amp; Durasi akan diganti. Tanggal dihitung ulang berurutan dari Awal tahapan pertama. <b>Isian saat ini akan diganti.</b></div>'+
+    '<div class="pnw-profil-list">'+items+'</div>'+
+    '<div class="pnw-profil-actions"><button type="button" class="btn btn-ghost" onclick="jpProfilClose()">Tutup</button></div>'
+  );
+}
+function jpProfilDoDelete(name){
+  let list=jpProfilAll(); list=list.filter(x=>String(x.name)!==String(name));
+  if(jpProfilStore(list)){ toast('Profil "'+name+'" dihapus','ok'); if(list.length) jpProfilOpenLoad(); else jpProfilClose(); }
+}
+/* Terapkan profil: nama + jam awal + durasi; tanggal dihitung berantai */
+function jpProfilDoLoad(name){
+  const p=jpProfilAll().find(x=>String(x.name)===String(name));
+  if(!p || !Array.isArray(p.tahapan) || !p.tahapan.length){ toast('Profil tidak ditemukan','warn'); return; }
+  const lama=jpState.tahapan||[];
+  const tglAwal = (lama[0] && lama[0].awalTgl) ? lama[0].awalTgl : '';
+  let cur = tglAwal ? jpCombine(tglAwal, p.tahapan[0].awalJam || '08:00') : null;
+  jpState.tahapan = p.tahapan.map(t=>{
+    const base = jpTahapNorm({ nama:t.nama, awalJam:t.awalJam||'08:00' });
+    if(!cur) return base;                       // belum ada tanggal awal -> hanya nama & jam
+    const awal = jpCombine(hlToISO(cur), t.awalJam || '08:00');
+    const akhir = new Date(awal.getTime());
+    akhir.setDate(akhir.getDate() + (Number(t.hari)||0));
+    akhir.setMinutes(akhir.getMinutes() + (Number(t.jam)||0)*60 + (Number(t.menit)||0));
+    cur = new Date(akhir.getTime());            // tahap berikutnya mulai di tanggal akhir tahap ini
+    return jpTahapNorm({
+      nama:t.nama, awalJam:t.awalJam||'08:00',
+      awalTgl: hlToISO(awal),
+      akhirTgl: hlToISO(akhir), akhirJam: jpFmtJam(akhir)
+    });
+  });
+  jpState.profilLoaded = true;   // tombol "Batalkan Profil" baru muncul di sini
+  jpProfilClose(); renderJadwalKerja();
+  toast('Profil "'+name+'" dimuat','ok');
+}
+/* Batalkan profil: tahapan kembali ke daftar default */
+function jpProfilCancel(){
+  jpState.tahapan = JP_DEFAULT_TAHAPAN.map(t=>Object.assign({}, t));
+  jpState.profilLoaded = false;  // tombol ikut hilang
+  renderJadwalKerja();
+  toast('Profil dibatalkan — tahapan dikembalikan ke default','ok');
 }
 
 /* ---- Cetak / PDF (dokumen mandiri bertema sama, meniru gaya tabel jadwal tahapan pengadaan) ---- */
@@ -8993,7 +9151,7 @@ function jpStandaloneDocHtml(){
     '</body></html>';
 }
 function jpPrint(){
-  if(!jpState || !jpState.tglMulai){ toast('Isi Tanggal Mulai terlebih dahulu','warn'); return; }
+  if(!jpState || !jpAdaJadwal()){ toast('Isi Awal & Akhir minimal satu tahapan terlebih dahulu','warn'); return; }
   const old=document.getElementById('jp-print-frame'); if(old) old.remove();
   const ifr=document.createElement('iframe');
   ifr.id='jp-print-frame';
@@ -9053,12 +9211,16 @@ async function refreshDataJadwal(){
 /* Simpan (atau perbarui) jadwal yang sedang disusun di halaman Tentukan Jadwal */
 async function jpSaveRecord(){
   if(!requireInput()) return;
-  if(!jpState || !jpState.tglMulai){ toast('Isi Tanggal Mulai terlebih dahulu','warn'); return; }
+  if(!jpState || !String(jpState.namaPekerjaan||'').trim()){ toast('Nama Pekerjaan wajib diisi','warn'); return; }
+  if(!jpAdaJadwal()){ toast('Isi Awal & Akhir minimal satu tahapan terlebih dahulu','warn'); return; }
   const rows=jpCompute();
-  const akhirTerakhir = rows.length ? rows[rows.length-1].akhir : null;
+  const awalSemua = rows.map(r=>r.awal).filter(Boolean);
+  const akhirSemua = rows.map(r=>r.akhir).filter(Boolean);
+  const mulaiPertama = awalSemua.length ? new Date(Math.min.apply(null, awalSemua.map(d=>d.getTime()))) : null;
+  const akhirTerakhir = akhirSemua.length ? new Date(Math.max.apply(null, akhirSemua.map(d=>d.getTime()))) : null;
   const rec={
-    nama_pekerjaan: (jpState.namaPekerjaan||'').trim() || 'Tanpa Nama',
-    tgl_mulai: jpState.tglMulai,
+    nama_pekerjaan: (jpState.namaPekerjaan||'').trim(),
+    tgl_mulai: mulaiPertama ? hlToISO(mulaiPertama) : null,
     tgl_selesai: akhirTerakhir ? hlToISO(akhirTerakhir) : null,
     jumlah_tahapan: jpState.tahapan.length,
     state: jpState
