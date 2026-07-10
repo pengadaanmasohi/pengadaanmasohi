@@ -1728,7 +1728,6 @@ tr.jp-row-hi td{background:#f2ecd9}
 .jp-dt input{border:1px solid var(--line);border-radius:7px;padding:5px 7px;font-size:11px;background:#fff;width:auto;display:inline-block}
 .jp-dt .jp-dt-tgl{width:126px;margin-right:5px}
 .jp-dt .jp-dt-jam{width:84px}
-.jp-table thead th small{display:block;font-size:8.5px;font-weight:700;letter-spacing:.2px;opacity:.8;text-transform:none;margin-top:1px}
 .jp-awal-val{font-weight:700;color:#0d2a30;font-size:11.5px;white-space:nowrap}
 .jp-aksi{display:flex;gap:4px;justify-content:center}
 .jp-aksi button{border:none;background:var(--teal-soft);color:var(--teal-dark);border-radius:8px;width:26px;height:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
@@ -1742,14 +1741,18 @@ tr.jp-row-hi td{background:#f2ecd9}
 .jp-summary-card .txt b{display:block;font-size:12.5px;font-weight:800;color:#0d2a30;line-height:1.3}
 .jp-summary-card .txt span{display:block;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--muted)}
 /* Kartu ke-3: tombol aksi Profil Jadwal (Simpan / Muat / Batalkan) */
-.jp-profil-card{gap:8px;flex-wrap:wrap;justify-content:center}
+/* Kartu 1 & 2 dipersempit agar kartu Profil muat 3 tombol dalam satu baris */
+.jp-summary > .jp-summary-card:not(.jp-profil-card){flex:0 1 230px;min-width:0}
+/* Kartu Profil tanpa kotak latar: hanya deretan tombol */
+.jp-profil-card{flex:1 1 auto;min-width:0;gap:8px;flex-wrap:nowrap;justify-content:flex-end;background:none;border:none;box-shadow:none;padding:0 0 0 6px}
 .jp-profil-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:10px;padding:7px 11px;font-family:'Plus Jakarta Sans';font-weight:800;font-size:10.5px;cursor:pointer;transition:.15s;background:#fff;color:#33454b;white-space:nowrap}
 .jp-profil-btn svg{width:15px;height:15px;flex:0 0 auto}
 .jp-profil-btn:hover{transform:translateY(-1px)}
 .jp-profil-btn.is-save{background:linear-gradient(135deg,var(--yellow,#F6B40E),#ffd35a);border-color:#e2a70c;color:#5c4a00}
 .jp-profil-btn.is-load{background:linear-gradient(135deg,var(--teal),var(--teal-dark));border-color:#0b6a73;color:#fff}
 .jp-profil-btn.is-cancel{background:linear-gradient(135deg,#d33a3a,#e25151);border-color:#c33;color:#fff}
-@media(max-width:760px){.jp-profil-btn span{display:none}.jp-profil-btn{padding:8px 10px}}
+@media(max-width:1180px){.jp-profil-btn span{display:none}.jp-profil-btn{padding:8px 10px}}
+@media(max-width:760px){.jp-summary > .jp-summary-card:not(.jp-profil-card){flex:1 1 100%}.jp-profil-card{flex:1 1 100%;flex-wrap:wrap}.jp-profil-btn span{display:inline}}
 .jp-actions{margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
 /* Hari Libur — tabel & toolbar dirapikan */
 tr.hl-weekend td{background:#f5f8fb}
@@ -3005,37 +3008,18 @@ table.hps-uraian tbody tr:last-child td,table.ana-uraian tbody tr:last-child td,
                   </div>
                 </div>
                 <!-- Perhitungan HPS: submenu Hitung HPS / Lihat HPS -->
-                <div class="topnav-sub" data-sub="hps-perhitungan" data-role="admin">
-                  <button class="topnav-subtrigger" type="button" onclick="toggleFkSub(event,'hps-perhitungan')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 10h2M14 10h2M8 14h2M14 14h2M8 18h2"/></svg>
-                    <span class="sub-label">Perhitungan HPS</span>
-                    <svg class="caret2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
-                  </button>
-                  <div class="topnav-subdrop">
-                    <button class="topnav-item" data-view="form-hps" data-role="admin" onclick="openHpsInput()">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                      Hitung HPS
-                    </button>
-                    <button class="topnav-item" data-view="hps-view" data-role="admin" onclick="openHpsView()">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                      Lihat HPS
-                    </button>
-                  </div>
-                </div>
+                <!-- Perhitungan HPS: satu menu (tanpa submenu Hitung/Lihat).
+                     Hitung HPS diakses lewat tombol "Input HPS" di halaman daftar. -->
+                <button class="topnav-item" data-view="hps-view" data-role="admin" onclick="openHpsView()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 10h2M14 10h2M8 14h2M14 14h2M8 18h2"/></svg>
+                  Perhitungan HPS
+                </button>
                 <!-- Rekap HPS: rekap gabungan Data Pekerjaan + Perhitungan HPS + Analisa Harga Satuan -->
-                <div class="topnav-sub" data-sub="rekap-hps" data-role="admin">
-                  <button class="topnav-subtrigger" type="button" onclick="toggleFkSub(event,'rekap-hps')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 17V7a2 2 0 0 1 2-2h6.5L21 8.5V17a2 2 0 0 1-2 2H11a2 2 0 0 1-2-2Z"/><path d="M17 5v4h4"/><path d="M6 21V9a2 2 0 0 1 .4-1.2"/></svg>
-                    <span class="sub-label">Rekap HPS</span>
-                    <svg class="caret2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
-                  </button>
-                  <div class="topnav-subdrop">
-                    <button class="topnav-item" data-view="rekap-hps" data-role="admin" onclick="openRekapHps()">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                      Lihat Rekap
-                    </button>
-                  </div>
-                </div>
+                <!-- Rekap HPS: satu menu, klik langsung membuka halaman rekap -->
+                <button class="topnav-item" data-view="rekap-hps" data-role="admin" onclick="openRekapHps()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 17V7a2 2 0 0 1 2-2h6.5L21 8.5V17a2 2 0 0 1-2 2H11a2 2 0 0 1-2-2Z"/><path d="M17 5v4h4"/><path d="M6 21V9a2 2 0 0 1 .4-1.2"/></svg>
+                  Rekap HPS
+                </button>
               </div>
             </div>
           </div>
@@ -4016,6 +4000,10 @@ table.hps-uraian tbody tr:last-child td,table.ana-uraian tbody tr:last-child td,
           <input id="hps-view-search" type="text" placeholder="Cari Nama Pekerjaan" oninput="renderHpsView()">
         </div>
       </div>
+      <button class="btn btn-teal head-add-btn" data-role="admin" onclick="openHpsInput()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        Input HPS
+      </button>
     </div>
     <div class="panel">
       <div class="table-wrap">
@@ -5350,6 +5338,7 @@ function showView(name, loaderMsg, noLoader){
           if(l.dataset.view==='pnw-view' && (name==='pnw-view'||name==='form-pembukaan')) on=true; // Pembukaan Penawaran induk tetap aktif
           if(l.dataset.view==='rho-view' && (name==='rho-view'||name==='form-rho')) on=true; // Referensi Harga Online induk tetap aktif
           if(l.dataset.view==='analisa-view' && (name==='analisa-view'||name==='form-analisa')) on=true; // Analisa Harga Satuan induk tetap aktif
+          if(l.dataset.view==='hps-view' && (name==='hps-view'||name==='form-hps')) on=true; // Perhitungan HPS induk tetap aktif
           l.classList.toggle('active', on);
         });
         // tandai & buka grup yang memuat view aktif (akordeon tetap terbuka)
@@ -5361,6 +5350,7 @@ function showView(name, loaderMsg, noLoader){
           if(name==='form-pembukaan') has = has || [...grp.querySelectorAll('.topnav-item')].some(it=>it.dataset.view==='pnw-view');
           if(name==='form-rho') has = has || [...grp.querySelectorAll('.topnav-item')].some(it=>it.dataset.view==='rho-view');
           if(name==='form-analisa') has = has || [...grp.querySelectorAll('.topnav-item')].some(it=>it.dataset.view==='analisa-view');
+          if(name==='form-hps') has = has || [...grp.querySelectorAll('.topnav-item')].some(it=>it.dataset.view==='hps-view');
           // Grup Monitoring mencakup Input Pekerjaan (input/-pl/-tender) & Daftar Pekerjaan (list/-pl/-tender)
           if(grp.dataset.group==='monitor' && monitorAll.includes(name)) has=true;
           grp.classList.toggle('has-active', has);
@@ -8980,7 +8970,7 @@ function renderJadwalKerja(){
     summaryHtml+
     '<div class="panel" style="margin-top:16px">'+
       '<div class="table-wrap"><table class="jp-table">'+
-        '<thead><tr><th class="col-no">No</th><th>Tahapan Pengadaan</th><th>Awal<small>Tanggal &amp; Jam</small></th><th>Akhir<small>Tanggal &amp; Jam</small></th><th>Keterangan</th><th style="width:104px">Aksi</th></tr></thead>'+
+        '<thead><tr><th class="col-no">No</th><th>Tahapan Pengadaan</th><th>Awal</th><th>Akhir</th><th>Keterangan</th><th style="width:104px">Aksi</th></tr></thead>'+
         '<tbody>'+bodyRows+'</tbody>'+
       '</table></div>'+
       '<div class="jp-actions">'+
@@ -9014,10 +9004,10 @@ function jpMoveTahap(i, dir){
 const JP_PROFIL_KEY='jp_jadwal_profiles_v1';
 function jpProfilAll(){ try{ const r=localStorage.getItem(JP_PROFIL_KEY); const a=r?JSON.parse(r):[]; return Array.isArray(a)?a:[]; }catch(e){ return []; } }
 function jpProfilStore(list){ try{ localStorage.setItem(JP_PROFIL_KEY, JSON.stringify(list)); return true; }catch(e){ toast('Gagal menyimpan profil di penyimpanan browser','err'); return false; } }
-/* Snapshot: nama + jam awal + durasi tiap tahapan */
+/* Snapshot: nama tahapan + keterangan + jam awal + durasi tiap tahapan */
 function jpProfilSnapshot(){
   const rows=jpCompute();
-  return { tahapan: rows.map(r=>({ nama:r.nama||'', awalJam:r.awalJam||'08:00', hari:r.hari||0, jam:r.jam||0, menit:r.menit||0 })) };
+  return { tahapan: rows.map(r=>({ nama:r.nama||'', ket:r.ket||'', awalJam:r.awalJam||'08:00', hari:r.hari||0, jam:r.jam||0, menit:r.menit||0 })) };
 }
 function jpProfilOverlay(inner){
   let ov=document.getElementById('pnw-profil-ov');
@@ -9033,7 +9023,7 @@ function jpProfilOpenSave(){
   const existing = list.length ? ('<div class="pnw-profil-existing">Profil tersimpan: '+list.map(p=>fkEsc(p.name)).join(' &middot; ')+'</div>') : '';
   jpProfilOverlay(
     '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Simpan Profil Jadwal</div>'+
-    '<div class="pnw-profil-sub">Menyimpan <b>'+cnt+'</b> tahapan beserta <b>Jam Awal</b> &amp; <b>Durasi (Hari/Jam/Menit)</b>. Tanggal tidak ikut tersimpan.</div>'+
+    '<div class="pnw-profil-sub">Menyimpan <b>'+cnt+'</b> <b>Tahapan Pengadaan</b> beserta <b>Keterangan</b>, <b>Jam Awal</b> &amp; <b>Durasi (Hari/Jam/Menit)</b>. Tanggal tidak ikut tersimpan.</div>'+
     '<input id="jp-profil-name" class="pnw-profil-input" type="text" placeholder="Nama profil (mis. Pengadaan Langsung Standar)" maxlength="60" onkeydown="if(event.key===\'Enter\')jpProfilDoSave()">'+
     existing+
     '<div class="pnw-profil-actions"><button type="button" class="btn btn-ghost" onclick="jpProfilClose()">Batal</button>'+
@@ -9061,7 +9051,7 @@ function jpProfilOpenLoad(){
   ).join('');
   jpProfilOverlay(
     '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6M9 14h6"/></svg>Muat Profil Jadwal</div>'+
-    '<div class="pnw-profil-sub">Tahapan, Jam Awal &amp; Durasi akan diganti. Tanggal dihitung ulang berurutan dari Awal tahapan pertama. <b>Isian saat ini akan diganti.</b></div>'+
+    '<div class="pnw-profil-sub">Tahapan Pengadaan, Keterangan, Jam Awal &amp; Durasi akan diganti. Tanggal dihitung ulang berurutan dari Awal tahapan pertama. <b>Isian saat ini akan diganti.</b></div>'+
     '<div class="pnw-profil-list">'+items+'</div>'+
     '<div class="pnw-profil-actions"><button type="button" class="btn btn-ghost" onclick="jpProfilClose()">Tutup</button></div>'
   );
@@ -9078,15 +9068,15 @@ function jpProfilDoLoad(name){
   const tglAwal = (lama[0] && lama[0].awalTgl) ? lama[0].awalTgl : '';
   let cur = tglAwal ? jpCombine(tglAwal, p.tahapan[0].awalJam || '08:00') : null;
   jpState.tahapan = p.tahapan.map(t=>{
-    const base = jpTahapNorm({ nama:t.nama, awalJam:t.awalJam||'08:00' });
-    if(!cur) return base;                       // belum ada tanggal awal -> hanya nama & jam
+    const base = jpTahapNorm({ nama:t.nama, ket:t.ket, awalJam:t.awalJam||'08:00' });
+    if(!cur) return base;                       // belum ada tanggal awal -> hanya nama, keterangan & jam
     const awal = jpCombine(hlToISO(cur), t.awalJam || '08:00');
     const akhir = new Date(awal.getTime());
     akhir.setDate(akhir.getDate() + (Number(t.hari)||0));
     akhir.setMinutes(akhir.getMinutes() + (Number(t.jam)||0)*60 + (Number(t.menit)||0));
     cur = new Date(akhir.getTime());            // tahap berikutnya mulai di tanggal akhir tahap ini
     return jpTahapNorm({
-      nama:t.nama, awalJam:t.awalJam||'08:00',
+      nama:t.nama, ket:t.ket, awalJam:t.awalJam||'08:00',
       awalTgl: hlToISO(awal),
       akhirTgl: hlToISO(akhir), akhirJam: jpFmtJam(akhir)
     });
