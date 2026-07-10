@@ -15832,7 +15832,10 @@ async function anaDownloadTemplate(){
       cell.border=allBorder;
       const kind=cols[c-1].kind;
       if(kind==='no'||kind==='sat') cell.alignment={vertical:'middle',horizontal:'center'};
-      else if(kind==='vol'){ cell.numFmt='#,##0.###'; cell.alignment={vertical:'middle',horizontal:'center'}; }
+      // Vol: format 'General' — angka bulat tampil polos (4200), desimal tetap tampil (2,5).
+      // Format '#,##0.###' sebelumnya menyisakan pemisah desimal menggantung ("4.200,")
+      // pada Excel/LibreOffice dengan locale Indonesia saat nilainya bilangan bulat.
+      else if(kind==='vol'){ cell.numFmt='General'; cell.alignment={vertical:'middle',horizontal:'center'}; }
       else if(kind==='barang'||kind==='jasa'){ cell.numFmt=ACCT_NODEC; cell.alignment={vertical:'middle',horizontal:'right'}; }
       else cell.alignment={vertical:'middle'};
       if(rr%2===1) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F7F8'}};
