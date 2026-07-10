@@ -300,11 +300,14 @@ a{color:inherit}
 .toolbar.fk-toolbar{width:100%;margin-left:0;margin-right:0}
 .toolbar.fk-toolbar .fk-search{flex:0 0 auto}
 .toolbar.fk-toolbar .fk-search input{min-width:236px!important;max-width:236px!important;width:236px!important}
-.toolbar.fk-toolbar .fk-actions-inline{margin-left:0}
+.toolbar.fk-toolbar .fk-actions-inline{margin-left:0;flex:1 1 auto}
+/* Tombol "Tambah Data" didorong ke pojok kanan toolbar, Reset tetap menempel di kanan Cari */
+.toolbar.fk-toolbar .fk-actions-inline > .btn-teal{margin-left:auto}
 @media(max-width:640px){
   .toolbar.fk-toolbar .fk-search{flex:1 1 100%}
   .toolbar.fk-toolbar .fk-search input{min-width:0!important;max-width:none!important;width:100%!important}
   .toolbar.fk-toolbar .fk-actions-inline{flex:1 1 100%;margin-left:0}
+  .toolbar.fk-toolbar .fk-actions-inline > .btn-teal{margin-left:0}
 }
 select,input,textarea{font-family:'Inter';font-size:12px;padding:9px 11px;border:1px solid #cdd9de;border-radius:10px;background:linear-gradient(180deg,#ffffff,#fbfdfe);color:var(--ink);width:100%;transition:border .15s,box-shadow .15s,background .15s;box-shadow:0 1px 2px rgba(16,40,50,.05),inset 0 1px 0 rgba(255,255,255,.6)}
 select:hover,input:hover{border-color:#a7bec5;box-shadow:0 2px 6px rgba(16,40,50,.08),inset 0 1px 0 rgba(255,255,255,.6)}
@@ -3676,6 +3679,10 @@ table.hps-uraian tbody tr:last-child td,table.ana-uraian tbody tr:last-child td,
         <button class="btn btn-red" onclick="fkResetInput()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
           Reset
+        </button>
+        <button class="btn btn-teal" onclick="fkKembaliView()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+          Kembali
         </button>
       </div>
     </div>
@@ -9477,6 +9484,9 @@ function fkResetView(){ fkClearFilters('view'); fkState.view.page=1; renderFkVie
 /* Tombol "Tambah Data" pada File Kontrak — Lihat Kontrak:
    mengalihkan ke halaman Input Kontrak dengan modul yang sedang dibuka. */
 function fkTambahData(){ openFkInput((fkState&&fkState.view&&fkState.view.modul)||'kr'); }
+/* Tombol "Kembali" pada File Kontrak — Input Kontrak: kembali ke daftar (Lihat Kontrak)
+   dengan modul yang sedang dibuka. */
+function fkKembaliView(){ openFkView((fkState&&fkState.input&&fkState.input.modul)||'kr'); }
 /* Tandai item nav + segmented control yang aktif sesuai modul terpilih */
 function fkMarkActive(mode, modul){
   document.querySelectorAll('.topnav-item[data-view="fk-'+mode+'"]').forEach(b=>{
