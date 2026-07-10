@@ -14108,7 +14108,17 @@ function openHpsInput(editId){
 }
 function openHpsView(){
   if(!isAdmin()){ toast('Menu ini hanya untuk akun admin','warn'); return; }
-  refreshDataHps().then(()=>showView('hps-view'));
+  // Penetapan Nomor ikut dimuat: Tgl. HPS tidak lagi diketik manual, melainkan
+  // mengikuti tanggal terbit dokumen HPS pada menu "Ambil Nomor".
+  Promise.all([refreshDataHps(), refreshDataPenetapan()]).then(()=>showView('hps-view'))
+    .catch(err=>{ console.error(err); showView('hps-view'); });
+}
+/* Tanggal HPS efektif: pakai tgl_hps tersimpan bila ada, jika tidak ambil
+   tanggal terbit dokumen HPS dari Penetapan Nomor (dicocokkan via Nama Pekerjaan). */
+function hpsTglEfektif(nama, tglTersimpan){
+  const t=String(tglTersimpan||'').trim(); if(t) return t;
+  try{ const doc=hpscPenetapanHpsDoc(nama); if(doc && doc.tgl_terbit) return doc.tgl_terbit; }catch(e){}
+  return '';
 }
 function hpsRecordToState(rec){
   const base=hpsBlankState();
@@ -14631,7 +14641,7 @@ function renderHpsView(){
     const nilai = linkedUmum
       ? hpsSummary(stt).totT
       : ((r.nilai_total!=null)?r.nilai_total:hpsSummary(stt).totT);
-    const tgl=r.tgl_hps||info.tgl_hps||'';
+    const tgl=hpsTglEfektif(nama, r.tgl_hps||info.tgl_hps);
     const rid=fkEsc(String(r.id));
     return '<tr>'+
       '<td class="col-no">'+(start+i+1)+'</td>'+
@@ -14746,7 +14756,8 @@ function hpsBuildDocHtml(){
 
   const pengguna=(info.pengguna&&String(info.pengguna).trim())?String(info.pengguna).trim():'(..........................)';
   const pejabat=(info.pejabat&&String(info.pejabat).trim())?String(info.pejabat).trim().toUpperCase():'(..........................)';
-  const tglFull=info.tgl_hps?hpsDateFull(info.tgl_hps):'..........................';
+  const _tglDoc=hpsTglEfektif(info.nama, info.tgl_hps);
+  const tglFull=_tglDoc?hpsDateFull(_tglDoc):'..........................';
 
   return ''+
   '<div class="fkl-doc pnw-doc hps-doc">'+
