@@ -9463,7 +9463,13 @@ async function jpSaveRecord(){
     });
   }catch(err){ console.error(err); toast('Gagal menyimpan: '+errMsg(err),'err'); return; }
   toast('Jadwal berhasil disimpan','ok');
+  // Reset form "Tentukan Jadwal" ke kondisi default agar siap untuk pengisian jadwal baru
+  jpEditId = null;
+  jpState = jpBlankState();
   renderJadwalKerja();
+  // Alihkan otomatis ke halaman "Lihat Jadwal"
+  jadwalViewPage = 1;
+  showView('jadwal-view');
 }
 
 /* ================= LIHAT JADWAL ================= */
