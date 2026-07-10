@@ -258,9 +258,12 @@ a{color:inherit}
 .toolbar #pn-lihat-search{min-width:316px;max-width:316px}
 /* Kotak Cari yang dipindah sejajar dengan judul (di dalam page-head) */
 .page-head .pn-head-search{flex:0 0 auto;margin-left:auto}
+/* Tombol "Tambah Data" di pojok kanan atas page-head; kotak Cari bergeser ke kiri */
+.page-head .head-add-btn{flex:0 0 auto;margin-left:12px;align-self:center}
 .page-head .pn-head-search input{min-width:316px;max-width:316px}
 @media(max-width:640px){
   .page-head .pn-head-search{flex:1 1 100%;margin-left:0}
+  .page-head .head-add-btn{margin-left:0;width:100%;justify-content:center}
   .page-head .pn-head-search input{min-width:0;max-width:none;width:100%}
 }
 /* Kelengkapan Dokumen — Lihat Data: samakan lebar kotak Cari dengan Monitoring (300–390px) */
@@ -3988,6 +3991,10 @@ table.hps-uraian tbody tr:last-child td,table.ana-uraian tbody tr:last-child td,
           <input id="dp-view-search" type="text" placeholder="Cari Nama Pekerjaan" oninput="renderDpView()">
         </div>
       </div>
+      <button class="btn btn-teal head-add-btn" data-role="admin" onclick="openDpInput()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        Tambah Data
+      </button>
     </div>
     <div class="panel">
       <div class="table-wrap">
