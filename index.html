@@ -3125,6 +3125,39 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
           File Kontrak
         </button>
 
+        <!-- ===== Pembuatan Kontrak ===== -->
+        <div class="topnav-group" data-group="kontrak">
+          <button class="topnav-trigger" type="button" onclick="toggleTopGroup(event,'kontrak')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></svg>
+            Pembuatan Kontrak
+            <svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="topnav-dropdown">
+            <!-- Surat Perintah Kerja: submenu Penyusunan / Lihat / Ubah Klausul -->
+            <div class="topnav-sub" data-sub="spk" data-role="admin">
+              <button class="topnav-subtrigger" type="button" onclick="toggleFkSub(event,'spk')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/><path d="M9 13h6M9 16h4"/></svg>
+                <span class="sub-label">Surat Perintah Kerja</span>
+                <svg class="caret2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <div class="topnav-subdrop">
+                <button class="topnav-item" data-view="spk-susun" data-role="admin" onclick="openSpkSusun()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                  Penyusunan Kontrak
+                </button>
+                <button class="topnav-item" data-view="spk-view" data-role="admin" onclick="openSpkView()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                  Lihat Kontrak
+                </button>
+                <button class="topnav-item" data-view="spk-klausul" data-role="admin" onclick="openSpkKlausul()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/><path d="M9 7h7M9 11h5"/></svg>
+                  Ubah Klausul Kontrak
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </nav>
 
       <div class="topbar-user" id="topbar-user" style="display:none">
@@ -4240,7 +4273,64 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
   <input type="file" id="hl-file-input" style="display:none"
     accept=".xlsx,.xls" onchange="hlHandleUpload(event)">
 
-<!-- (Menu Pembuatan Kontrak dihapus) -->
+<!-- ============ PEMBUATAN KONTRAK — SURAT PERINTAH KERJA ============ -->
+  <!-- Penyusunan Kontrak: isi mail merge + pilih klausul + simpan -->
+  <section id="view-spk-susun" class="view">
+    <div class="page-head">
+      <div>
+        <h2>Penyusunan Kontrak — Surat Perintah Kerja</h2>
+        <p>Isi data mail merge lalu pilih klausul yang dipakai. Semua data otomatis menyatu menjadi satu dokumen SPK seperti kontrak asli.</p>
+      </div>
+      <button class="btn btn-ghost head-add-btn" data-role="admin" onclick="spkNewKontrak()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Kontrak Baru
+      </button>
+    </div>
+    <div id="spk-susun-content"></div>
+  </section>
+
+  <!-- Lihat Kontrak: daftar kontrak tersimpan -->
+  <section id="view-spk-view" class="view">
+    <div class="page-head">
+      <div>
+        <h2>Lihat Kontrak — Surat Perintah Kerja <span class="count-badge" id="spk-view-count">0</span></h2>
+      </div>
+      <div class="filter-field toolbar-search pn-search-right search-elegant pn-head-search">
+        <div class="search-elegant-box">
+          <svg class="search-elegant-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input id="spk-view-search" type="text" placeholder="Cari Nomor / Nama Pekerjaan" oninput="renderSpkView()">
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="col-no">No.</th>
+              <th>Nomor Kontrak</th>
+              <th class="col-nama-freeze">Nama Pekerjaan</th>
+              <th class="col-date">Tanggal</th>
+              <th style="text-align:right;min-width:150px">Nilai</th>
+              <th style="text-align:center;min-width:150px">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="spk-view-body"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="spk-view-pagination"></div>
+    </div>
+  </section>
+
+  <!-- Ubah Klausul Kontrak: pustaka klausul -->
+  <section id="view-spk-klausul" class="view">
+    <div class="page-head">
+      <div>
+        <h2>Ubah Klausul Kontrak — Surat Perintah Kerja</h2>
+        <p>Kelola pustaka klausul SPK: tambah klausul baru, ubah isi, urutkan, atau non-aktifkan.</p>
+      </div>
+    </div>
+    <div id="spk-klausul-content"></div>
+  </section>
 
 </main>
   </div><!-- /.app-main -->
@@ -5460,6 +5550,9 @@ function showView(name, loaderMsg, noLoader){
         if(name==='analisa-view') renderAnalisaView();
         if(name==='jadwal-kerja') renderJadwalKerja();
         if(name==='jadwal-view') renderJadwalView();
+        if(name==='spk-susun' && typeof renderSpkSusun==='function') renderSpkSusun();
+        if(name==='spk-view' && typeof renderSpkView==='function') renderSpkView();
+        if(name==='spk-klausul' && typeof renderSpkKlausul==='function') renderSpkKlausul();
         if(name==='hari-libur') renderHariLibur();
         if(name==='rekap-hps') renderRekapHps();
         if(typeof fkSegSyncAll==='function') fkSegSyncAll(false);   // reposisi pil segmented setelah halaman baru terlihat
@@ -17441,7 +17534,7 @@ resetLoginForm();
   if(hasRole && !tooOldSession && !tooLongIdle){
     currentUsername = uname || null;
     // Refresh: kembali ke halaman terakhir (data di halaman itu di-refresh), bukan ke dashboard.
-    const allowed=['dashboard','list','list-pl','list-tender','pn-lihat','pn-ambil','form-kelengkapan','fkl-view','form-pembukaan','pnw-view','form-rho','rho-view','form-hps','hps-view','form-analisa','analisa-view'];
+    const allowed=['dashboard','list','list-pl','list-tender','pn-lihat','pn-ambil','form-kelengkapan','fkl-view','form-pembukaan','pnw-view','form-rho','rho-view','form-hps','hps-view','form-analisa','analisa-view','spk-susun','spk-view','spk-klausul'];
     const inputViews=['input','input-pl','input-tender'];
     const draft=getDraft();
     if(inputViews.includes(view)){
@@ -17477,6 +17570,717 @@ document.getElementById('pn-doc-overlay').addEventListener('click',e=>{ if(e.tar
 document.getElementById('hps-ana-overlay').addEventListener('click',e=>{ if(e.target.id==='hps-ana-overlay')closeHpsAnaPicker(); });
 document.getElementById('dp-picker-overlay').addEventListener('click',e=>{ if(e.target.id==='dp-picker-overlay')closeDpPicker(); });
 document.getElementById('pn-preview-overlay').addEventListener('click',e=>{ if(e.target.id==='pn-preview-overlay')closePnPreview(); });
+</script>
+
+<style id="spk-style">
+.btn.btn-sm{padding:7px 12px;font-size:11.5px}
+.spk-step{display:flex;align-items:center;gap:12px;margin:14px 2px 10px}
+.spk-step-no{width:30px;height:30px;flex:0 0 auto;border-radius:50%;background:linear-gradient(135deg,#0E7C86,#12303f);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:14px}
+.spk-step-tx b{display:block;font-size:14px;color:#12303f}
+.spk-step-tx span{display:block;font-size:12px;color:#6B7885}
+.spk-kl-tools{display:flex;gap:6px}
+.spk-kl-list{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(max-width:760px){.spk-kl-list{grid-template-columns:1fr}}
+.spk-kl-pick{display:flex;align-items:center;gap:10px;padding:9px 11px;border:1.5px solid #DfE4E9;border-radius:10px;cursor:pointer;background:#fff;transition:.15s}
+.spk-kl-pick:hover{border-color:#0E7C86}
+.spk-kl-pick.on{border-color:#0E7C86;background:#f0f8f9}
+.spk-kl-pick input{width:17px;height:17px;accent-color:#0E7C86;flex:0 0 auto}
+.spk-kl-no{width:22px;height:22px;flex:0 0 auto;border-radius:6px;background:#eef3f7;color:#12303f;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center}
+.spk-kl-judul{font-size:12.5px;font-weight:600;color:#233}
+.spk-klx-list{display:flex;flex-direction:column;gap:8px}
+.spk-klx{display:flex;align-items:center;gap:12px;padding:11px 13px;border:1.5px solid #DfE4E9;border-radius:11px;background:#fff}
+.spk-klx.off{opacity:.6;background:#f7f8f9}
+.spk-klx-no{width:26px;height:26px;flex:0 0 auto;border-radius:7px;background:#12303f;color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:12px}
+.spk-klx-main{flex:1;min-width:0}
+.spk-klx-judul{font-weight:700;font-size:13px;color:#12303f}
+.spk-klx-prev{font-size:11.5px;color:#6B7885;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.spk-klx-act{display:flex;gap:5px;flex:0 0 auto}
+.spk-badge-off{font-size:10px;background:#e0e5ea;color:#66707a;padding:1px 7px;border-radius:20px;font-weight:600;vertical-align:middle}
+.spk-ov{position:fixed;inset:0;background:rgba(14,48,63,.5);display:none;align-items:center;justify-content:center;z-index:9999;padding:20px}
+.spk-ov.show{display:flex}
+.spk-ov-modal{background:#fff;border-radius:14px;width:min(920px,96vw);max-height:94vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 80px -20px rgba(0,0,0,.5)}
+.spk-ov-head{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid #DfE4E9}
+.spk-ov-title{font-weight:800;color:#12303f;font-size:15px}
+.spk-ov-actions{display:flex;gap:8px}
+.spk-ov-body{flex:1;overflow:auto;background:#eceff1}
+.spk-ov-body iframe{width:100%;height:78vh;border:0;background:#fff;display:block}
+.spk-ov-edit{width:min(820px,96vw)}
+.spk-edit-body{padding:16px 18px;background:#fff}
+.spk-edit-body textarea{width:100%;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;line-height:1.5}
+.spk-edit-hint{font-size:11.5px;color:#6B7885;margin-top:8px}
+.spk-ov-foot{padding:12px 18px;border-top:1px solid #DfE4E9;display:flex;justify-content:flex-end}
+.spk-edit-body code,#spk-klausul-content code{background:#eef3f7;color:#0E7C86;padding:1px 5px;border-radius:5px;font-size:11.5px}
+</style>
+<script>
+/* ===== MODUL PEMBUATAN KONTRAK (SPK) ===== */
+const SPK_KLAUSUL_SEED=[
+  {urutan:10, judul:"URAIAN PEKERJAAN", isi:"<p class=\"kl0\">Nama Pekerjaan</p><p class=\"kl0\">:</p><p class=\"kl0\">{{nama_pekerjaan}}</p><p class=\"kl0\">Lokasi Pekerjaan</p><p class=\"kl0\">:</p><p class=\"kl0\">{{lokasi_pekerjaan}}</p><p class=\"kl1\">1.1. Latar Belakang</p><p class=\"kl0\">PT PLN (Persero) senantiasa berkomitmen untuk tidak hanya meningkatkan keandalan pasokan tenaga listrik, tetapi juga memastikan standar keamanan, keselamatan, dan kebersihan lingkungan kerja (K3L) di seluruh fasilitas kelistrikannya. Dalam pengoperasian instalasi vital seperti Gardu Hubung (GH) di area PLTD Kobisonta, aspek perlindungan aset dan keselamatan personel merupakan prioritas utama yang harus dipenuhi.</p><p class=\"kl0\">Gardu Hubung (GH) berfungsi sebagai simpul penting dalam mendistribusikan energi listrik. Fasilitas ini dilengkapi dengan berbagai peralatan tegangan menengah dan instalasi jaringan kabel yang sangat kompleks. Kabel-kabel distribusi tersebut umumnya ditempatkan pada jalur atau saluran kabel (cable trench) di area gardu. Saluran kabel yang terbuka atau tidak tertutup dengan standar yang baik sangat rentan terhadap berbagai risiko. Paparan cuaca, masuknya air atau kotoran, ancaman gigitan hewan pengerat, hingga risiko kerusakan mekanis akibat aktivitas di sekitarnya dapat memicu korsleting dan gangguan sistem. Selain itu, saluran kabel yang terbuka juga membahayakan keselamatan petugas operasi yang sedang melakukan pemeliharaan di area tersebut. Oleh karena itu, pengadaan Penutup Saluran Kabel yang kuat, presisi, dan aman menjadi sangat esensial.</p><p class=\"kl0\">Di samping perlindungan terhadap jaringan kabel, Gardu Hubung juga merupakan zona berbahaya (tegangan menengah) yang memerlukan pembatasan akses secara ketat. Diperlukan batas fisik (perimeter) yang jelas untuk mencegah masuknya pihak-pihak yang tidak berkepentingan, melindungi aset dari potensi pencurian atau vandalisme, serta mencegah masuknya hewan liar yang berisiko menyebabkan gangguan hubung singkat (korsleting). Penggunaan Pagar Harmonika dinilai sangat efektif dan efisien untuk kebutuhan ini, karena materialnya yang kuat, tahan terhadap cuaca, namun tetap memberikan visibilitas yang baik untuk keperluan pengawasan visual (visual inspection) dari luar area gardu.</p><p class=\"kl0\">Memperhatikan kondisi dan kebutuhan krusial tersebut, maka dipandang perlu untuk segera melaksanakan pekerjaan \"{{nama_pekerjaan}}\". Pekerjaan ini merupakan langkah preventif dan penyempurnaan infrastruktur pendukung Gardu Hubung, yang bertujuan untuk memaksimalkan keamanan aset, menjamin keselamatan personel, serta mendukung tercapainya keandalan operasional kelistrikan di wilayah kerja ULP Kobisonta secara berkelanjutan.</p><p class=\"kl1\">1.2. Permasalahan</p><p class=\"kl0\">Berdasarkan tinjauan terhadap kondisi keamanan dan keselamatan operasional di area Gardu Hubung (GH) Kobisonta, terdapat beberapa isu utama yang memerlukan penanganan segera:</p><p class=\"kl2\">a. Kerentanan Saluran Kabel Terbuka: Jaringan kabel listrik yang berada di dalam trench (saluran kabel) memiliki risiko tinggi jika dibiarkan tanpa penutup yang memadai. Kondisi ini membuat kabel rentan terhadap genangan air, tumpukan kotoran/sampah, serta gangguan dari hama atau hewan pengerat (seperti tikus) yang dapat merusak isolasi kabel dan memicu korsleting. Selain itu, saluran yang terbuka juga merupakan bahaya (potensi tersandung/jatuh) bagi petugas PLN saat melakukan manuver atau pemeliharaan;</p><p class=\"kl2\">b. Belum Optimalnya Pengamanan Perimeter (Batas Fisik): Area Gardu Hubung adalah zona instalasi tegangan menengah yang sangat berbahaya. Ketiadaan atau kurang memadainya pagar pembatas di sekitar area gardu memunculkan risiko masuknya warga sipil (pihak yang tidak berkepentingan), anak-anak, maupun hewan liar ke dalam area bertegangan. Hal ini tidak hanya mengancam keselamatan jiwa, tetapi juga meningkatkan risiko pencurian atau vandalisme terhadap aset-aset PLN.</p><p class=\"kl1\">1.3. Maksud dan Tujuan</p><p class=\"kl0\">Adapun maksud dan tujuan dilaksanakannya pekerjaan ini adalah sebagai berikut:</p><p class=\"kl1\">1. Maksud:</p><p class=\"kl0\">Maksud dari pengadaan pekerjaan ini adalah untuk melaksanakan pembuatan dan pemasangan fasilitas pengamanan fisik tambahan di area Gardu Hubung (GH) Kobisonta. Pelaksanaan fisik tersebut difokuskan pada dua item utama, yaitu pembuatan Penutup Saluran Kabel (cable trench cover) dan instalasi Pagar Harmonika sebagai batas perimeter area gardu, yang dikerjakan sesuai dengan spesifikasi material, volume, dan standar teknis yang ditetapkan oleh PT PLN (Persero).</p><p class=\"kl1\">2. Tujuan pengadaan ini adalah:</p><p class=\"kl2\">a. Pengamanan Aset Jaringan Kabel: Melindungi instalasi kabel kelistrikan di dalam saluran (trench) dari paparan langsung kondisi cuaca, genangan air, penumpukan kotoran, serta mencegah kerusakan fisik yang dapat ditimbulkan oleh gigitan hewan pengerat (hama).</p><p class=\"kl2\">b. Peningkatan Keselamatan Kerja (K3): Menutup area saluran kabel yang terbuka agar tidak menjadi bahaya (risiko terperosok atau tersandung) bagi petugas atau teknisi PLN yang sedang melakukan inspeksi, pemeliharaan, maupun manuver jaringan di dalam area gardu.</p><p class=\"kl2\">c. Pembatasan Akses (Perimeter Security): Membangun Pagar Harmonika sebagai batas fisik yang tegas untuk mencegah masuknya pihak-pihak yang tidak berkepentingan, warga sipil, maupun hewan liar ke dalam area bertegangan menengah, guna menghindari risiko kecelakaan ketenagalistrikan.</p><p class=\"kl2\">d. Pencegahan Vandalisme dan Pencurian: Memberikan lapisan perlindungan ekstra untuk menekan risiko terjadinya pencurian material atau tindakan perusakan (vandalisme) terhadap aset-aset kelistrikan di area Gardu Hubung.</p><p class=\"kl2\">e. Dukungan Keandalan Sistem: Melalui terciptanya lingkungan gardu yang aman, tertutup, dan terlindungi, diharapkan dapat meminimalisir potensi gangguan teknis yang bersumber dari faktor eksternal, sehingga keandalan suplai listrik kepada pelanggan ULP Kobisonta dapat terus terjaga.</p><p class=\"kl1\">1.4. Pedoman Pelaksanaan Pekerjaan</p><p class=\"kl0\">Pelaksanaan pekerjaan {{nama_pekerjaan}} berpedoman pada peraturan-peraturan sebagai berikut:</p><p class=\"kl2\">a. Undang-Undang Republik Indonesia Nomor: 19 Tahun 2003 tanggal 19 Juni 2003 tentang Badan Usaha Milik Negara;</p><p class=\"kl2\">b. Undang-Undang Republik Indonesia Nomor: 40 Tahun 2007 tanggal 16 Agustus 2007 tentang Perseroan Terbatas;</p><p class=\"kl2\">c. Undang-Undang Nomor: 30 Tahun 2009 tanggal 23 September 2009 tentang Ketenagalistrikan.</p><p class=\"kl2\">d. Anggaran Dasar PT PLN (Persero);</p><p class=\"kl2\">e. Peraturan Direksi PT PLN (Persero) Nomor: 0018.P/DIR/2023 tanggal 07 Juli 2023 tentang Kebijakan Strategis Pengadaan Barang/Jasa PT PLN (Persero).</p><p class=\"kl2\">f. Peraturan Pelaksana PT PLN (Persero) yang merupakan turunan dari Peraturan Direksi PT PLN (Persero) Nomor: 0018.P/DIR/2023 tanggal 07 Juli 2023 tentang Kebijakan Strategis Pengadaan Barang/Jasa PT PLN (Persero).</p><p class=\"kl2\">g. Peraturan Pelaksana PT PLN (Persero) Nomor: 0033.E/DIR/2024 tanggal 31 Oktober 2024 tentang Standar Prosedur Pengelolaan Penyedia Barang/Jasa.</p><p class=\"kl2\">h. Keputusan Direksi PT PLN (Persero) Nomor: 0325.K/DIR/2021 tanggal 01 September 2021 tentang Penetapan Standar PT PLN (Persero) (SPLN) Nomor U1.006:2021 mengenai Sistem Manajemen Keselamatan Kontraktor (Contractor Safety Management System / CSMS).</p><p class=\"kl2\">i. Peraturan Direksi PT PLN (Persero) Nomor: 0028.P/DIR/2023 tanggal 05 September 2023 tentang Penertiban Pemakaian Tenaga Listrik (P2TL).</p><p class=\"kl2\">j. Peraturan Direksi PT PLN (Persero) Nomor: 0048.P/DIR/2020 tanggal 01 Juli 2020 tentang Tata Kelola Anti Penyuapan di Lingkungan PT PLN (Persero).</p><p class=\"kl2\">k. Peraturan Direksi PT PLN (Persero) Nomor: 0121.P/DIR/2019 tanggal 19 Agustus 2019 tentang Kebijakan Anti Fraud di PT PLN (Persero).</p><p class=\"kl2\">l. Peraturan Direksi PT PLN (Persero) Nomor: 0122.P/DIR/2019 tanggal 19 Agustus 2019 tentang Pengelolaan Konflik Kepentingan di Lingkungan PT PLN (Persero).</p><p class=\"kl2\">m. Peraturan Direksi PT PLN (Persero) Nomor: 0002.P/DIR/2022 tanggal 20 Januari 2022 tentang Kebijakan Strategis Pedoman Penggunaan Produk Dalam Negeri di Lingkungan PT PLN (Persero).</p><p class=\"kl2\">n. Edaran Direksi PT PLN (Persero) Nomor: 0031.E/DIR/2022 tanggal 04 November 2022 tentang Standar Prosedur Pelaksanaan Penggunaan Produk Dalam Negeri di Lingkungan PT PLN (Persero).</p>", aktif:true},
+  {urutan:20, judul:"HAK DAN KEWAJIBAN", isi:"<p class=\"kl1\">2.1. Hak dan Kewajiban PIHAK PERTAMA:</p><p class=\"kl2\">a. Mengawasi dan memeriksa pekerjaan yang dilaksanakan oleh PIHAK KEDUA;</p><p class=\"kl2\">b. Meminta laporan-laporan secara periodik mengenai pelaksanaan pekerjaan yang dilakukan oleh PIHAK KEDUA;</p><p class=\"kl2\">c. Melakukan perubahan Perjanjian/Kontrak, jika ada alasan yang sah dan disetujui para pihak;</p><p class=\"kl2\">d. Memberikan peringatan atas keterlambatan pekerjaan;</p><p class=\"kl2\">e. Mengenakan denda keterlambatan;</p><p class=\"kl2\">f. Membayar tahapan sesuai dengan kemajuan/progres fisik pekerjaan yang tercantum dalam Berita Acara yang disetujui para pihak;</p><p class=\"kl2\">g. Memberikan instruksi sesuai jadwal pelaksanaan pekerjaan yang telah ditetapkan dalam Perjanjian ini.</p><p class=\"kl1\">2.2. Hak dan Kewajiban PIHAK KEDUA:</p><p class=\"kl2\">a. Menerima pembayaran sesuai dengan progres fisik pekerjaan;</p><p class=\"kl2\">b. Melaksanakan dan menyelesaikan serta menyerahkan hasil pekerjaan sesuai dengan spesifikasi atau kriteria yang disyaratkan;</p><p class=\"kl2\">c. Melaporkan pelaksanaan pekerjaan secara periodik;</p><p class=\"kl2\">d. Memberikan keterangan yang diperlukan untuk pemeriksaan pelaksanaan pekerjaan yang dilakukan PIHAK PERTAMA;</p><p class=\"kl2\">e. Mengambil langkah-langkah untuk melindungi lingkungan dan masyarakat dari polusi, kebisingan dan kerusakan lain yang disebabkan oleh kegiatan PIHAK KEDUA.</p><p class=\"kl2\">f. Menunjuk personel di lokasi pekerjaan, yang diberi wewenang penuh dan bertanggung jawab atas pelaksanaan pekerjaan.</p><p class=\"kl2\">g. Mentaati semua ketentuan dan peraturan yang berlaku di PLN;</p><p class=\"kl2\">h. Menjaga kerahasiaan hasil pekerjaan berupa data/informasi dalam bentuk apapun yang terkait dalam pekerjaan yang diberikan.</p>", aktif:true},
+  {urutan:30, judul:"PENGENDALIAN PEKERJAAN", isi:"<p class=\"kl1\">3.1. Dalam rangka pengendalian pekerjaan yang meliputi fungsi pengawasan dan tindakan korektif, Manager PT PLN (Persero) Unit Pelaksana Pelayanan Pelanggan (UP3) Masohi menetapkan Assistant Manager Jaringan dan Konstruksi sebagai Direksi Pekerjaan. Selanjutnya, Team Leader Konstruksi ditunjuk sebagai Pengawas Pekerjaan yang dalam pelaksanaannya dibantu oleh Tim Pemeriksa Barang/Jasa, dengan rincian tugas dan tanggung jawab sebagai berikut:</p><p class=\"kl2\">3.1.1. Tugas Direksi Pekerjaan:</p><p class=\"kl2\">a. Mengoordinasikan dan memonitor seluruh progres pelaksanaan pekerjaan secara berkala;</p><p class=\"kl2\">b. Memberikan arahan, petunjuk teknis, maupun teguran (baik lisan maupun tertulis) kepada PIHAK KEDUA berdasarkan laporan hasil evaluasi dari Pengawas Pekerjaan;</p><p class=\"kl2\">c. Mengawasi pemenuhan aspek Keselamatan, Kesehatan Kerja, dan Lingkungan (K3L) serta kepatuhan Sistem Manajemen Keselamatan Kontraktor (CSMS) secara berkelanjutan;</p><p class=\"kl2\">d. Melakukan evaluasi terhadap kinerja PIHAK KEDUA selama masa pelaksanaan Perjanjian/Kontrak;</p><p class=\"kl2\">e. Menandatangani Berita Acara.</p><p class=\"kl2\">3.1.2. Tugas Pengawas Pekerjaan:</p><p class=\"kl2\">a. Memeriksa dan memastikan kualitas hasil pekerjaan sesuai dengan spesifikasi teknis dan kriteria yang disyaratkan.;</p><p class=\"kl2\">b. Memeriksa dan memastikan kesesuaian jumlah atau volume pekerjaan dengan kebutuhan yang tertuang dalam Perjanjian/Kontrak;</p><p class=\"kl2\">c. Memastikan ketepatan waktu dan lokasi penyerahan hasil pekerjaan sesuai dengan yang ditetapkan dalam Perjanjian/Kontrak;</p><p class=\"kl2\">d. Menyusun dan menyampaikan Laporan Kemajuan Pelaksanaan Pekerjaan yang dilakukan oleh PIHAK KEDUA kepada Direksi Pekerjaan secara tertulis;</p><p class=\"kl2\">e. Memberikan instruksi perbaikan dan berhak menolak hasil pekerjaan yang cacat, tidak akurat, atau tidak memenuhi standar kualitas yang ditetapkan;</p><p class=\"kl2\">f. Menyusun Berita Acara.</p><p class=\"kl2\">3.1.3. Tugas Tim Pemeriksa Barang/Jasa:</p><p class=\"kl2\">a. Melakukan verifikasi dan validasi spesifikasi teknis, merek, tipe, serta volume barang/material yang diserahkan oleh PIHAK KEDUA guna memastikan kesesuaian yang presisi dengan ketentuan dalam Perjanjian/Kontrak;</p><p class=\"kl2\">b. Melakukan pemeriksaan fisik dan/atau uji kelayakan fungsi terhadap material dan peralatan kerja untuk memastikan barang diserahkan dalam kondisi 100% baru, tidak cacat produksi, dan siap digunakan;</p><p class=\"kl2\">c. Mengembalikan atau menolak hasil pekerjaan yang terbukti kualitas, spesifikasi, atau jumlahnya tidak sesuai dengan yang dipersyaratkan dalam Perjanjian/Kontrak, serta menuntut penggantian kepada PIHAK KEDUA;</p><p class=\"kl2\">d. Menandatangani dokumen Berita Acara Pemeriksaan (BAP) Barang/Jasa bersama dengan Pengawas Pekerjaan, sebagai dasar kelayakan penerimaan hasil pekerjaan sebelum disahkan oleh Direksi Pekerjaan.</p><p class=\"kl2\">3.1.4. Direksi Pekerjaan atau pejabat yang ditunjuk oleh PIHAK PERTAMA berhak melakukan pemeriksaan dan/atau pengujian terhadap kualitas material maupun hasil pekerjaan yang diragukan mutunya.</p><p class=\"kl2\">3.1.5. Apabila pejabat atau petugas yang ditunjuk berhalangan atau tidak dapat menjalankan kewajibannya, PIHAK PERTAMA akan menunjuk pejabat pengganti, dan penunjukan tersebut akan diberitahukan secara tertulis kepada PIHAK KEDUA.</p>", aktif:true},
+  {urutan:40, judul:"WAKTU DAN TEMPAT PENYERAHAN PEKERJAAN", isi:"<p class=\"kl1\">4.1. Tempat penyerahan hasil pekerjaan adalah sesuai dengan lokasi yang ditentukan dalam dokumen Term of Reference (TOR)/Kerangka Acuan Kerja (KAK).</p><p class=\"kl1\">4.2. Jangka waktu penyerahan pekerjaan adalah {{jangka_waktu_hari}} ({{jangka_waktu_terbilang}}) hari kalender sejak ditandatangani Surat Perintah Kerja/SPK atau paling lambat pada tanggal {{akhir_pekerjaan_pjg}}.</p><p class=\"kl1\">4.3. Jangka waktu penyerahan pekerjaan sebagaimana dimaksud pada butir 4.2 tidak dapat dirubah/ditambah oleh PIHAK KEDUA kecuali dalam hal keadaan kahar (Force Majeure) dan/atau adanya hal-hal/kejadian-kejadian lain yang bukan karena kesalahan PIHAK KEDUA yang dapat mengakibatkan keterlambatan penyerahan pekerjaan dan perpanjangan waktu penyerahan ini harus disetujui oleh PIHAK PERTAMA secara tertulis sebelum jangka waktu penyerahan dimaksud dapat dirubah/ditambah.</p><p class=\"kl1\">4.4. Apabila dalam jangka waktu 15 (lima belas) hari kalender terhitung sejak berakhirnya batas waktu penyerahan pekerjaan, PIHAK KEDUA belum dapat menyelesaikan pekerjaan ini, maka PIHAK PERTAMA akan memberikan Surat Peringatan Tertulis Pertama kepada PIHAK KEDUA.</p><p class=\"kl1\">4.5. Apabila dalam jangka waktu 15 (lima belas) hari kalender terhitung sejak tanggal Peringatan Tertulis Pertama, ternyata PIHAK KEDUA belum juga dapat  menyelesaikan pekerjaannya, maka PIHAK PERTAMA akan mengeluarkan Surat Peringatan Tertulis Kedua kepada PIHAK KEDUA.</p><p class=\"kl1\">4.6. Selanjutnya apabila terhadap Peringatan Tertulis Kedua tersebut, PIHAK KEDUA belum juga dapat menyelesaikan pekerjaannya dan batas keterlambatan penyelesaian pekerjaan telah melampaui 50 (lima puluh) hari kalender terhitung sejak tanggal akhir Surat Perintah Kerja/SPK, maka PIHAK PERTAMA akan mengeluarkan Surat Peringatan Tertulis Ketiga/Terakhir kepada PIHAK KEDUA dan PIHAK PERTAMA dapat memutuskan Perjanjian ini secara sepihak.</p>", aktif:true},
+  {urutan:50, judul:"SANKSI DAN DENDA KETERLAMBATAN PELAKSANAAN PEKERJAAN", isi:"<p class=\"kl1\">5.1. Sanksi atau denda yang diberikan kepada PIHAK KEDUA jika terjadi keterlambatan pelaksanaan Pekerjaan dari batas Waktu Pelaksanaan Pekerjaan yang telah ditentukan sesuai yang diatur dalam Perjanjian ini.</p><p class=\"kl1\">5.2. Denda Keterlambatan tersebut akan langsung dikurangi dari nilai tagihan PIHAK KEDUA.</p><p class=\"kl1\">5.3. Besarnya denda keterlambatan kepada PIHAK KEDUA atas keterlambatan menyelesaikan pekerjaan adalah 1‰ (satu per seribu) dari harga pekerjaan untuk setiap hari keterlambatan dengan nilai maksimum 5% (lima per seratus) dari harga Perjanjian/Kontrak.</p><p class=\"kl1\">5.4. Apabila denda maksimum 5% (lima per seratus) telah tercapai, PIHAK PERTAMA dapat memutuskan Perjanjian/Kontrak setelah memberikan surat peringatan pertama sampai dengan surat peringatan ketiga.</p><p class=\"kl1\">5.5. Apabila denda maksimum dan surat peringatan ketiga telah tercapai dan PIHAK KEDUA belum dapat menyelesaikan pekerjaan tersebut, maka PIHAK PERTAMA dapat melakukan pemutusan Perjanjian/Kontrak secara sepihak dan mengalihkan tugas kepada pihak lain dan segala kerugian yang ditimbulkan menjadi tanggung jawab PIHAK KEDUA, dan dapat dikenakan sanksi daftar hitam (Blacklist) yaitu berupa larangan untuk mengikuti kegiatan Pengadaan Barang/Jasa di PLN selama 2 (dua) tahun kalender.</p><p class=\"kl1\">5.6. Perhitungan sanksi atau denda keterlambatan tidak berlaku apabila akibat yang disebabkan oleh keadaan Kahar (Force Majeure).</p><p class=\"kl1\">5.7. Pengenaan Sanksi/Blacklist kepada PIHAK KEDUA dilaksanakan berdasarkan ketentuan Sanksi/Blacklist yang berlaku di PLN.</p>", aktif:true},
+  {urutan:60, judul:"HARGA PEKERJAAN", isi:"<p class=\"kl0\">Harga Pekerjaan untuk pelaksanaan {{nama_pekerjaan}} ditetapkan sebesar {{nilai_rp}} ({{nilai_terbilang}}). Harga Pekerjaan tersebut bersifat mengikat dan telah mencakup Pajak Pertambahan Nilai (PPN) sebesar 12% (dua belas persen) terhadap nilai Dasar Pengenaan Pajak (DPP), keuntungan pihak pelaksana, segala risiko, pajak maupun pungutan lain yang berlaku menurut peraturan perundang-undangan, serta biaya pengangkutan hingga ke tempat penyerahan Pekerjaan.</p>", aktif:true},
+  {urutan:70, judul:"TATA CARA PEMBAYARAN", isi:"<p class=\"kl1\">7.1. Pembayaran oleh PIHAK PERTAMA diambil dari sumber anggaran No. {{sumber_dana_no}} tanggal {{sumber_dana_tgl_pjg}}.</p><p class=\"kl1\">7.2. Pelaksanaan pembayaran oleh PIHAK PERTAMA kepada PIHAK KEDUA sebagaimana dimaksud pada butir 7.1 akan dilakukan dalam 1 (satu) kali pembayaran setelah seluruh pekerjaan dimaksud sesuai dengan daftar  pekerjaan, sudah diterima dengan lengkap dan benar.</p><p class=\"kl1\">7.3. Pelaksanaan pembayaran oleh PIHAK PERTAMA kepada PIHAK KEDUA dimaksud akan dilakukan kepada {{p2_nama_hormat}} melalui Rekening Nomor: {{rekening_no}} a.n. {{rekening_atas_nama}} pada {{bank_nama}}.</p><p class=\"kl1\">7.4. Pembayaran akan dilaksanakan oleh PIHAK PERTAMA kepada PIHAK KEDUA setelah pekerjaan yang dimaksud sesuai dengan daftar pekerjaan sudah diterima dengan lengkap dan benar, pembayaran ditransfer melalui Rekening Bank serta menerima Permintaan Pembayaran dari PIHAK KEDUA yang ditujukan kepada PIHAK PERTAMA dengan disertai :</p><p class=\"kl2\">a. Surat Permohonan Permintaan Pembayaran;</p><p class=\"kl2\">b. Kwitansi dalam 3 (tiga), 1 (satu) asli bermeterai Rp10.000 dan 2 (Dua) copy;</p><p class=\"kl2\">c. Faktur Pajak dalam 3 (tiga) rangkap;</p><p class=\"kl2\">d. Fotocopy Surat Perintah Kerja/SPK;</p><p class=\"kl2\">e. Fotocopy NPWP dan PKP;</p><p class=\"kl2\">f. Berita Acara Pemeriksaan Pekerjaan (BAPP);</p><p class=\"kl2\">g. Berita Acara Serah Terima Pekerjaan (BASTP);</p><p class=\"kl2\">h. Dokumentasi Hasil Pekerjaan;</p><p class=\"kl2\">i. Form Penilaian Kinerja Penyedia Barang/Jasa.</p><p class=\"kl1\">7.5. Biaya transfer sebagaimana dimaksud pada butir 7.3 menjadi beban dan tanggung jawab PIHAK KEDUA dan akan diperhitungkan dengan jumlah pembayaran harga dimaksud.</p>", aktif:true},
+  {urutan:80, judul:"KEADAAN KAHAR (FORCE MAJEURE)", isi:"<p class=\"kl1\">8.1. Force Majeure merupakan suatu keadaan yang terjadi diluar kehendak para pihak sehingga kewajiban yang ditentukan dalam Perjanjian ini menjadi tidak dapat dipenuhi, antara lain peperangan, kerusuhan, revolusi, bencana alam, gempa bumi, pemogokan, dan kebakaran.</p><p class=\"kl1\">8.2. Keadaan Kahar (Force Majeure) ini tidak termasuk hal-hal yang merugikan disebabkan oleh perbuatan atau kelalaian para pihak.</p><p class=\"kl1\">8.3. Keterlambatan pelaksanaan yang diakibatkan oleh karena terjadinya keadaan kahar tidak dapat dikenai sanksi.</p><p class=\"kl1\">8.4. Pihak yang menanggung kerugian dan Tindakan yang diambil akibat terjadinya keadaan Kahar (Force Majeure), diserahkan pada kesepakatan para pihak.</p><p class=\"kl1\">8.5. Peristiwa-peristiwa lain yang tidak disebutkan di atas, tidak dapat dikategorikan sebagai keadaan Kahar (Force Majeure) kecuali apabila ditetapkan dengan Peraturan Pemerintah/Pemerintah Daerah setempat.</p><p class=\"kl1\">8.6. Dalam hal terjadi Force Majeure, PIHAK KEDUA wajib memberitahukan kepada PIHAK PERTAMA dalam waktu 1 x 24 Jam serta memberitahukan secara tertulis kepada Direksi Pekerjaan disertai Surat Keterangan dari Instansi berwenang paling lambat 14 (empat belas) hari kalender sejak terjadinya Force Majeure tersebut. Jika melewati 14 (empat belas) hari tersebut klaim dinyatakan tidak dapat diterima lagi.</p><p class=\"kl1\">8.7. Apabila dalam jangka waktu sebagaimana dimaksud pada butir 8.6, PIHAK KEDUA tidak memberitahukan kejadian Force Majeure tersebut kepada PIHAK PERTAMA, maka keterlambatan penyerahan barang/jasa sebagaimana dimaksud dalam Perjanjian ini dianggap bukan sebagai Force Majeure.</p><p class=\"kl1\">8.8. Dalam pemberitahuan mengenai kejadian Force Majeure sebagaimana dimaksud pada butir 8.6, PIHAK KEDUA dapat sekaligus mengajukan permohonan perpanjangan waktu penyerahan barang/jasa kepada PIHAK PERTAMA.</p><p class=\"kl1\">8.9. PIHAK PERTAMA dalam waktu 7 (tujuh) hari kalender terhitung sejak diterimanya permohonan perpanjangan waktu sebagaimana dimaksud pada butir 8.8, akan memberikan jawaban secara tertulis mengenai permohonan dimaksud kepada PIHAK KEDUA.</p><p class=\"kl1\">8.10. Apabila dalam jangka waktu sebagaimana dimaksud pada butir 8.9, PIHAK PERTAMA tidak memberikan jawaban terhadap permohonan perpanjangan waktu penyerahan Barang dari PIHAK KEDUA, maka PIHAK PERTAMA dianggap telah memberikan persetujuan terhadap permohonan dimaksud.</p><p class=\"kl1\">8.11. Surat Pernyataan adanya Force Majeure dinyatakan SAH, apabila dibuktikan dengan Surat Keterangan yang dikeluarkan oleh Pemerintah/Pemerintah Daerah setempat. Dalam hal terjadi Force Majeure di luar wilayah Indonesia, maka pemberitahuan adanya Force Majeure harus disertai dengan Surat Keterangan resmi dari Pejabat setempat yang berwenang dan disahkan oleh Konsulat Jenderal Republik Indonesia setempat.</p><p class=\"kl1\">8.12. Apabila PIHAK KEDUA tidak dapat mengatasi keadaan Force Majeure sebagaimana tersebut di atas sungguhpun sudah berusaha sebaik-baiknya dan setelah diperhitungkan secara seksama maka dapat diberikan perpanjangan waktu yang menurut Direksi Pekerjaan cukup untuk kompensasi waktu kelambatan yang dialami. Jika keterlambatan sebagai akibat tersebut di atas terjadi lebih dari 14 (empat belas) hari kalender, maka para pihak akan mengadakan musyawarah untuk menentukan dasar dan cara untuk memulai kembali pelaksanaan pekerjaan tersebut. Jika dari musyawarah tidak tercapai kesepakatan pelaksanaan pekerjaan tersebut, maka dapat dilakukan pembatalan secara tertulis bagian-bagian pekerjaan yang terlambat tersebut. Untuk ini PIHAK PERTAMA akan membayar kepada PIHAK KEDUA atas pekerjaan yang telah selesai.</p>", aktif:true},
+  {urutan:90, judul:"MASA GARANSI", isi:"<p class=\"kl1\">9.1. PIHAK KEDUA wajib memberikan garansi atas barang/jasa selama 1 (satu) tahun atau 365 (tiga ratus enam puluh lima) hari kalender terhitung sejak tanggal Berita Acara Serah Terima Pekerjaan.</p><p class=\"kl1\">9.2. PIHAK KEDUA wajib menjamin bahwa barang yang diserahkan kepada PIHAK PERTAMA adalah 100% baru, asli dan dalam keadaan baik, bebas dari cacat, baik yang kelihatan maupun tidak kelihatan, sesuai dengan spesifikasi dan sesuai dengan syarat yang ditentukan dalam dokumen Term of Reference (TOR)/Kerangka Acuan Kerja (KAK).</p><p class=\"kl1\">9.3. Apabila dalam masa garansi/jaminan ternyata terdapat barang/jasa yang tidak sesuai dengan jaminan yang diberikan oleh PIHAK KEDUA, maka PIHAK PERTAMA akan memberitahukan secara tertulis kepada PIHAK KEDUA selambat-lambatnya dalam jangka waktu 7 (tujuh) hari kalender terhitung sejak diketahui adanya barang yang tidak sesuai dengan jaminan yang diberikan oleh PIHAK KEDUA.</p><p class=\"kl1\">9.4. PIHAK KEDUA wajib mengganti barang/jasa yang tidak sesuai dengan jaminan dengan barang baru yang sesuai dengan syarat yang ditentukan.</p><p class=\"kl1\">9.5. Semua biaya yang diperlukan untuk penggantian barang sebagaimana dimaksud pada butir 9.4 menjadi beban dan tanggung jawab PIHAK KEDUA.</p><p class=\"kl1\">9.6. PIHAK KEDUA dibebaskan dari kewajiban untuk mengganti barang yang rusak/cacat selama masa garansi/jaminan apabila diakibatkan oleh kelalaian petugas PLN Unit dan kesalahan-kesalahan lain diluar kesalahan PIHAK KEDUA.</p><p class=\"kl1\">9.7. Apabila selama masa garansi, PIHAK KEDUA tidak dapat mengganti barang/jasa yang tidak sesuai dengan jaminan dengan barang baru, maka PIHAK KEDUA dikenakan sanksi sebagaimana diatur dalam Perjanjian ini.</p>", aktif:true},
+  {urutan:100, judul:"KESELAMATAN DAN KESEHATAN KERJA", isi:"<p class=\"kl1\">10.1. PIHAK KEDUA wajib mematuhi peraturan keselamatan kerja di lingkungan PT PLN (Persero).</p><p class=\"kl1\">10.2. PIHAK KEDUA wajib menjaga dan memelihara kebersihan lingkungan lokasi pekerjaan.</p><p class=\"kl1\">10.3. PIHAK KEDUA wajib menerapkan Sistem Manajemen Keselamatan dan Kesehatan Kerja (SMK3) di lokasi PIHAK PERTAMA sesuai dengan ketentuan yang diberlakukan oleh Diskertrans.</p><p class=\"kl1\">10.4. PIHAK KEDUA wajib menyediakan sarana dan perlengkapan keselamatan kerja sesuai dengan Sistem Manajemen Keselamatan dan Kesehatan Kerja (SMK3) serta sarana dan perlengkapan keselamatan lainnya berdasarkan ketentuan yang berlaku dan menjadi beban biaya PIHAK KEDUA.</p><p class=\"kl1\">10.5. Seluruh pekerjaan jasa wajib memiliki dan menerapkan Standar Operasional Prosedur (SOP) dan Instruksi Kerja (IK) pekerjaan.</p><p class=\"kl1\">10.6. Seluruh SOP/IK dan tempat/lokasi kerja harus melalui identifikasi bahaya dan pengendalian resiko terlebih dahulu. Tabel identifikasi bahaya dan pengalihan resiko atau disingkat HIRAC (Hazard Identification Risk Assesment Control) dijadikan sebagai lampiran kontrak.</p><p class=\"kl1\">10.7. Sesuai hasil HIRAC, apabila pekerjaan dan atau tempat kerja didapati berpotensi bahaya tinggi, sangat tinggi, fatal, dan seterusnya wajib mengisi Job Safety Analyst (JSA) dan Working Permit (Ijin Kerja).</p><p class=\"kl1\">10.8. Menyediakan APD secara lengkap dan layak.</p><p class=\"kl1\">10.9. Peralatan kerja maupun peralatan proteksi harus lengkap dan aman.</p><p class=\"kl1\">10.10. Petugas teknik wajib memiliki sertifikat pelatihan/kompetensi.</p><p class=\"kl1\">10.11. Untuk pekerjaan dan area kerja beresiko tinggi wajib menggunakan dan menerapkan Buddy System (tidak boleh bekerja atau masuk area kerja seorang diri).</p><p class=\"kl1\">10.12. PIHAK KEDUA berkewajiban atas biaya sendiri untuk mengikutsertakan personilnya pada program Badan Penyelenggara Jaminan Sosial (BPJS) sebagaimana diatur dalam peraturan perundang - undangan.</p><p class=\"kl1\">10.13. Wajib menggunakan sistem Lock Out dan Tag Out pada pekerjaan beresiko tinggi.</p><p class=\"kl1\">10.14. PIHAK KEDUA bertanggung jawab atas keselamatan semua pihak di lokasi kerja.</p><p class=\"kl1\">10.15. Apabila terjadi kecelakaan kerja (gagalnya Sistem Manajemen Keselamatan Dan Kesehatan Kerja), maka PIHAK KEDUA bertanggung jawab secara penuh dan segala kerugian ditanggung oleh PIHAK KEDUA.</p><p class=\"kl1\">10.16. PIHAK KEDUA bertanggung jawab atas segala kejadian dan kecelakaan dalam hubungan kerja baik antara PIHAK KEDUA dengan karyawannya/ pekerja-pekerjanya.</p><p class=\"kl1\">10.17. Apabila dalam implementasinya pada butir 10.1 sampai 10.16 tidak dipenuhi maka PIHAK PERTAMA akan mengevaluasi dan memutus secara sepihak atas perjanjian Pengadaaan Barang/Jasa yang sedang berlangsung.</p><p class=\"kl1\">10.18. PIHAK KEDUA bertanggung jawab atas segala yang berkaitan dengan urusan perburuhan/sosial dalam hubungan kerja antara PIHAK PERTAMA dengan karyawannya/ pekerja-pekerjanya sesuai dengan peraturan dan undang-undang perburuhan yang berlaku.</p><p class=\"kl1\">10.19. PIHAK KEDUA harus melaporkan secara tertulis atas kejadian kecelakaan yang menimpa karyawan/petugasnya kepada Departemen Tenaga Kerja dan Direksi Pekerjaan.</p>", aktif:true},
+  {urutan:110, judul:"TERMINASI DALAM KONTRAK", isi:"<p class=\"kl1\">11.1. Selain wanprestasi yang diatur dalam Perjanjian ini, maka setiap wanprestasi yang dilakukan PIHAK KEDUA akan mengikuti ketentuan dibawah ini. Setiap peristiwa sebagai berikut merupakan suatu peristiwa wanprestasi PIHAK KEDUA yaitu:</p><p class=\"kl2\">11.1.1. Peristiwa wanprestasi yang tidak dapat diperbaiki oleh PIHAK KEDUA adalah sebagai berikut:</p><p class=\"kl2\">a. PIHAK KEDUA terbukti melakukan tindak pidana antara lain adanya pemalsuan surat/dokumen, praktek persekongkolan, kecurangan dan pemalsuan yang berkaitan dengan proses pengadaan, pelaksanaan Perjanjian/Kontrak dan pelaksanaan Pekerjaan.</p><p class=\"kl2\">b. Berdasarkan putusan Pengadilan yang telah mempunyai kekuatan hukum tetap, PIHAK KEDUA dinyatakan dalam keadaan pailit, pembubaran, likuidasi atau diberikan penundaan pembayaran hutang yang menyebabkan PIHAK KEDUA tidak dapat melakukan kewajibannya berdasarkan Perjanjian/Kontrak.</p><p class=\"kl2\">c. PIHAK KEDUA terbukti dikenakan Sanksi Daftar Hitam sebelum penandatanganan Perjanjian/Kontrak.</p><p class=\"kl2\">d. Setiap pernyataan atau jaminan yang dibuat oleh PIHAK KEDUA di dalam Perjanjian/Kontrak yang berkaitan dengan pelaksanaan Pekerjaan/Kontrak terbukti tidak sah dan/atau tidak dilaksanakan oleh PIHAK KEDUA.</p><p class=\"kl2\">11.1.2. Peristiwa Wanprestasi yang dapat diperbaiki oleh PIHAK KEDUA adalah sebagai berikut :</p><p class=\"kl2\">a. PIHAK KEDUA mengalihkan Pekerjaan baik sebagian atau seluruhnya atau hak atau kewajiban yang diatur dalam Perjanjian/Kontrak tanpa persetujuan tertulis dari PIHAK PERTAMA;</p><p class=\"kl2\">b. Apabila denda yang diatur dalam Perjanjian/Kontrak tidak dibayar oleh PIHAK KEDUA kepada PIHAK PERTAMA;</p><p class=\"kl2\">c. PIHAK KEDUA tidak memenuhi kewajibannya sesuai ketentuan yang diatur dalam Perjanjian/Kontrak.</p><p class=\"kl1\">11.2. Dalam hal terjadi Peristiwa Wanprestasi yang tidak dapat diperbaiki oleh PIHAK KEDUA sebagaimana dimaksud butir 11.1 angka 11.1.1, maka PIHAK PERTAMA akan mengakhiri Perjanjian/Kontrak dengan memberikan surat pengakhiran Perjanjian/Kontrak kepada PIHAK KEDUA.</p><p class=\"kl1\">11.3. Dalam hal terjadi Peristiwa Wanprestasi yang dapat diperbaiki oleh PIHAK KEDUA sebagaimana dimaksud butir 11.1 angka 11.1.2, PIHAK PERTAMA berhak mengakhiri Perjanjian/Kontrak dengan memberikan surat peringatan, dengan ketentuan sebagai berikut :</p><p class=\"kl2\">11.3.1. PIHAK PERTAMA akan memberikan peringatan tertulis pertama kepada PIHAK KEDUA dengan perintah pemulihan wajib diselesaikan oleh PIHAK KEDUA dalam waktu 10 (sepuluh) Hari Kalender setelah tanggal diterimanya surat peringatan dari PIHAK PERTAMA kepada PIHAK KEDUA dan PIHAK KEDUA wajib menyampaikan pemberitahuan tertulis yang wajib dilengkapi dengan bukti pendukung kepada PIHAK PERTAMA bahwa pemulihan atau perbaikan tersebut akan, sedang, atau telah dilaksanakan oleh PIHAK KEDUA.</p><p class=\"kl2\">11.3.2. Apabila PIHAK KEDUA tidak menyelesaikan pemulihan atau perbaikan dalam waktu 10 Hari Kalender sesuai pada butir 11.3 angka 11.3.1, maka PIHAK PERTAMA akan memberikan peringatan tertulis kedua kepada PIHAK KEDUA dengan perintah pemulihan wajib diselesaikan oleh PIHAK KEDUA dalam waktu 10 (sepuluh) Hari Kalender setelah tanggal diterimanya peringatan oleh PIHAK KEDUA dan PIHAK KEDUA wajib menyampaikan pemberitahuan tertulis yang wajib dilengkapi dengan bukti pendukung kepada PIHAK PERTAMA bahwa pemulihan atau perbaikan tersebut akan, sedang atau telah dilaksanakan oleh PIHAK KEDUA.</p><p class=\"kl2\">11.3.3. Apabila PIHAK KEDUA tidak menyelesaikan pemulihan atau perbaikan dalam waktu 10 (sepuluh) hari kalender sebagaimana dimaksud pada butir 11.3 angka 11.3.2, maka PIHAK PERTAMA akan memberikan peringatan tertulis ketiga kepada PIHAK KEDUA dengan perintah pemulihan wajib diselesaikan oleh PIHAK KEDUA dalam waktu 10 (sepuluh) Hari Kalender setelah tanggal diterimanya peringatan dan PIHAK KEDUA wajib menyampaikan pemberitahuan tertulis yang wajib dilengkapi dengan bukti pendukung kepada PIHAK PERTAMA bahwa pemulihan atau perbaikan tersebut akan, sedang atau telah dilaksanakan oleh PIHAK KEDUA.</p><p class=\"kl2\">11.3.4. Apabila PIHAK KEDUA tidak menyelesaikan pemulihan atau perbaikan dalam waktu sebagaimana disebutkan pada butir 11.3 angka 11.3.3, maka PIHAK PERTAMA berhak mengakhiri Perjanjian/Kontrak.</p><p class=\"kl1\">11.4. Dalam hal PIHAK KEDUA telah melakukan pemulihan atau perbaikan sebagaimana dimaksud pada butir 11.3, dan pemulihan atau perbaikan tersebut disetujui oleh PIHAK PERTAMA maka peringatan tertulis yang telah diterbitkan tersebut tidak akan diperhitungkan sebagai pemberian peringatan yang berkelanjutan atau tidak berlaku kumulatif pada pemberian peringatan berikutnya.</p><p class=\"kl1\">11.5. Atas setiap pengakhiran dari Perjanjian/Kontrak, seluruh kewajiban-kewajiban masing-masing Pihak berdasarkan Perjanjian/Kontrak wajib berhenti, kecuali :</p><p class=\"kl2\">11.5.1. Sehubungan dengan kewajiban-kewajiban pembayaran yang ditimbulkan dari tindakan-tindakan yang diambil sebelum pengakhiran tersebut (termasuk namun tidak terbatas pada hak normatif pekerja PIHAK KEDUA);</p><p class=\"kl2\">11.5.2. Sebagaimana ditentukan lain dalam Perjanjian/Kontrak;</p><p class=\"kl2\">11.5.3. Pengakhiran tersebut tidak akan mengurangi setiap hak atas ganti rugi atau setiap perbaikan lainnya yang mungkin dimiliki oleh masing-masing Pihak berdasarkan Perjanjian/Kontrak.</p><p class=\"kl1\">11.6. Dalam hal terjadi Peristiwa Wanprestasi oleh PIHAK KEDUA, maka PIHAK KEDUA akan dikenakan hukuman/denda sesuai ketentuan Perjanjian/Kontrak.</p><p class=\"kl1\">11.7. PIHAK PERTAMA akan memberlakukan hukuman daftar hitam (Blacklist) bagi setiap pengakhiran Perjanjian/Kontrak yang disebabkan karena wanprestasi PIHAK KEDUA sebagaimana diatur lebih lanjut dalam ketentuan yang berlaku pada PIHAK PERTAMA.</p><p class=\"kl1\">11.8. Terhadap pengakhiran Perjanjia/Kontrak, para pihak sepakat untuk tidak memberlakukan ketentuan Pasal 1266 Kitab Undang-Undang Hukum Perdata.</p>", aktif:true},
+  {urutan:120, judul:"INTEGRITAS DAN GOOD CORPORATE GOVERNANCE", isi:"<p class=\"kl1\">12.1. Para Pihak menyepakati tidak akan melakukan tindakan-tindakan yang mengakibatkan terjadinya ketidakwajaran dalam pelaksanaan perjanjian ini termasuk namun tidak terbatas pada tindakan penipuan, penggelapan, pemerasan, kolusi, penyuapan, gratifikasi, korupsi, kecurangan, pemalsuan dan tindakan lain yang tidak sesuai dengan etika bisnis yang baik serta bertentangan dengan peraturan perundang-undangan yang berlaku termasuk mengenai pemberantasan tindak pidana korupsi, pencegahan dan pemberantasan tindak pidana pencucian uang, penerapan praktek Good Corporate Governance pada Badan Usaha Milik Negara (BUMN), termasuk peraturan yang mengatur mengenai Tata Kelola Anti Penyuapan yang berlaku di lingkungan PT PLN (Persero).</p><p class=\"kl1\">12.2. Para pihak menyepakati bahwa Perjanjian/Kontrak dilaksanakan dengan itikad baik, tidak saling mempengaruhi baik langsung maupun tidak langsung guna memenuhi keinginannya, menerima serta bertanggungjawab atas segala keputusan yang ditetapkan sesuai dengan kesepakatan para pihak, menghindari serta mencegah terjadinya konflik kepentingan (conflict of interest), menghindari serta mencegah penyalahgunaan wewenang dan/atau kolusi dengan tujuan untuk keuntungan pribadi, golongan atau pihak lain, dan tidak menerima, tidak menawarkan atau tidak menjanjikan untuk memberi atau menerima hadiah, imbalan berupa apa saja kepada siapapun yang diketahui atau patut diduga berkaitan dengan pelaksanaan perjanjian ini.</p><p class=\"kl1\">12.3. PIHAK KEDUA menyatakan, menjamin dan berkomitmen kepada PIHAK PERTAMA, untuk mematuhi ketentuan hukum yang berlaku termasuk namun tidak terbatas pada, kebijakan anti-fraud dan tata kelola anti-penyuapan di PLN seperti :</p><p class=\"kl2\">12.3.1. menerapkan 4 No's :</p><p class=\"kl2\">a. No bribery, menghindari suap menyuap dan pemerasan,</p><p class=\"kl2\">b. No gift, menghindari hadiah atau gratifikasi yang bertentangan dengan peraturan yang berlaku,</p><p class=\"kl2\">c. No kickback, menghindari komisi, tanda terima kasih baik dalam bentuk uang atau bentuk lainnya,</p><p class=\"kl2\">d. No luxurious hospitality, menghindari jamuan yang berlebihan;</p><p class=\"kl2\">12.3.2. menerapkan uji kelayakan berbasis integritas;</p><p class=\"kl2\">12.3.3. menghadiri program sosialisasi sistem manajemen anti penyuapan yang dilaksanakan oleh PT PLN (Persero);</p><p class=\"kl2\">12.3.4. menandatangani dan melaksanakan pakta integritas;</p><p class=\"kl2\">12.3.5. melaporkan insiden fraud melalui Whistle Blowing System PLN.</p><p class=\"kl1\">12.4. PIHAK PERTAMA akan melakukan audit terkait tagihan pembayaran dan dokumen pembukuan serta pencatatan kepada PIHAK KEDUA ketika terdapat indikasi ketidakwajaran dari tagihan yang disampaikan oleh PIHAK KEDUA kepada PIHAK PERTAMA, dimana tujuan pelaksanaan audit tersebut untuk memastikan kesesuaian tagihan PIHAK KEDUA dengan ketentuan yang berlaku termasuk kesesuaian dengan ketentuan dalam Perjanjian/Kontrak.</p><p class=\"kl1\">12.5. Pelaksanaan audit sebagaimana dimaksud dalam butir 12.4, dilakukan sebagai berikut :</p><p class=\"kl2\">12.5.1. Atas biaya PIHAK PERTAMA;</p><p class=\"kl2\">12.5.2. Dilakukan dengan pemberitahuan selambat-lambatnya 7 (tujuh) hari kalender sebelum pelaksanaan audit yang disampaikan PIHAK PERTAMA kepada PIHAK KEDUA;</p><p class=\"kl2\">12.5.3. Pelaksanaan audit dilaksanakan paling lambat dalam waktu 7 (tujuh) hari kerja, dilanjutkan dengan pembuatan pelaporan audit oleh PIHAK PERTAMA paling lambat dalam 3 (tiga) hari kerja;</p><p class=\"kl2\">12.5.4. Penyelesaian pembayaran (settlement/adjustment) dilakukan paling lambat dalam 30 (tiga puluh) hari kalender setelah PIHAK PERTAMA memaparkan laporan hasil audit kepada PIHAK KEDUA;</p><p class=\"kl2\">12.5.5. PIHAK PERTAMA dapat menunjuk pihak lain untuk melakukan audit;</p><p class=\"kl2\">12.5.6. PIHAK KEDUA wajib mengizinkan perwakilan dari PIHAK PERTAMA dan menyediakan dokumen dan data yang diperlukan;</p><p class=\"kl2\">12.5.7. Permintaan dan penyampaian dokumen dan data audit dilaksanakan pada jam kerja dari PIHAK KEDUA;</p><p class=\"kl2\">12.5.8. Apabila terdapat Kerjasama antara PIHAK KEDUA dengan pihak ketiga yang berkaitan dengan pelaksanaan Perjanjian/Kontrak, maka PIHAK KEDUA wajib memastikan dan menuangkan ketentuan mengenai Hak Akses PIHAK PERTAMA terhadap dokumen dan data milik pihak ketiga dalam Perjanjian/Kontrak antara PIHAK KEDUA dengan pihak ketiga tersebut.</p><p class=\"kl2\">12.5.9. Para pihak termasuk perwakilannya, akan menjaga kerahasiaan informasi non-publik yang diperoleh dari pelaksanaan audit tersebut.</p><p class=\"kl1\">12.6. Dalam pelaksanaan audit terhadap tagihan pembayaran sebagaimana butir 12.4 di atas, PIHAK PERTAMA berhak melakukan penundaan pembayaran atas tagihan pembayaran tersebut atau dapat melakukan pembayaran melalui suatu rekening khusus (Escrow Account) yang dibuat oleh PIHAK PERTAMA dan PIHAK KEDUA yang beban biayanya menjadi tanggung jawab PIHAK KEDUA sampai dilakukan penyesuaian pembayaran.</p><p class=\"kl1\">12.7. Dalam hal dilakukan audit sebagaimana dimaksud pada butir 12.4 dan/atau pelaksanaan penundaan pembayaran sebagaimana pada butir 12.6, PIHAK KEDUA wajib untuk tetap melaksanakan kewajibannya sesuai Perjanjian/Kontrak.</p><p class=\"kl1\">12.8. Dalam rangka penerapan tata kelola yang baik (Good Corporate Governance) di lingkungan PT PLN (Persero), jika dalam proses pelaksanaan Perjanjian/kontrak,  PIHAK KEDUA mengetahui adanya tindakan kecurangan, pelanggaran peraturan atau hukum, konflik kepentingan, penyuapan/gratifikasi maupun kelakuan tidak etis yang dilakukan oleh pegawai PLN, agar melaporkan melalui Whistle Blower System dengan media antara lain telepon, SMS, Whatsapp ke 08119861901, atau email ke wbpln@pln.co.id.</p><p class=\"kl1\">12.9. PIHAK KEDUA yang menurut penilaian PIHAK PERTAMA terbukti melakukan larangan-larangan sebagaimana dimaksud pada butir 12.1, butir 12.2 dan/atau butir 12.3 di atas dapat dikenakan sanksi-sanksi dari PIHAK PERTAMA sebagai berikut:</p><p class=\"kl2\">12.9.1. Pemutusan Perjanjian/Kontrak;</p><p class=\"kl2\">12.9.2. Pengenaan daftar hitam sesuai ketentuan yang berlaku di lingkungan PT PLN (Persero).</p>", aktif:true},
+  {urutan:130, judul:"BIAYA PENYUSUNAN KONTRAK", isi:"<p class=\"kl0\">Seluruh biaya yang timbul sehubungan dengan proses penyusunan, penggandaan, dan penandatanganan dokumen Perjanjian ini sepenuhnya menjadi beban dan tanggung jawab PIHAK KEDUA. Biaya-biaya sebagaimana dimaksud meliputi, namun tidak terbatas pada, bea meterai, pajak-pajak yang berlaku, biaya penggandaan dan penjilidan dokumen, serta biaya pengiriman dokumen Perjanjian menggunakan jasa kurir/ekspedisi (khusus bagi PIHAK KEDUA yang berdomisili di luar Pulau Seram).</p>", aktif:true},
+  {urutan:140, judul:"PERUBAHAN", isi:"<p class=\"kl1\">14.1. Perjanjian/Kontrak ini tidak dapat dipindahtangankan baik sebagian maupun keseluruhan tanpa persetujuan tertulis dari para pihak.</p><p class=\"kl1\">14.2. Para pihak sepakat bahwa setiap perubahan Perjanjian/Kontrak ini hanya dapat dilakukan atas persetujuan para pihak.</p><p class=\"kl1\">14.3. Perubahan sebagaimana dimaksud pada butir 14.1 akan dibuat dalam suatu addendum/amandemen yang merupakan bagian tidak terpisahkan dari Perjanjian/Kontrak.</p>", aktif:true},
+  {urutan:150, judul:"PENUTUP", isi:"<p class=\"kl0\">Perjanjian/Kontrak ini dibuat dalam 2 (dua) rangkap masing - masing dibubuhi materai Rp10.000 (sepuluh ribu rupiah) dan keduanya mempunyai kekuatan hukum yang sama, 1 (satu) rangkap untuk PIHAK PERTAMA dan 1 (satu) rangkap untuk PIHAK KEDUA, ditandatangani di Masohi, pada hari, tanggal, bulan dan tahun seperti pada tersebut diatas.</p>", aktif:true}
+];
+/* =========================================================================
+   PEMBUATAN KONTRAK — SURAT PERINTAH KERJA (SPK)
+   Menu: Pembuatan Kontrak > Surat Perintah Kerja
+     - Penyusunan Kontrak (isi mail merge + pilih klausul + simpan)
+     - Lihat Kontrak (daftar kontrak tersimpan + cetak/PDF + ubah + hapus)
+     - Ubah Klausul Kontrak (pustaka klausul: tambah / ubah / urutkan / aktif)
+   Penyimpanan: Supabase (tabel kontrak_spk & klausul_spk).
+   ========================================================================= */
+
+const SPK_LOGO_SRC = (typeof FKL_LOGO_SRC!=='undefined') ? FKL_LOGO_SRC : '';
+const SPK_BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+const SPK_HARI  = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+
+/* ---------- Skema field mail-merge (dikelompokkan per bagian) ---------- */
+const SPK_FIELD_GROUPS = [
+  { sec:'Identitas Kontrak', fields:[
+    {k:'nomor_kontrak', l:'Nomor Kontrak', t:'text', span:2, def:'0026.SPK/DAN.01.03/F17060000/2026'},
+    {k:'tanggal_kontrak', l:'Tanggal Kontrak', t:'date', def:'2026-07-03'},
+    {k:'kota_ttd', l:'Kota Penandatanganan', t:'text', def:'Masohi'},
+    {k:'nama_pekerjaan', l:'Nama Pekerjaan', t:'text', span:2, def:'Pembangunan Pagar dan Penutup Saluran Kabel GH Kobisonta'},
+    {k:'lokasi_pekerjaan', l:'Lokasi Pekerjaan', t:'text', span:2, def:'PT PLN (Persero) UP3 Masohi - ULP Kobisonta'},
+    {k:'nilai_pekerjaan', l:'Nilai Pekerjaan (Rp)', t:'rupiah', def:84249000},
+    {k:'pelaksana', l:'Pelaksana / Bidang', t:'text', def:'Jaringan dan Konstruksi'},
+    {k:'jenis_pengadaan', l:'Jenis Pengadaan', t:'text', def:'PENGADAAN LANGSUNG'},
+    {k:'sumber_dana_no', l:'Sumber Dana — Nomor', t:'text', span:2, def:'004/SKKAI/GM.MMU/TND/MSH/2026/R1'},
+    {k:'sumber_dana_tgl', l:'Sumber Dana — Tanggal', t:'date', def:'2026-06-08'},
+    {k:'akhir_pekerjaan', l:'Akhir Pekerjaan', t:'date', def:'2026-09-01'},
+    {k:'jangka_waktu_hari', l:'Jangka Waktu (hari kalender)', t:'number', def:60},
+  ]},
+  { sec:'PIHAK PERTAMA (PT PLN)', fields:[
+    {k:'p1_nama', l:'Nama Unit (kapital)', t:'text', span:2, def:'PT PLN (PERSERO) UNIT PELAKSANA PELAYANAN PELANGGAN MASOHI'},
+    {k:'p1_nama_singkat', l:'Nama Singkat', t:'text', span:2, def:'PT PLN (Persero) UP3 Masohi'},
+    {k:'p1_alamat', l:'Alamat', t:'text', span:2, def:'Jl. Abdullah Soulissa No 1, Masohi, Kab. Maluku Tengah, Prov. Maluku 97513'},
+    {k:'p1_wakil', l:'Diwakili Oleh', t:'text', def:'I MADE INDRA WIJAYA'},
+    {k:'p1_jabatan', l:'Jabatan', t:'text', def:'Manager'},
+    {k:'p1_sk', l:'Dasar Kewenangan (SK)', t:'textarea', span:2, def:'Keputusan Direksi PT PLN (Persero) Nomor: 0174.K/SDM.02.02/DIR/2026 tanggal 25 Mei 2026'},
+    {k:'p1_akta', l:'Akta Pendirian & Pengesahan', t:'textarea', span:2, def:'Perusahaan Berbadan Hukum yang merupakan Badan Usaha Milik Negara (BUMN) yang didirikan berdasarkan Akta Notaris Nomor: 169 tanggal 30 Juli 1994 dibuat di hadapan Notaris SUTJIPTO, SH., yang disahkan berdasarkan Surat Keputusan Menteri Kehakiman Republik Indonesia Nomor: C2-11.519.HT.01.01.TH\'94 tanggal 01 Agustus 1994 beserta akta-akta perubahannya.'},
+  ]},
+  { sec:'PIHAK KEDUA (Penyedia)', fields:[
+    {k:'p2_nama', l:'Nama Perusahaan (kapital)', t:'text', span:2, def:'PT. SAMUDRA JAYA RURIKA MANDIRI'},
+    {k:'p2_nama_hormat', l:'Nama Perusahaan (normal)', t:'text', span:2, def:'PT. Samudra Jaya Rurika Mandiri'},
+    {k:'p2_alamat', l:'Alamat', t:'text', span:2, def:'Jln. Kebun Cengkeh, Batu Merah - Ambon'},
+    {k:'p2_wakil', l:'Diwakili Oleh', t:'text', def:'RULLY ADEK PUTRA'},
+    {k:'p2_jabatan', l:'Jabatan', t:'text', def:'Direktur'},
+    {k:'p2_akta', l:'Akta Pendirian & Pengesahan', t:'textarea', span:2, def:'Perusahaan Berbadan Hukum yang didirikan berdasarkan Akta Notaris No. 04 tanggal 01 September 2016 dibuat dihadapan Notaris LIDIA GOSAL, S.H., M.Kn. yang disahkan berdasarkan Surat Keputusan Menteri Hukum dan Hak Asasi Manusia No. AHU-0040056.AH.01.01.TAHUN 2016 tanggal 08 September 2016 beserta Akta-akta Perubahannya.'},
+    {k:'p2_akta_jabatan', l:'Akta Pengangkatan Wakil', t:'textarea', span:2, def:'Akta Notaris No. 40 tanggal 31 Mei 2022 dibuat dihadapan Notaris LIDIA GOSAL, S.H., M.Kn. yang disahkan berdasarkan Surat Keputusan Menteri Hukum dan Hak Asasi Manusia No. AHU-0037659.AH.01.02.TAHUN 2022 tanggal 06 Juni 2022'},
+  ]},
+  { sec:'Dasar Pengadaan', fields:[
+    {k:'dasar_undangan_no', l:'Undangan E-Proc — Nomor', t:'text', span:2, def:'EPROC-4230-20260624-4230-00003'},
+    {k:'dasar_undangan_tgl', l:'Undangan — Tanggal', t:'text', def:'25 Juni s/d 26 Juni 2026'},
+    {k:'dasar_penawaran_no', l:'Surat Penawaran Harga — Nomor', t:'text', span:2, def:'105/SJRM/02-PH/MSH/2026'},
+    {k:'dasar_penawaran_tgl', l:'Surat Penawaran — Tanggal', t:'date', def:'2026-06-29'},
+    {k:'dasar_bapp_no', l:'BA Pembukaan Penawaran — Nomor', t:'text', span:2, def:'0019.BAPP.PL/DAN.01.03/F17060000/2026'},
+    {k:'dasar_bapp_tgl', l:'BA Pembukaan — Tanggal', t:'date', def:'2026-07-01'},
+    {k:'dasar_bae_no', l:'BA Evaluasi Penawaran — Nomor', t:'text', span:2, def:'0019.BAE.PL/DAN.01.03/F17060000/2026'},
+    {k:'dasar_bae_tgl', l:'BA Evaluasi — Tanggal', t:'date', def:'2026-07-01'},
+    {k:'dasar_bakn_no', l:'BA Klarifikasi & Negosiasi — Nomor', t:'text', span:2, def:'0019.BAKN.PL/DAN.01.03/F17060000/2026'},
+    {k:'dasar_bakn_tgl', l:'BA Klarifikasi — Tanggal', t:'date', def:'2026-07-02'},
+  ]},
+  { sec:'Pembayaran', fields:[
+    {k:'bank_nama', l:'Bank', t:'text', span:2, def:'PT. Bank Negara Indonesia KCU Ambon'},
+    {k:'rekening_no', l:'Nomor Rekening', t:'text', def:'0341935221'},
+    {k:'rekening_atas_nama', l:'Atas Nama', t:'text', def:'Samudra Jaya Rurika Mandiri'},
+  ]},
+];
+/* daftar semua field (flat) */
+const SPK_FIELDS_FLAT = SPK_FIELD_GROUPS.reduce((a,g)=>a.concat(g.fields),[]);
+
+/* ---------- Preamble (pembuka) — memakai placeholder ---------- */
+const SPK_PREAMBLE_TPL =
+ '<p class="kl0">Pada hari ini <b>{{hari_ttd}}</b>, tanggal {{tgl_kontrak_terbilang}} ({{tgl_kontrak_num}}), kami yang bertanda tangan dibawah ini :</p>'+
+ '<p class="kl1">I. PT PLN (PERSERO):</p>'+
+ '<p class="kl0">{{p1_akta}} Dalam hal ini diwakili oleh <b>{{p1_wakil}}</b> selaku {{p1_jabatan}} berdasarkan {{p1_sk}}. Bertindak untuk dan atas nama {{p1_nama_singkat}} yang berkedudukan di {{p1_alamat}}, selanjutnya dalam Perjanjian ini disebut sebagai (&ldquo;PIHAK PERTAMA&rdquo;);</p>'+
+ '<p class="kl1">II. {{p2_nama}}:</p>'+
+ '<p class="kl0">{{p2_akta}} Dalam hal ini diwakili oleh <b>{{p2_wakil}}</b> selaku {{p2_jabatan}} berdasarkan {{p2_akta_jabatan}}. Bertindak untuk dan atas nama {{p2_nama_hormat}} yang berkedudukan di {{p2_alamat}}, selanjutnya dalam Perjanjian ini disebut sebagai (&ldquo;PIHAK KEDUA&rdquo;).</p>'+
+ '<p class="kl0">Berdasarkan :</p>'+
+ '<p class="kl2">1. Undangan kepada Penyedia Barang/Jasa melalui E-Procurement dengan paket pengadaan Nomor: {{dasar_undangan_no}} pada tanggal {{dasar_undangan_tgl}};</p>'+
+ '<p class="kl2">2. Surat Penawaran Harga PIHAK KEDUA Nomor: {{dasar_penawaran_no}} tanggal {{dasar_penawaran_tgl_pjg}};</p>'+
+ '<p class="kl2">3. Berita Acara Pembukaan Penawaran Nomor: {{dasar_bapp_no}} tanggal {{dasar_bapp_tgl_pjg}};</p>'+
+ '<p class="kl2">4. Berita Acara Evaluasi Penawaran Nomor: {{dasar_bae_no}} tanggal {{dasar_bae_tgl_pjg}};</p>'+
+ '<p class="kl2">5. Berita Acara Klarifikasi dan Negosiasi Nomor: {{dasar_bakn_no}} tanggal {{dasar_bakn_tgl_pjg}}.</p>'+
+ '<p class="kl0">Maka dengan ini PIHAK PERTAMA menugaskan kepada PIHAK KEDUA untuk melaksanakan pekerjaan sebagaimana tersebut dalam ketentuan sebagai berikut :</p>';
+
+/* ---------- Util angka & tanggal ---------- */
+function spkNum(v){ const n=Number(String(v==null?'':v).replace(/[^0-9.-]/g,'')); return isFinite(n)?n:0; }
+function spkRupiah(v){ return 'Rp'+spkNum(v).toLocaleString('id-ID'); }
+function spkTitleCase(s){ return String(s||'').replace(/\S+/g, w=> w.charAt(0).toUpperCase()+w.slice(1)); }
+function spkTerbilang(n){ try{ return spkTitleCase(hpsTerbilangKata(Math.round(spkNum(n)))); }catch(e){ return ''; } }
+function spkTerbilangRupiah(n){ try{ return spkTitleCase(hpsTerbilangKata(Math.round(spkNum(n)))+' rupiah'); }catch(e){ return ''; } }
+function spkDateLong(iso){ if(!iso) return ''; const p=String(iso).split('-'); if(p.length!==3) return iso; const y=+p[0],m=+p[1],d=+p[2]; return d+' '+(SPK_BULAN[m-1]||'')+' '+y; }
+function spkDateNum(iso){ if(!iso) return ''; const p=String(iso).split('-'); if(p.length!==3) return iso; return p[2]+' - '+p[1]+' - '+p[0]; }
+function spkDayName(iso){ if(!iso) return ''; const p=String(iso).split('-'); if(p.length!==3) return ''; const dt=new Date(+p[0],+p[1]-1,+p[2]); return SPK_HARI[dt.getDay()]||''; }
+function spkTglTerbilang(iso){ if(!iso) return ''; const p=String(iso).split('-'); if(p.length!==3) return iso; const d=+p[2],m=+p[1],y=+p[0];
+  return spkTerbilang(d)+' bulan '+(SPK_BULAN[m-1]||'')+' tahun '+spkTerbilang(y); }
+
+/* Bangun konteks (semua placeholder final) dari data field */
+function spkBuildCtx(data){
+  const d=Object.assign({}, data||{});
+  const ctx={};
+  SPK_FIELDS_FLAT.forEach(f=>{ ctx[f.k]= (d[f.k]!=null && d[f.k]!=='') ? d[f.k] : ''; });
+  // turunan
+  ctx.nilai_rp = spkRupiah(d.nilai_pekerjaan);
+  ctx.nilai_terbilang = spkTerbilangRupiah(d.nilai_pekerjaan);
+  ctx.jangka_waktu_terbilang = spkTerbilang(d.jangka_waktu_hari);
+  ctx.tanggal_kontrak_pjg = spkDateLong(d.tanggal_kontrak);
+  ctx.akhir_pekerjaan_pjg = spkDateLong(d.akhir_pekerjaan);
+  ctx.sumber_dana_tgl_pjg = spkDateLong(d.sumber_dana_tgl);
+  ctx.dasar_penawaran_tgl_pjg = spkDateLong(d.dasar_penawaran_tgl);
+  ctx.dasar_bapp_tgl_pjg = spkDateLong(d.dasar_bapp_tgl);
+  ctx.dasar_bae_tgl_pjg = spkDateLong(d.dasar_bae_tgl);
+  ctx.dasar_bakn_tgl_pjg = spkDateLong(d.dasar_bakn_tgl);
+  ctx.hari_ttd = spkDayName(d.tanggal_kontrak);
+  ctx.tgl_kontrak_num = spkDateNum(d.tanggal_kontrak);
+  ctx.tgl_kontrak_terbilang = spkTglTerbilang(d.tanggal_kontrak);
+  return ctx;
+}
+/* Ganti semua {{key}} pada template dengan nilai konteks (sisa placeholder dikosongkan bila tak dikenal, dibiarkan bila kosong) */
+function spkMerge(tpl, ctx){
+  return String(tpl||'').replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, function(m,k){
+    if(Object.prototype.hasOwnProperty.call(ctx,k)) return (ctx[k]==null?'':String(ctx[k]));
+    return m;
+  });
+}
+
+/* ================= PENYIMPANAN (Supabase) ================= */
+const SPK_KONTRAK_TABLE='kontrak_spk';
+const SPK_KLAUSUL_TABLE='klausul_spk';
+let records_spk=[];       // daftar kontrak tersimpan
+let records_klausul=[];   // pustaka klausul (aktif & non-aktif)
+function spkSupaReady(){ return !!(typeof USE_SUPABASE!=='undefined' && USE_SUPABASE && typeof db!=='undefined' && db); }
+
+const StoreSpkKontrak={
+  async list(){ if(!spkSupaReady()) throw new Error('Koneksi Supabase tidak tersedia');
+    const {data,error}=await db.from(SPK_KONTRAK_TABLE).select('*').order('created_at',{ascending:false}); if(error) throw error; return data||[]; },
+  async create(rec){ if(!spkSupaReady()) throw new Error('Koneksi Supabase tidak tersedia');
+    const {data,error}=await db.from(SPK_KONTRAK_TABLE).insert(rec).select(); if(error) throw error; return data&&data[0]; },
+  async update(id,rec){ if(!spkSupaReady()) throw new Error('Koneksi Supabase tidak tersedia');
+    const {error}=await db.from(SPK_KONTRAK_TABLE).update(rec).eq('id',id); if(error) throw error; },
+  async remove(id){ if(!spkSupaReady()) throw new Error('Koneksi Supabase tidak tersedia');
+    const {error}=await db.from(SPK_KONTRAK_TABLE).delete().eq('id',id); if(error) throw error; }
+};
+const StoreSpkKlausul={
+  async list(){ if(!spkSupaReady()) throw new Error('Koneksi Supabase tidak tersedia');
+    const {data,error}=await db.from(SPK_KLAUSUL_TABLE).select('*').order('urutan',{ascending:true}); if(error) throw error; return data||[]; },
+  async create(rec){ if(!spkSupaReady()) throw new Error('Koneksi Supabase tidak tersedia');
+    const {data,error}=await db.from(SPK_KLAUSUL_TABLE).insert(rec).select(); if(error) throw error; return data&&data[0]; },
+  async update(id,rec){ if(!spkSupaReady()) throw new Error('Koneksi Supabase tidak tersedia');
+    const {error}=await db.from(SPK_KLAUSUL_TABLE).update(rec).eq('id',id); if(error) throw error; },
+  async remove(id){ if(!spkSupaReady()) throw new Error('Koneksi Supabase tidak tersedia');
+    const {error}=await db.from(SPK_KLAUSUL_TABLE).delete().eq('id',id); if(error) throw error; }
+};
+
+/* seed di memori dipakai bila DB belum tersedia / kosong, agar pratinjau tetap jalan */
+function spkSeedInMemory(){
+  records_klausul = SPK_KLAUSUL_SEED.map((s,i)=>Object.assign({id:'seed_'+i}, s));
+}
+async function refreshDataSpk(){
+  try{ records_spk=await StoreSpkKontrak.list(); }
+  catch(err){ console.error('SPK kontrak:',err); records_spk=records_spk||[]; }
+}
+async function refreshDataKlausul(){
+  try{
+    const rows=await StoreSpkKlausul.list();
+    if(rows && rows.length){ records_klausul=rows; }
+    else{
+      // DB tersambung tapi kosong -> seed 15 klausul bawaan ke DB (sekali)
+      try{
+        for(let i=0;i<SPK_KLAUSUL_SEED.length;i++){ await StoreSpkKlausul.create(SPK_KLAUSUL_SEED[i]); }
+        records_klausul=await StoreSpkKlausul.list();
+      }catch(e2){ console.error('SPK seed gagal:',e2); spkSeedInMemory(); }
+    }
+  }catch(err){ console.error('SPK klausul:',err); spkSeedInMemory(); }
+}
+async function spkInit(){ await refreshDataKlausul(); await refreshDataSpk(); }
+
+/* ================= STATE PENYUSUNAN ================= */
+let spkEditId=null;
+let spkState=null;
+function spkBlankState(){
+  const data={};
+  SPK_FIELDS_FLAT.forEach(f=>{ data[f.k]= (f.def!=null? f.def : ''); });
+  // default: semua klausul aktif terpilih
+  const sel=records_klausul.filter(k=>k.aktif!==false).map(k=>String(k.id));
+  return { data:data, sel:sel };
+}
+function spkRecordToState(rec){
+  const base=spkBlankState();
+  const data=Object.assign({}, base.data, (rec && rec.data && typeof rec.data==='object')?rec.data:{});
+  let sel;
+  if(rec && Array.isArray(rec.klausul) && rec.klausul.length){ sel=rec.klausul.map(k=>String(k.id)); }
+  else sel=base.sel;
+  return { data:data, sel:sel };
+}
+
+/* ================= HALAMAN: PENYUSUNAN KONTRAK ================= */
+function openSpkSusun(){ if(!spkState) spkState=spkBlankState(); renderSpkSusun(); showView('spk-susun'); }
+function spkNewKontrak(){ spkEditId=null; spkState=spkBlankState(); renderSpkSusun(); showView('spk-susun'); }
+
+function spkFieldInput(f){
+  const v = spkState.data[f.k];
+  const span = f.span?(' style="grid-column:span '+f.span+'"'):'';
+  if(f.t==='textarea'){
+    return '<div class="field"'+span+'><label>'+fkEsc(f.l)+'</label><textarea rows="3" oninput="spkSet(\''+f.k+'\',this.value)">'+fkEsc(v||'')+'</textarea></div>';
+  }
+  if(f.t==='date'){
+    return '<div class="field"'+span+'><label>'+fkEsc(f.l)+'</label><input type="date" value="'+fkEsc(v||'')+'" onchange="spkSet(\''+f.k+'\',this.value)"></div>';
+  }
+  if(f.t==='number'){
+    return '<div class="field"'+span+'><label>'+fkEsc(f.l)+'</label><input type="number" min="0" value="'+fkEsc(v==null?'':v)+'" oninput="spkSet(\''+f.k+'\',this.value)"></div>';
+  }
+  if(f.t==='rupiah'){
+    const disp = (v!==''&&v!=null)? Number(spkNum(v)).toLocaleString('id-ID') : '';
+    return '<div class="field"'+span+'><label>'+fkEsc(f.l)+'</label><input type="text" inputmode="numeric" placeholder="Rp" value="'+fkEsc(disp)+'" oninput="spkSetRupiah(\''+f.k+'\',this)"></div>';
+  }
+  return '<div class="field"'+span+'><label>'+fkEsc(f.l)+'</label><input type="text" value="'+fkEsc(v||'')+'" oninput="spkSet(\''+f.k+'\',this.value)"></div>';
+}
+function spkSet(k,v){ if(!spkState) return; spkState.data[k]=v; }
+function spkSetRupiah(k,el){
+  const digits=String(el.value).replace(/[^0-9]/g,'');
+  spkState.data[k]= digits? Number(digits) : '';
+  const pos=el.selectionStart;
+  el.value = digits? Number(digits).toLocaleString('id-ID') : '';
+  try{ el.setSelectionRange(el.value.length, el.value.length); }catch(e){}
+}
+function spkToggleSel(id){
+  id=String(id); const i=spkState.sel.indexOf(id);
+  if(i>=0) spkState.sel.splice(i,1); else spkState.sel.push(id);
+}
+function spkSelAll(on){
+  spkState.sel = on ? records_klausul.filter(k=>k.aktif!==false).map(k=>String(k.id)) : [];
+  renderSpkSusun();
+}
+function renderSpkSusun(){
+  const cont=document.getElementById('spk-susun-content'); if(!cont) return;
+  if(!spkState) spkState=spkBlankState();
+  // Bagian 1: form mail merge
+  const groupsHtml = SPK_FIELD_GROUPS.map(g=>{
+    const cols = 2;
+    const fieldsHtml = g.fields.map(spkFieldInput).join('');
+    return '<div class="form-card">'+
+      '<div class="form-section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M4 4h16v16H4z" opacity="0"/><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg> '+fkEsc(g.sec)+'</div>'+
+      '<div class="form-flow" style="--cols:'+cols+'">'+fieldsHtml+'</div>'+
+    '</div>';
+  }).join('');
+  // Bagian 2: pilih klausul
+  const aktif = records_klausul.filter(k=>k.aktif!==false);
+  const selSet = new Set(spkState.sel.map(String));
+  const klausulRows = aktif.length ? aktif.map((k,i)=>{
+    const on = selSet.has(String(k.id));
+    return '<label class="spk-kl-pick'+(on?' on':'')+'">'+
+      '<input type="checkbox" '+(on?'checked':'')+' onchange="spkToggleSel(\''+fkEscJs(String(k.id))+'\');this.closest(\'.spk-kl-pick\').classList.toggle(\'on\',this.checked)">'+
+      '<span class="spk-kl-no">'+(i+1)+'</span>'+
+      '<span class="spk-kl-judul">'+fkEsc(k.judul||'(Tanpa judul)')+'</span>'+
+    '</label>';
+  }).join('') : '<div class="empty" style="padding:22px"><div>Belum ada klausul. Tambahkan lewat menu <b>Ubah Klausul Kontrak</b>.</div></div>';
+
+  cont.innerHTML =
+    '<div class="spk-step"><span class="spk-step-no">1</span><div class="spk-step-tx"><b>Isi Data Mail Merge</b><span>Data ini otomatis mengisi cover, pembuka, dan seluruh klausul kontrak.</span></div></div>'+
+    groupsHtml+
+    '<div class="spk-step"><span class="spk-step-no">2</span><div class="spk-step-tx"><b>Pilih Klausul Kontrak</b><span>Centang klausul yang ingin dimasukkan ke dalam SPK. Urutan mengikuti pustaka klausul.</span></div></div>'+
+    '<div class="form-card">'+
+      '<div class="form-section-title" style="justify-content:space-between">'+
+        '<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg> Klausul Terpilih ('+selSet.size+' dari '+aktif.length+')</span>'+
+        '<span class="spk-kl-tools"><button type="button" class="btn btn-ghost btn-sm" onclick="spkSelAll(true)">Pilih Semua</button><button type="button" class="btn btn-ghost btn-sm" onclick="spkSelAll(false)">Kosongkan</button></span>'+
+      '</div>'+
+      '<div class="spk-kl-list">'+klausulRows+'</div>'+
+    '</div>'+
+    '<div class="jp-actions" style="margin-top:4px">'+
+      '<button class="btn btn-teal" onclick="spkPreviewCurrent()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg> Pratinjau / Cetak</button>'+
+      '<button class="btn btn-green" onclick="spkSaveKontrak()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> '+(spkEditId?'Simpan Perubahan':'Simpan Kontrak')+'</button>'+
+    '</div>';
+}
+
+/* Kumpulkan klausul terpilih (snapshot judul+isi, sesuai urutan pustaka) */
+function spkSelectedClauses(){
+  const selSet=new Set((spkState.sel||[]).map(String));
+  return records_klausul.filter(k=>k.aktif!==false && selSet.has(String(k.id)))
+    .map(k=>({id:String(k.id), judul:k.judul||'', isi:k.isi||''}));
+}
+
+async function spkSaveKontrak(){
+  if(typeof requireInput==='function' && !requireInput()) return;
+  if(!spkState){ toast('Data belum diisi','warn'); return; }
+  const nama=String(spkState.data.nama_pekerjaan||'').trim();
+  if(!nama){ toast('Nama Pekerjaan wajib diisi','warn'); return; }
+  const klausul=spkSelectedClauses();
+  if(!klausul.length){ toast('Pilih minimal satu klausul kontrak','warn'); return; }
+  const rec={
+    nomor_kontrak: String(spkState.data.nomor_kontrak||'').trim(),
+    nama_pekerjaan: nama,
+    tanggal: spkState.data.tanggal_kontrak || null,
+    nilai: spkNum(spkState.data.nilai_pekerjaan),
+    data: spkState.data,
+    klausul: klausul
+  };
+  try{
+    await withActionLoader('Menyimpan', async()=>{
+      if(spkEditId) await StoreSpkKontrak.update(spkEditId, rec);
+      else { const row=await StoreSpkKontrak.create(rec); if(row) spkEditId=row.id; }
+      await refreshDataSpk();
+    });
+  }catch(err){ console.error(err); toast('Gagal menyimpan: '+errMsg(err),'err'); return; }
+  toast('Kontrak berhasil disimpan','ok');
+  // reset form ke default & alihkan ke Lihat Kontrak
+  spkEditId=null; spkState=spkBlankState();
+  spkViewPage=1; showView('spk-view');
+}
+
+/* ================= HALAMAN: LIHAT KONTRAK ================= */
+let spkViewPage=1; const SPK_VIEW_PAGE_SIZE=8;
+function openSpkView(){ refreshDataSpk().then(()=>{ renderSpkView(); showView('spk-view'); }); }
+function spkViewRows(){
+  let rows=(records_spk||[]).slice();
+  const fs=(document.getElementById('spk-view-search')?.value||'').toLowerCase().trim();
+  if(fs) rows=rows.filter(r=>String(r.nama_pekerjaan||'').toLowerCase().includes(fs) || String(r.nomor_kontrak||'').toLowerCase().includes(fs));
+  return rows;
+}
+function spkEmptyRow(){
+  return '<tr><td colspan="6"><div class="empty">'+
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>'+
+    '<div>Belum ada kontrak tersimpan</div></div></td></tr>';
+}
+function renderSpkView(){
+  const tb=document.getElementById('spk-view-body'); const pg=document.getElementById('spk-view-pagination'); const cEl=document.getElementById('spk-view-count');
+  if(!tb) return;
+  const rows=spkViewRows();
+  if(cEl) cEl.textContent=rows.length;
+  if(!rows.length){ tb.innerHTML=spkEmptyRow(); if(pg) pg.innerHTML=''; return; }
+  const totalPages=Math.max(1,Math.ceil(rows.length/SPK_VIEW_PAGE_SIZE));
+  if(spkViewPage>totalPages) spkViewPage=totalPages; if(spkViewPage<1) spkViewPage=1;
+  const start=(spkViewPage-1)*SPK_VIEW_PAGE_SIZE;
+  const pageRows=rows.slice(start,start+SPK_VIEW_PAGE_SIZE);
+  tb.innerHTML=pageRows.map((r,i)=>{
+    const rid=fkEsc(String(r.id));
+    const nklausul = Array.isArray(r.klausul)? r.klausul.length : 0;
+    return '<tr>'+
+      '<td class="col-no">'+(start+i+1)+'</td>'+
+      '<td class="wrap-cell">'+fkEsc(r.nomor_kontrak||'—')+'</td>'+
+      '<td class="wrap-cell col-nama-freeze">'+fkEsc(r.nama_pekerjaan||'—')+'</td>'+
+      '<td class="col-date">'+fkEsc(r.tanggal?spkDateLong(r.tanggal):'—')+'</td>'+
+      '<td style="text-align:right;white-space:nowrap">'+fkEsc(r.nilai!=null?spkRupiah(r.nilai):'—')+'</td>'+
+      '<td><div class="action-cell" style="justify-content:center">'+
+        '<button class="act act-view" title="Cetak / Pratinjau" onclick="spkPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
+        '<button class="act act-edit" title="Ubah" onclick="spkEditRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
+        '<button class="act act-del" title="Hapus" onclick="spkDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>'+
+      '</div></td>'+
+    '</tr>';
+  }).join('');
+  if(pg){
+    if(totalPages<=1){ pg.innerHTML=''; }
+    else{
+      let h='<button class="pg-btn" '+(spkViewPage<=1?'disabled':'')+' onclick="spkViewGoto('+(spkViewPage-1)+')">&#8249;</button>';
+      for(let p=1;p<=totalPages;p++) h+='<button class="pg-btn '+(p===spkViewPage?'active':'')+'" onclick="spkViewGoto('+p+')">'+p+'</button>';
+      h+='<button class="pg-btn" '+(spkViewPage>=totalPages?'disabled':'')+' onclick="spkViewGoto('+(spkViewPage+1)+')">&#8250;</button>';
+      pg.innerHTML=h;
+    }
+  }
+}
+function spkViewGoto(p){ spkViewPage=p; renderSpkView(); }
+function spkEditRecord(id){
+  const rec=(records_spk||[]).find(r=>String(r.id)===String(id)); if(!rec) return;
+  spkEditId=rec.id; spkState=spkRecordToState(rec);
+  renderSpkSusun(); showView('spk-susun');
+}
+function spkDeleteRecord(id){
+  if(typeof requireInput==='function' && !requireInput()) return;
+  const rec=(records_spk||[]).find(r=>String(r.id)===String(id)); if(!rec) return;
+  openConfirm({ icon:'del', title:'Hapus Kontrak', text:'Hapus kontrak "'+(rec.nama_pekerjaan||'')+'"?',
+    onYes:async()=>{
+      try{ await withActionLoader('Menghapus', async()=>{ await StoreSpkKontrak.remove(id); await refreshDataSpk(); }); }
+      catch(err){ console.error(err); toast('Gagal menghapus: '+errMsg(err),'warn'); return; }
+      toast('Kontrak dihapus','ok'); renderSpkView();
+    }});
+}
+/* Pratinjau dari record tersimpan */
+function spkPreviewRecord(id){
+  const rec=(records_spk||[]).find(r=>String(r.id)===String(id)); if(!rec) return;
+  spkOpenPreview(rec.data||{}, (Array.isArray(rec.klausul)?rec.klausul:[]));
+}
+/* Pratinjau dari form yang sedang disusun */
+function spkPreviewCurrent(){
+  if(!spkState){ toast('Data belum diisi','warn'); return; }
+  const kl=spkSelectedClauses();
+  if(!kl.length){ toast('Pilih minimal satu klausul untuk pratinjau','warn'); return; }
+  spkOpenPreview(spkState.data, kl);
+}
+
+/* ================= DOKUMEN KONTRAK (cover + daftar isi + isi) ================= */
+function spkDocCss(){
+  return ''+
+  '@page{size:A4;margin:14mm 16mm}'+
+  '*{box-sizing:border-box}'+
+  'body{font-family:"Times New Roman",Georgia,serif;color:#1c1c1c;margin:0;font-size:11.5px;line-height:1.5}'+
+  '.spk-doc{}'+
+  '.spk-page{padding:0 0 6mm;page-break-after:always}'+
+  '.spk-page:last-child{page-break-after:auto}'+
+  /* Cover */
+  '.spk-cv{min-height:250mm;display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:16mm}'+
+  '.spk-cv img{width:80px;margin-bottom:20px}'+
+  '.spk-cv .t{font-size:23px;font-weight:800;color:#154A7C;letter-spacing:.05em}'+
+  '.spk-cv .s{font-size:13px;font-weight:700;color:#154A7C;letter-spacing:.14em;margin-top:6px}'+
+  '.spk-cv .lbl{font-size:9.5px;letter-spacing:.22em;color:#8A97A2;margin-top:22px}'+
+  '.spk-cv .org{font-size:13px;font-weight:700;color:#222;margin-top:6px;max-width:430px;line-height:1.35}'+
+  '.spk-cv table{margin-top:34px;width:100%;max-width:600px;text-align:left;border-collapse:collapse}'+
+  '.spk-cv td{padding:9px 4px;border-bottom:1px solid #E2E7EB;vertical-align:top}'+
+  '.spk-cv td.k{width:38%;color:#6B7885;font-size:11.5px}'+
+  '.spk-cv td.v{font-weight:600;font-size:11.5px}'+
+  '.spk-cv td.v.hi{color:#154A7C;font-weight:700}'+
+  '.spk-cv tr:first-child td{border-top:1px solid #E2E7EB}'+
+  /* Header/footer isi */
+  '.spk-hd{display:flex;justify-content:space-between;align-items:center;padding-bottom:6px;border-bottom:2px solid #154A7C;margin-bottom:12px}'+
+  '.spk-hd .l{display:flex;align-items:center;gap:9px}'+
+  '.spk-hd img{width:34px}'+
+  '.spk-hd .o b{display:block;font-size:11px;color:#154A7C;font-weight:800}'+
+  '.spk-hd .o span{display:block;font-size:8.6px;color:#6B7885}'+
+  '.spk-hd .r{text-align:right;font-size:8.6px;color:#6B7885;line-height:1.5}'+
+  '.spk-hd .r b{color:#222}'+
+  /* Daftar isi */
+  '.spk-toc h2{font-size:18px;font-weight:800;color:#154A7C;margin:0 0 4px}'+
+  '.spk-toc .hr{height:2px;background:#154A7C;margin-bottom:10px}'+
+  '.spk-toc .row{display:flex;align-items:baseline;gap:8px;padding:6px 2px;border-bottom:1px solid #EEF1F4}'+
+  '.spk-toc .nm{font-weight:600}.spk-toc .nm .no{color:#154A7C;font-weight:800;margin-right:6px}'+
+  '.spk-toc .dot{flex:1;border-bottom:1.4px dotted #C7D0D8;transform:translateY(-3px)}'+
+  '.spk-toc .pg{color:#6B7885;font-weight:700}'+
+  /* Isi */
+  '.spk-title{text-align:center;font-weight:800;font-size:15px;color:#154A7C;margin:4px 0 2px;letter-spacing:.02em}'+
+  '.spk-subno{text-align:center;font-size:11px;margin-bottom:12px;color:#333}'+
+  '.spk-cl{margin:0 0 10px}'+
+  '.spk-cl-h{font-weight:800;font-size:12px;color:#12303f;background:#eef3f7;border-left:4px solid #154A7C;padding:5px 9px;margin:14px 0 7px}'+
+  '.spk-cl p{margin:0 0 5px;text-align:justify}'+
+  '.spk-cl p.kl0{}'+
+  '.spk-cl p.kl1{padding-left:16px}'+
+  '.spk-cl p.kl2{padding-left:32px}'+
+  '.spk-info{border-collapse:collapse;margin:2px 0 8px}'+
+  '.spk-info td{padding:2px 6px;vertical-align:top;font-size:11.5px}'+
+  '.spk-sign{margin-top:26px;width:100%;border-collapse:collapse}'+
+  '.spk-sign td{width:50%;text-align:center;vertical-align:top;font-size:11.5px;padding:4px}'+
+  '.spk-sign .role{font-weight:700}.spk-sign .nm{font-weight:800;text-decoration:underline;margin-top:60px}'+
+  '.spk-sign .jab{color:#333}';
+}
+function spkDocHtml(data, klausul){
+  const ctx=spkBuildCtx(data||{});
+  const esc=fkEsc;
+  const romanTitle = (s)=> String(s||'').toUpperCase();
+  // COVER
+  const cvRow=(k,v,hi)=> '<tr><td class="k">'+esc(k)+'</td><td class="v'+(hi?' hi':'')+'">'+esc(v||'—')+'</td></tr>';
+  const nilaiCover = (ctx.nilai_rp||'') + (ctx.nilai_terbilang? ' ('+ctx.nilai_terbilang+')':'');
+  const sumberCover = (ctx.sumber_dana_no||'') + (ctx.sumber_dana_tgl_pjg? ', '+ctx.sumber_dana_tgl_pjg:'');
+  const cover=
+    '<section class="spk-page"><div class="spk-cv">'+
+      (SPK_LOGO_SRC?'<img src="'+SPK_LOGO_SRC+'" alt="PLN">':'')+
+      '<div class="t">SURAT PERINTAH KERJA</div>'+
+      '<div class="s">'+esc(data.jenis_pengadaan||'PENGADAAN LANGSUNG')+'</div>'+
+      '<div class="lbl">DARI</div><div class="org">'+esc(data.p1_nama||'')+'</div>'+
+      '<div class="lbl">KEPADA</div><div class="org">'+esc(data.p2_nama||'')+'</div>'+
+      '<table>'+
+        cvRow('Nomor Kontrak', data.nomor_kontrak, true)+
+        cvRow('Tanggal', ctx.tanggal_kontrak_pjg)+
+        cvRow('Pekerjaan', data.nama_pekerjaan)+
+        cvRow('Lokasi', data.lokasi_pekerjaan)+
+        cvRow('Nilai Pekerjaan', nilaiCover, true)+
+        cvRow('Pelaksana', data.pelaksana)+
+        cvRow('Sumber Dana', sumberCover)+
+        cvRow('Akhir Pekerjaan', ctx.akhir_pekerjaan_pjg)+
+      '</table>'+
+    '</div></section>';
+  // header untuk halaman isi
+  const hd=
+    '<div class="spk-hd"><div class="l">'+(SPK_LOGO_SRC?'<img src="'+SPK_LOGO_SRC+'" alt="PLN">':'')+
+      '<div class="o"><b>PT PLN (PERSERO)</b><span>Unit Pelaksana Pelayanan Pelanggan Masohi</span></div></div>'+
+      '<div class="r"><b>SPK No. '+esc(data.nomor_kontrak||'')+'</b><br>'+esc(ctx.tanggal_kontrak_pjg||'')+'</div></div>';
+  // DAFTAR ISI
+  const tocRows = (klausul||[]).map((k,i)=>
+    '<div class="row"><span class="nm"><span class="no">'+(i+1)+'.</span>'+esc(k.judul||'')+'</span><span class="dot"></span><span class="pg"></span></div>'
+  ).join('');
+  const toc=
+    '<section class="spk-page">'+hd+'<div class="spk-toc"><h2>DAFTAR ISI</h2><div class="hr"></div>'+tocRows+'</div></section>';
+  // ISI: preamble + klausul + tanda tangan
+  const preamble = spkMerge(SPK_PREAMBLE_TPL, ctx);
+  const clausesHtml = (klausul||[]).map((k,i)=>
+    '<div class="spk-cl-h">'+(i+1)+'. '+esc(String(k.judul||'').toUpperCase())+'</div>'+
+    '<div class="spk-cl">'+spkMerge(k.isi||'', ctx)+'</div>'
+  ).join('');
+  const sign=
+    '<table class="spk-sign"><tr>'+
+      '<td><div class="role">PIHAK PERTAMA</div><div>'+esc(data.p1_nama_singkat||'PT PLN (Persero)')+'</div><div class="nm">'+esc(data.p1_wakil||'')+'</div><div class="jab">'+esc(data.p1_jabatan||'')+'</div></td>'+
+      '<td><div class="role">PIHAK KEDUA</div><div>'+esc(data.p2_nama_hormat||'')+'</div><div class="nm">'+esc(data.p2_wakil||'')+'</div><div class="jab">'+esc(data.p2_jabatan||'')+'</div></td>'+
+    '</tr></table>';
+  const isi=
+    '<section class="spk-page">'+hd+
+      '<div class="spk-title">SURAT PERINTAH KERJA</div>'+
+      '<div class="spk-subno">'+esc(data.nomor_kontrak||'')+'</div>'+
+      '<div class="spk-cl">'+preamble+'</div>'+
+      clausesHtml+
+      sign+
+    '</section>';
+  return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><title>&#8203;</title><style>'+spkDocCss()+'</style></head><body><div class="spk-doc">'+cover+toc+isi+'</div></body></html>';
+}
+
+/* ---------- Pratinjau (modal iframe) & Cetak ---------- */
+let spkPreviewData=null, spkPreviewKlausul=null;
+function spkOpenPreview(data, klausul){
+  spkPreviewData=data; spkPreviewKlausul=klausul;
+  let ov=document.getElementById('spk-preview-overlay');
+  if(!ov){
+    ov=document.createElement('div'); ov.id='spk-preview-overlay'; ov.className='spk-ov';
+    ov.innerHTML=
+      '<div class="spk-ov-modal">'+
+        '<div class="spk-ov-head"><span class="spk-ov-title">Pratinjau Surat Perintah Kerja</span>'+
+          '<div class="spk-ov-actions">'+
+            '<button class="btn btn-teal btn-sm" onclick="spkPrint()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg> Cetak / PDF</button>'+
+            '<button class="btn btn-ghost btn-sm" onclick="spkClosePreview()">Tutup</button>'+
+          '</div>'+
+        '</div>'+
+        '<div class="spk-ov-body"><iframe id="spk-preview-frame" title="Pratinjau SPK"></iframe></div>'+
+      '</div>';
+    document.body.appendChild(ov);
+    ov.addEventListener('click', e=>{ if(e.target.id==='spk-preview-overlay') spkClosePreview(); });
+  }
+  const ifr=document.getElementById('spk-preview-frame');
+  const doc=ifr.contentWindow.document; doc.open(); doc.write(spkDocHtml(data, klausul)); doc.close();
+  ov.classList.add('show');
+}
+function spkClosePreview(){ const ov=document.getElementById('spk-preview-overlay'); if(ov) ov.classList.remove('show'); }
+function spkPrint(){
+  const data=spkPreviewData||{}, klausul=spkPreviewKlausul||[];
+  const old=document.getElementById('spk-print-frame'); if(old) old.remove();
+  const ifr=document.createElement('iframe'); ifr.id='spk-print-frame'; ifr.setAttribute('aria-hidden','true');
+  ifr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+  document.body.appendChild(ifr);
+  const doc=ifr.contentWindow.document; doc.open(); doc.write(spkDocHtml(data, klausul)); doc.close();
+  const go=()=>{
+    const run=()=>{ try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }catch(e){ try{ window.print(); }catch(_){} } };
+    if(typeof withHiddenPageTitle==='function') withHiddenPageTitle(run); else run();
+    setTimeout(()=>{ const f=document.getElementById('spk-print-frame'); if(f) f.remove(); }, 1500);
+  };
+  const imgs=doc.images?Array.from(doc.images):[];
+  if(imgs.length){ let n=imgs.length; const dec=()=>{ if(--n<=0) setTimeout(go,60); }; imgs.forEach(im=>{ if(im.complete) dec(); else{ im.onload=dec; im.onerror=dec; } }); setTimeout(go,1200); }
+  else setTimeout(go,120);
+}
+
+/* ================= HALAMAN: UBAH KLAUSUL KONTRAK ================= */
+function openSpkKlausul(){ refreshDataKlausul().then(()=>{ renderSpkKlausul(); showView('spk-klausul'); }); }
+function renderSpkKlausul(){
+  const cont=document.getElementById('spk-klausul-content'); if(!cont) return;
+  const list=records_klausul.slice();
+  const rows = list.length ? list.map((k,i)=>{
+    const kid=fkEscJs(String(k.id));
+    const off = (k.aktif===false);
+    const preview = String(k.isi||'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim().slice(0,150);
+    return '<div class="spk-klx'+(off?' off':'')+'">'+
+      '<div class="spk-klx-no">'+(i+1)+'</div>'+
+      '<div class="spk-klx-main"><div class="spk-klx-judul">'+fkEsc(k.judul||'(Tanpa judul)')+(off?' <span class="spk-badge-off">non-aktif</span>':'')+'</div>'+
+        '<div class="spk-klx-prev">'+fkEsc(preview)+(preview.length>=150?'…':'')+'</div></div>'+
+      '<div class="spk-klx-act">'+
+        '<button class="act" title="Naik" onclick="spkKlausulMove(\''+kid+'\',-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 15l-6-6-6 6"/></svg></button>'+
+        '<button class="act" title="Turun" onclick="spkKlausulMove(\''+kid+'\',1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg></button>'+
+        '<button class="act" title="'+(off?'Aktifkan':'Non-aktifkan')+'" onclick="spkKlausulToggle(\''+kid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">'+(off?'<path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/>':'<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20C5 20 1 12 1 12a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19M1 1l22 22"/>')+'</svg></button>'+
+        '<button class="act act-edit" title="Ubah" onclick="spkKlausulEdit(\''+kid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
+        '<button class="act act-del" title="Hapus" onclick="spkKlausulDelete(\''+kid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>'+
+      '</div>'+
+    '</div>';
+  }).join('') : '<div class="empty" style="padding:26px"><div>Belum ada klausul.</div></div>';
+  cont.innerHTML=
+    '<div class="form-card">'+
+      '<div class="form-section-title" style="justify-content:space-between">'+
+        '<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg> Pustaka Klausul SPK</span>'+
+        '<button class="btn btn-green btn-sm" onclick="spkKlausulNew()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Tambah Klausul</button>'+
+      '</div>'+
+      '<p style="margin:0 0 10px;color:#6B7885;font-size:12px">Klausul di sini menjadi pilihan pada halaman <b>Penyusunan Kontrak</b>. Gunakan placeholder seperti <code>{{nama_pekerjaan}}</code>, <code>{{nilai_rp}}</code>, <code>{{nilai_terbilang}}</code>, <code>{{jangka_waktu_hari}}</code>, <code>{{akhir_pekerjaan_pjg}}</code> — otomatis terisi dari data mail merge.</p>'+
+      '<div class="spk-klx-list">'+rows+'</div>'+
+    '</div>';
+}
+function spkKlausulMove(id, dir){
+  const i=records_klausul.findIndex(k=>String(k.id)===String(id)); if(i<0) return;
+  const j=i+dir; if(j<0||j>=records_klausul.length) return;
+  const a=records_klausul[i], b=records_klausul[j];
+  const ua=a.urutan, ub=b.urutan;
+  // tukar urutan lalu simpan keduanya
+  (async()=>{
+    try{ await withActionLoader('Menyimpan', async()=>{
+      await StoreSpkKlausul.update(a.id,{urutan:ub}); await StoreSpkKlausul.update(b.id,{urutan:ua});
+      await refreshDataKlausul();
+    }); }catch(err){ console.error(err); toast('Gagal mengubah urutan: '+errMsg(err),'warn'); return; }
+    renderSpkKlausul();
+  })();
+}
+function spkKlausulToggle(id){
+  const k=records_klausul.find(x=>String(x.id)===String(id)); if(!k) return;
+  (async()=>{
+    try{ await withActionLoader('Menyimpan', async()=>{ await StoreSpkKlausul.update(k.id,{aktif:!(k.aktif!==false)}); await refreshDataKlausul(); }); }
+    catch(err){ console.error(err); toast('Gagal: '+errMsg(err),'warn'); return; }
+    renderSpkKlausul();
+  })();
+}
+function spkKlausulDelete(id){
+  if(typeof requireInput==='function' && !requireInput()) return;
+  const k=records_klausul.find(x=>String(x.id)===String(id)); if(!k) return;
+  openConfirm({ icon:'del', title:'Hapus Klausul', text:'Hapus klausul "'+(k.judul||'')+'"?',
+    onYes:async()=>{
+      try{ await withActionLoader('Menghapus', async()=>{ await StoreSpkKlausul.remove(id); await refreshDataKlausul(); }); }
+      catch(err){ console.error(err); toast('Gagal menghapus: '+errMsg(err),'warn'); return; }
+      toast('Klausul dihapus','ok'); renderSpkKlausul();
+    }});
+}
+/* ---- Modal editor klausul ---- */
+function spkKlausulNew(){ spkKlausulOpenEditor(null); }
+function spkKlausulEdit(id){ const k=records_klausul.find(x=>String(x.id)===String(id)); spkKlausulOpenEditor(k||null); }
+function spkKlausulOpenEditor(k){
+  let ov=document.getElementById('spk-klausul-overlay');
+  if(!ov){ ov=document.createElement('div'); ov.id='spk-klausul-overlay'; ov.className='spk-ov'; document.body.appendChild(ov);
+    ov.addEventListener('click', e=>{ if(e.target.id==='spk-klausul-overlay') spkKlausulCloseEditor(); }); }
+  const isEdit=!!(k && k.id);
+  const judul=isEdit? (k.judul||'') : '';
+  const isi=isEdit? (k.isi||'') : '<p class="kl0"></p>';
+  ov.innerHTML=
+    '<div class="spk-ov-modal spk-ov-edit">'+
+      '<div class="spk-ov-head"><span class="spk-ov-title">'+(isEdit?'Ubah Klausul':'Tambah Klausul')+'</span>'+
+        '<button class="btn btn-ghost btn-sm" onclick="spkKlausulCloseEditor()">Tutup</button></div>'+
+      '<div class="spk-ov-body spk-edit-body">'+
+        '<div class="field"><label>Judul Klausul</label><input type="text" id="spk-ed-judul" value="'+fkEsc(judul)+'" placeholder="mis. HARGA PEKERJAAN"></div>'+
+        '<div class="field"><label>Isi Klausul (boleh HTML &amp; placeholder <code>{{...}}</code>)</label>'+
+          '<textarea id="spk-ed-isi" rows="16" spellcheck="false">'+fkEsc(isi)+'</textarea></div>'+
+        '<div class="spk-edit-hint">Tip: bungkus tiap paragraf dengan <code>&lt;p class="kl0"&gt;…&lt;/p&gt;</code>. Gunakan <code>kl1</code> / <code>kl2</code> untuk indentasi sub-poin.</div>'+
+      '</div>'+
+      '<div class="spk-ov-foot"><button class="btn btn-green" onclick="spkKlausulSave('+(isEdit?'\''+fkEscJs(String(k.id))+'\'':'null')+')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> Simpan</button></div>'+
+    '</div>';
+  ov.classList.add('show');
+}
+function spkKlausulCloseEditor(){ const ov=document.getElementById('spk-klausul-overlay'); if(ov) ov.classList.remove('show'); }
+function spkKlausulSave(id){
+  if(typeof requireInput==='function' && !requireInput()) return;
+  const judul=String((document.getElementById('spk-ed-judul')||{}).value||'').trim();
+  const isi=String((document.getElementById('spk-ed-isi')||{}).value||'').trim();
+  if(!judul){ toast('Judul klausul wajib diisi','warn'); return; }
+  (async()=>{
+    try{
+      await withActionLoader('Menyimpan', async()=>{
+        if(id){ await StoreSpkKlausul.update(id,{judul:judul, isi:isi}); }
+        else{
+          const maxU=records_klausul.reduce((m,k)=>Math.max(m, Number(k.urutan)||0), 0);
+          await StoreSpkKlausul.create({judul:judul, isi:isi, urutan:maxU+10, aktif:true});
+        }
+        await refreshDataKlausul();
+      });
+    }catch(err){ console.error(err); toast('Gagal menyimpan: '+errMsg(err),'err'); return; }
+    toast('Klausul disimpan','ok'); spkKlausulCloseEditor(); renderSpkKlausul();
+  })();
+}
+
+try{ if(typeof spkInit==="function") spkInit(); }catch(e){ console.error("spkInit:",e); }
 </script>
 
 </body>
