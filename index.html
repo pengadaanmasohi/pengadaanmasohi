@@ -17574,6 +17574,16 @@ document.getElementById('pn-preview-overlay').addEventListener('click',e=>{ if(e
 
 <style id="spk-style">
 .btn.btn-sm{padding:7px 12px;font-size:11.5px}
+.spk-stepper{display:flex;align-items:center;gap:10px;margin:2px 2px 16px}
+.spk-stp{display:inline-flex;align-items:center;gap:8px;border:1.5px solid #DfE4E9;background:#fff;color:#6B7885;font-weight:700;font-size:13px;padding:8px 15px;border-radius:30px;cursor:pointer;transition:.15s;font-family:inherit}
+.spk-stp:hover{border-color:#0E7C86}
+.spk-stp .spk-stp-no{width:22px;height:22px;flex:0 0 auto;border-radius:50%;background:#eef3f7;color:#6B7885;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800}
+.spk-stp.active{border-color:#0E7C86;background:#f0f8f9;color:#0E7C86}
+.spk-stp.active .spk-stp-no{background:linear-gradient(135deg,#0E7C86,#12303f);color:#fff}
+.spk-stp.done{color:#12303f;border-color:#bfe0e3}
+.spk-stp.done .spk-stp-no{background:#0E7C86;color:#fff}
+.spk-stp-line{flex:1;max-width:120px;height:2px;background:#DfE4E9;border-radius:2px}
+@media(max-width:620px){.spk-stepper{flex-wrap:wrap}.spk-stp{font-size:12px;padding:7px 12px}.spk-stp-line{display:none}}
 .spk-step{display:flex;align-items:center;gap:12px;margin:14px 2px 10px}
 .spk-step-no{width:30px;height:30px;flex:0 0 auto;border-radius:50%;background:linear-gradient(135deg,#0E7C86,#12303f);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:14px}
 .spk-step-tx b{display:block;font-size:14px;color:#12303f}
@@ -17808,6 +17818,7 @@ async function spkInit(){ await refreshDataKlausul(); await refreshDataSpk(); }
 /* ================= STATE PENYUSUNAN ================= */
 let spkEditId=null;
 let spkState=null;
+let spkStep=1;
 function spkBlankState(){
   const data={};
   SPK_FIELDS_FLAT.forEach(f=>{ data[f.k]= (f.def!=null? f.def : ''); });
@@ -17825,8 +17836,8 @@ function spkRecordToState(rec){
 }
 
 /* ================= HALAMAN: PENYUSUNAN KONTRAK ================= */
-function openSpkSusun(){ if(!spkState) spkState=spkBlankState(); renderSpkSusun(); showView('spk-susun'); }
-function spkNewKontrak(){ spkEditId=null; spkState=spkBlankState(); renderSpkSusun(); showView('spk-susun'); }
+function openSpkSusun(){ if(!spkState) spkState=spkBlankState(); spkStep=1; renderSpkSusun(); showView('spk-susun'); }
+function spkNewKontrak(){ spkEditId=null; spkState=spkBlankState(); spkStep=1; renderSpkSusun(); showView('spk-susun'); }
 
 function spkFieldInput(f){
   const v = spkState.data[f.k];
@@ -17886,21 +17897,51 @@ function renderSpkSusun(){
     '</label>';
   }).join('') : '<div class="empty" style="padding:22px"><div>Belum ada klausul. Tambahkan lewat menu <b>Ubah Klausul Kontrak</b>.</div></div>';
 
-  cont.innerHTML =
-    '<div class="spk-step"><span class="spk-step-no">1</span><div class="spk-step-tx"><b>Isi Data Mail Merge</b><span>Data ini otomatis mengisi cover, pembuka, dan seluruh klausul kontrak.</span></div></div>'+
-    groupsHtml+
-    '<div class="spk-step"><span class="spk-step-no">2</span><div class="spk-step-tx"><b>Pilih Klausul Kontrak</b><span>Centang klausul yang ingin dimasukkan ke dalam SPK. Urutan mengikuti pustaka klausul.</span></div></div>'+
-    '<div class="form-card">'+
-      '<div class="form-section-title" style="justify-content:space-between">'+
-        '<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg> Klausul Terpilih ('+selSet.size+' dari '+aktif.length+')</span>'+
-        '<span class="spk-kl-tools"><button type="button" class="btn btn-ghost btn-sm" onclick="spkSelAll(true)">Pilih Semua</button><button type="button" class="btn btn-ghost btn-sm" onclick="spkSelAll(false)">Kosongkan</button></span>'+
-      '</div>'+
-      '<div class="spk-kl-list">'+klausulRows+'</div>'+
-    '</div>'+
-    '<div class="jp-actions" style="margin-top:4px">'+
-      '<button class="btn btn-teal" onclick="spkPreviewCurrent()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg> Pratinjau / Cetak</button>'+
-      '<button class="btn btn-green" onclick="spkSaveKontrak()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> '+(spkEditId?'Simpan Perubahan':'Simpan Kontrak')+'</button>'+
+  // Penanda langkah (stepper) — dua halaman: 1) Data Mail Merge, 2) Pilih Klausul
+  const stepper =
+    '<div class="spk-stepper">'+
+      '<button type="button" class="spk-stp'+(spkStep===1?' active':' done')+'" onclick="spkGoStep(1)"><span class="spk-stp-no">'+(spkStep>1?'&#10003;':'1')+'</span> Data Mail Merge</button>'+
+      '<div class="spk-stp-line"></div>'+
+      '<button type="button" class="spk-stp'+(spkStep===2?' active':'')+'" onclick="spkGoStep(2)"><span class="spk-stp-no">2</span> Pilih Klausul</button>'+
     '</div>';
+
+  if(spkStep===1){
+    cont.innerHTML =
+      stepper+
+      '<div class="spk-step"><span class="spk-step-no">1</span><div class="spk-step-tx"><b>Isi Data Mail Merge</b><span>Data ini otomatis mengisi cover, pembuka, dan seluruh klausul kontrak.</span></div></div>'+
+      groupsHtml+
+      '<div class="jp-actions" style="justify-content:flex-end;margin-top:4px">'+
+        '<button class="btn btn-teal" onclick="spkGoStep(2)">Berikutnya: Pilih Klausul <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>'+
+      '</div>';
+  }else{
+    cont.innerHTML =
+      stepper+
+      '<div class="spk-step"><span class="spk-step-no">2</span><div class="spk-step-tx"><b>Pilih Klausul Kontrak</b><span>Centang klausul yang ingin dimasukkan ke dalam SPK. Urutan mengikuti pustaka klausul.</span></div></div>'+
+      '<div class="form-card">'+
+        '<div class="form-section-title" style="justify-content:space-between">'+
+          '<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg> Klausul Terpilih ('+selSet.size+' dari '+aktif.length+')</span>'+
+          '<span class="spk-kl-tools"><button type="button" class="btn btn-ghost btn-sm" onclick="spkSelAll(true)">Pilih Semua</button><button type="button" class="btn btn-ghost btn-sm" onclick="spkSelAll(false)">Kosongkan</button></span>'+
+        '</div>'+
+        '<div class="spk-kl-list">'+klausulRows+'</div>'+
+      '</div>'+
+      '<div class="jp-actions" style="justify-content:space-between;margin-top:4px">'+
+        '<button class="btn btn-ghost" onclick="spkGoStep(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 12H5M11 6l-6 6 6 6"/></svg> Kembali</button>'+
+        '<span style="display:flex;gap:10px">'+
+          '<button class="btn btn-teal" onclick="spkPreviewCurrent()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg> Pratinjau / Cetak</button>'+
+          '<button class="btn btn-green" onclick="spkSaveKontrak()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> '+(spkEditId?'Simpan Perubahan':'Simpan Kontrak')+'</button>'+
+        '</span>'+
+      '</div>';
+  }
+}
+/* Pindah antar langkah pada Penyusunan Kontrak */
+function spkGoStep(n){
+  if(n===2){
+    const nama=String((spkState&&spkState.data&&spkState.data.nama_pekerjaan)||'').trim();
+    if(!nama){ toast('Isi Nama Pekerjaan terlebih dahulu sebelum lanjut','warn'); return; }
+  }
+  spkStep=(n===2?2:1);
+  renderSpkSusun();
+  try{ window.scrollTo({top:0,left:0,behavior:'smooth'}); }catch(e){}
 }
 
 /* Kumpulkan klausul terpilih (snapshot judul+isi, sesuai urutan pustaka) */
@@ -17991,7 +18032,7 @@ function renderSpkView(){
 function spkViewGoto(p){ spkViewPage=p; renderSpkView(); }
 function spkEditRecord(id){
   const rec=(records_spk||[]).find(r=>String(r.id)===String(id)); if(!rec) return;
-  spkEditId=rec.id; spkState=spkRecordToState(rec);
+  spkEditId=rec.id; spkState=spkRecordToState(rec); spkStep=1;
   renderSpkSusun(); showView('spk-susun');
 }
 function spkDeleteRecord(id){
