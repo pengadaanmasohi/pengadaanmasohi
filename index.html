@@ -14057,6 +14057,60 @@ function jsNumFmt(style,n){
   if(style==='i') return jsRomanNum(n).toLowerCase();
   return jsAlphaNum(n);
 }
+/* Baca Volume menjadi angka, sadar konvensi Indonesia.
+   Titik BISA berarti pemisah ribuan ("13.970" = 13970) atau desimal ("2.5" = 2,5).
+   Aturan: bila ada koma, koma = desimal dan semua titik = ribuan. Bila hanya titik dan
+   polanya kelompok 3 digit ("1.234", "13.970", "1.234.567"), titik = ribuan. Selain itu
+   titik = desimal. Ini mencegah 13.970 terbaca 13,97 lalu digandakan dengan harga. */
+function jsVolNum(v){
+  if(v===''||v==null) return 0;
+  if(typeof v==='number') return isNaN(v)?0:v;
+  let t=String(v).trim().replace(/\s/g,''); if(!t) return 0;
+  if(t.indexOf(',')>=0){ t=t.replace(/\./g,'').replace(',','.'); }
+  else if(/^\d{1,3}(\.\d{3})+$/.test(t)){ t=t.replace(/\./g,''); }
+  const n=parseFloat(t);
+  return isNaN(n)?0:n;
+}
+/* Volume untuk dokumen cetak: format akuntansi gaya Indonesia — pemisah ribuan
+   + 2 desimal tetap (mis. "13.979,00"). Kosong / nol → "-". Dipakai kolom Vol pada
+   dokumen HPS maupun Analisa agar seragam dengan kolom harga. */
+function jsVolDoc(v){
+  if(v===''||v==null) return '-';
+  const n=jsVolNum(v);
+  if(!n) return '-';
+  return n.toLocaleString('id-ID',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+/* Ukur isi terpanjang kolom Sat & Vol (setelah Vol diformat akuntansi).
+   Judul kolom ikut jadi lantai minimum. */
+function jsSatVolLen(items){
+  let satLen=3, volLen=3;   // "Sat" & "Vol"
+  (items||[]).forEach(function(it){
+    const sat=String((it&&it.sat)||'').trim();
+    if(sat.length>satLen) satLen=sat.length;
+    const vol=jsVolDoc(it&&it.vol);
+    if(vol!=='-' && vol.length>volLen) volLen=vol.length;
+  });
+  return {satLen, volLen};
+}
+/* Lebar kolom dokumen HPS (table-layout:fixed → persen). Sat & Vol menyesuaikan
+   data terpanjang; sisa ruang diberikan ke kolom Uraian Pekerjaan. */
+function jsHpsColPct(items){
+  const L=jsSatVolLen(items);
+  const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+  const sat=clamp(Math.round(L.satLen*0.85)+3,  5, 12);
+  const vol=clamp(Math.round(L.volLen*0.80)+3,  7, 15);
+  const ur =Math.max(14, 100 - 5 - sat - vol - 55);   // 5=No, 55=lima kolom harga
+  return {no:5, ur, sat, vol};
+}
+/* Lebar minimum (px) kolom Sat & Vol pada dokumen Analisa (table-layout auto). */
+function jsAnaColPx(items){
+  const L=jsSatVolLen(items);
+  const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+  return {
+    sat: clamp(L.satLen*6+16, 44, 130),
+    vol: clamp(L.volLen*6+16, 60, 130)
+  };
+}
 function jsNumStyleOk(v,dflt){ return (['','A','a','I','i'].indexOf(v)>=0)?v:((dflt!=null)?dflt:''); }
 function jsOn(v){ return v==='Ya'; }
 /* Konfigurasi judul/sub-judul dari sebuah state (HPS atau Analisa) */
@@ -14336,8 +14390,8 @@ function hpsOnJumlahItemChange(el){
 function hpsNum(v){ if(v===''||v==null) return 0; if(typeof v==='number') return v; const n=parseFloat(String(v).replace(/,/g,'.')); return isNaN(n)?0:n; }
 function hpsRp(n){ n=Math.round(hpsNum(n)); return n>0 ? ('Rp '+n.toLocaleString('id-ID')) : '–'; }
 function hpsRpDoc(n){ n=Math.round(hpsNum(n)); return n>0 ? n.toLocaleString('id-ID') : '-'; }
-function hpsItemMat(it){ return Math.round(hpsNum(it&&it.vol)*hpsNum(it&&it.hargaMat)); }   // 7 = 4 x 5
-function hpsItemJasa(it){ return Math.round(hpsNum(it&&it.vol)*hpsNum(it&&it.hargaJasa)); }  // 8 = 4 x 6
+function hpsItemMat(it){ return Math.round(jsVolNum(it&&it.vol)*hpsNum(it&&it.hargaMat)); }   // 7 = 4 x 5
+function hpsItemJasa(it){ return Math.round(jsVolNum(it&&it.vol)*hpsNum(it&&it.hargaJasa)); }  // 8 = 4 x 6
 function hpsItemTotal(it){ return hpsItemMat(it)+hpsItemJasa(it); }                          // 9 = 7 + 8
 /* Ringkasan bawah — dihitung dari penjumlahan vertikal kolom Jumlah Harga */
 function hpsSummary(st){
@@ -14439,12 +14493,14 @@ function hpsOnJudul(el){ if(hpsItemsLocked()) return; const i=+el.dataset.i; if(
 function hpsOnSubjudul(el){ if(hpsItemsLocked()) return; const i=+el.dataset.i; if(hpsState.items[i]){ hpsState.items[i].subjudul=el.value; hpsSaveState(); } }
 function hpsOnUraian(el){ if(hpsItemsLocked()) return; const i=+el.dataset.i; if(hpsState.items[i]){ hpsState.items[i].uraian=el.value; hpsSaveState(); } }
 function hpsOnSat(el){ if(hpsItemsLocked()) return; const i=+el.dataset.i; if(hpsState.items[i]){ hpsState.items[i].sat=el.value; hpsSaveState(); } }
+/* Ketikan Vol dibiarkan apa adanya selagi mengetik (agar "2." atau "1.2" tidak
+   dipotong), namun yang DISIMPAN adalah hasil jsVolNum: "13.970" → 13970, "2,5" → 2.5. */
 function hpsOnVol(el){
   if(hpsItemsLocked()) return;
-  let v=el.value.replace(/[^0-9.,]/g,'').replace(/,/g,'.');
-  const parts=v.split('.'); if(parts.length>2) v=parts[0]+'.'+parts.slice(1).join('');
+  let v=el.value.replace(/[^0-9.,]/g,'');
   el.value=v;
-  const i=+el.dataset.i; if(hpsState.items[i]){ hpsState.items[i].vol=v; hpsSaveState(); hpsRecalcRow(i); }
+  const i=+el.dataset.i;
+  if(hpsState.items[i]){ hpsState.items[i].vol=(v===''?'':String(jsVolNum(v))); hpsSaveState(); hpsRecalcRow(i); }
 }
 function hpsOnHargaMat(el){ if(hpsHargaLocked()) return; onRupiahInput(el); const i=+el.dataset.i; if(hpsState.items[i]){ hpsState.items[i].hargaMat=parseRupiah(el.value); hpsSaveState(); hpsRecalcRow(i); } }
 function hpsOnHargaJasa(el){ if(hpsHargaLocked()) return; onRupiahInput(el); const i=+el.dataset.i; if(hpsState.items[i]){ hpsState.items[i].hargaJasa=parseRupiah(el.value); hpsSaveState(); hpsRecalcRow(i); } }
@@ -14812,7 +14868,7 @@ function hpsBuildDocHtml(){
   const grpRow=(cls,no,txt,it)=>{
     if(!it) return '<tr class="'+cls+'"><td class="no">'+fkEsc(no)+'</td><td class="gname" colspan="8">'+fkEsc(txt)+'</td></tr>';
     const sat=(it.sat!=null&&String(it.sat).trim())?it.sat:'-';
-    const vol=(it.vol!=null&&String(it.vol).trim())?it.vol:'-';
+    const vol=jsVolDoc(it.vol);
     return '<tr class="'+cls+' has-val"><td class="no">'+fkEsc(no)+'</td>'+
       '<td class="gname ur">'+fkEsc(txt)+'</td>'+
       '<td class="st">'+fkEsc(String(sat))+'</td>'+
@@ -14829,7 +14885,7 @@ function hpsBuildDocHtml(){
     item:(noInGroup,it,idx)=>{
     const uraian=(it.uraian&&String(it.uraian).trim())?it.uraian:('Barang/Jasa '+(idx+1));
     const sat=(it.sat!=null&&String(it.sat).trim())?it.sat:'-';
-    const vol=(it.vol!=null&&String(it.vol).trim())?it.vol:'-';
+    const vol=jsVolDoc(it.vol);
     bodyRows+='<tr>'+
       '<td class="no">'+noInGroup+'</td>'+
       '<td class="ur">'+fkEsc(uraian)+'</td>'+
@@ -14877,15 +14933,18 @@ function hpsBuildDocHtml(){
       '</tr></tbody></table>'+
     '</td></tr>';
 
+  const _cw=jsHpsColPct(st.items);
   const tbl=
     '<table class="hps-doc-tbl">'+
-      '<colgroup><col style="width:5%"><col style="width:30%"><col style="width:5%"><col style="width:5%"><col style="width:11%"><col style="width:11%"><col style="width:11%"><col style="width:11%"><col style="width:11%"></colgroup>'+
+      // Lebar Sat & Vol mengikuti data terpanjang; sisanya jadi milik kolom Uraian.
+      '<colgroup><col style="width:'+_cw.no+'%"><col style="width:'+_cw.ur+'%"><col style="width:'+_cw.sat+'%"><col style="width:'+_cw.vol+'%">'+
+        '<col style="width:11%"><col style="width:11%"><col style="width:11%"><col style="width:11%"><col style="width:11%"></colgroup>'+
       '<thead>'+
         '<tr>'+
           '<th class="no" rowspan="2">No.</th>'+
           '<th class="ur" rowspan="2">Uraian Pekerjaan</th>'+
-          '<th rowspan="2">Sat</th>'+
-          '<th rowspan="2">Vol</th>'+
+          '<th class="st" rowspan="2">Sat</th>'+
+          '<th class="vl" rowspan="2">Vol</th>'+
           '<th colspan="2">Harga Satuan</th>'+
           '<th colspan="2">Jumlah Harga</th>'+
           '<th rowspan="2">Jumlah Total<br>(Rp)</th>'+
@@ -14942,7 +15001,7 @@ function hpsExtraDocCss(){
   'table.hps-doc-tbl thead th.no{white-space:nowrap}'+
   'table.hps-doc-tbl td.no{text-align:center;font-weight:400}'+
   'table.hps-doc-tbl td.ur{text-align:left}'+
-  'table.hps-doc-tbl td.st,table.hps-doc-tbl td.vl{text-align:center}'+
+  'table.hps-doc-tbl th.st,table.hps-doc-tbl td.st,table.hps-doc-tbl th.vl,table.hps-doc-tbl td.vl{text-align:center;white-space:nowrap;overflow-wrap:normal;word-break:keep-all}'+
   'table.hps-doc-tbl td.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}'+
   'table.hps-doc-tbl td.num.tot{font-weight:800;color:#0b3d42}'+
   'table.hps-doc-tbl tr.grp td{background:#dcecee;font-weight:800;color:#0b3d42;text-transform:uppercase;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
@@ -15710,10 +15769,11 @@ function anaOnCell(el,key){
   anaSaveState();
 }
 function anaOnVol(el){
-  let v=el.value.replace(/[^0-9.,]/g,'').replace(/,/g,'.');
-  const parts=v.split('.'); if(parts.length>2) v=parts[0]+'.'+parts.slice(1).join('');
-  el.value=v; const i=+el.dataset.i; const st=anaState;
-  st.refs.forEach(rf=>{ if(rf.items[i]) rf.items[i].vol=v; });   // vol sama utk semua referensi
+  let v=el.value.replace(/[^0-9.,]/g,'');
+  el.value=v;
+  const val=(v===''?'':String(jsVolNum(v)));
+  const i=+el.dataset.i; const st=anaState;
+  st.refs.forEach(rf=>{ if(rf.items[i]) rf.items[i].vol=val; });   // vol sama utk semua referensi
   anaSaveState(); anaRenderResult();
 }
 function anaOnHarga(el,key){
@@ -15848,7 +15908,7 @@ function anaTplLebarSatVol(st){
   items.forEach(function(it){
     const sat=String((it&&it.sat)||'').trim();
     if(sat.length>satLen) satLen=sat.length;
-    const v=anaNum(it&&it.vol);
+    const v=jsVolNum(it&&it.vol);
     if(v>0){
       // panjang teks sebagaimana ditampilkan format akuntansi 2 desimal, mis. "13.979,00"
       const teks=v.toLocaleString('id-ID',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -15934,7 +15994,7 @@ async function anaDownloadTemplate(){
       else if(c.kind==='subjudul') cell.value=base.subjudul||'';
       else if(c.kind==='uraian')   cell.value=base.uraian||'';
       else if(c.kind==='sat')      cell.value=base.sat||'';
-      else if(c.kind==='vol')      cell.value=(base.vol!==''&&base.vol!=null)?anaNum(base.vol):'';
+      else if(c.kind==='vol')      cell.value=(base.vol!==''&&base.vol!=null)?jsVolNum(base.vol):'';
       else if(c.kind==='barang'){ const it=(st.refs[c.ref]&&st.refs[c.ref].items[i])||{}; const v=anaNum(it.hargaBarang); cell.value=v>0?v:''; }
       else if(c.kind==='jasa'){   const it=(st.refs[c.ref]&&st.refs[c.ref].items[i])||{}; const v=anaNum(it.hargaJasa);   cell.value=v>0?v:''; }
     });
@@ -16078,7 +16138,7 @@ function anaHandleUpload(ev){
           if(cSub>=0) it.subjudul=String(d.row[cSub]==null?'':d.row[cSub]).trim();
           if(cUr >=0) it.uraian =String(d.row[cUr]==null?'':d.row[cUr]).trim();
           if(cSat>=0) it.sat    =String(d.row[cSat]==null?'':d.row[cSat]).trim();
-          if(cVol>=0){ let v=String(d.row[cVol]==null?'':d.row[cVol]).replace(/[^0-9.,]/g,'').replace(/,/g,'.'); const p=v.split('.'); if(p.length>2) v=p[0]+'.'+p.slice(1).join(''); it.vol=v; }
+          if(cVol>=0){ const raw=d.row[cVol]; const n=jsVolNum(raw); it.vol=(String(raw==null?'':raw).trim()===''?'':String(n)); }
         });
         // Harga → referensi masing-masing
         hargaCols.forEach(hc=>{
@@ -16245,7 +16305,7 @@ async function anaSimpan(){
     jumlahItemRec=st.konstruksi.jumlahItem; jumlahRefRec=0;
   } else {
     const struct=(st.refs[0]&&st.refs[0].items)||[];
-    struct.forEach((it,i)=>{ const res=anaResultFor(i); nilaiTotal += Math.round(res.total*anaNum(it.vol)); });
+    struct.forEach((it,i)=>{ const res=anaResultFor(i); nilaiTotal += Math.round(res.total*jsVolNum(it.vol)); });
   }
   const rec={
     nama_pekerjaan: nama,
@@ -16484,7 +16544,7 @@ function anaBuildDocHtmlUmum(st){
      Sat/Vol/Harga ikut tercetak pada baris itu — di kedua tabel. */
   const grpLead=(no,txt,it)=>'<td class="no">'+fkEsc(no)+'</td><td class="gname ur">'+fkEsc(txt)+'</td>'+
     '<td class="st">'+fkEsc(String((it.sat!=null&&String(it.sat).trim())?it.sat:'-'))+'</td>'+
-    '<td class="vl">'+fkEsc(String((it.vol!=null&&String(it.vol).trim())?it.vol:'-'))+'</td>';
+    '<td class="vl">'+fkEsc(jsVolDoc(it.vol))+'</td>';
   const grpRows=(cls,no,txt,it,i)=>{
     if(!it){
       rowsA+='<tr class="'+cls+'"><td class="no">'+fkEsc(no)+'</td><td class="gname" colspan="'+(colA-1)+'">'+fkEsc(txt)+'</td></tr>';
@@ -16509,7 +16569,7 @@ function anaBuildDocHtmlUmum(st){
     item:(noInGroup,it,i)=>{
     const uraian=(it.uraian&&String(it.uraian).trim())?it.uraian:('Uraian '+(i+1));
     const sat=(it.sat!=null&&String(it.sat).trim())?it.sat:'-';
-    const vol=(it.vol!=null&&String(it.vol).trim())?it.vol:'-';
+    const vol=jsVolDoc(it.vol);
     const res=anaResultForState(st,i);
     let refCells='';
     for(let r=0;r<nRef;r++){
@@ -16521,14 +16581,16 @@ function anaBuildDocHtmlUmum(st){
     rowsH+='<tr>'+lead+'<td class="mtd">'+res.method+'</td><td class="rok">'+anaPct(rok,'-')+'</td>'+(infOn?('<td class="num">'+anaPct(res.inflasi,'-')+'</td>'):'')+'<td class="num tot">'+anaRpDoc(res.hargaBarang)+'</td><td class="num tot">'+anaRpDoc(res.hargaJasa)+'</td></tr>';
   }});
   if(!rowsA){ rowsA='<tr><td colspan="'+colA+'" style="text-align:center;color:#889">Belum ada data</td></tr>'; rowsH='<tr><td colspan="'+colH+'" style="text-align:center;color:#889">Belum ada data</td></tr>'; }
+  const _px=jsAnaColPx(struct);
+  const _stW=' style="min-width:'+_px.sat+'px"', _vlW=' style="min-width:'+_px.vol+'px"';
   const tblAnalisa=
     '<table class="ana-doc-tbl"><thead>'+
-      '<tr><th class="no" rowspan="2">No.</th><th class="ur" rowspan="2">Uraian Pekerjaan</th><th class="st" rowspan="2">Sat</th><th class="vl" rowspan="2">Vol</th>'+refHead1+'</tr>'+
+      '<tr><th class="no" rowspan="2">No.</th><th class="ur" rowspan="2">Uraian Pekerjaan</th><th class="st" rowspan="2"'+_stW+'>Sat</th><th class="vl" rowspan="2"'+_vlW+'>Vol</th>'+refHead1+'</tr>'+
       '<tr>'+refHead2+'</tr>'+
     '</thead><tbody>'+rowsA+'</tbody></table>';
   const tblHasil=
     '<table class="ana-doc-tbl ana-hasil-tbl"><thead>'+
-      '<tr><th class="no">No.</th><th class="ur">Uraian Pekerjaan</th><th class="st">Sat</th><th class="vl">Vol</th><th class="mtd">Metode</th><th class="rok">ROK</th>'+(infOn?'<th class="inf">Inflasi</th>':'')+'<th class="jh">Harga Satuan Barang</th><th class="jh">Harga Satuan Jasa</th></tr>'+
+      '<tr><th class="no">No.</th><th class="ur">Uraian Pekerjaan</th><th class="st"'+_stW+'>Sat</th><th class="vl"'+_vlW+'>Vol</th><th class="mtd">Metode</th><th class="rok">ROK</th>'+(infOn?'<th class="inf">Inflasi</th>':'')+'<th class="jh">Harga Satuan Barang</th><th class="jh">Harga Satuan Jasa</th></tr>'+
     '</thead><tbody>'+rowsH+'</tbody></table>';
 
   return ''+
@@ -16575,8 +16637,9 @@ function anaExtraDocCss(){
   /* Kolom Jumlah Harga: cukup memuat nominal miliaran & judul maksimal 2 baris, tidak melebar berlebihan */
   'table.ana-doc-tbl th.jh{width:1%;min-width:82px}'+
   'table.ana-doc-tbl th.no,table.ana-doc-tbl td.no{width:28px;min-width:28px;white-space:nowrap;word-break:keep-all;overflow-wrap:normal}'+
-  'table.ana-doc-tbl th.st,table.ana-doc-tbl td.st{width:40px;min-width:38px;white-space:nowrap;text-align:center}'+
-  'table.ana-doc-tbl th.vl,table.ana-doc-tbl td.vl{width:42px;min-width:38px}'+
+  /* min-width diset inline per-dokumen (jsAnaColPx) sesuai data terpanjang */
+  'table.ana-doc-tbl th.st,table.ana-doc-tbl td.st{width:1%;white-space:nowrap;overflow-wrap:normal;word-break:keep-all;text-align:center}'+
+  'table.ana-doc-tbl th.vl,table.ana-doc-tbl td.vl{width:1%;white-space:nowrap;overflow-wrap:normal;word-break:keep-all;text-align:center}'+
   /* Seksi C (Hasil Analisa) tidak lagi dipaksa ke halaman baru: bila ruang di halaman
      yang sama masih cukup, tabel B & C digabung. Judul C tetap menempel pada tabelnya
      dan diberi jarak atas agar pemisahan visual dari tabel B tetap rapi. */
