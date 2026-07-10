@@ -4975,6 +4975,11 @@ function restoreDraft(d){
 }
 /* Format angka "Accounting" tanpa simbol Rp & tanpa desimal (dipakai di template & export Excel) */
 const ACCT_NODEC = '_(* #,##0_);_(* (#,##0);_(* "-"_);_(@_)';
+/* Format akuntansi untuk kolom Volume: pemisah ribuan + 2 desimal tetap (sehingga
+   pemisah desimal tidak pernah menggantung seperti pada '#,##0.###'), nilai nol
+   tampil sebagai "-". Padding "_(" dan "_)" khas Accounting sengaja TIDAK dipakai:
+   spasi semu itu membuat isi sel tidak pernah benar-benar berada di tengah. */
+const ACCT_VOL = '#,##0.00;-#,##0.00;"-";@';
 function isAdmin(){ return currentRole==='admin'; }
 function canInput(){ return currentRole==='admin' || currentRole==='user'; }
 function requireAdmin(){ if(!isAdmin()){ toast('Hanya admin yang dapat melakukan tindakan ini','warn'); return false; } return true; }
@@ -15834,8 +15839,31 @@ function anaTplRefName(st,r){
   const s=(st.sumber&&st.sumber[r]!=null)?String(st.sumber[r]).trim():'';
   return s ? s : ('Referensi '+(r+1)+' (Sesuaikan Dengan Nama)');
 }
+/* Lebar kolom Sat & Vol dihitung dari isi datanya sendiri (bukan angka tetap),
+   sehingga selalu muat tanpa terpotong maupun melebar berlebihan. */
+function anaTplLebarSatVol(st){
+  const items=(st.refs&&st.refs[0]&&Array.isArray(st.refs[0].items))?st.refs[0].items:[];
+  let satLen=3;   // panjang judul kolom "Sat"
+  let volLen=3;   // panjang judul kolom "Vol"
+  items.forEach(function(it){
+    const sat=String((it&&it.sat)||'').trim();
+    if(sat.length>satLen) satLen=sat.length;
+    const v=anaNum(it&&it.vol);
+    if(v>0){
+      // panjang teks sebagaimana ditampilkan format akuntansi 2 desimal, mis. "13.979,00"
+      const teks=v.toLocaleString('id-ID',{minimumFractionDigits:2,maximumFractionDigits:2});
+      if(teks.length>volLen) volLen=teks.length;
+    }
+  });
+  const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
+  return {
+    sat: clamp(satLen+3,  8, 24),   // +3 = jarak sel kiri/kanan
+    vol: clamp(volLen+3, 12, 26)
+  };
+}
 /* Susun deskriptor kolom template mengikuti jumlah referensi. */
 function anaTplBuildCols(st){
+  const wSV=anaTplLebarSatVol(st);
   const cols=[
     {label:'No',               w:6,  kind:'no'}
   ];
@@ -15843,8 +15871,8 @@ function anaTplBuildCols(st){
   if(jsOn(st.subjudulOn)) cols.push({label:'Sub-Judul', w:22, kind:'subjudul'});
   cols.push(...[
     {label:'Uraian Pekerjaan', w:44, kind:'uraian'},
-    {label:'Sat',              w:9,  kind:'sat'},
-    {label:'Vol',              w:11, kind:'vol'}
+    {label:'Sat',              w:wSV.sat, kind:'sat'},
+    {label:'Vol',              w:wSV.vol, kind:'vol'}
   ]);
   for(let r=0;r<st.jumlahRef;r++){
     const nm=anaTplRefName(st,r);
@@ -15918,10 +15946,8 @@ async function anaDownloadTemplate(){
       cell.border=allBorder;
       const kind=cols[c-1].kind;
       if(kind==='no'||kind==='sat') cell.alignment={vertical:'middle',horizontal:'center'};
-      // Vol: format 'General' — angka bulat tampil polos (4200), desimal tetap tampil (2,5).
-      // Format '#,##0.###' sebelumnya menyisakan pemisah desimal menggantung ("4.200,")
-      // pada Excel/LibreOffice dengan locale Indonesia saat nilainya bilangan bulat.
-      else if(kind==='vol'){ cell.numFmt='General'; cell.alignment={vertical:'middle',horizontal:'center'}; }
+      // Vol: format akuntansi 2 desimal (mis. "999.999,00"), rata tengah.
+      else if(kind==='vol'){ cell.numFmt=ACCT_VOL; cell.alignment={vertical:'middle',horizontal:'center'}; }
       else if(kind==='barang'||kind==='jasa'){ cell.numFmt=ACCT_NODEC; cell.alignment={vertical:'middle',horizontal:'right'}; }
       else cell.alignment={vertical:'middle'};
       if(rr%2===1) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F7F8'}};
@@ -15942,7 +15968,7 @@ async function anaDownloadTemplate(){
    ['Sub-Judul','Sub-judul di bawah judul. Dicetak sesuai huruf besar/kecil yang diketik. Kosongkan bila melanjutkan sub-judul di atasnya.'],
    ['Uraian Pekerjaan','Nama barang/jasa/pekerjaan. Berlaku sama untuk semua referensi.'],
    ['Sat','Satuan (mis. Buah, Pack, m, unit). Berlaku sama untuk semua referensi.'],
-   ['Vol','Volume. Ketik angka saja (mis. 10 atau 2.5). Berlaku sama untuk semua referensi.'],
+   ['Vol','Volume. Ketik angka saja (mis. 10 atau 2.5). Ditampilkan format akuntansi 2 desimal, rata tengah. Berlaku sama untuk semua referensi.'],
    ['',''],
    ['Kolom Harga per Referensi','Isi Harga Barang & Jasa pada kolom referensi masing-masing. Ketik angka saja (mis. 150000).']
   ];
