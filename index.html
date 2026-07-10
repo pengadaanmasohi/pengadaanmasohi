@@ -15530,13 +15530,18 @@ function anaRokInflasiFieldsHtml(){
         (infOn?('<input class="js-numbox js-num4" id="ana-inflasi-nilai" type="text" inputmode="decimal" maxlength="6" placeholder="0" title="Nilai inflasi (%)" value="'+fkEsc(infNilai)+'" oninput="anaOnInflasiNilai(this)">'):'')+
       '</div></div>';
 }
+/* Isi ulang baris ROK/Inflasi (+Judul/Sub-Judul bila Pekerjaan Umum) */
+function anaRefreshRokInfBox(){
+  const box=document.getElementById('ana-dp-rokinf'); if(!box) return;
+  box.innerHTML=anaRokInflasiFieldsHtml()+((anaState.jenis!=='Konstruksi')?anaJudulFieldsHtml():'');
+}
 /* ROK? = Tidak → nilai ROK dikosongkan & tidak ikut dihitung */
 function anaOnRokOn(el){
   const on=(el.value==='Ya');
   anaState.rokOn=on?'Ya':'Tidak';
   if(!on) anaState.rok='';
   anaSaveState();
-  const box=document.getElementById('ana-dp-rokinf'); if(box) box.innerHTML=anaRokInflasiFieldsHtml()+anaJudulFieldsHtml();
+  anaRefreshRokInfBox();
   anaRenderResult();
 }
 /* Field Judul? & Sub-Judul? — tampil pada kartu Data Pekerjaan (Umum & Konstruksi) */
@@ -15557,7 +15562,7 @@ function anaOnInflasi(el){
   anaState.inflasi=(el.value==='Ya')?'Ya':'Tidak';
   if(anaState.inflasi!=='Ya') anaState.inflasiNilai='';
   anaSaveState();
-  const box=document.getElementById('ana-dp-rokinf'); if(box) box.innerHTML=anaRokInflasiFieldsHtml()+anaJudulFieldsHtml();
+  anaRefreshRokInfBox();
   anaRenderResult();
 }
 /* Nilai Inflasi global (satu nilai untuk semua uraian) — tampil bila Inflasi? = Ya. */
@@ -16029,9 +16034,9 @@ function renderAnalisaForm(){
       '<div class="form-flow'+rev1+'" style="--cols:4">'+
         ANA_DP_FIELDS.map(anaInfoInputHtml).join('')+
         ANA_OWN_FIELDS.map(anaInfoInputHtml).join('')+
-        (!isKon ? (anaCountItemFieldHtml()+anaCountRefFieldHtml()) : '')+
+        (!isKon ? (anaCountItemFieldHtml()+anaCountRefFieldHtml()) : anaCountRefFieldHtml())+
       '</div>'+
-      (!isKon ? ('<div class="ana-dp-rokinf" id="ana-dp-rokinf">'+anaRokInflasiFieldsHtml()+anaJudulFieldsHtml()+'</div>') : '')
+      ('<div class="ana-dp-rokinf" id="ana-dp-rokinf">'+anaRokInflasiFieldsHtml()+(!isKon?anaJudulFieldsHtml():'')+'</div>')
     ) : '')+
     '</div>';
 
