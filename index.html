@@ -14096,7 +14096,7 @@ function jsSatVolLen(items){
 /* Isi terpanjang kolom "No." — judul kolom, nomor item, dan (bila aktif) label
    penomoran Judul/Sub-Judul seperti "A", "III", atau "viii". */
 function jsNoLen(items,cfg){
-  let noLen=3;   // "No."
+  let noLen=2;   // judul kolom "No"
   const ukur=t=>{ const n=String(t||'').length; if(n>noLen) noLen=n; };
   jsWalk(items, cfg||{judulOn:false,subOn:false}, { judul:ukur, sub:ukur, item:ukur });
   return noLen;
@@ -14956,7 +14956,7 @@ function hpsBuildDocHtml(){
         '<col style="width:11%"><col style="width:11%"><col style="width:11%"><col style="width:11%"><col style="width:11%"></colgroup>'+
       '<thead>'+
         '<tr>'+
-          '<th class="no" rowspan="2">No.</th>'+
+          '<th class="no" rowspan="2">No</th>'+
           '<th class="ur" rowspan="2">Uraian Pekerjaan</th>'+
           '<th class="st" rowspan="2">Sat</th>'+
           '<th class="vl" rowspan="2">Vol</th>'+
@@ -15008,7 +15008,8 @@ function hpsBuildDocHtml(){
 }
 function hpsExtraDocCss(){
   return ''+
-  'table.hps-doc-tbl{width:100%;border-collapse:collapse;table-layout:fixed;margin:2px 0 8px;border:1.5px solid #0b6a73}'+
+  'table.hps-doc-tbl{width:100%;border-collapse:collapse;table-layout:fixed;margin:2px 0 8px}'+
+  'table.hps-doc-tbl thead th{border-color:#0b6a73}'+
   'table.hps-doc-tbl th,table.hps-doc-tbl td{border:1px solid #7d979c;padding:3px 5px;font-size:8.7px;line-height:1.3;vertical-align:middle;word-wrap:break-word;overflow-wrap:anywhere}'+
   'table.hps-doc-tbl thead th{background:#0E7C86;color:#fff;font-weight:800;text-align:center;letter-spacing:.2px;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   'table.hps-doc-tbl thead th.ur{text-align:center}'+
@@ -15038,7 +15039,7 @@ function hpsExtraDocCss(){
   'table.hps-doc-tbl thead{display:table-header-group}'+
   'table.hps-doc-tbl tbody.hps-tail{break-inside:avoid;page-break-inside:avoid}'+
   'table.hps-doc-tbl tr.ttd-row{break-inside:avoid;page-break-inside:avoid}'+
-  'table.hps-doc-tbl tr.ttd-row > td{padding:14px 10px 10px;background:#fff;border-top:1.5px solid #0b6a73;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  'table.hps-doc-tbl tr.ttd-row > td{padding:22px 10px 6px;background:transparent;border:none}'+
   'table.hps-doc-tbl tr.ttd-row table.ttd,table.hps-doc-tbl tr.ttd-row table.ttd td{border:none;background:transparent;padding:0}'+
   '.hps-foot{margin-top:26px;break-inside:avoid;page-break-inside:avoid}'+
   '.hps-foot .ttd,tr.ttd-row .ttd{width:100%;margin:0;border-collapse:collapse}'+
@@ -16451,7 +16452,7 @@ function anaBuildDocHargaSatuan(st){
       '<td class="ur">'+fkEsc(it.sumberRef||'-')+'</td></tr>';
   }});
   if(!hsRows) hsRows='<tr><td colspan="6" style="text-align:center;color:#889">Belum ada data</td></tr>';
-  const hsTbl='<table class="ana-doc-tbl"><thead><tr><th>No.</th><th class="ur">Uraian Pekerjaan</th><th>Satuan</th>'+
+  const hsTbl='<table class="ana-doc-tbl"><thead><tr><th class="no">No</th><th class="ur">Uraian Pekerjaan</th><th>Satuan</th>'+
     '<th>Harga Barang (Rp)</th><th>Harga Jasa (Rp)</th><th class="ur">Sumber Referensi</th></tr></thead><tbody>'+hsRows+'</tbody></table>';
 
   return ''+
@@ -16600,12 +16601,12 @@ function anaBuildDocHtmlUmum(st){
   const _noW=' style="min-width:'+_px.no+'px"', _stW=' style="min-width:'+_px.sat+'px"', _vlW=' style="min-width:'+_px.vol+'px"';
   const tblAnalisa=
     '<table class="ana-doc-tbl"><thead>'+
-      '<tr><th class="no" rowspan="2"'+_noW+'>No.</th><th class="ur" rowspan="2">Uraian Pekerjaan</th><th class="st" rowspan="2"'+_stW+'>Sat</th><th class="vl" rowspan="2"'+_vlW+'>Vol</th>'+refHead1+'</tr>'+
+      '<tr><th class="no" rowspan="2"'+_noW+'>No</th><th class="ur" rowspan="2">Uraian Pekerjaan</th><th class="st" rowspan="2"'+_stW+'>Sat</th><th class="vl" rowspan="2"'+_vlW+'>Vol</th>'+refHead1+'</tr>'+
       '<tr>'+refHead2+'</tr>'+
     '</thead><tbody>'+rowsA+'</tbody></table>';
   const tblHasil=
     '<table class="ana-doc-tbl ana-hasil-tbl"><thead>'+
-      '<tr><th class="no"'+_noW+'>No.</th><th class="ur">Uraian Pekerjaan</th><th class="st"'+_stW+'>Sat</th><th class="vl"'+_vlW+'>Vol</th><th class="mtd">Metode</th><th class="rok">ROK</th>'+(infOn?'<th class="inf">Inflasi</th>':'')+'<th class="jh">Harga Satuan Barang</th><th class="jh">Harga Satuan Jasa</th></tr>'+
+      '<tr><th class="no"'+_noW+'>No</th><th class="ur">Uraian Pekerjaan</th><th class="st"'+_stW+'>Sat</th><th class="vl"'+_vlW+'>Vol</th><th class="mtd">Metode</th><th class="rok">ROK</th>'+(infOn?'<th class="inf">Inflasi</th>':'')+'<th class="jh">Harga Satuan Barang</th><th class="jh">Harga Satuan Jasa</th></tr>'+
     '</thead><tbody>'+rowsH+'</tbody></table>';
 
   return ''+
