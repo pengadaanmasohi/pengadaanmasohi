@@ -11292,7 +11292,7 @@ const PNW_INFO_FIELDS = [
    periksa   : { s1:{ penyediaIdx:{ 'kat||baris': {ada:bool, ket:str} } }, s2:{...} }
 */
 function pnwBlankState(){
-  return { info:{}, penyedia:[''], pejabat:'', pilih:{s1:{},s2:{}}, syarat:{s1:{},s2:{}}, periksa:{s1:{},s2:{}} };
+  return { info:{}, penyedia:[''], pejabat:'', pilih:{s1:{},s2:{}}, syarat:{s1:{},s2:{}}, periksa:{s1:{},s2:{}}, profilLoaded:false };
 }
 let pnwState = pnwBlankState();
 let pnwStep = 1;               // 1..4
@@ -11578,6 +11578,7 @@ function pnwProfilDoLoad(name){
   const p=pnwProfilAll().find(x=>String(x.name)===String(name)); if(!p){ toast('Profil tidak ditemukan','warn'); return; }
   pnwState.pilih = JSON.parse(JSON.stringify(p.pilih||{}));
   pnwState.syarat = JSON.parse(JSON.stringify(p.syarat||{}));
+  pnwState.profilLoaded = true;   // tombol "Batalkan Profil" hanya tampil setelah profil dimuat
   pnwEnsureSyarat(); pnwSaveState(); pnwProfilClose(); renderPnwForm();
   toast('Profil "'+name+'" dimuat','ok');
 }
@@ -11589,6 +11590,7 @@ function pnwProfilDoDelete(name){
 function pnwProfilCancel(){
   const st=pnwState;
   st.syarat={};
+  st.profilLoaded=false;         // tombol "Batalkan Profil" ikut hilang
   pnwEnsureSyarat();
   pnwSaveState(); renderPnwForm();
   toast('Profil dibatalkan — isian dikembalikan ke default','ok');
@@ -11817,7 +11819,7 @@ function renderPnwForm(){
         '<span class="pnw-profil-bar">'+
           '<button type="button" class="btn btn-amber pnw-profil-btn" onclick="pnwProfilOpenSave()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Simpan Profil</button>'+
           '<button type="button" class="btn btn-teal pnw-profil-btn" onclick="pnwProfilOpenLoad()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Muat Profil</button>'+
-          '<button type="button" class="btn btn-ghost pnw-profil-btn" onclick="pnwProfilCancel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Batalkan Profil</button>'+
+          (st.profilLoaded ? '<button type="button" class="btn btn-red pnw-profil-btn" onclick="pnwProfilCancel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Batalkan Profil</button>' : '')+
         '</span>'+
       '</div>'+body+'</div>';
     html+=pnwActionsHtml({back:true});
