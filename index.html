@@ -2632,7 +2632,8 @@ table.hps-uraian thead th.c-ur{text-align:left;min-width:220px}
 table.hps-uraian tbody td{border-bottom:1px solid #e8f0f1;padding:7px 8px;vertical-align:middle;font-size:12px}
 table.hps-uraian tbody tr:last-child td{border-bottom:none}
 table.hps-uraian tbody tr:nth-child(even){background:#f8fbfc}
-table.hps-uraian th.c-no,table.hps-uraian td.c-no{text-align:center;font-weight:800;color:#0b6a73;width:46px;min-width:40px;max-width:52px}
+/* Kolom NO cukup lebar untuk nomor tiga digit (mis. 100+) tanpa terlihat sempit */
+table.hps-uraian th.c-no,table.hps-uraian td.c-no{text-align:center;font-weight:800;color:#0b6a73;width:62px;min-width:62px;max-width:62px;padding-left:6px;padding-right:6px;white-space:nowrap}
 table.hps-uraian td.c-ur{width:100%}
 table.hps-uraian textarea,table.hps-uraian input{width:100%;border:1px solid #cdd9de;border-radius:9px;padding:7px 8px;font-size:12px;background:#fff;font-family:inherit;color:var(--ink)}
 table.hps-uraian textarea{resize:vertical;min-height:36px;line-height:1.45}
@@ -2957,41 +2958,18 @@ table.hps-uraian tbody tr:last-child td,table.ana-uraian tbody tr:last-child td,
               </button>
               <div class="topnav-subdrop">
                 <!-- Referensi Harga Online: submenu Input Harga / Lihat Harga (ikon Rupiah) -->
-                <div class="topnav-sub" data-sub="referensiharga" data-role="admin">
-                  <button class="topnav-subtrigger" type="button" onclick="toggleFkSub(event,'referensiharga')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><text x="12" y="17" text-anchor="middle" font-family="'Plus Jakarta Sans',system-ui,sans-serif" font-size="14" font-weight="800" fill="currentColor" stroke="none">Rp</text></svg>
-                    <span class="sub-label">Referensi Harga Online</span>
-                    <svg class="caret2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
-                  </button>
-                  <div class="topnav-subdrop">
-                    <button class="topnav-item" data-view="form-rho" data-role="admin" onclick="openRhoInput()">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                      Input Harga
-                    </button>
-                    <button class="topnav-item" data-view="rho-view" data-role="admin" onclick="openRhoView()">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                      Lihat Harga
-                    </button>
-                  </div>
-                </div>
-                <!-- Analisa Harga Satuan: submenu Analisa Harga / Lihat Analisa -->
-                <div class="topnav-sub" data-sub="hps-analisa" data-role="admin">
-                  <button class="topnav-subtrigger" type="button" onclick="toggleFkSub(event,'hps-analisa')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.8L7 14.3"/></svg>
-                    <span class="sub-label">Analisa Harga Satuan</span>
-                    <svg class="caret2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
-                  </button>
-                  <div class="topnav-subdrop">
-                    <button class="topnav-item" data-view="form-analisa" data-role="admin" onclick="openAnalisaInput()">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                      Analisa Harga
-                    </button>
-                    <button class="topnav-item" data-view="analisa-view" data-role="admin" onclick="openAnalisaView()">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                      Lihat Analisa
-                    </button>
-                  </div>
-                </div>
+                <!-- Referensi Harga Online: satu menu (tanpa submenu Input/Lihat).
+                     Input Harga diakses lewat tombol "Tambah Data" di halaman daftar. -->
+                <button class="topnav-item" data-view="rho-view" data-role="admin" onclick="openRhoView()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><text x="12" y="17" text-anchor="middle" font-family="'Plus Jakarta Sans',system-ui,sans-serif" font-size="14" font-weight="800" fill="currentColor" stroke="none">Rp</text></svg>
+                  Referensi Harga Online
+                </button>
+                <!-- Analisa Harga Satuan: satu menu (tanpa submenu Analisa/Lihat).
+                     Analisa Harga diakses lewat tombol "Tambah Data" di halaman daftar. -->
+                <button class="topnav-item" data-view="analisa-view" data-role="admin" onclick="openAnalisaView()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.8L7 14.3"/></svg>
+                  Analisa Harga Satuan
+                </button>
                 <!-- Jadwal Pelaksanaan Pengadaan: submenu Tentukan Jadwal / Lihat Jadwal / Tentukan Hari Libur -->
                 <div class="topnav-sub" data-sub="hps-jadwal" data-role="admin">
                   <button class="topnav-subtrigger" type="button" onclick="toggleFkSub(event,'hps-jadwal')">
@@ -3924,6 +3902,10 @@ table.hps-uraian tbody tr:last-child td,table.ana-uraian tbody tr:last-child td,
           <input id="rho-view-search" type="text" placeholder="Cari Nama Pekerjaan" oninput="renderRhoView()">
         </div>
       </div>
+      <button class="btn btn-teal head-add-btn" data-role="admin" onclick="openRhoInput()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        Tambah Data
+      </button>
     </div>
     <div class="panel">
       <div class="table-wrap">
@@ -4068,6 +4050,10 @@ table.hps-uraian tbody tr:last-child td,table.ana-uraian tbody tr:last-child td,
           <input id="ana-view-search" type="text" placeholder="Cari Nama Pekerjaan" oninput="renderAnalisaView()">
         </div>
       </div>
+      <button class="btn btn-teal head-add-btn" data-role="admin" onclick="openAnalisaInput()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        Tambah Data
+      </button>
     </div>
     <div class="panel">
       <div class="table-wrap">
@@ -5350,6 +5336,8 @@ function showView(name, loaderMsg, noLoader){
           if(l.dataset.view==='dp-view' && (name==='dp-view'||name==='form-dp')) on=true; // Data Pekerjaan induk tetap aktif
           if(l.dataset.view==='fkl-view' && (name==='fkl-view'||name==='form-kelengkapan')) on=true; // Kelengkapan induk tetap aktif
           if(l.dataset.view==='pnw-view' && (name==='pnw-view'||name==='form-pembukaan')) on=true; // Pembukaan Penawaran induk tetap aktif
+          if(l.dataset.view==='rho-view' && (name==='rho-view'||name==='form-rho')) on=true; // Referensi Harga Online induk tetap aktif
+          if(l.dataset.view==='analisa-view' && (name==='analisa-view'||name==='form-analisa')) on=true; // Analisa Harga Satuan induk tetap aktif
           l.classList.toggle('active', on);
         });
         // tandai & buka grup yang memuat view aktif (akordeon tetap terbuka)
@@ -5359,6 +5347,8 @@ function showView(name, loaderMsg, noLoader){
           if(name==='form-dp') has = has || [...grp.querySelectorAll('.topnav-item')].some(it=>it.dataset.view==='dp-view');
           if(name==='form-kelengkapan') has = has || [...grp.querySelectorAll('.topnav-item')].some(it=>it.dataset.view==='fkl-view');
           if(name==='form-pembukaan') has = has || [...grp.querySelectorAll('.topnav-item')].some(it=>it.dataset.view==='pnw-view');
+          if(name==='form-rho') has = has || [...grp.querySelectorAll('.topnav-item')].some(it=>it.dataset.view==='rho-view');
+          if(name==='form-analisa') has = has || [...grp.querySelectorAll('.topnav-item')].some(it=>it.dataset.view==='analisa-view');
           // Grup Monitoring mencakup Input Pekerjaan (input/-pl/-tender) & Daftar Pekerjaan (list/-pl/-tender)
           if(grp.dataset.group==='monitor' && monitorAll.includes(name)) has=true;
           grp.classList.toggle('has-active', has);
@@ -12859,12 +12849,12 @@ function renderRhoForm(){
 }
 function rhoActionsHtml(o){
   o=o||{};
-  let left='<button class="btn btn-ghost" onclick="rhoBatal()">'+FKL_IC_X+'Batal</button>';
-  let right='';
+  // Batal (merah) berdampingan dengan tombol navigasi di pojok kanan
+  let right='<button class="btn btn-red" onclick="rhoBatal()">'+FKL_IC_X+'Batal</button>';
   if(o.back) right+='<button class="btn btn-light" onclick="rhoBack()">'+FKL_IC_BACK+'Kembali</button>';
   if(o.save) right+='<button class="btn btn-green" onclick="rhoSimpan()">'+FKL_IC_SAVE+'Simpan &amp; Lihat PDF</button>';
   else right+='<button class="btn btn-teal" onclick="rhoNext()">Selanjutnya'+FKL_IC_NEXT+'</button>';
-  return '<div class="fkl-actions"><div class="fkl-actions-left">'+left+'</div><div class="fkl-actions-right">'+right+'</div></div>';
+  return '<div class="fkl-actions"><div class="fkl-actions-right">'+right+'</div></div>';
 }
 
 /* ---------- Navigasi ---------- */
@@ -14138,12 +14128,12 @@ function openHpsAnalisa(){
 }
 function hpsActionsHtml(o){
   o=o||{};
-  let left='<button class="btn btn-ghost" onclick="hpsBatal()">'+FKL_IC_X+'Batal</button>';
-  let right='';
+  // Batal (merah) berdampingan dengan tombol navigasi di pojok kanan
+  let right='<button class="btn btn-red" onclick="hpsBatal()">'+FKL_IC_X+'Batal</button>';
   if(o.back) right+='<button class="btn btn-light" onclick="hpsBack()">'+FKL_IC_BACK+'Kembali</button>';
   if(o.save) right+='<button class="btn btn-green" onclick="hpsSimpan()">'+FKL_IC_SAVE+'Simpan &amp; Lihat PDF</button>';
   else right+='<button class="btn btn-teal" onclick="hpsNext()">Selanjutnya'+FKL_IC_NEXT+'</button>';
-  return '<div class="fkl-actions"><div class="fkl-actions-left">'+left+'</div><div class="fkl-actions-right">'+right+'</div></div>';
+  return '<div class="fkl-actions"><div class="fkl-actions-right">'+right+'</div></div>';
 }
 
 /* ---------- Navigasi ---------- */
@@ -15579,12 +15569,12 @@ function renderAnalisaForm(){
 }
 function anaActionsHtml(o){
   o=o||{};
-  let left='<button class="btn btn-ghost" onclick="anaBatal()">'+FKL_IC_X+'Batal</button>';
-  let right='';
+  // Batal (merah) berdampingan dengan tombol navigasi di pojok kanan
+  let right='<button class="btn btn-red" onclick="anaBatal()">'+FKL_IC_X+'Batal</button>';
   if(o.back) right+='<button class="btn btn-light" onclick="anaBack()">'+FKL_IC_BACK+'Kembali</button>';
   if(o.save) right+='<button class="btn btn-green" onclick="anaSimpan()">'+FKL_IC_SAVE+'Simpan dan Lihat</button>';
   if(o.next) right+='<button class="btn btn-teal" onclick="anaNext()">Selanjutnya'+FKL_IC_NEXT+'</button>';
-  return '<div class="fkl-actions"><div class="fkl-actions-left">'+left+'</div><div class="fkl-actions-right">'+right+'</div></div>';
+  return '<div class="fkl-actions"><div class="fkl-actions-right">'+right+'</div></div>';
 }
 
 /* ---------- Navigasi ---------- */
