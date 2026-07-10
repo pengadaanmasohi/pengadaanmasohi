@@ -512,10 +512,12 @@ td.cell-center{text-align:center}
 #view-pn-lihat .toolbar.pn-toolbar-bare,#view-fkl-view .toolbar.pn-toolbar-bare{box-shadow:none}
 
 /* ===== Penetapan Nomor / Kelengkapan — Lihat: header rapi & kotak Cari lebih premium ===== */
-#view-pn-lihat .page-head,#view-fkl-view .page-head{
+#view-pn-lihat .page-head{
   align-items:center;
   border-bottom:1px solid #e7eff0;padding-bottom:14px;margin-bottom:14px
 }
+/* Kelengkapan — Lihat Data: jarak judul ke tabel disamakan dengan Data Pekerjaan */
+#view-fkl-view .page-head{align-items:center}
 #view-pn-lihat .page-head p,#view-fkl-view .page-head p{
   font-size:11.5px;color:#5b6d76;margin-top:5px
 }
@@ -2921,42 +2923,18 @@ table.hps-uraian tbody tr:last-child td,table.ana-uraian tbody tr:last-child td,
             <svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
           </button>
           <div class="topnav-dropdown">
-            <!-- Data Pekerjaan: master data terpusat (dipakai Pembukaan, Kelengkapan, RHO, HPS, Analisa & Jadwal via tombol Pilih Pekerjaan) -->
-            <div class="topnav-sub" data-sub="data-pekerjaan" data-role="admin">
-              <button class="topnav-subtrigger" type="button" onclick="toggleFkSub(event,'data-pekerjaan')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>
-                <span class="sub-label">Data Pekerjaan</span>
-                <svg class="caret2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
-              </button>
-              <div class="topnav-subdrop">
-                <button class="topnav-item" data-view="form-dp" data-role="admin" onclick="openDpInput()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                  Input Data
-                </button>
-                <button class="topnav-item" data-view="dp-view" data-role="admin" onclick="openDpView()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                  Lihat Data
-                </button>
-              </div>
-            </div>
-            <!-- Kelengkapan Dokumen Pengadaan: submenu Input Data / Lihat Data -->
-            <div class="topnav-sub" data-sub="kelengkapan" data-role="admin">
-              <button class="topnav-subtrigger" type="button" onclick="toggleFkSub(event,'kelengkapan')">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>
-                <span class="sub-label">Kelengkapan Dokumen Pengadaan</span>
-                <svg class="caret2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
-              </button>
-              <div class="topnav-subdrop">
-                <button class="topnav-item" data-view="form-kelengkapan" data-role="admin" onclick="openFklInput()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                  Input Data
-                </button>
-                <button class="topnav-item" data-view="fkl-view" data-role="admin" onclick="openFklView()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                  Lihat Data
-                </button>
-              </div>
-            </div>
+            <!-- Data Pekerjaan: satu menu (tanpa submenu Input/Lihat). Klik langsung membuka
+                 daftar; Input Data diakses lewat tombol "Tambah Data" di halaman daftar. -->
+            <button class="topnav-item" data-view="dp-view" data-role="admin" onclick="openDpView()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>
+              Data Pekerjaan
+            </button>
+            <!-- Kelengkapan Dokumen Pengadaan: satu menu (tanpa submenu Input/Lihat).
+                 Input Data diakses lewat tombol "Tambah Data" di halaman daftar. -->
+            <button class="topnav-item" data-view="fkl-view" data-role="admin" onclick="openFklView()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>
+              Kelengkapan Dokumen Pengadaan
+            </button>
             <!-- Pembukaan Penawaran: submenu Input Data / Lihat Data -->
             <div class="topnav-sub" data-sub="pembukaan" data-role="admin">
               <button class="topnav-subtrigger" type="button" onclick="toggleFkSub(event,'pembukaan')">
@@ -3850,6 +3828,10 @@ table.hps-uraian tbody tr:last-child td,table.ana-uraian tbody tr:last-child td,
           <input id="fkl-view-search" type="text" placeholder="Cari Nama Pekerjaan" oninput="renderFklView()">
         </div>
       </div>
+      <button class="btn btn-teal head-add-btn" data-role="admin" onclick="openFklInput()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        Tambah Data
+      </button>
     </div>
     <div class="panel">
       <div class="table-wrap">
@@ -5366,12 +5348,16 @@ function showView(name, loaderMsg, noLoader){
           if(l.dataset.view==='list' && monitorViews.includes(name)) on=true; // Monitoring induk tetap aktif
           if(l.dataset.view==='input' && inputViews.includes(name)) on=true;  // (kompatibilitas) Input Pekerjaan induk tetap aktif
           if(l.dataset.view==='fk-view' && (name==='fk-view'||name==='fk-input')) on=true; // File Kontrak induk tetap aktif
+          if(l.dataset.view==='dp-view' && (name==='dp-view'||name==='form-dp')) on=true; // Data Pekerjaan induk tetap aktif
+          if(l.dataset.view==='fkl-view' && (name==='fkl-view'||name==='form-kelengkapan')) on=true; // Kelengkapan induk tetap aktif
           l.classList.toggle('active', on);
         });
         // tandai & buka grup yang memuat view aktif (akordeon tetap terbuka)
         const monitorAll=['list','list-pl','list-tender','input','input-pl','input-tender'];
         document.querySelectorAll('.topnav-group').forEach(grp=>{
           let has=[...grp.querySelectorAll('.topnav-item')].some(it=>it.dataset.view===name);
+          if(name==='form-dp') has = has || [...grp.querySelectorAll('.topnav-item')].some(it=>it.dataset.view==='dp-view');
+          if(name==='form-kelengkapan') has = has || [...grp.querySelectorAll('.topnav-item')].some(it=>it.dataset.view==='fkl-view');
           // Grup Monitoring mencakup Input Pekerjaan (input/-pl/-tender) & Daftar Pekerjaan (list/-pl/-tender)
           if(grp.dataset.group==='monitor' && monitorAll.includes(name)) has=true;
           grp.classList.toggle('has-active', has);
@@ -10831,8 +10817,8 @@ function renderFormKelengkapan(){
     html+='<div class="form-card"><div class="form-section-title">'+KR_SECTION_ICON+'Data Pekerjaan'+dpPickBtnHtml('fkl')+'</div><div class="form-flow" style="--cols:4">';
     html+=FKL_INFO_FIELDS.map(fklInfoInputHtml).join('');
     html+='</div></div>';
-    html+='<div class="fkl-actions"><div class="fkl-actions-left"></div><div class="fkl-actions-right">'+
-      '<button class="btn btn-ghost" onclick="fklBatal()">'+FKL_IC_X+'Batal</button>'+
+    html+='<div class="fkl-actions"><div class="fkl-actions-right">'+
+      '<button class="btn btn-red" onclick="fklBatal()">'+FKL_IC_X+'Batal</button>'+
       '<button class="btn btn-teal" onclick="fklNext()">Selanjutnya'+FKL_IC_NEXT+'</button>'+
     '</div></div>';
   }
@@ -10844,9 +10830,8 @@ function renderFormKelengkapan(){
       '<div class="fkl-hint">Centang dokumen yang perlu diperiksa kelengkapannya (gabungan Dokumen Wajib &amp; Dokumen Tambahan).</div>'+
       '<div class="fkl-checkgrid" style="--rows:'+Math.ceil(fklDocPool().length/2)+'">'+fklPilihHtml()+'</div>'+
     '</div>';
-    html+='<div class="fkl-actions"><div class="fkl-actions-left">'+
-        '<button class="btn btn-ghost" onclick="fklBatal()">'+FKL_IC_X+'Batal</button>'+
-      '</div><div class="fkl-actions-right">'+
+    html+='<div class="fkl-actions"><div class="fkl-actions-right">'+
+        '<button class="btn btn-red" onclick="fklBatal()">'+FKL_IC_X+'Batal</button>'+
         '<button class="btn btn-light" onclick="fklBack()">'+FKL_IC_BACK+'Kembali</button>'+
         '<button class="btn btn-teal" onclick="fklNext()">Selanjutnya'+FKL_IC_NEXT+'</button>'+
     '</div></div>';
@@ -10858,9 +10843,8 @@ function renderFormKelengkapan(){
       fklAdaHtml()+
     '</div>';
     html+='<div class="form-card"><div class="form-section-title">'+FKL_SEC_ICON+'Ringkasan Pemeriksaan</div><div id="fkl-status"></div></div>';
-    html+='<div class="fkl-actions"><div class="fkl-actions-left">'+
-        '<button class="btn btn-ghost" onclick="fklBatal()">'+FKL_IC_X+'Batal</button>'+
-      '</div><div class="fkl-actions-right">'+
+    html+='<div class="fkl-actions"><div class="fkl-actions-right">'+
+        '<button class="btn btn-red" onclick="fklBatal()">'+FKL_IC_X+'Batal</button>'+
         '<button class="btn btn-light" onclick="fklBack()">'+FKL_IC_BACK+'Sebelumnya</button>'+
         '<button class="btn btn-green" onclick="fklSimpan()">'+FKL_IC_SAVE+'Simpan</button>'+
     '</div></div>';
@@ -13411,9 +13395,9 @@ function renderDpForm(){
   let html='<div class="form-card"><div class="form-section-title">'+KR_SECTION_ICON+'Data Pekerjaan</div>'+
     '<div class="hps-hint">Data ini akan dipakai bersama oleh <b>Perhitungan HPS</b> dan <b>Analisa Harga Satuan</b> lewat tombol <b>Pilih Data Pekerjaan</b> — isi & simpan sekali di sini.</div>'+
     '<div class="form-flow" style="--cols:4">'+DP_INFO_FIELDS.map(dpInfoInputHtml).join('')+'</div></div>';
-  html+='<div class="fkl-actions"><div class="fkl-actions-left">'+
-      '<button class="btn btn-ghost" onclick="dpBatal()">'+FKL_IC_X+'Batal</button>'+
-    '</div><div class="fkl-actions-right">'+
+  // Batal & Simpan berdampingan di pojok kanan (Batal merah)
+  html+='<div class="fkl-actions"><div class="fkl-actions-right">'+
+      '<button class="btn btn-red" onclick="dpBatal()">'+FKL_IC_X+'Batal</button>'+
       '<button class="btn btn-green" onclick="dpSimpan()">'+FKL_IC_SAVE+'Simpan</button>'+
     '</div></div>';
   cont.innerHTML=html;
