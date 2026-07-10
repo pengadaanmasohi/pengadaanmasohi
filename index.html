@@ -14062,18 +14062,34 @@ function jsCfg(st){
     subOn:   jsOn(st.subjudulOn), subNum: jsNumStyleOk(st.subjudulNum,'')
   };
 }
-/* Telusuri items → panggil out.judul(no,teks) / out.sub(no,teks) / out.item(no,it,idx) */
+/* Telusuri items →
+     out.judul(no, teks, pembawa, idx)
+     out.sub  (no, teks, pembawa, idx)
+     out.item (no, it, idx)
+
+   "pembawa" berisi item bila baris judul/sub-judul itu SEKALIGUS memuat harga —
+   yaitu ketika itemnya tidak punya Uraian Pekerjaan. Dalam hal ini tidak ada baris
+   item terpisah; Sat/Vol/Harga diisi langsung pada baris judul (atau sub-judul).
+   Bila keduanya baru sekaligus, yang membawa harga adalah tingkat TERDALAM. */
 function jsWalk(items,cfg,out){
   let jIdx=0,sIdx=0,iNo=0,curJ=null,curS=null;
   (items||[]).forEach(function(it,idx){
-    if(cfg.judulOn){
-      const j=String((it&&it.judul)||'').trim();
-      if(j && j.toUpperCase()!==curJ){ curJ=j.toUpperCase(); jIdx++; sIdx=0; iNo=0; curS=null; if(out.judul) out.judul(jsNumFmt(cfg.judulNum,jIdx), curJ); }
+    const jTxt = cfg.judulOn ? String((it&&it.judul)||'').trim() : '';
+    const sTxt = cfg.subOn   ? String((it&&it.subjudul)||'').trim() : '';
+    const jBaru = !!(jTxt && jTxt.toUpperCase()!==curJ);
+    const sBaru = !!(sTxt && sTxt!==curS);
+    const adaUraian = String((it&&it.uraian)||'').trim()!=='';
+    const bawaSub   = !adaUraian && sBaru;
+    const bawaJudul = !adaUraian && !sBaru && jBaru;
+    if(jBaru){
+      curJ=jTxt.toUpperCase(); jIdx++; sIdx=0; iNo=0; curS=null;
+      if(out.judul) out.judul(jsNumFmt(cfg.judulNum,jIdx), curJ, bawaJudul?it:null, idx);
     }
-    if(cfg.subOn){
-      const sb=String((it&&it.subjudul)||'').trim();
-      if(sb && sb!==curS){ curS=sb; sIdx++; iNo=0; if(out.sub) out.sub(jsNumFmt(cfg.subNum,sIdx), sb); }
+    if(sBaru){
+      curS=sTxt; sIdx++; iNo=0;
+      if(out.sub) out.sub(jsNumFmt(cfg.subNum,sIdx), sTxt, bawaSub?it:null, idx);
     }
+    if(bawaSub||bawaJudul) return;   // harga sudah tercetak pada baris judul/sub-judul
     iNo++;
     if(out.item) out.item(iNo,it,idx);
   });
@@ -14786,9 +14802,25 @@ function hpsBuildDocHtml(){
   /* ---- Baris item + Judul / Sub-Judul (bernomor sesuai gaya terpilih) ---- */
   let bodyRows='';
   const cfg=jsCfg(st);
+  /* Baris judul/sub-judul. Bila "pembawa" ada, baris itu sekaligus memuat
+     Sat/Vol/Harga (judul tanpa Uraian Pekerjaan tersendiri). */
+  const grpRow=(cls,no,txt,it)=>{
+    if(!it) return '<tr class="'+cls+'"><td class="no">'+fkEsc(no)+'</td><td class="gname" colspan="8">'+fkEsc(txt)+'</td></tr>';
+    const sat=(it.sat!=null&&String(it.sat).trim())?it.sat:'-';
+    const vol=(it.vol!=null&&String(it.vol).trim())?it.vol:'-';
+    return '<tr class="'+cls+' has-val"><td class="no">'+fkEsc(no)+'</td>'+
+      '<td class="gname ur">'+fkEsc(txt)+'</td>'+
+      '<td class="st">'+fkEsc(String(sat))+'</td>'+
+      '<td class="vl">'+fkEsc(String(vol))+'</td>'+
+      '<td class="num">'+hpsRpDoc(it.hargaMat)+'</td>'+
+      '<td class="num">'+hpsRpDoc(it.hargaJasa)+'</td>'+
+      '<td class="num">'+hpsRpDoc(hpsItemMat(it))+'</td>'+
+      '<td class="num">'+hpsRpDoc(hpsItemJasa(it))+'</td>'+
+      '<td class="num tot">'+hpsRpDoc(hpsItemTotal(it))+'</td></tr>';
+  };
   jsWalk(st.items,cfg,{
-    judul:(no,txt)=>{ bodyRows+='<tr class="grp"><td class="no">'+fkEsc(no)+'</td><td class="gname" colspan="8">'+fkEsc(txt)+'</td></tr>'; },
-    sub:(no,txt)=>{ bodyRows+='<tr class="grp sub"><td class="no">'+fkEsc(no)+'</td><td class="gname" colspan="8">'+fkEsc(txt)+'</td></tr>'; },
+    judul:(no,txt,it)=>{ bodyRows+=grpRow('grp',no,txt,it); },
+    sub:(no,txt,it)=>{ bodyRows+=grpRow('grp sub',no,txt,it); },
     item:(noInGroup,it,idx)=>{
     const uraian=(it.uraian&&String(it.uraian).trim())?it.uraian:('Barang/Jasa '+(idx+1));
     const sat=(it.sat!=null&&String(it.sat).trim())?it.sat:'-';
@@ -14911,6 +14943,9 @@ function hpsExtraDocCss(){
   'table.hps-doc-tbl tr.grp td{background:#dcecee;font-weight:800;color:#0b3d42;text-transform:uppercase;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   'table.hps-doc-tbl tr.grp td.gname{text-align:left;letter-spacing:.3px}'+
   'table.hps-doc-tbl tr.grp.sub td{background:#eef5f6;text-transform:none;font-weight:700;font-style:italic}'+
+  'table.hps-doc-tbl tr.grp.has-val td.gname{width:auto}'+
+  'table.hps-doc-tbl tr.grp.has-val td.num{text-align:right;text-transform:none}'+
+  'table.hps-doc-tbl tr.grp.has-val td.st,table.hps-doc-tbl tr.grp.has-val td.vl{text-align:center;text-transform:none}'+
   'table.hps-doc-tbl tr.sum td{background:#f2f7f8;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   'table.hps-doc-tbl tr.sum td.sum-lbl{text-align:right;font-weight:800;color:#0d2a30;text-transform:none}'+
   'table.hps-doc-tbl tr.sum td.num{font-weight:800;color:#0b3d42}'+
@@ -16419,15 +16454,32 @@ function anaBuildDocHtmlUmum(st){
   const colA = 4 + nRef*2;   // no,ur,sat,vol + ref*2 (kolom Metode dihapus dari tabel Analisa)
   const colH = 4 + 1 + 1 + (infOn?1:0) + 2;   // no,ur,sat,vol + metode + ROK + inflasi? + jumlahHargaBarang,jumlahHargaJasa
   let rowsA='', rowsH='';
+  /* Baris judul/sub-judul; bila membawa harga (judul tanpa Uraian tersendiri),
+     Sat/Vol/Harga ikut tercetak pada baris itu — di kedua tabel. */
+  const grpLead=(no,txt,it)=>'<td class="no">'+fkEsc(no)+'</td><td class="gname ur">'+fkEsc(txt)+'</td>'+
+    '<td class="st">'+fkEsc(String((it.sat!=null&&String(it.sat).trim())?it.sat:'-'))+'</td>'+
+    '<td class="vl">'+fkEsc(String((it.vol!=null&&String(it.vol).trim())?it.vol:'-'))+'</td>';
+  const grpRows=(cls,no,txt,it,i)=>{
+    if(!it){
+      rowsA+='<tr class="'+cls+'"><td class="no">'+fkEsc(no)+'</td><td class="gname" colspan="'+(colA-1)+'">'+fkEsc(txt)+'</td></tr>';
+      rowsH+='<tr class="'+cls+'"><td class="no">'+fkEsc(no)+'</td><td class="gname" colspan="'+(colH-1)+'">'+fkEsc(txt)+'</td></tr>';
+      return;
+    }
+    const lead=grpLead(no,txt,it);
+    let refCells='';
+    for(let r=0;r<nRef;r++){
+      const rit=(st.refs[r]&&st.refs[r].items[i])||{};
+      refCells+='<td class="num">'+anaRpDoc(rit.hargaBarang)+'</td><td class="num">'+anaRpDoc(rit.hargaJasa)+'</td>';
+    }
+    const res=anaResultForState(st,i);
+    rowsA+='<tr class="'+cls+' has-val">'+lead+refCells+'</tr>';
+    rowsH+='<tr class="'+cls+' has-val">'+lead+'<td class="mtd">'+res.method+'</td><td class="rok">'+anaPct(rok,'-')+'</td>'+
+      (infOn?('<td class="num">'+anaPct(res.inflasi,'-')+'</td>'):'')+
+      '<td class="num tot">'+anaRpDoc(res.hargaBarang)+'</td><td class="num tot">'+anaRpDoc(res.hargaJasa)+'</td></tr>';
+  };
   jsWalk(struct,jsCfg(st),{
-    judul:(no,txt)=>{
-      rowsA+='<tr class="grp"><td class="no">'+fkEsc(no)+'</td><td class="gname" colspan="'+(colA-1)+'">'+fkEsc(txt)+'</td></tr>';
-      rowsH+='<tr class="grp"><td class="no">'+fkEsc(no)+'</td><td class="gname" colspan="'+(colH-1)+'">'+fkEsc(txt)+'</td></tr>';
-    },
-    sub:(no,txt)=>{
-      rowsA+='<tr class="grp sub"><td class="no">'+fkEsc(no)+'</td><td class="gname" colspan="'+(colA-1)+'">'+fkEsc(txt)+'</td></tr>';
-      rowsH+='<tr class="grp sub"><td class="no">'+fkEsc(no)+'</td><td class="gname" colspan="'+(colH-1)+'">'+fkEsc(txt)+'</td></tr>';
-    },
+    judul:(no,txt,it,i)=>{ grpRows('grp',no,txt,it,i); },
+    sub:(no,txt,it,i)=>{ grpRows('grp sub',no,txt,it,i); },
     item:(noInGroup,it,i)=>{
     const uraian=(it.uraian&&String(it.uraian).trim())?it.uraian:('Uraian '+(i+1));
     const sat=(it.sat!=null&&String(it.sat).trim())?it.sat:'-';
@@ -16520,6 +16572,8 @@ function anaExtraDocCss(){
   'table.ana-doc-tbl tr.grp td{background:#dcecee;font-weight:800;color:#0b3d42;text-transform:uppercase;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   'table.ana-doc-tbl tr.grp td.gname{text-align:left;letter-spacing:.3px}'+
   'table.ana-doc-tbl tr.grp.sub td{background:#eef5f6;text-transform:none;font-weight:700;font-style:italic}'+
+  'table.ana-doc-tbl tr.grp.has-val td.num,table.ana-doc-tbl tr.grp.has-val td.mtd{text-transform:none}'+
+  'table.ana-doc-tbl tr.grp.has-val td.st,table.ana-doc-tbl tr.grp.has-val td.vl{text-transform:none}'+
   'table.ana-doc-tbl tr.grp{break-inside:avoid;page-break-inside:avoid}'+
   'tr.ana-ahsp-spacer td{border:none;height:6px;padding:0}'+
   '.ana-ahsp-doc-info{font-size:9.5px;color:#33474d;margin:0 0 8px;font-weight:700}'+
