@@ -14862,7 +14862,11 @@ function hpsBuildDocHtml(){
           '<td>7 = 4 x 5</td><td>8 = 4 x 6</td><td>9 = 7 + 8</td>'+
         '</tr>'+
       '</thead>'+
-      '<tbody>'+bodyRows+sumRows+terbilangRow+ttdRow+'</tbody>'+
+      '<tbody>'+bodyRows+'</tbody>'+
+      // tbody kedua: rekap + terbilang + tanda tangan diperlakukan sebagai SATU blok.
+      // Bila tak cukup ruang, seluruhnya turun bersama ke halaman berikutnya —
+      // tanda tangan tidak pernah berdiri sendiri tanpa angka rekapnya.
+      '<tbody class="hps-tail">'+sumRows+terbilangRow+ttdRow+'</tbody>'+
     '</table>';
 
 
@@ -14917,6 +14921,8 @@ function hpsExtraDocCss(){
   'table.hps-doc-tbl tr.grp,table.hps-doc-tbl tr.sum,table.hps-doc-tbl tr.terb{break-inside:avoid;page-break-inside:avoid}'+
   /* Baris tanda tangan menyatu dengan tabel: tanpa arsiran zebra, tanpa padding sel
      tabel, dan tidak boleh terpotong antar-halaman. */
+  'table.hps-doc-tbl thead{display:table-header-group}'+
+  'table.hps-doc-tbl tbody.hps-tail{break-inside:avoid;page-break-inside:avoid}'+
   'table.hps-doc-tbl tr.ttd-row{break-inside:avoid;page-break-inside:avoid}'+
   'table.hps-doc-tbl tr.ttd-row > td{padding:14px 10px 10px;background:#fff;border-top:1.5px solid #0b6a73;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   'table.hps-doc-tbl tr.ttd-row table.ttd,table.hps-doc-tbl tr.ttd-row table.ttd td{border:none;background:transparent;padding:0}'+
