@@ -9295,17 +9295,39 @@ function jpExtraDocCss(){
   '.jp-doc-nama{font-weight:800;font-size:12px;color:#0d2a30;margin-bottom:8px}'+
   '.jp-doc-wrap{border-left:4px solid #0E7C86}'+
   'table.jp-doc-tbl{width:100%;border-collapse:collapse;margin:0;border:1.5px solid #0b6a73}'+
-  'table.jp-doc-tbl th,table.jp-doc-tbl td{border:1px solid #7d97ab;padding:6px 8px;font-size:9.5px;vertical-align:middle}'+
+  'table.jp-doc-tbl th,table.jp-doc-tbl td{border:1px solid #7d979c;padding:4px 7px;font-size:8.7px;line-height:1.3;vertical-align:middle}'+
   'table.jp-doc-tbl thead th{background:#0E7C86;color:#fff;font-weight:700;text-align:center;text-transform:uppercase;letter-spacing:0;border-color:#5aa8ae;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   'table.jp-doc-tbl thead th:first-child{border-left-color:#0E7C86}'+
   'table.jp-doc-tbl thead th:last-child{border-right-color:#0E7C86}'+
   'table.jp-doc-tbl thead tr:last-child th{border-bottom:1.5px solid #0b6a73}'+
   'table.jp-doc-tbl td.no,table.jp-doc-tbl td.awal,table.jp-doc-tbl td.akhir,table.jp-doc-tbl td.durasi{text-align:center;white-space:nowrap}'+
-  'table.jp-doc-tbl tr.hi td{background:#f2ecd9;-webkit-print-color-adjust:exact;print-color-adjust:exact}';
+  'table.jp-doc-tbl tr.hi td{background:#f2ecd9;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  /* Tabel ringkasan (poin C): Durasi Pengadaan & Rencana Terkontrak */
+  'table.jp-doc-sum{width:100%;border-collapse:collapse;margin:0;border:1.5px solid #0b6a73}'+
+  'table.jp-doc-sum th,table.jp-doc-sum td{border:1px solid #7d979c;padding:4px 8px;font-size:8.7px;line-height:1.3;vertical-align:middle}'+
+  'table.jp-doc-sum thead th{background:#0E7C86;color:#fff;font-weight:700;text-align:center;text-transform:uppercase;letter-spacing:0;border-color:#5aa8ae;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  'table.jp-doc-sum thead th:first-child{border-left-color:#0E7C86}'+
+  'table.jp-doc-sum thead th:last-child{border-right-color:#0E7C86}'+
+  'table.jp-doc-sum thead tr:last-child th{border-bottom:1.5px solid #0b6a73}'+
+  'table.jp-doc-sum td.lbl{width:38%;font-weight:700;color:#0d2a30;background:#f6fafb;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  'table.jp-doc-sum td.val{text-align:center;font-weight:700;color:#0b3d42;white-space:nowrap}';
 }
 /* Isi dokumen Jadwal (dipakai pratinjau, cetak, & Rekap HPS lewat shell bersama) */
 function jpBuildDocHtml(){
   const st=jpState; const rows=jpCompute();
+  /* Blok Data Pekerjaan — gaya sama seperti dokumen pada menu Harga Perkiraan Sendiri */
+  const fmtNilai=(st.nilai!==''&&st.nilai!=null)?('Rp '+Number(st.nilai).toLocaleString('id-ID')):'-';
+  const infoRow=(k,v)=>'<tr><td class="k">'+k+'</td><td class="s">:</td><td class="v">'+fkEsc(v||'-')+'</td></tr>';
+  /* Ringkasan (poin C) — logika sama persis dengan kartu ringkasan di form:
+     Rencana Terkontrak = Akhir tahapan terakhir; Durasi Pengadaan = selisih Awal
+     tahapan pertama s.d. Akhir tahapan terakhir. */
+  const awalSemua = rows.map(r=>r.awal).filter(Boolean);
+  const akhirSemua = rows.map(r=>r.akhir).filter(Boolean);
+  const mulai   = awalSemua.length  ? new Date(Math.min.apply(null, awalSemua.map(d=>d.getTime())))  : null;
+  const selesai = akhirSemua.length ? new Date(Math.max.apply(null, akhirSemua.map(d=>d.getTime()))) : null;
+  const totDur  = jpDiffDurasi(mulai, selesai);
+  const durasiText = totDur ? jpFmtDurasi(totDur.hari, totDur.jam, totDur.menit) : '0 Jam';
+  const terkontrakText = selesai ? jpFmtTglPanjang(selesai) : '—';
   const body=rows.map((r,i)=>{
     const hasKet=!!(r.ket && r.ket.trim());
     return '<tr'+(hasKet?' class="hi"':'')+'>'+
@@ -9330,8 +9352,23 @@ function jpBuildDocHtml(){
       '<div class="fkl-doc-band"></div>'+
       '<h1 class="fkl-doc-title">JADWAL PELAKSANAAN PEKERJAAN</h1>'+
       '<div class="fkl-doc-titlegap"></div>'+
-      (st.namaPekerjaan? '<div class="jp-doc-nama">'+fkEsc(st.namaPekerjaan)+'</div>' : '')+
+      '<div class="fkl-sec-h"><span class="rn">A</span>Data Pekerjaan</div>'+
+      '<table class="fkl-info"><tbody>'+
+        infoRow('Nama Pekerjaan', st.namaPekerjaan)+
+        infoRow('Lokasi Pekerjaan', st.lokasi)+
+        infoRow('Rencana Anggaran Biaya', fmtNilai)+
+        infoRow('No. Anggaran', st.noAnggaran)+
+        infoRow('Tgl. Anggaran', st.tglAnggaran?pnwDateLong(st.tglAnggaran):'-')+
+        infoRow('Jenis Anggaran', st.jenisAnggaran)+
+        infoRow('Metode Pengadaan', st.metode)+
+      '</tbody></table>'+
+      '<div class="fkl-sec-h"><span class="rn">B</span>Tahapan Pengadaan</div>'+
       '<div class="jp-doc-wrap"><table class="jp-doc-tbl"><thead><tr><th class="no">No</th><th class="nm">Tahapan Pengadaan</th><th class="awal">Awal</th><th class="akhir">Akhir</th><th class="durasi">Durasi</th><th class="ket">Keterangan</th></tr></thead><tbody>'+body+'</tbody></table></div>'+
+      '<div class="fkl-sec-h"><span class="rn">C</span>Durasi Pengadaan &amp; Rencana Terkontrak</div>'+
+      '<div class="jp-doc-wrap"><table class="jp-doc-sum"><thead><tr><th class="lbl">Uraian</th><th class="val">Keterangan</th></tr></thead><tbody>'+
+        '<tr><td class="lbl">Durasi Pengadaan</td><td class="val">'+fkEsc(durasiText)+'</td></tr>'+
+        '<tr><td class="lbl">Rencana Terkontrak</td><td class="val">'+fkEsc(terkontrakText)+'</td></tr>'+
+      '</tbody></table></div>'+
     '</div>';
 }
 function jpStandaloneDocHtml(){
