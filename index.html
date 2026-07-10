@@ -2911,6 +2911,15 @@ table.hps-uraian tr>*:first-child,table.ana-uraian tr>*:first-child,table.rho-ma
 table.hps-uraian tr>*:last-child,table.ana-uraian tr>*:last-child,table.rho-matrix tr>*:last-child,table.ana-res tr>*:last-child{ border-right:none; }
 /* bawah: buang border bawah baris terakhir */
 table.hps-uraian tbody tr:last-child td,table.ana-uraian tbody tr:last-child td,table.rho-matrix tbody tr:last-child td,table.ana-res tbody tr:last-child td{ border-bottom:none; }
+
+/* =================================================================
+   Perjelas GARIS GRID (vertikal + horizontal) khusus tabel
+   Pengisian Referensi (rho-matrix) agar tiap sel tegas & rapi
+   saat diisi — badan tabel garis teal-abu jelas, pemisah kolom
+   header terlihat tipis di atas latar teal.
+   ================================================================= */
+table.rho-matrix td{ border-color:#9bbfc5; }
+table.rho-matrix thead th{ border-color:#3f9ba3; }
 </style>
 </head>
 <body>
@@ -14685,7 +14694,7 @@ function hpsExtraDocCss(){
   'table.hps-doc-tbl thead th.ur{text-align:center}'+
   'table.hps-doc-tbl thead tr.numh td{background:#e7f2f3;color:#0b3d42;font-weight:700;text-align:center;font-style:italic;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   'table.hps-doc-tbl thead th.no{white-space:nowrap}'+
-  'table.hps-doc-tbl td.no{text-align:center;font-weight:700}'+
+  'table.hps-doc-tbl td.no{text-align:center;font-weight:400}'+
   'table.hps-doc-tbl td.ur{text-align:left}'+
   'table.hps-doc-tbl td.st,table.hps-doc-tbl td.vl{text-align:center}'+
   'table.hps-doc-tbl td.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}'+
@@ -15497,7 +15506,7 @@ function anaRenderResult(){
   const cols = infOn ? 7 : 6;
   body.innerHTML='<div class="ana-res-wrap"><table class="ana-res"><thead><tr>'+
       '<th class="c-no">No</th><th class="c-ur">Uraian Pekerjaan</th><th class="c-mtd">Metode Perhitungan</th><th class="c-rok">ROK</th>'+infHead+
-      '<th>Jumlah Harga Barang</th><th>Jumlah Harga Jasa</th>'+
+      '<th>Harga Satuan Barang</th><th>Harga Satuan Jasa</th>'+
     '</tr></thead><tbody>'+(rows||'<tr><td colspan="'+cols+'" style="text-align:center;color:#9aa7ab">Belum ada data</td></tr>')+'</tbody></table></div>';
 }
 
@@ -16161,7 +16170,7 @@ function anaBuildDocHtmlUmum(st){
     '</thead><tbody>'+rowsA+'</tbody></table>';
   const tblHasil=
     '<table class="ana-doc-tbl ana-hasil-tbl"><thead>'+
-      '<tr><th class="no">No.</th><th class="ur">Uraian Pekerjaan</th><th class="st">Sat</th><th class="vl">Vol</th><th class="mtd">Metode</th><th class="rok">ROK</th>'+(infOn?'<th class="inf">Inflasi</th>':'')+'<th class="jh">Jumlah Harga Barang</th><th class="jh">Jumlah Harga Jasa</th></tr>'+
+      '<tr><th class="no">No.</th><th class="ur">Uraian Pekerjaan</th><th class="st">Sat</th><th class="vl">Vol</th><th class="mtd">Metode</th><th class="rok">ROK</th>'+(infOn?'<th class="inf">Inflasi</th>':'')+'<th class="jh">Harga Satuan Barang</th><th class="jh">Harga Satuan Jasa</th></tr>'+
     '</thead><tbody>'+rowsH+'</tbody></table>';
 
   return ''+
@@ -16220,7 +16229,7 @@ function anaExtraDocCss(){
   'table.ana-doc-tbl td.st,table.ana-doc-tbl td.vl,table.ana-doc-tbl td.mtd{text-align:center}'+
   'table.ana-doc-tbl td.mtd{font-size:7.6px;color:#0b3d42;font-weight:700}'+
   'table.ana-doc-tbl td.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;min-width:54px}'+
-  'table.ana-doc-tbl td.num.tot{font-weight:800;color:#0b3d42;background:#f2f7f8;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  'table.ana-doc-tbl td.num.tot{font-weight:800;color:#0b3d42}'+
   'table.ana-doc-tbl td.num.tot2{font-weight:800;color:#0d7a3f;background:#e7f6ec;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   'table.ana-doc-tbl tr.grp td{background:#dcecee;font-weight:800;color:#0b3d42;text-transform:uppercase;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   'table.ana-doc-tbl tr.grp td.gname{text-align:left;letter-spacing:.3px}'+
