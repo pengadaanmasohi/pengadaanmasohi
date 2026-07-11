@@ -20973,6 +20973,120 @@ function spkIndClass(left, hang, first){
   if(first>0) return (left>=1100) ? 'klp2' : (left>=700 ? 'klp1' : 'klp');
   return (left>=700) ? 'kldesc' : 'kl0';
 }
+/* ===== FORMAT WORD APA ADANYA (WYSIWYG) =====
+   Indentasi, jarak antar baris (line spacing), jarak antar paragraf
+   (spacing before/after), jarak nomor->teks (hanging indent), dan perataan
+   dibaca LANGSUNG dari berkas .docx (docDefaults -> rantai gaya basedOn ->
+   definisi penomoran -> pengaturan langsung paragraf, persis urutan Word),
+   lalu dibawa sebagai style inline agar tampilan web = tampilan Word. */
+var SPK_WX_BASE = 425;                                   // dasar klausul 0,75 cm (twips)
+function spkTwCm(tw){ return Math.round((+tw||0)/566.929*100)/100; }
+function spkTwPt(tw){ return Math.round((+tw||0)/20*10)/10; }
+/* Baca <w:pPr> -> {ind:{left,hanging,firstLine}, sp:{before,after,line,lineRule}, jc} */
+function spkReadPPr(pPr){
+  var o={ind:{},sp:{},jc:''};
+  if(!pPr) return o;
+  var ind=pPr.getElementsByTagNameNS(SPK_W_NS,'ind')[0];
+  if(ind){
+    var L=ind.getAttributeNS(SPK_W_NS,'left'); if(L==null||L==='') L=ind.getAttributeNS(SPK_W_NS,'start');
+    var H=ind.getAttributeNS(SPK_W_NS,'hanging'), F=ind.getAttributeNS(SPK_W_NS,'firstLine');
+    if(L!=null&&L!=='') o.ind.left=+L;
+    if(H!=null&&H!==''){ o.ind.hanging=+H; o.ind.firstLine=0; }
+    else if(F!=null&&F!==''){ o.ind.firstLine=+F; o.ind.hanging=0; }
+  }
+  var sp=pPr.getElementsByTagNameNS(SPK_W_NS,'spacing')[0];
+  if(sp){
+    var b=sp.getAttributeNS(SPK_W_NS,'before'), a=sp.getAttributeNS(SPK_W_NS,'after');
+    var l=sp.getAttributeNS(SPK_W_NS,'line'),  lr=sp.getAttributeNS(SPK_W_NS,'lineRule');
+    if(b!=null&&b!=='') o.sp.before=+b;
+    if(a!=null&&a!=='') o.sp.after=+a;
+    if(l!=null&&l!==''){ o.sp.line=+l; o.sp.lineRule=lr||'auto'; }
+  }
+  var jc=pPr.getElementsByTagNameNS(SPK_W_NS,'jc')[0];
+  if(jc) o.jc=jc.getAttributeNS(SPK_W_NS,'val')||'';
+  return o;
+}
+/* docDefaults + seluruh gaya paragraf dari word/styles.xml */
+function spkStylePropMap(stylesXml){
+  var res={def:{ind:{},sp:{after:120,line:276,lineRule:'auto'},jc:'both'},sty:{}};
+  if(!stylesXml) return res;
+  try{
+    var sd=new DOMParser().parseFromString(stylesXml,'application/xml');
+    var dPr=sd.getElementsByTagNameNS(SPK_W_NS,'pPrDefault')[0];
+    if(dPr){
+      var d=spkReadPPr(dPr.getElementsByTagNameNS(SPK_W_NS,'pPr')[0]);
+      res.def={ ind:d.ind,
+        sp:Object.assign({before:0,after:0,line:240,lineRule:'auto'}, d.sp),
+        jc:d.jc||'' };
+    }
+    var st=sd.getElementsByTagNameNS(SPK_W_NS,'style');
+    for(var i=0;i<st.length;i++){
+      if((st[i].getAttributeNS(SPK_W_NS,'type')||'')!=='paragraph') continue;
+      var id=st[i].getAttributeNS(SPK_W_NS,'styleId')||'';
+      var bo=st[i].getElementsByTagNameNS(SPK_W_NS,'basedOn')[0];
+      var pPr=null, kids=st[i].childNodes;
+      for(var k=0;k<kids.length;k++){ if(kids[k].nodeType===1&&kids[k].localName==='pPr'){ pPr=kids[k]; break; } }
+      var o=spkReadPPr(pPr); o.basedOn=bo?(bo.getAttributeNS(SPK_W_NS,'val')||''):'';
+      res.sty[id]=o;
+    }
+  }catch(e){}
+  return res;
+}
+/* Properti efektif sebuah gaya: docDefaults -> rantai basedOn */
+function spkStyleChain(map, sid){
+  var chain=[], seen={}, id=sid;
+  while(id && map.sty[id] && !seen[id]){ seen[id]=1; chain.unshift(map.sty[id]); id=map.sty[id].basedOn; }
+  var eff={ ind:Object.assign({},map.def.ind), sp:Object.assign({},map.def.sp), jc:map.def.jc||'' };
+  for(var i=0;i<chain.length;i++){
+    Object.assign(eff.ind, chain[i].ind);
+    Object.assign(eff.sp,  chain[i].sp);
+    if(chain[i].jc) eff.jc=chain[i].jc;
+  }
+  return eff;
+}
+/* Definisi level penomoran (numId+ilvl) -> objek lvl (fmt, text, ind, ...) */
+function spkNumLvl(numbering, numId, ilvl){
+  var absId=numbering.numToAbs[numId];
+  var levels=(absId!=null)?numbering.abs[absId]:null;
+  return levels ? (levels[String(+ilvl||0)]||levels[+ilvl||0]||null) : null;
+}
+/* Karakter simbol daftar (font Symbol/Wingdings) -> karakter web */
+function spkBulletChar(s){
+  s=String(s||'').replace(/%\d/g,'').trim(); if(!s) return '\u2022';
+  var map={'\uF0B7':'\u2022','\uF0A7':'\u25AA','\uF0A8':'\u25AB','\uF0D8':'\u27A2',
+           '\uF076':'\u2756','\uF0FC':'\u2713','\uF0B4':'\u2717','\uF0E0':'\u2192','\uF0A0':'\u25CF'};
+  var c=s.charAt(0);
+  if(map[c]) return map[c];
+  if(c.charCodeAt(0)>=0xF000) return '\u2022';
+  return s;
+}
+/* Properti efektif -> style inline. Margin kiri dihitung RELATIF terhadap
+   dasar klausul (0,75 cm) karena kontainer .spk-cl sudah menjorok 0,75 cm. */
+function spkParaCss(eff, noInd){
+  var css='';
+  if(!noInd){
+    var left=+eff.ind.left||0, hang=+eff.ind.hanging||0, first=+eff.ind.firstLine||0;
+    css+='margin-left:'+spkTwCm(left-SPK_WX_BASE)+'cm;';
+    if(hang>0) css+='text-indent:-'+spkTwCm(hang)+'cm;';
+    else if(first>0) css+='text-indent:'+spkTwCm(first)+'cm;';
+    else css+='text-indent:0;';
+  }
+  css+='margin-top:'+spkTwPt(eff.sp.before||0)+'pt;';
+  css+='margin-bottom:'+spkTwPt(eff.sp.after||0)+'pt;';
+  var line=+eff.sp.line||240, lr=eff.sp.lineRule||'auto';
+  css+='line-height:'+((lr==='auto') ? (Math.round(line/240*1000)/1000) : (spkTwPt(line)+'pt'))+';';
+  if(eff.jc){
+    var jm={both:'justify',center:'center',right:'right',left:'left',start:'left',end:'right'};
+    if(jm[eff.jc]) css+='text-align:'+jm[eff.jc]+';';
+  }
+  return css;
+}
+/* Kotak nomor: lebarnya = hanging indent Word -> jarak nomor->teks IDENTIK
+   dengan Word; bila nomornya lebih lebar, kotak melebar (teks terdorong). */
+function spkNumBox(txt, hangCm){
+  return '<span class="n" style="display:inline-block;width:auto;min-width:'+hangCm+
+    'cm;text-indent:0;white-space:nowrap;text-align:left">'+txt+'</span>';
+}
 /* Peta styleId -> NAMA gaya (dinormalkan) dari word/styles.xml */
 function spkStyleNameMap(stylesXml){
   var map={};
@@ -20999,7 +21113,7 @@ function spkWpText(p){
       var c=kids[k]; if(c.nodeType!==1) continue;
       var ln=c.localName;
       if(ln==='t') txt += (c.textContent||'');
-      else if(ln==='tab') txt += ' ';
+      else if(ln==='tab') txt += '\t';
       else if(ln==='br') txt += '\n';
     }
     if(!txt) continue;
@@ -21020,7 +21134,7 @@ function spkWTcText(tc){
     if(j>0){ if(html) html+='<br>'; if(plain) plain+=' '; }
     html+=t.html; plain+=t.plain;
   }
-  return { html:html, plain:plain.replace(/\s+/g,' ').trim() };
+  return { html:html.replace(/\t/g,' '), plain:plain.replace(/\s+/g,' ').trim() };
 }
 /* Tabel Word -> HTML klausul. Baris "label | : | nilai" (3 kolom) atau
    "label | nilai" (2 kolom) dijadikan baris spk-kv yang SEJAJAR seperti Word.
@@ -21087,10 +21201,12 @@ function spkParseNumbering(xml){
         var nf=lvls[j].getElementsByTagNameNS(SPK_W_NS,'numFmt')[0];
         var lt=lvls[j].getElementsByTagNameNS(SPK_W_NS,'lvlText')[0];
         var st=lvls[j].getElementsByTagNameNS(SPK_W_NS,'start')[0];
+        var li=spkReadPPr(lvls[j].getElementsByTagNameNS(SPK_W_NS,'pPr')[0]);
         abs[aid][il]={
           fmt:  nf?(nf.getAttributeNS(SPK_W_NS,'val')||'decimal'):'decimal',
           text: lt?(lt.getAttributeNS(SPK_W_NS,'val')||''):'',
-          start:st?(parseInt(st.getAttributeNS(SPK_W_NS,'val'),10)||1):1
+          start:st?(parseInt(st.getAttributeNS(SPK_W_NS,'val'),10)||1):1,
+          ind:  li.ind||{}
         };
       }
     }
@@ -21115,6 +21231,7 @@ function spkNumberer(numbering){
     if(!counters[numId]) counters[numId]=[];
     var c=counters[numId];
     var lv=levels[ilvl]||{fmt:'decimal',text:'%'+(ilvl+1)+'.',start:1};
+    if(lv.fmt==='bullet') return spkBulletChar(lv.text);   // simbol poin (•, -, ▪ ...)
     if(c[ilvl]==null) c[ilvl]=lv.start; else c[ilvl]=c[ilvl]+1;
     for(var d=ilvl+1; d<c.length; d++) c[d]=null;            // reset sub-level lebih dalam
     var txt=lv.text||('%'+(ilvl+1)+'.');
@@ -21133,6 +21250,7 @@ function spkWordXmlToKlausul(xmlText, stylesXml, numberingXml){
   var body=doc.getElementsByTagNameNS(SPK_W_NS,'body')[0];
   if(!body) throw new Error('Struktur dokumen Word tidak dikenali.');
   var nameOf=spkStyleNameMap(stylesXml);
+  var propMap=spkStylePropMap(stylesXml);
   var numbering=spkParseNumbering(numberingXml);
   var nextNum=spkNumberer(numbering);
   /* --- Lintasan 1: kumpulkan blok level-atas BERURUTAN (paragraf & tabel) ---
@@ -21157,7 +21275,7 @@ function spkWordXmlToKlausul(xmlText, stylesXml, numberingXml){
         numId= ni?(ni.getAttributeNS(SPK_W_NS,'val')||''):'';
         ilvl=  il?(il.getAttributeNS(SPK_W_NS,'val')||'0'):'0';
       }
-      blocks.push({t:'p', p:nd, pPr:pPr, key:key, numId:numId, ilvl:ilvl});
+      blocks.push({t:'p', p:nd, pPr:pPr, sid:sid, key:key, numId:numId, ilvl:ilvl});
     }else if(ln==='tbl'){
       blocks.push({t:'tbl', el:nd, key:''});
     }
@@ -21181,39 +21299,70 @@ function spkWordXmlToKlausul(xmlText, stylesXml, numberingXml){
     var numStr='';
     if(b.numId && b.numId!=='0'){ numStr=nextNum(b.numId, b.ilvl); }
     if(!t.plain && !numStr) continue;                       // baris benar-benar kosong -> lewati
-    var cls=SPK_STY2CLS[key];
-    if(!cls){                                               // gaya lain -> baca indentasi paragraf
-      var ind=b.pPr?b.pPr.getElementsByTagNameNS(SPK_W_NS,'ind')[0]:null;
-      cls=spkIndClass(
-        ind?ind.getAttributeNS(SPK_W_NS,'left'):0,
-        ind?ind.getAttributeNS(SPK_W_NS,'hanging'):0,
-        ind?ind.getAttributeNS(SPK_W_NS,'firstLine'):0);
-    }
-    var out=t.html;
-    if(numStr){
-      /* paragraf bernomor otomatis: pastikan kelasnya menggantung (kl1/kl2)
-         sesuai kedalaman level, lalu sisipkan nomornya sebagai teks. */
-      if(cls!=='kl1' && cls!=='kl2') cls=((+b.ilvl)>=1)?'kl2':'kl1';
-      out=spkXmlEsc(numStr)+' '+out;
-    }else{
-      if(cls==='kl0'||cls==='kldesc'){                      // deteksi nomor yang diketik manual
-        if(/^(?:\d+\.)+[\s\u00a0]/.test(t.plain)) cls='kl1';
-        else if(/^[A-Za-z][.)][\s\u00a0]/.test(t.plain)) cls='kl2';
+    /* === properti EFEKTIF paragraf, persis urutan Word:
+       docDefaults -> rantai gaya (basedOn) -> definisi penomoran -> pPr langsung === */
+    var eff=spkStyleChain(propMap, b.sid);
+    if(b.numId && b.numId!=='0'){
+      var lvlDef=spkNumLvl(numbering, b.numId, b.ilvl);
+      if(lvlDef && lvlDef.ind){
+        if(lvlDef.ind.left!=null) eff.ind.left=lvlDef.ind.left;
+        if(lvlDef.ind.hanging!=null){ eff.ind.hanging=lvlDef.ind.hanging; if(lvlDef.ind.hanging>0) eff.ind.firstLine=0; }
+        if(lvlDef.ind.firstLine!=null && lvlDef.ind.firstLine>0){ eff.ind.firstLine=lvlDef.ind.firstLine; eff.ind.hanging=0; }
       }
-      /* Huruf masuk (spasi di awal) -> indentasi baris pertama SERAGAM.
-         Paragraf narasi (Klausul Deskripsi) diratakan ke DASAR klausul (0,75 cm)
-         supaya tidak menjorok jauh & sejajar dengan paragraf lain:
-           - ada huruf masuk  -> "klp"  (rata dasar + baris pertama menjorok 0,75 cm)
-           - tanpa huruf masuk -> "kl0" (rata dasar, tanpa menjorok)
-         Spasi awal dibuang; jaraknya diatur oleh kelas (seragam), bukan jumlah spasi. */
-      var lead=out.match(/^([ \u00a0]+)/);
-      if(cls==='kldesc'){ cls = lead ? 'klp' : 'kl0'; }
-      else if(cls==='kl0' && lead){ cls='klp'; }
-      if(lead){ out=out.slice(lead[1].length); }
     }
+    var dir=spkReadPPr(b.pPr);
+    Object.assign(eff.ind, dir.ind); Object.assign(eff.sp, dir.sp); if(dir.jc) eff.jc=dir.jc;
+    var cls=SPK_STY2CLS[key];
+    if(!cls){ cls=spkIndClass(eff.ind.left, eff.ind.hanging, eff.ind.firstLine); }
+    var out=t.html;
+    var hangCm=spkTwCm(eff.ind.hanging||0);
+    var wrapped=false, plainNumFallback=false;
+    if(numStr){
+      /* paragraf bernomor otomatis: nomor ditaruh dalam kotak selebar hanging
+         indent Word -> jarak nomor->teks & baris lanjutan SAMA seperti Word. */
+      if(cls!=='kl1' && cls!=='kl2') cls=((+b.ilvl)>=1)?'kl2':'kl1';
+      if(hangCm>=0.2){
+        out=spkNumBox(spkXmlEsc(numStr), hangCm)+out.replace(/^[\t ]+/,'');
+        wrapped=true;
+      }else{
+        out=spkXmlEsc(numStr)+' '+out;
+        plainNumFallback=true;
+      }
+    }else{
+      /* nomor yang DIKETIK manual (mis. "2.1." lalu TAB/spasi) di paragraf
+         yang punya hanging indent -> perlakukan sama seperti nomor otomatis */
+      var mm=/^((?:<(?:b|i|u)>)*)((?:\d+\.)+|\d+\)|[A-Za-z][.)])[\t\u00a0 ]+/.exec(out);
+      if(mm && hangCm>=0.2 && !/^(CV|CD|MM|DVD|DIV|MMC|LC|DC|ID|IL|IM)[.)]$/i.test(mm[2])){
+        if(cls!=='kl1' && cls!=='kl2') cls=((+eff.ind.left||0)>=1100)?'kl2':'kl1';
+        out=mm[1]+spkNumBox(mm[2], hangCm)+out.slice(mm[0].length);
+        wrapped=true;
+      }else{
+        if(cls==='kl0'||cls==='kldesc'){                    // deteksi nomor yang diketik manual
+          if(/^(?:\d+\.)+[\s\u00a0]/.test(t.plain)) cls='kl1';
+          else if(/^[A-Za-z][.)][\s\u00a0]/.test(t.plain)) cls='kl2';
+          if(cls==='kl1'||cls==='kl2') plainNumFallback=true;
+        }
+        /* Huruf masuk (spasi di awal) tanpa first-line indent dari Word ->
+           jadikan indentasi baris pertama 0,75 cm yang seragam. */
+        var lead=out.match(/^([ \u00a0]+)/);
+        if(lead && !(eff.ind.hanging>0)){
+          if(!(eff.ind.firstLine>0)) eff.ind.firstLine=SPK_WX_BASE;
+          out=out.slice(lead[1].length);
+          if(cls==='kldesc'||cls==='kl0') cls='klp';
+        }
+      }
+    }
+    out=out.replace(/\t/g,' ');
     /* rapikan spasi bekas TAB sesudah nomor menjadi satu spasi */
     out=out.replace(/^(\s*(?:(?:\d+\.)+|\d+\)|[A-Za-z][.)]))[ \u00a0]{2,}/, '$1 ');
-    html += '<p class="'+cls+'">'+out+'</p>';
+    /* Style inline dari Word. Bila nomor dibiarkan polos (fallback), indentasi
+       diserahkan ke spkNumberFix agar kotak nomornya tetap rapi. */
+    var css=spkParaCss(eff, plainNumFallback);
+    if(plainNumFallback){
+      html += '<p class="'+cls+'" style="'+css+'">'+out+'</p>';
+    }else{
+      html += '<p class="'+cls+' spk-wx'+(wrapped?' spk-sl':'')+'" style="'+css+'">'+out+'</p>';
+    }
   }
   return { judul:judul, html:html };
 }
@@ -21440,7 +21589,7 @@ function spkKlausulView(id){
         '<button class="btn btn-ghost btn-sm" onclick="spkKlausulViewClose()">Tutup</button></div></div>'+
       '<div class="spk-ov-body">'+
         '<div class="spk-we-pagearea"><div class="spk-we-page">'+
-          '<div class="spk-cl">'+(k.judul?'<p class="spk-cl-h" style="font-weight:700;text-transform:uppercase;margin:0 0 8pt">'+fkEsc(k.judul)+'</p>':'')+inner+'</div>'+
+          '<div class="spk-cl">'+(k.judul?'<p class="spk-cl-h" style="font-weight:700;text-transform:uppercase;margin:0 0 3pt">'+fkEsc(k.judul)+'</p>':'')+inner+'</div>'+
         '</div></div>'+
       '</div>'+
     '</div>';
