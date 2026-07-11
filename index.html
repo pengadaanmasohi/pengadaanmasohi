@@ -4336,6 +4336,100 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
   </div><!-- /.app-main -->
 </div><!-- /.app-shell -->
 
+<!-- ====== EDITOR NARASI — tampilan mirip Word (Latar Belakang/Permasalahan/Maksud & Tujuan) ====== -->
+<div class="spked-overlay" id="spked-overlay">
+  <div class="spked-box">
+    <div class="spked-title"><span id="spked-title-tx">Editor</span>
+      <button type="button" class="x" onclick="spkedClose()" title="Tutup">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="spked-toolbar">
+      <select id="spked-font" title="Jenis huruf" onchange="spkedFont(this.value)">
+        <option>Arial</option><option>Times New Roman</option><option>Calibri</option>
+        <option>Verdana</option><option>Georgia</option><option>Tahoma</option>
+      </select>
+      <select id="spked-size" title="Ukuran huruf" onchange="spkedSize(this.value)">
+        <option>8</option><option>9</option><option>10</option><option>10.5</option>
+        <option selected>11</option><option>12</option><option>14</option><option>16</option>
+        <option>18</option><option>20</option><option>24</option><option>28</option><option>36</option>
+      </select>
+      <button type="button" class="spked-btn" title="Perbesar huruf" onclick="spkedGrow(1)">A<svg viewBox="0 0 24 24" style="width:11px;height:11px;margin-left:1px" fill="none" stroke="currentColor" stroke-width="3"><path d="m5 15 7-7 7 7"/></svg></button>
+      <button type="button" class="spked-btn" title="Perkecil huruf" onclick="spkedGrow(-1)">A<svg viewBox="0 0 24 24" style="width:11px;height:11px;margin-left:1px" fill="none" stroke="currentColor" stroke-width="3"><path d="m5 9 7 7 7-7"/></svg></button>
+      <button type="button" class="spked-btn" title="Hapus format" onclick="spkedClearFmt()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20H8m2.5-4L5 10.5 13.5 2 21 9.5 12.5 18"/><path d="m9 12 5 5"/></svg>
+      </button>
+      <span class="spked-sep"></span>
+      <button type="button" class="spked-btn" style="font-family:Georgia,serif" title="Tebal (Bold)" onclick="spkedExec('bold')"><b>B</b></button>
+      <button type="button" class="spked-btn" style="font-style:italic;font-family:Georgia,serif" title="Miring (Italic)" onclick="spkedExec('italic')"><i>I</i></button>
+      <button type="button" class="spked-btn" style="text-decoration:underline" title="Garis bawah (Underline)" onclick="spkedExec('underline')">U</button>
+      <button type="button" class="spked-btn" style="text-decoration:line-through" title="Coret (Strikethrough)" onclick="spkedExec('strikeThrough')">S</button>
+      <button type="button" class="spked-btn" title="Subscript" onclick="spkedExec('subscript')">x<sub>2</sub></button>
+      <button type="button" class="spked-btn" title="Superscript" onclick="spkedExec('superscript')">x<sup>2</sup></button>
+      <span class="spked-sep"></span>
+      <button type="button" class="spked-btn" title="Warna teks">A<span class="spked-clr-bar" id="spked-fore-bar" style="background:#e03131"></span>
+        <input type="color" value="#e03131" onchange="spkedColor('fore',this.value);document.getElementById('spked-fore-bar').style.background=this.value">
+      </button>
+      <button type="button" class="spked-btn" title="Warna sorot (highlight)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11 6 6M3 21l3.6-1L18 9.5 14.5 6 3.6 16.5 3 21Z"/></svg>
+        <span class="spked-clr-bar" id="spked-back-bar" style="background:#ffe066"></span>
+        <input type="color" value="#ffe066" onchange="spkedColor('back',this.value);document.getElementById('spked-back-bar').style.background=this.value">
+      </button>
+      <button type="button" class="spked-btn" title="Hapus sorot" onclick="spkedColor('back','transparent')">&times;</button>
+      <span class="spked-sep"></span>
+      <button type="button" class="spked-btn" title="Daftar bullet" onclick="spkedList('ul')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="4.5" cy="6" r="1.3" fill="currentColor" stroke="none"/><line x1="9" y1="6" x2="20" y2="6"/><circle cx="4.5" cy="12" r="1.3" fill="currentColor" stroke="none"/><line x1="9" y1="12" x2="20" y2="12"/><circle cx="4.5" cy="18" r="1.3" fill="currentColor" stroke="none"/><line x1="9" y1="18" x2="20" y2="18"/></svg>
+      </button>
+      <button type="button" class="spked-btn" title="Daftar bernomor" onclick="spkedList('ol')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><text x="1.5" y="8.2" font-size="7.5" fill="currentColor" stroke="none" font-weight="700">1.</text><line x1="9" y1="6" x2="20" y2="6"/><text x="1.5" y="14.2" font-size="7.5" fill="currentColor" stroke="none" font-weight="700">2.</text><line x1="9" y1="12" x2="20" y2="12"/><text x="1.5" y="20.2" font-size="7.5" fill="currentColor" stroke="none" font-weight="700">3.</text><line x1="9" y1="18" x2="20" y2="18"/></svg>
+      </button>
+      <button type="button" class="spked-btn" title="Daftar bertingkat (multilevel)" onclick="spkedList('ol');spkedExec('indent')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><text x="1" y="8.2" font-size="7" fill="currentColor" stroke="none" font-weight="700">1.</text><line x1="8" y1="6" x2="20" y2="6"/><text x="5" y="14.2" font-size="7" fill="currentColor" stroke="none" font-weight="700">a.</text><line x1="11" y1="12" x2="20" y2="12"/><text x="1" y="20.2" font-size="7" fill="currentColor" stroke="none" font-weight="700">2.</text><line x1="8" y1="18" x2="20" y2="18"/></svg>
+      </button>
+      <button type="button" class="spked-btn" title="Kurangi indentasi" onclick="spkedIndent('out')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10 8-4 4 4 4"/><line x1="14" y1="6" x2="21" y2="6"/><line x1="14" y1="12" x2="21" y2="12"/><line x1="14" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <button type="button" class="spked-btn" title="Tambah indentasi" onclick="spkedIndent('in')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 8 4 4-4 4"/><line x1="13" y1="6" x2="21" y2="6"/><line x1="13" y1="12" x2="21" y2="12"/><line x1="13" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <button type="button" class="spked-btn" title="Urutkan A→Z" onclick="spkedSort()">A→Z</button>
+      <button type="button" class="spked-btn" title="Tampilkan tanda paragraf" onclick="spkedMarks()">&para;</button>
+      <span class="spked-sep"></span>
+      <button type="button" class="spked-btn" title="Rata kiri" onclick="spkedAlign('Left')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="18" y2="18"/></svg>
+      </button>
+      <button type="button" class="spked-btn" title="Rata tengah" onclick="spkedAlign('Center')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="7" y1="12" x2="17" y2="12"/><line x1="5" y1="18" x2="19" y2="18"/></svg>
+      </button>
+      <button type="button" class="spked-btn" title="Rata kanan" onclick="spkedAlign('Right')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="10" y1="12" x2="20" y2="12"/><line x1="6" y1="18" x2="20" y2="18"/></svg>
+      </button>
+      <button type="button" class="spked-btn" title="Rata kiri-kanan (justify)" onclick="spkedAlign('Full')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="16" y2="18"/></svg>
+      </button>
+      <select class="spked-lh" title="Spasi baris" onchange="spkedLineHeight(this.value)">
+        <option value="1">Spasi 1.0</option><option value="1.15" selected>Spasi 1.15</option>
+        <option value="1.5">Spasi 1.5</option><option value="2">Spasi 2.0</option>
+      </select>
+      <button type="button" class="spked-btn" title="Warna isi (shading)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 11.5c0 3.6-3 6.5-7 6.5s-7-2.9-7-6.5C5 7 9 3 12 2c0 3 2 4.5 4 6.5 1.2 1.2 3 2 3 3Z"/></svg>
+        <span class="spked-clr-bar" id="spked-fill-bar" style="background:#ffffff"></span>
+        <input type="color" value="#ffffff" onchange="spkedFill(this.value);document.getElementById('spked-fill-bar').style.background=this.value">
+      </button>
+      <select class="spked-border" title="Bingkai (border)" onchange="spkedBorder(this.value)">
+        <option value="none">Tanpa bingkai</option><option value="all">Bingkai penuh</option><option value="bottom">Garis bawah</option>
+      </select>
+    </div>
+    <div class="spked-canvas">
+      <div class="spked-page" id="spked-page" contenteditable="true" spellcheck="false"></div>
+    </div>
+    <div class="spked-foot">
+      <button type="button" class="btn btn-ghost" onclick="spkedClose()">Batal</button>
+      <button type="button" class="btn btn-primary" onclick="spkedSave()">Simpan</button>
+    </div>
+  </div>
+</div>
+
 <!-- ====== CONFIRM MODAL ====== -->
 <div class="overlay" id="confirm-overlay">
   <div class="modal">
@@ -17607,6 +17701,44 @@ document.getElementById('pn-preview-overlay').addEventListener('click',e=>{ if(e
 .spk-narasi-prev i{font-style:italic}
 .spk-narasi-prev b{font-weight:700}
 .spk-narasi-empty{color:#9AA7B2;font-style:italic;font-family:inherit;font-size:12px}
+.spk-narasi-prev ul,.spk-narasi-prev ol{margin:0 0 9px 1.4em;padding:0}
+.spk-narasi-prev li{margin:0 0 4px;text-align:justify}
+.spk-narasi-prev blockquote{margin:0 0 9px 1.4em;padding:0;border:none}
+.spk-narasi-prev u{text-decoration:underline}
+.spk-narasi-btn{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:10px;border:1.5px solid #0E7C86;background:linear-gradient(135deg,#0E7C86,#0b5e66);color:#fff;font-size:12.5px;font-weight:700;letter-spacing:.2px;cursor:pointer;transition:.15s}
+.spk-narasi-btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.spk-narasi-btn:active{transform:translateY(0)}
+.spk-narasi-btn svg{width:15px;height:15px;flex:0 0 auto}
+/* ====== Editor Narasi — tampilan mirip Word (Latar Belakang/Permasalahan/Maksud & Tujuan) ====== */
+.spked-overlay{position:fixed;inset:0;z-index:400;background:rgba(7,26,30,.62);display:none;align-items:flex-start;justify-content:center}
+.spked-overlay.show{display:flex}
+.spked-box{width:100%;height:100vh;background:#3c4045;display:flex;flex-direction:column}
+.spked-title{color:#fff;font-size:13.5px;font-weight:800;padding:0 16px;height:40px;line-height:40px;background:#1c1e20;flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.spked-title .x{width:26px;height:26px;border-radius:7px;border:none;background:transparent;color:#c7ccd0;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto}
+.spked-title .x:hover{background:#3c4045;color:#fff}
+.spked-title .x svg{width:16px;height:16px}
+.spked-toolbar{background:#292b2e;color:#e4e6e8;padding:6px 8px;display:flex;flex-wrap:wrap;align-items:center;gap:3px;border-bottom:1px solid #1c1e20;flex:0 0 auto}
+.spked-toolbar select{background:#3c4045;color:#e4e6e8;border:1px solid #55585c;border-radius:5px;padding:0 6px;font-size:12.5px;height:30px;cursor:pointer}
+.spked-toolbar select#spked-font{width:132px}
+.spked-toolbar select#spked-size{width:54px}
+.spked-toolbar select.spked-lh,.spked-toolbar select.spked-border{width:100px}
+.spked-btn{min-width:30px;height:30px;border:none;border-radius:5px;background:transparent;color:#e4e6e8;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;font-size:13px;font-weight:700;padding:0 6px;position:relative}
+.spked-btn:hover{background:#4a4e52}
+.spked-btn svg{width:17px;height:17px}
+.spked-sep{width:1px;align-self:stretch;margin:3px 5px;background:#55585c;flex:0 0 auto}
+.spked-btn input[type=color]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;border:none;padding:0}
+.spked-clr-bar{position:absolute;left:6px;right:6px;bottom:4px;height:3px;border-radius:1px;pointer-events:none}
+.spked-canvas{flex:1;overflow:auto;padding:26px 0 70px;display:flex;justify-content:center;background:#3c4045}
+.spked-page{width:210mm;max-width:94vw;min-height:297mm;background:#fff;padding:2.54cm;box-shadow:0 8px 30px rgba(0,0,0,.4);box-sizing:border-box;outline:none;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.15;color:#000}
+.spked-page p{margin:0 0 6pt;text-align:justify;line-height:1.15}
+.spked-page ul,.spked-page ol{margin:0 0 6pt;padding-left:1.5em}
+.spked-page li{margin:0 0 3pt;text-align:justify}
+.spked-page blockquote{margin:0 0 6pt;padding-left:.75cm;border:none}
+.spked-page u{text-decoration:underline}
+.spked-page.spked-marks p::after{content:'\00b6';color:#9fb8c4;margin-left:3px;font-size:.85em}
+.spked-foot{flex:0 0 auto;background:#292b2e;padding:10px 16px;display:flex;justify-content:flex-end;gap:10px;border-top:1px solid #1c1e20}
+.spked-foot .btn{padding:9px 22px;border-radius:9px;font-size:13px;font-weight:700}
+@media(max-width:760px){.spked-page{width:100%;padding:16px}.spked-toolbar select#spked-font{width:96px}}
 .spk-kl-pick{display:flex;align-items:center;gap:10px;padding:9px 11px;border:1.5px solid #DfE4E9;border-radius:10px;cursor:pointer;background:#fff;transition:.15s}
 .spk-kl-pick:hover{border-color:#0E7C86}
 .spk-kl-pick.on{border-color:#0E7C86;background:#f0f8f9}
@@ -17778,9 +17910,13 @@ function spkBuildCtx(data){
   ctx.hari_ttd = spkDayName(d.tanggal_kontrak);
   ctx.tgl_kontrak_num = spkDateNum(d.tanggal_kontrak);
   ctx.tgl_kontrak_terbilang = spkTglTerbilang(d.tanggal_kontrak);
-  // Narasi Uraian Pekerjaan: resolusikan placeholder di dalamnya lalu format rapi
+  // Narasi Uraian Pekerjaan: resolusikan placeholder di dalamnya lalu format rapi.
+  // Bila isi sudah berupa HTML hasil Editor Narasi (kotak dialog mirip Word), pakai
+  // langsung apa adanya (sudah dirapikan manual); bila masih teks polos (data lama),
+  // tetap dirapikan otomatis seperti sebelumnya.
   ['latar_belakang','permasalahan','maksud_tujuan'].forEach(function(k){
-    ctx[k]=spkFormatNarasi(spkMerge(d[k]||'', ctx));
+    var raw=d[k]||'';
+    ctx[k]= spkIsHtml(raw) ? spkMerge(raw, ctx) : spkFormatNarasi(spkMerge(raw, ctx));
   });
   return ctx;
 }
@@ -17882,9 +18018,12 @@ function spkFieldInput(f){
     return '<div class="field"'+span+'><label>'+fkEsc(f.l)+'</label><textarea rows="3" oninput="spkSet(\''+f.k+'\',this.value)">'+fkEsc(v||'')+'</textarea></div>';
   }
   if(f.t==='narasi'){
-    return '<div class="field"'+span+'><label>'+fkEsc(f.l)+' <span class="spk-narasi-hint">— tempel (paste) teks; kerapian, indentasi &amp; penomoran a./b./1./2. diatur otomatis</span></label>'+
-      '<textarea class="spk-narasi-input" rows="6" oninput="spkNarasiInput(this,\''+f.k+'\')" onpaste="spkNarasiPaste(this,\''+f.k+'\')" placeholder="Tempel isi '+fkEsc(f.l)+' di sini... (satu paragraf per baris, atau baris berawalan a. / b. / 1. / 2. untuk daftar)">'+fkEsc(v||'')+'</textarea>'+
-      '<div class="spk-narasi-prevwrap"><div class="spk-narasi-prevlabel">Pratinjau kerapian (mengikuti dokumen)</div><div class="spk-narasi-prev" id="spk-prev-'+f.k+'">'+spkNarasiPreviewHtml(v||'')+'</div></div>'+
+    return '<div class="field"'+span+'><label>'+fkEsc(f.l)+' <span class="spk-narasi-hint">— buka editor untuk merapikan tulisan (tampilan seperti Word)</span></label>'+
+      '<button type="button" class="spk-narasi-btn" onclick="spkedOpen(\''+f.k+'\')">'+
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>'+
+        'Buka Editor — '+fkEsc(f.l)+
+      '</button>'+
+      '<div class="spk-narasi-prevwrap"><div class="spk-narasi-prevlabel">Pratinjau (mengikuti dokumen)</div><div class="spk-narasi-prev" id="spk-prev-'+f.k+'">'+spkNarasiPreviewHtml(v||'')+'</div></div>'+
     '</div>';
   }
   if(f.t==='date'){
@@ -18168,6 +18307,11 @@ function spkDocCss(){
   /* Isi klausul menjorok sejajar dengan TEKS judul (0,75 cm dari margin) */
   '.spk-clause .spk-cl{padding-left:0.75cm}'+
   '.spk-cl p{margin:0 0 6pt;text-align:justify;line-height:1.15}'+
+  /* Daftar (bullet/nomor) & indentasi hasil Editor Narasi (kotak dialog mirip Word) */
+  '.spk-cl ul,.spk-cl ol{margin:0 0 6pt;padding-left:1.5em}'+
+  '.spk-cl li{margin:0 0 3pt;text-align:justify;line-height:1.15}'+
+  '.spk-cl blockquote{margin:0 0 6pt;padding-left:0.75cm;border:none}'+
+  '.spk-cl u{text-decoration:underline}'+
   /* kl0 = paragraf biasa (sejajar teks judul); kldesc = deskripsi menjorok */
   '.spk-cl p.kl0{margin-left:0;text-indent:0}'+
   '.spk-cl p.kldesc{margin-left:0.75cm}'+
@@ -18362,11 +18506,14 @@ function spkCleanPasteText(raw){
   while(paras.length && paras[paras.length-1]==='') paras.pop();
   return paras.join('\n');
 }
+/* Deteksi apakah isi field narasi sudah berupa HTML hasil Editor Narasi
+   (kotak dialog mirip Word), berbeda dari teks polos (data lama / belum diedit). */
+function spkIsHtml(s){ return /<\/?[a-z][\s\S]*>/i.test(String(s||'')); }
 function spkNarasiPreviewHtml(raw){
   var ctx={};
   try{ ctx=spkBuildCtx((typeof spkState!=='undefined'&&spkState&&spkState.data)||{}); }catch(e){}
-  var html=spkNumberFix(spkFormatNarasi(spkMerge(raw||'', ctx)));
-  return html || '<div class="spk-narasi-empty">Belum ada teks. Tempel di kolom atas &mdash; kerapian akan tampil di sini.</div>';
+  var html = spkIsHtml(raw) ? spkNumberFix(spkMerge(raw||'', ctx)) : spkNumberFix(spkFormatNarasi(spkMerge(raw||'', ctx)));
+  return html || '<div class="spk-narasi-empty">Belum ada teks. Klik &quot;Buka Editor&quot; untuk menulis.</div>';
 }
 function spkNarasiRefresh(k){
   var el=document.getElementById('spk-prev-'+k);
@@ -18376,6 +18523,109 @@ function spkNarasiInput(el,k){ spkSet(k, el.value); spkNarasiRefresh(k); }
 function spkNarasiPaste(el,k){
   setTimeout(function(){ el.value=spkCleanPasteText(el.value); spkSet(k, el.value); spkNarasiRefresh(k); },0);
 }
+
+/* ================= EDITOR NARASI — kotak dialog mirip Word =================
+   Dipakai untuk merapikan Latar Belakang / Permasalahan / Maksud & Tujuan
+   secara manual (bold, italic, list, perataan, warna, dll) sebagai pengganti
+   textarea + perapian otomatis. Isi disimpan sebagai HTML langsung pada field
+   terkait; spkBuildCtx & spkNarasiPreviewHtml mendeteksi ini via spkIsHtml(). */
+let spkedKey=null;
+function spkedOpen(k){
+  if(!spkState) return;
+  spkedKey=k;
+  const f=SPK_FIELDS_FLAT.find(x=>x.k===k);
+  document.getElementById('spked-title-tx').textContent='Editor — '+(f?f.l:k);
+  const raw=spkState.data[k]||'';
+  const html= spkIsHtml(raw) ? raw : spkNumberFix(spkFormatNarasi(raw));
+  const page=document.getElementById('spked-page');
+  page.innerHTML = html || '<p><br></p>';
+  document.getElementById('spked-overlay').classList.add('show');
+  try{ document.execCommand('defaultParagraphSeparator', false, 'p'); }catch(e){}
+  try{ document.execCommand('styleWithCSS', false, true); }catch(e){}
+  page.focus();
+}
+function spkedClose(){
+  document.getElementById('spked-overlay').classList.remove('show');
+  spkedKey=null;
+}
+function spkedSave(){
+  if(!spkedKey) return;
+  const page=document.getElementById('spked-page');
+  spkSet(spkedKey, page.innerHTML);
+  spkNarasiRefresh(spkedKey);
+  spkedClose();
+}
+function spkedExec(cmd, val){
+  const page=document.getElementById('spked-page'); page.focus();
+  try{ document.execCommand(cmd, false, val==null?null:val); }catch(e){}
+}
+function spkedFont(v){ spkedExec('fontName', v); }
+function spkedSize(v){
+  spkedExec('fontSize','7');
+  const page=document.getElementById('spked-page');
+  page.querySelectorAll('font[size="7"]').forEach(function(f){
+    f.removeAttribute('size'); f.style.fontSize=v+'pt';
+  });
+}
+function spkedGrow(delta){
+  const page=document.getElementById('spked-page'); page.focus();
+  const sel=window.getSelection();
+  let cur=11;
+  if(sel && sel.anchorNode){
+    let el = sel.anchorNode.nodeType===3 ? sel.anchorNode.parentElement : sel.anchorNode;
+    if(el && el.nodeType===1){
+      const cs=getComputedStyle(el);
+      const px=parseFloat(cs.fontSize)||14.67;
+      cur=Math.round(px/96*72*2)/2;
+    }
+  }
+  const next=Math.max(6, cur+delta);
+  spkedSize(next);
+  const sizeSel=document.getElementById('spked-size');
+  if(sizeSel){ let has=false; for(const o of sizeSel.options){ if(+o.value===next) has=true; } if(has) sizeSel.value=String(next); }
+}
+function spkedClearFmt(){
+  spkedExec('removeFormat');
+  const page=document.getElementById('spked-page');
+  page.querySelectorAll('font').forEach(function(f){ const t=document.createTextNode(f.textContent); f.replaceWith(t); });
+}
+function spkedColor(type, v){
+  spkedExec(type==='fore' ? 'foreColor' : 'hiliteColor', v==='transparent' ? 'inherit' : v);
+}
+function spkedList(type){ spkedExec(type==='ol' ? 'insertOrderedList' : 'insertUnorderedList'); }
+function spkedIndent(dir){ spkedExec(dir==='in' ? 'indent' : 'outdent'); }
+function spkedAlign(a){ spkedExec('justify'+a); }
+function spkedBlockOfSelection(){
+  const page=document.getElementById('spked-page');
+  const sel=window.getSelection();
+  if(!sel || !sel.rangeCount) return null;
+  let node=sel.getRangeAt(0).commonAncestorContainer;
+  if(node.nodeType===3) node=node.parentElement;
+  let block=node;
+  while(block && block!==page && !/^(P|LI|DIV|H[1-6])$/.test(block.tagName||'')) block=block.parentElement;
+  return (block && block!==page) ? block : null;
+}
+function spkedLineHeight(v){ const b=spkedBlockOfSelection(); if(b) b.style.lineHeight=v; }
+function spkedFill(v){ const b=spkedBlockOfSelection(); if(b) b.style.background=v; }
+function spkedBorder(v){
+  const b=spkedBlockOfSelection(); if(!b) return;
+  if(v==='none'){ b.style.border=''; b.style.borderBottom=''; }
+  else if(v==='all'){ b.style.border='1px solid #000'; }
+  else if(v==='bottom'){ b.style.border=''; b.style.borderBottom='1px solid #000'; }
+}
+function spkedSort(){
+  const page=document.getElementById('spked-page');
+  const sel=window.getSelection();
+  let node = sel && sel.rangeCount ? sel.getRangeAt(0).commonAncestorContainer : null;
+  if(node && node.nodeType===3) node=node.parentElement;
+  const list = node && node.closest ? node.closest('ul,ol') : null;
+  if(!list || !page.contains(list)){ alert('Pilih teks di dalam daftar (bullet/nomor) untuk mengurutkan A-Z.'); return; }
+  const items=Array.prototype.slice.call(list.children);
+  items.sort(function(a,b){ return a.textContent.trim().localeCompare(b.textContent.trim(),'id'); });
+  items.forEach(function(li){ list.appendChild(li); });
+}
+function spkedMarks(){ document.getElementById('spked-page').classList.toggle('spked-marks'); }
+
 function spkDocHtml(data, klausul){
   const ctx=spkBuildCtx(data||{});
   const esc=fkEsc;
