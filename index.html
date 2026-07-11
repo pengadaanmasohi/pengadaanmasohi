@@ -18167,6 +18167,9 @@ function spkDocCss(){
      baris sambungan sejajar teks di atasnya (mengikuti penggaris Word) */
   '.spk-cl p.spk-dlist{margin:0 0 4pt;padding-left:0.7cm;text-indent:-0.7cm;text-align:justify;line-height:1.15}'+
   '.spk-cl p.spk-dlist .n{display:inline-block;width:0.7cm;text-indent:0}'+
+  /* Nomor/kode referensi panjang di daftar "Berdasarkan" tetap utuh (tak diputus
+     di "/" atau "-"), agar justify tidak menimbulkan celah spasi lebar. */
+  '.spk-cl p.spk-dlist .nbrk{white-space:nowrap}'+
   /* Blok tanda tangan akhir */
   '.spk-sign{margin-top:30px;width:100%;border-collapse:collapse}'+
   '.spk-sign td{width:50%;text-align:center;vertical-align:top;font-size:11pt;padding:4px}'+
@@ -18201,7 +18204,7 @@ function spkDocCss(){
    memakai lebar kolom otomatis (min 0,75 cm) supaya "11.1.1." tetap mendapat
    jarak cukup tanpa menabrak teks. */
 function spkNumberFix(html){
-  return String(html||'').replace(
+  html = String(html||'').replace(
     /<p class="(kl1|kl2)">((?:[0-9]+\.)+|[A-Za-z]\.)(&nbsp;|\s)/g,
     function(m, cls, tok, sp){
       const isSingleNum = /^[0-9]+\.$/.test(tok);          // "1." "10."
@@ -18217,6 +18220,37 @@ function spkNumberFix(html){
       return '<p class="'+pcls+'"><span class="'+cls2+'">'+tok+'</span>'+sp;
     }
   );
+  /* Pada daftar "Berdasarkan" (spk-dlist) yang rata kanan-kiri (justify), nomor
+     referensi panjang seperti "0019.BAPP.PL/DAN.01.03/F17060000/2026" atau
+     "EPROC-4230-20260624-4230-00003" jangan sampai terpotong di tengah (browser
+     memutus pada "/" atau "-"), karena akan menimbulkan celah spasi lebar. Setiap
+     token panjang seperti itu dibungkus <span class="nbrk"> agar tetap utuh —
+     bila tak muat, seluruh nomor turun ke baris berikut sebagai satu kesatuan. */
+  html = spkNoBreakRefNumbers(html);
+  return html;
+}
+/* Bungkus token "kode/nomor" (mengandung "/" atau rangkaian huruf-angka dengan
+   "-"/"." menyambung) di dalam paragraf spk-dlist dengan <span class="nbrk">. */
+function spkNoBreakRefNumbers(html){
+  return String(html||'').replace(/<p class="spk-dlist">[\s\S]*?<\/p>/g, function(p){
+    // Pisahkan tag <span class="n">..</span> di depan agar tidak ikut diproses.
+    return p.replace(/(<span class="n">[\s\S]*?<\/span>)?([\s\S]*?)(<\/p>)/,
+      function(_m, numSpan, body, end){
+        const protectedBody = String(body).replace(
+          /(^|[\s>(])([^\s<>]*(?:\/[^\s<>]+)+[^\s<>]*|[A-Za-z0-9]+(?:[.\-][A-Za-z0-9]+){2,})/g,
+          function(mm, pre, tok){
+            // Hanya lindungi NOMOR/KODE referensi, bukan kata biasa seperti
+            // "Barang/Jasa" atau "s/d": syaratnya mengandung angka, ATAU token
+            // sangat panjang (>=15 krkt) yang jelas bukan kata biasa.
+            const hasDigit = /[0-9]/.test(tok);
+            if(!hasDigit && tok.length < 15) return mm;
+            return pre + '<span class="nbrk">' + tok + '</span>';
+          }
+        );
+        return (numSpan||'') + protectedBody + end;
+      }
+    );
+  });
 }
 function spkDocHtml(data, klausul){
   const ctx=spkBuildCtx(data||{});
