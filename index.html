@@ -17809,6 +17809,17 @@ document.getElementById('pn-preview-overlay').addEventListener('click',e=>{ if(e
 .spk-we-page .spk-cl p .n{display:inline-block;width:.75cm;text-indent:0;text-align:left}
 .spk-we-page .spk-cl i{font-style:italic}
 .spk-we-page .spk-cl b{font-weight:700}
+/* Baris "Label : nilai" (spk-kv) — sejajar seperti Word. Aturan ini dulunya
+   hanya ada di CSS dokumen (spkDocCss) sehingga di modal Lihat/pratinjau
+   label:nilai tampak menyatu. Disamakan di sini agar tampilan konsisten. */
+.spk-cl .spk-kv{display:flex;margin:0 0 4pt;line-height:1.15}
+.spk-cl .spk-kv .k{flex:0 0 34%;max-width:34%}
+.spk-cl .spk-kv .s{flex:0 0 auto;width:1.2em}
+.spk-cl .spk-kv .v{flex:1;text-align:justify}
+.spk-we-doc .spk-kv{display:flex;margin:0 0 4pt;line-height:1.15}
+.spk-we-doc .spk-kv .k{flex:0 0 34%;max-width:34%}
+.spk-we-doc .spk-kv .s{flex:0 0 auto;width:1.2em}
+.spk-we-doc .spk-kv .v{flex:1;text-align:justify}
 /* ---- Pustaka Klausul: template Word (.docx) — pengganti editor teks ---- */
 .spk-kldoc-top{padding:13px 16px 14px;background:#fff;border-bottom:1px solid #e5eaee}
 .spk-kldoc-tools{display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin-top:11px}
@@ -20799,15 +20810,57 @@ function spkCollectRuns(node, fmt, out){
   for(var i=0;i<ch.length;i++) spkCollectRuns(ch[i], f, out);
 }
 var SPK_NUMTOK = /^((?:\d+\.)+|\d+\)|[A-Za-z][.)])[\s\u00a0]+/;
+/* Kumpulan run (teks+format) dari potongan HTML -> XML run Word */
+function spkRunsFromHtml(html){
+  var box=document.createElement('div'); box.innerHTML=String(html||'');
+  var runs=[]; spkCollectRuns(box, {}, runs);
+  var rx='', j; for(j=0;j<runs.length;j++){ if(runs[j].t!=='') rx+=spkRunXml(runs[j].t, runs[j].f); }
+  return rx;
+}
+/* Sel tabel: paragraf gaya "Klausul Isi" tanpa indent kiri (rata tabel) */
+function spkKvCellXml(w, runsXml){
+  return '<w:tc><w:tcPr><w:tcW w:w="'+w+'" w:type="dxa"/></w:tcPr>'+
+    '<w:p><w:pPr><w:pStyle w:val="KlausulIsi"/><w:spacing w:after="0"/><w:ind w:left="0"/></w:pPr>'+(runsXml||'')+'</w:p></w:tc>';
+}
+/* Baris spk-kv (label:nilai) -> tabel 3 kolom borderless, sejajar isi klausul
+   (menjorok 0,75 cm). Kolom: label | : | nilai. Round-trip dari tampilan web. */
+function spkKvTableXml(rows){
+  var W1=1247, W2=283, W3=7000, i;
+  var borders='<w:tblBorders>'+
+    ['top','left','bottom','right','insideH','insideV'].map(function(s){
+      return '<w:'+s+' w:val="none" w:sz="0" w:space="0" w:color="auto"/>'; }).join('')+
+    '</w:tblBorders>';
+  var pr='<w:tblPr><w:tblW w:w="0" w:type="auto"/><w:tblInd w:w="'+SPK_DX.IND+'" w:type="dxa"/>'+borders+
+    '<w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="0" w:type="dxa"/>'+
+    '<w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr>';
+  var grid='<w:tblGrid><w:gridCol w:w="'+W1+'"/><w:gridCol w:w="'+W2+'"/><w:gridCol w:w="'+W3+'"/></w:tblGrid>';
+  var trs='';
+  for(i=0;i<rows.length;i++){
+    trs+='<w:tr>'+
+      spkKvCellXml(W1, spkRunsFromHtml(rows[i].k))+
+      spkKvCellXml(W2, spkRunXml(':',{}))+
+      spkKvCellXml(W3, spkRunsFromHtml(rows[i].v))+
+    '</w:tr>';
+  }
+  return '<w:tbl>'+pr+grid+trs+'</w:tbl>';
+}
 /* HTML klausul  ->  paragraf Word (sesuai gaya/indentasi template) */
 function spkHtmlToWordParas(html){
   var box=document.createElement('div');
   box.innerHTML=String(html||'');
   var blocks=box.querySelectorAll('p,div');
-  var xml='', i, j;
+  var xml='', i, j, kvRun=[];
+  var flushKv=function(){ if(kvRun.length){ xml+=spkKvTableXml(kvRun); kvRun=[]; } };
   for(i=0;i<blocks.length;i++){
     var el=blocks[i];
+    /* baris "Label : nilai" -> kumpulkan lalu keluarkan sebagai tabel */
+    if(el.classList && el.classList.contains('spk-kv')){
+      var kEl=el.querySelector('.k'), vEl=el.querySelector('.v');
+      kvRun.push({ k:kEl?kEl.innerHTML:'', v:vEl?vEl.innerHTML:'' });
+      continue;
+    }
     if(el.querySelector && el.querySelector('p,div')) continue;   // lewati pembungkus
+    flushKv();                                                    // akhiri blok kv sebelum paragraf lain
     var cls='kl0', cl=(el.className||'').split(/\s+/);
     for(j=0;j<cl.length;j++){ if(SPK_CLS2STY[cl[j]]){ cls=cl[j]; break; } }
     var runs=[]; spkCollectRuns(el, {}, runs);
@@ -20824,6 +20877,7 @@ function spkHtmlToWordParas(html){
     for(j=0;j<runs.length;j++){ if(runs[j].t!=='') rx+=spkRunXml(runs[j].t, runs[j].f); }
     xml += spkPXml(SPK_CLS2STY[cls]||'KlausulIsi', rx);
   }
+  flushKv();
   return xml;
 }
 /* Berkas template .docx siap unduh */
@@ -20843,6 +20897,9 @@ function spkDocxTemplateBlob(judul, isiHtml, noKl){
       spkRunXml(String(judul||'JUDUL KLAUSUL'),{}) );
   var isi=spkHtmlToWordParas(isiHtml);
   body += isi || spkPXml('KlausulIsi','');
+  /* Word mensyaratkan paragraf setelah tabel: jika isi berakhir dengan tabel,
+     tambahkan satu paragraf kosong sebelum sectPr agar berkas tetap sah. */
+  if(/<\/w:tbl>\s*$/.test(body)) body += spkPXml('KlausulIsi','');
   var docXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
     '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+
       body+
@@ -20927,6 +20984,41 @@ function spkWpText(p){
   }
   return { html:out, plain:plain.replace(/\s+/g,' ').trim() };
 }
+/* Teks (html+plain) sebuah SEL tabel: gabungkan seluruh paragraf di dalamnya */
+function spkWTcText(tc){
+  var ps=tc.getElementsByTagNameNS(SPK_W_NS,'p'), html='', plain='', j;
+  for(j=0;j<ps.length;j++){
+    var t=spkWpText(ps[j]);
+    if(j>0){ if(html) html+='<br>'; if(plain) plain+=' '; }
+    html+=t.html; plain+=t.plain;
+  }
+  return { html:html, plain:plain.replace(/\s+/g,' ').trim() };
+}
+/* Tabel Word -> HTML klausul. Baris "label | : | nilai" (3 kolom) atau
+   "label | nilai" (2 kolom) dijadikan baris spk-kv yang SEJAJAR seperti Word.
+   Bentuk tabel lain digabung antar-kolom menjadi satu paragraf biasa. */
+function spkWTblToHtml(tbl){
+  var trs=tbl.getElementsByTagNameNS(SPK_W_NS,'tr'), html='', i, j;
+  for(i=0;i<trs.length;i++){
+    var tcs=[], kids=trs[i].childNodes;
+    for(j=0;j<kids.length;j++){ if(kids[j].nodeType===1 && kids[j].localName==='tc') tcs.push(kids[j]); }
+    if(!tcs.length) continue;
+    var cells=[]; for(j=0;j<tcs.length;j++) cells.push(spkWTcText(tcs[j]));
+    var filled=0; for(j=0;j<cells.length;j++){ if(cells[j].plain!=='') filled++; }
+    if(!filled) continue;                                        // baris kosong -> lewati
+    if(cells.length===3 && cells[1].plain===':'){                // label | : | nilai
+      html+='<div class="spk-kv"><span class="k">'+cells[0].html+'</span>'+
+            '<span class="s">:</span><span class="v">'+cells[2].html+'</span></div>';
+    }else if(cells.length===2){                                  // label | nilai
+      html+='<div class="spk-kv"><span class="k">'+cells[0].html+'</span>'+
+            '<span class="s">:</span><span class="v">'+cells[1].html+'</span></div>';
+    }else{                                                       // tabel lain -> gabung kolom
+      var parts=[]; for(j=0;j<cells.length;j++){ if(cells[j].html) parts.push(cells[j].html); }
+      html+='<p class="kl0">'+parts.join(' ')+'</p>';
+    }
+  }
+  return html;
+}
 /* word/document.xml -> { judul, html } dalam format kelas dokumen SPK (kl0/kl1/kl2/...) */
 function spkWordXmlToKlausul(xmlText, stylesXml){
   var doc=new DOMParser().parseFromString(xmlText,'application/xml');
@@ -20934,25 +21026,35 @@ function spkWordXmlToKlausul(xmlText, stylesXml){
   var body=doc.getElementsByTagNameNS(SPK_W_NS,'body')[0];
   if(!body) throw new Error('Struktur dokumen Word tidak dikenali.');
   var nameOf=spkStyleNameMap(stylesXml);
-  var ps=body.getElementsByTagNameNS(SPK_W_NS,'p'), i;
-  /* --- Lintasan 1: kenali gaya tiap paragraf & posisi baris judul --- */
-  var rows=[], judulAt=-1;
-  for(i=0;i<ps.length;i++){
-    var pPr=ps[i].getElementsByTagNameNS(SPK_W_NS,'pPr')[0];
-    var styEl=pPr?pPr.getElementsByTagNameNS(SPK_W_NS,'pStyle')[0]:null;
-    var sid=styEl?(styEl.getAttributeNS(SPK_W_NS,'val')||''):'';
-    /* cocokkan lewat NAMA gaya (tahan terhadap penulisan ulang styleId oleh Word) */
-    var key=nameOf[sid] || spkStyNorm(sid);
-    rows.push({p:ps[i], pPr:pPr, key:key});
-    if(judulAt<0 && key==='klausuljudul') judulAt=i;
+  /* --- Lintasan 1: kumpulkan blok level-atas BERURUTAN (paragraf & tabel) ---
+     Penting: tabel Word (mis. blok "Nama : nilai") ikut dibaca sebagai satu
+     kesatuan, bukan diratakan jadi paragraf lepas yang menyatu. */
+  var blocks=[], kids=body.childNodes, i;
+  for(i=0;i<kids.length;i++){
+    var nd=kids[i]; if(nd.nodeType!==1) continue;
+    var ln=nd.localName;
+    if(ln==='p'){
+      var pPr=nd.getElementsByTagNameNS(SPK_W_NS,'pPr')[0];
+      var styEl=pPr?pPr.getElementsByTagNameNS(SPK_W_NS,'pStyle')[0]:null;
+      var sid=styEl?(styEl.getAttributeNS(SPK_W_NS,'val')||''):'';
+      /* cocokkan lewat NAMA gaya (tahan terhadap penulisan ulang styleId oleh Word) */
+      var key=nameOf[sid] || spkStyNorm(sid);
+      blocks.push({t:'p', p:nd, pPr:pPr, key:key});
+    }else if(ln==='tbl'){
+      blocks.push({t:'tbl', el:nd, key:''});
+    }
   }
+  var judulAt=-1;
+  for(i=0;i<blocks.length;i++){ if(blocks[i].t==='p' && blocks[i].key==='klausuljudul'){ judulAt=i; break; } }
   /* --- Lintasan 2: bangun HTML klausul --- */
   var html='', judul='';
-  for(i=0;i<rows.length;i++){
-    var row=rows[i], key=row.key;
-    if(key.indexOf('petunjuk')===0) continue;               // baris petunjuk -> abaikan
+  for(i=0;i<blocks.length;i++){
     if(judulAt>=0 && i<judulAt) continue;                   // apa pun di atas judul -> abaikan
-    var t=spkWpText(row.p);
+    var b=blocks[i];
+    if(b.t==='tbl'){ html+=spkWTblToHtml(b.el); continue; } // tabel -> baris spk-kv sejajar
+    var key=b.key;
+    if(key.indexOf('petunjuk')===0) continue;               // baris petunjuk -> abaikan
+    var t=spkWpText(b.p);
     if(key==='klausuljudul'){                               // baris judul klausul
       if(!judul) judul=t.plain.replace(/^((?:\d+\.)+|\d+[.)])\s*/,'').trim();
       continue;
@@ -20960,7 +21062,7 @@ function spkWordXmlToKlausul(xmlText, stylesXml){
     if(!t.plain) continue;                                  // baris kosong -> lewati
     var cls=SPK_STY2CLS[key];
     if(!cls){                                               // gaya lain -> baca indentasi paragraf
-      var ind=row.pPr?row.pPr.getElementsByTagNameNS(SPK_W_NS,'ind')[0]:null;
+      var ind=b.pPr?b.pPr.getElementsByTagNameNS(SPK_W_NS,'ind')[0]:null;
       cls=spkIndClass(
         ind?ind.getAttributeNS(SPK_W_NS,'left'):0,
         ind?ind.getAttributeNS(SPK_W_NS,'hanging'):0,
@@ -21069,7 +21171,7 @@ function spkKlDocPreview(){
   if(!isi.replace(/<[^>]+>/g,'').trim()){
     el.innerHTML='<p class="kl0 spk-kldoc-empty">Belum ada isi klausul. Unduh template, ketik isinya di Microsoft Word, lalu unggah kembali berkas .docx di sini.</p>';
   }else{
-    var h=isi; try{ h=spkNumberFix(isi); }catch(e){}
+    var h=isi; try{ h=spkNumberFix(spkTidyKeyValue(isi)); }catch(e){}
     el.innerHTML=h;
   }
   var c=document.getElementById('spk-kldoc-count');
