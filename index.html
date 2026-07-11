@@ -17657,13 +17657,18 @@ document.getElementById('pn-preview-overlay').addEventListener('click',e=>{ if(e
 /* Ruler */
 .spk-we-rulerwrap{background:#eef1f3;border-bottom:1px solid #e5eaee;padding:3px 0;user-select:none;display:flex;justify-content:center;overflow:hidden}
 .spk-we-rulerwrap.hidden{display:none}
-.spk-we-ruler{position:relative;height:24px;width:794px;max-width:100%}
+.spk-we-ruler{position:relative;height:26px;width:210mm;max-width:100%}
 .spk-we-ruler svg{display:block;overflow:visible}
-/* Area kertas A4 */
-.spk-we-pagearea{background:#e7eaed;padding:22px 0;display:flex;justify-content:center;overflow:auto;flex:1}
-.spk-we-page{width:794px;min-height:600px;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.16);padding:56px 75px;box-sizing:border-box}
+/* Area kertas A4 — Portrait, margin Normal (2,54 cm) persis seperti Microsoft Word */
+.spk-we-pagearea{background:#e7eaed;padding:22px 14px 40px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;overflow:auto;flex:1}
+.spk-we-page{width:210mm;min-height:297mm;flex:0 0 auto;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.16);padding:25.4mm;box-sizing:border-box;position:relative;
+  /* garis bantu batas halaman: muncul tiap kelipatan tinggi A4 (297mm) */
+  background-image:repeating-linear-gradient(to bottom,rgba(0,0,0,0) 0,rgba(0,0,0,0) calc(297mm - 2px),#c9d1d8 calc(297mm - 2px),#c9d1d8 297mm)}
+/* Panduan margin (garis putus-putus batas area ketik) */
+.spk-we-page::before{content:'';position:absolute;left:25.4mm;right:25.4mm;top:25.4mm;bottom:25.4mm;border:1px dashed #e3e8ec;pointer-events:none;z-index:0}
+.spk-we-page>*{position:relative;z-index:1}
 /* Kanvas edit: samakan persis dengan .spk-cl dokumen (Arial 11pt, indent 0,75cm) */
-.spk-we-doc{outline:none;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.15;color:#000;min-height:480px}
+.spk-we-doc{outline:none;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.15;color:#000;min-height:246.2mm}
 .spk-we-doc:empty:before{content:attr(data-ph);color:#9AA7B2;font-style:italic}
 .spk-we-doc p{margin:0 0 6pt;text-align:justify;line-height:1.15}
 .spk-we-doc p.kl0{margin-left:0;text-indent:0}
@@ -17679,9 +17684,31 @@ document.getElementById('pn-preview-overlay').addEventListener('click',e=>{ if(e
 .spk-we-doc.fp-active{cursor:crosshair}
 .spk-we-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:9px 14px;background:#fff;border-top:1px solid #e5eaee}
 .spk-we-status{font-size:12px;color:#7a848d;display:flex;gap:14px}
-/* Modal editor lebih lebar untuk memuat kertas A4 */
-.spk-ov-we{width:min(980px,97vw)}
-.spk-ov-we .spk-ov-body{padding:0;background:#e7eaed;display:flex;flex-direction:column}
+/* Modal editor lebih lebar untuk memuat kertas A4 utuh (210mm + ruang scroll) */
+.spk-ov-we{width:min(1060px,98vw);height:94vh;max-height:94vh}
+.spk-ov-we .spk-ov-body{padding:0;background:#e7eaed;display:flex;flex-direction:column;min-height:0}
+/* ---- Title bar bergaya jendela: Minimize / Maximize / Close ---- */
+.spk-we-head{background:#12303f;border-bottom:none;padding:0 0 0 16px;user-select:none;cursor:default}
+.spk-we-head .spk-ov-title{color:#fff;font-size:14px;letter-spacing:.01em}
+.spk-we-wbtns{display:flex;align-items:stretch;gap:0;margin-left:auto}
+.spk-we-wbtn{width:46px;height:42px;border:0;background:transparent;color:#e7eef3;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:background .12s,color .12s}
+.spk-we-wbtn svg{width:15px;height:15px;pointer-events:none}
+.spk-we-wbtn:hover{background:rgba(255,255,255,.14);color:#fff}
+.spk-we-wbtn.close:hover{background:#e53935;color:#fff}
+/* ---- Maximized ---- */
+.spk-ov.we-max{padding:0}
+.spk-ov.we-max .spk-ov-we{width:100vw;height:100vh;max-height:100vh;border-radius:0}
+/* ---- Minimized: menyusut jadi bilah di kanan bawah, isi editor tetap tersimpan ---- */
+.spk-ov.we-min{background:transparent;align-items:flex-end;justify-content:flex-end;padding:0;pointer-events:none}
+.spk-ov.we-min .spk-ov-we{pointer-events:auto;width:min(360px,90vw);height:auto;max-height:none;border-radius:10px 10px 0 0;margin:0 20px 0 0;box-shadow:0 -8px 28px -6px rgba(10,25,40,.45)}
+.spk-ov.we-min .spk-ov-body,.spk-ov.we-min .spk-we-foot{display:none}
+.spk-ov.we-min .spk-we-head{cursor:pointer}
+.spk-ov.we-min .spk-we-head .spk-ov-title{max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* ---- Format Painter ---- */
+.spk-we-toolbar button#spk-we-fp.sticky{background:#e6f7ef;border-color:#7fd3ae;color:#12805c}
+.spk-we-doc.fp-active{cursor:cell}
+.spk-we-hint{font-size:11px;color:#8a949c}
+@media(max-width:820px){ .spk-we-hint{display:none} }
 /* Dropdown pustaka penomoran (gaya Word) */
 .spk-we-numwrap{position:relative;display:inline-flex}
 .spk-we-numpop{position:absolute;top:calc(100% + 4px);left:0;z-index:60;background:#fff;border:1px solid #d5dbe0;border-radius:10px;box-shadow:0 18px 44px -12px rgba(10,25,40,.4);padding:12px;width:340px;max-height:420px;overflow:auto;display:none}
@@ -18446,7 +18473,7 @@ function spkFmtJudul(judul){
    dokumen SPK, sehingga tampilan saat mengetik = pratinjau = cetak.
    Dipakai oleh: field narasi (Latar Belakang/Permasalahan/Maksud & Tujuan)
    dan editor Pustaka Klausul. */
-var spkWE = { onSave:null, key:null };
+var spkWE = { onSave:null, key:null, maximized:false };
 
 /* --- Bangun kerangka modal editor (sekali saja) --- */
 function spkWEEnsureOverlay(){
@@ -18485,7 +18512,7 @@ function spkWEToolbarHtml(){
           '<option value="lower">huruf kecil</option>'+
           '<option value="cap">Kapital Awal</option>'+
         '</select>'+
-        '<button type="button" id="spk-we-fp" title="Format Painter (Ctrl+Alt+C)" onmousedown="return spkWEmd(event)" onclick="spkWEPainterClick()">&#128463;</button>'+
+        '<button type="button" id="spk-we-fp" title="Format Painter — Ctrl+Alt+C salin format, Ctrl+Alt+V tempel format (klik ganda: mode terkunci)" onmousedown="return spkWEmd(event)" onclick="spkWEPainterClick()" ondblclick="spkWEPainterSticky()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="M18.4 2.6a2 2 0 0 1 2.8 2.8L12 14.6l-3.4-3.4Z"/><path d="M8.6 11.2 5.9 13.9a3 3 0 0 0-.8 2.9L3 21l4.2-2.1a3 3 0 0 0 2.9-.8l2.7-2.7Z"/></svg></button>'+
         '<button type="button" title="Bersihkan format" onmousedown="return spkWEmd(event)" onclick="spkWECmd(\'removeFormat\')">&#10006;</button>'+
       '</div>'+
     '</div>'+
@@ -18538,9 +18565,15 @@ function spkWEOpen(opts){
     : '';
   var ov=spkWEEnsureOverlay();
   ov.innerHTML=
-    '<div class="spk-ov-modal spk-ov-we">'+
-      '<div class="spk-ov-head"><span class="spk-ov-title">'+fkEsc(opts.title||'Editor Teks')+'</span>'+
-        '<button class="btn btn-ghost btn-sm" onclick="spkWEClose()">Tutup</button></div>'+
+    '<div class="spk-ov-modal spk-ov-we" id="spk-we-modal">'+
+      '<div class="spk-ov-head spk-we-head" id="spk-we-head" onclick="spkWEHeadClick(event)" ondblclick="spkWEToggleMax()">'+
+        '<span class="spk-ov-title">'+fkEsc(opts.title||'Editor Teks')+'</span>'+
+        '<div class="spk-we-wbtns">'+
+          '<button type="button" class="spk-we-wbtn" id="spk-we-minbtn" title="Perkecil (Minimize)" onclick="event.stopPropagation();spkWEMinimize()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg></button>'+
+          '<button type="button" class="spk-we-wbtn" id="spk-we-maxbtn" title="Perbesar (Maximize)" onclick="event.stopPropagation();spkWEToggleMax()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="7" y="4" width="13" height="13" rx="2"/><path d="M16 20H6a2 2 0 0 1-2-2V8"/></svg></button>'+
+          '<button type="button" class="spk-we-wbtn close" title="Tutup (Close)" onclick="event.stopPropagation();spkWEAskClose()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>'+
+        '</div>'+
+      '</div>'+
       '<div class="spk-ov-body">'+
         titleFieldHtml+
         spkWEToolbarHtml()+
@@ -18549,13 +18582,17 @@ function spkWEOpen(opts){
         '</div></div>'+
       '</div>'+
       '<div class="spk-we-foot">'+
-        '<span class="spk-we-status"><span id="spk-we-count">0 kata</span><span>A4 &middot; Portrait</span></span>'+
+        '<span class="spk-we-status"><span id="spk-we-count">0 kata</span><span id="spk-we-pages">1 halaman</span><span>A4 &middot; Portrait &middot; Margin Normal (2,54 cm)</span>'+
+          '<span class="spk-we-hint">Ctrl+Alt+C salin format &middot; Ctrl+Alt+V tempel format</span></span>'+
         '<button class="btn btn-green" onclick="spkWEDoSave()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> Simpan</button>'+
       '</div>'+
     '</div>';
   var doc=document.getElementById('spk-we-doc');
   doc.innerHTML = spkWENormalizeIn(opts.html||'');
   spkWEBindDoc(doc);
+  ov.classList.remove('we-min');            // selalu mulai dari keadaan normal
+  if(spkWE.maximized) ov.classList.add('we-max'); else ov.classList.remove('we-max');
+  spkWEPainterMode(false); spkWEfp=null; spkWEfpSticky=false;
   ov.classList.add('show');
   try{ document.execCommand('defaultParagraphSeparator', false, 'p'); }catch(e){}
   spkWEDrawRuler();
@@ -18563,7 +18600,58 @@ function spkWEOpen(opts){
   setTimeout(function(){ try{ doc.focus(); }catch(e){} spkWEDrawRuler(); }, 60);
 }
 
-function spkWEClose(){ var ov=document.getElementById('spk-we-overlay'); if(ov) ov.classList.remove('show'); spkWE.onSave=null; try{ spkWENumClose(); }catch(e){} try{ spkWELHClose(); }catch(e){} try{ spkWEBulClose(); }catch(e){} }
+function spkWEClose(){
+  var ov=document.getElementById('spk-we-overlay');
+  if(ov){ ov.classList.remove('show'); ov.classList.remove('we-min'); }
+  spkWE.onSave=null; spkWEfp=null; spkWEfpSticky=false;
+  try{ spkWEPainterMode(false); }catch(e){}
+  try{ spkWENumClose(); }catch(e){} try{ spkWELHClose(); }catch(e){} try{ spkWEBulClose(); }catch(e){}
+}
+
+/* ---------- Kontrol jendela editor: Minimize / Maximize / Close ---------- */
+/* Minimize: editor menyusut menjadi bilah di kanan bawah. Isi tulisan TIDAK hilang. */
+function spkWEMinimize(){
+  var ov=document.getElementById('spk-we-overlay'); if(!ov) return;
+  try{ spkWENumClose(); }catch(e){} try{ spkWELHClose(); }catch(e){} try{ spkWEBulClose(); }catch(e){}
+  ov.classList.add('we-min');
+  var b=document.getElementById('spk-we-minbtn'); if(b) b.title='Kembalikan (Restore)';
+}
+/* Restore dari keadaan minimize */
+function spkWERestore(){
+  var ov=document.getElementById('spk-we-overlay'); if(!ov) return;
+  ov.classList.remove('we-min');
+  var b=document.getElementById('spk-we-minbtn'); if(b) b.title='Perkecil (Minimize)';
+  var d=document.getElementById('spk-we-doc'); if(d){ try{ d.focus(); }catch(e){} }
+  spkWEDrawRuler();
+}
+/* Klik pada bilah judul saat minimize = kembalikan */
+function spkWEHeadClick(e){
+  var ov=document.getElementById('spk-we-overlay');
+  if(ov && ov.classList.contains('we-min')) spkWERestore();
+}
+/* Maximize / Restore ukuran */
+function spkWEToggleMax(){
+  var ov=document.getElementById('spk-we-overlay'); if(!ov) return;
+  if(ov.classList.contains('we-min')){ spkWERestore(); return; }
+  var on=!ov.classList.contains('we-max');
+  ov.classList.toggle('we-max', on);
+  spkWE.maximized=on;
+  var b=document.getElementById('spk-we-maxbtn');
+  if(b){
+    b.title = on ? 'Kembalikan ukuran (Restore)' : 'Perbesar (Maximize)';
+    b.innerHTML = on
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="4" y="8" width="12" height="12" rx="2"/><path d="M8 8V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="7" y="4" width="13" height="13" rx="2"/><path d="M16 20H6a2 2 0 0 1-2-2V8"/></svg>';
+  }
+  setTimeout(function(){ spkWEDrawRuler(); spkWECount(); }, 30);
+}
+/* Tutup dengan konfirmasi bila ada isi (mencegah kehilangan tulisan) */
+function spkWEAskClose(){
+  var doc=document.getElementById('spk-we-doc');
+  var isi = doc ? (doc.innerText||'').trim() : '';
+  if(isi && !confirm('Tutup editor? Perubahan yang belum disimpan akan hilang.')) return;
+  spkWEClose();
+}
 
 function spkWEDoSave(){
   var doc=document.getElementById('spk-we-doc'); if(!doc) return;
@@ -18640,6 +18728,12 @@ function spkWEBindDoc(doc){
   // nomor sah (1. / a. / i. / I. / 1)), buat nomor BERIKUTNYA secara otomatis.
   doc.addEventListener('keydown', function(e){
     if(e.key==='Escape'){ spkWEPainterMode(false); return; }
+    /* --- Format Painter: Ctrl+Alt+C (salin format) / Ctrl+Alt+V (tempel format) --- */
+    if((e.ctrlKey||e.metaKey) && e.altKey && !e.shiftKey){
+      var k=String(e.key||'').toLowerCase();
+      if(k==='c'){ e.preventDefault(); spkWEPainterCopy(); return; }
+      if(k==='v'){ e.preventDefault(); spkWEPainterPaste(); return; }
+    }
     if(e.key==='Enter' && !e.shiftKey){
       var p=spkWECurrentP();
       if(p){
@@ -18803,6 +18897,15 @@ function spkWECount(){
   if(!doc||!el) return;
   var t=(doc.innerText||'').trim();
   el.textContent=(t? t.split(/\s+/).length : 0)+' kata';
+  spkWEPageCount();
+}
+/* Jumlah halaman A4 (tinggi kertas 297mm = 1122,5px pada 96dpi) */
+function spkWEPageCount(){
+  var pg=document.querySelector('#spk-we-overlay .spk-we-page');
+  var el=document.getElementById('spk-we-pages'); if(!pg||!el) return;
+  var A4=297*96/25.4;                       // tinggi 1 halaman A4 dalam px
+  var n=Math.max(1, Math.ceil((pg.scrollHeight-2)/A4));
+  el.textContent=n+' halaman';
 }
 
 /* --- Toggle penggaris --- */
@@ -18813,44 +18916,149 @@ function spkWEToggleRuler(on){
 /* --- Gambar penggaris (skala 1-15, penanda cm) --- */
 function spkWEDrawRuler(){
   var svg=document.getElementById('spk-we-rulersvg'); if(!svg) return;
-  var w=794; var marks=16; var step=w/marks;
-  var html='<line x1="0" y1="22" x2="'+w+'" y2="22" stroke="#c9d0d6" stroke-width="1"/>';
-  for(var i=0;i<=marks;i++){
-    var x=i*step;
-    html+='<line x1="'+x+'" y1="14" x2="'+x+'" y2="22" stroke="#aab3ba" stroke-width="1"/>';
-    if(i>=1&&i<=15) html+='<text x="'+x+'" y="11" text-anchor="middle" font-size="10" fill="#7f8991" font-family="Arial">'+i+'</text>';
-    if(i<marks){ var hx=x+step/2; html+='<line x1="'+hx+'" y1="17" x2="'+hx+'" y2="22" stroke="#b7bfc5" stroke-width="1"/>'; }
+  var PX=96/25.4;                 // px per mm (96 dpi)
+  var W=Math.round(210*PX);       // lebar kertas A4 = 210mm
+  var M=Math.round(25.4*PX);      // margin Normal = 2,54cm
+  var CM=10*PX;                   // 1 cm dalam px
+  svg.setAttribute('width', W); svg.setAttribute('height', 26);
+  var h='';
+  // area margin (abu) + area ketik (putih)
+  h+='<rect x="0" y="8" width="'+W+'" height="12" fill="#d5dbe0"/>';
+  h+='<rect x="'+M+'" y="8" width="'+(W-2*M)+'" height="12" fill="#fff" stroke="#c3cbd2" stroke-width="1"/>';
+  // skala cm dihitung dari batas margin kiri (0 = awal area ketik), seperti Word
+  for(var cm=-2; cm<=18; cm++){
+    var x=M+cm*CM; if(x<0||x>W) continue;
+    h+='<line x1="'+x.toFixed(1)+'" y1="9" x2="'+x.toFixed(1)+'" y2="19" stroke="#8e99a2" stroke-width="1"/>';
+    if(cm!==0) h+='<text x="'+x.toFixed(1)+'" y="7" text-anchor="middle" font-size="9" fill="#6f7a83" font-family="Arial">'+Math.abs(cm)+'</text>';
+    var hx=x+CM/2; if(hx<W) h+='<line x1="'+hx.toFixed(1)+'" y1="12" x2="'+hx.toFixed(1)+'" y2="16" stroke="#aab3ba" stroke-width="1"/>';
   }
-  svg.innerHTML=html;
+  h+='<line x1="0" y1="20" x2="'+W+'" y2="20" stroke="#c9d0d6" stroke-width="1"/>';
+  svg.innerHTML=h;
 }
 
-/* --- Format Painter (Ctrl+Alt+C) --- */
-var spkWEfp=null;
+/* ================= FORMAT PAINTER =================================
+   Menyeragamkan penulisan: menyalin format KARAKTER (tebal/miring/garis
+   bawah/coret/warna/stabilo/ukuran & jenis huruf) SEKALIGUS format PARAGRAF
+   (kelas kl0/klp/kl1/kl2, perataan, spasi baris, indent) dari teks acuan,
+   lalu menempelkannya ke teks/paragraf lain.
+   Pintasan: Ctrl+Alt+C = salin format, Ctrl+Alt+V = tempel format.
+   Klik tombol kuas = salin format & aktifkan kuas (sekali pakai).
+   Klik GANDA tombol kuas = mode terkunci (bisa dipakai berkali-kali, Esc untuk berhenti). */
+var spkWEfp=null;          // format tersimpan
+var spkWEfpSticky=false;   // mode terkunci (seperti klik ganda Format Painter di Word)
+
+function spkWEToast(msg,tipe){ try{ if(typeof toast==='function') toast(msg, tipe||'ok'); }catch(e){} }
+
+/* --- Salin format dari posisi kursor / teks terpilih --- */
 function spkWEPainterCapture(){
+  var doc=document.getElementById('spk-we-doc'); if(!doc) return false;
   var sel=window.getSelection(); if(!sel.rangeCount) return false;
-  var node=sel.anchorNode; if(node&&node.nodeType===3) node=node.parentElement;
-  if(!node) return false;
+  var node=sel.anchorNode;
+  if(node && node.nodeType===3) node=node.parentElement;
+  if(!node || !doc.contains(node)) return false;
   var cs=getComputedStyle(node);
-  spkWEfp={ fontWeight:cs.fontWeight, fontStyle:cs.fontStyle, textDecoration:cs.textDecorationLine, color:cs.color, backgroundColor:cs.backgroundColor };
+  var p=spkWECurrentP();
+  var pcs=p?getComputedStyle(p):null;
+  spkWEfp={
+    /* format karakter */
+    ch:{
+      fontWeight:cs.fontWeight, fontStyle:cs.fontStyle,
+      textDecoration:cs.textDecorationLine, color:cs.color,
+      backgroundColor:cs.backgroundColor, fontSize:cs.fontSize, fontFamily:cs.fontFamily
+    },
+    /* format paragraf */
+    par: p ? {
+      cls:(p.className.match(/\b(kl0|kl1|kl2|klp|klp1|klp2|kldesc)\b/)||[])[1]||'kl0',
+      isH:p.getAttribute('data-h')==='1',
+      textAlign:p.style.textAlign||pcs.textAlign,
+      lineHeight:p.style.lineHeight||'',
+      marginTop:p.style.marginTop||'', marginBottom:p.style.marginBottom||'',
+      marginLeft:p.style.marginLeft||'', textIndent:p.style.textIndent||'',
+      fontWeight:p.style.fontWeight||'', textTransform:p.style.textTransform||''
+    } : null
+  };
   return true;
 }
+
+/* --- Tempel format ke teks/paragraf tujuan --- */
 function spkWEPainterApply(){
-  if(!spkWEfp) return;
-  var sel=window.getSelection(); if(!sel.rangeCount||sel.isCollapsed){ return; }
-  var range=sel.getRangeAt(0); var span=document.createElement('span');
-  span.style.fontWeight=spkWEfp.fontWeight; span.style.fontStyle=spkWEfp.fontStyle;
-  if(spkWEfp.textDecoration&&spkWEfp.textDecoration!=='none') span.style.textDecoration=spkWEfp.textDecoration;
-  span.style.color=spkWEfp.color;
-  if(spkWEfp.backgroundColor&&spkWEfp.backgroundColor!=='rgba(0, 0, 0, 0)') span.style.backgroundColor=spkWEfp.backgroundColor;
-  try{ span.appendChild(range.extractContents()); range.insertNode(span); sel.removeAllRanges(); }catch(e){}
-  spkWEPainterMode(false);
+  var doc=document.getElementById('spk-we-doc');
+  if(!spkWEfp || !doc){ return false; }
+  var sel=window.getSelection(); if(!sel.rangeCount) return false;
+
+  /* 1) format paragraf -> semua <p> yang tersentuh seleksi/kursor */
+  if(spkWEfp.par){
+    var ps=spkWESelectedPs();
+    ps.forEach(function(p){
+      var f=spkWEfp.par;
+      p.className=f.cls;
+      if(f.isH) p.setAttribute('data-h','1'); else p.removeAttribute('data-h');
+      p.style.textAlign=f.textAlign||'';
+      p.style.lineHeight=f.lineHeight||'';
+      p.style.marginTop=f.marginTop||''; p.style.marginBottom=f.marginBottom||'';
+      p.style.marginLeft=f.marginLeft||''; p.style.textIndent=f.textIndent||'';
+      p.style.fontWeight=f.fontWeight||''; p.style.textTransform=f.textTransform||'';
+    });
+  }
+
+  /* 2) format karakter -> hanya bila ada teks yang diblok */
+  if(!sel.isCollapsed){
+    var c=spkWEfp.ch;
+    var range=sel.getRangeAt(0);
+    var span=document.createElement('span');
+    span.style.fontWeight=c.fontWeight;
+    span.style.fontStyle=c.fontStyle;
+    span.style.color=c.color;
+    span.style.fontSize=c.fontSize;
+    span.style.fontFamily=c.fontFamily;
+    span.style.textDecoration=(c.textDecoration && c.textDecoration!=='none') ? c.textDecoration : 'none';
+    if(c.backgroundColor && c.backgroundColor!=='rgba(0, 0, 0, 0)' && c.backgroundColor!=='transparent')
+      span.style.backgroundColor=c.backgroundColor;
+    try{
+      var frag=range.extractContents();
+      /* buang format lama di dalam potongan agar benar-benar seragam */
+      Array.prototype.forEach.call(frag.querySelectorAll('span,b,strong,i,em,u,s,strike,font'), function(el){
+        var parent=el.parentNode; while(el.firstChild) parent.insertBefore(el.firstChild, el); parent.removeChild(el);
+      });
+      span.appendChild(frag);
+      range.insertNode(span);
+      sel.removeAllRanges();
+      var r2=document.createRange(); r2.selectNodeContents(span); sel.addRange(r2);
+    }catch(e){}
+  }
+
+  if(!spkWEfpSticky) spkWEPainterMode(false);
+  spkWECount();
+  return true;
 }
+
 function spkWEPainterMode(on){
   var doc=document.getElementById('spk-we-doc'); var btn=document.getElementById('spk-we-fp');
-  if(doc) doc.classList.toggle('fp-active', on);
-  if(btn) btn.classList.toggle('active', on);
+  if(doc) doc.classList.toggle('fp-active', !!on);
+  if(btn){ btn.classList.toggle('active', !!on); btn.classList.toggle('sticky', !!on && spkWEfpSticky); }
+  if(!on) spkWEfpSticky=false;
 }
-function spkWEPainterClick(){ if(spkWEPainterCapture()) spkWEPainterMode(true); }
+
+/* Tombol kuas: salin format lalu aktifkan kuas (sekali pakai) */
+function spkWEPainterClick(){
+  if(spkWEPainterCapture()){ spkWEfpSticky=false; spkWEPainterMode(true); spkWEToast('Format disalin — blok teks tujuan untuk menempel','ok'); }
+  else spkWEToast('Letakkan kursor pada teks acuan lebih dulu','warn');
+}
+/* Klik ganda: mode terkunci (berkali-kali) */
+function spkWEPainterSticky(){
+  if(spkWEPainterCapture()){ spkWEfpSticky=true; spkWEPainterMode(true); spkWEToast('Kuas format terkunci — tekan Esc untuk berhenti','ok'); }
+}
+/* Ctrl+Alt+C */
+function spkWEPainterCopy(){
+  if(spkWEPainterCapture()){ spkWEPainterMode(true); spkWEToast('Format disalin (Ctrl+Alt+C)','ok'); }
+  else spkWEToast('Letakkan kursor pada teks acuan lebih dulu','warn');
+}
+/* Ctrl+Alt+V */
+function spkWEPainterPaste(){
+  if(!spkWEfp){ spkWEToast('Belum ada format yang disalin (Ctrl+Alt+C)','warn'); return; }
+  spkWEPainterApply();
+  spkWEToast('Format diterapkan (Ctrl+Alt+V)','ok');
+}
 
 /* ================= PUSTAKA PENOMORAN (gaya Word) =================
    Menyisipkan nomor sebagai TEKS otomatis (1. 2. 3. / a. b. c. / I. II. III. /
