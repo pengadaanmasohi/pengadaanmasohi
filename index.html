@@ -17636,6 +17636,128 @@ document.getElementById('pn-preview-overlay').addEventListener('click',e=>{ if(e
 .spk-edit-hint{font-size:11.5px;color:#6B7885;margin-top:8px}
 .spk-ov-foot{padding:12px 18px;border-top:1px solid #DfE4E9;display:flex;justify-content:flex-end}
 .spk-edit-body code,#spk-klausul-content code{background:#eef3f7;color:#0E7C86;padding:1px 5px;border-radius:5px;font-size:11.5px}
+/* ===== Editor WYSIWYG bergaya dokumen SPK ===== */
+.spk-we-wrap{display:flex;flex-direction:column;background:#fff}
+.spk-we-toolbar{background:#fff;border-bottom:1px solid #e5eaee;padding:7px 10px;position:sticky;top:0;z-index:5}
+.spk-we-trow{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.spk-we-trow+.spk-we-trow{margin-top:6px}
+.spk-we-grp{display:inline-flex;align-items:center;gap:3px;padding:1px}
+.spk-we-sep{width:1px;height:22px;background:#e6e9ec;margin:0 3px}
+.spk-we-toolbar button,.spk-we-toolbar select{height:31px;border:1px solid #e0e4e8;background:#fff;border-radius:6px;cursor:pointer;font-size:13px;color:#333;padding:0 8px;display:inline-flex;align-items:center;justify-content:center;transition:background .12s,border-color .12s;font-family:Arial,Helvetica,sans-serif}
+.spk-we-toolbar button{min-width:32px}
+.spk-we-toolbar button:hover,.spk-we-toolbar select:hover{background:#f4f6f8;border-color:#cdd3d9}
+.spk-we-toolbar button:active{background:#e9edf0}
+.spk-we-toolbar button.active{background:#e3f0ff;border-color:#9cc4f5;color:#1565c0}
+.spk-we-clabel{display:inline-flex;align-items:center;gap:4px;cursor:pointer;font-size:12px;color:#333;height:31px;padding:0 6px;border:1px solid #e0e4e8;border-radius:6px;background:#fff}
+.spk-we-clabel:hover{background:#f4f6f8;border-color:#cdd3d9}
+.spk-we-clabel input[type=color]{width:22px;height:20px;padding:0;border:1px solid #e0e4e8;border-radius:4px;cursor:pointer;background:none}
+.spk-we-check{display:inline-flex;align-items:center;gap:6px;height:31px;padding:0 9px;font-size:12px;color:#3d4a55;cursor:pointer;user-select:none;border:1px solid #e0e4e8;border-radius:6px;background:#fff}
+.spk-we-check:hover{background:#f4f6f8;border-color:#cdd3d9}
+.spk-we-check input{cursor:pointer;margin:0}
+/* Ruler */
+.spk-we-rulerwrap{background:#eef1f3;border-bottom:1px solid #e5eaee;padding:3px 0;user-select:none;display:flex;justify-content:center;overflow:hidden}
+.spk-we-rulerwrap.hidden{display:none}
+.spk-we-ruler{position:relative;height:24px;width:794px;max-width:100%}
+.spk-we-ruler svg{display:block;overflow:visible}
+/* Area kertas A4 */
+.spk-we-pagearea{background:#e7eaed;padding:22px 0;display:flex;justify-content:center;overflow:auto;flex:1}
+.spk-we-page{width:794px;min-height:600px;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.16);padding:56px 75px;box-sizing:border-box}
+/* Kanvas edit: samakan persis dengan .spk-cl dokumen (Arial 11pt, indent 0,75cm) */
+.spk-we-doc{outline:none;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.15;color:#000;min-height:480px}
+.spk-we-doc:empty:before{content:attr(data-ph);color:#9AA7B2;font-style:italic}
+.spk-we-doc p{margin:0 0 6pt;text-align:justify;line-height:1.15}
+.spk-we-doc p.kl0{margin-left:0;text-indent:0}
+.spk-we-doc p.klp{margin-left:0;text-indent:.75cm}
+.spk-we-doc p.klp1{margin-left:.75cm;text-indent:.75cm}
+.spk-we-doc p.klp2{margin-left:1.5cm;text-indent:.75cm}
+.spk-we-doc p.kl1{margin-left:.75cm;text-indent:-.75cm}
+.spk-we-doc p.kl2{margin-left:1.5cm;text-indent:-.75cm}
+.spk-we-doc p.kldesc{margin-left:.75cm;text-indent:0}
+.spk-we-doc p .n{display:inline-block;width:.75cm;text-indent:0;text-align:left}
+.spk-we-doc i{font-style:italic}
+.spk-we-doc b{font-weight:700}
+.spk-we-doc.fp-active{cursor:crosshair}
+.spk-we-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:9px 14px;background:#fff;border-top:1px solid #e5eaee}
+.spk-we-status{font-size:12px;color:#7a848d;display:flex;gap:14px}
+/* Modal editor lebih lebar untuk memuat kertas A4 */
+.spk-ov-we{width:min(980px,97vw)}
+.spk-ov-we .spk-ov-body{padding:0;background:#e7eaed;display:flex;flex-direction:column}
+/* Dropdown pustaka penomoran (gaya Word) */
+.spk-we-numwrap{position:relative;display:inline-flex}
+.spk-we-numpop{position:absolute;top:calc(100% + 4px);left:0;z-index:60;background:#fff;border:1px solid #d5dbe0;border-radius:10px;box-shadow:0 18px 44px -12px rgba(10,25,40,.4);padding:12px;width:340px;max-height:420px;overflow:auto;display:none}
+.spk-we-numpop.show{display:block}
+.spk-we-numsec{font-size:11px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:#5a6773;margin:2px 2px 8px}
+.spk-we-numsec+.spk-we-numgrid{margin-bottom:12px}
+.spk-we-numgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.spk-we-numcell{border:1px solid #e2e7eb;border-radius:8px;background:#fff;cursor:pointer;padding:9px 8px;min-height:64px;display:flex;flex-direction:column;justify-content:center;gap:3px;transition:border-color .12s,background .12s}
+.spk-we-numcell:hover{border-color:#1d9e75;background:#f2fbf7}
+.spk-we-numcell.sel{border-color:#1d9e75;border-width:2px;background:#eafaf3}
+.spk-we-numcell .ln{display:flex;align-items:center;gap:6px;font:12px/1.1 Arial,Helvetica,sans-serif;color:#2a3540}
+.spk-we-numcell .ln .mk{color:#12303f;min-width:22px;font-weight:600}
+.spk-we-numcell .ln .ba{flex:1;height:3px;background:#c7ced4;border-radius:2px}
+.spk-we-numcell.none{align-items:center;justify-content:center;font:600 12px Arial;color:#3d4a55}
+.spk-we-numdiv{height:1px;background:#e8ebee;margin:4px 0 12px}
+.spk-we-numact{display:flex;flex-direction:column;gap:2px;margin-top:6px}
+.spk-we-numactbtn{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:none;border:none;border-radius:7px;padding:9px 8px;cursor:pointer;font:13px Arial;color:#25303a}
+.spk-we-numactbtn:hover{background:#f2f5f7}
+.spk-we-numactbtn svg{width:16px;height:16px;flex:0 0 auto;color:#5a6773}
+/* Modal 'Tetapkan Format Nomor Baru' */
+.spk-we-nfmodal{position:fixed;inset:0;z-index:10000;background:rgba(14,48,63,.5);display:none;align-items:center;justify-content:center;padding:20px}
+.spk-we-nfmodal.show{display:flex}
+.spk-we-nfcard{background:#fff;border-radius:12px;width:min(430px,96vw);box-shadow:0 30px 80px -20px rgba(0,0,0,.5);overflow:hidden}
+.spk-we-nfhead{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid #e5eaee;font-weight:800;color:#12303f;font-size:14px}
+.spk-we-nfbody{padding:14px 16px}
+.spk-we-nfbody label{display:block;font-size:12px;font-weight:600;color:#3d4a55;margin:10px 0 5px}
+.spk-we-nfbody label:first-child{margin-top:0}
+.spk-we-nfbody select,.spk-we-nfbody input{width:100%;height:34px;border:1px solid #d5dbe0;border-radius:7px;padding:0 9px;font:13px Arial;color:#25303a;background:#fff}
+.spk-we-nfprev{margin-top:12px;border:1px solid #e2e7eb;border-radius:8px;padding:12px;background:#f8fafb}
+.spk-we-nfprev .pl{font-size:11px;color:#6b7885;font-weight:700;text-transform:uppercase;letter-spacing:.03em;margin-bottom:7px}
+.spk-we-nfprev .rw{display:flex;align-items:center;gap:8px;margin:5px 0;font:13px Arial;color:#1c2733}
+.spk-we-nfprev .rw .mk{min-width:32px;font-weight:600}
+.spk-we-nfprev .rw .ba{flex:1;height:4px;background:#111;border-radius:2px}
+.spk-we-nffoot{display:flex;justify-content:flex-end;gap:8px;padding:12px 16px;border-top:1px solid #e5eaee}
+/* Dropdown spasi baris (gaya Word) */
+.spk-we-lhwrap{position:relative;display:inline-flex}
+.spk-we-lhpop{position:absolute;top:calc(100% + 4px);left:0;z-index:60;background:#fff;border:1px solid #d5dbe0;border-radius:10px;box-shadow:0 18px 44px -12px rgba(10,25,40,.4);padding:6px;width:250px;display:none}
+.spk-we-lhpop.show{display:block}
+.spk-we-lhitem{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:none;border-radius:7px;padding:9px 12px;cursor:pointer;font:13px Arial;color:#25303a}
+.spk-we-lhitem:hover{background:#f2f5f7}
+.spk-we-lhitem .ck{width:16px;flex:0 0 auto;color:#1d9e75;font-weight:700;visibility:hidden}
+.spk-we-lhitem.on .ck{visibility:visible}
+.spk-we-lhitem svg{width:16px;height:16px;flex:0 0 auto;color:#5a6773}
+.spk-we-lhdiv{height:1px;background:#e8ebee;margin:5px 4px}
+/* Dialog Paragraf */
+.spk-we-pgprev .rw{height:6px;background:#c9ced3;border-radius:2px;margin:3px 0}
+.spk-we-pgprev .rc{height:6px;background:#111;border-radius:2px;margin:3px auto}
+.spk-we-nfbody .row2{display:flex;gap:12px}
+.spk-we-nfbody .row2>div{flex:1}
+.spk-we-nfcard.wide{width:min(560px,96vw)}
+/* Dropdown pustaka poin (gaya Word) */
+.spk-we-bulwrap{position:relative;display:inline-flex}
+.spk-we-bulpop{position:absolute;top:calc(100% + 4px);left:0;z-index:60;background:#fff;border:1px solid #d5dbe0;border-radius:10px;box-shadow:0 18px 44px -12px rgba(10,25,40,.4);padding:12px;width:300px;max-height:420px;overflow:auto;display:none}
+.spk-we-bulpop.show{display:block}
+.spk-we-bulgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.spk-we-bulcell{border:1px solid #e2e7eb;border-radius:8px;background:#fff;cursor:pointer;min-height:56px;display:flex;align-items:center;justify-content:center;font:18px/1 Arial,Helvetica,sans-serif;color:#12303f;transition:border-color .12s,background .12s}
+.spk-we-bulcell:hover{border-color:#1d9e75;background:#f2fbf7}
+.spk-we-bulcell.none{font:600 11px Arial;color:#3d4a55;text-align:center;padding:4px}
+.spk-we-bulcell.sel{border-color:#1d9e75;border-width:2px;background:#eafaf3}
+/* Pratinjau klausul (mode Lihat) di halaman utama — samakan dengan dokumen */
+.spk-we-page .spk-cl{font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.15}
+.spk-we-page .spk-cl p{margin:0 0 6pt;text-align:justify;line-height:1.15}
+.spk-we-page .spk-cl p.kl0{margin-left:0;text-indent:0}
+.spk-we-page .spk-cl p.klp{margin-left:0;text-indent:.75cm}
+.spk-we-page .spk-cl p.klp1{margin-left:.75cm;text-indent:.75cm}
+.spk-we-page .spk-cl p.klp2{margin-left:1.5cm;text-indent:.75cm}
+.spk-we-page .spk-cl p.kl1{margin-left:.75cm;text-indent:-.75cm}
+.spk-we-page .spk-cl p.kl2{margin-left:1.5cm;text-indent:-.75cm}
+.spk-we-page .spk-cl p.kl1.spk-sl{margin-left:.75cm;text-indent:-.75cm;padding-left:0}
+.spk-we-page .spk-cl p.kl2.spk-sl{margin-left:1.5cm;text-indent:-.75cm;padding-left:0}
+.spk-we-page .spk-cl p.spk-sl .n{display:inline-block;width:.75cm;text-indent:0;text-align:left}
+.spk-we-page .spk-cl p.kldesc{margin-left:.75cm;text-indent:0}
+.spk-we-page .spk-cl p .n{display:inline-block;width:.75cm;text-indent:0;text-align:left}
+.spk-we-page .spk-cl i{font-style:italic}
+.spk-we-page .spk-cl b{font-weight:700}
+
 </style>
 <script>
 /* ===== MODUL PEMBUATAN KONTRAK (SPK) ===== */
@@ -17778,9 +17900,14 @@ function spkBuildCtx(data){
   ctx.hari_ttd = spkDayName(d.tanggal_kontrak);
   ctx.tgl_kontrak_num = spkDateNum(d.tanggal_kontrak);
   ctx.tgl_kontrak_terbilang = spkTglTerbilang(d.tanggal_kontrak);
-  // Narasi Uraian Pekerjaan: resolusikan placeholder di dalamnya lalu format rapi
+  // Narasi Uraian Pekerjaan: resolusikan placeholder di dalamnya lalu format rapi.
+  // Jika sudah berupa HTML (dari editor WYSIWYG, mengandung <p ...>), pakai apa adanya
+  // agar tampilan cetak sama persis dengan yang diketik; jika masih teks polos (data
+  // lama), tetap diformat otomatis oleh spkFormatNarasi (kompatibel mundur).
   ['latar_belakang','permasalahan','maksud_tujuan'].forEach(function(k){
-    ctx[k]=spkFormatNarasi(spkMerge(d[k]||'', ctx));
+    var raw=d[k]||'';
+    if(/<p[\s>]/i.test(raw)) ctx[k]=spkMerge(raw, ctx);
+    else ctx[k]=spkFormatNarasi(spkMerge(raw, ctx));
   });
   return ctx;
 }
@@ -17882,8 +18009,10 @@ function spkFieldInput(f){
     return '<div class="field"'+span+'><label>'+fkEsc(f.l)+'</label><textarea rows="3" oninput="spkSet(\''+f.k+'\',this.value)">'+fkEsc(v||'')+'</textarea></div>';
   }
   if(f.t==='narasi'){
-    return '<div class="field"'+span+'><label>'+fkEsc(f.l)+' <span class="spk-narasi-hint">— tempel (paste) teks; kerapian, indentasi &amp; penomoran a./b./1./2. diatur otomatis</span></label>'+
-      '<textarea class="spk-narasi-input" rows="6" oninput="spkNarasiInput(this,\''+f.k+'\')" onpaste="spkNarasiPaste(this,\''+f.k+'\')" placeholder="Tempel isi '+fkEsc(f.l)+' di sini... (satu paragraf per baris, atau baris berawalan a. / b. / 1. / 2. untuk daftar)">'+fkEsc(v||'')+'</textarea>'+
+    var isiAda = String(v||'').replace(/<[^>]+>/g,'').trim()!=='';
+    return '<div class="field"'+span+'><label>'+fkEsc(f.l)+' <span class="spk-narasi-hint">— klik tombol untuk membuka editor teks (kerapian sama dengan cetak)</span></label>'+
+      '<button type="button" class="btn btn-teal btn-sm spk-narasi-openbtn" style="margin-bottom:8px" onclick="spkNarasiOpenEditor(\''+f.k+'\',\''+fkEscJs(f.l)+'\')">'+
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> '+(isiAda?'Ubah Teks '+fkEsc(f.l):'Isi Teks '+fkEsc(f.l))+'</button>'+
       '<div class="spk-narasi-prevwrap"><div class="spk-narasi-prevlabel">Pratinjau kerapian (mengikuti dokumen)</div><div class="spk-narasi-prev" id="spk-prev-'+f.k+'">'+spkNarasiPreviewHtml(v||'')+'</div></div>'+
     '</div>';
   }
@@ -18246,8 +18375,11 @@ function spkDocCss(){
    jarak cukup tanpa menabrak teks. */
 function spkNumberFix(html){
   html = String(html||'').replace(
-    /<p class="(kl1|kl2)">((?:[0-9]+\.)+|[A-Za-z]\.)(&nbsp;|\s)/g,
-    function(m, cls, tok, sp){
+    /<p class="(kl1|kl2)"((?:\s+[a-zA-Z-]+="[^"]*")*)>((?:[0-9]+\.)+|[0-9]+\)|[A-Za-z][.)]|[ivxlcdmIVXLCDM]{2,4}[.)])(&nbsp;|\s)/g,
+    function(m, cls, attrs, tok, sp){
+      // Lindungi singkatan umum yang kebetulan tampak seperti angka romawi
+      // (mis. "CV." "CD." "MM." "DVD.") agar tidak salah dianggap penomoran.
+      if(/^(CV|CD|MM|DVD|DIV|MMC|LC|DC|ID|IL|IM)[.)]$/i.test(tok)) return m;
       const isSingleNum = /^[0-9]+\.$/.test(tok);          // "1." "10."
       const right = isSingleNum && parseInt(tok,10) >= 10; // 2 digit -> rata kanan
       const multi = /^(?:[0-9]+\.){2,}$/.test(tok);        // "5.1." "3.1.1."
@@ -18258,7 +18390,7 @@ function spkNumberFix(html){
       const forceLv1 = multi && cls === 'kl2';
       const cls2 = 'n' + (right ? ' r' : '') + (multi ? ' m' : '');
       const pcls = cls + ' spk-sl' + (multi ? ' spk-ml' : '') + (forceLv1 ? ' spk-lv1' : '');
-      return '<p class="'+pcls+'"><span class="'+cls2+'">'+tok+'</span>'+sp;
+      return '<p class="'+pcls+'"'+(attrs||'')+'><span class="'+cls2+'">'+tok+'</span>'+sp;
     }
   );
   /* Pada daftar "Berdasarkan" (spk-dlist) yang rata kanan-kiri (justify), nomor
@@ -18267,6 +18399,14 @@ function spkNumberFix(html){
      memutus pada "/" atau "-"), karena akan menimbulkan celah spasi lebar. Setiap
      token panjang seperti itu dibungkus <span class="nbrk"> agar tetap utuh —
      bila tak muat, seluruh nomor turun ke baris berikut sebagai satu kesatuan. */
+  /* Simbol poin (bullet) di awal paragraf kl2 -> bungkus <span class="n"> agar
+     jarak simbol->teks seragam (tab 0,75 cm) seperti nomor. */
+  html = html.replace(
+    /<p class="kl2"((?:\s+[a-zA-Z-]+="[^"]*")*)>([\u25CF\u25CB\u25A0\u25C6\u27A4\u2713\u2013\u2726\u2022\u25E6\u2043\u2219\u203B\u2605\u2606\u2666\u2665\u25B8\u25AA\u2794\u21D2\u00BB\u2717\u2691])(&nbsp;|\u00A0|\s)/g,
+    function(m, attrs, ch, sp){
+      return '<p class="kl2 spk-sl"'+(attrs||'')+'><span class="n">'+ch+'</span>'+sp;
+    }
+  );
   html = spkNoBreakRefNumbers(html);
   return html;
 }
@@ -18301,6 +18441,885 @@ function spkFmtJudul(judul){
   SPK_ITALIC_TERMS.forEach(t=>{ s=s.split(t).join('<i>'+t+'</i>'); });
   return s;
 }
+/* ================= EDITOR WYSIWYG BERGAYA DOKUMEN SPK =================
+   Menghasilkan HTML dengan kelas kl0/kl1/kl2/klp/klp1/klp2 yang identik dengan
+   dokumen SPK, sehingga tampilan saat mengetik = pratinjau = cetak.
+   Dipakai oleh: field narasi (Latar Belakang/Permasalahan/Maksud & Tujuan)
+   dan editor Pustaka Klausul. */
+var spkWE = { onSave:null, key:null };
+
+/* --- Bangun kerangka modal editor (sekali saja) --- */
+function spkWEEnsureOverlay(){
+  var ov=document.getElementById('spk-we-overlay');
+  if(ov) return ov;
+  ov=document.createElement('div'); ov.id='spk-we-overlay'; ov.className='spk-ov';
+  document.body.appendChild(ov);
+  ov.addEventListener('click', function(e){ if(e.target.id==='spk-we-overlay') spkWEClose(); });
+  return ov;
+}
+
+function spkWEToolbarHtml(){
+  return '<div class="spk-we-toolbar">'+
+    '<div class="spk-we-trow">'+
+      '<div class="spk-we-grp">'+
+        '<select id="spk-we-block" title="Gaya paragraf" onchange="spkWEBlock(this.value)">'+
+          '<option value="kl0">Teks biasa</option>'+
+          '<option value="klp">Paragraf (menjorok)</option>'+
+          '<option value="kl1">Butir angka (1.)</option>'+
+          '<option value="kl2">Butir huruf (a.)</option>'+
+          '<option value="H">Judul klausul</option>'+
+        '</select>'+
+      '</div>'+
+      '<span class="spk-we-sep"></span>'+
+      '<div class="spk-we-grp">'+
+        '<button type="button" title="Turunkan level (indent)" onmousedown="return spkWEmd(event)" onclick="spkWEIndent(1)">&#8677;</button>'+
+        '<button type="button" title="Naikkan level" onmousedown="return spkWEmd(event)" onclick="spkWEIndent(-1)">&#8676;</button>'+
+        '<span class="spk-we-bulwrap"><button type="button" id="spk-we-bulbtn" title="Daftar poin" onmousedown="return spkWEmd(event)" onclick="spkWEBulToggle(event)">&#8226;&#8801; <span style="font-size:9px;margin-left:1px">&#9662;</span></button></span>'+
+        '<span class="spk-we-numwrap"><button type="button" id="spk-we-numbtn" title="Daftar bernomor" onmousedown="return spkWEmd(event)" onclick="spkWENumToggle(event)">1.&#8801; <span style="font-size:9px;margin-left:1px">&#9662;</span></button></span>'+
+      '</div>'+
+      '<span class="spk-we-sep"></span>'+
+      '<div class="spk-we-grp">'+
+        '<select id="spk-we-case" title="Ubah huruf" onchange="spkWECase(this.value)">'+
+          '<option value="">Aa Huruf</option>'+
+          '<option value="upper">HURUF BESAR</option>'+
+          '<option value="lower">huruf kecil</option>'+
+          '<option value="cap">Kapital Awal</option>'+
+        '</select>'+
+        '<button type="button" id="spk-we-fp" title="Format Painter (Ctrl+Alt+C)" onmousedown="return spkWEmd(event)" onclick="spkWEPainterClick()">&#128463;</button>'+
+        '<button type="button" title="Bersihkan format" onmousedown="return spkWEmd(event)" onclick="spkWECmd(\'removeFormat\')">&#10006;</button>'+
+      '</div>'+
+    '</div>'+
+    '<div class="spk-we-trow">'+
+      '<div class="spk-we-grp">'+
+        '<button type="button" title="Tebal" onmousedown="return spkWEmd(event)" onclick="spkWECmd(\'bold\')"><b>B</b></button>'+
+        '<button type="button" title="Miring" onmousedown="return spkWEmd(event)" onclick="spkWECmd(\'italic\')"><i>I</i></button>'+
+        '<button type="button" title="Garis bawah" onmousedown="return spkWEmd(event)" onclick="spkWECmd(\'underline\')"><u>U</u></button>'+
+        '<button type="button" title="Coret" onmousedown="return spkWEmd(event)" onclick="spkWECmd(\'strikeThrough\')"><s>S</s></button>'+
+        '<button type="button" title="Subscript" onmousedown="return spkWEmd(event)" onclick="spkWECmd(\'subscript\')">X&#8322;</button>'+
+        '<button type="button" title="Superscript" onmousedown="return spkWEmd(event)" onclick="spkWECmd(\'superscript\')">X&#178;</button>'+
+      '</div>'+
+      '<span class="spk-we-sep"></span>'+
+      '<div class="spk-we-grp">'+
+        '<label class="spk-we-clabel" title="Warna teks"><span style="font-weight:700">A</span><input type="color" value="#e53935" oninput="spkWECmd(\'foreColor\',this.value)"></label>'+
+        '<label class="spk-we-clabel" title="Warna stabilo"><span>&#9998;</span><input type="color" value="#fff59d" oninput="spkWECmd(\'hiliteColor\',this.value)"></label>'+
+      '</div>'+
+      '<span class="spk-we-sep"></span>'+
+      '<div class="spk-we-grp">'+
+        '<button type="button" title="Rata kiri" onmousedown="return spkWEmd(event)" onclick="spkWEAlign(\'left\')">&#9776;</button>'+
+        '<button type="button" title="Rata tengah" onmousedown="return spkWEmd(event)" onclick="spkWEAlign(\'center\')">&#8801;</button>'+
+        '<button type="button" title="Rata kanan" onmousedown="return spkWEmd(event)" onclick="spkWEAlign(\'right\')">&#9776;</button>'+
+        '<button type="button" title="Rata kiri-kanan" onmousedown="return spkWEmd(event)" onclick="spkWEAlign(\'justify\')">&#9636;</button>'+
+        '<span class="spk-we-lhwrap"><button type="button" id="spk-we-lhbtn" title="Spasi baris &amp; paragraf" onmousedown="return spkWEmd(event)" onclick="spkWELHToggle(event)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M3 6h13M3 12h13M3 18h13M20 8V4m0 0-2 2m2-2 2 2M20 16v4m0 0-2-2m2 2 2-2"/></svg> <span style="font-size:9px;margin-left:1px">&#9662;</span></button></span>'+
+      '</div>'+
+      '<span class="spk-we-sep"></span>'+
+      '<div class="spk-we-grp">'+
+        '<button type="button" title="Urungkan" onmousedown="return spkWEmd(event)" onclick="spkWECmd(\'undo\')">&#8630;</button>'+
+        '<button type="button" title="Ulangi" onmousedown="return spkWEmd(event)" onclick="spkWECmd(\'redo\')">&#8631;</button>'+
+      '</div>'+
+      '<span class="spk-we-sep"></span>'+
+      '<div class="spk-we-grp">'+
+        '<label class="spk-we-check" title="Tampilkan / sembunyikan penggaris"><input type="checkbox" id="spk-we-rulertgl" checked onchange="spkWEToggleRuler(this.checked)"> Penggaris</label>'+
+      '</div>'+
+    '</div>'+
+  '</div>'+
+  '<div class="spk-we-rulerwrap" id="spk-we-rulerwrap"><div class="spk-we-ruler" id="spk-we-ruler"><svg id="spk-we-rulersvg" width="794" height="24"></svg></div></div>';
+}
+
+function spkWEmd(e){ e.preventDefault(); return false; }
+
+/* --- Buka editor --- .
+   opts = { title, html, placeholder, onSave(html) } */
+function spkWEOpen(opts){
+  opts=opts||{};
+  spkWE.onSave = opts.onSave || null;
+  var titleFieldHtml = opts.titleField
+    ? '<div style="padding:12px 16px 4px;background:#fff;border-bottom:1px solid #eef1f3"><div class="field" style="margin:0"><label>'+fkEsc(opts.titleField.label||'Judul')+'</label>'+
+        '<input type="text" id="spk-we-titleinput" value="'+fkEsc(opts.titleField.value||'')+'" placeholder="'+fkEsc(opts.titleField.placeholder||'')+'"></div></div>'
+    : '';
+  var ov=spkWEEnsureOverlay();
+  ov.innerHTML=
+    '<div class="spk-ov-modal spk-ov-we">'+
+      '<div class="spk-ov-head"><span class="spk-ov-title">'+fkEsc(opts.title||'Editor Teks')+'</span>'+
+        '<button class="btn btn-ghost btn-sm" onclick="spkWEClose()">Tutup</button></div>'+
+      '<div class="spk-ov-body">'+
+        titleFieldHtml+
+        spkWEToolbarHtml()+
+        '<div class="spk-we-pagearea"><div class="spk-we-page">'+
+          '<div class="spk-we-doc" id="spk-we-doc" contenteditable="true" spellcheck="true" data-ph="'+fkEsc(opts.placeholder||'Mulai ketik di sini...')+'"></div>'+
+        '</div></div>'+
+      '</div>'+
+      '<div class="spk-we-foot">'+
+        '<span class="spk-we-status"><span id="spk-we-count">0 kata</span><span>A4 &middot; Portrait</span></span>'+
+        '<button class="btn btn-green" onclick="spkWEDoSave()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> Simpan</button>'+
+      '</div>'+
+    '</div>';
+  var doc=document.getElementById('spk-we-doc');
+  doc.innerHTML = spkWENormalizeIn(opts.html||'');
+  spkWEBindDoc(doc);
+  ov.classList.add('show');
+  try{ document.execCommand('defaultParagraphSeparator', false, 'p'); }catch(e){}
+  spkWEDrawRuler();
+  spkWECount();
+  setTimeout(function(){ try{ doc.focus(); }catch(e){} spkWEDrawRuler(); }, 60);
+}
+
+function spkWEClose(){ var ov=document.getElementById('spk-we-overlay'); if(ov) ov.classList.remove('show'); spkWE.onSave=null; try{ spkWENumClose(); }catch(e){} try{ spkWELHClose(); }catch(e){} try{ spkWEBulClose(); }catch(e){} }
+
+function spkWEDoSave(){
+  var doc=document.getElementById('spk-we-doc'); if(!doc) return;
+  var html=spkWESerialize(doc);
+  var ti=document.getElementById('spk-we-titleinput');
+  var title = ti ? String(ti.value||'').trim() : null;
+  var cb=spkWE.onSave;
+  // Bila ada field judul dan judul kosong, jangan tutup — beri peringatan
+  if(ti && !title){ if(typeof toast==='function') toast('Judul wajib diisi','warn'); ti.focus(); return; }
+  spkWEClose();
+  if(typeof cb==='function') cb(html, title);
+}
+
+/* --- Normalisasi HTML masuk: pastikan tiap blok teratas adalah <p class="klX"> --- */
+function spkWENormalizeIn(html){
+  html=String(html||'').trim();
+  if(!html) return '<p class="kl0"><br></p>';
+  var tmp=document.createElement('div'); tmp.innerHTML=html;
+  // Jika isi hanya teks tanpa <p>, bungkus jadi satu paragraf
+  if(!tmp.querySelector('p')){
+    return '<p class="kl0">'+html+'</p>';
+  }
+  // Pastikan tiap <p> punya salah satu kelas kl*
+  var ps=tmp.querySelectorAll('p');
+  for(var i=0;i<ps.length;i++){
+    var p=ps[i];
+    if(!/\b(kl0|kl1|kl2|klp|klp1|klp2|kldesc)\b/.test(p.className)){
+      p.className=(p.className? p.className+' ':'')+'kl0';
+    }
+    if(p.innerHTML.trim()==='') p.innerHTML='<br>';
+  }
+  return tmp.innerHTML;
+}
+
+/* --- Serialisasi keluar: hasil HTML bersih dengan kelas dokumen kl* --- */
+function spkWESerialize(doc){
+  var tmp=document.createElement('div');
+  tmp.innerHTML=doc.innerHTML;
+  // Buang atribut contenteditable sisa
+  var all=tmp.querySelectorAll('[contenteditable]');
+  for(var i=0;i<all.length;i++) all[i].removeAttribute('contenteditable');
+  // Ubah <div> tak sengaja (dari perilaku browser) jadi <p class="kl0">
+  var divs=tmp.querySelectorAll('div');
+  for(var d=divs.length-1; d>=0; d--){
+    var dv=divs[d];
+    var np=document.createElement('p'); np.className='kl0'; np.innerHTML=dv.innerHTML;
+    if(dv.style && dv.style.textAlign) np.style.textAlign=dv.style.textAlign;
+    dv.parentNode.replaceChild(np, dv);
+  }
+  // Pastikan tiap <p> punya kelas kl*, pertahankan text-align bila diset pengguna
+  var ps=tmp.querySelectorAll('p');
+  for(var j=0;j<ps.length;j++){
+    var pp=ps[j];
+    if(!/\b(kl0|kl1|kl2|klp|klp1|klp2|kldesc)\b/.test(pp.className||'')){
+      pp.className=((pp.className||'')+' kl0').trim();
+    }
+    // buang penanda judul internal (data-h) tapi biarkan style tebal/kapital
+    pp.removeAttribute('data-h');
+    // buang style kosong
+    if(pp.getAttribute('style')==='') pp.removeAttribute('style');
+  }
+  return tmp.innerHTML.replace(/<br>\s*<\/p>/g,'</p>').trim();
+}
+
+/* --- Ikat event pada kanvas --- */
+function spkWEBindDoc(doc){
+  doc.addEventListener('input', function(){ spkWECount(); spkWESyncBlockSelect(); });
+  doc.addEventListener('keyup', spkWESyncBlockSelect);
+  doc.addEventListener('mouseup', function(){
+    if(doc.classList.contains('fp-active')){ setTimeout(spkWEPainterApply,0); return; }
+    spkWESyncBlockSelect();
+  });
+  // Enter di dalam paragraf: pertahankan kelas kl*; bila paragraf diawali penanda
+  // nomor sah (1. / a. / i. / I. / 1)), buat nomor BERIKUTNYA secara otomatis.
+  doc.addEventListener('keydown', function(e){
+    if(e.key==='Escape'){ spkWEPainterMode(false); return; }
+    if(e.key==='Enter' && !e.shiftKey){
+      var p=spkWECurrentP();
+      if(p){
+        var cls=(p.className.match(/\b(kl0|kl1|kl2|klp|klp1|klp2|kldesc)\b/)||[])[1]||'kl0';
+        var nextMk=spkWENextMarker(p);   // penanda berikutnya bila ada
+        // Bila item bernomor tapi ISINYA kosong (hanya penanda) -> Enter mengakhiri list
+        var plain=(p.textContent||'').trim();
+        var mkNow=spkWECurrentMarker(p);
+        var endList = mkNow && plain===mkNow.replace(/\s+$/,'');
+        setTimeout(function(){
+          var np=spkWECurrentP();
+          if(np && np!==p){
+            if(endList){ // hapus penanda di paragraf lama, jadikan kedua paragraf biasa
+              spkWEStripLeadingMarker(p); p.className='kl0';
+              np.className='kl0';
+            } else {
+              np.className=cls;
+              if(nextMk){
+                // sisipkan penanda berikutnya di awal paragraf baru
+                np.innerHTML = nextMk+' '+np.innerHTML.replace(/^(<br>)?/,'');
+              }
+            }
+            np.removeAttribute('data-h');
+            np.style.fontWeight=''; np.style.textTransform='';
+          }
+          spkWECount();
+        }, 0);
+      }
+    }
+  });
+}
+/* Ambil penanda nomor di awal paragraf (mis. "3." "b." "iv." "2)") atau null */
+function spkWECurrentMarker(p){
+  var txt=(p.textContent||'');
+  var m=txt.match(/^\s*((?:\d+\.)+|\d+\)|[A-Za-z][.)]|[ivxlcdmIVXLCDM]{2,4}[.)])\s/);
+  if(!m) return null;
+  var tok=m[1];
+  if(/^(CV|CD|MM|DVD|DIV|MMC|LC|DC|ID|IL|IM)[.)]$/i.test(tok)) return null;
+  return tok;
+}
+/* Hitung penanda BERIKUTNYA dari penanda saat ini (1.->2., a.->b., iv.->v., 2)->3)) */
+function spkWENextMarker(p){
+  var tok=spkWECurrentMarker(p); if(!tok) return null;
+  var close = /\)$/.test(tok) ? ')' : '.';
+  var core = tok.replace(/[.)]$/,'');
+  // angka
+  if(/^\d+$/.test(core)) return (parseInt(core,10)+1)+close;
+  // angka majemuk (3.1.) -> naikkan segmen terakhir
+  if(/^(?:\d+\.)+$/.test(tok)){
+    var segs=tok.replace(/\.$/,'').split('.');
+    segs[segs.length-1]=String(parseInt(segs[segs.length-1],10)+1);
+    return segs.join('.')+'.';
+  }
+  // huruf tunggal NON-romawi -> alfabet (a->b). Huruf romawi tunggal (I,V,X,L,C,D,M
+  // dan i,v,x,...) ditangani di blok romawi di bawah agar I.->II. bukan I.->J.
+  if(/^[A-Za-z]$/.test(core) && !/^[ivxlcdmIVXLCDM]$/.test(core)){
+    var up=/[A-Z]/.test(core);
+    var code=core.toLowerCase().charCodeAt(0);
+    var nx = code>=122 ? 'a' : String.fromCharCode(code+1);
+    return (up?nx.toUpperCase():nx)+close;
+  }
+  // romawi (termasuk huruf romawi tunggal seperti I. / i. / V.)
+  if(/^[ivxlcdm]{1,4}$/i.test(core)){
+    var up2 = core===core.toUpperCase();
+    var val=spkRomanToInt(core.toUpperCase());
+    if(val>0){ var r=spkNumRoman(val+1); return (up2?r:r.toLowerCase())+close; }
+  }
+  return null;
+}
+function spkRomanToInt(s){
+  var map={I:1,V:5,X:10,L:50,C:100,D:500,M:1000}, n=0, prev=0;
+  for(var i=s.length-1;i>=0;i--){ var v=map[s[i]]||0; if(v<prev) n-=v; else { n+=v; prev=v; } }
+  return n;
+}
+
+function spkWECmd(cmd,val){
+  var doc=document.getElementById('spk-we-doc'); if(!doc) return;
+  doc.focus();
+  try{ document.execCommand(cmd,false,val||null); }catch(e){}
+  spkWECount();
+}
+
+function spkWEAlign(dir){
+  // Untuk dokumen SPK default justify; izinkan override per paragraf via style ringan
+  var p=spkWECurrentP(); if(!p) return;
+  p.style.textAlign = dir;
+}
+
+/* --- Cari <p> yang sedang aktif (tempat kursor) --- */
+function spkWECurrentP(){
+  var sel=window.getSelection(); if(!sel.rangeCount) return null;
+  var node=sel.anchorNode; if(!node) return null;
+  if(node.nodeType===3) node=node.parentNode;
+  var doc=document.getElementById('spk-we-doc');
+  while(node && node!==doc && node.tagName!=='P') node=node.parentNode;
+  return (node && node.tagName==='P')? node : null;
+}
+
+/* Semua <p> yang tersentuh seleksi */
+function spkWESelectedPs(){
+  var doc=document.getElementById('spk-we-doc'); if(!doc) return [];
+  var sel=window.getSelection(); if(!sel.rangeCount) { var p=spkWECurrentP(); return p?[p]:[]; }
+  var range=sel.getRangeAt(0);
+  var ps=Array.prototype.slice.call(doc.querySelectorAll('p'));
+  var hit=ps.filter(function(p){ return range.intersectsNode ? range.intersectsNode(p) : true; });
+  if(!hit.length){ var c=spkWECurrentP(); if(c) hit=[c]; }
+  return hit;
+}
+
+/* --- Terapkan gaya paragraf (dropdown) --- */
+function spkWEBlock(val){
+  var doc=document.getElementById('spk-we-doc'); if(!doc) return; doc.focus();
+  var ps=spkWESelectedPs();
+  ps.forEach(function(p){
+    if(val==='H'){ p.className='kl0'; p.setAttribute('data-h','1'); p.style.fontWeight='700'; p.style.textTransform='uppercase'; p.style.textAlign='left'; }
+    else { p.removeAttribute('data-h'); p.style.fontWeight=''; p.style.textTransform=''; p.style.textAlign=''; p.className=val; }
+  });
+  spkWECount();
+}
+
+/* Sinkronkan dropdown gaya dengan paragraf aktif */
+function spkWESyncBlockSelect(){
+  var sel=document.getElementById('spk-we-block'); if(!sel) return;
+  var p=spkWECurrentP(); if(!p) return;
+  var cls=(p.className.match(/\b(kl0|kl1|kl2|klp|klp1|klp2)\b/)||[])[1]||'kl0';
+  if(p.getAttribute('data-h')==='1') cls='H';
+  sel.value=cls;
+}
+
+/* --- Indent naik/turun level (0,75cm) mengikuti kelas dokumen --- */
+function spkWEIndent(dir){
+  var doc=document.getElementById('spk-we-doc'); if(!doc) return; doc.focus();
+  var order=['kl0','klp','kl1','kl2'];
+  var ps=spkWESelectedPs();
+  ps.forEach(function(p){
+    var cur=(p.className.match(/\b(kl0|kl1|kl2|klp|klp1|klp2)\b/)||[])[1]||'kl0';
+    // petakan klp1/klp2 ke level agar konsisten
+    if(cur==='klp1') cur='kl1'; if(cur==='klp2') cur='kl2';
+    var i=order.indexOf(cur); if(i<0) i=0;
+    i=Math.max(0, Math.min(order.length-1, i+dir));
+    p.className=order[i];
+  });
+  spkWESyncBlockSelect();
+}
+
+/* --- Ubah huruf --- */
+function spkWECase(mode){
+  var selEl=document.getElementById('spk-we-case'); if(selEl) selEl.value='';
+  if(!mode) return;
+  var sel=window.getSelection(); if(!sel.rangeCount||sel.isCollapsed) return;
+  var txt=sel.toString(); var out=txt;
+  if(mode==='upper') out=txt.toUpperCase();
+  else if(mode==='lower') out=txt.toLowerCase();
+  else if(mode==='cap') out=txt.replace(/\b\w/g,function(c){return c.toUpperCase();});
+  spkWECmd('insertText',out);
+}
+
+/* --- Hitung kata --- */
+function spkWECount(){
+  var doc=document.getElementById('spk-we-doc'); var el=document.getElementById('spk-we-count');
+  if(!doc||!el) return;
+  var t=(doc.innerText||'').trim();
+  el.textContent=(t? t.split(/\s+/).length : 0)+' kata';
+}
+
+/* --- Toggle penggaris --- */
+function spkWEToggleRuler(on){
+  var w=document.getElementById('spk-we-rulerwrap'); if(w) w.classList.toggle('hidden', !on);
+}
+
+/* --- Gambar penggaris (skala 1-15, penanda cm) --- */
+function spkWEDrawRuler(){
+  var svg=document.getElementById('spk-we-rulersvg'); if(!svg) return;
+  var w=794; var marks=16; var step=w/marks;
+  var html='<line x1="0" y1="22" x2="'+w+'" y2="22" stroke="#c9d0d6" stroke-width="1"/>';
+  for(var i=0;i<=marks;i++){
+    var x=i*step;
+    html+='<line x1="'+x+'" y1="14" x2="'+x+'" y2="22" stroke="#aab3ba" stroke-width="1"/>';
+    if(i>=1&&i<=15) html+='<text x="'+x+'" y="11" text-anchor="middle" font-size="10" fill="#7f8991" font-family="Arial">'+i+'</text>';
+    if(i<marks){ var hx=x+step/2; html+='<line x1="'+hx+'" y1="17" x2="'+hx+'" y2="22" stroke="#b7bfc5" stroke-width="1"/>'; }
+  }
+  svg.innerHTML=html;
+}
+
+/* --- Format Painter (Ctrl+Alt+C) --- */
+var spkWEfp=null;
+function spkWEPainterCapture(){
+  var sel=window.getSelection(); if(!sel.rangeCount) return false;
+  var node=sel.anchorNode; if(node&&node.nodeType===3) node=node.parentElement;
+  if(!node) return false;
+  var cs=getComputedStyle(node);
+  spkWEfp={ fontWeight:cs.fontWeight, fontStyle:cs.fontStyle, textDecoration:cs.textDecorationLine, color:cs.color, backgroundColor:cs.backgroundColor };
+  return true;
+}
+function spkWEPainterApply(){
+  if(!spkWEfp) return;
+  var sel=window.getSelection(); if(!sel.rangeCount||sel.isCollapsed){ return; }
+  var range=sel.getRangeAt(0); var span=document.createElement('span');
+  span.style.fontWeight=spkWEfp.fontWeight; span.style.fontStyle=spkWEfp.fontStyle;
+  if(spkWEfp.textDecoration&&spkWEfp.textDecoration!=='none') span.style.textDecoration=spkWEfp.textDecoration;
+  span.style.color=spkWEfp.color;
+  if(spkWEfp.backgroundColor&&spkWEfp.backgroundColor!=='rgba(0, 0, 0, 0)') span.style.backgroundColor=spkWEfp.backgroundColor;
+  try{ span.appendChild(range.extractContents()); range.insertNode(span); sel.removeAllRanges(); }catch(e){}
+  spkWEPainterMode(false);
+}
+function spkWEPainterMode(on){
+  var doc=document.getElementById('spk-we-doc'); var btn=document.getElementById('spk-we-fp');
+  if(doc) doc.classList.toggle('fp-active', on);
+  if(btn) btn.classList.toggle('active', on);
+}
+function spkWEPainterClick(){ if(spkWEPainterCapture()) spkWEPainterMode(true); }
+
+/* ================= PUSTAKA PENOMORAN (gaya Word) =================
+   Menyisipkan nomor sebagai TEKS otomatis (1. 2. 3. / a. b. c. / I. II. III. /
+   i. ii. iii. / A. B. C. / 1) 2) 3) dst.) ke tiap paragraf terpilih, memakai
+   kelas kl1/kl2 sesuai level. Hasilnya sama persis dengan cetak SPK. */
+
+/* Definisi gaya: fn(index0)-> penanda; pane = 'lib' (pustaka) atau 'doc' (multi-level) */
+function spkNumRoman(n){
+  var map=[[1000,'M'],[900,'CM'],[500,'D'],[400,'CD'],[100,'C'],[90,'XC'],[50,'L'],[40,'XL'],[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']];
+  var s=''; n=n||0; for(var i=0;i<map.length;i++){ while(n>=map[i][0]){ s+=map[i][1]; n-=map[i][0]; } } return s;
+}
+function spkNumAlpha(n){ // 1->a, 26->z, 27->aa
+  var s=''; n=n; while(n>0){ var r=(n-1)%26; s=String.fromCharCode(97+r)+s; n=Math.floor((n-1)/26); } return s;
+}
+var SPK_NUMSTYLES={
+  'dec':   { label:'1. 2. 3.',  mk:function(i){return (i+1)+'.';},                 lvl:1 },
+  'decp':  { label:'1) 2) 3)',  mk:function(i){return (i+1)+')';},                 lvl:1 },
+  'romU':  { label:'I. II. III.',mk:function(i){return spkNumRoman(i+1)+'.';},      lvl:1 },
+  'romL':  { label:'i. ii. iii.',mk:function(i){return spkNumRoman(i+1).toLowerCase()+'.';}, lvl:2 },
+  'alpU':  { label:'A. B. C.',  mk:function(i){return spkNumAlpha(i+1).toUpperCase()+'.';}, lvl:2 },
+  'alpL':  { label:'a. b. c.',  mk:function(i){return spkNumAlpha(i+1)+'.';},       lvl:2 },
+  'alpUp': { label:'a) b) c)',  mk:function(i){return spkNumAlpha(i+1)+')';},       lvl:2 }
+};
+
+/* Pustaka (grid atas) mengikuti gambar: baris1 1./1)  ... disusun 3 kolom */
+var SPK_NUMLIB=[
+  {key:'none', none:true},
+  {key:'dec'}, {key:'decp'},
+  {key:'romU'},{key:'alpU'},{key:'alpUp'},
+  {key:'alpL'},{key:'romL'}
+];
+
+/* State format nomor kustom (dibuat via 'Tetapkan Format Nomor Baru') */
+var spkNumCustom=null; // {styleKey, fmt:'{n}.', align}
+
+function spkWENumToggle(e){
+  if(e){ e.preventDefault(); e.stopPropagation(); }
+  var wrap=document.querySelector('.spk-we-numwrap'); if(!wrap) return;
+  var pop=document.getElementById('spk-we-numpop');
+  if(pop && pop.classList.contains('show')){ spkWENumClose(); return; }
+  spkWENumOpen();
+}
+function spkWENumOpen(){
+  var wrap=document.querySelector('.spk-we-numwrap'); if(!wrap) return;
+  var pop=document.getElementById('spk-we-numpop');
+  if(!pop){ pop=document.createElement('div'); pop.id='spk-we-numpop'; pop.className='spk-we-numpop'; wrap.appendChild(pop); }
+  pop.innerHTML=spkWENumPopHtml();
+  pop.classList.add('show');
+  // tutup saat klik di luar
+  setTimeout(function(){ document.addEventListener('mousedown', spkWENumOutside, true); },0);
+}
+function spkWENumOutside(e){
+  var pop=document.getElementById('spk-we-numpop');
+  if(pop && !pop.contains(e.target) && e.target.id!=='spk-we-numbtn' && !(e.target.closest && e.target.closest('#spk-we-numbtn'))){
+    spkWENumClose();
+  }
+}
+function spkWENumClose(){
+  var pop=document.getElementById('spk-we-numpop');
+  if(pop) pop.classList.remove('show');
+  document.removeEventListener('mousedown', spkWENumOutside, true);
+}
+
+function spkWENumCell(key){
+  if(key==='none') return '<div class="spk-we-numcell none" onmousedown="return spkWEmd(event)" onclick="spkWENumApply(\'none\')">Tidak Ada</div>';
+  var st=SPK_NUMSTYLES[key]; if(!st) return '';
+  var rows='';
+  for(var i=0;i<3;i++){
+    rows+='<div class="ln"><span class="mk">'+st.mk(i)+'</span><span class="ba"></span></div>';
+  }
+  return '<div class="spk-we-numcell" onmousedown="return spkWEmd(event)" onclick="spkWENumApply(\''+key+'\')" title="'+st.label+'">'+rows+'</div>';
+}
+function spkWENumPopHtml(){
+  var lib='';
+  SPK_NUMLIB.forEach(function(it){ lib+=spkWENumCell(it.key); });
+  var html=
+    '<div class="spk-we-numsec">Pustaka Penomoran</div>'+
+    '<div class="spk-we-numgrid">'+lib+'</div>'+
+    '<div class="spk-we-numdiv"></div>'+
+    '<div class="spk-we-numact">'+
+      '<button type="button" class="spk-we-numactbtn" onmousedown="return spkWEmd(event)" onclick="spkWENumRemove()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg> Hapus Penomoran</button>'+
+      '<button type="button" class="spk-we-numactbtn" onmousedown="return spkWEmd(event)" onclick="spkWENumNewFormat()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Tetapkan Format Nomor Baru…</button>'+
+    '</div>';
+  return html;
+}
+
+/* Terapkan gaya ke paragraf terpilih: sisipkan nomor sebagai teks di awal,
+   set kelas level (kl1 untuk level-1, kl2 untuk level-2). Nomor lama dibersihkan. */
+function spkWENumApply(key){
+  spkWENumClose();
+  var doc=document.getElementById('spk-we-doc'); if(!doc) return;
+  var ps=spkWESelectedPs();
+  if(!ps.length){ doc.focus(); return; }
+  if(key==='none'){ spkWENumStripPs(ps); spkWECount(); doc.focus(); return; }
+  var st=SPK_NUMSTYLES[key]; if(!st) return;
+  var cls = st.lvl===2 ? 'kl2' : 'kl1';
+  var idx=0;
+  ps.forEach(function(p){
+    spkWEStripLeadingMarker(p);
+    var mk=st.mk(idx);
+    p.className=cls;
+    p.innerHTML=mk+' '+p.innerHTML;
+    idx++;
+  });
+  spkWECount(); spkWESyncBlockSelect();
+  try{ doc.focus(); }catch(e){}
+}
+
+/* Buang penomoran -> jadikan paragraf biasa (kl0) tanpa marker */
+function spkWENumRemove(){
+  spkWENumClose();
+  var ps=spkWESelectedPs();
+  spkWENumStripPs(ps);
+  spkWECount();
+}
+function spkWENumStripPs(ps){
+  ps.forEach(function(p){ spkWEStripLeadingMarker(p); p.className='kl0'; });
+}
+/* Hapus marker "1." / "a)" / "I." / "12.3.1." di awal paragraf bila ada */
+function spkWEStripLeadingMarker(p){
+  var h=p.innerHTML;
+  // buang <span class="n">...</span> di awal (hasil numberFix) + spasi
+  h=h.replace(/^\s*<span class="n[^"]*">[^<]*<\/span>\s*(&nbsp;|\s)?/i,'');
+  // buang marker teks polos di awal: angka(majemuk)/berkurung/huruf/romawi + . atau ) + spasi
+  h=h.replace(/^\s*((?:\d+\.)+|\d+\)|[A-Za-z][.)]|[ivxlcdmIVXLCDM]{2,4}[.)])\s+/,'');
+  p.innerHTML=h;
+}
+
+/* ---- Modal 'Tetapkan Format Nomor Baru' ---- */
+function spkWENumNewFormat(){
+  spkWENumClose();
+  var m=document.getElementById('spk-we-nfmodal');
+  if(!m){ m=document.createElement('div'); m.id='spk-we-nfmodal'; m.className='spk-we-nfmodal'; document.body.appendChild(m);
+    m.addEventListener('click', function(e){ if(e.target.id==='spk-we-nfmodal') spkWENFClose(); }); }
+  var opts='';
+  var order=['dec','romU','romL','alpU','alpL','decp','alpUp'];
+  order.forEach(function(k){ opts+='<option value="'+k+'">'+SPK_NUMSTYLES[k].label+'</option>'; });
+  m.innerHTML=
+    '<div class="spk-we-nfcard">'+
+      '<div class="spk-we-nfhead"><span>Atur Format Nomor Baru</span><button class="btn btn-ghost btn-sm" onclick="spkWENFClose()">✕</button></div>'+
+      '<div class="spk-we-nfbody">'+
+        '<label>Gaya angka</label>'+
+        '<select id="spk-nf-style" onchange="spkWENFPrev()">'+opts+'</select>'+
+        '<label>Format angka</label>'+
+        '<input type="text" id="spk-nf-fmt" value="{n}." oninput="spkWENFPrev()" placeholder="mis. {n}.  atau  ({n})">'+
+        '<div style="font-size:11px;color:#8a97a2;margin-top:4px">Gunakan <b>{n}</b> sebagai posisi angka. Contoh: <code>{n}.</code> &rarr; 1.  &nbsp; <code>({n})</code> &rarr; (1)</div>'+
+        '<label>Perataan</label>'+
+        '<select id="spk-nf-align"><option value="left">Kiri</option><option value="right">Kanan</option></select>'+
+        '<div class="spk-we-nfprev"><div class="pl">Pratinjau</div><div id="spk-nf-prev"></div></div>'+
+      '</div>'+
+      '<div class="spk-we-nffoot"><button class="btn btn-ghost btn-sm" onclick="spkWENFClose()">Batal</button><button class="btn btn-green btn-sm" onclick="spkWENFApply()">OK</button></div>'+
+    '</div>';
+  m.classList.add('show');
+  spkWENFPrev();
+}
+function spkWENFClose(){ var m=document.getElementById('spk-we-nfmodal'); if(m) m.classList.remove('show'); }
+function spkWENFRender(styleKey, fmt, i){
+  var st=SPK_NUMSTYLES[styleKey]||SPK_NUMSTYLES.dec;
+  // ambil bagian angka murni dari style (tanpa titik/kurung bawaan)
+  var base;
+  if(styleKey==='romU') base=spkNumRoman(i+1);
+  else if(styleKey==='romL') base=spkNumRoman(i+1).toLowerCase();
+  else if(styleKey==='alpU') base=spkNumAlpha(i+1).toUpperCase();
+  else if(styleKey==='alpL'||styleKey==='alpUp') base=spkNumAlpha(i+1);
+  else base=String(i+1);
+  return String(fmt||'{n}').replace(/\{n\}/g, base);
+}
+function spkWENFPrev(){
+  var s=(document.getElementById('spk-nf-style')||{}).value||'dec';
+  var f=(document.getElementById('spk-nf-fmt')||{}).value||'{n}.';
+  var box=document.getElementById('spk-nf-prev'); if(!box) return;
+  var h='';
+  for(var i=0;i<3;i++){ h+='<div class="rw"><span class="mk">'+fkEsc(spkWENFRender(s,f,i))+'</span><span class="ba"></span></div>'; }
+  box.innerHTML=h;
+}
+function spkWENFApply(){
+  var s=(document.getElementById('spk-nf-style')||{}).value||'dec';
+  var f=(document.getElementById('spk-nf-fmt')||{}).value||'{n}.';
+  var align=(document.getElementById('spk-nf-align')||{}).value||'left';
+  spkWENFClose();
+  var doc=document.getElementById('spk-we-doc'); if(!doc) return;
+  var ps=spkWESelectedPs(); if(!ps.length){ doc.focus(); return; }
+  // level: gaya huruf/romawi kecil -> kl2, selain itu kl1
+  var lvl2 = (s==='alpL'||s==='alpUp'||s==='romL');
+  var cls = lvl2 ? 'kl2':'kl1';
+  var idx=0;
+  ps.forEach(function(p){
+    spkWEStripLeadingMarker(p);
+    var mk=spkWENFRender(s,f,idx);
+    p.className=cls;
+    if(align==='right') p.style.textAlign='';
+    p.innerHTML=mk+' '+p.innerHTML;
+    idx++;
+  });
+  spkWECount(); spkWESyncBlockSelect();
+  try{ doc.focus(); }catch(e){}
+}
+
+/* ================= SPASI BARIS & PARAGRAF (gaya Word) =================
+   Dropdown cepat (1,0 / 1,15 / 1,5 / 2,0 / 2,5 / 3,0), opsi dialog Paragraf
+   lengkap, serta hapus spasi sebelum/sesudah paragraf. Nilai disimpan sebagai
+   style inline per paragraf (line-height, margin-top, margin-bottom, text-align)
+   agar tampilan editor SAMA dengan cetak. */
+
+function spkWELHToggle(e){
+  if(e){ e.preventDefault(); e.stopPropagation(); }
+  var pop=document.getElementById('spk-we-lhpop');
+  if(pop && pop.classList.contains('show')){ spkWELHClose(); return; }
+  spkWELHOpen();
+}
+function spkWELHOpen(){
+  var wrap=document.querySelector('.spk-we-lhwrap'); if(!wrap) return;
+  var pop=document.getElementById('spk-we-lhpop');
+  if(!pop){ pop=document.createElement('div'); pop.id='spk-we-lhpop'; pop.className='spk-we-lhpop'; wrap.appendChild(pop); }
+  var cur=spkWELHCurrent();
+  var vals=[['1','1,0'],['1.15','1,15'],['1.5','1,5'],['2','2,0'],['2.5','2,5'],['3','3,0']];
+  var html='';
+  vals.forEach(function(v){
+    var on=(cur && Math.abs(parseFloat(cur)-parseFloat(v[0]))<0.001)?' on':'';
+    html+='<button type="button" class="spk-we-lhitem'+on+'" onmousedown="return spkWEmd(event)" onclick="spkWELHSet(\''+v[0]+'\')"><span class="ck">&#10003;</span>'+v[1]+'</button>';
+  });
+  html+='<div class="spk-we-lhdiv"></div>';
+  html+='<button type="button" class="spk-we-lhitem" onmousedown="return spkWEmd(event)" onclick="spkWEParagraphDialog()"><span class="ck"></span>Opsi Penspasian Baris…</button>';
+  html+='<div class="spk-we-lhdiv"></div>';
+  html+='<button type="button" class="spk-we-lhitem" onmousedown="return spkWEmd(event)" onclick="spkWELHSpace(\'before\')"><span class="ck"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M12 5l-4 4M12 5l4 4M4 3h16"/></svg>Hapus Spasi Sebelum Paragraf</button>';
+  html+='<button type="button" class="spk-we-lhitem" onmousedown="return spkWEmd(event)" onclick="spkWELHSpace(\'after\')"><span class="ck"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M12 19l-4-4M12 19l4-4M4 21h16"/></svg>Hapus Spasi Sesudah Paragraf</button>';
+  pop.innerHTML=html;
+  pop.classList.add('show');
+  setTimeout(function(){ document.addEventListener('mousedown', spkWELHOutside, true); },0);
+}
+function spkWELHOutside(e){
+  var pop=document.getElementById('spk-we-lhpop');
+  if(pop && !pop.contains(e.target) && !(e.target.closest && e.target.closest('#spk-we-lhbtn'))){ spkWELHClose(); }
+}
+function spkWELHClose(){ var pop=document.getElementById('spk-we-lhpop'); if(pop) pop.classList.remove('show'); document.removeEventListener('mousedown', spkWELHOutside, true); }
+
+/* line-height paragraf aktif (untuk tanda centang) */
+function spkWELHCurrent(){
+  var p=spkWECurrentP(); if(!p) return null;
+  if(p.style && p.style.lineHeight) return p.style.lineHeight;
+  return '1.15'; // default dokumen
+}
+function spkWELHSet(v){
+  spkWELHClose();
+  var ps=spkWESelectedPs();
+  ps.forEach(function(p){ p.style.lineHeight=v; });
+  var doc=document.getElementById('spk-we-doc'); if(doc){ try{ doc.focus(); }catch(e){} }
+}
+function spkWELHSpace(which){
+  spkWELHClose();
+  var ps=spkWESelectedPs();
+  ps.forEach(function(p){ if(which==='before') p.style.marginTop='0'; else p.style.marginBottom='0'; });
+  var doc=document.getElementById('spk-we-doc'); if(doc){ try{ doc.focus(); }catch(e){} }
+}
+
+/* ---- Dialog Paragraf lengkap ---- */
+function spkWEParagraphDialog(){
+  spkWELHClose();
+  var p=spkWECurrentP();
+  var m=document.getElementById('spk-we-nfmodal');
+  if(!m){ m=document.createElement('div'); m.id='spk-we-nfmodal'; m.className='spk-we-nfmodal'; document.body.appendChild(m);
+    m.addEventListener('click', function(e){ if(e.target.id==='spk-we-nfmodal') spkWENFClose(); }); }
+  // nilai awal dari paragraf aktif
+  var align = (p && p.style && p.style.textAlign) || 'justify';
+  var lh = (p && p.style && p.style.lineHeight) || '1.15';
+  var mt = spkWEPtVal((p && p.style && p.style.marginTop)||'', 0);
+  var mb = spkWEPtVal((p && p.style && p.style.marginBottom)||'', 6);
+  var ml = spkWECmVal((p && p.style && p.style.marginLeft)||'', 0);
+  var mr = spkWECmVal((p && p.style && p.style.marginRight)||'', 0);
+  var alignOpts=[['left','Kiri'],['center','Tengah'],['right','Kanan'],['justify','Rata Kiri-Kanan']]
+    .map(function(o){return '<option value="'+o[0]+'"'+(o[0]===align?' selected':'')+'>'+o[1]+'</option>';}).join('');
+  var lhOpts=[['1','1,0'],['1.15','1,15'],['1.5','1,5'],['2','2,0'],['2.5','2,5'],['3','3,0']]
+    .map(function(o){return '<option value="'+o[0]+'"'+(Math.abs(parseFloat(o[0])-parseFloat(lh))<0.001?' selected':'')+'>'+o[1]+'</option>';}).join('');
+  m.innerHTML=
+    '<div class="spk-we-nfcard wide">'+
+      '<div class="spk-we-nfhead"><span>Paragraf</span><button class="btn btn-ghost btn-sm" onclick="spkWENFClose()">✕</button></div>'+
+      '<div class="spk-we-nfbody">'+
+        '<div style="font-size:11px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:#5a6773;margin-bottom:4px">Umum</div>'+
+        '<label>Perataan</label><select id="spk-pg-align">'+alignOpts+'</select>'+
+        '<div style="font-size:11px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:#5a6773;margin:14px 0 4px">Indentasi</div>'+
+        '<div class="row2"><div><label>Kiri (cm)</label><input type="number" step="0.25" min="0" id="spk-pg-ml" value="'+ml+'"></div>'+
+          '<div><label>Kanan (cm)</label><input type="number" step="0.25" min="0" id="spk-pg-mr" value="'+mr+'"></div></div>'+
+        '<div style="font-size:11px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:#5a6773;margin:14px 0 4px">Spasi</div>'+
+        '<div class="row2"><div><label>Sebelum (pt)</label><input type="number" step="1" min="0" id="spk-pg-mt" value="'+mt+'"></div>'+
+          '<div><label>Setelah (pt)</label><input type="number" step="1" min="0" id="spk-pg-mb" value="'+mb+'"></div>'+
+          '<div><label>Jarak antarbaris</label><select id="spk-pg-lh">'+lhOpts+'</select></div></div>'+
+        '<div class="spk-we-nfprev spk-we-pgprev" style="margin-top:14px"><div class="pl">Pratinjau</div>'+
+          '<div class="rw" style="width:70%"></div><div class="rw" style="width:60%"></div>'+
+          '<div id="spk-pg-prevline" class="rc" style="width:55%;background:#111;margin:8px auto"></div>'+
+          '<div class="rw" style="width:65%"></div><div class="rw" style="width:72%"></div></div>'+
+      '</div>'+
+      '<div class="spk-we-nffoot"><button class="btn btn-ghost btn-sm" onclick="spkWENFClose()">Batal</button><button class="btn btn-green btn-sm" onclick="spkWEParagraphApply()">OK</button></div>'+
+    '</div>';
+  m.classList.add('show');
+  // pratinjau perataan langsung
+  var as=document.getElementById('spk-pg-align');
+  var upd=function(){ var pv=document.getElementById('spk-pg-prevline'); if(!pv) return; var a=as.value;
+    pv.style.margin = a==='center'?'8px auto':(a==='right'?'8px 0 8px auto':'8px auto 8px 0'); };
+  if(as){ as.addEventListener('change', upd); upd(); }
+}
+/* util: ambil angka pt dari string "18pt"/"18px" (px->pt approx /1.333) */
+function spkWEPtVal(s, def){
+  if(!s) return def;
+  var m=String(s).match(/([0-9.]+)\s*(pt|px)?/);
+  if(!m) return def;
+  var n=parseFloat(m[1]); if(m[2]==='px') n=Math.round(n/1.333);
+  return isNaN(n)?def:n;
+}
+function spkWECmVal(s, def){
+  if(!s) return def;
+  var m=String(s).match(/([0-9.]+)\s*cm/);
+  if(m) return parseFloat(m[1]);
+  var mm=String(s).match(/([0-9.]+)\s*px/);
+  if(mm) return Math.round(parseFloat(mm[1])/37.8*100)/100; // px->cm approx
+  return def;
+}
+function spkWEParagraphApply(){
+  var align=(document.getElementById('spk-pg-align')||{}).value||'justify';
+  var lh=(document.getElementById('spk-pg-lh')||{}).value||'1.15';
+  var mt=parseFloat((document.getElementById('spk-pg-mt')||{}).value||'0')||0;
+  var mb=parseFloat((document.getElementById('spk-pg-mb')||{}).value||'0')||0;
+  var ml=parseFloat((document.getElementById('spk-pg-ml')||{}).value||'0')||0;
+  var mr=parseFloat((document.getElementById('spk-pg-mr')||{}).value||'0')||0;
+  spkWENFClose();
+  var doc=document.getElementById('spk-we-doc'); if(!doc) return;
+  var ps=spkWESelectedPs(); if(!ps.length){ doc.focus(); return; }
+  ps.forEach(function(p){
+    p.style.textAlign = align;
+    p.style.lineHeight = lh;
+    p.style.marginTop = mt+'pt';
+    p.style.marginBottom = mb+'pt';
+    if(ml>0) p.style.marginLeft = ml+'cm'; else p.style.marginLeft='';
+    if(mr>0) p.style.marginRight = mr+'cm'; else p.style.marginRight='';
+  });
+  spkWECount();
+  try{ doc.focus(); }catch(e){}
+}
+
+/* ================= PUSTAKA POIN (bullet, gaya Word) =================
+   Menyisipkan simbol poin sebagai TEKS di awal paragraf kl2, agar tampilan
+   editor SAMA dengan cetak SPK. */
+var SPK_BULLETS=[
+  {key:'disc', ch:'\u25CF'},   /* ● */
+  {key:'circ', ch:'\u25CB'},   /* ○ */
+  {key:'sq',   ch:'\u25A0'},   /* ■ */
+  {key:'diam', ch:'\u25C6'},   /* ◆ */
+  {key:'arrow',ch:'\u27A4'},   /* ➤ */
+  {key:'check',ch:'\u2713'},   /* ✓ */
+  {key:'dash', ch:'\u2013'},   /* – */
+  {key:'star', ch:'\u2726'}    /* ✦ */
+];
+var spkBulCustom=null;
+
+function spkWEBulToggle(e){
+  if(e){ e.preventDefault(); e.stopPropagation(); }
+  var pop=document.getElementById('spk-we-bulpop');
+  if(pop && pop.classList.contains('show')){ spkWEBulClose(); return; }
+  spkWEBulOpen();
+}
+function spkWEBulOpen(){
+  var wrap=document.querySelector('.spk-we-bulwrap'); if(!wrap) return;
+  var pop=document.getElementById('spk-we-bulpop');
+  if(!pop){ pop=document.createElement('div'); pop.id='spk-we-bulpop'; pop.className='spk-we-bulpop'; wrap.appendChild(pop); }
+  var cells='<div class="spk-we-bulcell none" onmousedown="return spkWEmd(event)" onclick="spkWEBulApply(\'none\')">Tidak Ada</div>';
+  SPK_BULLETS.forEach(function(b){
+    cells+='<div class="spk-we-bulcell" onmousedown="return spkWEmd(event)" onclick="spkWEBulApply(\''+b.ch+'\')">'+b.ch+'</div>';
+  });
+  if(spkBulCustom){ cells+='<div class="spk-we-bulcell" onmousedown="return spkWEmd(event)" onclick="spkWEBulApply(\''+spkBulCustom+'\')">'+fkEsc(spkBulCustom)+'</div>'; }
+  pop.innerHTML=
+    '<div class="spk-we-numsec">Pustaka Poin</div>'+
+    '<div class="spk-we-bulgrid">'+cells+'</div>'+
+    '<div class="spk-we-numdiv"></div>'+
+    '<div class="spk-we-numact">'+
+      '<button type="button" class="spk-we-numactbtn" onmousedown="return spkWEmd(event)" onclick="spkWEBulRemove()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg> Hapus Poin</button>'+
+      '<button type="button" class="spk-we-numactbtn" onmousedown="return spkWEmd(event)" onclick="spkWEBulNew()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Tetapkan Poin Baru…</button>'+
+    '</div>';
+  pop.classList.add('show');
+  setTimeout(function(){ document.addEventListener('mousedown', spkWEBulOutside, true); },0);
+}
+function spkWEBulOutside(e){
+  var pop=document.getElementById('spk-we-bulpop');
+  if(pop && !pop.contains(e.target) && !(e.target.closest && e.target.closest('#spk-we-bulbtn'))){ spkWEBulClose(); }
+}
+function spkWEBulClose(){ var pop=document.getElementById('spk-we-bulpop'); if(pop) pop.classList.remove('show'); document.removeEventListener('mousedown', spkWEBulOutside, true); }
+
+/* Terapkan poin ke paragraf terpilih: sisipkan simbol di awal (kl2). */
+function spkWEBulApply(ch){
+  spkWEBulClose();
+  var doc=document.getElementById('spk-we-doc'); if(!doc) return;
+  var ps=spkWESelectedPs(); if(!ps.length){ doc.focus(); return; }
+  if(ch==='none'){ spkWEBulStripPs(ps); spkWECount(); doc.focus(); return; }
+  ps.forEach(function(p){
+    spkWEStripLeadingBullet(p);
+    spkWEStripLeadingMarker(p);
+    p.className='kl2';
+    p.innerHTML=ch+'\u00A0'+p.innerHTML;   /* simbol + spasi keras */
+  });
+  spkWECount(); spkWESyncBlockSelect();
+  try{ doc.focus(); }catch(e){}
+}
+function spkWEBulRemove(){
+  spkWEBulClose();
+  var ps=spkWESelectedPs();
+  spkWEBulStripPs(ps);
+  spkWECount();
+}
+function spkWEBulStripPs(ps){
+  ps.forEach(function(p){ spkWEStripLeadingBullet(p); p.className='kl0'; });
+}
+/* Hapus simbol poin di awal paragraf bila ada */
+function spkWEStripLeadingBullet(p){
+  var chars=SPK_BULLETS.map(function(b){return b.ch;});
+  if(spkBulCustom) chars.push(spkBulCustom);
+  var h=p.innerHTML;
+  var esc=chars.map(function(c){return c.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}).join('|');
+  if(esc){ h=h.replace(new RegExp('^\\s*(?:'+esc+')\\s*(&nbsp;|\\u00A0|\\s)?'), ''); }
+  p.innerHTML=h;
+}
+
+/* 'Tetapkan Poin Baru' — pilih simbol dari daftar diperluas atau ketik sendiri */
+function spkWEBulNew(){
+  spkWEBulClose();
+  var m=document.getElementById('spk-we-nfmodal');
+  if(!m){ m=document.createElement('div'); m.id='spk-we-nfmodal'; m.className='spk-we-nfmodal'; document.body.appendChild(m);
+    m.addEventListener('click', function(e){ if(e.target.id==='spk-we-nfmodal') spkWENFClose(); }); }
+  var palette=['\u2022','\u25E6','\u2043','\u2219','\u203B','\u2605','\u2606','\u2666','\u2665','\u25B8','\u25AA','\u2794','\u21D2','\u00BB','\u2717','\u2691'];
+  var cells=palette.map(function(c){
+    return '<button type="button" class="spk-we-bulcell" style="font-size:18px" onmousedown="return spkWEmd(event)" onclick="spkWEBulPick(\''+c+'\')">'+c+'</button>';
+  }).join('');
+  m.innerHTML=
+    '<div class="spk-we-nfcard">'+
+      '<div class="spk-we-nfhead"><span>Tetapkan Poin Baru</span><button class="btn btn-ghost btn-sm" onclick="spkWENFClose()">✕</button></div>'+
+      '<div class="spk-we-nfbody">'+
+        '<label>Pilih simbol</label>'+
+        '<div class="spk-we-bulgrid" style="grid-template-columns:repeat(8,1fr)">'+cells+'</div>'+
+        '<label style="margin-top:12px">Atau ketik simbol sendiri</label>'+
+        '<input type="text" id="spk-bul-custom" maxlength="3" placeholder="mis. → atau •" style="width:120px;text-align:center;font-size:16px">'+
+        '<div class="spk-we-nfprev"><div class="pl">Pratinjau</div>'+
+          '<div style="font:13px Arial;color:#1c2733"><span id="spk-bul-prev">\u2022</span>&nbsp; Contoh butir poin</div></div>'+
+      '</div>'+
+      '<div class="spk-we-nffoot"><button class="btn btn-ghost btn-sm" onclick="spkWENFClose()">Batal</button><button class="btn btn-green btn-sm" onclick="spkWEBulNewApply()">OK</button></div>'+
+    '</div>';
+  m.classList.add('show');
+  var inp=document.getElementById('spk-bul-custom');
+  if(inp){ inp.addEventListener('input', function(){ var pv=document.getElementById('spk-bul-prev'); if(pv) pv.textContent=inp.value||'\u2022'; }); }
+}
+function spkWEBulPick(ch){
+  var inp=document.getElementById('spk-bul-custom'); if(inp) inp.value=ch;
+  var pv=document.getElementById('spk-bul-prev'); if(pv) pv.textContent=ch;
+}
+function spkWEBulNewApply(){
+  var inp=document.getElementById('spk-bul-custom');
+  var ch=(inp && inp.value ? inp.value : '\u2022').trim() || '\u2022';
+  spkBulCustom=ch;
+  spkWENFClose();
+  spkWEBulApply(ch);
+}
+
+
+
+
+/* Shortcut global Ctrl+Alt+C hanya saat editor terbuka */
+document.addEventListener('keydown', function(e){
+  var ov=document.getElementById('spk-we-overlay');
+  if(!ov || !ov.classList.contains('show')) return;
+  if(e.ctrlKey && e.altKey && (e.key==='c'||e.key==='C')){ e.preventDefault(); if(spkWEPainterCapture()) spkWEPainterMode(true); }
+});
+
+
 /* ====== Formatter narasi (Latar Belakang / Permasalahan / Maksud & Tujuan) ======
    Teks polos hasil paste dirapikan jadi paragraf ber-justify dengan indentasi baris
    pertama, plus penomoran a./b./c. (kl2) dan 1./2. (kl1) dengan hanging indent seperti
@@ -18365,8 +19384,11 @@ function spkCleanPasteText(raw){
 function spkNarasiPreviewHtml(raw){
   var ctx={};
   try{ ctx=spkBuildCtx((typeof spkState!=='undefined'&&spkState&&spkState.data)||{}); }catch(e){}
-  var html=spkNumberFix(spkFormatNarasi(spkMerge(raw||'', ctx)));
-  return html || '<div class="spk-narasi-empty">Belum ada teks. Tempel di kolom atas &mdash; kerapian akan tampil di sini.</div>';
+  var html;
+  // HTML dari editor WYSIWYG -> pakai apa adanya (hanya merge placeholder & rapikan nomor)
+  if(/<p[\s>]/i.test(String(raw||''))) html=spkNumberFix(spkMerge(raw||'', ctx));
+  else html=spkNumberFix(spkFormatNarasi(spkMerge(raw||'', ctx)));
+  return html || '<div class="spk-narasi-empty">Belum ada teks. Klik tombol di atas untuk membuka editor.</div>';
 }
 function spkNarasiRefresh(k){
   var el=document.getElementById('spk-prev-'+k);
@@ -18375,6 +19397,25 @@ function spkNarasiRefresh(k){
 function spkNarasiInput(el,k){ spkSet(k, el.value); spkNarasiRefresh(k); }
 function spkNarasiPaste(el,k){
   setTimeout(function(){ el.value=spkCleanPasteText(el.value); spkSet(k, el.value); spkNarasiRefresh(k); },0);
+}
+/* Buka editor WYSIWYG untuk field narasi. Data lama (teks polos) dikonversi otomatis
+   menjadi HTML kl* saat pertama dibuka, agar bisa disunting visual. */
+function spkNarasiOpenEditor(k, label){
+  var cur=(spkState&&spkState.data&&spkState.data[k])||'';
+  var html;
+  if(/<p[\s>]/i.test(String(cur))) html=cur;               // sudah HTML
+  else html=spkFormatNarasi(String(cur||''));               // konversi teks lama -> HTML kl*
+  spkWEOpen({
+    title:'Editor Teks — '+(label||'Narasi'),
+    html:html,
+    placeholder:'Ketik atau tempel isi '+(label||'')+' di sini...',
+    onSave:function(outHtml){
+      spkSet(k, outHtml);
+      spkNarasiRefresh(k);
+      // perbarui label tombol (Isi -> Ubah) tanpa render ulang penuh
+      try{ renderSpkSusun(); }catch(e){}
+    }
+  });
 }
 function spkDocHtml(data, klausul){
   const ctx=spkBuildCtx(data||{});
@@ -18500,9 +19541,7 @@ function renderSpkKlausul(){
       '<div class="spk-klx-main"><div class="spk-klx-judul">'+fkEsc(k.judul||'(Tanpa judul)')+(off?' <span class="spk-badge-off">non-aktif</span>':'')+'</div>'+
         '<div class="spk-klx-prev">'+fkEsc(preview)+(preview.length>=150?'…':'')+'</div></div>'+
       '<div class="spk-klx-act">'+
-        '<button class="act" title="Naik" onclick="spkKlausulMove(\''+kid+'\',-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 15l-6-6-6 6"/></svg></button>'+
-        '<button class="act" title="Turun" onclick="spkKlausulMove(\''+kid+'\',1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg></button>'+
-        '<button class="act" title="'+(off?'Aktifkan':'Non-aktifkan')+'" onclick="spkKlausulToggle(\''+kid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">'+(off?'<path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/>':'<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20C5 20 1 12 1 12a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19M1 1l22 22"/>')+'</svg></button>'+
+        '<button class="act" title="Lihat" onclick="spkKlausulView(\''+kid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
         '<button class="act act-edit" title="Ubah" onclick="spkKlausulEdit(\''+kid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
         '<button class="act act-del" title="Hapus" onclick="spkKlausulDelete(\''+kid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>'+
       '</div>'+
@@ -18553,47 +19592,62 @@ function spkKlausulDelete(id){
 /* ---- Modal editor klausul ---- */
 function spkKlausulNew(){ spkKlausulOpenEditor(null); }
 function spkKlausulEdit(id){ const k=records_klausul.find(x=>String(x.id)===String(id)); spkKlausulOpenEditor(k||null); }
+/* Editor klausul kini memakai editor WYSIWYG bergaya SPK (ketik = pratinjau = cetak). */
 function spkKlausulOpenEditor(k){
-  let ov=document.getElementById('spk-klausul-overlay');
-  if(!ov){ ov=document.createElement('div'); ov.id='spk-klausul-overlay'; ov.className='spk-ov'; document.body.appendChild(ov);
-    ov.addEventListener('click', e=>{ if(e.target.id==='spk-klausul-overlay') spkKlausulCloseEditor(); }); }
   const isEdit=!!(k && k.id);
   const judul=isEdit? (k.judul||'') : '';
-  const isi=isEdit? (k.isi||'') : '<p class="kl0"></p>';
+  const isi=isEdit? (k.isi||'') : '<p class="kl0"><br></p>';
+  spkWEOpen({
+    title:isEdit?'Ubah Klausul':'Tambah Klausul',
+    titleField:{ label:'Judul Klausul', value:judul, placeholder:'mis. HARGA PEKERJAAN' },
+    html:isi,
+    placeholder:'Ketik isi klausul di sini... (boleh gunakan placeholder {{nama_pekerjaan}}, {{nilai_rp}}, dll.)',
+    onSave:function(outHtml, outTitle){
+      const jd=String(outTitle||'').trim();
+      if(!jd){ toast('Judul klausul wajib diisi','warn'); return; }
+      if(typeof requireInput==='function' && !requireInput()) return;
+      (async()=>{
+        try{
+          await withActionLoader('Menyimpan', async()=>{
+            if(isEdit){ await StoreSpkKlausul.update(k.id,{judul:jd, isi:outHtml}); }
+            else{
+              const maxU=records_klausul.reduce((m,x)=>Math.max(m, Number(x.urutan)||0), 0);
+              await StoreSpkKlausul.create({judul:jd, isi:outHtml, urutan:maxU+10, aktif:true});
+            }
+            await refreshDataKlausul();
+          });
+        }catch(err){ console.error(err); toast('Gagal menyimpan: '+errMsg(err),'err'); return; }
+        toast('Klausul disimpan','ok'); renderSpkKlausul();
+      })();
+    }
+  });
+}
+/* Lihat klausul: pratinjau isi persis seperti dokumen (read-only). */
+function spkKlausulView(id){
+  const k=records_klausul.find(x=>String(x.id)===String(id)); if(!k) return;
+  let ctx={};
+  try{ ctx=spkBuildCtx((spkState&&spkState.data)||{}); }catch(e){}
+  let inner='';
+  try{ inner=spkNumberFix(spkTidyKeyValue(spkMerge(k.isi||'', ctx))); }
+  catch(e){ inner=String(k.isi||''); }
+  let ov=document.getElementById('spk-klausul-view-ov');
+  if(!ov){ ov=document.createElement('div'); ov.id='spk-klausul-view-ov'; ov.className='spk-ov'; document.body.appendChild(ov);
+    ov.addEventListener('click', e=>{ if(e.target.id==='spk-klausul-view-ov') spkKlausulViewClose(); }); }
   ov.innerHTML=
-    '<div class="spk-ov-modal spk-ov-edit">'+
-      '<div class="spk-ov-head"><span class="spk-ov-title">'+(isEdit?'Ubah Klausul':'Tambah Klausul')+'</span>'+
-        '<button class="btn btn-ghost btn-sm" onclick="spkKlausulCloseEditor()">Tutup</button></div>'+
-      '<div class="spk-ov-body spk-edit-body">'+
-        '<div class="field"><label>Judul Klausul</label><input type="text" id="spk-ed-judul" value="'+fkEsc(judul)+'" placeholder="mis. HARGA PEKERJAAN"></div>'+
-        '<div class="field"><label>Isi Klausul (boleh HTML &amp; placeholder <code>{{...}}</code>)</label>'+
-          '<textarea id="spk-ed-isi" rows="16" spellcheck="false">'+fkEsc(isi)+'</textarea></div>'+
-        '<div class="spk-edit-hint">Tip: bungkus tiap paragraf dengan <code>&lt;p class="kl0"&gt;…&lt;/p&gt;</code>. Gunakan <code>kl1</code> / <code>kl2</code> untuk indentasi sub-poin.</div>'+
+    '<div class="spk-ov-modal spk-ov-we">'+
+      '<div class="spk-ov-head"><span class="spk-ov-title">Lihat Klausul — '+fkEsc(k.judul||'')+'</span>'+
+        '<div style="display:flex;gap:8px"><button class="btn btn-teal btn-sm" onclick="spkKlausulViewToEdit(\''+fkEscJs(String(k.id))+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Ubah</button>'+
+        '<button class="btn btn-ghost btn-sm" onclick="spkKlausulViewClose()">Tutup</button></div></div>'+
+      '<div class="spk-ov-body">'+
+        '<div class="spk-we-pagearea"><div class="spk-we-page">'+
+          '<div class="spk-cl">'+(k.judul?'<p class="spk-cl-h" style="font-weight:700;text-transform:uppercase;margin:0 0 8pt">'+fkEsc(k.judul)+'</p>':'')+inner+'</div>'+
+        '</div></div>'+
       '</div>'+
-      '<div class="spk-ov-foot"><button class="btn btn-green" onclick="spkKlausulSave('+(isEdit?'\''+fkEscJs(String(k.id))+'\'':'null')+')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> Simpan</button></div>'+
     '</div>';
   ov.classList.add('show');
 }
-function spkKlausulCloseEditor(){ const ov=document.getElementById('spk-klausul-overlay'); if(ov) ov.classList.remove('show'); }
-function spkKlausulSave(id){
-  if(typeof requireInput==='function' && !requireInput()) return;
-  const judul=String((document.getElementById('spk-ed-judul')||{}).value||'').trim();
-  const isi=String((document.getElementById('spk-ed-isi')||{}).value||'').trim();
-  if(!judul){ toast('Judul klausul wajib diisi','warn'); return; }
-  (async()=>{
-    try{
-      await withActionLoader('Menyimpan', async()=>{
-        if(id){ await StoreSpkKlausul.update(id,{judul:judul, isi:isi}); }
-        else{
-          const maxU=records_klausul.reduce((m,k)=>Math.max(m, Number(k.urutan)||0), 0);
-          await StoreSpkKlausul.create({judul:judul, isi:isi, urutan:maxU+10, aktif:true});
-        }
-        await refreshDataKlausul();
-      });
-    }catch(err){ console.error(err); toast('Gagal menyimpan: '+errMsg(err),'err'); return; }
-    toast('Klausul disimpan','ok'); spkKlausulCloseEditor(); renderSpkKlausul();
-  })();
-}
+function spkKlausulViewClose(){ const ov=document.getElementById('spk-klausul-view-ov'); if(ov) ov.classList.remove('show'); }
+function spkKlausulViewToEdit(id){ spkKlausulViewClose(); spkKlausulEdit(id); }
 
 try{ if(typeof spkInit==="function") spkInit(); }catch(e){ console.error("spkInit:",e); }
 </script>
