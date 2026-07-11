@@ -17604,6 +17604,7 @@ document.getElementById('pn-preview-overlay').addEventListener('click',e=>{ if(e
 .spk-narasi-prev p.kl1{margin-left:1.5em;text-indent:-1.5em}
 .spk-narasi-prev p.kl2{margin-left:3em;text-indent:-1.5em}
 .spk-narasi-prev p .n{display:inline-block;width:1.5em}
+.spk-narasi-prev p .n.m{display:inline-block;box-sizing:border-box;width:auto;min-width:1.5em;padding-right:.35em;text-indent:0;text-align:left}
 .spk-narasi-prev i{font-style:italic}
 .spk-narasi-prev b{font-weight:700}
 .spk-narasi-empty{color:#9AA7B2;font-style:italic;font-family:inherit;font-size:12px}
@@ -17796,6 +17797,7 @@ document.getElementById('pn-preview-overlay').addEventListener('click',e=>{ if(e
 .spk-we-page .spk-cl p.kl1.spk-sl{margin-left:.75cm;text-indent:-.75cm;padding-left:0}
 .spk-we-page .spk-cl p.kl2.spk-sl{margin-left:1.5cm;text-indent:-.75cm;padding-left:0}
 .spk-we-page .spk-cl p.spk-sl .n{display:inline-block;width:.75cm;text-indent:0;text-align:left}
+.spk-we-page .spk-cl p.spk-ml .n.m{display:inline-block;box-sizing:border-box;width:auto;min-width:.75cm;padding-right:.14cm;text-indent:0;text-align:left}
 .spk-we-page .spk-cl p.kldesc{margin-left:.75cm;text-indent:0}
 .spk-we-page .spk-cl p .n{display:inline-block;width:.75cm;text-indent:0;text-align:left}
 .spk-we-page .spk-cl i{font-style:italic}
@@ -18360,7 +18362,7 @@ function spkDocCss(){
      tanpa menabrak teks; hanging otomatis mengikuti lebar label (via .spk-ml). */
   '.spk-cl p.kl1.spk-ml{margin-left:0.75cm;text-indent:-0.75cm;padding-left:0}'+
   '.spk-cl p.kl2.spk-ml{margin-left:1.5cm;text-indent:-0.75cm;padding-left:0}'+
-  '.spk-cl p.spk-ml .n.m{display:inline-block;width:auto;min-width:0.75cm;text-indent:0;text-align:left;padding-right:0.2cm;box-sizing:content-box}'+
+  '.spk-cl p.spk-ml .n.m{display:inline-block;width:auto;min-width:0.75cm;text-indent:0;text-align:left;padding-right:0.14cm;box-sizing:border-box}'+
   /* Token angka-majemuk yang di sumber ber-kelas kl2 (mis. "3.1.1.") -> paksa
      sejajar di tingkat-1 (0,75 cm) seperti Word; huruf a./b. tetap di 1,5 cm. */
   '.spk-cl p.kl2.spk-lv1{margin-left:0.75cm;text-indent:-0.75cm;padding-left:0}'+
@@ -18433,7 +18435,10 @@ function spkNumberFix(html){
       const forceLv1 = multi && cls === 'kl2';
       const cls2 = 'n' + (right ? ' r' : '') + (multi ? ' m' : '');
       const pcls = cls + ' spk-sl' + (multi ? ' spk-ml' : '') + (forceLv1 ? ' spk-lv1' : '');
-      return '<p class="'+pcls+'"'+(attrs||'')+'><span class="'+cls2+'">'+tok+'</span>'+sp;
+      /* Tanpa spasi literal setelah nomor: jarak nomor->teks ditentukan oleh kotak
+         nomor (.n) sehingga baris ke-2 dst SEJAJAR persis dengan huruf pertama teks
+         (hanging indent seperti Microsoft Word). */
+      return '<p class="'+pcls+'"'+(attrs||'')+'><span class="'+cls2+'">'+tok+'</span>';
     }
   );
   /* Pada daftar "Berdasarkan" (spk-dlist) yang rata kanan-kiri (justify), nomor
@@ -18613,6 +18618,22 @@ function spkWEOpen(opts){
   Array.prototype.forEach.call(doc.querySelectorAll('p[data-nfmt] > span.n'), function(sp){
     sp.setAttribute('contenteditable','false');
     if(sp.style){ sp.style.userSelect='none'; }
+    /* Hitung ulang lebar kotak nomor dengan rumus terbaru (lebih rapat) agar isi
+       tersimpan lama ikut dirapikan: jarak nomor->teks menyempit & baris ke-2
+       sejajar dengan huruf pertama teks seperti Microsoft Word. */
+    try{
+      var p=sp.parentNode; if(!p) return;
+      var sty=p.getAttribute('data-nsty')||'dec';
+      var fmt=p.getAttribute('data-nfmt')||'{n}';
+      var idx=parseInt(p.getAttribute('data-nidx')||'0',10)||0;
+      var align=(p.getAttribute('data-nalign')==='right')?'right':'left';
+      var W=spkNFWidth([spkNFMark(sty, fmt, idx)]);
+      var start=/\bkl2\b/.test(p.className||'')?0.75:0;
+      sp.setAttribute('style', spkNFSpanStyle(W, align));
+      p.style.marginLeft=(start+W).toFixed(2)+'cm';
+      p.style.textIndent='-'+W.toFixed(2)+'cm';
+      p.setAttribute('data-nw', W.toFixed(2));
+    }catch(e){}
   });
   spkWEBindDoc(doc);
   ov.classList.remove('we-min');            // selalu mulai dari keadaan normal
@@ -19411,7 +19432,7 @@ function spkNFParse(txt, sty){
 function spkNFWidth(marks){
   var maxLen=0;
   marks.forEach(function(m){ if(String(m).length>maxLen) maxLen=String(m).length; });
-  var w=maxLen*0.21+0.22;                    // ±2,1mm per karakter (Arial 11pt) + jeda
+  var w=maxLen*0.175+0.12;                   // lebar nyata glyph Arial 11pt + jeda kecil (rapat, sejajar Word)
   return Math.max(0.75, Math.round(w*100)/100);
 }
 function spkNFSpanStyle(w, align){
@@ -19489,8 +19510,9 @@ function spkWEParseTypedMarker(tok){
 function spkWENumberOne(p, sty, fmt, idx, align, noCaret){
   if(!p) return;
   var mk=spkNFMark(sty, fmt, idx);
-  /* beri ruang untuk nomor yang lebih panjang (mis. 9. -> 10.) */
-  var W=spkNFWidth([mk, spkNFMark(sty, fmt, idx+9)]);
+  /* Lebar kotak nomor mengikuti nomor itu sendiri (rapat, sejajar Word). Angka
+     1 digit s/d 3 digit tetap di lantai 0,75 cm sehingga indentasi tetap seragam. */
+  var W=spkNFWidth([mk]);
   var cls = /\bkl2\b/.test(p.className||'') ? 'kl2' : 'kl1';
   p.className=cls;
   var start=(cls==='kl2')?0.75:0;
