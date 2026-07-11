@@ -17657,7 +17657,15 @@ document.getElementById('pn-preview-overlay').addEventListener('click',e=>{ if(e
 /* Ruler */
 .spk-we-rulerwrap{background:#eef1f3;border-bottom:1px solid #e5eaee;padding:3px 0;user-select:none;display:flex;justify-content:center;overflow:hidden}
 .spk-we-rulerwrap.hidden{display:none}
-.spk-we-ruler{position:relative;height:26px;width:210mm;max-width:100%}
+.spk-we-ruler{position:relative;height:34px;width:210mm;max-width:100%}
+/* Penanda indentasi pada penggaris (dapat digeser, gaya Word) */
+.spk-rm{cursor:ew-resize}
+.spk-rm polygon,.spk-rm rect{fill:#f3f6f8;stroke:#79848d;stroke-width:1;stroke-linejoin:round}
+.spk-rm:hover polygon,.spk-rm:hover rect{fill:#1d9e75;stroke:#0f7a58}
+.spk-rm.on polygon,.spk-rm.on rect{fill:#1d9e75;stroke:#0f7a58}
+.spk-we-rulerwrap{position:relative}
+.spk-we-ruletip{position:absolute;top:2px;right:10px;background:#12303f;color:#fff;font:11px Arial;padding:2px 8px;border-radius:5px;display:none;z-index:6;white-space:nowrap}
+.spk-we-ruletip.show{display:block}
 .spk-we-ruler svg{display:block;overflow:visible}
 /* Area kertas A4 — Portrait, margin Normal (2,54 cm) persis seperti Microsoft Word */
 .spk-we-pagearea{background:#e7eaed;padding:22px 14px 40px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;overflow:auto;flex:1}
@@ -17668,7 +17676,15 @@ document.getElementById('pn-preview-overlay').addEventListener('click',e=>{ if(e
 .spk-we-page::before{content:'';position:absolute;left:25.4mm;right:25.4mm;top:25.4mm;bottom:25.4mm;border:1px dashed #e3e8ec;pointer-events:none;z-index:0}
 .spk-we-page>*{position:relative;z-index:1}
 /* Kanvas edit: samakan persis dengan .spk-cl dokumen (Arial 11pt, indent 0,75cm) */
-.spk-we-doc{outline:none;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.15;color:#000;min-height:246.2mm}
+/* Isi klausul pada dokumen SPK selalu menjorok 0,75cm (sejajar dengan huruf
+   sesudah nomor klausul) -> kanvas editor dibuat sama persis. */
+.spk-we-doc{outline:none;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.15;color:#000;min-height:246.2mm;padding-left:.75cm}
+/* Baris judul klausul (pratinjau, tidak dapat diedit) */
+.spk-we-clhead{font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;text-transform:uppercase;color:#000;line-height:1.15;
+  margin:0 0 3pt;padding-left:.75cm;text-indent:-.75cm;user-select:none}
+.spk-we-clhead .n{display:inline-block;width:.75cm;text-indent:0;text-align:left}
+.spk-we-clhead .ph{color:#9AA7B2;font-weight:700}
+.spk-we-clhead-tag{font:10px Arial;color:#9AA7B2;text-transform:none;font-weight:400;margin-left:6px;letter-spacing:.02em}
 .spk-we-doc:empty:before{content:attr(data-ph);color:#9AA7B2;font-style:italic}
 .spk-we-doc p{margin:0 0 6pt;text-align:justify;line-height:1.15}
 .spk-we-doc p.kl0{margin-left:0;text-indent:0}
@@ -17769,7 +17785,7 @@ document.getElementById('pn-preview-overlay').addEventListener('click',e=>{ if(e
 .spk-we-bulcell.none{font:600 11px Arial;color:#3d4a55;text-align:center;padding:4px}
 .spk-we-bulcell.sel{border-color:#1d9e75;border-width:2px;background:#eafaf3}
 /* Pratinjau klausul (mode Lihat) di halaman utama — samakan dengan dokumen */
-.spk-we-page .spk-cl{font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.15}
+.spk-we-page .spk-cl{font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:1.15;padding-left:.75cm}
 .spk-we-page .spk-cl p{margin:0 0 6pt;text-align:justify;line-height:1.15}
 .spk-we-page .spk-cl p.kl0{margin-left:0;text-indent:0}
 .spk-we-page .spk-cl p.klp{margin-left:0;text-indent:.75cm}
@@ -18549,7 +18565,8 @@ function spkWEToolbarHtml(){
       '</div>'+
     '</div>'+
   '</div>'+
-  '<div class="spk-we-rulerwrap" id="spk-we-rulerwrap"><div class="spk-we-ruler" id="spk-we-ruler"><svg id="spk-we-rulersvg" width="794" height="24"></svg></div></div>';
+  '<div class="spk-we-rulerwrap" id="spk-we-rulerwrap"><div class="spk-we-ruletip" id="spk-we-ruletip"></div>'+
+  '<div class="spk-we-ruler" id="spk-we-ruler"><svg id="spk-we-rulersvg" width="794" height="34"></svg></div></div>';
 }
 
 function spkWEmd(e){ e.preventDefault(); return false; }
@@ -18578,6 +18595,7 @@ function spkWEOpen(opts){
         titleFieldHtml+
         spkWEToolbarHtml()+
         '<div class="spk-we-pagearea"><div class="spk-we-page">'+
+          (opts.head ? '<div class="spk-we-clhead" id="spk-we-clhead"></div>' : '')+
           '<div class="spk-we-doc" id="spk-we-doc" contenteditable="true" spellcheck="true" data-ph="'+fkEsc(opts.placeholder||'Mulai ketik di sini...')+'"></div>'+
         '</div></div>'+
       '</div>'+
@@ -18587,8 +18605,15 @@ function spkWEOpen(opts){
         '<button class="btn btn-green" onclick="spkWEDoSave()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> Simpan</button>'+
       '</div>'+
     '</div>';
+  spkWE.head = opts.head || null;
   var doc=document.getElementById('spk-we-doc');
   doc.innerHTML = spkWENormalizeIn(opts.html||'');
+  spkWEHeadRender();
+  /* nomor yang tersimpan dari sesi sebelumnya dikembalikan menjadi objek non-editable */
+  Array.prototype.forEach.call(doc.querySelectorAll('p[data-nfmt] > span.n'), function(sp){
+    sp.setAttribute('contenteditable','false');
+    if(sp.style){ sp.style.userSelect='none'; }
+  });
   spkWEBindDoc(doc);
   ov.classList.remove('we-min');            // selalu mulai dari keadaan normal
   if(spkWE.maximized) ov.classList.add('we-max'); else ov.classList.remove('we-max');
@@ -18598,6 +18623,23 @@ function spkWEOpen(opts){
   spkWEDrawRuler();
   spkWECount();
   setTimeout(function(){ try{ doc.focus(); }catch(e){} spkWEDrawRuler(); }, 60);
+}
+
+/* Baris judul klausul pada kertas (pratinjau posisi, tidak dapat diedit).
+   Memperlihatkan bahwa isi klausul sejajar dengan huruf sesudah nomor klausul. */
+function spkWEHeadRender(){
+  var el=document.getElementById('spk-we-clhead'); if(!el) return;
+  var h=spkWE.head||{};
+  var ti=document.getElementById('spk-we-titleinput');
+  var judul = ti ? String(ti.value||'').trim() : String(h.judul||'').trim();
+  var no = (h.no!=null && h.no!=='') ? String(h.no) : 'N';
+  el.innerHTML='<span class="n">'+fkEsc(no)+'.</span>'+
+    (judul ? fkEsc(judul) : '<span class="ph">JUDUL KLAUSUL</span>')+
+    '<span class="spk-we-clhead-tag">(pratinjau — isi klausul di bawah ini sejajar dengan huruf sesudah nomor)</span>';
+  if(ti && !ti.__hdBound){
+    ti.__hdBound=true;
+    ti.addEventListener('input', spkWEHeadRender);
+  }
 }
 
 function spkWEClose(){
@@ -18659,6 +18701,7 @@ function spkWEDoSave(){
   var ti=document.getElementById('spk-we-titleinput');
   var title = ti ? String(ti.value||'').trim() : null;
   var cb=spkWE.onSave;
+  spkWE.head=null;
   // Bila ada field judul dan judul kosong, jangan tutup — beri peringatan
   if(ti && !title){ if(typeof toast==='function') toast('Judul wajib diisi','warn'); ti.focus(); return; }
   spkWEClose();
@@ -18719,15 +18762,26 @@ function spkWESerialize(doc){
 /* --- Ikat event pada kanvas --- */
 function spkWEBindDoc(doc){
   doc.addEventListener('input', function(){ spkWECount(); spkWESyncBlockSelect(); });
-  doc.addEventListener('keyup', spkWESyncBlockSelect);
+  doc.addEventListener('keyup', function(){ spkWEGuardNumCaret(); spkWESyncBlockSelect(); });
   doc.addEventListener('mouseup', function(){
     if(doc.classList.contains('fp-active')){ setTimeout(spkWEPainterApply,0); return; }
+    setTimeout(spkWEGuardNumCaret, 0);
     spkWESyncBlockSelect();
   });
+  /* kursor tidak boleh berhenti di dalam / sebelum nomor */
+  doc.addEventListener('click', function(){ setTimeout(spkWEGuardNumCaret, 0); });
   // Enter di dalam paragraf: pertahankan kelas kl*; bila paragraf diawali penanda
   // nomor sah (1. / a. / i. / I. / 1)), buat nomor BERIKUTNYA secara otomatis.
   doc.addEventListener('keydown', function(e){
     if(e.key==='Escape'){ spkWEPainterMode(false); return; }
+    /* --- AutoFormat: ketik "1." / "a." / "2.1." / "i)" lalu SPASI -> jadi penomoran --- */
+    if((e.key===' '||e.key==='Spacebar'||e.code==='Space') && !e.ctrlKey && !e.altKey && !e.metaKey){
+      if(spkWEAutoNumberOnSpace()){ e.preventDefault(); return; }
+    }
+    /* --- Backspace tepat setelah nomor otomatis -> batalkan penomoran --- */
+    if(e.key==='Backspace' && !e.ctrlKey && !e.altKey && !e.metaKey){
+      if(spkWECancelNumberOnBackspace()){ e.preventDefault(); return; }
+    }
     /* --- Format Painter: Ctrl+Alt+C (salin format) / Ctrl+Alt+V (tempel format) --- */
     if((e.ctrlKey||e.metaKey) && e.altKey && !e.shiftKey){
       var k=String(e.key||'').toLowerCase();
@@ -18736,6 +18790,41 @@ function spkWEBindDoc(doc){
     }
     if(e.key==='Enter' && !e.shiftKey){
       var p=spkWECurrentP();
+      /* --- Paragraf hasil 'Atur Format Nomor Baru': lanjutkan nomor otomatis --- */
+      if(p && p.hasAttribute && p.hasAttribute('data-nfmt')){
+        var nf=p.getAttribute('data-nfmt');
+        var nsty=p.getAttribute('data-nsty')||'dec';
+        var nidx=parseInt(p.getAttribute('data-nidx')||'0',10);
+        var nalign=p.getAttribute('data-nalign')||'left';
+        var nw=parseFloat(p.getAttribute('data-nw')||'0.75')||0.75;
+        var ncls=(p.className.match(/\b(kl1|kl2)\b/)||[])[1]||'kl1';
+        var nml=p.style.marginLeft, nti=p.style.textIndent;
+        var isiKosong=((p.textContent||'').trim()===spkNFMark(nsty,nf,nidx).trim());
+        var pRef=p;
+        setTimeout(function(){
+          var np=spkWECurrentP();
+          if(isiKosong){                       // item kosong -> akhiri penomoran (spt Word)
+            spkWEStripLeadingMarker(pRef); pRef.className='kl0';
+            if(np && np!==pRef){ spkWEStripLeadingMarker(np); np.className='kl0'; np.style.marginLeft=''; np.style.textIndent=''; }
+            spkWECount(); return;
+          }
+          if(np && np!==pRef){
+            spkWEStripLeadingMarker(np);
+            np.className=ncls;
+            np.style.marginLeft=nml; np.style.textIndent=nti;
+            np.removeAttribute('data-h'); np.style.fontWeight=''; np.style.textTransform='';
+            var sp=spkWEMakeNumSpan(spkNFMark(nsty, nf, nidx+1), nw, nalign);
+            np.insertBefore(sp, np.firstChild);
+            np.setAttribute('data-nfmt', nf); np.setAttribute('data-nsty', nsty);
+            np.setAttribute('data-nidx', String(nidx+1));
+            np.setAttribute('data-nalign', nalign); np.setAttribute('data-nw', nw.toFixed(2));
+            try{ var r=document.createRange(); r.setStartAfter(sp); r.collapse(true);
+                 var sl=window.getSelection(); sl.removeAllRanges(); sl.addRange(r); }catch(e2){}
+          }
+          spkWECount();
+        }, 0);
+        return;
+      }
       if(p){
         var cls=(p.className.match(/\b(kl0|kl1|kl2|klp|klp1|klp2|kldesc)\b/)||[])[1]||'kl0';
         var nextMk=spkWENextMarker(p);   // penanda berikutnya bila ada
@@ -18856,6 +18945,7 @@ function spkWEBlock(val){
 
 /* Sinkronkan dropdown gaya dengan paragraf aktif */
 function spkWESyncBlockSelect(){
+  try{ spkWERulerSync(); }catch(e){}
   var sel=document.getElementById('spk-we-block'); if(!sel) return;
   var p=spkWECurrentP(); if(!p) return;
   var cls=(p.className.match(/\b(kl0|kl1|kl2|klp|klp1|klp2)\b/)||[])[1]||'kl0';
@@ -18914,26 +19004,149 @@ function spkWEToggleRuler(on){
 }
 
 /* --- Gambar penggaris (skala 1-15, penanda cm) --- */
+/* Ukuran dasar kertas untuk penggaris.
+   OFF = indent tetap kanvas (isi klausul menjorok 0,75cm),
+   L   = titik nol paragraf (batas margin + OFF), CW = lebar kolom teks. */
+function spkWERulerGeom(){
+  var PX=96/25.4;                 // px per mm (96 dpi)
+  var W=Math.round(210*PX), M=Math.round(25.4*PX), CM=10*PX;
+  var d=document.getElementById('spk-we-doc');
+  var OFF=d ? (parseFloat(getComputedStyle(d).paddingLeft)||0) : 0;
+  return { PX:PX, W:W, M:M, CM:CM, OFF:OFF, L:M+OFF, CW:(W-2*M)-OFF };
+}
 function spkWEDrawRuler(){
   var svg=document.getElementById('spk-we-rulersvg'); if(!svg) return;
-  var PX=96/25.4;                 // px per mm (96 dpi)
-  var W=Math.round(210*PX);       // lebar kertas A4 = 210mm
-  var M=Math.round(25.4*PX);      // margin Normal = 2,54cm
-  var CM=10*PX;                   // 1 cm dalam px
-  svg.setAttribute('width', W); svg.setAttribute('height', 26);
+  var g=spkWERulerGeom(), W=g.W, M=g.M, CM=g.CM;
+  svg.setAttribute('width', W); svg.setAttribute('height', 34);
+  svg.setAttribute('viewBox','0 0 '+W+' 34');
   var h='';
   // area margin (abu) + area ketik (putih)
-  h+='<rect x="0" y="8" width="'+W+'" height="12" fill="#d5dbe0"/>';
-  h+='<rect x="'+M+'" y="8" width="'+(W-2*M)+'" height="12" fill="#fff" stroke="#c3cbd2" stroke-width="1"/>';
+  h+='<rect x="0" y="10" width="'+W+'" height="12" fill="#d5dbe0"/>';
+  h+='<rect x="'+M+'" y="10" width="'+(W-2*M)+'" height="12" fill="#fff" stroke="#c3cbd2" stroke-width="1"/>';
   // skala cm dihitung dari batas margin kiri (0 = awal area ketik), seperti Word
   for(var cm=-2; cm<=18; cm++){
     var x=M+cm*CM; if(x<0||x>W) continue;
-    h+='<line x1="'+x.toFixed(1)+'" y1="9" x2="'+x.toFixed(1)+'" y2="19" stroke="#8e99a2" stroke-width="1"/>';
-    if(cm!==0) h+='<text x="'+x.toFixed(1)+'" y="7" text-anchor="middle" font-size="9" fill="#6f7a83" font-family="Arial">'+Math.abs(cm)+'</text>';
-    var hx=x+CM/2; if(hx<W) h+='<line x1="'+hx.toFixed(1)+'" y1="12" x2="'+hx.toFixed(1)+'" y2="16" stroke="#aab3ba" stroke-width="1"/>';
+    h+='<line x1="'+x.toFixed(1)+'" y1="11" x2="'+x.toFixed(1)+'" y2="21" stroke="#8e99a2" stroke-width="1"/>';
+    if(cm!==0) h+='<text x="'+x.toFixed(1)+'" y="9" text-anchor="middle" font-size="9" fill="#6f7a83" font-family="Arial">'+Math.abs(cm)+'</text>';
+    var hx=x+CM/2; if(hx<W) h+='<line x1="'+hx.toFixed(1)+'" y1="14" x2="'+hx.toFixed(1)+'" y2="18" stroke="#aab3ba" stroke-width="1"/>';
   }
-  h+='<line x1="0" y1="20" x2="'+W+'" y2="20" stroke="#c9d0d6" stroke-width="1"/>';
+  h+='<line x1="0" y1="22" x2="'+W+'" y2="22" stroke="#c9d0d6" stroke-width="1"/>';
+  // zona indent tetap isi klausul (0,75cm) — ditandai agar jelas
+  if(g.OFF>0){
+    h+='<rect x="'+M+'" y="10" width="'+g.OFF.toFixed(1)+'" height="12" fill="#e8eef1" stroke="#c3cbd2" stroke-width="1"/>';
+    h+='<line x1="'+g.L.toFixed(1)+'" y1="10" x2="'+g.L.toFixed(1)+'" y2="22" stroke="#1d9e75" stroke-width="1.2"/>';
+  }
+  // ---- Penanda indentasi (dapat diseret) ----
+  h+='<g class="spk-rm" id="spk-rm-first"><title>Indentasi baris pertama (seret)</title>'+
+     '<polygon points="-6,2 6,2 0,10"/><rect x="-7" y="0" width="14" height="12" fill="transparent" stroke="none"/></g>';
+  h+='<g class="spk-rm" id="spk-rm-hang"><title>Indentasi menggantung (seret)</title>'+
+     '<polygon points="-6,30 6,30 0,22"/><rect x="-7" y="21" width="14" height="10" fill="transparent" stroke="none"/></g>';
+  h+='<g class="spk-rm" id="spk-rm-left"><title>Indentasi kiri — menggeser keduanya (seret)</title>'+
+     '<rect x="-6" y="30" width="12" height="4" rx="1"/></g>';
+  h+='<g class="spk-rm" id="spk-rm-right"><title>Indentasi kanan (seret)</title>'+
+     '<polygon points="-6,30 6,30 0,22"/><rect x="-7" y="21" width="14" height="13" fill="transparent" stroke="none"/></g>';
   svg.innerHTML=h;
+  spkWERulerBind();
+  spkWERulerSync();
+}
+
+/* ---- Selaraskan posisi penanda dengan paragraf aktif ---- */
+function spkWERulerSync(){
+  var svg=document.getElementById('spk-we-rulersvg'); if(!svg) return;
+  var g=spkWERulerGeom(), W=g.W, L=g.L, CW=g.CW;
+  var p=spkWECurrentP();
+  var ml=0, ti=0, mr=0;
+  if(p){
+    var cs=getComputedStyle(p);
+    ml=parseFloat(cs.marginLeft)||0;
+    ti=parseFloat(cs.textIndent)||0;
+    mr=parseFloat(cs.marginRight)||0;
+  }
+  var xs={ first:L+ml+ti, hang:L+ml, left:L+ml, right:L+CW-mr };
+  ['first','hang','left','right'].forEach(function(k){
+    var el=document.getElementById('spk-rm-'+k);
+    if(el) el.setAttribute('transform','translate('+Math.max(0,Math.min(W,xs[k])).toFixed(1)+',0)');
+  });
+}
+
+/* ---- Seret penanda ---- */
+var spkRuler=null;
+function spkWERulerBind(){
+  ['first','hang','left','right'].forEach(function(k){
+    var el=document.getElementById('spk-rm-'+k); if(!el) return;
+    el.addEventListener('mousedown', function(e){ spkWERulerDown(e,k); });
+  });
+}
+function spkWERulerXY(e){
+  var svg=document.getElementById('spk-we-rulersvg'); if(!svg) return 0;
+  var r=svg.getBoundingClientRect();
+  var scale = r.width ? (spkWERulerGeom().W / r.width) : 1;   // jaga-jaga bila ruler diskalakan
+  return (e.clientX - r.left) * scale;
+}
+function spkWERulerDown(e,k){
+  e.preventDefault(); e.stopPropagation();          // jangan hilangkan seleksi di kanvas
+  var ps=spkWESelectedPs();
+  if(!ps.length){ var c=spkWECurrentP(); if(c) ps=[c]; }
+  if(!ps.length) return;
+  var cs=getComputedStyle(ps[0]);
+  spkRuler={ k:k, ps:ps,
+    ml:parseFloat(cs.marginLeft)||0,
+    ti:parseFloat(cs.textIndent)||0,
+    mr:parseFloat(cs.marginRight)||0 };
+  var el=document.getElementById('spk-rm-'+k); if(el) el.classList.add('on');
+  document.addEventListener('mousemove', spkWERulerMove, true);
+  document.addEventListener('mouseup', spkWERulerUp, true);
+  document.body.style.cursor='ew-resize';
+  spkWERulerMove(e);
+}
+function spkWERulerMove(e){
+  if(!spkRuler) return;
+  e.preventDefault();
+  var g=spkWERulerGeom(), W=g.W, M=g.L, CM=g.CM, CW=g.CW;   // M = titik nol paragraf
+  var st=spkRuler, k=st.k;
+  var snap=function(px){ return Math.round((px/CM)*4)/4*CM; };   // kelipatan 0,25 cm
+  var cmOf=function(px){ return Math.round((px/CM)*100)/100; };
+  var x=Math.max(0, Math.min(W, spkWERulerXY(e)));
+  var ml=st.ml, ti=st.ti, mr=st.mr, nml=ml, nti=ti, nmr=mr, info='';
+
+  if(k==='right'){
+    nmr=Math.max(0, Math.min(CW-CM*0.5, snap(CW-(x-M))));
+    info='Indentasi kanan: '+cmOf(nmr).toFixed(2).replace('.',',')+' cm';
+  } else if(k==='first'){
+    nti=snap(x-M-ml);
+    nti=Math.max(-M-ml, Math.min(CW-mr-CM*0.25-ml, nti));
+    info='Baris pertama: '+cmOf(ml+nti).toFixed(2).replace('.',',')+' cm';
+  } else if(k==='hang'){
+    var fixFirst=ml+ti;                       // baris pertama tetap di tempat
+    nml=Math.max(0, Math.min(CW-mr-CM*0.25, snap(x-M)));
+    nti=fixFirst-nml;
+    info='Menggantung: '+cmOf(nml).toFixed(2).replace('.',',')+' cm';
+  } else {                                    // 'left' -> geser keduanya
+    nml=Math.max(0, Math.min(CW-mr-CM*0.25, snap(x-M)));
+    info='Indentasi kiri: '+cmOf(nml).toFixed(2).replace('.',',')+' cm';
+  }
+
+  st.ps.forEach(function(p){
+    if(k==='right'){ p.style.marginRight=cmOf(nmr).toFixed(2)+'cm'; }
+    else if(k==='first'){ p.style.textIndent=cmOf(nti).toFixed(2)+'cm'; }
+    else if(k==='hang'){ p.style.marginLeft=cmOf(nml).toFixed(2)+'cm'; p.style.textIndent=cmOf(nti).toFixed(2)+'cm'; }
+    else { p.style.marginLeft=cmOf(nml).toFixed(2)+'cm'; }
+  });
+  var tip=document.getElementById('spk-we-ruletip');
+  if(tip){ tip.textContent=info; tip.classList.add('show'); }
+  spkWERulerSync();
+}
+function spkWERulerUp(){
+  document.removeEventListener('mousemove', spkWERulerMove, true);
+  document.removeEventListener('mouseup', spkWERulerUp, true);
+  document.body.style.cursor='';
+  var tip=document.getElementById('spk-we-ruletip'); if(tip) tip.classList.remove('show');
+  ['first','hang','left','right'].forEach(function(k){
+    var el=document.getElementById('spk-rm-'+k); if(el) el.classList.remove('on');
+  });
+  spkRuler=null;
+  spkWECount();
+  var doc=document.getElementById('spk-we-doc'); if(doc){ try{ doc.focus(); }catch(e){} }
 }
 
 /* ================= FORMAT PAINTER =================================
@@ -18975,33 +19188,29 @@ function spkWEPainterCapture(){
       marginTop:p.style.marginTop||'', marginBottom:p.style.marginBottom||'',
       marginLeft:p.style.marginLeft||'', textIndent:p.style.textIndent||'',
       fontWeight:p.style.fontWeight||'', textTransform:p.style.textTransform||''
+    } : null,
+    /* format PENOMORAN (bila paragraf acuan adalah daftar bernomor) */
+    num: (p && p.hasAttribute && p.hasAttribute('data-nfmt')) ? {
+      fmt:p.getAttribute('data-nfmt'),
+      sty:p.getAttribute('data-nsty')||'dec',
+      idx:parseInt(p.getAttribute('data-nidx')||'0',10)||0,
+      align:p.getAttribute('data-nalign')||'left'
     } : null
   };
   return true;
 }
 
-/* --- Tempel format ke teks/paragraf tujuan --- */
+/* --- Tempel format ke teks/paragraf tujuan ---
+   Urutan: (1) format karakter pada teks yang diblok, lalu (2) format paragraf,
+   lalu (3) PENOMORAN (nomor melanjutkan urutan daftar sebelumnya). */
 function spkWEPainterApply(){
   var doc=document.getElementById('spk-we-doc');
   if(!spkWEfp || !doc){ return false; }
   var sel=window.getSelection(); if(!sel.rangeCount) return false;
 
-  /* 1) format paragraf -> semua <p> yang tersentuh seleksi/kursor */
-  if(spkWEfp.par){
-    var ps=spkWESelectedPs();
-    ps.forEach(function(p){
-      var f=spkWEfp.par;
-      p.className=f.cls;
-      if(f.isH) p.setAttribute('data-h','1'); else p.removeAttribute('data-h');
-      p.style.textAlign=f.textAlign||'';
-      p.style.lineHeight=f.lineHeight||'';
-      p.style.marginTop=f.marginTop||''; p.style.marginBottom=f.marginBottom||'';
-      p.style.marginLeft=f.marginLeft||''; p.style.textIndent=f.textIndent||'';
-      p.style.fontWeight=f.fontWeight||''; p.style.textTransform=f.textTransform||'';
-    });
-  }
+  var ps=spkWESelectedPs();     // paragraf sasaran (dicatat sebelum DOM diubah)
 
-  /* 2) format karakter -> hanya bila ada teks yang diblok */
+  /* 1) format karakter -> hanya bila ada teks yang diblok */
   if(!sel.isCollapsed){
     var c=spkWEfp.ch;
     var range=sel.getRangeAt(0);
@@ -19016,8 +19225,10 @@ function spkWEPainterApply(){
       span.style.backgroundColor=c.backgroundColor;
     try{
       var frag=range.extractContents();
-      /* buang format lama di dalam potongan agar benar-benar seragam */
+      /* buang format lama di dalam potongan agar benar-benar seragam,
+         TAPI jangan ikut menghapus penanda nomor <span class="n"> */
       Array.prototype.forEach.call(frag.querySelectorAll('span,b,strong,i,em,u,s,strike,font'), function(el){
+        if(el.classList && el.classList.contains('n')) return;
         var parent=el.parentNode; while(el.firstChild) parent.insertBefore(el.firstChild, el); parent.removeChild(el);
       });
       span.appendChild(frag);
@@ -19027,8 +19238,45 @@ function spkWEPainterApply(){
     }catch(e){}
   }
 
+  /* 2) format paragraf -> semua <p> yang tersentuh seleksi/kursor */
+  if(spkWEfp.par){
+    ps.forEach(function(p){
+      var f=spkWEfp.par;
+      p.className=f.cls;
+      if(f.isH) p.setAttribute('data-h','1'); else p.removeAttribute('data-h');
+      p.style.textAlign=f.textAlign||'';
+      p.style.lineHeight=f.lineHeight||'';
+      p.style.marginTop=f.marginTop||''; p.style.marginBottom=f.marginBottom||'';
+      p.style.marginLeft=f.marginLeft||''; p.style.textIndent=f.textIndent||'';
+      p.style.fontWeight=f.fontWeight||''; p.style.textTransform=f.textTransform||'';
+    });
+  }
+
+  /* 3) penomoran */
+  var num=spkWEfp.num;
+  if(num){
+    var lastIdx=null;
+    ps.forEach(function(p){
+      spkWEStripLeadingMarker(p);                 // buang nomor lama (bila ada)
+      var idx;
+      if(lastIdx!==null) idx=lastIdx+1;           // beberapa paragraf sekaligus -> berurutan
+      else {
+        var pv=spkWEPrevNumIdx(p, num.sty, num.fmt);
+        idx=(pv!==null)? pv : num.idx;            // lanjutkan daftar di atasnya
+      }
+      spkWENumberOne(p, num.sty, num.fmt, idx, num.align, true);
+      lastIdx=idx;
+    });
+  } else {
+    /* acuan bukan daftar bernomor -> nomor pada paragraf tujuan dihapus */
+    ps.forEach(function(p){
+      if(p.hasAttribute && p.hasAttribute('data-nfmt')) spkWEStripLeadingMarker(p);
+    });
+  }
+
   if(!spkWEfpSticky) spkWEPainterMode(false);
-  spkWECount();
+  spkWECount(); spkWESyncBlockSelect();
+  try{ doc.focus(); }catch(e){}
   return true;
 }
 
@@ -19048,10 +19296,15 @@ function spkWEPainterClick(){
 function spkWEPainterSticky(){
   if(spkWEPainterCapture()){ spkWEfpSticky=true; spkWEPainterMode(true); spkWEToast('Kuas format terkunci — tekan Esc untuk berhenti','ok'); }
 }
-/* Ctrl+Alt+C */
+/* Ctrl+Alt+C — HANYA menyalin format. Kuas TIDAK diaktifkan, sehingga format
+   baru menempel ketika Ctrl+Alt+V ditekan (bukan saat mengklik/menyorot teks). */
 function spkWEPainterCopy(){
-  if(spkWEPainterCapture()){ spkWEPainterMode(true); spkWEToast('Format disalin (Ctrl+Alt+C)','ok'); }
-  else spkWEToast('Letakkan kursor pada teks acuan lebih dulu','warn');
+  if(spkWEPainterCapture()){
+    spkWEfpSticky=false;
+    spkWEPainterMode(false);                    // pastikan kuas mati
+    var adaNo = spkWEfp && spkWEfp.num;
+    spkWEToast('Format disalin'+(adaNo?' (termasuk penomoran)':'')+' — tekan Ctrl+Alt+V untuk menempel','ok');
+  } else spkWEToast('Letakkan kursor pada teks acuan lebih dulu','warn');
 }
 /* Ctrl+Alt+V */
 function spkWEPainterPaste(){
@@ -19093,6 +19346,258 @@ var SPK_NUMLIB=[
 
 /* State format nomor kustom (dibuat via 'Tetapkan Format Nomor Baru') */
 var spkNumCustom=null; // {styleKey, fmt:'{n}.', align}
+
+/* ============ Sasaran paragraf untuk dialog ============
+   Saat dialog (Format Nomor / Paragraf) dibuka, fokus pindah ke input dialog
+   sehingga seleksi di kanvas HILANG. Karena itu paragraf sasaran DISIMPAN dulu
+   saat dialog dibuka, lalu dipakai kembali ketika tombol OK ditekan. */
+var spkWETargets=null;
+function spkWESaveTargets(){
+  var ps=spkWESelectedPs();
+  if(!ps.length){ var c=spkWECurrentP(); if(c) ps=[c]; }
+  if(!ps.length){
+    var doc=document.getElementById('spk-we-doc');
+    if(doc){ var all=doc.querySelectorAll('p'); if(all.length) ps=[all[all.length-1]]; }
+  }
+  spkWETargets=ps.slice();
+  return spkWETargets;
+}
+function spkWETakeTargets(){
+  var doc=document.getElementById('spk-we-doc');
+  var ps=(spkWETargets||[]).filter(function(p){ return doc && doc.contains(p); });
+  spkWETargets=null;
+  if(!ps.length) ps=spkWESelectedPs();
+  if(!ps.length){ var c=spkWECurrentP(); if(c) ps=[c]; }
+  if(!ps.length && doc){ var all=doc.querySelectorAll('p'); if(all.length) ps=[all[all.length-1]]; }
+  return ps;
+}
+/* Kembalikan sorotan ke paragraf yang baru diproses */
+function spkWESelectPs(ps){
+  var doc=document.getElementById('spk-we-doc'); if(!doc||!ps||!ps.length) return;
+  try{
+    doc.focus();
+    var r=document.createRange();
+    var last=ps[ps.length-1];
+    r.setStart(ps[0], 0);
+    r.setEnd(last, last.childNodes.length);
+    var sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+  }catch(e){}
+}
+
+/* ============ Inti penomoran (dipakai dialog Format Nomor Baru) ============ */
+/* Angka dasar untuk item ke-i sesuai gaya angka */
+function spkNFBase(sty, i){
+  if(sty==='romU') return spkNumRoman(i+1);
+  if(sty==='romL') return spkNumRoman(i+1).toLowerCase();
+  if(sty==='alpU') return spkNumAlpha(i+1).toUpperCase();
+  if(sty==='alpL'||sty==='alpUp') return spkNumAlpha(i+1);
+  return String(i+1);
+}
+/* Bentuk penanda akhir: fmt '{n}.' / '1.{n}.' -> '1.a.' dst. */
+function spkNFMark(sty, fmt, i){
+  return String(fmt||'{n}').replace(/\{n\}/g, spkNFBase(sty, i));
+}
+/* Ubah teks yang diketik pengguna (mis. "1.a.") menjadi format ber-{n} otomatis:
+   bagian yang sama dengan angka item-1 dianggap ANGKA OTOMATIS, sisanya teks biasa. */
+function spkNFParse(txt, sty){
+  txt=String(txt==null?'':txt);
+  if(txt.indexOf('{n}')>=0) return txt;
+  var base=spkNFBase(sty,0);                 // '1' / 'a' / 'A' / 'i' / 'I'
+  var i=txt.lastIndexOf(base);               // kemunculan terakhir = pencacah
+  if(i<0) return txt;                        // tanpa angka otomatis (nomor statis)
+  return txt.slice(0,i)+'{n}'+txt.slice(i+base.length);
+}
+/* Lebar kotak nomor (cm) berdasarkan penanda terpanjang */
+function spkNFWidth(marks){
+  var maxLen=0;
+  marks.forEach(function(m){ if(String(m).length>maxLen) maxLen=String(m).length; });
+  var w=maxLen*0.21+0.22;                    // ±2,1mm per karakter (Arial 11pt) + jeda
+  return Math.max(0.75, Math.round(w*100)/100);
+}
+function spkNFSpanStyle(w, align){
+  return 'display:inline-block;box-sizing:border-box;width:'+Number(w).toFixed(2)+'cm;'+
+         'text-indent:0;padding-right:.12cm;text-align:'+(align==='right'?'right':'left')+
+         ';user-select:none;-webkit-user-modify:read-only';
+}
+/* Penanda nomor dibuat sebagai OBJEK yang tidak dapat diedit (seperti Word):
+   kursor tidak bisa masuk ke dalam nomor, tidak ada spasi yang bisa di-backspace,
+   dan Backspace tepat di belakang nomor akan menghapus penomorannya. */
+function spkWEMakeNumSpan(mark, w, align){
+  var sp=document.createElement('span');
+  sp.className='n';
+  sp.setAttribute('contenteditable','false');
+  sp.setAttribute('style', spkNFSpanStyle(w, align));
+  sp.textContent=mark;
+  return sp;
+}
+/* Jaga posisi kursor: tidak boleh berada DI DALAM atau SEBELUM nomor */
+function spkWEGuardNumCaret(){
+  var doc=document.getElementById('spk-we-doc'); if(!doc) return;
+  var sel=window.getSelection();
+  if(!sel.rangeCount || !sel.isCollapsed) return;
+  var r=sel.getRangeAt(0);
+  var node=r.startContainer;
+  if(!doc.contains(node)) return;
+  var el=(node.nodeType===3)? node.parentNode : node;
+  var sp=null;
+  /* kursor di dalam nomor? */
+  while(el && el!==doc){
+    if(el.tagName==='SPAN' && el.classList && el.classList.contains('n')){ sp=el; break; }
+    el=el.parentNode;
+  }
+  /* kursor tepat di awal paragraf (sebelum nomor)? */
+  if(!sp && node.nodeType===1 && node.tagName==='P' && r.startOffset===0){
+    var f=node.firstChild;
+    if(f && f.nodeType===1 && f.tagName==='SPAN' && f.classList.contains('n')) sp=f;
+  }
+  if(!sp) return;
+  try{
+    var r2=document.createRange(); r2.setStartAfter(sp); r2.collapse(true);
+    sel.removeAllRanges(); sel.addRange(r2);
+  }catch(e){}
+}
+/* ============ AUTOFORMAT SAAT MENGETIK (seperti Word) ============
+   Ketik penanda lalu SPASI di awal paragraf -> langsung menjadi penomoran:
+     1.   2.   10.        -> angka       (level 1)
+     1)   2)              -> angka kurung
+     2.1.  3.2.1.         -> angka majemuk (level 1)
+     a.   b.   c)         -> huruf       (level 2)
+     i.   ii.  IV.        -> romawi
+     1.a.                 -> majemuk campuran
+   Nomor berikutnya otomatis muncul saat menekan Enter. */
+function spkWEParseTypedMarker(tok){
+  var m=String(tok||'').match(/^((?:\d+\.)*)([0-9]+|[A-Za-z]+)([.)])$/);
+  if(!m) return null;
+  var prefix=m[1], core=m[2], close=m[3], sty, idx;
+  if(/^\d+$/.test(core)){
+    var n=parseInt(core,10); if(!(n>=1 && n<=300)) return null;
+    sty=(close===')')?'decp':'dec'; idx=n-1;
+  } else if(/^[a-z]$/.test(core) && core!=='i'){          // huruf tunggal -> abjad (a. b. c.)
+    sty=(close===')')?'alpUp':'alpL'; idx=core.charCodeAt(0)-97;
+  } else if(/^[A-Z]$/.test(core) && core!=='I'){          // huruf besar tunggal -> abjad (A. B. C.)
+    sty='alpU'; idx=core.charCodeAt(0)-65;
+  } else if(/^[ivxlcdm]{1,4}$/.test(core) && spkRomanToInt(core.toUpperCase())>0){
+    sty='romL'; idx=spkRomanToInt(core.toUpperCase())-1;  // i. ii. iii. iv.
+  } else if(/^[IVXLCDM]{1,4}$/.test(core) && spkRomanToInt(core)>0){
+    sty='romU'; idx=spkRomanToInt(core)-1;                // I. II. III.
+  } else return null;
+  if(idx<0 || idx>300) return null;
+  var lvl2 = (!prefix) && (sty==='alpL'||sty==='alpUp'||sty==='romL');
+  return { sty:sty, fmt:prefix+'{n}'+close, idx:idx, lvl2:lvl2 };
+}
+/* Terapkan nomor pada SATU paragraf mulai dari indeks tertentu */
+function spkWENumberOne(p, sty, fmt, idx, align, noCaret){
+  if(!p) return;
+  var mk=spkNFMark(sty, fmt, idx);
+  /* beri ruang untuk nomor yang lebih panjang (mis. 9. -> 10.) */
+  var W=spkNFWidth([mk, spkNFMark(sty, fmt, idx+9)]);
+  var cls = /\bkl2\b/.test(p.className||'') ? 'kl2' : 'kl1';
+  p.className=cls;
+  var start=(cls==='kl2')?0.75:0;
+  p.style.marginLeft=(start+W).toFixed(2)+'cm';
+  p.style.textIndent='-'+W.toFixed(2)+'cm';
+  var sp=spkWEMakeNumSpan(mk, W, align||'left');
+  p.insertBefore(sp, p.firstChild);
+  p.setAttribute('data-nfmt', fmt);
+  p.setAttribute('data-nsty', sty);
+  p.setAttribute('data-nidx', String(idx));
+  p.setAttribute('data-nalign', (align==='right')?'right':'left');
+  p.setAttribute('data-nw', W.toFixed(2));
+  if(noCaret) return;
+  /* kursor tepat setelah nomor */
+  try{
+    var r=document.createRange(); r.setStartAfter(sp); r.collapse(true);
+    var sl=window.getSelection(); sl.removeAllRanges(); sl.addRange(r);
+  }catch(e){}
+}
+/* Cari nomor lanjutan dari paragraf bernomor sebelumnya (fmt & gaya sama) */
+function spkWEPrevNumIdx(p, sty, fmt){
+  var el=p.previousElementSibling;
+  var guard=0;
+  while(el && guard++<50){
+    if(el.tagName==='P'){
+      if(el.getAttribute('data-nfmt')===fmt && (el.getAttribute('data-nsty')||'dec')===sty){
+        return (parseInt(el.getAttribute('data-nidx')||'0',10)||0)+1;
+      }
+      if((el.textContent||'').trim()!=='') return null;   // ada paragraf lain -> daftar baru
+    }
+    el=el.previousElementSibling;
+  }
+  return null;
+}
+/* Dipanggil saat pengguna menekan SPASI: cek apakah teks sebelum kursor
+   adalah penanda nomor yang sah dan berada di AWAL paragraf. */
+function spkWEAutoNumberOnSpace(){
+  var doc=document.getElementById('spk-we-doc'); if(!doc) return false;
+  var p=spkWECurrentP(); if(!p) return false;
+  if(p.hasAttribute && p.hasAttribute('data-nfmt')) return false;   // sudah bernomor
+  if(p.getAttribute('data-h')==='1') return false;                  // judul klausul
+  var sel=window.getSelection();
+  if(!sel.rangeCount || !sel.isCollapsed) return false;
+  var pos=sel.getRangeAt(0);
+  if(!doc.contains(pos.startContainer)) return false;
+  var r=document.createRange();
+  r.selectNodeContents(p);
+  try{ r.setEnd(pos.startContainer, pos.startOffset); }catch(e){ return false; }
+  var before=r.toString();
+  if(!/^\s*\S{1,10}$/.test(before)) return false;                   // hanya penanda, tanpa teks lain
+  var info=spkWEParseTypedMarker(before.trim());
+  if(!info) return false;
+  /* hapus teks penanda yang tadi diketik, lalu pasang nomor sungguhan */
+  try{ r.deleteContents(); }catch(e){ return false; }
+  if(info.lvl2 && !/\bkl2\b/.test(p.className||'')) p.className='kl2';
+  spkWENumberOne(p, info.sty, info.fmt, info.idx, 'left');
+  spkWECount(); spkWESyncBlockSelect();
+  return true;
+}
+/* Backspace tepat setelah nomor otomatis -> batalkan penomoran (seperti Word) */
+function spkWECancelNumberOnBackspace(){
+  var p=spkWECurrentP(); if(!p) return false;
+  if(!(p.hasAttribute && p.hasAttribute('data-nfmt'))) return false;
+  var sp=p.querySelector('span.n'); if(!sp) return false;
+  var sel=window.getSelection(); if(!sel.rangeCount || !sel.isCollapsed) return false;
+  /* Kursor berada tepat di belakang nomor (tidak ada teks lain sebelum kursor)
+     -> Backspace menghapus PENOMORAN, bukan mengedit angkanya (persis Word). */
+  var r=document.createRange();
+  r.selectNodeContents(p);
+  try{ r.setEnd(sel.getRangeAt(0).startContainer, sel.getRangeAt(0).startOffset); }catch(e){ return false; }
+  var sebelum=r.toString().replace(/\u00a0/g,' ');
+  var nomor=(sp.textContent||'');
+  if(sebelum.replace(/\s+/g,'') !== nomor.replace(/\s+/g,'')) return false;
+  spkWEStripLeadingMarker(p);
+  p.className='kl0';
+  try{
+    var r2=document.createRange(); r2.setStart(p,0); r2.collapse(true);
+    var sl=window.getSelection(); sl.removeAllRanges(); sl.addRange(r2);
+  }catch(e){}
+  spkWECount(); spkWESyncBlockSelect();
+  if(typeof spkWEToast==='function') spkWEToast('Penomoran dihapus','ok');
+  return true;
+}
+
+/* Terapkan penomoran ke daftar paragraf: penanda dibuat sebagai <span class="n">,
+   indentasi menggantung disesuaikan lebar nomor (persis perilaku Word). */
+function spkWEApplyNumbering(ps, sty, fmt, align){
+  if(!ps||!ps.length) return 0;
+  var marks=ps.map(function(_,i){ return spkNFMark(sty, fmt, i); });
+  var W=spkNFWidth(marks);
+  ps.forEach(function(p, idx){
+    spkWEStripLeadingMarker(p);
+    var cls = /\bkl2\b/.test(p.className||'') ? 'kl2' : 'kl1';
+    p.className=cls;
+    var start = (cls==='kl2') ? 0.75 : 0;           // posisi awal penanda (cm)
+    p.style.marginLeft=(start+W).toFixed(2)+'cm';
+    p.style.textIndent='-'+W.toFixed(2)+'cm';
+    var sp=spkWEMakeNumSpan(marks[idx], W, align);
+    p.setAttribute('data-nfmt', fmt);
+    p.setAttribute('data-nsty', sty);
+    p.setAttribute('data-nidx', String(idx));
+    p.setAttribute('data-nalign', align==='right'?'right':'left');
+    p.setAttribute('data-nw', W.toFixed(2));
+    p.insertBefore(sp, p.firstChild);
+  });
+  return ps.length;
+}
 
 function spkWENumToggle(e){
   if(e){ e.preventDefault(); e.stopPropagation(); }
@@ -19151,7 +19656,8 @@ function spkWENumApply(key){
   spkWENumClose();
   var doc=document.getElementById('spk-we-doc'); if(!doc) return;
   var ps=spkWESelectedPs();
-  if(!ps.length){ doc.focus(); return; }
+  if(!ps.length){ var c=spkWECurrentP(); if(c) ps=[c]; }
+  if(!ps.length){ spkWEToast('Letakkan kursor pada paragraf yang akan diberi nomor','warn'); doc.focus(); return; }
   if(key==='none'){ spkWENumStripPs(ps); spkWECount(); doc.focus(); return; }
   var st=SPK_NUMSTYLES[key]; if(!st) return;
   var cls = st.lvl===2 ? 'kl2' : 'kl1';
@@ -19180,81 +19686,108 @@ function spkWENumStripPs(ps){
 /* Hapus marker "1." / "a)" / "I." / "12.3.1." di awal paragraf bila ada */
 function spkWEStripLeadingMarker(p){
   var h=p.innerHTML;
-  // buang <span class="n">...</span> di awal (hasil numberFix) + spasi
-  h=h.replace(/^\s*<span class="n[^"]*">[^<]*<\/span>\s*(&nbsp;|\s)?/i,'');
+  // buang <span class="n" ...>...</span> di awal (hasil numberFix / penomoran editor) + spasi
+  h=h.replace(/^\s*<span[^>]*class="n[^"]*"[^>]*>[\s\S]*?<\/span>\s*(&nbsp;|\s)?/i,'');
   // buang marker teks polos di awal: angka(majemuk)/berkurung/huruf/romawi + . atau ) + spasi
   h=h.replace(/^\s*((?:\d+\.)+|\d+\)|[A-Za-z][.)]|[ivxlcdmIVXLCDM]{2,4}[.)])\s+/,'');
   p.innerHTML=h;
+  // bersihkan jejak penomoran otomatis
+  if(p.hasAttribute && p.hasAttribute('data-nfmt')){
+    p.removeAttribute('data-nfmt'); p.removeAttribute('data-nsty'); p.removeAttribute('data-nidx');
+    p.removeAttribute('data-nalign'); p.removeAttribute('data-nw');
+    p.style.marginLeft=''; p.style.textIndent='';
+  }
 }
 
-/* ---- Modal 'Tetapkan Format Nomor Baru' ---- */
+/* ---- Modal 'Atur Format Nomor Baru' (gaya Word) ----
+   Kolom "Format angka" diisi LANGSUNG seperti Word: ketik mis. 1.a. — bagian yang
+   sama dengan angka item pertama (mis. "a") otomatis menjadi PENCACAH, sisanya
+   ("1." dan ".") menjadi teks tetap. Boleh juga memakai {n} bila ingin eksplisit. */
+var spkNF={ sty:'dec', fmt:'{n}.', align:'left' };
+
 function spkWENumNewFormat(){
+  spkWESaveTargets();          // <— PENTING: simpan paragraf sasaran sebelum fokus pindah
   spkWENumClose();
   var m=document.getElementById('spk-we-nfmodal');
   if(!m){ m=document.createElement('div'); m.id='spk-we-nfmodal'; m.className='spk-we-nfmodal'; document.body.appendChild(m);
     m.addEventListener('click', function(e){ if(e.target.id==='spk-we-nfmodal') spkWENFClose(); }); }
   var opts='';
   var order=['dec','romU','romL','alpU','alpL','decp','alpUp'];
-  order.forEach(function(k){ opts+='<option value="'+k+'">'+SPK_NUMSTYLES[k].label+'</option>'; });
+  order.forEach(function(k){ opts+='<option value="'+k+'"'+(k===spkNF.sty?' selected':'')+'>'+SPK_NUMSTYLES[k].label+'</option>'; });
+  var alignOpts='<option value="left"'+(spkNF.align==='left'?' selected':'')+'>Kiri</option>'+
+                '<option value="right"'+(spkNF.align==='right'?' selected':'')+'>Kanan</option>';
   m.innerHTML=
     '<div class="spk-we-nfcard">'+
       '<div class="spk-we-nfhead"><span>Atur Format Nomor Baru</span><button class="btn btn-ghost btn-sm" onclick="spkWENFClose()">✕</button></div>'+
       '<div class="spk-we-nfbody">'+
         '<label>Gaya angka</label>'+
-        '<select id="spk-nf-style" onchange="spkWENFPrev()">'+opts+'</select>'+
+        '<select id="spk-nf-style" onchange="spkWENFStyle()">'+opts+'</select>'+
         '<label>Format angka</label>'+
-        '<input type="text" id="spk-nf-fmt" value="{n}." oninput="spkWENFPrev()" placeholder="mis. {n}.  atau  ({n})">'+
-        '<div style="font-size:11px;color:#8a97a2;margin-top:4px">Gunakan <b>{n}</b> sebagai posisi angka. Contoh: <code>{n}.</code> &rarr; 1.  &nbsp; <code>({n})</code> &rarr; (1)</div>'+
+        '<input type="text" id="spk-nf-fmt" value="'+fkEsc(spkNFMark(spkNF.sty, spkNF.fmt, 0))+'" oninput="spkWENFInput()" placeholder="mis. 1.a.  atau  (a)  atau  Pasal 1.">'+
+        '<div id="spk-nf-note" style="font-size:11px;color:#8a97a2;margin-top:4px"></div>'+
         '<label>Perataan</label>'+
-        '<select id="spk-nf-align"><option value="left">Kiri</option><option value="right">Kanan</option></select>'+
+        '<select id="spk-nf-align" onchange="spkWENFAlign()">'+alignOpts+'</select>'+
         '<div class="spk-we-nfprev"><div class="pl">Pratinjau</div><div id="spk-nf-prev"></div></div>'+
       '</div>'+
       '<div class="spk-we-nffoot"><button class="btn btn-ghost btn-sm" onclick="spkWENFClose()">Batal</button><button class="btn btn-green btn-sm" onclick="spkWENFApply()">OK</button></div>'+
     '</div>';
   m.classList.add('show');
   spkWENFPrev();
+  setTimeout(function(){ var el=document.getElementById('spk-nf-fmt'); if(el){ el.focus(); el.select(); } }, 40);
 }
 function spkWENFClose(){ var m=document.getElementById('spk-we-nfmodal'); if(m) m.classList.remove('show'); }
-function spkWENFRender(styleKey, fmt, i){
-  var st=SPK_NUMSTYLES[styleKey]||SPK_NUMSTYLES.dec;
-  // ambil bagian angka murni dari style (tanpa titik/kurung bawaan)
-  var base;
-  if(styleKey==='romU') base=spkNumRoman(i+1);
-  else if(styleKey==='romL') base=spkNumRoman(i+1).toLowerCase();
-  else if(styleKey==='alpU') base=spkNumAlpha(i+1).toUpperCase();
-  else if(styleKey==='alpL'||styleKey==='alpUp') base=spkNumAlpha(i+1);
-  else base=String(i+1);
-  return String(fmt||'{n}').replace(/\{n\}/g, base);
+
+/* Ganti gaya angka: format tetap, hanya bagian pencacahnya ikut berubah (spt Word) */
+function spkWENFStyle(){
+  spkNF.sty=(document.getElementById('spk-nf-style')||{}).value||'dec';
+  var el=document.getElementById('spk-nf-fmt');
+  if(el) el.value=spkNFMark(spkNF.sty, spkNF.fmt, 0);
+  spkWENFPrev();
 }
+/* Pengguna mengetik bebas pada kolom Format angka */
+function spkWENFInput(){
+  var el=document.getElementById('spk-nf-fmt'); if(!el) return;
+  spkNF.fmt=spkNFParse(el.value, spkNF.sty);
+  spkWENFPrev();
+}
+function spkWENFAlign(){
+  spkNF.align=(document.getElementById('spk-nf-align')||{}).value||'left';
+  spkWENFPrev();
+}
+/* Pratinjau: bagian angka otomatis diberi warna agar jelas mana yang bertambah */
 function spkWENFPrev(){
-  var s=(document.getElementById('spk-nf-style')||{}).value||'dec';
-  var f=(document.getElementById('spk-nf-fmt')||{}).value||'{n}.';
   var box=document.getElementById('spk-nf-prev'); if(!box) return;
+  var parts=String(spkNF.fmt||'{n}').split('{n}');
+  var auto=parts.length>1;
   var h='';
-  for(var i=0;i<3;i++){ h+='<div class="rw"><span class="mk">'+fkEsc(spkWENFRender(s,f,i))+'</span><span class="ba"></span></div>'; }
+  for(var i=0;i<3;i++){
+    var mk = auto
+      ? fkEsc(parts[0])+'<b style="color:#0E7C86">'+fkEsc(spkNFBase(spkNF.sty,i))+'</b>'+fkEsc(parts.slice(1).join('{n}'))
+      : fkEsc(parts[0]);
+    var st = spkNF.align==='right' ? 'text-align:right' : 'text-align:left';
+    h+='<div class="rw"><span class="mk" style="min-width:52px;'+st+'">'+mk+'</span><span class="ba"></span></div>';
+  }
   box.innerHTML=h;
+  var note=document.getElementById('spk-nf-note');
+  if(note){
+    note.innerHTML = auto
+      ? 'Ketik seperti di Word, mis. <code>1.a.</code> — bagian <b style="color:#0E7C86">berwarna</b> adalah angka otomatis yang bertambah, sisanya teks tetap.'
+      : '<span style="color:#c0392b">Belum ada angka otomatis</span> — sisipkan angka gaya terpilih (mis. <code>'+fkEsc(spkNFBase(spkNF.sty,0))+'</code>) atau tulis <code>{n}</code>.';
+  }
 }
+/* OK: langsung menjadi penomoran pada paragraf yang tadi dipilih */
 function spkWENFApply(){
-  var s=(document.getElementById('spk-nf-style')||{}).value||'dec';
-  var f=(document.getElementById('spk-nf-fmt')||{}).value||'{n}.';
-  var align=(document.getElementById('spk-nf-align')||{}).value||'left';
+  var el=document.getElementById('spk-nf-fmt');
+  if(el) spkNF.fmt=spkNFParse(el.value, spkNF.sty);
+  spkNF.align=(document.getElementById('spk-nf-align')||{}).value||'left';
   spkWENFClose();
   var doc=document.getElementById('spk-we-doc'); if(!doc) return;
-  var ps=spkWESelectedPs(); if(!ps.length){ doc.focus(); return; }
-  // level: gaya huruf/romawi kecil -> kl2, selain itu kl1
-  var lvl2 = (s==='alpL'||s==='alpUp'||s==='romL');
-  var cls = lvl2 ? 'kl2':'kl1';
-  var idx=0;
-  ps.forEach(function(p){
-    spkWEStripLeadingMarker(p);
-    var mk=spkWENFRender(s,f,idx);
-    p.className=cls;
-    if(align==='right') p.style.textAlign='';
-    p.innerHTML=mk+' '+p.innerHTML;
-    idx++;
-  });
+  var ps=spkWETakeTargets();
+  if(!ps.length){ spkWEToast('Letakkan kursor / blok paragraf yang akan diberi nomor','warn'); try{doc.focus();}catch(e){} return; }
+  spkWEApplyNumbering(ps, spkNF.sty, spkNF.fmt, spkNF.align);
+  spkWESelectPs(ps);
   spkWECount(); spkWESyncBlockSelect();
-  try{ doc.focus(); }catch(e){}
+  spkWEToast('Penomoran diterapkan — tekan Enter untuk nomor berikutnya','ok');
 }
 
 /* ================= SPASI BARIS & PARAGRAF (gaya Word) =================
@@ -19317,6 +19850,7 @@ function spkWELHSpace(which){
 /* ---- Dialog Paragraf lengkap ---- */
 function spkWEParagraphDialog(){
   spkWELHClose();
+  spkWESaveTargets();          // simpan sasaran sebelum fokus pindah ke dialog
   var p=spkWECurrentP();
   var m=document.getElementById('spk-we-nfmodal');
   if(!m){ m=document.createElement('div'); m.id='spk-we-nfmodal'; m.className='spk-we-nfmodal'; document.body.appendChild(m);
@@ -19384,7 +19918,7 @@ function spkWEParagraphApply(){
   var mr=parseFloat((document.getElementById('spk-pg-mr')||{}).value||'0')||0;
   spkWENFClose();
   var doc=document.getElementById('spk-we-doc'); if(!doc) return;
-  var ps=spkWESelectedPs(); if(!ps.length){ doc.focus(); return; }
+  var ps=spkWETakeTargets(); if(!ps.length){ doc.focus(); return; }
   ps.forEach(function(p){
     p.style.textAlign = align;
     p.style.lineHeight = lh;
@@ -19393,8 +19927,8 @@ function spkWEParagraphApply(){
     if(ml>0) p.style.marginLeft = ml+'cm'; else p.style.marginLeft='';
     if(mr>0) p.style.marginRight = mr+'cm'; else p.style.marginRight='';
   });
+  spkWESelectPs(ps);
   spkWECount();
-  try{ doc.focus(); }catch(e){}
 }
 
 /* ================= PUSTAKA POIN (bullet, gaya Word) =================
@@ -19615,6 +20149,7 @@ function spkNarasiOpenEditor(k, label){
   else html=spkFormatNarasi(String(cur||''));               // konversi teks lama -> HTML kl*
   spkWEOpen({
     title:'Editor Teks — '+(label||'Narasi'),
+    head:{ no:1, judul:'URAIAN PEKERJAAN' },
     html:html,
     placeholder:'Ketik atau tempel isi '+(label||'')+' di sini...',
     onSave:function(outHtml){
@@ -19805,9 +20340,18 @@ function spkKlausulOpenEditor(k){
   const isEdit=!!(k && k.id);
   const judul=isEdit? (k.judul||'') : '';
   const isi=isEdit? (k.isi||'') : '<p class="kl0"><br></p>';
+  /* nomor klausul (urutan tampil) untuk pratinjau baris judul di kertas */
+  let noKl=1;
+  try{
+    const aktif=(records_klausul||[]).filter(x=>x.aktif!==false)
+      .sort((a,b)=>(Number(a.urutan)||0)-(Number(b.urutan)||0));
+    const i=isEdit? aktif.findIndex(x=>String(x.id)===String(k.id)) : -1;
+    noKl = (i>=0) ? (i+1) : (aktif.length+1);
+  }catch(e){}
   spkWEOpen({
     title:isEdit?'Ubah Klausul':'Tambah Klausul',
     titleField:{ label:'Judul Klausul', value:judul, placeholder:'mis. HARGA PEKERJAAN' },
+    head:{ no:noKl, judul:judul },
     html:isi,
     placeholder:'Ketik isi klausul di sini... (boleh gunakan placeholder {{nama_pekerjaan}}, {{nilai_rp}}, dll.)',
     onSave:function(outHtml, outTitle){
