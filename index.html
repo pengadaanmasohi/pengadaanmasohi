@@ -18447,14 +18447,16 @@ function spkNumberFix(html){
          punya hanging sendiri (margin-left/text-indent inline), jadi baris ke-2 sejajar
          tepat di bawah huruf pertama. Nomor 2 digit (8.10) otomatis mendorong teksnya
          sedikit ke kanan — natural seperti Word. */
-      var hug=Math.max(0.4, Math.round((spkTextWidthCm(tok)+0.13)*100)/100);
+      var hug=Math.max(0.4, Math.round((spkTextWidthCm(tok)+0.14)*100)/100);
       var base=(cls==='kl2' && !forceLv1)?0.75:0;
       var ml=(base+hug).toFixed(2), ti=hug.toFixed(2);
       var a=attrs||'';
       var extra='margin-left:'+ml+'cm;text-indent:-'+ti+'cm';
       if(/\bstyle="/.test(a)) a=a.replace(/style="([^"]*)"/, 'style="'+extra+';$1"');
       else a=a+' style="'+extra+'"';
-      var nstyle='width:'+ti+'cm;display:inline-block;box-sizing:border-box;padding-right:0.13cm;text-indent:0;text-align:'+(right?'right':'left');
+      /* white-space:nowrap -> nomor (mis. "8.10.") tidak pernah terpotong ke baris baru;
+         padding 0,12 < jeda 0,14 -> ada sedikit ruang agar titik terakhir tak terdorong. */
+      var nstyle='width:'+ti+'cm;display:inline-block;box-sizing:border-box;padding-right:0.12cm;text-indent:0;white-space:nowrap;text-align:'+(right?'right':'left');
       /* Tanpa spasi literal setelah nomor: jarak diatur oleh kotak nomor. */
       return '<p class="'+pcls+'"'+a+'><span class="'+cls2+'" style="'+nstyle+'">'+tok+'</span>';
     }
@@ -18661,7 +18663,7 @@ function spkWEOpen(opts){
   try{ document.execCommand('defaultParagraphSeparator', false, 'p'); }catch(e){}
   spkWEDrawRuler();
   spkWECount();
-  setTimeout(function(){ try{ doc.focus(); }catch(e){} spkWEDrawRuler(); }, 60);
+  setTimeout(function(){ try{ doc.focus(); }catch(e){} spkWEDrawRuler(); spkWEPaginate(); }, 60);
 }
 
 /* Baris judul klausul pada kertas (pratinjau posisi, tidak dapat diedit).
@@ -18772,6 +18774,8 @@ function spkWENormalizeIn(html){
 function spkWESerialize(doc){
   var tmp=document.createElement('div');
   tmp.innerHTML=doc.innerHTML;
+  // Buang spacer paginasi (hanya bantuan tampilan editor, tak boleh ikut tersimpan)
+  Array.prototype.slice.call(tmp.querySelectorAll('.spk-pagebreak')).forEach(function(s){ s.parentNode.removeChild(s); });
   // Buang atribut contenteditable sisa
   var all=tmp.querySelectorAll('[contenteditable]');
   for(var i=0;i<all.length;i++) all[i].removeAttribute('contenteditable');
@@ -18798,9 +18802,12 @@ function spkWESerialize(doc){
   return tmp.innerHTML.replace(/<br>\s*<\/p>/g,'</p>').trim();
 }
 
+/* Jalankan paginasi dengan penundaan (agar tidak berat saat mengetik cepat) */
+var _spkPagTimer=null;
+function spkWEPaginateSoon(){ clearTimeout(_spkPagTimer); _spkPagTimer=setTimeout(spkWEPaginate, 250); }
 /* --- Ikat event pada kanvas --- */
 function spkWEBindDoc(doc){
-  doc.addEventListener('input', function(){ spkWECount(); spkWESyncBlockSelect(); });
+  doc.addEventListener('input', function(){ spkWECount(); spkWESyncBlockSelect(); spkWEPaginateSoon(); });
   doc.addEventListener('keyup', function(){ spkWEGuardNumCaret(); spkWESyncBlockSelect(); });
   doc.addEventListener('mouseup', function(){
     if(doc.classList.contains('fp-active')){ setTimeout(spkWEPainterApply,0); return; }
@@ -19039,6 +19046,46 @@ function spkWEPageCount(){
   var A4=297*96/25.4;                       // tinggi 1 halaman A4 dalam px
   var n=Math.max(1, Math.ceil((pg.scrollHeight-2)/A4));
   el.textContent=n+' halaman';
+}
+
+/* --- Paginasi ala Word ---
+   Menyisipkan "spacer" tak-teredit di batas halaman sehingga paragraf yang akan
+   melewati margin bawah otomatis TURUN ke area ketik halaman berikutnya (melompati
+   zona margin bawah + margin atas). Tinggi area ketik per halaman = 297mm − 2×25,4mm
+   = 246,2mm; awal area ketik tiap halaman = kelipatan 297mm (koordinat dari atas doc).
+   Dijalankan setelah mengetik (debounce). Spacer dibuang saat menyimpan. */
+var _spkPagBusy=false;
+function spkWEPaginate(){
+  var doc=document.getElementById('spk-we-doc'); if(!doc || _spkPagBusy) return;
+  _spkPagBusy=true;
+  try{
+    // buang spacer lama
+    Array.prototype.slice.call(doc.children).forEach(function(el){
+      if(el.nodeType===1 && el.classList && el.classList.contains('spk-pagebreak')) doc.removeChild(el);
+    });
+    var PX=96/25.4, USABLE=246.2*PX, PAGE=297*PX;
+    var kids=Array.prototype.slice.call(doc.children);
+    for(var i=0;i<kids.length;i++){
+      var b=kids[i]; if(b.nodeType!==1) continue;
+      var docTop=doc.getBoundingClientRect().top;
+      var r=b.getBoundingClientRect();
+      var top=r.top-docTop, h=r.height;
+      if(h>=USABLE) continue;                       // paragraf lebih tinggi dari 1 halaman -> biarkan
+      var curPage=Math.floor((top+1)/PAGE);
+      var pageEnd=curPage*PAGE+USABLE;
+      if(top+h > pageEnd+1){                         // paragraf menembus margin bawah
+        var gap=(curPage+1)*PAGE - top;             // dorong ke awal area ketik halaman berikut
+        if(gap>1){
+          var sp=document.createElement('div');
+          sp.className='spk-pagebreak';
+          sp.setAttribute('contenteditable','false');
+          sp.style.cssText='height:'+Math.round(gap)+'px;margin:0;padding:0;border:0;list-style:none;pointer-events:none;-webkit-user-select:none;user-select:none';
+          doc.insertBefore(sp, b);
+        }
+      }
+    }
+  }catch(e){}
+  _spkPagBusy=false;
 }
 
 /* --- Toggle penggaris --- */
@@ -19621,11 +19668,11 @@ function spkNFParse(txt, sty){
 function spkNFWidth(marks){
   var maxW=0;
   marks.forEach(function(m){ var w=spkTextWidthCm(m); if(w>maxW) maxW=w; });
-  return Math.max(0.4, Math.round((maxW+0.13)*100)/100);
+  return Math.max(0.4, Math.round((maxW+0.14)*100)/100);
 }
 function spkNFSpanStyle(w, align){
   return 'display:inline-block;box-sizing:border-box;width:'+Number(w).toFixed(2)+'cm;'+
-         'text-indent:0;padding-right:.12cm;text-align:'+(align==='right'?'right':'left')+
+         'text-indent:0;padding-right:.12cm;white-space:nowrap;text-align:'+(align==='right'?'right':'left')+
          ';user-select:none;-webkit-user-modify:read-only';
 }
 /* Penanda nomor dibuat sebagai OBJEK yang tidak dapat diedit (seperti Word):
