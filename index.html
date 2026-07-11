@@ -17661,6 +17661,10 @@ document.getElementById('pn-preview-overlay').addEventListener('click',e=>{ if(e
 .spk-we-ruler{position:relative;height:34px;width:210mm;max-width:100%}
 /* Penanda indentasi pada penggaris (dapat digeser, gaya Word) */
 .spk-rm{cursor:default}
+.spk-tab{cursor:pointer}
+.spk-tab path{stroke:#12303f}
+.spk-tab:hover path{stroke:#c0392b}
+.spk-tabspace{display:inline-block}
 .spk-rm polygon,.spk-rm rect{fill:#f3f6f8;stroke:#79848d;stroke-width:1;stroke-linejoin:round}
 .spk-rm:hover polygon,.spk-rm:hover rect{fill:#1d9e75;stroke:#0f7a58}
 .spk-rm.on polygon,.spk-rm.on rect{fill:#1d9e75;stroke:#0f7a58}
@@ -18805,6 +18809,10 @@ function spkWEBindDoc(doc){
     if(e.key==='Backspace' && !e.ctrlKey && !e.altKey && !e.metaKey){
       if(spkWECancelNumberOnBackspace()){ e.preventDefault(); return; }
     }
+    /* --- Tab: lompat ke tab stop (L) berikutnya di penggaris, seperti Word --- */
+    if(e.key==='Tab' && !e.ctrlKey && !e.altKey && !e.metaKey){
+      e.preventDefault(); spkWEDoTab(e.shiftKey); return;
+    }
     /* --- Format Painter: Ctrl+Alt+C (salin format) / Ctrl+Alt+V (tempel format) --- */
     if((e.ctrlKey||e.metaKey) && e.altKey && !e.shiftKey){
       var k=String(e.key||'').toLowerCase();
@@ -19068,6 +19076,7 @@ function spkWEDrawRuler(){
      '<rect x="-6" y="30" width="12" height="4" rx="1"/></g>';
   h+='<g class="spk-rm" id="spk-rm-right"><title>Indentasi kanan (seret)</title>'+
      '<polygon points="-6,30 6,30 0,22"/><rect x="-7" y="21" width="14" height="13" fill="transparent" stroke="none"/></g>';
+  h+='<g id="spk-tablayer"></g>';   // penanda tab (L) diisi oleh spkWERulerSync
   svg.innerHTML=h;
   spkWERulerBind();
   spkWERulerSync();
@@ -19090,6 +19099,19 @@ function spkWERulerSync(){
     var el=document.getElementById('spk-rm-'+k);
     if(el) el.setAttribute('transform','translate('+Math.max(0,Math.min(W,xs[k])).toFixed(1)+',0)');
   });
+  /* Gambar penanda tab kiri (L) milik paragraf aktif */
+  var lay=document.getElementById('spk-tablayer');
+  if(lay){
+    var tabs=(p && p.getAttribute('data-tabs')||'').split(',').map(function(s){return parseFloat(s);}).filter(function(v){return !isNaN(v);});
+    var hh='';
+    tabs.forEach(function(cm){
+      var x=g.M + cm*g.CM;
+      hh+='<g class="spk-tab" data-cm="'+cm.toFixed(2)+'"><title>Tab kiri '+cm.toFixed(2).replace('.',',')+' cm (klik untuk hapus)</title>'
+        +'<path d="M'+(x-3).toFixed(1)+' 11 L'+(x-3).toFixed(1)+' 21 L'+(x+4).toFixed(1)+' 21" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>'
+        +'<rect x="'+(x-6).toFixed(1)+'" y="10" width="14" height="12" fill="transparent"/></g>';
+    });
+    lay.innerHTML=hh;
+  }
 }
 
 /* ---- Seret penanda ---- */
@@ -19099,6 +19121,88 @@ function spkWERulerBind(){
     var el=document.getElementById('spk-rm-'+k); if(!el) return;
     el.addEventListener('mousedown', function(e){ spkWERulerDown(e,k); });
   });
+  var svg=document.getElementById('spk-we-rulersvg');
+  if(svg && !svg.__tabBound){ svg.__tabBound=true; svg.addEventListener('mousedown', spkWERulerAddTab); }
+}
+/* Klik kiri di badan penggaris -> tambah tab kiri (L). Klik pada L -> hapus. */
+function spkWERulerAddTab(e){
+  if(e.button!==0) return;
+  var t=e.target;
+  var tabG=t.closest?t.closest('.spk-tab'):null;
+  if(tabG){                                   // klik L yang sudah ada -> hapus
+    e.preventDefault(); e.stopPropagation();
+    var cmv=parseFloat(tabG.getAttribute('data-cm'));
+    spkWEModifyTabs(function(list){ return list.filter(function(v){ return Math.abs(v-cmv)>0.01; }); });
+    return;
+  }
+  if(t.closest && t.closest('.spk-rm')) return;   // penanda indent punya handler sendiri
+  var g=spkWERulerGeom(), W=g.W, M=g.M, CM=g.CM;
+  var x=spkWERulerXY(e);
+  if(x < M || x > W-M) return;                 // hanya di dalam area ketik
+  e.preventDefault();
+  var cm=Math.round(((x-M)/CM)*4)/4;           // snap 0,25 cm dari margin
+  spkWEModifyTabs(function(list){ if(list.indexOf(cm)<0) list.push(cm); return list; });
+}
+function spkWEModifyTabs(fn){
+  var ps=spkWESelectedPs(); if(!ps.length){ var c=spkWECurrentP(); if(c) ps=[c]; }
+  if(!ps.length) return;
+  ps.forEach(function(p){
+    var list=(p.getAttribute('data-tabs')||'').split(',').map(function(s){return parseFloat(s);}).filter(function(v){return !isNaN(v);});
+    list=fn(list.slice());
+    list.sort(function(a,b){return a-b;});
+    if(list.length) p.setAttribute('data-tabs', list.map(function(v){return v.toFixed(2);}).join(','));
+    else p.removeAttribute('data-tabs');
+  });
+  spkWEDrawRuler();
+}
+/* Posisi caret dalam cm dari margin kiri (0 penggaris) */
+function spkWECaretCmFromMargin(){
+  var sel=window.getSelection(); if(!sel.rangeCount) return null;
+  var r=sel.getRangeAt(0).cloneRange(); r.collapse(true);
+  var rect=r.getBoundingClientRect(); var x=rect.left;
+  if(!rect.width && !rect.height && !rect.left){
+    var node=sel.anchorNode; var el=(node&&node.nodeType===3)?node.parentNode:node;
+    if(el && el.getBoundingClientRect) x=el.getBoundingClientRect().left; else return null;
+  }
+  var svg=document.getElementById('spk-we-rulersvg'); if(!svg) return null;
+  var sr=svg.getBoundingClientRect(); var g=spkWERulerGeom();
+  var scale=sr.width? g.W/sr.width : 1;
+  return ((x - sr.left)*scale - g.M)/g.CM;
+}
+/* Sisipkan "tab" selebar wcm (cm) pada posisi caret */
+function spkWEInsertTabSpace(wcm){
+  var sel=window.getSelection(); if(!sel.rangeCount) return;
+  var r=sel.getRangeAt(0); r.deleteContents();
+  var sp=document.createElement('span');
+  sp.className='spk-tabspace';
+  sp.setAttribute('contenteditable','false');
+  sp.style.cssText='display:inline-block;width:'+Math.max(0.05,wcm).toFixed(2)+'cm';
+  sp.innerHTML='​';
+  r.insertNode(sp);
+  var nr=document.createRange(); nr.setStartAfter(sp); nr.collapse(true);
+  sel.removeAllRanges(); sel.addRange(nr);
+  try{ spkWECount(); }catch(e){}
+}
+/* Tab: lompat ke tab stop (L) berikutnya bila ada; jika tidak, tab default 1,27 cm */
+function spkWEDoTab(back){
+  var sel=window.getSelection(); if(!sel.rangeCount) return;
+  if(back){
+    var r=sel.getRangeAt(0); var node=r.startContainer, off=r.startOffset, prev=null;
+    if(node.nodeType===1) prev=node.childNodes[off-1];
+    else if(node.nodeType===3 && off===0) prev=node.previousSibling;
+    if(prev && prev.nodeType===1 && prev.classList && prev.classList.contains('spk-tabspace')) prev.parentNode.removeChild(prev);
+    return;
+  }
+  var p=spkWECurrentP();
+  var tabs=(p && p.getAttribute('data-tabs')||'').split(',').map(function(s){return parseFloat(s);}).filter(function(v){return !isNaN(v);}).sort(function(a,b){return a-b;});
+  var caretCm=spkWECaretCmFromMargin();
+  var target=null;
+  if(tabs.length && caretCm!=null){ for(var i=0;i<tabs.length;i++){ if(tabs[i] > caretCm+0.02){ target=tabs[i]; break; } } }
+  var wcm;
+  if(target!=null) wcm=target-caretCm;
+  else if(caretCm!=null) wcm=(Math.floor(caretCm/1.27)+1)*1.27 - caretCm;
+  else wcm=1.27;
+  spkWEInsertTabSpace(wcm);
 }
 function spkWERulerXY(e){
   var svg=document.getElementById('spk-we-rulersvg'); if(!svg) return 0;
@@ -19122,6 +19226,22 @@ function spkWERulerDown(e,k){
   document.body.style.cursor='default';
   spkWERulerMove(e);
 }
+/* Ukur lebar teks (cm) pada Arial 11pt — untuk membatasi lebar kotak nomor. */
+var _spkMeasCanvas=null;
+function spkTextWidthCm(txt){
+  if(!_spkMeasCanvas){ _spkMeasCanvas=document.createElement('canvas'); }
+  var ctx=_spkMeasCanvas.getContext('2d'); ctx.font='11pt Arial';
+  return (ctx.measureText(String(txt==null?'':txt)).width) * 2.54/96;
+}
+/* Setel lebar kotak nomor (span.n) = jarak gantung (cm) hasil seret penggaris, tapi
+   tidak boleh lebih kecil dari lebar teks nomornya sendiri (agar nomor tak menabrak
+   teks). Inilah yang membuat teks bisa DIRAPATKAN/DILEBARKAN dari nomor lewat penggaris. */
+function spkWEFitNumBox(p, hangCm){
+  var sp=p && p.querySelector(':scope > span.n'); if(!sp) return;
+  var minCm=spkTextWidthCm(sp.textContent)+0.06;
+  var w=Math.max(minCm, hangCm||0);
+  sp.style.width=w.toFixed(2)+'cm';
+}
 function spkWERulerMove(e){
   if(!spkRuler) return;
   e.preventDefault();
@@ -19129,37 +19249,31 @@ function spkWERulerMove(e){
   var st=spkRuler, k=st.k;
   var snap=function(px){ return Math.round((px/CM)*4)/4*CM; };   // kelipatan 0,25 cm
   var cmOf=function(px){ return Math.round((px/CM)*100)/100; };
-  /* Snap MAGNETIK: bila dekat dengan posisi indent ASAL paragraf (mis. gantungan
-     nomor 1,27 cm yang tidak pas grid), kembalikan tepat ke sana — supaya "geser ke
-     kanan lalu balik ke kiri" selalu kembali sejajar. Selain itu snap ke grid 0,25 cm. */
-  var TH=CM*0.14;
-  var magSnap=function(px, mag){ return (mag!=null && Math.abs(px-mag)<TH) ? mag : snap(px); };
   var x=Math.max(0, Math.min(W, spkWERulerXY(e)));
   var ml=st.ml, ti=st.ti, mr=st.mr, nml=ml, nti=ti, nmr=mr, info='';
 
   if(k==='right'){
-    nmr=Math.max(0, Math.min(CW-CM*0.5, magSnap(CW-(x-M), st.mr)));
+    nmr=Math.max(0, Math.min(CW-CM*0.5, snap(CW-(x-M))));
     info='Indentasi kanan: '+cmOf(nmr).toFixed(2).replace('.',',')+' cm';
   } else if(k==='first'){
-    var fp=magSnap(x-M, st.ml+st.ti);         // posisi baris pertama (magnet ke asal)
-    nti=fp-ml;
+    nti=snap(x-M-ml);
     nti=Math.max(-M-ml, Math.min(CW-mr-CM*0.25-ml, nti));
     info='Baris pertama: '+cmOf(ml+nti).toFixed(2).replace('.',',')+' cm';
   } else if(k==='hang'){
     var fixFirst=ml+ti;                       // baris pertama tetap di tempat
-    nml=Math.max(0, Math.min(CW-mr-CM*0.25, magSnap(x-M, st.ml)));
+    nml=Math.max(0, Math.min(CW-mr-CM*0.25, snap(x-M)));
     nti=fixFirst-nml;
     info='Menggantung: '+cmOf(nml).toFixed(2).replace('.',',')+' cm';
   } else {                                    // 'left' -> geser keduanya
-    nml=Math.max(0, Math.min(CW-mr-CM*0.25, magSnap(x-M, st.ml)));
+    nml=Math.max(0, Math.min(CW-mr-CM*0.25, snap(x-M)));
     info='Indentasi kiri: '+cmOf(nml).toFixed(2).replace('.',',')+' cm';
   }
 
   st.ps.forEach(function(p){
     if(k==='right'){ p.style.marginRight=cmOf(nmr).toFixed(2)+'cm'; }
-    else if(k==='first'){ p.style.textIndent=cmOf(nti).toFixed(2)+'cm'; }
-    else if(k==='hang'){ p.style.marginLeft=cmOf(nml).toFixed(2)+'cm'; p.style.textIndent=cmOf(nti).toFixed(2)+'cm'; }
-    else { p.style.marginLeft=cmOf(nml).toFixed(2)+'cm'; }
+    else if(k==='first'){ p.style.textIndent=cmOf(nti).toFixed(2)+'cm'; spkWEFitNumBox(p, -cmOf(nti)); }
+    else if(k==='hang'){ p.style.marginLeft=cmOf(nml).toFixed(2)+'cm'; p.style.textIndent=cmOf(nti).toFixed(2)+'cm'; spkWEFitNumBox(p, -cmOf(nti)); }
+    else { p.style.marginLeft=cmOf(nml).toFixed(2)+'cm'; }   // 'left' geser dua-duanya, jarak nomor->teks tetap
   });
   var tip=document.getElementById('spk-we-ruletip');
   if(tip){ tip.textContent=info; tip.classList.add('show'); }
@@ -19450,7 +19564,7 @@ function spkNFWidth(marks){
   if(majemuk){
     w=Math.max(1.27, w);
   } else {
-    w=Math.max(0.75, w);
+    w=Math.max(0.5, w);                        // nomor tunggal ("1.", "a.") lebih rapat ke teks
     w=Math.ceil(w/0.25)*0.25;
   }
   return Math.round(w*100)/100;
