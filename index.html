@@ -18098,14 +18098,16 @@ function spkDocCss(){
   '.spk-hd .o span{display:block;font-size:8.6px;color:#6B7885}'+
   '.spk-hd .r{text-align:right;font-size:8.6px;color:#6B7885;line-height:1.5}'+
   '.spk-hd .r b{color:#222}'+
-  /* Daftar isi (seperti sebelumnya) */
-  '.spk-toc h2{font-size:18px;font-weight:800;color:#154A7C;margin:0 0 4px}'+
-  '.spk-toc .hr{height:2px;background:#154A7C;margin-bottom:10px}'+
-  '.spk-toc .row{display:flex;align-items:baseline;gap:8px;padding:6px 2px;border-bottom:1px solid #EEF1F4}'+
-  '.spk-toc .nm{font-weight:600}.spk-toc .nm .no{color:#154A7C;font-weight:800;display:inline-block;width:0.6cm;margin-right:0.15cm;text-align:left}'+
-  '.spk-toc .nm .no.r{text-align:right}'+
-  '.spk-toc .dot{flex:1;border-bottom:1.4px dotted #C7D0D8;transform:translateY(-3px)}'+
-  '.spk-toc .pg{color:#6B7885;font-weight:700}'+
+  /* Daftar isi (Arial 11, jarak antar poin 12pt, seperti dokumen Word) */
+  '.spk-toc{font-family:Arial,Helvetica,sans-serif;color:#000}'+
+  '.spk-toc h2{text-align:center;font-size:12pt;font-weight:700;text-decoration:underline;color:#000;margin:0 0 24pt;letter-spacing:.01em}'+
+  '.spk-toc .row{display:flex;align-items:baseline;gap:0;margin:0 0 12pt;padding:0;border:0;font-size:11pt;line-height:1.25;font-weight:400}'+
+  '.spk-toc .row:last-child{margin-bottom:0}'+
+  '.spk-toc .nm{font-weight:400;white-space:nowrap}'+
+  '.spk-toc .nm .no{color:#000;font-weight:400;display:inline-block;width:0.85cm;margin-right:0;text-align:left}'+
+  '.spk-toc .nm i{font-style:italic}'+
+  '.spk-toc .dot{flex:1;border-bottom:1.2px dotted #000;transform:translateY(-3px);margin:0 4px}'+
+  '.spk-toc .pg{color:#000;font-weight:400;min-width:1.2em;text-align:right;white-space:nowrap}'+
   /* Judul & nomor SPK di halaman isi (seperti sebelumnya, navy) */
   '.spk-title{text-align:center;font-weight:800;font-size:15px;color:#154A7C;margin:4px 0 2px;letter-spacing:.02em}'+
   '.spk-subno{text-align:center;font-size:11px;margin-bottom:12px;color:#333}'+
@@ -18252,6 +18254,14 @@ function spkNoBreakRefNumbers(html){
     );
   });
 }
+/* Judul klausul: huruf kapital, aman-HTML, dan istilah asing dicetak miring
+   (mis. FORCE MAJEURE, GOOD CORPORATE GOVERNANCE) — dipakai di Daftar Isi & judul klausul. */
+const SPK_ITALIC_TERMS=['GOOD CORPORATE GOVERNANCE','FORCE MAJEURE'];
+function spkFmtJudul(judul){
+  let s=fkEsc(String(judul||'').toUpperCase());
+  SPK_ITALIC_TERMS.forEach(t=>{ s=s.split(t).join('<i>'+t+'</i>'); });
+  return s;
+}
 function spkDocHtml(data, klausul){
   const ctx=spkBuildCtx(data||{});
   const esc=fkEsc;
@@ -18285,14 +18295,14 @@ function spkDocHtml(data, klausul){
       '<div class="r"><b>SPK No. '+esc(data.nomor_kontrak||'')+'</b><br>'+esc(ctx.tanggal_kontrak_pjg||'')+'</div></div>';
   // DAFTAR ISI (dipertahankan seperti desain sebelumnya)
   const tocRows = (klausul||[]).map((k,i)=>
-    '<div class="row"><span class="nm"><span class="no'+((i+1)>=10?' r':'')+'">'+(i+1)+'.</span>'+esc(k.judul||'')+'</span><span class="dot"></span><span class="pg"></span></div>'
+    '<div class="row"><span class="nm"><span class="no">'+(i+1)+'.</span>'+spkFmtJudul(k.judul)+'</span><span class="dot"></span><span class="pg">'+esc(k.hal||k.halaman||'')+'</span></div>'
   ).join('');
   const toc=
-    '<section class="spk-page">'+hd+'<div class="spk-toc"><h2>DAFTAR ISI</h2><div class="hr"></div>'+tocRows+'</div></section>';
+    '<section class="spk-page">'+hd+'<div class="spk-toc"><h2>DAFTAR ISI</h2>'+tocRows+'</div></section>';
   // ISI: preamble + klausul + tanda tangan
   const preamble = spkNumberFix(spkTidyKeyValue(spkMerge(SPK_PREAMBLE_TPL, ctx)));
   const clausesHtml = (klausul||[]).map((k,i)=>
-    '<div class="spk-clause"><div class="spk-cl-h"><span class="n'+((i+1)>=10?' r':'')+'">'+(i+1)+'.</span>'+esc(String(k.judul||'').toUpperCase())+'</div>'+
+    '<div class="spk-clause"><div class="spk-cl-h"><span class="n'+((i+1)>=10?' r':'')+'">'+(i+1)+'.</span>'+spkFmtJudul(k.judul)+'</div>'+
     '<div class="spk-cl">'+spkNumberFix(spkTidyKeyValue(spkMerge(k.isi||'', ctx)))+'</div></div>'
   ).join('');
   const sign=
