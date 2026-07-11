@@ -20999,6 +20999,14 @@ function spkWTcText(tc){
    Bentuk tabel lain digabung antar-kolom menjadi satu paragraf biasa. */
 function spkWTblToHtml(tbl){
   var trs=tbl.getElementsByTagNameNS(SPK_W_NS,'tr'), html='', i, j;
+  /* Lebar kolom asli dari Word -> posisi titik dua & nilai SAMA PERSIS dengan
+     tabel yang Anda buat (bukan lebar tetap yang membuat jaraknya jauh). */
+  var gc=tbl.getElementsByTagNameNS(SPK_W_NS,'gridCol');
+  var twCm=function(tw){ tw=+tw||0; return tw>0 ? (Math.round(tw/566.93*100)/100)+'cm' : ''; };
+  var kw=gc.length>0 ? twCm(gc[0].getAttributeNS(SPK_W_NS,'w')) : '';
+  var sw=gc.length>1 ? twCm(gc[1].getAttributeNS(SPK_W_NS,'w')) : '';
+  var kStyle=kw?(' style="flex:0 0 '+kw+';max-width:'+kw+'"'):'';
+  var sStyle=sw?(' style="flex:0 0 '+sw+';width:'+sw+'"'):'';
   for(i=0;i<trs.length;i++){
     var tcs=[], kids=trs[i].childNodes;
     for(j=0;j<kids.length;j++){ if(kids[j].nodeType===1 && kids[j].localName==='tc') tcs.push(kids[j]); }
@@ -21007,11 +21015,11 @@ function spkWTblToHtml(tbl){
     var filled=0; for(j=0;j<cells.length;j++){ if(cells[j].plain!=='') filled++; }
     if(!filled) continue;                                        // baris kosong -> lewati
     if(cells.length===3 && cells[1].plain===':'){                // label | : | nilai
-      html+='<div class="spk-kv"><span class="k">'+cells[0].html+'</span>'+
-            '<span class="s">:</span><span class="v">'+cells[2].html+'</span></div>';
+      html+='<div class="spk-kv"><span class="k"'+kStyle+'>'+cells[0].html+'</span>'+
+            '<span class="s"'+sStyle+'>:</span><span class="v">'+cells[2].html+'</span></div>';
     }else if(cells.length===2){                                  // label | nilai
-      html+='<div class="spk-kv"><span class="k">'+cells[0].html+'</span>'+
-            '<span class="s">:</span><span class="v">'+cells[1].html+'</span></div>';
+      html+='<div class="spk-kv"><span class="k"'+kStyle+'>'+cells[0].html+'</span>'+
+            '<span class="s"'+sStyle+'>:</span><span class="v">'+cells[1].html+'</span></div>';
     }else{                                                       // tabel lain -> gabung kolom
       var parts=[]; for(j=0;j<cells.length;j++){ if(cells[j].html) parts.push(cells[j].html); }
       html+='<p class="kl0">'+parts.join(' ')+'</p>';
@@ -21019,13 +21027,86 @@ function spkWTblToHtml(tbl){
   }
   return html;
 }
+/* ================= Penomoran OTOMATIS Word (word/numbering.xml) =================
+   Word menyimpan nomor daftar (1.1., a., 1., dst.) SECARA OTOMATIS \u2014 bukan sebagai
+   teks. Bagian ini membaca definisi & menghitung nomornya persis seperti Word,
+   lalu menyuntikkannya sebagai teks agar tampil sama di website. */
+function spkRoman(n){
+  var m=[[1000,'m'],[900,'cm'],[500,'d'],[400,'cd'],[100,'c'],[90,'xc'],[50,'l'],
+         [40,'xl'],[10,'x'],[9,'ix'],[5,'v'],[4,'iv'],[1,'i']], s=''; n=+n||0;
+  for(var i=0;i<m.length;i++){ while(n>=m[i][0]){ s+=m[i][1]; n-=m[i][0]; } } return s;
+}
+function spkNumFmt(n, fmt){
+  n=+n||0;
+  if(fmt==='lowerLetter') return String.fromCharCode(97+((n-1)%26));
+  if(fmt==='upperLetter') return String.fromCharCode(65+((n-1)%26));
+  if(fmt==='lowerRoman')  return spkRoman(n);
+  if(fmt==='upperRoman')  return spkRoman(n).toUpperCase();
+  if(fmt==='decimalZero') return (n<10?'0':'')+n;
+  return String(n);                                          // decimal
+}
+function spkParseNumbering(xml){
+  var numToAbs={}, abs={};
+  if(!xml) return {numToAbs:numToAbs, abs:abs};
+  try{
+    var d=new DOMParser().parseFromString(xml,'application/xml'), i, j;
+    var an=d.getElementsByTagNameNS(SPK_W_NS,'abstractNum');
+    for(i=0;i<an.length;i++){
+      var aid=an[i].getAttributeNS(SPK_W_NS,'abstractNumId'); abs[aid]={};
+      var lvls=an[i].getElementsByTagNameNS(SPK_W_NS,'lvl');
+      for(j=0;j<lvls.length;j++){
+        var il=lvls[j].getAttributeNS(SPK_W_NS,'ilvl');
+        var nf=lvls[j].getElementsByTagNameNS(SPK_W_NS,'numFmt')[0];
+        var lt=lvls[j].getElementsByTagNameNS(SPK_W_NS,'lvlText')[0];
+        var st=lvls[j].getElementsByTagNameNS(SPK_W_NS,'start')[0];
+        abs[aid][il]={
+          fmt:  nf?(nf.getAttributeNS(SPK_W_NS,'val')||'decimal'):'decimal',
+          text: lt?(lt.getAttributeNS(SPK_W_NS,'val')||''):'',
+          start:st?(parseInt(st.getAttributeNS(SPK_W_NS,'val'),10)||1):1
+        };
+      }
+    }
+    var nums=d.getElementsByTagNameNS(SPK_W_NS,'num');
+    for(i=0;i<nums.length;i++){
+      var nid=nums[i].getAttributeNS(SPK_W_NS,'numId');
+      var ab=nums[i].getElementsByTagNameNS(SPK_W_NS,'abstractNumId')[0];
+      numToAbs[nid]= ab?(ab.getAttributeNS(SPK_W_NS,'val')||''):'';
+    }
+  }catch(e){}
+  return {numToAbs:numToAbs, abs:abs};
+}
+/* Mesin penghitung: state counter per numId, menaikkan level & mereset sub-level
+   persis seperti Word. Mengembalikan teks nomor jadi (mis. "1.2." atau "a."). */
+function spkNumberer(numbering){
+  var counters={};
+  return function(numId, ilvl){
+    var absId=numbering.numToAbs[numId];
+    var levels=(absId!=null)?numbering.abs[absId]:null;
+    if(!levels) return '';
+    ilvl=+ilvl||0;
+    if(!counters[numId]) counters[numId]=[];
+    var c=counters[numId];
+    var lv=levels[ilvl]||{fmt:'decimal',text:'%'+(ilvl+1)+'.',start:1};
+    if(c[ilvl]==null) c[ilvl]=lv.start; else c[ilvl]=c[ilvl]+1;
+    for(var d=ilvl+1; d<c.length; d++) c[d]=null;            // reset sub-level lebih dalam
+    var txt=lv.text||('%'+(ilvl+1)+'.');
+    txt=txt.replace(/%(\d)/g, function(m,g){
+      var idx=(+g)-1, lvd=levels[idx]||{fmt:'decimal',start:1};
+      var val=(c[idx]!=null)?c[idx]:lvd.start;
+      return spkNumFmt(val, lvd.fmt);
+    });
+    return txt;
+  };
+}
 /* word/document.xml -> { judul, html } dalam format kelas dokumen SPK (kl0/kl1/kl2/...) */
-function spkWordXmlToKlausul(xmlText, stylesXml){
+function spkWordXmlToKlausul(xmlText, stylesXml, numberingXml){
   var doc=new DOMParser().parseFromString(xmlText,'application/xml');
   if(doc.getElementsByTagName('parsererror').length) throw new Error('Isi dokumen tidak dapat dibaca.');
   var body=doc.getElementsByTagNameNS(SPK_W_NS,'body')[0];
   if(!body) throw new Error('Struktur dokumen Word tidak dikenali.');
   var nameOf=spkStyleNameMap(stylesXml);
+  var numbering=spkParseNumbering(numberingXml);
+  var nextNum=spkNumberer(numbering);
   /* --- Lintasan 1: kumpulkan blok level-atas BERURUTAN (paragraf & tabel) ---
      Penting: tabel Word (mis. blok "Nama : nilai") ikut dibaca sebagai satu
      kesatuan, bukan diratakan jadi paragraf lepas yang menyatu. */
@@ -21039,7 +21120,16 @@ function spkWordXmlToKlausul(xmlText, stylesXml){
       var sid=styEl?(styEl.getAttributeNS(SPK_W_NS,'val')||''):'';
       /* cocokkan lewat NAMA gaya (tahan terhadap penulisan ulang styleId oleh Word) */
       var key=nameOf[sid] || spkStyNorm(sid);
-      blocks.push({t:'p', p:nd, pPr:pPr, key:key});
+      /* baca penomoran otomatis (numPr) bila ada */
+      var np=pPr?pPr.getElementsByTagNameNS(SPK_W_NS,'numPr')[0]:null;
+      var numId='', ilvl='0';
+      if(np){
+        var ni=np.getElementsByTagNameNS(SPK_W_NS,'numId')[0];
+        var il=np.getElementsByTagNameNS(SPK_W_NS,'ilvl')[0];
+        numId= ni?(ni.getAttributeNS(SPK_W_NS,'val')||''):'';
+        ilvl=  il?(il.getAttributeNS(SPK_W_NS,'val')||'0'):'0';
+      }
+      blocks.push({t:'p', p:nd, pPr:pPr, key:key, numId:numId, ilvl:ilvl});
     }else if(ln==='tbl'){
       blocks.push({t:'tbl', el:nd, key:''});
     }
@@ -21059,7 +21149,10 @@ function spkWordXmlToKlausul(xmlText, stylesXml){
       if(!judul) judul=t.plain.replace(/^((?:\d+\.)+|\d+[.)])\s*/,'').trim();
       continue;
     }
-    if(!t.plain) continue;                                  // baris kosong -> lewati
+    /* nomor OTOMATIS Word (dihitung berurutan, meski teksnya kosong tetap sah) */
+    var numStr='';
+    if(b.numId && b.numId!=='0'){ numStr=nextNum(b.numId, b.ilvl); }
+    if(!t.plain && !numStr) continue;                       // baris benar-benar kosong -> lewati
     var cls=SPK_STY2CLS[key];
     if(!cls){                                               // gaya lain -> baca indentasi paragraf
       var ind=b.pPr?b.pPr.getElementsByTagNameNS(SPK_W_NS,'ind')[0]:null;
@@ -21068,12 +21161,23 @@ function spkWordXmlToKlausul(xmlText, stylesXml){
         ind?ind.getAttributeNS(SPK_W_NS,'hanging'):0,
         ind?ind.getAttributeNS(SPK_W_NS,'firstLine'):0);
     }
-    if(cls==='kl0'||cls==='kldesc'){                        // deteksi nomor yang diketik manual
-      if(/^(?:\d+\.)+[\s\u00a0]/.test(t.plain)) cls='kl1';
-      else if(/^[A-Za-z][.)][\s\u00a0]/.test(t.plain)) cls='kl2';
+    var out=t.html;
+    if(numStr){
+      /* paragraf bernomor otomatis: pastikan kelasnya menggantung (kl1/kl2)
+         sesuai kedalaman level, lalu sisipkan nomornya sebagai teks. */
+      if(cls!=='kl1' && cls!=='kl2') cls=((+b.ilvl)>=1)?'kl2':'kl1';
+      out=spkXmlEsc(numStr)+' '+out;
+    }else{
+      if(cls==='kl0'||cls==='kldesc'){                      // deteksi nomor yang diketik manual
+        if(/^(?:\d+\.)+[\s\u00a0]/.test(t.plain)) cls='kl1';
+        else if(/^[A-Za-z][.)][\s\u00a0]/.test(t.plain)) cls='kl2';
+      }
+      /* pertahankan indentasi baris pertama (huruf masuk) yang dibuat dari spasi */
+      var lead=out.match(/^([ \u00a0]{2,})/);
+      if(lead){ out='<span style="white-space:pre">'+lead[1]+'</span>'+out.slice(lead[1].length); }
     }
     /* rapikan spasi bekas TAB sesudah nomor menjadi satu spasi */
-    var out=t.html.replace(/^(\s*(?:(?:\d+\.)+|\d+\)|[A-Za-z][.)]))[ \u00a0]{2,}/, '$1 ');
+    out=out.replace(/^(\s*(?:(?:\d+\.)+|\d+\)|[A-Za-z][.)]))[ \u00a0]{2,}/, '$1 ');
     html += '<p class="'+cls+'">'+out+'</p>';
   }
   return { judul:judul, html:html };
@@ -21221,7 +21325,8 @@ async function spkKlDocReadFile(file){
       if(!xml) throw new Error('word/document.xml tidak ditemukan — berkas bukan dokumen Word (.docx).');
       var dec=new TextDecoder();
       var sty=zip['word/styles.xml'] ? dec.decode(zip['word/styles.xml']) : '';
-      var res=spkWordXmlToKlausul(dec.decode(xml), sty);
+      var num=zip['word/numbering.xml'] ? dec.decode(zip['word/numbering.xml']) : '';
+      var res=spkWordXmlToKlausul(dec.decode(xml), sty, num);
       if(!res.html) throw new Error('Tidak ada isi klausul yang terbaca pada template.');
       spkKlDoc.isi=res.html; spkKlDoc.fileName=file.name; spkKlDoc.dirty=true;
       if(res.judul){ var j=document.getElementById('spk-kldoc-judul'); if(j && !j.value.trim()) j.value=res.judul; }
