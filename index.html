@@ -18530,6 +18530,7 @@ function spkNarasiPaste(el,k){
    textarea + perapian otomatis. Isi disimpan sebagai HTML langsung pada field
    terkait; spkBuildCtx & spkNarasiPreviewHtml mendeteksi ini via spkIsHtml(). */
 let spkedKey=null;
+let spkedOrigHtml=null;
 function spkedOpen(k){
   if(!spkState) return;
   spkedKey=k;
@@ -18539,21 +18540,30 @@ function spkedOpen(k){
   const html= spkIsHtml(raw) ? raw : spkNumberFix(spkFormatNarasi(raw));
   const page=document.getElementById('spked-page');
   page.innerHTML = html || '<p><br></p>';
+  spkedOrigHtml = page.innerHTML;
   document.getElementById('spked-overlay').classList.add('show');
   try{ document.execCommand('defaultParagraphSeparator', false, 'p'); }catch(e){}
   try{ document.execCommand('styleWithCSS', false, true); }catch(e){}
   page.focus();
 }
-function spkedClose(){
+/* Tutup editor. Bila ada perubahan yang BELUM disimpan (tombol X / klik luar),
+   minta konfirmasi dulu supaya tulisan yang sudah dirapikan tidak hilang tanpa
+   sengaja — sebelumnya X langsung membuang perubahan tanpa peringatan. */
+function spkedClose(force){
+  const page=document.getElementById('spked-page');
+  if(!force && spkedKey && page && page.innerHTML!==spkedOrigHtml){
+    if(!confirm('Perubahan pada editor ini belum disimpan. Tutup tanpa menyimpan?')) return;
+  }
   document.getElementById('spked-overlay').classList.remove('show');
-  spkedKey=null;
+  spkedKey=null; spkedOrigHtml=null;
 }
 function spkedSave(){
   if(!spkedKey) return;
   const page=document.getElementById('spked-page');
   spkSet(spkedKey, page.innerHTML);
   spkNarasiRefresh(spkedKey);
-  spkedClose();
+  toast('Tulisan tersimpan ke form. Jangan lupa klik "Simpan Kontrak" untuk menyimpan seluruh dokumen.','ok');
+  spkedClose(true);
 }
 function spkedExec(cmd, val){
   const page=document.getElementById('spked-page'); page.focus();
