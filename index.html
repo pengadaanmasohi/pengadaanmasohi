@@ -17660,7 +17660,7 @@ document.getElementById('pn-preview-overlay').addEventListener('click',e=>{ if(e
 .spk-we-rulerwrap.hidden{display:none}
 .spk-we-ruler{position:relative;height:34px;width:210mm;max-width:100%}
 /* Penanda indentasi pada penggaris (dapat digeser, gaya Word) */
-.spk-rm{cursor:ew-resize}
+.spk-rm{cursor:default}
 .spk-rm polygon,.spk-rm rect{fill:#f3f6f8;stroke:#79848d;stroke-width:1;stroke-linejoin:round}
 .spk-rm:hover polygon,.spk-rm:hover rect{fill:#1d9e75;stroke:#0f7a58}
 .spk-rm.on polygon,.spk-rm.on rect{fill:#1d9e75;stroke:#0f7a58}
@@ -17797,7 +17797,9 @@ document.getElementById('pn-preview-overlay').addEventListener('click',e=>{ if(e
 .spk-we-page .spk-cl p.kl1.spk-sl{margin-left:.75cm;text-indent:-.75cm;padding-left:0}
 .spk-we-page .spk-cl p.kl2.spk-sl{margin-left:1.5cm;text-indent:-.75cm;padding-left:0}
 .spk-we-page .spk-cl p.spk-sl .n{display:inline-block;width:.75cm;text-indent:0;text-align:left}
-.spk-we-page .spk-cl p.spk-ml .n.m{display:inline-block;box-sizing:border-box;width:auto;min-width:.75cm;padding-right:.14cm;text-indent:0;text-align:left}
+.spk-we-page .spk-cl p.kl1.spk-ml{margin-left:1.27cm;text-indent:-1.27cm}
+.spk-we-page .spk-cl p.kl2.spk-ml{margin-left:2.02cm;text-indent:-1.27cm}
+.spk-we-page .spk-cl p.spk-ml .n.m{display:inline-block;box-sizing:border-box;width:auto;min-width:1.27cm;padding-right:.05cm;text-indent:0;text-align:left}
 .spk-we-page .spk-cl p.kldesc{margin-left:.75cm;text-indent:0}
 .spk-we-page .spk-cl p .n{display:inline-block;width:.75cm;text-indent:0;text-align:left}
 .spk-we-page .spk-cl i{font-style:italic}
@@ -18360,12 +18362,12 @@ function spkDocCss(){
   '.spk-cl p.spk-sl .n{display:inline-block;width:0.75cm;text-indent:0;text-align:left}'+
   /* Label MAJEMUK (5.1. / 3.1.1. / 11.1.1.) -> lebar auto, jaga jarak >=0,75 cm
      tanpa menabrak teks; hanging otomatis mengikuti lebar label (via .spk-ml). */
-  '.spk-cl p.kl1.spk-ml{margin-left:0.75cm;text-indent:-0.75cm;padding-left:0}'+
-  '.spk-cl p.kl2.spk-ml{margin-left:1.5cm;text-indent:-0.75cm;padding-left:0}'+
-  '.spk-cl p.spk-ml .n.m{display:inline-block;width:auto;min-width:0.75cm;text-indent:0;text-align:left;padding-right:0.14cm;box-sizing:border-box}'+
+  '.spk-cl p.kl1.spk-ml{margin-left:1.27cm;text-indent:-1.27cm;padding-left:0}'+
+  '.spk-cl p.kl2.spk-ml{margin-left:2.02cm;text-indent:-1.27cm;padding-left:0}'+
+  '.spk-cl p.spk-ml .n.m{display:inline-block;width:auto;min-width:1.27cm;text-indent:0;text-align:left;padding-right:0.05cm;box-sizing:border-box}'+
   /* Token angka-majemuk yang di sumber ber-kelas kl2 (mis. "3.1.1.") -> paksa
      sejajar di tingkat-1 (0,75 cm) seperti Word; huruf a./b. tetap di 1,5 cm. */
-  '.spk-cl p.kl2.spk-lv1{margin-left:0.75cm;text-indent:-0.75cm;padding-left:0}'+
+  '.spk-cl p.kl2.spk-lv1{margin-left:1.27cm;text-indent:-1.27cm;padding-left:0}'+
   /* Baris "Label : nilai" agar sejajar seperti Word */
   '.spk-cl .spk-kv{display:flex;margin:0 0 4pt;line-height:1.15}'+
   '.spk-cl .spk-kv .k{flex:0 0 34%;max-width:34%}'+
@@ -18592,7 +18594,7 @@ function spkWEOpen(opts){
         '<span class="spk-ov-title">'+fkEsc(opts.title||'Editor Teks')+'</span>'+
         '<div class="spk-we-wbtns">'+
           '<button type="button" class="spk-we-wbtn" id="spk-we-minbtn" title="Perkecil (Minimize)" onclick="event.stopPropagation();spkWEMinimize()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg></button>'+
-          '<button type="button" class="spk-we-wbtn" id="spk-we-maxbtn" title="Perbesar (Maximize)" onclick="event.stopPropagation();spkWEToggleMax()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="7" y="4" width="13" height="13" rx="2"/><path d="M16 20H6a2 2 0 0 1-2-2V8"/></svg></button>'+
+          '<button type="button" class="spk-we-wbtn" id="spk-we-maxbtn" title="Perbesar (Maximize)" onclick="event.stopPropagation();spkWEToggleMax()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="5" y="5" width="14" height="14" rx="1.5"/></svg></button>'+
           '<button type="button" class="spk-we-wbtn close" title="Tutup (Close)" onclick="event.stopPropagation();spkWEAskClose()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>'+
         '</div>'+
       '</div>'+
@@ -18704,7 +18706,7 @@ function spkWEToggleMax(){
     b.title = on ? 'Kembalikan ukuran (Restore)' : 'Perbesar (Maximize)';
     b.innerHTML = on
       ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="4" y="8" width="12" height="12" rx="2"/><path d="M8 8V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2"/></svg>'
-      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="7" y="4" width="13" height="13" rx="2"/><path d="M16 20H6a2 2 0 0 1-2-2V8"/></svg>';
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="5" y="5" width="14" height="14" rx="1.5"/></svg>';
   }
   setTimeout(function(){ spkWEDrawRuler(); spkWECount(); }, 30);
 }
@@ -19117,7 +19119,7 @@ function spkWERulerDown(e,k){
   var el=document.getElementById('spk-rm-'+k); if(el) el.classList.add('on');
   document.addEventListener('mousemove', spkWERulerMove, true);
   document.addEventListener('mouseup', spkWERulerUp, true);
-  document.body.style.cursor='ew-resize';
+  document.body.style.cursor='default';
   spkWERulerMove(e);
 }
 function spkWERulerMove(e){
@@ -19127,23 +19129,29 @@ function spkWERulerMove(e){
   var st=spkRuler, k=st.k;
   var snap=function(px){ return Math.round((px/CM)*4)/4*CM; };   // kelipatan 0,25 cm
   var cmOf=function(px){ return Math.round((px/CM)*100)/100; };
+  /* Snap MAGNETIK: bila dekat dengan posisi indent ASAL paragraf (mis. gantungan
+     nomor 1,27 cm yang tidak pas grid), kembalikan tepat ke sana — supaya "geser ke
+     kanan lalu balik ke kiri" selalu kembali sejajar. Selain itu snap ke grid 0,25 cm. */
+  var TH=CM*0.14;
+  var magSnap=function(px, mag){ return (mag!=null && Math.abs(px-mag)<TH) ? mag : snap(px); };
   var x=Math.max(0, Math.min(W, spkWERulerXY(e)));
   var ml=st.ml, ti=st.ti, mr=st.mr, nml=ml, nti=ti, nmr=mr, info='';
 
   if(k==='right'){
-    nmr=Math.max(0, Math.min(CW-CM*0.5, snap(CW-(x-M))));
+    nmr=Math.max(0, Math.min(CW-CM*0.5, magSnap(CW-(x-M), st.mr)));
     info='Indentasi kanan: '+cmOf(nmr).toFixed(2).replace('.',',')+' cm';
   } else if(k==='first'){
-    nti=snap(x-M-ml);
+    var fp=magSnap(x-M, st.ml+st.ti);         // posisi baris pertama (magnet ke asal)
+    nti=fp-ml;
     nti=Math.max(-M-ml, Math.min(CW-mr-CM*0.25-ml, nti));
     info='Baris pertama: '+cmOf(ml+nti).toFixed(2).replace('.',',')+' cm';
   } else if(k==='hang'){
     var fixFirst=ml+ti;                       // baris pertama tetap di tempat
-    nml=Math.max(0, Math.min(CW-mr-CM*0.25, snap(x-M)));
+    nml=Math.max(0, Math.min(CW-mr-CM*0.25, magSnap(x-M, st.ml)));
     nti=fixFirst-nml;
     info='Menggantung: '+cmOf(nml).toFixed(2).replace('.',',')+' cm';
   } else {                                    // 'left' -> geser keduanya
-    nml=Math.max(0, Math.min(CW-mr-CM*0.25, snap(x-M)));
+    nml=Math.max(0, Math.min(CW-mr-CM*0.25, magSnap(x-M, st.ml)));
     info='Indentasi kiri: '+cmOf(nml).toFixed(2).replace('.',',')+' cm';
   }
 
@@ -19208,6 +19216,7 @@ function spkWEPainterCapture(){
       lineHeight:p.style.lineHeight||'',
       marginTop:p.style.marginTop||'', marginBottom:p.style.marginBottom||'',
       marginLeft:p.style.marginLeft||'', textIndent:p.style.textIndent||'',
+      marginRight:p.style.marginRight||'',
       fontWeight:p.style.fontWeight||'', textTransform:p.style.textTransform||''
     } : null,
     /* format PENOMORAN (bila paragraf acuan adalah daftar bernomor) */
@@ -19269,6 +19278,7 @@ function spkWEPainterApply(){
       p.style.lineHeight=f.lineHeight||'';
       p.style.marginTop=f.marginTop||''; p.style.marginBottom=f.marginBottom||'';
       p.style.marginLeft=f.marginLeft||''; p.style.textIndent=f.textIndent||'';
+      p.style.marginRight=f.marginRight||'';
       p.style.fontWeight=f.fontWeight||''; p.style.textTransform=f.textTransform||'';
     });
   }
@@ -19430,10 +19440,20 @@ function spkNFParse(txt, sty){
 }
 /* Lebar kotak nomor (cm) berdasarkan penanda terpanjang */
 function spkNFWidth(marks){
-  var maxLen=0;
-  marks.forEach(function(m){ if(String(m).length>maxLen) maxLen=String(m).length; });
-  var w=maxLen*0.175+0.12;                   // lebar nyata glyph Arial 11pt + jeda kecil (rapat, sejajar Word)
-  return Math.max(0.75, Math.round(w*100)/100);
+  var maxLen=0, majemuk=false;
+  marks.forEach(function(m){ m=String(m); if(m.length>maxLen) maxLen=m.length;
+    if(/^(?:\d+\.){2,}$/.test(m)) majemuk=true; });   // nomor majemuk: "8.1." / "3.1.1."
+  var w=maxLen*0.175+0.12;                    // perkiraan lebar glyph Arial 11pt + jeda
+  /* Nomor majemuk memakai "tab stop" tetap 1,27 cm (0,5") seperti default Word agar
+     SEMUA teks butir sejajar di titik yang sama (mis. 8.1 & 8.10 mulai di kolom yang
+     sama). Nomor tunggal cukup 0,75 cm & dibulatkan ke grid penggaris 0,25 cm. */
+  if(majemuk){
+    w=Math.max(1.27, w);
+  } else {
+    w=Math.max(0.75, w);
+    w=Math.ceil(w/0.25)*0.25;
+  }
+  return Math.round(w*100)/100;
 }
 function spkNFSpanStyle(w, align){
   return 'display:inline-block;box-sizing:border-box;width:'+Number(w).toFixed(2)+'cm;'+
@@ -20076,11 +20096,14 @@ function spkWEBulNewApply(){
 
 
 
-/* Shortcut global Ctrl+Alt+C hanya saat editor terbuka */
+/* Shortcut global Ctrl+Alt+C hanya saat editor terbuka.
+   HANYA menyalin format (kuas TIDAK diaktifkan) — seperti Word, format baru menempel
+   saat Ctrl+Alt+V ditekan, BUKAN saat mengklik teks. */
 document.addEventListener('keydown', function(e){
   var ov=document.getElementById('spk-we-overlay');
   if(!ov || !ov.classList.contains('show')) return;
-  if(e.ctrlKey && e.altKey && (e.key==='c'||e.key==='C')){ e.preventDefault(); if(spkWEPainterCapture()) spkWEPainterMode(true); }
+  if(e.ctrlKey && e.altKey && (e.key==='c'||e.key==='C')){ e.preventDefault(); spkWEPainterCopy(); }
+  if(e.ctrlKey && e.altKey && (e.key==='v'||e.key==='V')){ e.preventDefault(); spkWEPainterPaste(); }
 });
 
 
