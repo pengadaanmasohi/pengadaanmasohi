@@ -5562,6 +5562,28 @@ function showView(name, loaderMsg, noLoader){
   requestAnimationFrame(()=>{ requestAnimationFrame(doSwap); });
 }
 
+/* Render ulang HALAMAN yang sedang aktif — dipakai setelah data selesai dimuat
+   secara async saat refresh, agar tabel tidak tampil kosong (data baru muncul
+   tanpa perlu pindah menu dulu). */
+function rerenderActiveView(){
+  try{
+    var v=document.querySelector('.view.active'); if(!v) return;
+    var name=v.id.replace(/^view-/,'');
+    var R={
+      'dashboard':'renderDashboard','list':'renderTable','list-pl':'renderTablePl','list-tender':'renderTableTender',
+      'fk-input':'renderFkInput','fk-view':'renderFkView','pn-ambil':'renderPnAmbil','pn-lihat':'renderPnLihat',
+      'form-kelengkapan':'renderFormKelengkapan','fkl-view':'renderFklView','form-pembukaan':'renderPnwForm',
+      'pnw-view':'renderPnwView','form-rho':'renderRhoForm','rho-view':'renderRhoView','form-dp':'renderDpForm',
+      'dp-view':'renderDpView','form-hps':'renderHpsForm','hps-view':'renderHpsView','form-analisa':'renderAnalisaForm',
+      'analisa-view':'renderAnalisaView','jadwal-kerja':'renderJadwalKerja','jadwal-view':'renderJadwalView',
+      'spk-susun':'renderSpkSusun','spk-view':'renderSpkView','spk-klausul':'renderSpkKlausul',
+      'hari-libur':'renderHariLibur','rekap-hps':'renderRekapHps'
+    };
+    var fn=R[name];
+    if(fn && typeof window[fn]==='function') window[fn]();
+  }catch(e){ console.error('rerenderActiveView:', e); }
+}
+
 /* ============ NAV (top bar dropdown) ============ */
 function toggleTopGroup(ev,g){
   if(ev) ev.stopPropagation();
@@ -17504,16 +17526,22 @@ async function migrateLocalStorageToSupabase(){
   }
 }
 
-refreshData();      // muat data SPBJ/Kontrak Rinci
-refreshDataPl();    // muat data Pengadaan Langsung
-refreshDataTender();// muat data Tender
-refreshDataPenetapan(); // muat data Penetapan Nomor
-refreshDataKelengkapan(); // muat data Kelengkapan Dokumen (Lihat Data)
-refreshDataPembukaan();   // muat data Pembukaan Penawaran (Lihat Hasil)
-refreshDataRho();         // muat data Referensi Harga Online (Lihat Harga)
-refreshDataHps();         // muat data Harga Perkiraan Sendiri (Lihat HPS)
-refreshDataAnalisa();     // muat data Analisa Harga Satuan (Lihat Analisa)
-refreshDataJadwal();      // muat data Jadwal Pelaksanaan Pengadaan (Lihat Jadwal)
+/* Muat semua data awal. Karena async, tiap selesai memuat kita render ULANG
+   halaman yang sedang aktif — mencegah tabel tampil KOSONG saat refresh
+   (dulu data baru muncul setelah pindah menu). */
+[ refreshData,        // SPBJ/Kontrak Rinci
+  refreshDataPl,      // Pengadaan Langsung
+  refreshDataTender,  // Tender
+  refreshDataPenetapan,
+  refreshDataKelengkapan,
+  refreshDataPembukaan,
+  refreshDataRho,
+  refreshDataHps,
+  refreshDataAnalisa,
+  refreshDataJadwal
+].forEach(function(fn){
+  try{ var p=fn(); if(p && p.then) p.then(rerenderActiveView).catch(function(){}); }catch(e){}
+});
 migrateLocalStorageToSupabase().then(dpMigrateOldRecords);    // pindahkan data lokal ke Supabase (sekali jalan), lalu tautkan Data Pekerjaan lama
 pnLoadConfig();         // muat konfigurasi nomor awal
 // #3: Refresh TIDAK memaksa logout selama sesi masih dalam batas wajar.
@@ -18066,7 +18094,7 @@ async function refreshDataKlausul(){
     }
   }catch(err){ console.error('SPK klausul:',err); spkSeedInMemory(); }
 }
-async function spkInit(){ await refreshDataKlausul(); await refreshDataSpk(); }
+async function spkInit(){ await refreshDataKlausul(); await refreshDataSpk(); try{ rerenderActiveView(); }catch(e){} }
 
 /* ================= STATE PENYUSUNAN ================= */
 let spkEditId=null;
@@ -21172,9 +21200,16 @@ function spkWordXmlToKlausul(xmlText, stylesXml, numberingXml){
         if(/^(?:\d+\.)+[\s\u00a0]/.test(t.plain)) cls='kl1';
         else if(/^[A-Za-z][.)][\s\u00a0]/.test(t.plain)) cls='kl2';
       }
-      /* pertahankan indentasi baris pertama (huruf masuk) yang dibuat dari spasi */
-      var lead=out.match(/^([ \u00a0]{2,})/);
-      if(lead){ out='<span style="white-space:pre">'+lead[1]+'</span>'+out.slice(lead[1].length); }
+      /* Huruf masuk (spasi di awal) -> indentasi baris pertama SERAGAM.
+         Paragraf narasi (Klausul Deskripsi) diratakan ke DASAR klausul (0,75 cm)
+         supaya tidak menjorok jauh & sejajar dengan paragraf lain:
+           - ada huruf masuk  -> "klp"  (rata dasar + baris pertama menjorok 0,75 cm)
+           - tanpa huruf masuk -> "kl0" (rata dasar, tanpa menjorok)
+         Spasi awal dibuang; jaraknya diatur oleh kelas (seragam), bukan jumlah spasi. */
+      var lead=out.match(/^([ \u00a0]+)/);
+      if(cls==='kldesc'){ cls = lead ? 'klp' : 'kl0'; }
+      else if(cls==='kl0' && lead){ cls='klp'; }
+      if(lead){ out=out.slice(lead[1].length); }
     }
     /* rapikan spasi bekas TAB sesudah nomor menjadi satu spasi */
     out=out.replace(/^(\s*(?:(?:\d+\.)+|\d+\)|[A-Za-z][.)]))[ \u00a0]{2,}/, '$1 ');
@@ -21204,7 +21239,7 @@ function spkKlausulOpenEditor(k){
     ov.addEventListener('click', function(e){ if(e.target.id==='spk-kldoc-ov') spkKlDocAskClose(); });
   }
   ov.innerHTML=
-    '<div class="spk-ov-modal spk-ov-we">'+
+    '<div class="spk-ov-modal spk-ov-we" style="height:auto;max-height:92vh">'+
       '<div class="spk-ov-head spk-we-head">'+
         '<span class="spk-ov-title">'+(isEdit?'Ubah Klausul':'Tambah Klausul')+' — Template Word (.docx)</span>'+
         '<div class="spk-we-wbtns">'+
@@ -21218,15 +21253,13 @@ function spkKlausulOpenEditor(k){
           '<div class="spk-kldoc-tools">'+
             '<button type="button" class="btn btn-teal btn-sm" onclick="spkKlDocDownload()">'+
               '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg> Download Template (.docx)</button>'+
-            '<button type="button" class="btn btn-green btn-sm" onclick="spkKlDocPick()">'+
+            '<button type="button" class="btn btn-green btn-sm" onclick="spkKlDocBrowse()">'+
               '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5M12 3v12"/></svg> Upload Template (.docx)</button>'+
             '<input type="file" id="spk-kldoc-file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="display:none" onchange="spkKlDocUpload(event)">'+
             '<span class="spk-kldoc-meta" id="spk-kldoc-meta"></span>'+
           '</div>'+
-          /* Kotak unggah (muncul saat tombol Upload Template ditekan) */
-          '<div class="spk-kldoc-dz" id="spk-kldoc-dz" onclick="spkKlDocBrowse()">'+
-            '<button type="button" class="spk-kldoc-dzx" title="Tutup" onclick="event.stopPropagation();spkKlDocDzHide()">'+
-              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>'+
+          /* Kotak Unggah File: telusuri berkas + Drag and drop (selalu tampil) */
+          '<div class="spk-kldoc-dz show" id="spk-kldoc-dz" onclick="spkKlDocBrowse()">'+
             '<svg class="spk-kldoc-dzic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+
               '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5M12 3v12"/></svg>'+
             '<div class="t">Drag &amp; Drop berkas .docx ke sini</div>'+
@@ -21236,19 +21269,12 @@ function spkKlausulOpenEditor(k){
           '<div class="spk-kldoc-note">'+
             '<b>Cara pakai:</b> unduh template &rarr; ketik isi klausul di Microsoft Word &rarr; unggah kembali berkas .docx tersebut. '+
             'Template sudah diatur <b>A4 &middot; Portrait &middot; Margin Normal (2,54 cm) &middot; Arial 11</b>. '+
-            'Teks yang Anda ketik akan berada <b>di bawah judul klausul dan sejajar dengan huruf sesudah penomorannya</b> (menjorok 0,75 cm). '+
-            'Ketik nomor butir secara manual (mis. <code>1.1.</code> atau <code>a.</code>) lalu tekan TAB.'+
-          '</div>'+
-        '</div>'+
-        '<div class="spk-we-pagearea" id="spk-kldoc-drop">'+
-          '<div class="spk-we-page">'+
-            '<div class="spk-we-clhead" id="spk-kldoc-head"></div>'+
-            '<div class="spk-cl" id="spk-kldoc-prev"></div>'+
+            'Format Word Anda (penomoran otomatis, indentasi, tabel) akan <b>diikuti apa adanya</b> saat ditampilkan di website.'+
           '</div>'+
         '</div>'+
       '</div>'+
       '<div class="spk-we-foot">'+
-        '<span class="spk-we-status"><span id="spk-kldoc-count">0 kata</span>'+
+        '<span class="spk-we-status">'+
           '<span>A4 &middot; Portrait &middot; Margin Normal (2,54 cm) &middot; Arial 11</span></span>'+
         '<div style="display:flex;gap:8px">'+
           '<button class="btn btn-ghost btn-sm" onclick="spkKlDocAskClose()">Batal</button>'+
@@ -21270,13 +21296,16 @@ function spkKlDocHead(){
     '<span class="spk-we-clhead-tag">(pratinjau — isi klausul di bawah ini sejajar dengan huruf sesudah nomor)</span>';
 }
 function spkKlDocPreview(){
-  var el=document.getElementById('spk-kldoc-prev'); if(!el) return;
   var isi=String(spkKlDoc.isi||'');
-  if(!isi.replace(/<[^>]+>/g,'').trim()){
-    el.innerHTML='<p class="kl0 spk-kldoc-empty">Belum ada isi klausul. Unduh template, ketik isinya di Microsoft Word, lalu unggah kembali berkas .docx di sini.</p>';
-  }else{
-    var h=isi; try{ h=spkNumberFix(spkTidyKeyValue(isi)); }catch(e){}
-    el.innerHTML=h;
+  /* Area pratinjau sudah dihilangkan; tetap perbarui elemen bila ada. */
+  var el=document.getElementById('spk-kldoc-prev');
+  if(el){
+    if(!isi.replace(/<[^>]+>/g,'').trim()){
+      el.innerHTML='<p class="kl0 spk-kldoc-empty">Belum ada isi klausul. Unduh template, ketik isinya di Microsoft Word, lalu unggah kembali berkas .docx di sini.</p>';
+    }else{
+      var h=isi; try{ h=spkNumberFix(spkTidyKeyValue(isi)); }catch(e){}
+      el.innerHTML=h;
+    }
   }
   var c=document.getElementById('spk-kldoc-count');
   if(c){
