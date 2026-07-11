@@ -18115,25 +18115,42 @@ function spkDocCss(){
      - Judul klausul: penomoran + "tab", baris berikut menjorok mengikuti
        teks sesudah nomor (hanging indent)
      - Jarak dari akhir klausul ke judul klausul baru = 12 pt */
+  /* ---- Penggaris (ruler) mengikuti Word ----
+     Body Arial 11pt, spasi baris 1,15, rata kanan-kiri.
+     Judul Pasal: nomor di margin, tab 0,75 cm ke teks (hanging 0,75 cm),
+       jarak 12 pt sebelum tiap judul (spacing before Word).
+     Isi klausul rata dengan TEKS judul (0,75 cm dari margin).
+     Sub-klausul (X.1) & sub-sub (a. / X.1.1) memakai hanging tab 0,75 cm yang
+       konsisten, bertingkat 0,75 cm tiap level — persis penggaris Word. */
   '.spk-clause{margin:0}'+
   '.spk-clause,.spk-clause *,.spk-cl,.spk-cl *,.spk-cl-h,.spk-cl-h *{font-family:Arial,Helvetica,sans-serif}'+
-  '.spk-cl-h{font-weight:700;font-size:11pt;color:#000;line-height:1.15;text-transform:uppercase;text-align:left;margin:12pt 0 0;padding-left:0.75cm;text-indent:-0.75cm}'+
+  '.spk-cl-h{font-weight:700;font-size:11pt;color:#000;line-height:1.15;text-transform:uppercase;text-align:left;margin:12pt 0 3pt;padding-left:0.75cm;text-indent:-0.75cm}'+
   '.spk-cl-h .n{display:inline-block;width:0.75cm;text-indent:0;text-align:left}'+
-  /* Perataan nomor tunggal: 2 digit (mis. 10.) rata kanan agar teks tetap sejajar */
-  '.spk-clause .n.r,.spk-cl-h .n.r{text-align:right;padding-right:0.15cm;box-sizing:border-box}'+
+  /* Perataan nomor tunggal 2 digit (mis. 10.) rata kanan -> titik sejajar */
+  '.spk-clause .n.r,.spk-cl-h .n.r{text-align:right;padding-right:0.2cm;box-sizing:border-box}'+
   '.spk-cl{margin:0;font-size:11pt;color:#000;line-height:1.15}'+
-  /* Isi klausul menjorok sejajar dengan teks judul (di kanan nomor) */
-  '.spk-clause .spk-cl{padding-left:1.9em}'+
-  '.spk-cl p{margin:0 0 4pt;text-align:justify;line-height:1.15}'+
-  '.spk-cl p.kl0{}'+
-  '.spk-cl p.kldesc{margin-left:1.9em}'+
-  '.spk-cl p.kl1{margin-left:2.3em;text-indent:-2.3em}'+
-  '.spk-cl p.kl2{margin-left:3.9em;text-indent:-1.6em}'+
-  /* Paragraf ber-nomor TUNGGAL: jarak nomor->teks diseragamkan ke 0,75cm,
-     posisi kiri nomor tiap level dipertahankan (kl1 & kl2 tetap bertingkat) */
+  /* Isi klausul menjorok sejajar dengan TEKS judul (0,75 cm dari margin) */
+  '.spk-clause .spk-cl{padding-left:0.75cm}'+
+  '.spk-cl p{margin:0 0 6pt;text-align:justify;line-height:1.15}'+
+  /* kl0 = paragraf biasa (sejajar teks judul); kldesc = deskripsi menjorok */
+  '.spk-cl p.kl0{margin-left:0;text-indent:0}'+
+  '.spk-cl p.kldesc{margin-left:0.75cm}'+
+  /* Fallback bila nomor TIDAK ter-wrap (jarang): tetap hanging bertingkat */
+  '.spk-cl p.kl1{margin-left:0.75cm;text-indent:-0.75cm}'+
+  '.spk-cl p.kl2{margin-left:1.5cm;text-indent:-0.75cm}'+
+  /* Paragraf ber-nomor (tunggal & majemuk) hasil spkNumberFix:
+     hanging tab 0,75 cm dari margin level; kl2 bertingkat +0,75 cm dari kl1. */
   '.spk-cl p.kl1.spk-sl{margin-left:0.75cm;text-indent:-0.75cm;padding-left:0}'+
-  '.spk-cl p.kl2.spk-sl{margin-left:4.2em;text-indent:-0.75cm;padding-left:0}'+
+  '.spk-cl p.kl2.spk-sl{margin-left:1.5cm;text-indent:-0.75cm;padding-left:0}'+
   '.spk-cl p.spk-sl .n{display:inline-block;width:0.75cm;text-indent:0;text-align:left}'+
+  /* Label MAJEMUK (5.1. / 3.1.1. / 11.1.1.) -> lebar auto, jaga jarak >=0,75 cm
+     tanpa menabrak teks; hanging otomatis mengikuti lebar label (via .spk-ml). */
+  '.spk-cl p.kl1.spk-ml{margin-left:0.75cm;text-indent:-0.75cm;padding-left:0}'+
+  '.spk-cl p.kl2.spk-ml{margin-left:1.5cm;text-indent:-0.75cm;padding-left:0}'+
+  '.spk-cl p.spk-ml .n.m{display:inline-block;width:auto;min-width:0.75cm;text-indent:0;text-align:left;padding-right:0.2cm;box-sizing:content-box}'+
+  /* Token angka-majemuk yang di sumber ber-kelas kl2 (mis. "3.1.1.") -> paksa
+     sejajar di tingkat-1 (0,75 cm) seperti Word; huruf a./b. tetap di 1,5 cm. */
+  '.spk-cl p.kl2.spk-lv1{margin-left:0.75cm;text-indent:-0.75cm;padding-left:0}'+
   /* Baris "Label : nilai" agar sejajar seperti Word */
   '.spk-cl .spk-kv{display:flex;margin:0 0 4pt;line-height:1.15}'+
   '.spk-cl .spk-kv .k{flex:0 0 34%;max-width:34%}'+
@@ -18141,9 +18158,9 @@ function spkDocCss(){
   '.spk-cl .spk-kv .v{flex:1;text-align:justify}'+
   /* Blok PIHAK pada pembuka: label (I./II.) menggantung, deskripsi sejajar di bawah label */
   '.spk-cl .spk-party{margin:0 0 9pt}'+
-  '.spk-cl .spk-party-h{font-weight:700;line-height:1.15;padding-left:1.9em;text-indent:-1.9em;margin:0}'+
-  '.spk-cl .spk-party-h .n{display:inline-block;width:1.9em;text-indent:0}'+
-  '.spk-cl .spk-party-d{margin:0;padding-left:1.9em;text-align:justify;line-height:1.15}'+
+  '.spk-cl .spk-party-h{font-weight:700;line-height:1.15;padding-left:0.75cm;text-indent:-0.75cm;margin:0}'+
+  '.spk-cl .spk-party-h .n{display:inline-block;width:0.75cm;text-indent:0}'+
+  '.spk-cl .spk-party-d{margin:0;padding-left:0.75cm;text-align:justify;line-height:1.15}'+
   /* "Berdasarkan :" rata margin kiri (sejajar "Pada hari ini"), jarak 12 pt dari blok pihak */
   '.spk-cl p.spk-berdasar{margin-top:12pt;margin-left:0;padding-left:0}'+
   /* Daftar "Berdasarkan": nomor tunggal (1. a. I.) dengan jarak tab ~0,7 cm,
@@ -18173,18 +18190,31 @@ function spkDocCss(){
     '.spk-page.spk-flow{height:auto;overflow:visible}'+
   '}';
 }
-/* Membungkus penomoran TUNGGAL (mis. "1.", "10.", "a.", "I.") pada awal paragraf
-   kl1/kl2 ke dalam <span class="n"> agar jarak nomor->teks seragam (mengikuti
-   penggaris Word) dan perataannya mengikuti aturan: nomor 1 digit = rata kiri,
-   nomor 2 digit = rata kanan. Penomoran majemuk (mis. "1.1.", "11.1.1.") sengaja
-   TIDAK diproses karena hanya berlaku untuk nomor tunggal. */
+/* Membungkus penomoran di awal paragraf kl1/kl2 ke dalam <span class="n"> agar
+   jarak nomor->teks SERAGAM mengikuti penggaris Word (tab 0,75 cm), baik untuk:
+     - nomor TUNGGAL  : "1.", "10.", "a.", "I."
+     - nomor MAJEMUK  : "5.1.", "3.1.1.", "11.1.1." dst.
+   Aturan tampilan:
+     - kl1 / kl2 -> ditandai .spk-sl (hanging tab konsisten dari margin levelnya)
+   Perataan label majemuk selalu rata-kiri; nomor tunggal 2 digit (>=10) dibuat
+   rata-kanan agar titik desimalnya sejajar dengan nomor 1 digit. Label majemuk
+   memakai lebar kolom otomatis (min 0,75 cm) supaya "11.1.1." tetap mendapat
+   jarak cukup tanpa menabrak teks. */
 function spkNumberFix(html){
   return String(html||'').replace(
-    /<p class="(kl1|kl2)">([0-9]+|[A-Za-z])\.(&nbsp;|\s)/g,
+    /<p class="(kl1|kl2)">((?:[0-9]+\.)+|[A-Za-z]\.)(&nbsp;|\s)/g,
     function(m, cls, tok, sp){
-      const isNum = /^[0-9]+$/.test(tok);
-      const right = isNum && parseInt(tok,10) >= 10;   // 2 digit -> rata kanan
-      return '<p class="'+cls+' spk-sl"><span class="n'+(right?' r':'')+'">'+tok+'.</span>'+sp;
+      const isSingleNum = /^[0-9]+\.$/.test(tok);          // "1." "10."
+      const right = isSingleNum && parseInt(tok,10) >= 10; // 2 digit -> rata kanan
+      const multi = /^(?:[0-9]+\.){2,}$/.test(tok);        // "5.1." "3.1.1."
+      /* Mengikuti Word: token angka-majemuk (mis. "3.1.1.") selalu sejajar di
+         tingkat-1 (marjin X.1), walau di sumber ditandai kl2; huruf (a./b.)
+         tetap di tingkat berikutnya (kl2). Ditandai .spk-lv1 agar CSS memaksa
+         marjin tingkat-1. */
+      const forceLv1 = multi && cls === 'kl2';
+      const cls2 = 'n' + (right ? ' r' : '') + (multi ? ' m' : '');
+      const pcls = cls + ' spk-sl' + (multi ? ' spk-ml' : '') + (forceLv1 ? ' spk-lv1' : '');
+      return '<p class="'+pcls+'"><span class="'+cls2+'">'+tok+'</span>'+sp;
     }
   );
 }
