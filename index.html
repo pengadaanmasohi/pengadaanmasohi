@@ -17913,60 +17913,65 @@ const SPK_HARI  = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
 const SPK_DEF_LATAR="PT PLN (Persero) senantiasa berkomitmen untuk tidak hanya meningkatkan keandalan pasokan tenaga listrik, tetapi juga memastikan standar keamanan, keselamatan, dan kebersihan lingkungan kerja (K3L) di seluruh fasilitas kelistrikannya. Dalam pengoperasian instalasi vital seperti Gardu Hubung (GH) di area PLTD Kobisonta, aspek perlindungan aset dan keselamatan personel merupakan prioritas utama yang harus dipenuhi.\nGardu Hubung (GH) berfungsi sebagai simpul penting dalam mendistribusikan energi listrik. Fasilitas ini dilengkapi dengan berbagai peralatan tegangan menengah dan instalasi jaringan kabel yang sangat kompleks. Kabel-kabel distribusi tersebut umumnya ditempatkan pada jalur atau saluran kabel (cable trench) di area gardu. Saluran kabel yang terbuka atau tidak tertutup dengan standar yang baik sangat rentan terhadap berbagai risiko. Paparan cuaca, masuknya air atau kotoran, ancaman gigitan hewan pengerat, hingga risiko kerusakan mekanis akibat aktivitas di sekitarnya dapat memicu korsleting dan gangguan sistem. Selain itu, saluran kabel yang terbuka juga membahayakan keselamatan petugas operasi yang sedang melakukan pemeliharaan di area tersebut. Oleh karena itu, pengadaan Penutup Saluran Kabel yang kuat, presisi, dan aman menjadi sangat esensial.\nDi samping perlindungan terhadap jaringan kabel, Gardu Hubung juga merupakan zona berbahaya (tegangan menengah) yang memerlukan pembatasan akses secara ketat. Diperlukan batas fisik (perimeter) yang jelas untuk mencegah masuknya pihak-pihak yang tidak berkepentingan, melindungi aset dari potensi pencurian atau vandalisme, serta mencegah masuknya hewan liar yang berisiko menyebabkan gangguan hubung singkat (korsleting). Penggunaan Pagar Harmonika dinilai sangat efektif dan efisien untuk kebutuhan ini, karena materialnya yang kuat, tahan terhadap cuaca, namun tetap memberikan visibilitas yang baik untuk keperluan pengawasan visual (visual inspection) dari luar area gardu.\nMemperhatikan kondisi dan kebutuhan krusial tersebut, maka dipandang perlu untuk segera melaksanakan pekerjaan \"{{nama_pekerjaan}}\". Pekerjaan ini merupakan langkah preventif dan penyempurnaan infrastruktur pendukung Gardu Hubung, yang bertujuan untuk memaksimalkan keamanan aset, menjamin keselamatan personel, serta mendukung tercapainya keandalan operasional kelistrikan di wilayah kerja ULP Kobisonta secara berkelanjutan.";
 const SPK_DEF_MASALAH="Berdasarkan tinjauan terhadap kondisi keamanan dan keselamatan operasional di area Gardu Hubung (GH) Kobisonta, terdapat beberapa isu utama yang memerlukan penanganan segera:\na. Kerentanan Saluran Kabel Terbuka: Jaringan kabel listrik yang berada di dalam trench (saluran kabel) memiliki risiko tinggi jika dibiarkan tanpa penutup yang memadai. Kondisi ini membuat kabel rentan terhadap genangan air, tumpukan kotoran/sampah, serta gangguan dari hama atau hewan pengerat (seperti tikus) yang dapat merusak isolasi kabel dan memicu korsleting. Selain itu, saluran yang terbuka juga merupakan bahaya (potensi tersandung/jatuh) bagi petugas PLN saat melakukan manuver atau pemeliharaan;\nb. Belum Optimalnya Pengamanan Perimeter (Batas Fisik): Area Gardu Hubung adalah zona instalasi tegangan menengah yang sangat berbahaya. Ketiadaan atau kurang memadainya pagar pembatas di sekitar area gardu memunculkan risiko masuknya warga sipil (pihak yang tidak berkepentingan), anak-anak, maupun hewan liar ke dalam area bertegangan. Hal ini tidak hanya mengancam keselamatan jiwa, tetapi juga meningkatkan risiko pencurian atau vandalisme terhadap aset-aset PLN.";
 const SPK_DEF_MAKSUD="Adapun maksud dan tujuan dilaksanakannya pekerjaan ini adalah sebagai berikut:\n1. Maksud:\nMaksud dari pengadaan pekerjaan ini adalah untuk melaksanakan pembuatan dan pemasangan fasilitas pengamanan fisik tambahan di area Gardu Hubung (GH) Kobisonta. Pelaksanaan fisik tersebut difokuskan pada dua item utama, yaitu pembuatan Penutup Saluran Kabel (cable trench cover) dan instalasi Pagar Harmonika sebagai batas perimeter area gardu, yang dikerjakan sesuai dengan spesifikasi material, volume, dan standar teknis yang ditetapkan oleh PT PLN (Persero).\n2. Tujuan pengadaan ini adalah:\na. Pengamanan Aset Jaringan Kabel: Melindungi instalasi kabel kelistrikan di dalam saluran (trench) dari paparan langsung kondisi cuaca, genangan air, penumpukan kotoran, serta mencegah kerusakan fisik yang dapat ditimbulkan oleh gigitan hewan pengerat (hama).\nb. Peningkatan Keselamatan Kerja (K3): Menutup area saluran kabel yang terbuka agar tidak menjadi bahaya (risiko terperosok atau tersandung) bagi petugas atau teknisi PLN yang sedang melakukan inspeksi, pemeliharaan, maupun manuver jaringan di dalam area gardu.\nc. Pembatasan Akses (Perimeter Security): Membangun Pagar Harmonika sebagai batas fisik yang tegas untuk mencegah masuknya pihak-pihak yang tidak berkepentingan, warga sipil, maupun hewan liar ke dalam area bertegangan menengah, guna menghindari risiko kecelakaan ketenagalistrikan.\nd. Pencegahan Vandalisme dan Pencurian: Memberikan lapisan perlindungan ekstra untuk menekan risiko terjadinya pencurian material atau tindakan perusakan (vandalisme) terhadap aset-aset kelistrikan di area Gardu Hubung.\ne. Dukungan Keandalan Sistem: Melalui terciptanya lingkungan gardu yang aman, tertutup, dan terlindungi, diharapkan dapat meminimalisir potensi gangguan teknis yang bersumber dari faktor eksternal, sehingga keandalan suplai listrik kepada pelanggan ULP Kobisonta dapat terus terjaga.";
+/* Skema field mail-merge — mengikuti Field Kontrak (Excel): 5 bidang.
+   Semua nilai dikosongkan (def:''). Field otomatis (auto) tampil read-only
+   & terisi sendiri; "Perubahan?" dropdown; field SK terkunci bila Perubahan≠Ya. */
 const SPK_FIELD_GROUPS = [
-  { sec:'Identitas Kontrak', fields:[
-    {k:'nomor_kontrak', l:'Nomor Kontrak', t:'text', span:2, def:'0026.SPK/DAN.01.03/F17060000/2026'},
-    {k:'tanggal_kontrak', l:'Tanggal Kontrak', t:'date', def:'2026-07-03'},
-    {k:'kota_ttd', l:'Kota Penandatanganan', t:'text', def:'Masohi'},
-    {k:'nama_pekerjaan', l:'Nama Pekerjaan', t:'text', span:2, def:'Pembangunan Pagar dan Penutup Saluran Kabel GH Kobisonta'},
-    {k:'lokasi_pekerjaan', l:'Lokasi Pekerjaan', t:'text', span:2, def:'PT PLN (Persero) UP3 Masohi - ULP Kobisonta'},
-    {k:'nilai_pekerjaan', l:'Nilai Pekerjaan (Rp)', t:'rupiah', def:84249000},
-    {k:'pelaksana', l:'Pelaksana / Bidang', t:'text', def:'Jaringan dan Konstruksi'},
-    {k:'jenis_pengadaan', l:'Jenis Pengadaan', t:'text', def:'PENGADAAN LANGSUNG'},
-    {k:'sumber_dana_no', l:'Sumber Dana — Nomor', t:'text', span:2, def:'004/SKKAI/GM.MMU/TND/MSH/2026/R1'},
-    {k:'sumber_dana_tgl', l:'Sumber Dana — Tanggal', t:'date', def:'2026-06-08'},
-    {k:'akhir_pekerjaan', l:'Akhir Pekerjaan', t:'date', def:'2026-09-01'},
-    {k:'jangka_waktu_hari', l:'Jangka Waktu (hari kalender)', t:'number', def:60},
+  { sec:'Informasi Pengadaan', fields:[
+    {k:'nama_pekerjaan', l:'Nama Pekerjaan', t:'text', span:2, def:''},
+    {k:'lokasi_pekerjaan', l:'Lokasi Pekerjaan', t:'text', span:2, def:''},
+    {k:'pelaksana', l:'Bidang Pelaksana', t:'text', def:''},
+    {k:'jenis_anggaran', l:'Jenis Anggaran', t:'text', def:''},
+    {k:'no_anggaran', l:'No. Anggaran', t:'text', span:2, def:''},
+    {k:'tgl_anggaran', l:'Tgl. Anggaran', t:'date', def:''},
+    {k:'no_eproc', l:'No. Eproc', t:'text', span:2, def:''},
+    {k:'pengumuman_awal', l:'Tgl. Pengumuman (awal)', t:'date', def:''},
+    {k:'pengumuman_akhir', l:'Tgl. Pengumuman (akhir)', t:'date', def:''},
+    {k:'no_bapp', l:'No. BAPP', t:'text', span:2, def:''},
+    {k:'tgl_bapp', l:'Tgl. BAPP', t:'date', def:''},
+    {k:'no_bae', l:'No. BAE', t:'text', span:2, def:''},
+    {k:'tgl_bae', l:'Tgl. BAE', t:'date', def:''},
+    {k:'no_bakn', l:'No. BAKN', t:'text', span:2, def:''},
+    {k:'tgl_bakn', l:'Tgl. BAKN', t:'date', def:''},
+    {k:'no_penawaran', l:'No. Penawaran', t:'text', span:2, def:''},
   ]},
-  { sec:'Uraian Pekerjaan — Latar Belakang, Permasalahan, Maksud & Tujuan', fields:[
-    {k:'latar_belakang', l:'1.1. Latar Belakang', t:'narasi', span:2, def:SPK_DEF_LATAR},
-    {k:'permasalahan',   l:'1.2. Permasalahan',   t:'narasi', span:2, def:SPK_DEF_MASALAH},
-    {k:'maksud_tujuan',  l:'1.3. Maksud dan Tujuan', t:'narasi', span:2, def:SPK_DEF_MAKSUD},
+  { sec:'Informasi Kontrak', fields:[
+    {k:'nomor_kontrak', l:'No. Kontrak', t:'text', span:2, def:''},
+    {k:'tanggal_kontrak', l:'Tgl. Awal Kontrak', t:'date', def:''},
+    {k:'auto_terbilang_tgl', l:'Terbilang Tgl. Awal Kontrak', auto:'terbilang_tgl', span:2},
+    {k:'auto_tgl_strip', l:'Tgl. Awal Kontrak (-)', auto:'tgl_strip'},
+    {k:'tgl_akhir_kontrak', l:'Tgl. Akhir Kontrak', t:'date', def:''},
+    {k:'nilai_pekerjaan', l:'Nilai Pekerjaan (+ PPN)', t:'rupiah', def:''},
+    {k:'auto_terbilang_nilai', l:'Terbilang Nilai Pekerjaan', auto:'terbilang_nilai', span:2},
+    {k:'jangka_waktu', l:'Jangka Waktu Pelaksanaan (hari)', t:'number', def:''},
+    {k:'auto_terbilang_jangka', l:'Terbilang Jangka Waktu Pelaksanaan', auto:'terbilang_jangka', span:2},
   ]},
-  { sec:'PIHAK PERTAMA (PT PLN)', fields:[
-    {k:'p1_nama', l:'Nama Unit (kapital)', t:'text', span:2, def:'PT PLN (PERSERO) UNIT PELAKSANA PELAYANAN PELANGGAN MASOHI'},
-    {k:'p1_nama_singkat', l:'Nama Singkat', t:'text', span:2, def:'PT PLN (Persero) UP3 Masohi'},
-    {k:'p1_alamat', l:'Alamat', t:'text', span:2, def:'Jl. Abdullah Soulissa No 1, Masohi, Kab. Maluku Tengah, Prov. Maluku 97513'},
-    {k:'p1_wakil', l:'Diwakili Oleh', t:'text', def:'I MADE INDRA WIJAYA'},
-    {k:'p1_jabatan', l:'Jabatan', t:'text', def:'Manager'},
-    {k:'p1_sk', l:'Dasar Kewenangan (SK)', t:'textarea', span:2, def:'Keputusan Direksi PT PLN (Persero) Nomor: 0174.K/SDM.02.02/DIR/2026 tanggal 25 Mei 2026'},
-    {k:'p1_akta', l:'Akta Pendirian & Pengesahan', t:'textarea', span:2, def:'Perusahaan Berbadan Hukum yang merupakan Badan Usaha Milik Negara (BUMN) yang didirikan berdasarkan Akta Notaris Nomor: 169 tanggal 30 Juli 1994 dibuat di hadapan Notaris SUTJIPTO, SH., yang disahkan berdasarkan Surat Keputusan Menteri Kehakiman Republik Indonesia Nomor: C2-11.519.HT.01.01.TH\'94 tanggal 01 Agustus 1994 beserta akta-akta perubahannya.'},
+  { sec:'SK Pimpinan Unit', fields:[
+    {k:'perubahan', l:'Perubahan?', t:'select', opts:['Ya','Tidak'], def:''},
+    {k:'nama_pengguna', l:'Nama Pengguna', t:'text', span:2, lockedBy:'perubahan', def:''},
+    {k:'jabatan_pengguna', l:'Jabatan', t:'text', lockedBy:'perubahan', def:''},
+    {k:'no_sk', l:'No. SK Keputusan', t:'text', span:2, lockedBy:'perubahan', def:''},
+    {k:'nama_unit', l:'Nama Unit', t:'text', span:2, lockedBy:'perubahan', def:''},
+    {k:'singkatan_unit', l:'Singkatan Unit', t:'text', lockedBy:'perubahan', def:''},
+    {k:'lokasi_unit', l:'Lokasi Unit', t:'text', span:2, lockedBy:'perubahan', def:''},
   ]},
-  { sec:'PIHAK KEDUA (Penyedia)', fields:[
-    {k:'p2_nama', l:'Nama Perusahaan (kapital)', t:'text', span:2, def:'PT. SAMUDRA JAYA RURIKA MANDIRI'},
-    {k:'p2_nama_hormat', l:'Nama Perusahaan (normal)', t:'text', span:2, def:'PT. Samudra Jaya Rurika Mandiri'},
-    {k:'p2_alamat', l:'Alamat', t:'text', span:2, def:'Jln. Kebun Cengkeh, Batu Merah - Ambon'},
-    {k:'p2_wakil', l:'Diwakili Oleh', t:'text', def:'RULLY ADEK PUTRA'},
-    {k:'p2_jabatan', l:'Jabatan', t:'text', def:'Direktur'},
-    {k:'p2_akta', l:'Akta Pendirian & Pengesahan', t:'textarea', span:2, def:'Perusahaan Berbadan Hukum yang didirikan berdasarkan Akta Notaris No. 04 tanggal 01 September 2016 dibuat dihadapan Notaris LIDIA GOSAL, S.H., M.Kn. yang disahkan berdasarkan Surat Keputusan Menteri Hukum dan Hak Asasi Manusia No. AHU-0040056.AH.01.01.TAHUN 2016 tanggal 08 September 2016 beserta Akta-akta Perubahannya.'},
-    {k:'p2_akta_jabatan', l:'Akta Pengangkatan Wakil', t:'textarea', span:2, def:'Akta Notaris No. 40 tanggal 31 Mei 2022 dibuat dihadapan Notaris LIDIA GOSAL, S.H., M.Kn. yang disahkan berdasarkan Surat Keputusan Menteri Hukum dan Hak Asasi Manusia No. AHU-0037659.AH.01.02.TAHUN 2022 tanggal 06 Juni 2022'},
+  { sec:'Informasi Penyedia', fields:[
+    {k:'nama_perusahaan', l:'Nama Perusahaan', t:'text', span:2, def:''},
+    {k:'auto_jenis_perusahaan', l:'Jenis Perusahaan', auto:'jenis_perusahaan', span:2},
+    {k:'lokasi_perusahaan', l:'Lokasi Perusahaan', t:'text', span:2, def:''},
+    {k:'nama_pimpinan', l:'Nama Pimpinan', t:'text', def:''},
+    {k:'jabatan_pimpinan', l:'Jabatan Pimpinan', t:'text', def:''},
+    {k:'no_rekening', l:'No. Rekening', t:'text', def:''},
+    {k:'nama_bank', l:'Nama Bank', t:'text', span:2, def:''},
+    {k:'pemilik_rekening', l:'Pemilik Rekening', t:'text', span:2, def:''},
+    {k:'no_penawaran_penyedia', l:'No. Penawaran', t:'text', span:2, def:''},
+    {k:'tgl_penawaran', l:'Tgl. Penawaran', t:'date', def:''},
+    {k:'akta_pendirian', l:'Rincian Akta Pendirian', t:'textarea', span:2, def:''},
+    {k:'akta_perubahan', l:'Rincian Akta Perubahan', t:'textarea', span:2, def:''},
   ]},
-  { sec:'Dasar Pengadaan', fields:[
-    {k:'dasar_undangan_no', l:'Undangan E-Proc — Nomor', t:'text', span:2, def:'EPROC-4230-20260624-4230-00003'},
-    {k:'dasar_undangan_tgl', l:'Undangan — Tanggal', t:'text', def:'25 Juni s/d 26 Juni 2026'},
-    {k:'dasar_penawaran_no', l:'Surat Penawaran Harga — Nomor', t:'text', span:2, def:'105/SJRM/02-PH/MSH/2026'},
-    {k:'dasar_penawaran_tgl', l:'Surat Penawaran — Tanggal', t:'date', def:'2026-06-29'},
-    {k:'dasar_bapp_no', l:'BA Pembukaan Penawaran — Nomor', t:'text', span:2, def:'0019.BAPP.PL/DAN.01.03/F17060000/2026'},
-    {k:'dasar_bapp_tgl', l:'BA Pembukaan — Tanggal', t:'date', def:'2026-07-01'},
-    {k:'dasar_bae_no', l:'BA Evaluasi Penawaran — Nomor', t:'text', span:2, def:'0019.BAE.PL/DAN.01.03/F17060000/2026'},
-    {k:'dasar_bae_tgl', l:'BA Evaluasi — Tanggal', t:'date', def:'2026-07-01'},
-    {k:'dasar_bakn_no', l:'BA Klarifikasi & Negosiasi — Nomor', t:'text', span:2, def:'0019.BAKN.PL/DAN.01.03/F17060000/2026'},
-    {k:'dasar_bakn_tgl', l:'BA Klarifikasi — Tanggal', t:'date', def:'2026-07-02'},
-  ]},
-  { sec:'Pembayaran', fields:[
-    {k:'bank_nama', l:'Bank', t:'text', span:2, def:'PT. Bank Negara Indonesia KCU Ambon'},
-    {k:'rekening_no', l:'Nomor Rekening', t:'text', def:'0341935221'},
-    {k:'rekening_atas_nama', l:'Atas Nama', t:'text', def:'Samudra Jaya Rurika Mandiri'},
+  { sec:'Pengendali Pekerjaan', fields:[
+    {k:'jabatan_direksi', l:'Jabatan Direksi Pekerjaan', t:'text', span:2, def:''},
+    {k:'jabatan_pengawas', l:'Jabatan Pengawas Pekerjaan', t:'text', span:2, def:''},
   ]},
 ];
 /* daftar semua field (flat) */
@@ -18004,29 +18009,63 @@ function spkBuildCtx(data){
   const d=Object.assign({}, data||{});
   const ctx={};
   SPK_FIELDS_FLAT.forEach(f=>{ ctx[f.k]= (d[f.k]!=null && d[f.k]!=='') ? d[f.k] : ''; });
-  // turunan
+  // ---- Nilai otomatis (mengikuti Field Kontrak Excel) ----
   ctx.nilai_rp = spkRupiah(d.nilai_pekerjaan);
   ctx.nilai_terbilang = spkTerbilangRupiah(d.nilai_pekerjaan);
-  ctx.jangka_waktu_terbilang = spkTerbilang(d.jangka_waktu_hari);
+  ctx.jangka_waktu_hari = (d.jangka_waktu!=null && d.jangka_waktu!=='') ? d.jangka_waktu : '';
+  ctx.jangka_waktu_terbilang = spkTerbilang(d.jangka_waktu);
   ctx.tanggal_kontrak_pjg = spkDateLong(d.tanggal_kontrak);
-  ctx.akhir_pekerjaan_pjg = spkDateLong(d.akhir_pekerjaan);
-  ctx.sumber_dana_tgl_pjg = spkDateLong(d.sumber_dana_tgl);
-  ctx.dasar_penawaran_tgl_pjg = spkDateLong(d.dasar_penawaran_tgl);
-  ctx.dasar_bapp_tgl_pjg = spkDateLong(d.dasar_bapp_tgl);
-  ctx.dasar_bae_tgl_pjg = spkDateLong(d.dasar_bae_tgl);
-  ctx.dasar_bakn_tgl_pjg = spkDateLong(d.dasar_bakn_tgl);
+  ctx.akhir_pekerjaan = d.tgl_akhir_kontrak || '';
+  ctx.akhir_pekerjaan_pjg = spkDateLong(d.tgl_akhir_kontrak);
   ctx.hari_ttd = spkDayName(d.tanggal_kontrak);
   ctx.tgl_kontrak_num = spkDateNum(d.tanggal_kontrak);
   ctx.tgl_kontrak_terbilang = spkTglTerbilang(d.tanggal_kontrak);
-  // Narasi Uraian Pekerjaan: resolusikan placeholder di dalamnya lalu format rapi.
-  // Jika sudah berupa HTML (dari editor WYSIWYG, mengandung <p ...>), pakai apa adanya
-  // agar tampilan cetak sama persis dengan yang diketik; jika masih teks polos (data
-  // lama), tetap diformat otomatis oleh spkFormatNarasi (kompatibel mundur).
-  ['latar_belakang','permasalahan','maksud_tujuan'].forEach(function(k){
-    var raw=d[k]||'';
-    if(/<p[\s>]/i.test(raw)) ctx[k]=spkMerge(raw, ctx);
-    else ctx[k]=spkFormatNarasi(spkMerge(raw, ctx));
-  });
+
+  // ---- Sumber dana & dasar pengadaan (alias placeholder klausul/preamble) ----
+  ctx.sumber_dana_no = d.no_anggaran || '';
+  ctx.sumber_dana_tgl = d.tgl_anggaran || '';
+  ctx.sumber_dana_tgl_pjg = spkDateLong(d.tgl_anggaran);
+  ctx.jenis_pengadaan = d.jenis_anggaran || '';
+  ctx.dasar_undangan_no = d.no_eproc || '';
+  ctx.dasar_undangan_tgl = (function(){ var a=spkDateLong(d.pengumuman_awal), b=spkDateLong(d.pengumuman_akhir); return (a&&b)?(a+' s/d '+b):(a||b||''); })();
+  ctx.dasar_penawaran_no = d.no_penawaran_penyedia || d.no_penawaran || '';
+  ctx.dasar_penawaran_tgl_pjg = spkDateLong(d.tgl_penawaran);
+  ctx.dasar_bapp_no = d.no_bapp || '';
+  ctx.dasar_bapp_tgl_pjg = spkDateLong(d.tgl_bapp);
+  ctx.dasar_bae_no = d.no_bae || '';
+  ctx.dasar_bae_tgl_pjg = spkDateLong(d.tgl_bae);
+  ctx.dasar_bakn_no = d.no_bakn || '';
+  ctx.dasar_bakn_tgl_pjg = spkDateLong(d.tgl_bakn);
+
+  // ---- PIHAK PERTAMA (dari bidang SK Pimpinan Unit) ----
+  ctx.p1_wakil = d.nama_pengguna || '';
+  ctx.p1_jabatan = d.jabatan_pengguna || '';
+  ctx.p1_sk = d.no_sk || '';
+  ctx.p1_nama_singkat = d.nama_unit || d.singkatan_unit || '';
+  ctx.p1_nama = String(d.nama_unit||'').toUpperCase();
+  ctx.p1_alamat = d.lokasi_unit || '';
+  ctx.p1_akta = '';
+
+  // ---- PIHAK KEDUA (dari bidang Informasi Penyedia) ----
+  ctx.p2_nama = String(d.nama_perusahaan||'').toUpperCase();
+  ctx.p2_nama_hormat = d.nama_perusahaan || '';
+  ctx.p2_wakil = d.nama_pimpinan || '';
+  ctx.p2_jabatan = d.jabatan_pimpinan || '';
+  ctx.p2_alamat = d.lokasi_perusahaan || '';
+  var _jp = spkJenisPerusahaan(d.nama_perusahaan);
+  ctx.p2_akta = (_jp? _jp+' ':'') + (d.akta_pendirian||'');
+  ctx.p2_akta_jabatan = d.akta_perubahan || '';
+
+  // ---- Pembayaran ----
+  ctx.bank_nama = d.nama_bank || '';
+  ctx.rekening_no = d.no_rekening || '';
+  ctx.rekening_atas_nama = d.pemilik_rekening || '';
+
+  // ---- Uraian pekerjaan tidak termasuk dalam Field Kontrak Excel ----
+  ctx.latar_belakang = '';
+  ctx.permasalahan = '';
+  ctx.maksud_tujuan = '';
+
   return ctx;
 }
 /* Ganti semua {{key}} pada template dengan nilai konteks (sisa placeholder dikosongkan bila tak dikenal, dibiarkan bila kosong) */
@@ -18120,9 +18159,55 @@ function spkRecordToState(rec){
 function openSpkSusun(){ if(!spkState) spkState=spkBlankState(); spkStep=1; renderSpkSusun(); showView('spk-susun'); }
 function spkNewKontrak(){ spkEditId=null; spkState=spkBlankState(); spkStep=1; renderSpkSusun(); showView('spk-susun'); }
 
+/* Nilai field otomatis (read-only) berdasarkan data induk */
+function spkJenisPerusahaan(nama){
+  var up=String(nama||'').trim().toUpperCase();
+  if(!up) return '';
+  if(/^PT\.?(\s|$)/.test(up)) return 'Perusahaan Berbadan Hukum';
+  if(/^CV\.?(\s|$)/.test(up)) return 'Persekutuan Komanditer';
+  if(/^FA\.?(\s|$)/.test(up)) return 'Persekutuan Firma';
+  return '';
+}
+function spkAutoVal(kind, data){
+  data=data||{};
+  switch(kind){
+    case 'terbilang_tgl': { var iso=data.tanggal_kontrak; if(!iso) return ''; var hr=spkDayName(iso); return (hr?hr+', ':'')+'tanggal '+spkTglTerbilang(iso); }
+    case 'tgl_strip': return data.tanggal_kontrak? spkDateNum(data.tanggal_kontrak) : '';
+    case 'terbilang_nilai': return (data.nilai_pekerjaan!==''&&data.nilai_pekerjaan!=null)? spkTerbilangRupiah(data.nilai_pekerjaan) : '';
+    case 'terbilang_jangka': return (data.jangka_waktu!==''&&data.jangka_waktu!=null&&spkNum(data.jangka_waktu)>0)? spkTerbilang(data.jangka_waktu) : '';
+    case 'jenis_perusahaan': return spkJenisPerusahaan(data.nama_perusahaan);
+    default: return '';
+  }
+}
+/* Segarkan nilai semua field otomatis di DOM tanpa render ulang penuh */
+function spkRefreshAuto(){
+  if(!spkState) return;
+  SPK_FIELDS_FLAT.forEach(function(f){
+    if(!f.auto) return;
+    var el=document.getElementById('spk-fld-'+f.k);
+    if(el) el.value=spkAutoVal(f.auto, spkState.data);
+  });
+}
 function spkFieldInput(f){
   const v = spkState.data[f.k];
   const span = f.span?(' style="grid-column:span '+f.span+'"'):'';
+  if(f.auto){
+    const av = spkAutoVal(f.auto, spkState.data);
+    return '<div class="field"'+span+'><label>'+fkEsc(f.l)+' <span style="font-size:10px;color:#0a7c66;background:#d8f3ec;border-radius:6px;padding:1px 6px;margin-left:4px;vertical-align:middle">otomatis</span></label>'+
+      '<input type="text" id="spk-fld-'+f.k+'" value="'+fkEsc(av)+'" readonly disabled placeholder="Terisi otomatis" style="background:#eef2f6;color:#48586a;font-style:italic"></div>';
+  }
+  if(f.t==='select'){
+    const opts=(f.opts||[]).map(o=>'<option value="'+fkEsc(o)+'"'+((v===o)?' selected':'')+'>'+fkEsc(o)+'</option>').join('');
+    return '<div class="field"'+span+'><label>'+fkEsc(f.l)+'</label>'+
+      '<select onchange="spkSet(\''+f.k+'\',this.value);renderSpkSusun()"><option value="">— pilih —</option>'+opts+'</select></div>';
+  }
+  if(f.lockedBy){
+    const locked = String(spkState.data[f.lockedBy]||'')!=='Ya';
+    const note = locked? ' <span style="font-size:10px;color:#b45309;margin-left:4px;vertical-align:middle">terkunci — mengikuti input monitoring</span>' : '';
+    const attr = locked? ' disabled placeholder="Data terkunci" style="background:#f3f4f6;color:#9aa5b1"' : '';
+    return '<div class="field"'+span+'><label>'+fkEsc(f.l)+note+'</label>'+
+      '<input type="text" id="spk-fld-'+f.k+'" value="'+fkEsc(v||'')+'"'+attr+' oninput="spkSet(\''+f.k+'\',this.value)"></div>';
+  }
   if(f.t==='textarea'){
     return '<div class="field"'+span+'><label>'+fkEsc(f.l)+'</label><textarea rows="3" oninput="spkSet(\''+f.k+'\',this.value)">'+fkEsc(v||'')+'</textarea></div>';
   }
@@ -18146,13 +18231,14 @@ function spkFieldInput(f){
   }
   return '<div class="field"'+span+'><label>'+fkEsc(f.l)+'</label><input type="text" value="'+fkEsc(v||'')+'" oninput="spkSet(\''+f.k+'\',this.value)"></div>';
 }
-function spkSet(k,v){ if(!spkState) return; spkState.data[k]=v; }
+function spkSet(k,v){ if(!spkState) return; spkState.data[k]=v; spkRefreshAuto(); }
 function spkSetRupiah(k,el){
   const digits=String(el.value).replace(/[^0-9]/g,'');
   spkState.data[k]= digits? Number(digits) : '';
   const pos=el.selectionStart;
   el.value = digits? Number(digits).toLocaleString('id-ID') : '';
   try{ el.setSelectionRange(el.value.length, el.value.length); }catch(e){}
+  spkRefreshAuto();
 }
 function spkToggleSel(id){
   id=String(id); const i=spkState.sel.indexOf(id);
@@ -20501,9 +20587,9 @@ function spkDocHtml(data, klausul){
     '<section class="spk-page"><div class="spk-cv">'+
       (SPK_LOGO_SRC?'<img src="'+SPK_LOGO_SRC+'" alt="PLN">':'')+
       '<div class="t">SURAT PERINTAH KERJA</div>'+
-      '<div class="s">'+esc(data.jenis_pengadaan||'PENGADAAN LANGSUNG')+'</div>'+
-      '<div class="lbl">DARI</div><div class="org">'+esc(data.p1_nama||'')+'</div>'+
-      '<div class="lbl">KEPADA</div><div class="org">'+esc(data.p2_nama||'')+'</div>'+
+      '<div class="s">'+esc(ctx.jenis_pengadaan||'PENGADAAN LANGSUNG')+'</div>'+
+      '<div class="lbl">DARI</div><div class="org">'+esc(ctx.p1_nama||'')+'</div>'+
+      '<div class="lbl">KEPADA</div><div class="org">'+esc(ctx.p2_nama||'')+'</div>'+
       '<table>'+
         cvRow('Nomor Kontrak', data.nomor_kontrak, true)+
         cvRow('Tanggal', ctx.tanggal_kontrak_pjg)+
@@ -20534,8 +20620,8 @@ function spkDocHtml(data, klausul){
   ).join('');
   const sign=
     '<table class="spk-sign"><tr>'+
-      '<td><div class="role">PIHAK PERTAMA</div><div>'+esc(data.p1_nama_singkat||'PT PLN (Persero)')+'</div><div class="nm">'+esc(data.p1_wakil||'')+'</div><div class="jab">'+esc(data.p1_jabatan||'')+'</div></td>'+
-      '<td><div class="role">PIHAK KEDUA</div><div>'+esc(data.p2_nama_hormat||'')+'</div><div class="nm">'+esc(data.p2_wakil||'')+'</div><div class="jab">'+esc(data.p2_jabatan||'')+'</div></td>'+
+      '<td><div class="role">PIHAK PERTAMA</div><div>'+esc(ctx.p1_nama_singkat||'PT PLN (Persero)')+'</div><div class="nm">'+esc(ctx.p1_wakil||'')+'</div><div class="jab">'+esc(ctx.p1_jabatan||'')+'</div></td>'+
+      '<td><div class="role">PIHAK KEDUA</div><div>'+esc(ctx.p2_nama_hormat||'')+'</div><div class="nm">'+esc(ctx.p2_wakil||'')+'</div><div class="jab">'+esc(ctx.p2_jabatan||'')+'</div></td>'+
     '</tr></table>';
   const isi=
     '<section class="spk-page spk-flow">'+hd+
