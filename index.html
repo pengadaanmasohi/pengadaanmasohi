@@ -17817,6 +17817,15 @@ document.getElementById('pn-preview-overlay').addEventListener('click',e=>{ if(e
 .spk-we-page .spk-cl p .n{display:inline-block;width:.75cm;text-indent:0;text-align:left}
 .spk-we-page .spk-cl i{font-style:italic}
 .spk-we-page .spk-cl b{font-weight:700}
+/* Contoh pengisian klausul (placeholder): titik-titik sampai batas margin kanan,
+   huruf samar/transparan — tinggal ditimpa lewat template Word. */
+.spk-cl p.spk-ph,.spk-we-page .spk-cl p.spk-ph{color:rgba(0,0,0,.22);white-space:nowrap;overflow:hidden;text-align:left}
+/* Tombol Naik/Turun pada aksi klausul */
+.spk-klx-act .act.act-mv{color:#0e7c86}
+.spk-klx-act .act:disabled{opacity:.35;cursor:not-allowed;transform:none}
+/* Bar tombol pada judul kartu Pustaka Klausul (Simpan/Muat/Batalkan Profil + Tambah) */
+.spk-klbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.spk-klprof-tag{display:inline-flex;align-items:center;gap:6px;background:#e8f6f7;border:1px solid #bfe3e6;color:#0b5f66;border-radius:999px;padding:5px 10px;font-size:10.5px;font-weight:800}
 /* Baris "Label : nilai" (spk-kv) — sejajar seperti Word. Aturan ini dulunya
    hanya ada di CSS dokumen (spkDocCss) sehingga di modal Lihat/pratinjau
    label:nilai tampak menyatu. Disamakan di sini agar tampilan konsisten. */
@@ -17859,22 +17868,14 @@ document.getElementById('pn-preview-overlay').addEventListener('click',e=>{ if(e
 </style>
 <script>
 /* ===== MODUL PEMBUATAN KONTRAK (SPK) ===== */
+/* Pustaka Klausul bawaan: 3 klausul kosong (KLAUSUL 1 s.d. 3).
+   Isi tiap klausul berupa contoh pengisian (titik-titik sampai batas margin kanan,
+   huruf samar/transparan) yang tinggal diganti lewat template Word. */
+const SPK_KL_PLACEHOLDER = '<p class="kl0 spk-ph">Isi klausul pada bagian ini................................................................................................................................................................</p>';
 const SPK_KLAUSUL_SEED=[
-  {urutan:10, judul:"URAIAN PEKERJAAN", isi:"<p class=\"kl0\">Nama Pekerjaan</p><p class=\"kl0\">:</p><p class=\"kl0\">{{nama_pekerjaan}}</p><p class=\"kl0\">Lokasi Pekerjaan</p><p class=\"kl0\">:</p><p class=\"kl0\">{{lokasi_pekerjaan}}</p><p class=\"kl1\">1.1. Latar Belakang</p>{{latar_belakang}}<p class=\"kl1\">1.2. Permasalahan</p>{{permasalahan}}<p class=\"kl1\">1.3. Maksud dan Tujuan</p>{{maksud_tujuan}}<p class=\"kl1\">1.4. Pedoman Pelaksanaan Pekerjaan</p><p class=\"kl0\">Pelaksanaan pekerjaan {{nama_pekerjaan}} berpedoman pada peraturan-peraturan sebagai berikut:</p><p class=\"kl2\">a. Undang-Undang Republik Indonesia Nomor: 19 Tahun 2003 tanggal 19 Juni 2003 tentang Badan Usaha Milik Negara;</p><p class=\"kl2\">b. Undang-Undang Republik Indonesia Nomor: 40 Tahun 2007 tanggal 16 Agustus 2007 tentang Perseroan Terbatas;</p><p class=\"kl2\">c. Undang-Undang Nomor: 30 Tahun 2009 tanggal 23 September 2009 tentang Ketenagalistrikan.</p><p class=\"kl2\">d. Anggaran Dasar PT PLN (Persero);</p><p class=\"kl2\">e. Peraturan Direksi PT PLN (Persero) Nomor: 0018.P/DIR/2023 tanggal 07 Juli 2023 tentang Kebijakan Strategis Pengadaan Barang/Jasa PT PLN (Persero).</p><p class=\"kl2\">f. Peraturan Pelaksana PT PLN (Persero) yang merupakan turunan dari Peraturan Direksi PT PLN (Persero) Nomor: 0018.P/DIR/2023 tanggal 07 Juli 2023 tentang Kebijakan Strategis Pengadaan Barang/Jasa PT PLN (Persero).</p><p class=\"kl2\">g. Peraturan Pelaksana PT PLN (Persero) Nomor: 0033.E/DIR/2024 tanggal 31 Oktober 2024 tentang Standar Prosedur Pengelolaan Penyedia Barang/Jasa.</p><p class=\"kl2\">h. Keputusan Direksi PT PLN (Persero) Nomor: 0325.K/DIR/2021 tanggal 01 September 2021 tentang Penetapan Standar PT PLN (Persero) (SPLN) Nomor U1.006:2021 mengenai Sistem Manajemen Keselamatan Kontraktor (Contractor Safety Management System / CSMS).</p><p class=\"kl2\">i. Peraturan Direksi PT PLN (Persero) Nomor: 0028.P/DIR/2023 tanggal 05 September 2023 tentang Penertiban Pemakaian Tenaga Listrik (P2TL).</p><p class=\"kl2\">j. Peraturan Direksi PT PLN (Persero) Nomor: 0048.P/DIR/2020 tanggal 01 Juli 2020 tentang Tata Kelola Anti Penyuapan di Lingkungan PT PLN (Persero).</p><p class=\"kl2\">k. Peraturan Direksi PT PLN (Persero) Nomor: 0121.P/DIR/2019 tanggal 19 Agustus 2019 tentang Kebijakan Anti Fraud di PT PLN (Persero).</p><p class=\"kl2\">l. Peraturan Direksi PT PLN (Persero) Nomor: 0122.P/DIR/2019 tanggal 19 Agustus 2019 tentang Pengelolaan Konflik Kepentingan di Lingkungan PT PLN (Persero).</p><p class=\"kl2\">m. Peraturan Direksi PT PLN (Persero) Nomor: 0002.P/DIR/2022 tanggal 20 Januari 2022 tentang Kebijakan Strategis Pedoman Penggunaan Produk Dalam Negeri di Lingkungan PT PLN (Persero).</p><p class=\"kl2\">n. Edaran Direksi PT PLN (Persero) Nomor: 0031.E/DIR/2022 tanggal 04 November 2022 tentang Standar Prosedur Pelaksanaan Penggunaan Produk Dalam Negeri di Lingkungan PT PLN (Persero).</p>", aktif:true},
-  {urutan:20, judul:"HAK DAN KEWAJIBAN", isi:"<p class=\"kl1\">2.1. Hak dan Kewajiban PIHAK PERTAMA:</p><p class=\"kl2\">a. Mengawasi dan memeriksa pekerjaan yang dilaksanakan oleh PIHAK KEDUA;</p><p class=\"kl2\">b. Meminta laporan-laporan secara periodik mengenai pelaksanaan pekerjaan yang dilakukan oleh PIHAK KEDUA;</p><p class=\"kl2\">c. Melakukan perubahan Perjanjian/Kontrak, jika ada alasan yang sah dan disetujui para pihak;</p><p class=\"kl2\">d. Memberikan peringatan atas keterlambatan pekerjaan;</p><p class=\"kl2\">e. Mengenakan denda keterlambatan;</p><p class=\"kl2\">f. Membayar tahapan sesuai dengan kemajuan/progres fisik pekerjaan yang tercantum dalam Berita Acara yang disetujui para pihak;</p><p class=\"kl2\">g. Memberikan instruksi sesuai jadwal pelaksanaan pekerjaan yang telah ditetapkan dalam Perjanjian ini.</p><p class=\"kl1\">2.2. Hak dan Kewajiban PIHAK KEDUA:</p><p class=\"kl2\">a. Menerima pembayaran sesuai dengan progres fisik pekerjaan;</p><p class=\"kl2\">b. Melaksanakan dan menyelesaikan serta menyerahkan hasil pekerjaan sesuai dengan spesifikasi atau kriteria yang disyaratkan;</p><p class=\"kl2\">c. Melaporkan pelaksanaan pekerjaan secara periodik;</p><p class=\"kl2\">d. Memberikan keterangan yang diperlukan untuk pemeriksaan pelaksanaan pekerjaan yang dilakukan PIHAK PERTAMA;</p><p class=\"kl2\">e. Mengambil langkah-langkah untuk melindungi lingkungan dan masyarakat dari polusi, kebisingan dan kerusakan lain yang disebabkan oleh kegiatan PIHAK KEDUA.</p><p class=\"kl2\">f. Menunjuk personel di lokasi pekerjaan, yang diberi wewenang penuh dan bertanggung jawab atas pelaksanaan pekerjaan.</p><p class=\"kl2\">g. Mentaati semua ketentuan dan peraturan yang berlaku di PLN;</p><p class=\"kl2\">h. Menjaga kerahasiaan hasil pekerjaan berupa data/informasi dalam bentuk apapun yang terkait dalam pekerjaan yang diberikan.</p>", aktif:true},
-  {urutan:30, judul:"PENGENDALIAN PEKERJAAN", isi:"<p class=\"kl1\">3.1. Dalam rangka pengendalian pekerjaan yang meliputi fungsi pengawasan dan tindakan korektif, Manager PT PLN (Persero) Unit Pelaksana Pelayanan Pelanggan (UP3) Masohi menetapkan Assistant Manager Jaringan dan Konstruksi sebagai Direksi Pekerjaan. Selanjutnya, Team Leader Konstruksi ditunjuk sebagai Pengawas Pekerjaan yang dalam pelaksanaannya dibantu oleh Tim Pemeriksa Barang/Jasa, dengan rincian tugas dan tanggung jawab sebagai berikut:</p><p class=\"kl2\">3.1.1. Tugas Direksi Pekerjaan:</p><p class=\"kl2\">a. Mengoordinasikan dan memonitor seluruh progres pelaksanaan pekerjaan secara berkala;</p><p class=\"kl2\">b. Memberikan arahan, petunjuk teknis, maupun teguran (baik lisan maupun tertulis) kepada PIHAK KEDUA berdasarkan laporan hasil evaluasi dari Pengawas Pekerjaan;</p><p class=\"kl2\">c. Mengawasi pemenuhan aspek Keselamatan, Kesehatan Kerja, dan Lingkungan (K3L) serta kepatuhan Sistem Manajemen Keselamatan Kontraktor (CSMS) secara berkelanjutan;</p><p class=\"kl2\">d. Melakukan evaluasi terhadap kinerja PIHAK KEDUA selama masa pelaksanaan Perjanjian/Kontrak;</p><p class=\"kl2\">e. Menandatangani Berita Acara.</p><p class=\"kl2\">3.1.2. Tugas Pengawas Pekerjaan:</p><p class=\"kl2\">a. Memeriksa dan memastikan kualitas hasil pekerjaan sesuai dengan spesifikasi teknis dan kriteria yang disyaratkan.;</p><p class=\"kl2\">b. Memeriksa dan memastikan kesesuaian jumlah atau volume pekerjaan dengan kebutuhan yang tertuang dalam Perjanjian/Kontrak;</p><p class=\"kl2\">c. Memastikan ketepatan waktu dan lokasi penyerahan hasil pekerjaan sesuai dengan yang ditetapkan dalam Perjanjian/Kontrak;</p><p class=\"kl2\">d. Menyusun dan menyampaikan Laporan Kemajuan Pelaksanaan Pekerjaan yang dilakukan oleh PIHAK KEDUA kepada Direksi Pekerjaan secara tertulis;</p><p class=\"kl2\">e. Memberikan instruksi perbaikan dan berhak menolak hasil pekerjaan yang cacat, tidak akurat, atau tidak memenuhi standar kualitas yang ditetapkan;</p><p class=\"kl2\">f. Menyusun Berita Acara.</p><p class=\"kl2\">3.1.3. Tugas Tim Pemeriksa Barang/Jasa:</p><p class=\"kl2\">a. Melakukan verifikasi dan validasi spesifikasi teknis, merek, tipe, serta volume barang/material yang diserahkan oleh PIHAK KEDUA guna memastikan kesesuaian yang presisi dengan ketentuan dalam Perjanjian/Kontrak;</p><p class=\"kl2\">b. Melakukan pemeriksaan fisik dan/atau uji kelayakan fungsi terhadap material dan peralatan kerja untuk memastikan barang diserahkan dalam kondisi 100% baru, tidak cacat produksi, dan siap digunakan;</p><p class=\"kl2\">c. Mengembalikan atau menolak hasil pekerjaan yang terbukti kualitas, spesifikasi, atau jumlahnya tidak sesuai dengan yang dipersyaratkan dalam Perjanjian/Kontrak, serta menuntut penggantian kepada PIHAK KEDUA;</p><p class=\"kl2\">d. Menandatangani dokumen Berita Acara Pemeriksaan (BAP) Barang/Jasa bersama dengan Pengawas Pekerjaan, sebagai dasar kelayakan penerimaan hasil pekerjaan sebelum disahkan oleh Direksi Pekerjaan.</p><p class=\"kl2\">3.1.4. Direksi Pekerjaan atau pejabat yang ditunjuk oleh PIHAK PERTAMA berhak melakukan pemeriksaan dan/atau pengujian terhadap kualitas material maupun hasil pekerjaan yang diragukan mutunya.</p><p class=\"kl2\">3.1.5. Apabila pejabat atau petugas yang ditunjuk berhalangan atau tidak dapat menjalankan kewajibannya, PIHAK PERTAMA akan menunjuk pejabat pengganti, dan penunjukan tersebut akan diberitahukan secara tertulis kepada PIHAK KEDUA.</p>", aktif:true},
-  {urutan:40, judul:"WAKTU DAN TEMPAT PENYERAHAN PEKERJAAN", isi:"<p class=\"kl1\">4.1. Tempat penyerahan hasil pekerjaan adalah sesuai dengan lokasi yang ditentukan dalam dokumen Term of Reference (TOR)/Kerangka Acuan Kerja (KAK).</p><p class=\"kl1\">4.2. Jangka waktu penyerahan pekerjaan adalah {{jangka_waktu_hari}} ({{jangka_waktu_terbilang}}) hari kalender sejak ditandatangani Surat Perintah Kerja/SPK atau paling lambat pada tanggal {{akhir_pekerjaan_pjg}}.</p><p class=\"kl1\">4.3. Jangka waktu penyerahan pekerjaan sebagaimana dimaksud pada butir 4.2 tidak dapat dirubah/ditambah oleh PIHAK KEDUA kecuali dalam hal keadaan kahar (Force Majeure) dan/atau adanya hal-hal/kejadian-kejadian lain yang bukan karena kesalahan PIHAK KEDUA yang dapat mengakibatkan keterlambatan penyerahan pekerjaan dan perpanjangan waktu penyerahan ini harus disetujui oleh PIHAK PERTAMA secara tertulis sebelum jangka waktu penyerahan dimaksud dapat dirubah/ditambah.</p><p class=\"kl1\">4.4. Apabila dalam jangka waktu 15 (lima belas) hari kalender terhitung sejak berakhirnya batas waktu penyerahan pekerjaan, PIHAK KEDUA belum dapat menyelesaikan pekerjaan ini, maka PIHAK PERTAMA akan memberikan Surat Peringatan Tertulis Pertama kepada PIHAK KEDUA.</p><p class=\"kl1\">4.5. Apabila dalam jangka waktu 15 (lima belas) hari kalender terhitung sejak tanggal Peringatan Tertulis Pertama, ternyata PIHAK KEDUA belum juga dapat  menyelesaikan pekerjaannya, maka PIHAK PERTAMA akan mengeluarkan Surat Peringatan Tertulis Kedua kepada PIHAK KEDUA.</p><p class=\"kl1\">4.6. Selanjutnya apabila terhadap Peringatan Tertulis Kedua tersebut, PIHAK KEDUA belum juga dapat menyelesaikan pekerjaannya dan batas keterlambatan penyelesaian pekerjaan telah melampaui 50 (lima puluh) hari kalender terhitung sejak tanggal akhir Surat Perintah Kerja/SPK, maka PIHAK PERTAMA akan mengeluarkan Surat Peringatan Tertulis Ketiga/Terakhir kepada PIHAK KEDUA dan PIHAK PERTAMA dapat memutuskan Perjanjian ini secara sepihak.</p>", aktif:true},
-  {urutan:50, judul:"SANKSI DAN DENDA KETERLAMBATAN PELAKSANAAN PEKERJAAN", isi:"<p class=\"kl1\">5.1. Sanksi atau denda yang diberikan kepada PIHAK KEDUA jika terjadi keterlambatan pelaksanaan Pekerjaan dari batas Waktu Pelaksanaan Pekerjaan yang telah ditentukan sesuai yang diatur dalam Perjanjian ini.</p><p class=\"kl1\">5.2. Denda Keterlambatan tersebut akan langsung dikurangi dari nilai tagihan PIHAK KEDUA.</p><p class=\"kl1\">5.3. Besarnya denda keterlambatan kepada PIHAK KEDUA atas keterlambatan menyelesaikan pekerjaan adalah 1‰ (satu per seribu) dari harga pekerjaan untuk setiap hari keterlambatan dengan nilai maksimum 5% (lima per seratus) dari harga Perjanjian/Kontrak.</p><p class=\"kl1\">5.4. Apabila denda maksimum 5% (lima per seratus) telah tercapai, PIHAK PERTAMA dapat memutuskan Perjanjian/Kontrak setelah memberikan surat peringatan pertama sampai dengan surat peringatan ketiga.</p><p class=\"kl1\">5.5. Apabila denda maksimum dan surat peringatan ketiga telah tercapai dan PIHAK KEDUA belum dapat menyelesaikan pekerjaan tersebut, maka PIHAK PERTAMA dapat melakukan pemutusan Perjanjian/Kontrak secara sepihak dan mengalihkan tugas kepada pihak lain dan segala kerugian yang ditimbulkan menjadi tanggung jawab PIHAK KEDUA, dan dapat dikenakan sanksi daftar hitam (Blacklist) yaitu berupa larangan untuk mengikuti kegiatan Pengadaan Barang/Jasa di PLN selama 2 (dua) tahun kalender.</p><p class=\"kl1\">5.6. Perhitungan sanksi atau denda keterlambatan tidak berlaku apabila akibat yang disebabkan oleh keadaan Kahar (Force Majeure).</p><p class=\"kl1\">5.7. Pengenaan Sanksi/Blacklist kepada PIHAK KEDUA dilaksanakan berdasarkan ketentuan Sanksi/Blacklist yang berlaku di PLN.</p>", aktif:true},
-  {urutan:60, judul:"HARGA PEKERJAAN", isi:"<p class=\"kl0\">Harga Pekerjaan untuk pelaksanaan {{nama_pekerjaan}} ditetapkan sebesar {{nilai_rp}} ({{nilai_terbilang}}). Harga Pekerjaan tersebut bersifat mengikat dan telah mencakup Pajak Pertambahan Nilai (PPN) sebesar 12% (dua belas persen) terhadap nilai Dasar Pengenaan Pajak (DPP), keuntungan pihak pelaksana, segala risiko, pajak maupun pungutan lain yang berlaku menurut peraturan perundang-undangan, serta biaya pengangkutan hingga ke tempat penyerahan Pekerjaan.</p>", aktif:true},
-  {urutan:70, judul:"TATA CARA PEMBAYARAN", isi:"<p class=\"kl1\">7.1. Pembayaran oleh PIHAK PERTAMA diambil dari sumber anggaran No. {{sumber_dana_no}} tanggal {{sumber_dana_tgl_pjg}}.</p><p class=\"kl1\">7.2. Pelaksanaan pembayaran oleh PIHAK PERTAMA kepada PIHAK KEDUA sebagaimana dimaksud pada butir 7.1 akan dilakukan dalam 1 (satu) kali pembayaran setelah seluruh pekerjaan dimaksud sesuai dengan daftar  pekerjaan, sudah diterima dengan lengkap dan benar.</p><p class=\"kl1\">7.3. Pelaksanaan pembayaran oleh PIHAK PERTAMA kepada PIHAK KEDUA dimaksud akan dilakukan kepada {{p2_nama_hormat}} melalui Rekening Nomor: {{rekening_no}} a.n. {{rekening_atas_nama}} pada {{bank_nama}}.</p><p class=\"kl1\">7.4. Pembayaran akan dilaksanakan oleh PIHAK PERTAMA kepada PIHAK KEDUA setelah pekerjaan yang dimaksud sesuai dengan daftar pekerjaan sudah diterima dengan lengkap dan benar, pembayaran ditransfer melalui Rekening Bank serta menerima Permintaan Pembayaran dari PIHAK KEDUA yang ditujukan kepada PIHAK PERTAMA dengan disertai :</p><p class=\"kl2\">a. Surat Permohonan Permintaan Pembayaran;</p><p class=\"kl2\">b. Kwitansi dalam 3 (tiga), 1 (satu) asli bermeterai Rp10.000 dan 2 (Dua) copy;</p><p class=\"kl2\">c. Faktur Pajak dalam 3 (tiga) rangkap;</p><p class=\"kl2\">d. Fotocopy Surat Perintah Kerja/SPK;</p><p class=\"kl2\">e. Fotocopy NPWP dan PKP;</p><p class=\"kl2\">f. Berita Acara Pemeriksaan Pekerjaan (BAPP);</p><p class=\"kl2\">g. Berita Acara Serah Terima Pekerjaan (BASTP);</p><p class=\"kl2\">h. Dokumentasi Hasil Pekerjaan;</p><p class=\"kl2\">i. Form Penilaian Kinerja Penyedia Barang/Jasa.</p><p class=\"kl1\">7.5. Biaya transfer sebagaimana dimaksud pada butir 7.3 menjadi beban dan tanggung jawab PIHAK KEDUA dan akan diperhitungkan dengan jumlah pembayaran harga dimaksud.</p>", aktif:true},
-  {urutan:80, judul:"KEADAAN KAHAR (FORCE MAJEURE)", isi:"<p class=\"kl1\">8.1. Force Majeure merupakan suatu keadaan yang terjadi diluar kehendak para pihak sehingga kewajiban yang ditentukan dalam Perjanjian ini menjadi tidak dapat dipenuhi, antara lain peperangan, kerusuhan, revolusi, bencana alam, gempa bumi, pemogokan, dan kebakaran.</p><p class=\"kl1\">8.2. Keadaan Kahar (Force Majeure) ini tidak termasuk hal-hal yang merugikan disebabkan oleh perbuatan atau kelalaian para pihak.</p><p class=\"kl1\">8.3. Keterlambatan pelaksanaan yang diakibatkan oleh karena terjadinya keadaan kahar tidak dapat dikenai sanksi.</p><p class=\"kl1\">8.4. Pihak yang menanggung kerugian dan Tindakan yang diambil akibat terjadinya keadaan Kahar (Force Majeure), diserahkan pada kesepakatan para pihak.</p><p class=\"kl1\">8.5. Peristiwa-peristiwa lain yang tidak disebutkan di atas, tidak dapat dikategorikan sebagai keadaan Kahar (Force Majeure) kecuali apabila ditetapkan dengan Peraturan Pemerintah/Pemerintah Daerah setempat.</p><p class=\"kl1\">8.6. Dalam hal terjadi Force Majeure, PIHAK KEDUA wajib memberitahukan kepada PIHAK PERTAMA dalam waktu 1 x 24 Jam serta memberitahukan secara tertulis kepada Direksi Pekerjaan disertai Surat Keterangan dari Instansi berwenang paling lambat 14 (empat belas) hari kalender sejak terjadinya Force Majeure tersebut. Jika melewati 14 (empat belas) hari tersebut klaim dinyatakan tidak dapat diterima lagi.</p><p class=\"kl1\">8.7. Apabila dalam jangka waktu sebagaimana dimaksud pada butir 8.6, PIHAK KEDUA tidak memberitahukan kejadian Force Majeure tersebut kepada PIHAK PERTAMA, maka keterlambatan penyerahan barang/jasa sebagaimana dimaksud dalam Perjanjian ini dianggap bukan sebagai Force Majeure.</p><p class=\"kl1\">8.8. Dalam pemberitahuan mengenai kejadian Force Majeure sebagaimana dimaksud pada butir 8.6, PIHAK KEDUA dapat sekaligus mengajukan permohonan perpanjangan waktu penyerahan barang/jasa kepada PIHAK PERTAMA.</p><p class=\"kl1\">8.9. PIHAK PERTAMA dalam waktu 7 (tujuh) hari kalender terhitung sejak diterimanya permohonan perpanjangan waktu sebagaimana dimaksud pada butir 8.8, akan memberikan jawaban secara tertulis mengenai permohonan dimaksud kepada PIHAK KEDUA.</p><p class=\"kl1\">8.10. Apabila dalam jangka waktu sebagaimana dimaksud pada butir 8.9, PIHAK PERTAMA tidak memberikan jawaban terhadap permohonan perpanjangan waktu penyerahan Barang dari PIHAK KEDUA, maka PIHAK PERTAMA dianggap telah memberikan persetujuan terhadap permohonan dimaksud.</p><p class=\"kl1\">8.11. Surat Pernyataan adanya Force Majeure dinyatakan SAH, apabila dibuktikan dengan Surat Keterangan yang dikeluarkan oleh Pemerintah/Pemerintah Daerah setempat. Dalam hal terjadi Force Majeure di luar wilayah Indonesia, maka pemberitahuan adanya Force Majeure harus disertai dengan Surat Keterangan resmi dari Pejabat setempat yang berwenang dan disahkan oleh Konsulat Jenderal Republik Indonesia setempat.</p><p class=\"kl1\">8.12. Apabila PIHAK KEDUA tidak dapat mengatasi keadaan Force Majeure sebagaimana tersebut di atas sungguhpun sudah berusaha sebaik-baiknya dan setelah diperhitungkan secara seksama maka dapat diberikan perpanjangan waktu yang menurut Direksi Pekerjaan cukup untuk kompensasi waktu kelambatan yang dialami. Jika keterlambatan sebagai akibat tersebut di atas terjadi lebih dari 14 (empat belas) hari kalender, maka para pihak akan mengadakan musyawarah untuk menentukan dasar dan cara untuk memulai kembali pelaksanaan pekerjaan tersebut. Jika dari musyawarah tidak tercapai kesepakatan pelaksanaan pekerjaan tersebut, maka dapat dilakukan pembatalan secara tertulis bagian-bagian pekerjaan yang terlambat tersebut. Untuk ini PIHAK PERTAMA akan membayar kepada PIHAK KEDUA atas pekerjaan yang telah selesai.</p>", aktif:true},
-  {urutan:90, judul:"MASA GARANSI", isi:"<p class=\"kl1\">9.1. PIHAK KEDUA wajib memberikan garansi atas barang/jasa selama 1 (satu) tahun atau 365 (tiga ratus enam puluh lima) hari kalender terhitung sejak tanggal Berita Acara Serah Terima Pekerjaan.</p><p class=\"kl1\">9.2. PIHAK KEDUA wajib menjamin bahwa barang yang diserahkan kepada PIHAK PERTAMA adalah 100% baru, asli dan dalam keadaan baik, bebas dari cacat, baik yang kelihatan maupun tidak kelihatan, sesuai dengan spesifikasi dan sesuai dengan syarat yang ditentukan dalam dokumen Term of Reference (TOR)/Kerangka Acuan Kerja (KAK).</p><p class=\"kl1\">9.3. Apabila dalam masa garansi/jaminan ternyata terdapat barang/jasa yang tidak sesuai dengan jaminan yang diberikan oleh PIHAK KEDUA, maka PIHAK PERTAMA akan memberitahukan secara tertulis kepada PIHAK KEDUA selambat-lambatnya dalam jangka waktu 7 (tujuh) hari kalender terhitung sejak diketahui adanya barang yang tidak sesuai dengan jaminan yang diberikan oleh PIHAK KEDUA.</p><p class=\"kl1\">9.4. PIHAK KEDUA wajib mengganti barang/jasa yang tidak sesuai dengan jaminan dengan barang baru yang sesuai dengan syarat yang ditentukan.</p><p class=\"kl1\">9.5. Semua biaya yang diperlukan untuk penggantian barang sebagaimana dimaksud pada butir 9.4 menjadi beban dan tanggung jawab PIHAK KEDUA.</p><p class=\"kl1\">9.6. PIHAK KEDUA dibebaskan dari kewajiban untuk mengganti barang yang rusak/cacat selama masa garansi/jaminan apabila diakibatkan oleh kelalaian petugas PLN Unit dan kesalahan-kesalahan lain diluar kesalahan PIHAK KEDUA.</p><p class=\"kl1\">9.7. Apabila selama masa garansi, PIHAK KEDUA tidak dapat mengganti barang/jasa yang tidak sesuai dengan jaminan dengan barang baru, maka PIHAK KEDUA dikenakan sanksi sebagaimana diatur dalam Perjanjian ini.</p>", aktif:true},
-  {urutan:100, judul:"KESELAMATAN DAN KESEHATAN KERJA", isi:"<p class=\"kl1\">10.1. PIHAK KEDUA wajib mematuhi peraturan keselamatan kerja di lingkungan PT PLN (Persero).</p><p class=\"kl1\">10.2. PIHAK KEDUA wajib menjaga dan memelihara kebersihan lingkungan lokasi pekerjaan.</p><p class=\"kl1\">10.3. PIHAK KEDUA wajib menerapkan Sistem Manajemen Keselamatan dan Kesehatan Kerja (SMK3) di lokasi PIHAK PERTAMA sesuai dengan ketentuan yang diberlakukan oleh Diskertrans.</p><p class=\"kl1\">10.4. PIHAK KEDUA wajib menyediakan sarana dan perlengkapan keselamatan kerja sesuai dengan Sistem Manajemen Keselamatan dan Kesehatan Kerja (SMK3) serta sarana dan perlengkapan keselamatan lainnya berdasarkan ketentuan yang berlaku dan menjadi beban biaya PIHAK KEDUA.</p><p class=\"kl1\">10.5. Seluruh pekerjaan jasa wajib memiliki dan menerapkan Standar Operasional Prosedur (SOP) dan Instruksi Kerja (IK) pekerjaan.</p><p class=\"kl1\">10.6. Seluruh SOP/IK dan tempat/lokasi kerja harus melalui identifikasi bahaya dan pengendalian resiko terlebih dahulu. Tabel identifikasi bahaya dan pengalihan resiko atau disingkat HIRAC (Hazard Identification Risk Assesment Control) dijadikan sebagai lampiran kontrak.</p><p class=\"kl1\">10.7. Sesuai hasil HIRAC, apabila pekerjaan dan atau tempat kerja didapati berpotensi bahaya tinggi, sangat tinggi, fatal, dan seterusnya wajib mengisi Job Safety Analyst (JSA) dan Working Permit (Ijin Kerja).</p><p class=\"kl1\">10.8. Menyediakan APD secara lengkap dan layak.</p><p class=\"kl1\">10.9. Peralatan kerja maupun peralatan proteksi harus lengkap dan aman.</p><p class=\"kl1\">10.10. Petugas teknik wajib memiliki sertifikat pelatihan/kompetensi.</p><p class=\"kl1\">10.11. Untuk pekerjaan dan area kerja beresiko tinggi wajib menggunakan dan menerapkan Buddy System (tidak boleh bekerja atau masuk area kerja seorang diri).</p><p class=\"kl1\">10.12. PIHAK KEDUA berkewajiban atas biaya sendiri untuk mengikutsertakan personilnya pada program Badan Penyelenggara Jaminan Sosial (BPJS) sebagaimana diatur dalam peraturan perundang - undangan.</p><p class=\"kl1\">10.13. Wajib menggunakan sistem Lock Out dan Tag Out pada pekerjaan beresiko tinggi.</p><p class=\"kl1\">10.14. PIHAK KEDUA bertanggung jawab atas keselamatan semua pihak di lokasi kerja.</p><p class=\"kl1\">10.15. Apabila terjadi kecelakaan kerja (gagalnya Sistem Manajemen Keselamatan Dan Kesehatan Kerja), maka PIHAK KEDUA bertanggung jawab secara penuh dan segala kerugian ditanggung oleh PIHAK KEDUA.</p><p class=\"kl1\">10.16. PIHAK KEDUA bertanggung jawab atas segala kejadian dan kecelakaan dalam hubungan kerja baik antara PIHAK KEDUA dengan karyawannya/ pekerja-pekerjanya.</p><p class=\"kl1\">10.17. Apabila dalam implementasinya pada butir 10.1 sampai 10.16 tidak dipenuhi maka PIHAK PERTAMA akan mengevaluasi dan memutus secara sepihak atas perjanjian Pengadaaan Barang/Jasa yang sedang berlangsung.</p><p class=\"kl1\">10.18. PIHAK KEDUA bertanggung jawab atas segala yang berkaitan dengan urusan perburuhan/sosial dalam hubungan kerja antara PIHAK PERTAMA dengan karyawannya/ pekerja-pekerjanya sesuai dengan peraturan dan undang-undang perburuhan yang berlaku.</p><p class=\"kl1\">10.19. PIHAK KEDUA harus melaporkan secara tertulis atas kejadian kecelakaan yang menimpa karyawan/petugasnya kepada Departemen Tenaga Kerja dan Direksi Pekerjaan.</p>", aktif:true},
-  {urutan:110, judul:"TERMINASI DALAM KONTRAK", isi:"<p class=\"kl1\">11.1. Selain wanprestasi yang diatur dalam Perjanjian ini, maka setiap wanprestasi yang dilakukan PIHAK KEDUA akan mengikuti ketentuan dibawah ini. Setiap peristiwa sebagai berikut merupakan suatu peristiwa wanprestasi PIHAK KEDUA yaitu:</p><p class=\"kl2\">11.1.1. Peristiwa wanprestasi yang tidak dapat diperbaiki oleh PIHAK KEDUA adalah sebagai berikut:</p><p class=\"kl2\">a. PIHAK KEDUA terbukti melakukan tindak pidana antara lain adanya pemalsuan surat/dokumen, praktek persekongkolan, kecurangan dan pemalsuan yang berkaitan dengan proses pengadaan, pelaksanaan Perjanjian/Kontrak dan pelaksanaan Pekerjaan.</p><p class=\"kl2\">b. Berdasarkan putusan Pengadilan yang telah mempunyai kekuatan hukum tetap, PIHAK KEDUA dinyatakan dalam keadaan pailit, pembubaran, likuidasi atau diberikan penundaan pembayaran hutang yang menyebabkan PIHAK KEDUA tidak dapat melakukan kewajibannya berdasarkan Perjanjian/Kontrak.</p><p class=\"kl2\">c. PIHAK KEDUA terbukti dikenakan Sanksi Daftar Hitam sebelum penandatanganan Perjanjian/Kontrak.</p><p class=\"kl2\">d. Setiap pernyataan atau jaminan yang dibuat oleh PIHAK KEDUA di dalam Perjanjian/Kontrak yang berkaitan dengan pelaksanaan Pekerjaan/Kontrak terbukti tidak sah dan/atau tidak dilaksanakan oleh PIHAK KEDUA.</p><p class=\"kl2\">11.1.2. Peristiwa Wanprestasi yang dapat diperbaiki oleh PIHAK KEDUA adalah sebagai berikut :</p><p class=\"kl2\">a. PIHAK KEDUA mengalihkan Pekerjaan baik sebagian atau seluruhnya atau hak atau kewajiban yang diatur dalam Perjanjian/Kontrak tanpa persetujuan tertulis dari PIHAK PERTAMA;</p><p class=\"kl2\">b. Apabila denda yang diatur dalam Perjanjian/Kontrak tidak dibayar oleh PIHAK KEDUA kepada PIHAK PERTAMA;</p><p class=\"kl2\">c. PIHAK KEDUA tidak memenuhi kewajibannya sesuai ketentuan yang diatur dalam Perjanjian/Kontrak.</p><p class=\"kl1\">11.2. Dalam hal terjadi Peristiwa Wanprestasi yang tidak dapat diperbaiki oleh PIHAK KEDUA sebagaimana dimaksud butir 11.1 angka 11.1.1, maka PIHAK PERTAMA akan mengakhiri Perjanjian/Kontrak dengan memberikan surat pengakhiran Perjanjian/Kontrak kepada PIHAK KEDUA.</p><p class=\"kl1\">11.3. Dalam hal terjadi Peristiwa Wanprestasi yang dapat diperbaiki oleh PIHAK KEDUA sebagaimana dimaksud butir 11.1 angka 11.1.2, PIHAK PERTAMA berhak mengakhiri Perjanjian/Kontrak dengan memberikan surat peringatan, dengan ketentuan sebagai berikut :</p><p class=\"kl2\">11.3.1. PIHAK PERTAMA akan memberikan peringatan tertulis pertama kepada PIHAK KEDUA dengan perintah pemulihan wajib diselesaikan oleh PIHAK KEDUA dalam waktu 10 (sepuluh) Hari Kalender setelah tanggal diterimanya surat peringatan dari PIHAK PERTAMA kepada PIHAK KEDUA dan PIHAK KEDUA wajib menyampaikan pemberitahuan tertulis yang wajib dilengkapi dengan bukti pendukung kepada PIHAK PERTAMA bahwa pemulihan atau perbaikan tersebut akan, sedang, atau telah dilaksanakan oleh PIHAK KEDUA.</p><p class=\"kl2\">11.3.2. Apabila PIHAK KEDUA tidak menyelesaikan pemulihan atau perbaikan dalam waktu 10 Hari Kalender sesuai pada butir 11.3 angka 11.3.1, maka PIHAK PERTAMA akan memberikan peringatan tertulis kedua kepada PIHAK KEDUA dengan perintah pemulihan wajib diselesaikan oleh PIHAK KEDUA dalam waktu 10 (sepuluh) Hari Kalender setelah tanggal diterimanya peringatan oleh PIHAK KEDUA dan PIHAK KEDUA wajib menyampaikan pemberitahuan tertulis yang wajib dilengkapi dengan bukti pendukung kepada PIHAK PERTAMA bahwa pemulihan atau perbaikan tersebut akan, sedang atau telah dilaksanakan oleh PIHAK KEDUA.</p><p class=\"kl2\">11.3.3. Apabila PIHAK KEDUA tidak menyelesaikan pemulihan atau perbaikan dalam waktu 10 (sepuluh) hari kalender sebagaimana dimaksud pada butir 11.3 angka 11.3.2, maka PIHAK PERTAMA akan memberikan peringatan tertulis ketiga kepada PIHAK KEDUA dengan perintah pemulihan wajib diselesaikan oleh PIHAK KEDUA dalam waktu 10 (sepuluh) Hari Kalender setelah tanggal diterimanya peringatan dan PIHAK KEDUA wajib menyampaikan pemberitahuan tertulis yang wajib dilengkapi dengan bukti pendukung kepada PIHAK PERTAMA bahwa pemulihan atau perbaikan tersebut akan, sedang atau telah dilaksanakan oleh PIHAK KEDUA.</p><p class=\"kl2\">11.3.4. Apabila PIHAK KEDUA tidak menyelesaikan pemulihan atau perbaikan dalam waktu sebagaimana disebutkan pada butir 11.3 angka 11.3.3, maka PIHAK PERTAMA berhak mengakhiri Perjanjian/Kontrak.</p><p class=\"kl1\">11.4. Dalam hal PIHAK KEDUA telah melakukan pemulihan atau perbaikan sebagaimana dimaksud pada butir 11.3, dan pemulihan atau perbaikan tersebut disetujui oleh PIHAK PERTAMA maka peringatan tertulis yang telah diterbitkan tersebut tidak akan diperhitungkan sebagai pemberian peringatan yang berkelanjutan atau tidak berlaku kumulatif pada pemberian peringatan berikutnya.</p><p class=\"kl1\">11.5. Atas setiap pengakhiran dari Perjanjian/Kontrak, seluruh kewajiban-kewajiban masing-masing Pihak berdasarkan Perjanjian/Kontrak wajib berhenti, kecuali :</p><p class=\"kl2\">11.5.1. Sehubungan dengan kewajiban-kewajiban pembayaran yang ditimbulkan dari tindakan-tindakan yang diambil sebelum pengakhiran tersebut (termasuk namun tidak terbatas pada hak normatif pekerja PIHAK KEDUA);</p><p class=\"kl2\">11.5.2. Sebagaimana ditentukan lain dalam Perjanjian/Kontrak;</p><p class=\"kl2\">11.5.3. Pengakhiran tersebut tidak akan mengurangi setiap hak atas ganti rugi atau setiap perbaikan lainnya yang mungkin dimiliki oleh masing-masing Pihak berdasarkan Perjanjian/Kontrak.</p><p class=\"kl1\">11.6. Dalam hal terjadi Peristiwa Wanprestasi oleh PIHAK KEDUA, maka PIHAK KEDUA akan dikenakan hukuman/denda sesuai ketentuan Perjanjian/Kontrak.</p><p class=\"kl1\">11.7. PIHAK PERTAMA akan memberlakukan hukuman daftar hitam (Blacklist) bagi setiap pengakhiran Perjanjian/Kontrak yang disebabkan karena wanprestasi PIHAK KEDUA sebagaimana diatur lebih lanjut dalam ketentuan yang berlaku pada PIHAK PERTAMA.</p><p class=\"kl1\">11.8. Terhadap pengakhiran Perjanjia/Kontrak, para pihak sepakat untuk tidak memberlakukan ketentuan Pasal 1266 Kitab Undang-Undang Hukum Perdata.</p>", aktif:true},
-  {urutan:120, judul:"INTEGRITAS DAN GOOD CORPORATE GOVERNANCE", isi:"<p class=\"kl1\">12.1. Para Pihak menyepakati tidak akan melakukan tindakan-tindakan yang mengakibatkan terjadinya ketidakwajaran dalam pelaksanaan perjanjian ini termasuk namun tidak terbatas pada tindakan penipuan, penggelapan, pemerasan, kolusi, penyuapan, gratifikasi, korupsi, kecurangan, pemalsuan dan tindakan lain yang tidak sesuai dengan etika bisnis yang baik serta bertentangan dengan peraturan perundang-undangan yang berlaku termasuk mengenai pemberantasan tindak pidana korupsi, pencegahan dan pemberantasan tindak pidana pencucian uang, penerapan praktek Good Corporate Governance pada Badan Usaha Milik Negara (BUMN), termasuk peraturan yang mengatur mengenai Tata Kelola Anti Penyuapan yang berlaku di lingkungan PT PLN (Persero).</p><p class=\"kl1\">12.2. Para pihak menyepakati bahwa Perjanjian/Kontrak dilaksanakan dengan itikad baik, tidak saling mempengaruhi baik langsung maupun tidak langsung guna memenuhi keinginannya, menerima serta bertanggungjawab atas segala keputusan yang ditetapkan sesuai dengan kesepakatan para pihak, menghindari serta mencegah terjadinya konflik kepentingan (conflict of interest), menghindari serta mencegah penyalahgunaan wewenang dan/atau kolusi dengan tujuan untuk keuntungan pribadi, golongan atau pihak lain, dan tidak menerima, tidak menawarkan atau tidak menjanjikan untuk memberi atau menerima hadiah, imbalan berupa apa saja kepada siapapun yang diketahui atau patut diduga berkaitan dengan pelaksanaan perjanjian ini.</p><p class=\"kl1\">12.3. PIHAK KEDUA menyatakan, menjamin dan berkomitmen kepada PIHAK PERTAMA, untuk mematuhi ketentuan hukum yang berlaku termasuk namun tidak terbatas pada, kebijakan anti-fraud dan tata kelola anti-penyuapan di PLN seperti :</p><p class=\"kl2\">12.3.1. menerapkan 4 No's :</p><p class=\"kl2\">a. No bribery, menghindari suap menyuap dan pemerasan,</p><p class=\"kl2\">b. No gift, menghindari hadiah atau gratifikasi yang bertentangan dengan peraturan yang berlaku,</p><p class=\"kl2\">c. No kickback, menghindari komisi, tanda terima kasih baik dalam bentuk uang atau bentuk lainnya,</p><p class=\"kl2\">d. No luxurious hospitality, menghindari jamuan yang berlebihan;</p><p class=\"kl2\">12.3.2. menerapkan uji kelayakan berbasis integritas;</p><p class=\"kl2\">12.3.3. menghadiri program sosialisasi sistem manajemen anti penyuapan yang dilaksanakan oleh PT PLN (Persero);</p><p class=\"kl2\">12.3.4. menandatangani dan melaksanakan pakta integritas;</p><p class=\"kl2\">12.3.5. melaporkan insiden fraud melalui Whistle Blowing System PLN.</p><p class=\"kl1\">12.4. PIHAK PERTAMA akan melakukan audit terkait tagihan pembayaran dan dokumen pembukuan serta pencatatan kepada PIHAK KEDUA ketika terdapat indikasi ketidakwajaran dari tagihan yang disampaikan oleh PIHAK KEDUA kepada PIHAK PERTAMA, dimana tujuan pelaksanaan audit tersebut untuk memastikan kesesuaian tagihan PIHAK KEDUA dengan ketentuan yang berlaku termasuk kesesuaian dengan ketentuan dalam Perjanjian/Kontrak.</p><p class=\"kl1\">12.5. Pelaksanaan audit sebagaimana dimaksud dalam butir 12.4, dilakukan sebagai berikut :</p><p class=\"kl2\">12.5.1. Atas biaya PIHAK PERTAMA;</p><p class=\"kl2\">12.5.2. Dilakukan dengan pemberitahuan selambat-lambatnya 7 (tujuh) hari kalender sebelum pelaksanaan audit yang disampaikan PIHAK PERTAMA kepada PIHAK KEDUA;</p><p class=\"kl2\">12.5.3. Pelaksanaan audit dilaksanakan paling lambat dalam waktu 7 (tujuh) hari kerja, dilanjutkan dengan pembuatan pelaporan audit oleh PIHAK PERTAMA paling lambat dalam 3 (tiga) hari kerja;</p><p class=\"kl2\">12.5.4. Penyelesaian pembayaran (settlement/adjustment) dilakukan paling lambat dalam 30 (tiga puluh) hari kalender setelah PIHAK PERTAMA memaparkan laporan hasil audit kepada PIHAK KEDUA;</p><p class=\"kl2\">12.5.5. PIHAK PERTAMA dapat menunjuk pihak lain untuk melakukan audit;</p><p class=\"kl2\">12.5.6. PIHAK KEDUA wajib mengizinkan perwakilan dari PIHAK PERTAMA dan menyediakan dokumen dan data yang diperlukan;</p><p class=\"kl2\">12.5.7. Permintaan dan penyampaian dokumen dan data audit dilaksanakan pada jam kerja dari PIHAK KEDUA;</p><p class=\"kl2\">12.5.8. Apabila terdapat Kerjasama antara PIHAK KEDUA dengan pihak ketiga yang berkaitan dengan pelaksanaan Perjanjian/Kontrak, maka PIHAK KEDUA wajib memastikan dan menuangkan ketentuan mengenai Hak Akses PIHAK PERTAMA terhadap dokumen dan data milik pihak ketiga dalam Perjanjian/Kontrak antara PIHAK KEDUA dengan pihak ketiga tersebut.</p><p class=\"kl2\">12.5.9. Para pihak termasuk perwakilannya, akan menjaga kerahasiaan informasi non-publik yang diperoleh dari pelaksanaan audit tersebut.</p><p class=\"kl1\">12.6. Dalam pelaksanaan audit terhadap tagihan pembayaran sebagaimana butir 12.4 di atas, PIHAK PERTAMA berhak melakukan penundaan pembayaran atas tagihan pembayaran tersebut atau dapat melakukan pembayaran melalui suatu rekening khusus (Escrow Account) yang dibuat oleh PIHAK PERTAMA dan PIHAK KEDUA yang beban biayanya menjadi tanggung jawab PIHAK KEDUA sampai dilakukan penyesuaian pembayaran.</p><p class=\"kl1\">12.7. Dalam hal dilakukan audit sebagaimana dimaksud pada butir 12.4 dan/atau pelaksanaan penundaan pembayaran sebagaimana pada butir 12.6, PIHAK KEDUA wajib untuk tetap melaksanakan kewajibannya sesuai Perjanjian/Kontrak.</p><p class=\"kl1\">12.8. Dalam rangka penerapan tata kelola yang baik (Good Corporate Governance) di lingkungan PT PLN (Persero), jika dalam proses pelaksanaan Perjanjian/kontrak,  PIHAK KEDUA mengetahui adanya tindakan kecurangan, pelanggaran peraturan atau hukum, konflik kepentingan, penyuapan/gratifikasi maupun kelakuan tidak etis yang dilakukan oleh pegawai PLN, agar melaporkan melalui Whistle Blower System dengan media antara lain telepon, SMS, Whatsapp ke 08119861901, atau email ke wbpln@pln.co.id.</p><p class=\"kl1\">12.9. PIHAK KEDUA yang menurut penilaian PIHAK PERTAMA terbukti melakukan larangan-larangan sebagaimana dimaksud pada butir 12.1, butir 12.2 dan/atau butir 12.3 di atas dapat dikenakan sanksi-sanksi dari PIHAK PERTAMA sebagai berikut:</p><p class=\"kl2\">12.9.1. Pemutusan Perjanjian/Kontrak;</p><p class=\"kl2\">12.9.2. Pengenaan daftar hitam sesuai ketentuan yang berlaku di lingkungan PT PLN (Persero).</p>", aktif:true},
-  {urutan:130, judul:"BIAYA PENYUSUNAN KONTRAK", isi:"<p class=\"kl0\">Seluruh biaya yang timbul sehubungan dengan proses penyusunan, penggandaan, dan penandatanganan dokumen Perjanjian ini sepenuhnya menjadi beban dan tanggung jawab PIHAK KEDUA. Biaya-biaya sebagaimana dimaksud meliputi, namun tidak terbatas pada, bea meterai, pajak-pajak yang berlaku, biaya penggandaan dan penjilidan dokumen, serta biaya pengiriman dokumen Perjanjian menggunakan jasa kurir/ekspedisi (khusus bagi PIHAK KEDUA yang berdomisili di luar Pulau Seram).</p>", aktif:true},
-  {urutan:140, judul:"PERUBAHAN", isi:"<p class=\"kl1\">14.1. Perjanjian/Kontrak ini tidak dapat dipindahtangankan baik sebagian maupun keseluruhan tanpa persetujuan tertulis dari para pihak.</p><p class=\"kl1\">14.2. Para pihak sepakat bahwa setiap perubahan Perjanjian/Kontrak ini hanya dapat dilakukan atas persetujuan para pihak.</p><p class=\"kl1\">14.3. Perubahan sebagaimana dimaksud pada butir 14.1 akan dibuat dalam suatu addendum/amandemen yang merupakan bagian tidak terpisahkan dari Perjanjian/Kontrak.</p>", aktif:true},
-  {urutan:150, judul:"PENUTUP", isi:"<p class=\"kl0\">Perjanjian/Kontrak ini dibuat dalam 2 (dua) rangkap masing - masing dibubuhi materai Rp10.000 (sepuluh ribu rupiah) dan keduanya mempunyai kekuatan hukum yang sama, 1 (satu) rangkap untuk PIHAK PERTAMA dan 1 (satu) rangkap untuk PIHAK KEDUA, ditandatangani di Masohi, pada hari, tanggal, bulan dan tahun seperti pada tersebut diatas.</p>", aktif:true}
+  {urutan:10, judul:"KLAUSUL 1", isi:SPK_KL_PLACEHOLDER, aktif:true},
+  {urutan:20, judul:"KLAUSUL 2", isi:SPK_KL_PLACEHOLDER, aktif:true},
+  {urutan:30, judul:"KLAUSUL 3", isi:SPK_KL_PLACEHOLDER, aktif:true}
 ];
 /* =========================================================================
    PEMBUATAN KONTRAK — SURAT PERINTAH KERJA (SPK)
@@ -18900,7 +18901,10 @@ function spkDocCss(){
   '@page{size:A4 portrait;margin:2.54cm}'+
   '*{box-sizing:border-box}'+
   'body{font-family:"Times New Roman",Georgia,serif;color:#1c1c1c;margin:0;font-size:11.5px;line-height:1.5}'+
-  '.spk-doc{}'+
+  '.spk-doc{counter-reset:spkcl}'+
+  /* Penomoran judul klausul dibuat OTOMATIS (counter), bukan teks biasa */
+  '.spk-clause{counter-increment:spkcl}'+
+  '.spk-cl-h .n::before{content:counter(spkcl) "."}'+
   '.spk-page{page-break-after:always}'+
   '.spk-page:last-child{page-break-after:auto}'+
   /* Cover (seperti sebelumnya) */
@@ -18962,6 +18966,8 @@ function spkDocCss(){
   '.spk-cl p{margin:0 0 6pt;text-align:justify;line-height:1.15}'+
   /* kl0 = paragraf biasa (sejajar teks judul); kldesc = deskripsi menjorok */
   '.spk-cl p.kl0{margin-left:0;text-indent:0}'+
+  /* Contoh pengisian (placeholder): titik-titik sampai batas margin kanan, huruf samar */
+  '.spk-cl p.spk-ph{color:rgba(0,0,0,.22);white-space:nowrap;overflow:hidden;text-align:left}'+
   '.spk-cl p.kldesc{margin-left:0.75cm}'+
   /* Fallback bila nomor TIDAK ter-wrap (jarang): tetap hanging bertingkat */
   '.spk-cl p.kl1{margin-left:0.75cm;text-indent:-0.75cm}'+
@@ -21074,7 +21080,7 @@ function spkDocHtml(data, klausul){
   // ISI: preamble + klausul + tanda tangan
   const preamble = spkNumberFix(spkTidyKeyValue(spkMerge(SPK_PREAMBLE_TPL, ctx)));
   const clausesHtml = (klausul||[]).map((k,i)=>
-    '<div class="spk-clause"><div class="spk-cl-h"><span class="n'+((i+1)>=10?' r':'')+'">'+(i+1)+'.</span>'+spkFmtJudul(k.judul)+'</div>'+
+    '<div class="spk-clause"><div class="spk-cl-h"><span class="n'+((i+1)>=10?' r':'')+'"></span>'+spkFmtJudul(k.judul)+'</div>'+
     '<div class="spk-cl">'+spkNumberFix(spkTidyKeyValue(spkMerge(k.isi||'', ctx)))+'</div></div>'
   ).join('');
   const sign=
@@ -21149,6 +21155,7 @@ function openSpkKlausul(){ refreshDataKlausul().then(()=>{ renderSpkKlausul(); s
 function renderSpkKlausul(){
   const cont=document.getElementById('spk-klausul-content'); if(!cont) return;
   const list=records_klausul.slice();
+  const last=list.length-1;
   const rows = list.length ? list.map((k,i)=>{
     const kid=fkEscJs(String(k.id));
     const off = (k.aktif===false);
@@ -21158,31 +21165,158 @@ function renderSpkKlausul(){
       '<div class="spk-klx-main"><div class="spk-klx-judul">'+fkEsc(k.judul||'(Tanpa judul)')+(off?' <span class="spk-badge-off">non-aktif</span>':'')+'</div>'+
         '<div class="spk-klx-prev">'+fkEsc(preview)+(preview.length>=150?'…':'')+'</div></div>'+
       '<div class="spk-klx-act">'+
+        '<button class="act act-mv" title="Naikkan" '+(i===0?'disabled':'')+' onclick="spkKlausulMove(\''+kid+'\',-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>'+
+        '<button class="act act-mv" title="Turunkan" '+(i===last?'disabled':'')+' onclick="spkKlausulMove(\''+kid+'\',1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12l7 7 7-7"/></svg></button>'+
         '<button class="act" title="Lihat" onclick="spkKlausulView(\''+kid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
         '<button class="act act-edit" title="Ubah" onclick="spkKlausulEdit(\''+kid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
         '<button class="act act-del" title="Hapus" onclick="spkKlausulDelete(\''+kid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>'+
       '</div>'+
     '</div>';
   }).join('') : '<div class="empty" style="padding:26px"><div>Belum ada klausul.</div></div>';
+  /* Bar tombol: Simpan Profil | Muat Profil | Batalkan Pilihan (bila profil dipakai) | Tambah Klausul */
+  const aktifProfil = spkKlProfil.active;
+  const btnBatal = aktifProfil
+    ? '<button type="button" class="jp-profil-btn is-cancel" onclick="spkKlProfilCancel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg><span>Batalkan Pilihan</span></button>'
+    : '';
+  const tagProfil = aktifProfil
+    ? '<span class="spk-klprof-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:13px;height:13px"><path d="M20 6 9 17l-5-5"/></svg>Profil: '+fkEsc(aktifProfil)+'</span>'
+    : '';
   cont.innerHTML=
     '<div class="form-card">'+
       '<div class="form-section-title" style="justify-content:space-between">'+
-        '<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg> Pustaka Klausul SPK</span>'+
-        '<button class="btn btn-green btn-sm" onclick="spkKlausulNew()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Tambah Klausul</button>'+
+        '<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg> Pustaka Klausul SPK '+tagProfil+'</span>'+
+        '<span class="spk-klbar">'+
+          '<button type="button" class="jp-profil-btn is-save" onclick="spkKlProfilOpenSave()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg><span>Simpan Profil</span></button>'+
+          '<button type="button" class="jp-profil-btn is-load" onclick="spkKlProfilOpenLoad()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6M9 14h6"/></svg><span>Muat Profil</span></button>'+
+          btnBatal+
+          '<button class="btn btn-green btn-sm" onclick="spkKlausulNew()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Tambah Klausul</button>'+
+        '</span>'+
       '</div>'+
-      '<p style="margin:0 0 10px;color:#6B7885;font-size:12px">Klausul di sini menjadi pilihan pada halaman <b>Penyusunan Kontrak</b>. Isi klausul disunting lewat <b>template Word (.docx)</b>: buka <b>Ubah</b> &rarr; <b>Download Template</b> &rarr; ketik di Microsoft Word &rarr; <b>Upload Template</b>. Template sudah diatur A4, Portrait, margin Normal (2,54 cm), Arial 11. Placeholder seperti <code>{{nama_pekerjaan}}</code>, <code>{{nilai_rp}}</code>, <code>{{nilai_terbilang}}</code>, <code>{{jangka_waktu_hari}}</code>, <code>{{akhir_pekerjaan_pjg}}</code> tetap terisi otomatis dari data mail merge.</p>'+
       '<div class="spk-klx-list">'+rows+'</div>'+
     '</div>';
 }
+
+/* ================= PROFIL PUSTAKA KLAUSUL =================
+   Profil = rekaman seluruh isi Pustaka Klausul (judul + isi + urutan + aktif),
+   disimpan di penyimpanan peramban (localStorage) seperti Profil Jadwal.
+   - Simpan Profil     : merekam pustaka klausul saat ini dengan sebuah nama
+   - Muat Profil       : mengganti pustaka klausul dengan isi profil terpilih
+   - Batalkan Pilihan  : mengembalikan pustaka klausul ke keadaan sebelum profil dimuat
+   ========================================================= */
+const SPK_KL_PROFIL_KEY='spk_klausul_profiles_v1';
+var spkKlProfil={ active:'', backup:null };
+function spkKlProfilAll(){ try{ const r=localStorage.getItem(SPK_KL_PROFIL_KEY); const a=r?JSON.parse(r):[]; return Array.isArray(a)?a:[]; }catch(e){ return []; } }
+function spkKlProfilStore(list){ try{ localStorage.setItem(SPK_KL_PROFIL_KEY, JSON.stringify(list)); return true; }catch(e){ toast('Gagal menyimpan profil di penyimpanan peramban','err'); return false; } }
+function spkKlProfilSnapshot(){
+  return (records_klausul||[]).map(function(k,i){
+    return { judul:String(k.judul||''), isi:String(k.isi||''), urutan:(Number(k.urutan)||((i+1)*10)), aktif:(k.aktif!==false) };
+  });
+}
+function spkKlProfilOverlay(inner){
+  let ov=document.getElementById('pnw-profil-ov');
+  if(!ov){ ov=document.createElement('div'); ov.id='pnw-profil-ov'; ov.className='pnw-profil-ov'; document.body.appendChild(ov); }
+  ov.onclick=(e)=>{ if(e.target===ov) spkKlProfilClose(); };
+  ov.innerHTML='<div class="pnw-profil-modal" role="dialog">'+inner+'</div>'; ov.style.display='flex';
+}
+function spkKlProfilClose(){ const ov=document.getElementById('pnw-profil-ov'); if(ov) ov.style.display='none'; }
+function spkKlProfilOpenSave(){
+  const snap=spkKlProfilSnapshot();
+  if(!snap.length){ toast('Belum ada klausul untuk disimpan','warn'); return; }
+  const list=spkKlProfilAll();
+  const existing = list.length ? ('<div class="pnw-profil-existing">Profil tersimpan: '+list.map(p=>fkEsc(p.name)).join(' &middot; ')+'</div>') : '';
+  spkKlProfilOverlay(
+    '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Simpan Profil Klausul</div>'+
+    '<div class="pnw-profil-sub">Menyimpan <b>'+snap.length+'</b> klausul (judul, isi, urutan, status aktif) sebagai satu profil yang dapat dimuat kembali kapan saja.</div>'+
+    '<input id="spk-klprofil-name" class="pnw-profil-input" type="text" placeholder="Nama profil (mis. SPK Konstruksi Standar)" maxlength="60" onkeydown="if(event.key===\'Enter\')spkKlProfilDoSave()">'+
+    existing+
+    '<div class="pnw-profil-actions"><button type="button" class="btn btn-ghost" onclick="spkKlProfilClose()">Batal</button>'+
+    '<button type="button" class="btn btn-teal" onclick="spkKlProfilDoSave()">Simpan Profil</button></div>'
+  );
+  setTimeout(function(){ const el=document.getElementById('spk-klprofil-name'); if(el) el.focus(); },60);
+}
+function spkKlProfilDoSave(){
+  const el=document.getElementById('spk-klprofil-name'); const name=(el&&el.value||'').trim();
+  if(!name){ toast('Isi nama profil dulu','warn'); if(el) el.focus(); return; }
+  const list=spkKlProfilAll();
+  const snap={ name:name, savedAt:Date.now(), items:spkKlProfilSnapshot() };
+  snap.count=snap.items.length;
+  const idx=list.findIndex(p=>String(p.name).toLowerCase()===name.toLowerCase());
+  if(idx>=0) list[idx]=snap; else list.push(snap);
+  if(spkKlProfilStore(list)){ toast('Profil "'+name+'" tersimpan','ok'); spkKlProfilClose(); }
+}
+function spkKlProfilOpenLoad(){
+  const list=spkKlProfilAll();
+  if(!list.length){ toast('Belum ada profil. Simpan dulu lewat tombol "Simpan Profil".','warn'); return; }
+  const items=list.slice().sort((a,b)=>(b.savedAt||0)-(a.savedAt||0)).map(p=>
+    '<div class="pnw-profil-item"><div class="pnw-profil-item-info"><div class="pnw-profil-item-name">'+fkEsc(p.name)+'</div>'+
+    '<div class="pnw-profil-item-meta">'+(p.count||(p.items?p.items.length:0))+' klausul</div></div>'+
+    '<div class="pnw-profil-item-btns"><button type="button" class="btn btn-teal pnw-profil-mini" onclick="spkKlProfilDoLoad(\''+fkEscJs(p.name)+'\')">Muat</button>'+
+    '<button type="button" class="btn btn-ghost pnw-profil-mini" onclick="spkKlProfilDoDelete(\''+fkEscJs(p.name)+'\')">Hapus</button></div></div>'
+  ).join('');
+  spkKlProfilOverlay(
+    '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6M9 14h6"/></svg>Muat Profil Klausul</div>'+
+    '<div class="pnw-profil-sub">Pustaka klausul saat ini akan <b>diganti</b> oleh isi profil. Keadaan sebelumnya disimpan sementara sehingga dapat dikembalikan lewat <b>Batalkan Pilihan</b>.</div>'+
+    '<div class="pnw-profil-list">'+items+'</div>'+
+    '<div class="pnw-profil-actions"><button type="button" class="btn btn-ghost" onclick="spkKlProfilClose()">Tutup</button></div>'
+  );
+}
+function spkKlProfilDoDelete(name){
+  let list=spkKlProfilAll(); list=list.filter(x=>String(x.name)!==String(name));
+  if(spkKlProfilStore(list)){ toast('Profil "'+name+'" dihapus','ok'); if(list.length) spkKlProfilOpenLoad(); else spkKlProfilClose(); }
+}
+/* Tulis ulang seluruh pustaka klausul dari daftar item (hapus semua -> buat ulang) */
+async function spkKlProfilWrite(items){
+  const lama=(records_klausul||[]).slice();
+  for(let i=0;i<lama.length;i++){ await StoreSpkKlausul.remove(lama[i].id); }
+  for(let i=0;i<items.length;i++){
+    const it=items[i];
+    await StoreSpkKlausul.create({ judul:it.judul||'', isi:it.isi||'', urutan:(Number(it.urutan)||((i+1)*10)), aktif:(it.aktif!==false) });
+  }
+  await refreshDataKlausul();
+  // pilihan klausul pada kontrak yang sedang disusun mengikuti pustaka yang baru
+  if(spkState) spkState.sel = records_klausul.filter(k=>k.aktif!==false).map(k=>String(k.id));
+}
+function spkKlProfilDoLoad(name){
+  if(typeof requireInput==='function' && !requireInput()) return;
+  const p=spkKlProfilAll().find(x=>String(x.name)===String(name));
+  if(!p || !Array.isArray(p.items) || !p.items.length){ toast('Profil tidak ditemukan','warn'); return; }
+  const backup=spkKlProfilSnapshot();
+  openConfirm({ icon:'warn', title:'Muat Profil Klausul',
+    text:'Pustaka klausul saat ini akan diganti dengan profil "'+name+'" ('+p.items.length+' klausul). Lanjutkan?',
+    onYes:async()=>{
+      try{ await withActionLoader('Memuat profil', async()=>{ await spkKlProfilWrite(p.items); }); }
+      catch(err){ console.error(err); toast('Gagal memuat profil: '+errMsg(err),'err'); return; }
+      spkKlProfil.active=name; spkKlProfil.backup=backup;
+      spkKlProfilClose(); renderSpkKlausul();
+      toast('Profil "'+name+'" dimuat','ok');
+    }});
+}
+function spkKlProfilCancel(){
+  if(!spkKlProfil.active) return;
+  const back=spkKlProfil.backup;
+  if(!back || !back.length){ spkKlProfil.active=''; spkKlProfil.backup=null; renderSpkKlausul(); toast('Pilihan profil dibatalkan','ok'); return; }
+  openConfirm({ icon:'warn', title:'Batalkan Pilihan Profil',
+    text:'Kembalikan pustaka klausul ke keadaan sebelum profil "'+spkKlProfil.active+'" dimuat?',
+    onYes:async()=>{
+      try{ await withActionLoader('Mengembalikan', async()=>{ await spkKlProfilWrite(back); }); }
+      catch(err){ console.error(err); toast('Gagal mengembalikan: '+errMsg(err),'err'); return; }
+      spkKlProfil.active=''; spkKlProfil.backup=null;
+      renderSpkKlausul(); toast('Pilihan profil dibatalkan','ok');
+    }});
+}
 function spkKlausulMove(id, dir){
+  if(typeof requireInput==='function' && !requireInput()) return;
   const i=records_klausul.findIndex(k=>String(k.id)===String(id)); if(i<0) return;
   const j=i+dir; if(j<0||j>=records_klausul.length) return;
-  const a=records_klausul[i], b=records_klausul[j];
-  const ua=a.urutan, ub=b.urutan;
-  // tukar urutan lalu simpan keduanya
+  // Tukar posisi lalu tulis ulang urutan (10,20,30, ...) agar selalu konsisten
+  const arr=records_klausul.slice();
+  const tmp=arr[i]; arr[i]=arr[j]; arr[j]=tmp;
   (async()=>{
-    try{ await withActionLoader('Menyimpan', async()=>{
-      await StoreSpkKlausul.update(a.id,{urutan:ub}); await StoreSpkKlausul.update(b.id,{urutan:ua});
+    try{ await withActionLoader('Menyimpan urutan', async()=>{
+      for(let n=0;n<arr.length;n++){
+        const u=(n+1)*10;
+        if(Number(arr[n].urutan)!==u) await StoreSpkKlausul.update(arr[n].id,{urutan:u});
+      }
       await refreshDataKlausul();
     }); }catch(err){ console.error(err); toast('Gagal mengubah urutan: '+errMsg(err),'warn'); return; }
     renderSpkKlausul();
@@ -21355,8 +21489,29 @@ function spkStylesXml(){
       '<w:i/><w:color w:val="808080"/><w:sz w:val="18"/><w:szCs w:val="18"/>')+
   '</w:styles>';
 }
+/* Penomoran OTOMATIS Word untuk Judul Klausul (bukan angka yang diketik manual).
+   numId 1 -> daftar bernomor desimal "1." dengan hanging indent 0,75 cm.
+   w:start disetel ke nomor klausul agar angkanya sesuai posisinya di pustaka. */
+function spkNumberingXml(startNo){
+  var D=SPK_DX, st=Math.max(1, parseInt(startNo,10)||1);
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+  '<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'+
+    '<w:abstractNum w:abstractNumId="0">'+
+      '<w:multiLevelType w:val="singleLevel"/>'+
+      '<w:lvl w:ilvl="0">'+
+        '<w:start w:val="'+st+'"/>'+
+        '<w:numFmt w:val="decimal"/>'+
+        '<w:lvlText w:val="%1."/>'+
+        '<w:lvlJc w:val="left"/>'+
+        '<w:pPr><w:ind w:left="'+D.IND+'" w:hanging="'+D.IND+'"/></w:pPr>'+
+      '</w:lvl>'+
+    '</w:abstractNum>'+
+    '<w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num>'+
+  '</w:numbering>';
+}
 function spkRunXml(t, f){
-  var rpr = (f && (f.b||f.i||f.u)) ? '<w:rPr>'+(f.b?'<w:b/>':'')+(f.i?'<w:i/>':'')+(f.u?'<w:u w:val="single"/>':'')+'</w:rPr>' : '';
+  var rp = f ? ((f.b?'<w:b/>':'')+(f.i?'<w:i/>':'')+(f.u?'<w:u w:val="single"/>':'')+(f.c?'<w:color w:val="'+f.c+'"/>':'')) : '';
+  var rpr = rp ? ('<w:rPr>'+rp+'</w:rPr>') : '';
   if(t==='\t') return '<w:r>'+rpr+'<w:tab/></w:r>';
   if(t==='\n') return '<w:r>'+rpr+'<w:br/></w:r>';
   return '<w:r>'+rpr+'<w:t xml:space="preserve">'+spkXmlEsc(t)+'</w:t></w:r>';
@@ -21364,9 +21519,61 @@ function spkRunXml(t, f){
 function spkPXml(styleId, runsXml){
   return '<w:p><w:pPr><w:pStyle w:val="'+styleId+'"/></w:pPr>'+(runsXml||'')+'</w:p>';
 }
+/* Paragraf dengan pengaturan LANGSUNG (indent, spasi, perataan) — dipakai agar
+   template yang diunduh mengikuti PERSIS format template terakhir yang diunggah. */
+function spkPXml2(styleId, pPrExtra, runsXml){
+  return '<w:p><w:pPr><w:pStyle w:val="'+styleId+'"/>'+(pPrExtra||'')+'</w:pPr>'+(runsXml||'')+'</w:p>';
+}
+/* ---- Satuan: cm/pt (CSS) -> twip (Word) ---- */
+function spkCmTw(cm){ return Math.round((parseFloat(cm)||0)*566.929); }
+function spkPtTw(pt){ return Math.round((parseFloat(pt)||0)*20); }
+function spkCssLen(v, unit){
+  v=String(v||'').trim(); if(!v) return null;
+  var m=new RegExp('^(-?[0-9.]+)'+unit+'$').exec(v);
+  return m ? parseFloat(m[1]) : null;
+}
+/* Style inline hasil pembacaan .docx (WYSIWYG) -> <w:ind>/<w:spacing>/<w:jc> Word.
+   Margin kiri pada web bersifat RELATIF terhadap dasar klausul 0,75 cm, maka
+   nilainya dikembalikan ke ukuran Word dengan menambahkan SPK_WX_BASE. */
+function spkPPrFromCss(el){
+  var st=el && el.style ? el.style : null;
+  if(!st) return '';
+  var hasInd=false, left=SPK_WX_BASE, hang=0, first=0;
+  var ml=spkCssLen(st.marginLeft,'cm');
+  if(ml!=null){ left=SPK_WX_BASE+spkCmTw(ml); hasInd=true; }
+  var ti=spkCssLen(st.textIndent,'cm');
+  if(ti!=null){ hasInd=true; if(ti<0) hang=spkCmTw(-ti); else if(ti>0) first=spkCmTw(ti); }
+  var ind='';
+  if(hasInd){
+    ind='<w:ind w:left="'+Math.max(0,left)+'"'+
+        (hang>0?(' w:hanging="'+hang+'"'):'')+
+        (first>0?(' w:firstLine="'+first+'"'):'')+'/>';
+  }
+  var sp='', before=null, after=null, line=null, rule='auto';
+  var mt=spkCssLen(st.marginTop,'pt'); if(mt!=null) before=spkPtTw(mt);
+  var mb=spkCssLen(st.marginBottom,'pt'); if(mb!=null) after=spkPtTw(mb);
+  var lh=String(st.lineHeight||'').trim();
+  if(lh){
+    var lhPt=spkCssLen(lh,'pt');
+    if(lhPt!=null){ line=spkPtTw(lhPt); rule='exact'; }
+    else if(/^[0-9.]+$/.test(lh)){ line=Math.round(parseFloat(lh)*240); rule='auto'; }
+  }
+  if(before!=null||after!=null||line!=null){
+    sp='<w:spacing'+(before!=null?(' w:before="'+before+'"'):'')+
+       (after!=null?(' w:after="'+after+'"'):'')+
+       (line!=null?(' w:line="'+line+'" w:lineRule="'+rule+'"'):'')+'/>';
+  }
+  var jc='', ta=String(st.textAlign||'').trim();
+  var jm={justify:'both',center:'center',right:'right',left:'left'};
+  if(jm[ta]) jc='<w:jc w:val="'+jm[ta]+'"/>';
+  /* Tab stop tepat pada posisi teks (setelah nomor) agar jarak nomor->teks sama */
+  var tabs='';
+  if(hang>0) tabs='<w:tabs><w:tab w:val="left" w:pos="'+Math.max(0,left)+'"/></w:tabs>';
+  return tabs+ind+sp+jc;
+}
 /* Kumpulkan "run" (potongan teks + format) dari sebuah node HTML */
 function spkCollectRuns(node, fmt, out){
-  var f={b:!!fmt.b,i:!!fmt.i,u:!!fmt.u};
+  var f={b:!!fmt.b,i:!!fmt.i,u:!!fmt.u,c:(fmt.c||'')};
   if(node.nodeType===3){ var t=node.nodeValue; if(t) out.push({t:t,f:f}); return; }
   if(node.nodeType!==1) return;
   var tag=(node.tagName||'').toLowerCase();
@@ -21436,7 +21643,8 @@ function spkHtmlToWordParas(html){
     flushKv();                                                    // akhiri blok kv sebelum paragraf lain
     var cls='kl0', cl=(el.className||'').split(/\s+/);
     for(j=0;j<cl.length;j++){ if(SPK_CLS2STY[cl[j]]){ cls=cl[j]; break; } }
-    var runs=[]; spkCollectRuns(el, {}, runs);
+    var isPh=!!(el.classList && el.classList.contains('spk-ph'));   // contoh pengisian
+    var runs=[]; spkCollectRuns(el, isPh?{c:'BFBFBF'}:{}, runs);
     /* nomor yang masih berupa teks biasa ("1.1. Teks") -> nomor + TAB + teks */
     if((cls==='kl1'||cls==='kl2') && runs.length && runs[0].t && runs[0].t.indexOf('\t')<0){
       var m=SPK_NUMTOK.exec(runs[0].t);
@@ -21448,7 +21656,9 @@ function spkHtmlToWordParas(html){
     }
     var rx='';
     for(j=0;j<runs.length;j++){ if(runs[j].t!=='') rx+=spkRunXml(runs[j].t, runs[j].f); }
-    xml += spkPXml(SPK_CLS2STY[cls]||'KlausulIsi', rx);
+    /* Format (indent, jarak baris, jarak paragraf, perataan) diambil dari style inline
+       hasil unggahan terakhir -> template yang diunduh SAMA dengan yang diunggah. */
+    xml += spkPXml2(SPK_CLS2STY[cls]||'KlausulIsi', spkPPrFromCss(el), rx);
   }
   flushKv();
   return xml;
@@ -21461,12 +21671,12 @@ function spkDocxTemplateBlob(judul, isiHtml, noKl){
     guide('PETUNJUK (baris abu-abu ini otomatis DIABAIKAN saat diunggah — boleh dibiarkan):')+
     guide('1) Ketik isi klausul HANYA di bawah baris judul. Halaman sudah diatur A4, Portrait, margin Normal 2,54 cm, huruf Arial 11.')+
     guide('2) Gunakan Style Word: "Klausul Isi" (teks biasa), "Klausul Butir 1" (nomor 1.1.), "Klausul Butir 2" (huruf a.), "Klausul Paragraf" (paragraf menjorok).')+
-    guide('3) Ketik nomor butir secara manual (mis. 1.1. atau a.) lalu tekan TAB — jangan memakai penomoran otomatis Word.')+
-    guide('4) Judul klausul boleh diubah pada baris judul di bawah (nomor klausul terisi otomatis oleh aplikasi).')+
+    guide('3) Penomoran butir boleh memakai penomoran otomatis Word ATAU diketik manual (mis. 1.1. / a.) lalu TAB — keduanya terbaca sama persis.')+
+    guide('4) Nomor judul klausul memakai penomoran otomatis Word (bukan angka yang diketik) — cukup ubah teks judulnya saja.')+
     guide('5) Placeholder seperti {{nama_pekerjaan}}, {{nilai_rp}}, {{jangka_waktu_hari}} tetap boleh dipakai.')+
-    /* baris judul: nomor + TAB + judul (memperlihatkan posisi sejajar isi) */
-    spkPXml('KlausulJudul',
-      spkRunXml(String(noKl||1)+'.',{}) + spkRunXml('\t',{}) +
+    /* Baris judul: memakai PENOMORAN OTOMATIS Word (numId 1) — nomornya bukan teks
+       biasa, sehingga tetap berurutan bila klausul ditambah/dipindah. */
+    spkPXml2('KlausulJudul', '<w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr>',
       spkRunXml(String(judul||'JUDUL KLAUSUL'),{}) );
   var isi=spkHtmlToWordParas(isiHtml);
   body += isi || spkPXml('KlausulIsi','');
@@ -21486,6 +21696,7 @@ function spkDocxTemplateBlob(judul, isiHtml, noKl){
     '<Default Extension="xml" ContentType="application/xml"/>'+
     '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'+
     '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>'+
+    '<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>'+
     '</Types>';
   var rels='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
     '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
@@ -21494,13 +21705,15 @@ function spkDocxTemplateBlob(judul, isiHtml, noKl){
   var drels='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
     '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
     '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'+
+    '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>'+
     '</Relationships>';
   return spkZipBuild([
     {name:'[Content_Types].xml', data:enc.encode(ct)},
     {name:'_rels/.rels',         data:enc.encode(rels)},
     {name:'word/document.xml',   data:enc.encode(docXml)},
     {name:'word/_rels/document.xml.rels', data:enc.encode(drels)},
-    {name:'word/styles.xml',     data:enc.encode(spkStylesXml())}
+    {name:'word/styles.xml',     data:enc.encode(spkStylesXml())},
+    {name:'word/numbering.xml',  data:enc.encode(spkNumberingXml(noKl||1))}
   ]);
 }
 
