@@ -2685,7 +2685,9 @@ table.rho-matrix input:focus{outline:none;border-color:var(--teal);box-shadow:0 
 .hps-uraian-wrap{overflow-x:auto;border:1px solid #dde9eb;border-radius:14px;box-shadow:0 2px 8px rgba(16,40,50,.05)}
 table.hps-uraian{border-collapse:separate;border-spacing:0;width:100%;min-width:940px}
 table.hps-uraian thead th{background:#0E7C86;color:#fff;font-weight:800;font-size:10.5px;text-transform:uppercase;letter-spacing:.2px;padding:9px 8px;text-align:center;white-space:nowrap;vertical-align:middle}
-table.hps-uraian thead th.c-ur{text-align:left;min-width:220px}
+/* Kolom Jumlah Total (Rp) dihapus pada tabel input HPS & Lampiran -> lebarnya
+   dialihkan ke kolom Uraian Pekerjaan (td.c-ur tetap width:100%). */
+table.hps-uraian thead th.c-ur{text-align:left;min-width:340px}
 table.hps-uraian tbody td{border-bottom:1px solid #e8f0f1;padding:7px 8px;vertical-align:middle;font-size:12px}
 table.hps-uraian tbody tr:last-child td{border-bottom:none}
 table.hps-uraian tbody tr:nth-child(even){background:#f8fbfc}
@@ -14639,13 +14641,12 @@ function hpsUraianTableHtml(){
       '<td class="c-vol'+clsKUSV+'"><input type="text" inputmode="decimal" data-i="'+i+'" placeholder="0" value="'+fkEsc(it.vol!=null?String(it.vol):'')+'" oninput="hpsOnVol(this)"'+dis1+'></td>'+
       '<td class="c-money'+clsHarga+'"><input type="text" inputmode="numeric" id="hps-hm-'+i+'" data-i="'+i+'" placeholder="Rp" value="'+rupiahInputText(it.hargaMat)+'" oninput="hpsOnHargaMat(this)"'+disH+'></td>'+
       '<td class="c-money'+clsHarga+'"><input type="text" inputmode="numeric" id="hps-hj-'+i+'" data-i="'+i+'" placeholder="Rp" value="'+rupiahInputText(it.hargaJasa)+'" oninput="hpsOnHargaJasa(this)"'+disH+'></td>'+
-      '<td class="c-calc" id="hps-jt-'+i+'">'+hpsRp(hpsItemTotal(it))+'</td>'+
     '</tr>';
   });
   const note='';
   return note+'<div class="hps-uraian-wrap"><table class="hps-uraian"><thead>'+
     '<tr><th class="c-no">No</th>'+(jOn?'<th>Judul</th>':'')+(sOn?'<th>Sub-Judul</th>':'')+'<th class="c-ur">Uraian Pekerjaan</th><th>Sat</th><th>Vol</th>'+
-      '<th>Harga<br>Barang</th><th>Harga<br>Jasa</th><th>Jumlah Total<br>(Rp)</th></tr>'+
+      '<th>Harga<br>Barang</th><th>Harga<br>Jasa</th></tr>'+
     '</thead><tbody>'+rows+'</tbody></table></div>';
 }
 function hpsRecalcRow(i){
@@ -17616,8 +17617,10 @@ document.getElementById('pn-preview-overlay').addEventListener('click',e=>{ if(e
 .spk-narasi-prev i{font-style:italic}
 .spk-narasi-prev b{font-weight:700}
 .spk-narasi-empty{color:#9AA7B2;font-style:italic;font-family:inherit;font-size:12px}
-.spk-kl-pick{display:flex;align-items:center;gap:10px;padding:9px 11px;border:1.5px solid #DfE4E9;border-radius:10px;cursor:pointer;background:#fff;transition:.15s}
-.spk-kl-pick:hover{border-color:#0E7C86}
+/* Pemilihan klausul: tanpa animasi/geser (efek bergetar dihilangkan) */
+.spk-kl-pick{display:flex;align-items:center;gap:10px;padding:9px 11px;border:1.5px solid #DfE4E9;border-radius:10px;cursor:pointer;background:#fff;transition:none;animation:none;transform:none;will-change:auto}
+.spk-kl-pick:hover,.spk-kl-pick:active,.spk-kl-pick:focus,.spk-kl-pick:focus-within{border-color:#0E7C86;transform:none;animation:none;transition:none}
+.spk-kl-pick *,.spk-kl-pick input{transition:none!important;animation:none!important;transform:none!important}
 .spk-kl-pick.on{border-color:#0E7C86;background:#f0f8f9}
 .spk-kl-pick input{width:17px;height:17px;accent-color:#0E7C86;flex:0 0 auto}
 .spk-kl-no{width:22px;height:22px;flex:0 0 auto;border-radius:6px;background:#eef3f7;color:#12303f;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center}
@@ -18284,12 +18287,11 @@ function spkLampTableHtml(){
       '<td class="c-vol"><input type="text" inputmode="decimal" data-i="'+i+'" placeholder="0" value="'+fkEsc(it.vol!=null?String(it.vol):'')+'" oninput="spkLampOnVol(this)"></td>'+
       '<td class="c-money"><input type="text" inputmode="numeric" data-i="'+i+'" placeholder="Rp" value="'+rupiahInputText(it.hargaMat)+'" oninput="spkLampOnHarga(this,\'hargaMat\')"></td>'+
       '<td class="c-money"><input type="text" inputmode="numeric" data-i="'+i+'" placeholder="Rp" value="'+rupiahInputText(it.hargaJasa)+'" oninput="spkLampOnHarga(this,\'hargaJasa\')"></td>'+
-      '<td class="c-calc" id="spk-lamp-jt-'+i+'">'+spkLampRp(spkLampTotal(it))+'</td>'+
     '</tr>';
   });
   return '<div class="hps-uraian-wrap"><table class="hps-uraian"><thead>'+
     '<tr><th class="c-no">No</th><th>Judul</th><th>Sub-Judul</th><th class="c-ur">Uraian Pekerjaan</th><th>Sat</th><th>Vol</th>'+
-      '<th>Harga<br>Barang</th><th>Harga<br>Jasa</th><th>Jumlah Total<br>(Rp)</th></tr>'+
+      '<th>Harga<br>Barang</th><th>Harga<br>Jasa</th></tr>'+
     '</thead><tbody>'+rows+'</tbody></table></div>';
 }
 function spkLampOn(el,key){ const L=spkLamp(); const i=+el.dataset.i; if(L.items[i]) L.items[i][key]=el.value; }
@@ -18699,7 +18701,7 @@ function renderSpkSusun(){
   const stp=(no,label)=> '<button type="button" class="spk-stp'+(spkStep===no?' active':(spkStep>no?' done':''))+'" onclick="spkGoStep('+no+')"><span class="spk-stp-no">'+(spkStep>no?'&#10003;':no)+'</span> '+label+'</button>';
   const stepper =
     '<div class="spk-stepper">'+
-      stp(1,'Data Mail Merge')+
+      stp(1,'Data Kontrak')+
       '<div class="spk-stp-line"></div>'+
       stp(2,'Ubah Klausul Kontrak')+
       '<div class="spk-stp-line"></div>'+
@@ -18711,7 +18713,6 @@ function renderSpkSusun(){
   if(spkStep===1){
     cont.innerHTML =
       stepper+
-      '<div class="spk-step"><span class="spk-step-no">1</span><div class="spk-step-tx"><b>Isi Data Mail Merge</b><span>Data ini otomatis mengisi cover, pembuka, dan seluruh klausul kontrak.</span></div></div>'+
       groupsHtml+
       '<div class="jp-actions" style="justify-content:flex-end;margin-top:4px">'+
         '<button class="btn btn-teal" onclick="spkGoStep(2)">Berikutnya: Ubah Klausul Kontrak <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>'+
@@ -18719,7 +18720,6 @@ function renderSpkSusun(){
   }else if(spkStep===2){
     cont.innerHTML =
       stepper+
-      '<div class="spk-step"><span class="spk-step-no">2</span><div class="spk-step-tx"><b>Ubah Klausul Kontrak</b><span>Kelola pustaka klausul SPK: tambah, ubah lewat template Word (.docx), urutkan, atau non-aktifkan. Klausul aktif akan tampil pada langkah Pilih Klausul.</span></div></div>'+
       '<div id="spk-klausul-content"></div>'+
       '<div class="jp-actions" style="justify-content:space-between;margin-top:4px">'+
         '<button class="btn btn-ghost" onclick="spkGoStep(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 12H5M11 6l-6 6 6 6"/></svg> Kembali</button>'+
@@ -18729,7 +18729,6 @@ function renderSpkSusun(){
   }else if(spkStep===3){
     cont.innerHTML =
       stepper+
-      '<div class="spk-step"><span class="spk-step-no">3</span><div class="spk-step-tx"><b>Pilih Klausul Kontrak</b><span>Centang klausul yang ingin dimasukkan ke dalam SPK. Urutan mengikuti pustaka klausul.</span></div></div>'+
       '<div class="form-card">'+
         '<div class="form-section-title" style="justify-content:space-between">'+
           '<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg> Klausul Terpilih ('+selSet.size+' dari '+aktif.length+')</span>'+
@@ -18744,16 +18743,11 @@ function renderSpkSusun(){
   }else{
     // ---------- Langkah 4: Lampiran ----------
     const L=spkLamp();
-    const src = L.hpsNama
-      ? 'Terisi otomatis dari <b>Perhitungan HPS</b>: <b style="color:var(--teal-dark)">'+fkEsc(L.hpsNama)+'</b>. Harga Barang, Harga Jasa &amp; Jumlah Total diisi manual sesuai harga kontrak.'
-      : 'Isi rincian barang/jasa yang menjadi lampiran SPK. Pilih pekerjaan pada langkah <b>Data Mail Merge</b> agar terisi otomatis dari Perhitungan HPS, atau gunakan template Excel di bawah.';
     cont.innerHTML =
       stepper+
-      '<div class="spk-step"><span class="spk-step-no">4</span><div class="spk-step-tx"><b>Lampiran Kontrak</b><span>'+src+'</span></div></div>'+
       '<div class="form-card">'+
         '<div class="form-section-title">'+FKL_SEC_ICON+' Uraian Pekerjaan <span class="fkl-count-chip">'+L.items.length+' item</span></div>'+
         spkLampTplBarHtml()+
-        spkLampCountFieldHtml()+
         spkLampTableHtml()+
         spkLampSummaryPanelHtml()+
       '</div>'+
@@ -19032,6 +19026,109 @@ function spkDocCss(){
     '.spk-page.spk-flow{height:auto;overflow:visible}'+
   '}';
 }
+/* =========================================================================
+   GAYA DOKUMEN SPK (bagian baru): Cover, Daftar Isi, Kop/Footer berulang,
+   halaman tanda tangan, dan lembar Lampiran. Ditambahkan SETELAH spkDocCss()
+   sehingga menimpa gaya lama bila ada yang bertabrakan.
+   ========================================================================= */
+function spkDocCss2(){
+  const G="'Plus Jakarta Sans','Segoe UI',Arial,sans-serif";
+  return ''+
+  '@page{size:A4 portrait;margin:2.54cm}'+
+  'html,body{background:#fff}'+
+  '.spk-doc{counter-reset:spkcl}'+
+  '.spk-page{page-break-after:always;break-after:page}'+
+  '.spk-page:last-child{page-break-after:auto;break-after:auto}'+
+  /* ---------- COVER ---------- */
+  '.spk-cover{font-family:'+G+';color:#111;display:flex;flex-direction:column;min-height:238mm}'+
+  '.spk-cover .cv-top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}'+
+  '.spk-cover .cv-brand{display:flex;align-items:center;gap:14px}'+
+  '.spk-cover .cv-brand img{width:46px;height:auto;display:block}'+
+  '.spk-cover .cv-org{border-left:1px solid #D5DBE0;padding-left:14px;line-height:1.35}'+
+  '.spk-cover .cv-org span{display:block;font-size:8px;letter-spacing:.18em;color:#8A94A0;font-weight:700}'+
+  '.spk-cover .cv-org b{display:block;font-size:13px;color:#111;font-weight:800}'+
+  '.spk-cover .cv-no{text-align:right;line-height:1.5}'+
+  '.spk-cover .cv-no span{display:block;font-size:8px;letter-spacing:.18em;color:#8A94A0;font-weight:700}'+
+  '.spk-cover .cv-no b{display:block;font-size:11px;color:#111;font-weight:800;letter-spacing:.02em}'+
+  '.spk-cover .cv-no i{display:block;font-style:normal;font-size:9.5px;color:#8A94A0}'+
+  '.spk-cover .cv-rule{border-top:2.5px solid #111;margin:10px 0 0}'+
+  '.spk-cover .cv-rule2{border-top:2.5px solid #111;margin:26px 0 0}'+
+  '.spk-cover .cv-eyebrow{margin-top:34px;font-size:9px;font-weight:800;letter-spacing:.24em;color:#1E6FBF}'+
+  '.spk-cover .cv-title{margin:14px 0 0;font-size:44px;line-height:1.06;font-weight:800;letter-spacing:-.015em;color:#111;max-width:62%}'+
+  '.spk-cover .cv-title span{display:inline}'+
+  '.spk-cover .cv-parties{display:flex;gap:0;margin-top:14px}'+
+  '.spk-cover .cv-parties .p{flex:1;padding:12px 0 12px 0}'+
+  '.spk-cover .cv-parties .p:last-child{border-left:1px solid #D5DBE0;padding-left:26px}'+
+  '.spk-cover .cv-parties .pl{font-size:8px;font-weight:800;letter-spacing:.2em;color:#1E6FBF;margin-bottom:8px}'+
+  '.spk-cover .cv-parties .pn{font-size:13px;font-weight:800;color:#111;line-height:1.3}'+
+  '.spk-cover .cv-parties .ps{font-size:10px;color:#6B7885;margin-top:3px}'+
+  '.spk-cover .cv-spacer{flex:1 1 auto;min-height:14mm}'+
+  '.spk-cover .cv-grid{display:flex;flex-wrap:wrap}'+
+  '.spk-cover .cv-grid .f{flex:0 0 50%;padding:10px 22px 10px 0;border-top:1px solid #D5DBE0}'+
+  '.spk-cover .cv-grid .f:nth-child(even){padding-right:0;padding-left:22px}'+
+  '.spk-cover .fk{font-size:8px;font-weight:800;letter-spacing:.2em;color:#98A2AC}'+
+  '.spk-cover .fv{font-size:11px;font-weight:800;color:#111;margin-top:5px;line-height:1.35}'+
+  '.spk-cover .cv-nilai{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;border-top:1px solid #D5DBE0;padding-top:10px;margin-top:0}'+
+  '.spk-cover .cv-nilai .terb{font-size:9px;color:#6B7885;margin-top:5px}'+
+  '.spk-cover .cv-nilai .r{font-size:24px;font-weight:800;color:#111;white-space:nowrap}'+
+  '.spk-cover .cv-foot{margin-top:16px;font-size:8.6px;color:#8A94A0;line-height:1.6}'+
+  /* ---------- DAFTAR ISI ---------- */
+  '.spk-tocpage{font-family:'+G+';color:#111}'+
+  '.spk-tocpage .toc-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px}'+
+  '.spk-tocpage h1{margin:0;font-size:34px;font-weight:800;letter-spacing:-.02em;color:#111}'+
+  '.spk-tocpage .toc-meta{text-align:right;line-height:1.6}'+
+  '.spk-tocpage .toc-meta b{display:block;font-size:8.5px;font-weight:800;letter-spacing:.2em;color:#2B4A63}'+
+  '.spk-tocpage .toc-meta span{display:block;font-size:8px;font-weight:700;letter-spacing:.14em;color:#7A8794}'+
+  '.spk-tocpage .toc-rule{border-top:2.5px solid #111;margin:14px 0 6px}'+
+  '.spk-toc2 .row{display:flex;align-items:baseline;gap:14px;padding:13px 0;border-bottom:1px solid #E4E8EC;font-size:11px}'+
+  '.spk-toc2 .row .no{flex:0 0 auto;width:22px;font-weight:800;color:#2B6FA8;font-size:11px}'+
+  '.spk-toc2 .row .nm{flex:0 0 auto;font-weight:700;color:#111;max-width:70%}'+
+  '.spk-toc2 .row .nm i{font-style:italic}'+
+  '.spk-toc2 .row .dot{flex:1;border-bottom:1.2px dotted #B9C2CB;transform:translateY(-3px)}'+
+  '.spk-toc2 .row .pg{flex:0 0 auto;font-weight:800;color:#111;min-width:1.4em;text-align:right}'+
+  /* ---------- KOP & FOOTER BERULANG (halaman isi) ---------- */
+  'table.spk-run{width:100%;border-collapse:collapse;border:0;background:transparent}'+
+  'table.spk-run > thead > tr > td,table.spk-run > tbody > tr > td,table.spk-run > tfoot > tr > td{padding:0;border:0;background:transparent}'+
+  '.spk-rhd{display:flex;align-items:center;justify-content:space-between;gap:14px;padding-bottom:8px;border-bottom:2.5px solid #111;margin-bottom:16px;font-family:'+G+'}'+
+  '.spk-rhd .l{display:flex;align-items:center;gap:10px}'+
+  '.spk-rhd img{width:30px;height:auto;display:block}'+
+  '.spk-rhd .o{border-left:1px solid #D5DBE0;padding-left:10px;line-height:1.3}'+
+  '.spk-rhd .o span{display:block;font-size:6.5px;letter-spacing:.18em;color:#8A94A0;font-weight:700}'+
+  '.spk-rhd .o b{display:block;font-size:10px;color:#111;font-weight:800}'+
+  '.spk-rhd .r{text-align:right;line-height:1.4}'+
+  '.spk-rhd .r b{display:block;font-size:9.5px;font-weight:800;color:#111;letter-spacing:.02em}'+
+  '.spk-rhd .r span{display:block;font-size:7.5px;color:#8A94A0;letter-spacing:.06em}'+
+  '.spk-rft{display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:2.5px solid #111;margin-top:16px;padding-top:8px;font-family:'+G+';font-size:8.5px;font-weight:800;color:#111;letter-spacing:.06em}'+
+  '.spk-rft .ln{display:inline-block;width:3.2cm;border-bottom:1px solid #111;margin:0 4px;vertical-align:middle}'+
+  '.spk-rft .c{font-size:7.5px;color:#8A94A0;letter-spacing:.2em}'+
+  /* ---------- ISI: BAB & tanda tangan ---------- */
+  '.spk-bab{text-align:center;font-family:'+G+';font-size:8.5px;font-weight:800;letter-spacing:.24em;color:#1E6FBF;margin:0 0 12px}'+
+  '.spk-signpage{page-break-before:always;break-before:page;padding-top:8mm}'+
+  '.spk-sign-eyebrow{text-align:center;font-family:'+G+';font-size:8.5px;font-weight:800;letter-spacing:.24em;color:#1E6FBF;margin:0 0 24px}'+
+  '.spk-signpage .spk-sign{margin-top:10px}'+
+  /* ---------- LEMBAR LAMPIRAN (dokumen bergaya HPS) ---------- */
+  '.spk-lampsheet{page-break-before:always;break-before:page}'+
+  '.spk-lampsheet .fkl-doc{padding:0;overflow:visible;background:transparent}'+
+  '.spk-lampsheet .fkl-doc-title{font-size:16px}'+
+  /* ---------- PRATINJAU DI LAYAR (lembar A4) ---------- */
+  '@media screen{'+
+    'html,body{background:#54585c;margin:0;padding:24px 0}'+
+    '.spk-doc{margin:0 auto}'+
+    '.spk-page{width:210mm;min-height:297mm;background:#fff;margin:0 auto 22px;padding:2.54cm;box-shadow:0 8px 30px rgba(10,20,28,.34);overflow:hidden}'+
+    '.spk-page.spk-flow{height:auto;overflow:visible}'+
+  '}'+
+  /* ---------- CETAK ---------- */
+  '@media print{'+
+    'html,body{background:#fff;margin:0;padding:0}'+
+    '.spk-page{width:auto;min-height:0;margin:0;padding:0;box-shadow:none}'+
+    '.spk-cover{min-height:238mm}'+
+    '.fkl-print-page{width:auto;min-height:0;margin:0;padding:0;box-shadow:none}'+
+    'table.spk-run > thead{display:table-header-group}'+
+    'table.spk-run > tfoot{display:table-footer-group}'+
+    '.spk-signpage,.spk-rhd,.spk-rft{break-inside:avoid;page-break-inside:avoid}'+
+    '.spk-cl-h{break-after:avoid;page-break-after:avoid}'+
+  '}';
+}
 /* Membungkus penomoran di awal paragraf kl1/kl2 ke dalam <span class="n"> agar
    jarak nomor->teks SERAGAM mengikuti penggaris Word (tab 0,75 cm), baik untuk:
      - nomor TUNGGAL  : "1.", "10.", "a.", "I."
@@ -19124,6 +19221,15 @@ const SPK_ITALIC_TERMS=['GOOD CORPORATE GOVERNANCE','FORCE MAJEURE'];
 function spkFmtJudul(judul){
   let s=fkEsc(String(judul||'').toUpperCase());
   SPK_ITALIC_TERMS.forEach(t=>{ s=s.split(t).join('<i>'+t+'</i>'); });
+  return s;
+}
+/* Judul versi Title Case — dipakai pada Daftar Isi (mengikuti desain cover/daftar isi) */
+function spkFmtJudulTitle(judul){
+  let s=fkEsc(spkTitleCase(String(judul||'').toLowerCase()));
+  SPK_ITALIC_TERMS.forEach(t=>{
+    const tc=spkTitleCase(t.toLowerCase());
+    s=s.split(tc).join('<i>'+tc+'</i>');
+  });
   return s;
 }
 /* ================= EDITOR WYSIWYG BERGAYA DOKUMEN SPK =================
@@ -21040,63 +21146,243 @@ function spkNarasiOpenEditor(k, label){
     }
   });
 }
-function spkDocHtml(data, klausul){
-  const ctx=spkBuildCtx(data||{});
+/* =========================================================================
+   PENOMORAN KLAUSUL DINAMIS
+   Bila sebuah klausul berpindah posisi (mis. klausul 11 menjadi klausul 10),
+   maka:
+     - nomor butir di dalamnya   : 11.1  -> 10.1   (termasuk 11.1.1 -> 10.1.1)
+     - rujukan di dalam kalimat  : "pada butir 11.1" -> "pada butir 10.1"
+   Nomor klausul lama dideteksi dari awalan butir yang paling banyak dipakai di
+   dalam isi klausul, lalu seluruh kemunculannya diganti dengan nomor barunya.
+   Angka lain (mis. Rp11.000.000 atau tanggal) tidak ikut berubah.
+   ========================================================================= */
+function spkRenumberKlausul(html, newNo){
+  var src=String(html||'');
+  if(!src || !newNo) return src;
+  var box=document.createElement('div'); box.innerHTML=src;
+  /* 1) deteksi nomor klausul lama dari butir "X.Y" pada awal paragraf */
+  var counts={}, blocks=box.querySelectorAll('p,div'), i, t, m;
+  for(i=0;i<blocks.length;i++){
+    t=String(blocks[i].textContent||'').replace(/\s+/g,' ').trim();
+    m=/^(\d{1,2})\.(\d{1,2})(?!\d)/.exec(t);
+    if(m) counts[m[1]]=(counts[m[1]]||0)+1;
+  }
+  var oldNo='', best=0;
+  for(var k in counts){ if(counts[k]>best){ best=counts[k]; oldNo=k; } }
+  if(!oldNo || String(oldNo)===String(newNo)) return src;
+  /* 2) ganti "oldNo." -> "newNo." hanya pada pola nomor butir/rujukan butir */
+  var re=new RegExp('(^|[^0-9.,A-Za-z])'+oldNo+'\\.(\\d{1,2})(?!\\d)','g');
+  var w=document.createTreeWalker(box, NodeFilter.SHOW_TEXT, null, false), n, v;
+  while((n=w.nextNode())){
+    v=n.nodeValue;
+    if(v && v.indexOf(oldNo+'.')>=0) n.nodeValue=v.replace(re, '$1'+newNo+'.$2');
+  }
+  return box.innerHTML;
+}
+/* =========================================================================
+   DOKUMEN SPK — SATU KESATUAN (5 bagian)
+     1) Cover Surat Perintah Kerja
+     2) Daftar Isi
+     3) Isi kontrak (kop & footer berulang; halaman tanda tangan 2 rangkap)
+     4) Cover Lampiran SPK  (cover yang sama, judul "Lampiran SPK")
+     5) Isi Lampiran        (format sama dengan dokumen Perhitungan HPS,
+                             "Rencana Anggaran Biaya" -> "Nilai Pekerjaan")
+   ========================================================================= */
+const SPK_ALAMAT_1='Jl. Abdullah Soulissa No 1, Masohi, Kec. Kota Masohi';
+const SPK_ALAMAT_2='Kab Maluku Tengah Prov. Maluku 97513  ·  www.pln.co.id';
+
+/* ---------- Cover (dipakai untuk Cover SPK & Cover Lampiran) ---------- */
+function spkCoverHtml(data, ctx, judulBaris){
   const esc=fkEsc;
-  const romanTitle = (s)=> String(s||'').toUpperCase();
-  // COVER
-  const cvRow=(k,v,hi)=> '<tr><td class="k">'+esc(k)+'</td><td class="v'+(hi?' hi':'')+'">'+esc(v||'—')+'</td></tr>';
-  const nilaiCover = (ctx.nilai_rp||'') + (ctx.nilai_terbilang? ' ('+ctx.nilai_terbilang+')':'');
-  const sumberCover = (ctx.sumber_dana_no||'') + (ctx.sumber_dana_tgl_pjg? ', '+ctx.sumber_dana_tgl_pjg:'');
-  const cover=
-    '<section class="spk-page"><div class="spk-cv">'+
-      (SPK_LOGO_SRC?'<img src="'+SPK_LOGO_SRC+'" alt="PLN">':'')+
-      '<div class="t">SURAT PERINTAH KERJA</div>'+
-      '<div class="s">'+esc(ctx.jenis_pengadaan||'PENGADAAN LANGSUNG')+'</div>'+
-      '<div class="lbl">DARI</div><div class="org">'+esc(ctx.p1_nama||'')+'</div>'+
-      '<div class="lbl">KEPADA</div><div class="org">'+esc(ctx.p2_nama||'')+'</div>'+
-      '<table>'+
-        cvRow('Nomor Kontrak', data.nomor_kontrak, true)+
-        cvRow('Tanggal', ctx.tanggal_kontrak_pjg)+
-        cvRow('Pekerjaan', data.nama_pekerjaan)+
-        cvRow('Lokasi', data.lokasi_pekerjaan)+
-        cvRow('Nilai Pekerjaan', nilaiCover, true)+
-        cvRow('Pelaksana', data.pelaksana)+
-        cvRow('Sumber Dana', sumberCover)+
-        cvRow('Akhir Pekerjaan', ctx.akhir_pekerjaan_pjg)+
-      '</table>'+
-    '</div></section>';
-  // Kop halaman isi (dipertahankan seperti desain sebelumnya)
-  const hd=
-    '<div class="spk-hd"><div class="l">'+(SPK_LOGO_SRC?'<img src="'+SPK_LOGO_SRC+'" alt="PLN">':'')+
-      '<div class="o"><b>PT PLN (PERSERO)</b><span>Unit Pelaksana Pelayanan Pelanggan Masohi</span></div></div>'+
-      '<div class="r"><b>SPK No. '+esc(data.nomor_kontrak||'')+'</b><br>'+esc(ctx.tanggal_kontrak_pjg||'')+'</div></div>';
-  // DAFTAR ISI (dipertahankan seperti desain sebelumnya)
-  const tocRows = (klausul||[]).map((k,i)=>
-    '<div class="row"><span class="nm"><span class="no">'+(i+1)+'.</span>'+spkFmtJudul(k.judul)+'</span><span class="dot"></span><span class="pg">'+esc(k.hal||k.halaman||'')+'</span></div>'
-  ).join('');
-  const toc=
-    '<section class="spk-page">'+hd+'<div class="spk-toc"><h2>DAFTAR ISI</h2>'+tocRows+'</div></section>';
-  // ISI: preamble + klausul + tanda tangan
+  const logo = SPK_LOGO_SRC? '<img src="'+SPK_LOGO_SRC+'" alt="PLN">' : '';
+  const unit = ctx.p1_nama_singkat || 'Unit Pelaksana Pelayanan Pelanggan Masohi';
+  const fld=(k,v)=>'<div class="f"><div class="fk">'+esc(k)+'</div><div class="fv">'+esc(v||'—')+'</div></div>';
+  const judulHtml = String(judulBaris||'').split(' ').map(w=>'<span>'+esc(w)+'</span>').join(' ');
+  return ''+
+  '<section class="spk-page spk-cover">'+
+    '<div class="cv-top">'+
+      '<div class="cv-brand">'+logo+
+        '<div class="cv-org"><span>PT PLN (PERSERO)</span><b>UP3 Masohi</b></div>'+
+      '</div>'+
+      '<div class="cv-no"><span>NOMOR KONTRAK</span><b>'+esc(data.nomor_kontrak||'—')+'</b>'+
+        '<i>'+esc(ctx.tanggal_kontrak_pjg||'')+'</i></div>'+
+    '</div>'+
+    '<div class="cv-rule"></div>'+
+    '<div class="cv-eyebrow">PENGADAAN LANGSUNG</div>'+
+    '<h1 class="cv-title">'+judulHtml+'</h1>'+
+    '<div class="cv-rule2"></div>'+
+    '<div class="cv-parties">'+
+      '<div class="p"><div class="pl">DARI</div><div class="pn">PT PLN (Persero)</div><div class="ps">'+esc(unit)+'</div></div>'+
+      '<div class="p"><div class="pl">KEPADA</div><div class="pn">'+esc(ctx.p2_nama_hormat||'—')+'</div></div>'+
+    '</div>'+
+    '<div class="cv-spacer"></div>'+
+    '<div class="cv-grid">'+
+      fld('PEKERJAAN', data.nama_pekerjaan)+
+      fld('LOKASI', data.lokasi_pekerjaan)+
+      fld('PELAKSANA', data.pelaksana)+
+      fld('AKHIR PEKERJAAN', ctx.akhir_pekerjaan_pjg)+
+      fld('SUMBER ANGGARAN', ctx.sumber_dana_no)+
+      fld('TANGGAL ANGGARAN', ctx.sumber_dana_tgl_pjg)+
+    '</div>'+
+    '<div class="cv-nilai">'+
+      '<div class="l"><div class="fk">NILAI PEKERJAAN</div>'+
+        '<div class="terb">('+esc(ctx.nilai_terbilang||'')+')</div></div>'+
+      '<div class="r">'+esc(ctx.nilai_rp||'')+'</div>'+
+    '</div>'+
+    '<div class="cv-foot"><div>'+esc(SPK_ALAMAT_1)+'</div><div>'+esc(SPK_ALAMAT_2)+'</div></div>'+
+    '<div class="cv-rule"></div>'+
+  '</section>';
+}
+
+/* ---------- Daftar Isi ---------- */
+function spkTocHtml(data, klausul){
+  const esc=fkEsc;
+  const rows=(klausul||[]).map((k,i)=>{
+    const no=(i+1)<10 ? ('0'+(i+1)) : String(i+1);
+    return '<div class="row"><span class="no">'+no+'</span>'+
+      '<span class="nm">'+spkFmtJudulTitle(k.judul)+'</span>'+
+      '<span class="dot"></span><span class="pg">—</span></div>';
+  }).join('');
+  return ''+
+  '<section class="spk-page spk-tocpage">'+
+    '<div class="toc-head">'+
+      '<h1>Daftar Isi</h1>'+
+      '<div class="toc-meta"><b>SURAT PERINTAH KERJA</b><span>'+esc(data.nomor_kontrak||'')+'</span></div>'+
+    '</div>'+
+    '<div class="toc-rule"></div>'+
+    '<div class="spk-toc2">'+rows+'</div>'+
+  '</section>';
+}
+
+/* ---------- Kop & footer berulang pada halaman isi ---------- */
+function spkRunHeadHtml(data){
+  const esc=fkEsc;
+  const logo = SPK_LOGO_SRC? '<img src="'+SPK_LOGO_SRC+'" alt="PLN">' : '';
+  return '<div class="spk-rhd">'+
+    '<div class="l">'+logo+'<div class="o"><span>PT PLN (PERSERO)</span><b>UP3 Masohi</b></div></div>'+
+    '<div class="r"><b>SURAT PERINTAH KERJA</b><span>'+esc(data.nomor_kontrak||'')+'</span></div>'+
+  '</div>';
+}
+function spkRunFootHtml(){
+  return '<div class="spk-rft">'+
+    '<div class="l">PIHAK PERTAMA <span class="ln"></span></div>'+
+    '<div class="c">UP3 MASOHI</div>'+
+    '<div class="r"><span class="ln"></span> PIHAK KEDUA</div>'+
+  '</div>';
+}
+
+/* ---------- Blok tanda tangan (dicetak 2 rangkap) ---------- */
+function spkSignBlockHtml(ctx, rangkap){
+  const esc=fkEsc;
+  return '<div class="spk-signpage">'+
+    '<div class="spk-sign-eyebrow">TANDA TANGAN PARA PIHAK · RANGKAP '+rangkap+'</div>'+
+    '<table class="spk-sign"><tr>'+
+      '<td><div class="role">PIHAK PERTAMA</div><div>'+esc(ctx.p1_nama_singkat||'PT PLN (Persero)')+'</div>'+
+        '<div class="nm">'+esc(ctx.p1_wakil||'')+'</div><div class="jab">'+esc(ctx.p1_jabatan||'')+'</div></td>'+
+      '<td><div class="role">PIHAK KEDUA</div><div>'+esc(ctx.p2_nama_hormat||'')+'</div>'+
+        '<div class="nm">'+esc(ctx.p2_wakil||'')+'</div><div class="jab">'+esc(ctx.p2_jabatan||'')+'</div></td>'+
+    '</tr></table>'+
+  '</div>';
+}
+
+/* ---------- Lampiran: dokumen bergaya Perhitungan HPS ---------- */
+function spkLampOfData(data){
+  const L=(data && data.__lampiran && typeof data.__lampiran==='object') ? data.__lampiran : {items:[]};
+  const items=Array.isArray(L.items)?L.items:[];
+  return items.map(it=>spkLampNormItem(it));
+}
+function spkLampHpsState(data){
+  const items=spkLampOfData(data);
+  const dp=(typeof records_dp!=='undefined' && Array.isArray(records_dp))
+    ? records_dp.find(r=>String(r.id)===String(data.__dpId)) : null;
+  const dinfo=(dp && dp.state && dp.state.info) ? dp.state.info : {};
+  const anyJudul=items.some(it=>String(it.judul||'').trim()!=='');
+  const anySub=items.some(it=>String(it.subjudul||'').trim()!=='');
+  return {
+    info:{
+      nama: data.nama_pekerjaan||'', lokasi: data.lokasi_pekerjaan||'',
+      nilai: spkNum(data.nilai_pekerjaan),
+      no_anggaran: data.no_anggaran||'', tgl_anggaran: data.tgl_anggaran||'',
+      metode: dinfo.metode||'', pengguna: dinfo.pengguna || data.nama_pengguna || '',
+      pejabat: dinfo.pejabat||'', tgl_hps: data.tanggal_kontrak||''
+    },
+    jumlahItem: items.length||1,
+    judulOn: anyJudul?'Ya':'Tidak', judulNum:'',
+    subjudulOn: anySub?'Ya':'Tidak', subjudulNum:'',
+    items: items.length?items:[spkLampNormItem({})]
+  };
+}
+/* Memakai pembangun dokumen HPS agar hasilnya PERSIS sama, lalu:
+   - judul dokumen  -> LAMPIRAN SURAT PERINTAH KERJA
+   - nomor dokumen  -> nomor kontrak
+   - "Rencana Anggaran Biaya" -> "Nilai Pekerjaan" */
+function spkLampiranDocInner(data){
+  let html='';
+  const sv = (typeof hpsPreviewState!=='undefined') ? hpsPreviewState : null;
+  try{
+    hpsPreviewState = spkLampHpsState(data);
+    html = hpsBuildDocHtml();
+  }catch(e){ console.error(e); html='<div class="fkl-doc"><p>Lampiran belum dapat ditampilkan.</p></div>'; }
+  finally{ hpsPreviewState = sv; }
+  html = html.replace('HARGA PERKIRAAN SENDIRI (HPS)', 'LAMPIRAN SURAT PERINTAH KERJA');
+  html = html.replace(/<div class="fkl-doc-docno">[\s\S]*?<\/div>/,
+    '<div class="fkl-doc-docno">'+fkEsc(data.nomor_kontrak||'')+'</div>');
+  html = html.replace('>Rencana Anggaran Biaya<', '>Nilai Pekerjaan<');
+  return html;
+}
+
+/* ---------- Skrip kecil: mengisi nomor halaman pada Daftar Isi ---------- */
+function spkTocScript(){
+  return '<script>(function(){function run(){try{'+
+    'var pr=document.createElement("div");pr.style.cssText="position:absolute;visibility:hidden;height:246.2mm";'+
+    'document.body.appendChild(pr);var ph=pr.offsetHeight;pr.parentNode.removeChild(pr);'+
+    'var flow=document.getElementById("spk-flow");if(!flow)return;'+
+    'var hd=flow.querySelector(".spk-rhd"),ft=flow.querySelector(".spk-rft");'+
+    'var avail=ph-((hd?hd.offsetHeight:0)+(ft?ft.offsetHeight:0)+18);if(avail<120)return;'+
+    'var base=3,top0=flow.getBoundingClientRect().top;'+
+    'var cls=flow.querySelectorAll(".spk-clause"),pgs=document.querySelectorAll(".spk-toc2 .pg");'+
+    'for(var i=0;i<cls.length;i++){var off=cls[i].getBoundingClientRect().top-top0;'+
+    'var pg=base+Math.floor(off/avail);if(pgs[i])pgs[i].textContent=String(pg);}'+
+    '}catch(e){}}if(document.readyState==="complete")run();else window.addEventListener("load",run);})();<\/script>';
+}
+
+function spkDocHtml(data, klausul){
+  data=data||{};
+  const ctx=spkBuildCtx(data);
+  const esc=fkEsc;
+  // 1) Cover SPK
+  const cover=spkCoverHtml(data, ctx, 'Surat Perintah Kerja');
+  // 2) Daftar Isi
+  const toc=spkTocHtml(data, klausul);
+  // 3) Isi kontrak (kop + footer berulang tiap halaman)
   const preamble = spkNumberFix(spkTidyKeyValue(spkMerge(SPK_PREAMBLE_TPL, ctx)));
   const clausesHtml = (klausul||[]).map((k,i)=>
     '<div class="spk-clause"><div class="spk-cl-h"><span class="n'+((i+1)>=10?' r':'')+'"></span>'+spkFmtJudul(k.judul)+'</div>'+
-    '<div class="spk-cl">'+spkNumberFix(spkTidyKeyValue(spkMerge(k.isi||'', ctx)))+'</div></div>'
+    '<div class="spk-cl">'+spkNumberFix(spkTidyKeyValue(spkMerge(spkRenumberKlausul(k.isi||'', i+1), ctx)))+'</div></div>'
   ).join('');
-  const sign=
-    '<table class="spk-sign"><tr>'+
-      '<td><div class="role">PIHAK PERTAMA</div><div>'+esc(ctx.p1_nama_singkat||'PT PLN (Persero)')+'</div><div class="nm">'+esc(ctx.p1_wakil||'')+'</div><div class="jab">'+esc(ctx.p1_jabatan||'')+'</div></td>'+
-      '<td><div class="role">PIHAK KEDUA</div><div>'+esc(ctx.p2_nama_hormat||'')+'</div><div class="nm">'+esc(ctx.p2_wakil||'')+'</div><div class="jab">'+esc(ctx.p2_jabatan||'')+'</div></td>'+
-    '</tr></table>';
+  const isiBody=
+    '<div class="spk-bab">BAB I &middot; PARA PIHAK</div>'+
+    '<div class="spk-cl">'+preamble+'</div>'+
+    clausesHtml+
+    spkSignBlockHtml(ctx,'1')+
+    spkSignBlockHtml(ctx,'2');
   const isi=
-    '<section class="spk-page spk-flow">'+hd+
-      '<div class="spk-title">SURAT PERINTAH KERJA</div>'+
-      '<div class="spk-subno">'+esc(data.nomor_kontrak||'')+'</div>'+
-      '<div class="spk-cl">'+preamble+'</div>'+
-      clausesHtml+
-      sign+
+    '<section class="spk-page spk-flow" id="spk-flow">'+
+      '<table class="spk-run"><thead><tr><td>'+spkRunHeadHtml(data)+'</td></tr></thead>'+
+      '<tbody><tr><td>'+isiBody+'</td></tr></tbody>'+
+      '<tfoot><tr><td>'+spkRunFootHtml()+'</td></tr></tfoot></table>'+
     '</section>';
-  return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><title>&#8203;</title><style>'+spkDocCss()+'</style></head><body><div class="spk-doc">'+cover+toc+isi+'</div></body></html>';
+  // 4) Cover Lampiran + 5) Isi Lampiran
+  const coverLamp=spkCoverHtml(data, ctx, 'Lampiran SPK');
+  const lampiran='<section class="spk-page spk-flow spk-lampsheet">'+spkLampiranDocInner(data)+'</section>';
+
+  return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><title>&#8203;</title><style>'+
+    (typeof fklDocBaseCss==='function'?fklDocBaseCss():'')+
+    (typeof hpsExtraDocCss==='function'?hpsExtraDocCss():'')+
+    spkDocCss()+spkDocCss2()+
+    '</style></head><body><div class="spk-doc">'+
+      cover+toc+isi+coverLamp+lampiran+
+    '</div>'+spkTocScript()+'</body></html>';
 }
 
 /* ---------- Pratinjau & Cetak ----------
@@ -22334,8 +22620,10 @@ function spkKlausulView(id){
   const k=records_klausul.find(x=>String(x.id)===String(id)); if(!k) return;
   let ctx={};
   try{ ctx=spkBuildCtx((spkState&&spkState.data)||{}); }catch(e){}
+  // nomor klausul mengikuti posisinya di pustaka -> butir & rujukan ikut menyesuaikan
+  const noKl=(records_klausul.findIndex(x=>String(x.id)===String(id))+1)||1;
   let inner='';
-  try{ inner=spkNumberFix(spkTidyKeyValue(spkMerge(k.isi||'', ctx))); }
+  try{ inner=spkNumberFix(spkTidyKeyValue(spkMerge(spkRenumberKlausul(k.isi||'', noKl), ctx))); }
   catch(e){ inner=String(k.isi||''); }
   let ov=document.getElementById('spk-klausul-view-ov');
   if(!ov){ ov=document.createElement('div'); ov.id='spk-klausul-view-ov'; ov.className='spk-ov'; document.body.appendChild(ov);
