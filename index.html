@@ -3134,7 +3134,7 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
              pengelolaan klausul kini menjadi langkah dalam Penyusunan Kontrak. -->
         <button class="topnav-link" data-view="spk-view" data-role="admin" onclick="openSpkView()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></svg>
-          Pembuatan Kontrak
+          Susun Kontrak
         </button>
 
       </nav>
@@ -13825,6 +13825,8 @@ const DP_INFO_FIELDS = [
   {key:'tgl_anggaran', label:'Tgl. Anggaran',             type:'date'},
   {key:'jenis_anggaran',label:'Jenis Anggaran',           type:'select', options:['Operasi','Investasi']},
   {key:'metode',       label:'Metode Pengadaan',          type:'select', options:PNW_METODE},
+  /* Bidang Pelaksana — opsi sama persis dengan Monitoring (BIDANG_OPTS) */
+  {key:'bidang_pelaksana', label:'Bidang Pelaksana',      type:'select', span:2, options:BIDANG_OPTS},
   {key:'pengguna',     label:'Nama Pengguna (Manager)',            type:'text', span:2},
   {key:'pejabat',      label:'Nama Pejabat Pelaksana Pengadaan',   type:'text', span:2}
 ];
@@ -17894,6 +17896,13 @@ const SPK_DEF_MAKSUD="Adapun maksud dan tujuan dilaksanakannya pekerjaan ini ada
 /* Skema field mail-merge — mengikuti Field Kontrak (Excel): 5 bidang.
    Semua nilai dikosongkan (def:''). Field otomatis (auto) tampil read-only
    & terisi sendiri; "Perubahan?" dropdown; field SK terkunci bila Perubahan≠Ya. */
+/* Teks bawaan (default) Rincian Akta Pendirian & Rincian Akta Perubahan.
+   Tetap dapat disunting bebas oleh pengguna pada form Data Mail Merge. */
+const SPK_DEF_AKTA_PENDIRIAN = 'Akta Notaris Nomor: (no. akta..) tanggal (tgl. akta...) dibuat dihadapan Notaris (nama notaris...), yang disahkan berdasarkan Surat Keputusan Menteri Hukum dan Hak Asasi Manusia Nomor: (no. SK...) tanggal (tgl SK...) beserta Akta-akta Perubahannya';
+const SPK_DEF_AKTA_PERUBAHAN = 'berdasarkan Akta Notaris Nomor: (no. akta...) tanggal (tgl. akta...) dibuat dihadapan (nama notaris...), yang disahkan berdasarkan Surat Keputusan Menteri Hukum dan Hak Asasi Manusia Nomor: (no. SK...) tanggal (tgl. SK...)';
+/* Field SK Pimpinan Unit — dipakai untuk fitur "default = data terakhir disimpan" */
+const SPK_SK_KEYS = ['nama_pengguna','jabatan_pengguna','no_sk','nama_unit','singkatan_unit','lokasi_unit'];
+
 const SPK_FIELD_GROUPS = [
   { sec:'Informasi Pengadaan', fields:[
     {k:'nama_pekerjaan', l:'Nama Pekerjaan', t:'text', span:2, def:''},
@@ -17944,8 +17953,8 @@ const SPK_FIELD_GROUPS = [
     {k:'pemilik_rekening', l:'Pemilik Rekening', t:'text', span:2, def:''},
     {k:'no_penawaran_penyedia', l:'No. Penawaran', t:'text', span:2, def:''},
     {k:'tgl_penawaran', l:'Tgl. Penawaran', t:'date', def:''},
-    {k:'akta_pendirian', l:'Rincian Akta Pendirian', t:'textarea', span:2, def:''},
-    {k:'akta_perubahan', l:'Rincian Akta Perubahan', t:'textarea', span:2, def:''},
+    {k:'akta_pendirian', l:'Rincian Akta Pendirian', t:'textarea', span:2, def:SPK_DEF_AKTA_PENDIRIAN},
+    {k:'akta_perubahan', l:'Rincian Akta Perubahan', t:'textarea', span:2, def:SPK_DEF_AKTA_PERUBAHAN},
   ]},
   { sec:'Pengendali Pekerjaan', fields:[
     {k:'jabatan_direksi', l:'Jabatan Direksi Pekerjaan', t:'text', span:2, def:''},
@@ -18129,9 +18138,33 @@ async function spkInit(){ await refreshDataKlausul(); await refreshDataSpk(); tr
 let spkEditId=null;
 let spkState=null;
 let spkStep=1;
+/* SK Pimpinan Unit — ambil data dari kontrak TERAKHIR DISIMPAN (records_spk urut
+   terbaru lebih dulu). Dipakai sebagai nilai bawaan pada kontrak baru sehingga
+   tidak perlu mengetik ulang; hanya diubah bila "Perubahan?" = Ya. */
+function spkLastSkData(){
+  const out={};
+  const list=(typeof records_spk!=='undefined' && Array.isArray(records_spk))?records_spk:[];
+  for(let i=0;i<list.length;i++){
+    const d=(list[i] && list[i].data && typeof list[i].data==='object')?list[i].data:null;
+    if(!d) continue;
+    const ada=SPK_SK_KEYS.some(k=>String(d[k]||'').trim()!=='');
+    if(!ada) continue;
+    SPK_SK_KEYS.forEach(k=>{ out[k]=d[k]!=null?d[k]:''; });
+    return out;
+  }
+  return out;
+}
+/* Terapkan nilai bawaan SK Pimpinan Unit (data terakhir disimpan) ke sebuah objek data */
+function spkApplyLastSk(data){
+  const last=spkLastSkData();
+  SPK_SK_KEYS.forEach(k=>{ if(last[k]!=null && String(last[k]).trim()!=='') data[k]=last[k]; });
+  return data;
+}
 function spkBlankState(){
   const data={};
   SPK_FIELDS_FLAT.forEach(f=>{ data[f.k]= (f.def!=null? f.def : ''); });
+  // SK Pimpinan Unit: default = data terakhir disimpan
+  spkApplyLastSk(data);
   // default: semua klausul aktif terpilih
   const sel=records_klausul.filter(k=>k.aktif!==false).map(k=>String(k.id));
   return { data:data, sel:sel };
@@ -18401,6 +18434,44 @@ function spkCariHps(dpId, nama){
   }
   return rec;
 }
+/* ---------- Tautan ke PENETAPAN NOMOR ----------
+   Nomor & tanggal BA Pembukaan Penawaran, BA Evaluasi Penawaran, serta BA
+   Klarifikasi dan Negosiasi diambil PERSIS dari nomor yang sudah ditetapkan pada
+   menu Penetapan > Ambil Nomor (dicocokkan berdasarkan Nama Pekerjaan).
+   Bila ditemukan, field-field tersebut terisi otomatis dan DIKUNCI. */
+const SPK_PN_MAP = [
+  {no:'no_bapp', tgl:'tgl_bapp', keys:['BAPP','T_BAPP','T_BAPP_S1']},
+  {no:'no_bae',  tgl:'tgl_bae',  keys:['BAE','T_BAEP','T_BAEP_S1','T_BAEP_S2']},
+  {no:'no_bakn', tgl:'tgl_bakn', keys:['BAKN']}
+];
+function spkPnDocs(nama){
+  const key=String(nama||'').trim().toLowerCase();
+  if(!key) return [];
+  const rows=(typeof records_penetapan!=='undefined' && Array.isArray(records_penetapan))?records_penetapan:[];
+  let docs=[];
+  rows.filter(r=>String(r.nama_pekerjaan||'').trim().toLowerCase()===key)
+      .forEach(r=>{ if(Array.isArray(r.dokumen)) docs=docs.concat(r.dokumen); });
+  return docs;
+}
+/* Isi & kunci field BA dari Penetapan Nomor. Mengembalikan jumlah field terisi. */
+function spkApplyPenetapan(nama){
+  const d=spkState.data;
+  const docs=spkPnDocs(nama);
+  const lock=[];
+  SPK_PN_MAP.forEach(m=>{
+    let doc=null;
+    for(let i=0;i<m.keys.length && !doc;i++) doc=docs.find(x=>String(x.key)===m.keys[i])||null;
+    if(!doc) return;
+    if(doc.no){ d[m.no]=doc.no; lock.push(m.no); }
+    if(doc.tgl_terbit){ d[m.tgl]=doc.tgl_terbit; lock.push(m.tgl); }
+  });
+  d.__pnLock=lock;
+  return lock.length;
+}
+function spkPnLocked(k){
+  const d=(spkState&&spkState.data)||{};
+  return Array.isArray(d.__pnLock) && d.__pnLock.indexOf(k)>=0;
+}
 async function spkApplyDp(rec){
   if(!spkState) spkState=spkBlankState();
   const d=spkState.data;
@@ -18414,6 +18485,11 @@ async function spkApplyDp(rec){
   if(info.no_anggaran) d.no_anggaran=info.no_anggaran;
   if(info.tgl_anggaran) d.tgl_anggaran=info.tgl_anggaran;
   if(info.jenis_anggaran) d.jenis_anggaran=info.jenis_anggaran;
+  if(info.bidang_pelaksana) d.pelaksana=info.bidang_pelaksana;
+  // Nomor & tanggal BA (Pembukaan, Evaluasi, Klarifikasi & Negosiasi) dari Penetapan Nomor
+  let pnCount=0;
+  try{ await refreshDataPenetapan(); }catch(e){}
+  try{ pnCount=spkApplyPenetapan(d.__dpNama); }catch(e){ console.error(e); }
   // Tarik Lampiran dari Perhitungan HPS (tanpa harga)
   try{ await refreshDataHps(); }catch(e){}
   const hpsRec=spkCariHps(d.__dpId, d.__dpNama);
@@ -18434,6 +18510,8 @@ async function spkApplyDp(rec){
     L.hpsId=''; L.hpsNama='';
     toast('Pekerjaan diterapkan. Belum ada data HPS untuk pekerjaan ini — isi Lampiran manual.','warn');
   }
+  if(pnCount) toast('Nomor & tanggal BA terisi otomatis dari Penetapan Nomor (terkunci)','ok');
+  else toast('Belum ada nomor BA pada Penetapan untuk pekerjaan ini — isi manual','warn');
   renderSpkSusun();
 }
 /* Batalkan pilihan: tautan dilepas, isian yang sudah diketik TIDAK dihapus */
@@ -18441,6 +18519,7 @@ function spkLepasDp(){
   if(!spkState) return;
   const d=spkState.data;
   delete d.__dpId; delete d.__dpNama;
+  delete d.__pnLock;                       // field BA dari Penetapan kembali terbuka
   const L=spkLamp(); L.hpsId=''; L.hpsNama='';
   renderSpkSusun();
   toast('Pilihan pekerjaan dibatalkan (isian tetap dipertahankan)','ok');
@@ -18448,7 +18527,12 @@ function spkLepasDp(){
 
 /* ================= HALAMAN: PENYUSUNAN KONTRAK ================= */
 function openSpkSusun(){ if(!spkState) spkState=spkBlankState(); spkStep=1; renderSpkSusun(); showView('spk-susun'); }
-function spkNewKontrak(){ spkEditId=null; spkState=spkBlankState(); spkStep=1; renderSpkSusun(); showView('spk-susun'); }
+async function spkNewKontrak(){
+  spkEditId=null;
+  // segarkan daftar kontrak agar default SK Pimpinan Unit = data TERAKHIR disimpan
+  try{ await refreshDataSpk(); }catch(e){}
+  spkState=spkBlankState(); spkStep=1; renderSpkSusun(); showView('spk-susun');
+}
 
 /* Nilai field otomatis (read-only) berdasarkan data induk */
 function spkJenisPerusahaan(nama){
@@ -18505,16 +18589,25 @@ function spkFieldInput(f){
       '<input type="text" id="spk-fld-'+f.k+'" value="'+fkEsc(av)+'" readonly disabled>'+
       SPK_LOCK_OVL+'</div>';
   }
+  // Field yang terisi otomatis dari Penetapan Nomor (No./Tgl. BA) -> terkunci
+  if(spkPnLocked(f.k)){
+    const tp=(f.t==='date')?'date':'text';
+    return '<div class="field locked"'+span+'><label>'+spkLbl(f)+'</label>'+
+      '<input type="'+tp+'" id="spk-fld-'+f.k+'" value="'+fkEsc(v||'')+'" readonly disabled>'+
+      SPK_LOCK_OVL+'</div>';
+  }
   if(f.t==='select'){
     const opts=(f.opts||[]).map(o=>'<option value="'+fkEsc(o)+'"'+((v===o)?' selected':'')+'>'+fkEsc(o)+'</option>').join('');
+    const fn = (f.k==='perubahan') ? 'spkSetPerubahan(this.value)' : 'spkSet(\''+f.k+'\',this.value);renderSpkSusun()';
     return '<div class="field"'+span+'><label>'+spkLbl(f)+'</label>'+
-      '<select onchange="spkSet(\''+f.k+'\',this.value);renderSpkSusun()"><option value="">— pilih —</option>'+opts+'</select></div>';
+      '<select onchange="'+fn+'"><option value="">— pilih —</option>'+opts+'</select></div>';
   }
   if(f.lockedBy){
     const locked = String(spkState.data[f.lockedBy]||'')!=='Ya';
     if(locked){
+      // Tampilkan nilai bawaan (data terakhir disimpan) dalam keadaan terkunci
       return '<div class="field locked"'+span+'><label>'+spkLbl(f)+'</label>'+
-        '<input type="text" id="spk-fld-'+f.k+'" value="" readonly disabled>'+
+        '<input type="text" id="spk-fld-'+f.k+'" value="'+fkEsc(v||'')+'" readonly disabled>'+
         SPK_LOCK_OVL+'</div>';
     }
     return '<div class="field"'+span+'><label>'+spkLbl(f)+'</label>'+
@@ -18544,6 +18637,16 @@ function spkFieldInput(f){
   return '<div class="field"'+span+'><label>'+spkLbl(f)+'</label><input type="text" value="'+fkEsc(v||'')+'" oninput="spkSet(\''+f.k+'\',this.value)"></div>';
 }
 function spkSet(k,v){ if(!spkState) return; spkState.data[k]=v; spkRefreshAuto(); }
+/* "Perubahan?" pada SK Pimpinan Unit:
+   - Ya    -> field SK dibuka untuk diisi/diubah
+   - Tidak -> field SK dikunci & dikembalikan ke data terakhir disimpan (default) */
+function spkSetPerubahan(v){
+  if(!spkState) return;
+  spkState.data.perubahan=v;
+  if(String(v)!=='Ya') spkApplyLastSk(spkState.data);
+  spkRefreshAuto();
+  renderSpkSusun();
+}
 function spkSetRupiah(k,el){
   const digits=String(el.value).replace(/[^0-9]/g,'');
   spkState.data[k]= digits? Number(digits) : '';
