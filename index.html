@@ -1184,6 +1184,9 @@ tbody.tbody-reveal>tr:nth-child(10){animation-delay:.29s}
   color:#b08400;font-weight:700;font-size:10.5px;letter-spacing:.2px;
   white-space:nowrap;overflow:hidden;pointer-events:none;z-index:2}
 .field.locked .lock-overlay svg{width:11px;height:11px;flex:0 0 auto}
+/* Chip KODE placeholder pada label field mail-merge SPK */
+.spk-code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10px;font-weight:600;color:#0E7C86;background:#e6f4f5;border:1px solid #cfe8ea;border-radius:5px;padding:1px 5px;margin-left:6px;cursor:pointer;white-space:nowrap;vertical-align:middle;transition:background .12s}
+.spk-code:hover{background:#d3ecee}
 
 /* ---- Penawaran Harga: layer multi-penyedia ---- */
 .pnw-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:-4px 0 14px;padding:8px 12px;background:linear-gradient(180deg,#f3fafb,#eef6f7);border:1px solid var(--line);border-radius:11px}
@@ -17899,12 +17902,12 @@ const SPK_FIELD_GROUPS = [
     {k:'no_eproc', l:'No. Eproc', t:'text', span:2, def:''},
     {k:'pengumuman_awal', l:'Tgl. Pengumuman (awal)', t:'date', def:''},
     {k:'pengumuman_akhir', l:'Tgl. Pengumuman (akhir)', t:'date', def:''},
-    {k:'no_bapp', l:'No. BAPP', t:'text', span:2, def:''},
-    {k:'tgl_bapp', l:'Tgl. BAPP', t:'date', def:''},
-    {k:'no_bae', l:'No. BAE', t:'text', span:2, def:''},
-    {k:'tgl_bae', l:'Tgl. BAE', t:'date', def:''},
-    {k:'no_bakn', l:'No. BAKN', t:'text', span:2, def:''},
-    {k:'tgl_bakn', l:'Tgl. BAKN', t:'date', def:''},
+    {k:'no_bapp', l:'No. BA Pembukaan Penawaran', t:'text', span:2, def:''},
+    {k:'tgl_bapp', l:'Tgl. BA Pembukaan Penawaran', t:'date', def:''},
+    {k:'no_bae', l:'No. BA Evaluasi Penawaran', t:'text', span:2, def:''},
+    {k:'tgl_bae', l:'Tgl. BA Evaluasi Penawaran', t:'date', def:''},
+    {k:'no_bakn', l:'No. BA Klarifikasi dan Negosiasi', t:'text', span:2, def:''},
+    {k:'tgl_bakn', l:'Tgl. BA Klarifikasi dan Negosiasi', t:'date', def:''},
     {k:'no_penawaran', l:'No. Penawaran', t:'text', span:2, def:''},
   ]},
   { sec:'Informasi Kontrak', fields:[
@@ -18038,6 +18041,18 @@ function spkBuildCtx(data){
   ctx.permasalahan = '';
   ctx.maksud_tujuan = '';
 
+  // === Kode = nama field: pastikan {{key}} langsung menghasilkan output siap-dokumen ===
+  // (tanggal → format panjang, nilai → Rupiah, field otomatis → nilai terhitung).
+  // Kode turunan lama (mis. sumber_dana_tgl_pjg) tetap tersedia demi kompatibilitas.
+  ['tgl_anggaran','pengumuman_awal','pengumuman_akhir','tgl_bapp','tgl_bae','tgl_bakn','tanggal_kontrak','tgl_akhir_kontrak','tgl_penawaran'].forEach(function(k){ if(ctx[k]) ctx[k]=spkDateLong(ctx[k]); });
+  ctx.nilai_pekerjaan = (d.nilai_pekerjaan!==''&&d.nilai_pekerjaan!=null) ? spkRupiah(d.nilai_pekerjaan) : '';
+  ctx.auto_terbilang_tgl   = spkAutoVal('terbilang_tgl', d);
+  ctx.auto_tgl_strip       = spkAutoVal('tgl_strip', d);
+  ctx.auto_terbilang_nilai = spkAutoVal('terbilang_nilai', d);
+  ctx.auto_terbilang_jangka= spkAutoVal('terbilang_jangka', d);
+  ctx.auto_jenis_perusahaan= spkAutoVal('jenis_perusahaan', d);
+  ctx.jenis_perusahaan     = ctx.auto_jenis_perusahaan;
+
   return ctx;
 }
 /* Ganti semua {{key}} pada template dengan nilai konteks (sisa placeholder dikosongkan bila tak dikenal, dibiarkan bila kosong) */
@@ -18160,29 +18175,49 @@ function spkRefreshAuto(){
     if(el) el.value=spkAutoVal(f.auto, spkState.data);
   });
 }
+const SPK_LOCK_OVL = '<span class="lock-overlay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Data terkunci</span>';
+/* Label + chip KODE placeholder. Klausul terhubung ke data lewat kode {{key}} ini,
+   bukan lewat label — sehingga mengganti nama (label) field tidak memutus tautan.
+   Klik chip untuk menyalin kode, lalu tempel di template klausul. */
+function spkLbl(f){
+  if(f.t==='select') return fkEsc(f.l); // field kontrol, tidak dipakai di dokumen
+  return fkEsc(f.l)+' <span class="spk-code" title="Kode untuk klausul — klik untuk menyalin" onclick="spkCopyCode(\''+f.k+'\')">{{'+f.k+'}}</span>';
+}
+function spkCopyCode(k){
+  const t='{{'+k+'}}';
+  try{ navigator.clipboard.writeText(t).then(function(){ toast('Kode '+t+' disalin','ok'); },function(){ toast('Kode: '+t,'info'); }); }
+  catch(e){ toast('Kode: '+t,'info'); }
+}
 function spkFieldInput(f){
   const v = spkState.data[f.k];
-  // 4 field per baris; kecuali Rincian Akta Pendirian & Perubahan yang melebar penuh
-  const span = (f.k==='akta_pendirian'||f.k==='akta_perubahan') ? ' style="flex:1 1 100%"' : '';
+  // 4 field per baris; kecuali Rincian Akta Pendirian & Perubahan yang 2 field per baris
+  const span = (f.k==='akta_pendirian'||f.k==='akta_perubahan') ? ' style="flex:1 1 calc(50% - 15px)"' : '';
   if(f.auto){
+    // Field otomatis: tampil sebagai field terkunci "Data terkunci" (nilai dihitung
+    // otomatis di belakang layar & dipakai pada dokumen). Gaya sama seperti field
+    // terkunci lain di aplikasi.
     const av = spkAutoVal(f.auto, spkState.data);
-    return '<div class="field"'+span+'><label>'+fkEsc(f.l)+' <span style="font-size:10px;color:#0a7c66;background:#d8f3ec;border-radius:6px;padding:1px 6px;margin-left:4px;vertical-align:middle">otomatis</span></label>'+
-      '<input type="text" id="spk-fld-'+f.k+'" value="'+fkEsc(av)+'" readonly disabled placeholder="Terisi otomatis" style="background:#eef2f6;color:#48586a;font-style:italic"></div>';
+    return '<div class="field locked"'+span+'><label>'+spkLbl(f)+'</label>'+
+      '<input type="text" id="spk-fld-'+f.k+'" value="'+fkEsc(av)+'" readonly disabled>'+
+      SPK_LOCK_OVL+'</div>';
   }
   if(f.t==='select'){
     const opts=(f.opts||[]).map(o=>'<option value="'+fkEsc(o)+'"'+((v===o)?' selected':'')+'>'+fkEsc(o)+'</option>').join('');
-    return '<div class="field"'+span+'><label>'+fkEsc(f.l)+'</label>'+
+    return '<div class="field"'+span+'><label>'+spkLbl(f)+'</label>'+
       '<select onchange="spkSet(\''+f.k+'\',this.value);renderSpkSusun()"><option value="">— pilih —</option>'+opts+'</select></div>';
   }
   if(f.lockedBy){
     const locked = String(spkState.data[f.lockedBy]||'')!=='Ya';
-    const note = locked? ' <span style="font-size:10px;color:#b45309;margin-left:4px;vertical-align:middle">terkunci — mengikuti input monitoring</span>' : '';
-    const attr = locked? ' disabled placeholder="Data terkunci" style="background:#f3f4f6;color:#9aa5b1"' : '';
-    return '<div class="field"'+span+'><label>'+fkEsc(f.l)+note+'</label>'+
-      '<input type="text" id="spk-fld-'+f.k+'" value="'+fkEsc(v||'')+'"'+attr+' oninput="spkSet(\''+f.k+'\',this.value)"></div>';
+    if(locked){
+      return '<div class="field locked"'+span+'><label>'+spkLbl(f)+'</label>'+
+        '<input type="text" id="spk-fld-'+f.k+'" value="" readonly disabled>'+
+        SPK_LOCK_OVL+'</div>';
+    }
+    return '<div class="field"'+span+'><label>'+spkLbl(f)+'</label>'+
+      '<input type="text" id="spk-fld-'+f.k+'" value="'+fkEsc(v||'')+'" oninput="spkSet(\''+f.k+'\',this.value)"></div>';
   }
   if(f.t==='textarea'){
-    return '<div class="field"'+span+'><label>'+fkEsc(f.l)+'</label><textarea rows="3" oninput="spkSet(\''+f.k+'\',this.value)">'+fkEsc(v||'')+'</textarea></div>';
+    return '<div class="field"'+span+'><label>'+spkLbl(f)+'</label><textarea rows="3" oninput="spkSet(\''+f.k+'\',this.value)">'+fkEsc(v||'')+'</textarea></div>';
   }
   if(f.t==='narasi'){
     var isiAda = String(v||'').replace(/<[^>]+>/g,'').trim()!=='';
@@ -18193,16 +18228,16 @@ function spkFieldInput(f){
     '</div>';
   }
   if(f.t==='date'){
-    return '<div class="field"'+span+'><label>'+fkEsc(f.l)+'</label><input type="date" value="'+fkEsc(v||'')+'" onchange="spkSet(\''+f.k+'\',this.value)"></div>';
+    return '<div class="field"'+span+'><label>'+spkLbl(f)+'</label><input type="date" value="'+fkEsc(v||'')+'" onchange="spkSet(\''+f.k+'\',this.value)"></div>';
   }
   if(f.t==='number'){
-    return '<div class="field"'+span+'><label>'+fkEsc(f.l)+'</label><input type="number" min="0" value="'+fkEsc(v==null?'':v)+'" oninput="spkSet(\''+f.k+'\',this.value)"></div>';
+    return '<div class="field"'+span+'><label>'+spkLbl(f)+'</label><input type="number" min="0" value="'+fkEsc(v==null?'':v)+'" oninput="spkSet(\''+f.k+'\',this.value)"></div>';
   }
   if(f.t==='rupiah'){
     const disp = (v!==''&&v!=null)? Number(spkNum(v)).toLocaleString('id-ID') : '';
-    return '<div class="field"'+span+'><label>'+fkEsc(f.l)+'</label><input type="text" inputmode="numeric" placeholder="Rp" value="'+fkEsc(disp)+'" oninput="spkSetRupiah(\''+f.k+'\',this)"></div>';
+    return '<div class="field"'+span+'><label>'+spkLbl(f)+'</label><input type="text" inputmode="numeric" placeholder="Rp" value="'+fkEsc(disp)+'" oninput="spkSetRupiah(\''+f.k+'\',this)"></div>';
   }
-  return '<div class="field"'+span+'><label>'+fkEsc(f.l)+'</label><input type="text" value="'+fkEsc(v||'')+'" oninput="spkSet(\''+f.k+'\',this.value)"></div>';
+  return '<div class="field"'+span+'><label>'+spkLbl(f)+'</label><input type="text" value="'+fkEsc(v||'')+'" oninput="spkSet(\''+f.k+'\',this.value)"></div>';
 }
 function spkSet(k,v){ if(!spkState) return; spkState.data[k]=v; spkRefreshAuto(); }
 function spkSetRupiah(k,el){
@@ -18227,7 +18262,11 @@ function renderSpkSusun(){
   // Bagian 1: form mail merge
   const groupsHtml = SPK_FIELD_GROUPS.map(g=>{
     const cols = 4;
-    const fieldsHtml = g.fields.map(spkFieldInput).join('');
+    const fieldsHtml = g.fields.map(f=>{
+      // paksa Rincian Akta Pendirian & Perubahan mulai baris baru bersama (2 field 1 baris)
+      const brk = (f.k==='akta_pendirian') ? '<div style="flex:0 0 100%;height:0;margin:0;padding:0"></div>' : '';
+      return brk + spkFieldInput(f);
+    }).join('');
     return '<div class="form-card">'+
       '<div class="form-section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M4 4h16v16H4z" opacity="0"/><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg> '+fkEsc(g.sec)+'</div>'+
       '<div class="form-flow" style="--cols:'+cols+'">'+fieldsHtml+'</div>'+
