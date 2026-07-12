@@ -12724,7 +12724,7 @@ function pnwBuildDocHtml(sk){
     '<div class="fkl-doc-foot">'+
       '<div class="ttd-date">Masohi, '+fkEsc(tglDoc)+'</div>'+
       '<table class="ttd ttd-single"><tbody><tr>'+
-        '<td><div class="role">Diperiksa oleh,</div><div class="role2">Pejabat Pelaksana Pengadaan</div><div class="gap"></div><div class="nm">'+fkEsc(st.pejabat?st.pejabat:'(..........................)')+'</div></td>'+
+        '<td><div class="role">Diperiksa oleh,</div><div class="role2">Pejabat Pelaksana Pengadaan</div><div class="gap"></div><div class="nm nm-up">'+fkEsc(st.pejabat?String(st.pejabat).trim().toUpperCase():'(..........................)')+'</div></td>'+
       '</tr></tbody></table>'+
     '</div>'+
   '</div>';
@@ -15076,7 +15076,9 @@ function hpsBuildDocHtml(){
     sumRow('PPn 12%', s.ppnM, s.ppnJ, s.ppnT)+
     sumRow('Jumlah Total', s.totM, s.totJ, s.totT, 'grand');
   const terbilangRow='<tr class="terb"><td colspan="9"><b>Terbilang :</b> '+fkEsc(hpsTerbilangRupiah(s.totT))+'</td></tr>';
-  const pengguna=(info.pengguna&&String(info.pengguna).trim())?String(info.pengguna).trim():'(..........................)';
+  /* Nama Pengguna (Manager) & Pejabat Pelaksana Pengadaan SELALU tampil UPPERCASE
+     pada pratinjau & cetak, apa pun cara pengetikannya. */
+  const pengguna=(info.pengguna&&String(info.pengguna).trim())?String(info.pengguna).trim().toUpperCase():'(..........................)';
   const pejabat=(info.pejabat&&String(info.pejabat).trim())?String(info.pejabat).trim().toUpperCase():'(..........................)';
   const _tglDoc=hpsTglEfektif(info.nama, info.tgl_hps);
   const tglFull=_tglDoc?hpsDateFull(_tglDoc):'..........................';
@@ -15089,7 +15091,7 @@ function hpsBuildDocHtml(){
           '<div class="role">Disetujui oleh,</div>'+
           '<div class="role2">Manager</div>'+
           '<div class="gap"></div>'+
-          '<div class="nm">'+fkEsc(pengguna)+'</div></td>'+
+          '<div class="nm nm-up">'+fkEsc(pengguna)+'</div></td>'+
         '<td><div class="ttd-date">Masohi, '+fkEsc(tglFull)+'</div>'+
           '<div class="role">Disusun oleh,</div>'+
           '<div class="role2">Pejabat Pelaksana Pengadaan</div>'+
@@ -17823,6 +17825,20 @@ document.getElementById('pn-preview-overlay').addEventListener('click',e=>{ if(e
 /* Contoh pengisian klausul (placeholder): titik-titik sampai batas margin kanan,
    huruf samar/transparan — tinggal ditimpa lewat template Word. */
 .spk-cl p.spk-ph,.spk-we-page .spk-cl p.spk-ph{color:rgba(0,0,0,.22);white-space:nowrap;overflow:hidden;text-align:left}
+/* Contoh pengisian pada EDITOR & pratinjau narasi: huruf transparan (samar),
+   boleh membungkus baris. Blok bertanda ini TIDAK PERNAH ikut tercetak. */
+.spk-we-doc p.spk-ph,.spk-narasi-prev p.spk-ph{color:rgba(0,0,0,.28)}
+.spk-we-toolbar button#spk-we-ph.active{background:#eef2f4;border-color:#b6c2cb;color:#5b6b78}
+/* Kolom Judul Klausul yang dapat dimiringkan (contenteditable + tombol I) */
+.spk-kldoc-jwrap{display:flex;align-items:stretch;gap:6px}
+.spk-kldoc-jinput{flex:1 1 auto;min-height:42px;border:1px solid #cdd9de;border-radius:10px;padding:10px 13px;
+  font-size:13px;font-family:inherit;color:var(--ink);background:#fff;outline:none;line-height:1.35;overflow-wrap:anywhere}
+.spk-kldoc-jinput:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,124,134,.15)}
+.spk-kldoc-jinput:empty:before{content:attr(data-ph);color:#9AA7B2}
+.spk-kldoc-jinput i,.spk-kldoc-jinput em{font-style:italic}
+.spk-kldoc-jbtn{flex:0 0 auto;width:42px;border:1px solid #cdd9de;border-radius:10px;background:#fff;cursor:pointer;
+  font-size:15px;color:#33454b}
+.spk-kldoc-jbtn:hover{background:#f4f6f8;border-color:#0e7c86;color:#0e7c86}
 /* Tombol Naik/Turun pada aksi klausul */
 .spk-klx-act .act.act-mv{color:#0e7c86}
 .spk-klx-act .act:disabled{opacity:.35;cursor:not-allowed;transform:none}
@@ -17874,7 +17890,7 @@ document.getElementById('pn-preview-overlay').addEventListener('click',e=>{ if(e
 /* Pustaka Klausul bawaan: 3 klausul kosong (KLAUSUL 1 s.d. 3).
    Isi tiap klausul berupa contoh pengisian (titik-titik sampai batas margin kanan,
    huruf samar/transparan) yang tinggal diganti lewat template Word. */
-const SPK_KL_PLACEHOLDER = '<p class="kl0 spk-ph">Isi klausul pada bagian ini................................................................................................................................................................</p>';
+const SPK_KL_PLACEHOLDER = '<p class="kl0 spk-ph">Isi Klausul ................................................................................................................................................................................................</p>';
 const SPK_KLAUSUL_SEED=[
   {urutan:10, judul:"KLAUSUL 1", isi:SPK_KL_PLACEHOLDER, aktif:true},
   {urutan:20, judul:"KLAUSUL 2", isi:SPK_KL_PLACEHOLDER, aktif:true},
@@ -17964,6 +17980,14 @@ const SPK_FIELD_GROUPS = [
     {k:'jabatan_direksi', l:'Jabatan Direksi Pekerjaan', t:'text', span:2, def:''},
     {k:'jabatan_pengawas', l:'Jabatan Pengawas Pekerjaan', t:'text', span:2, def:''},
   ]},
+  /* Isian klausul yang bersifat OPSIONAL. Bila dikosongkan, butir yang
+     bersangkutan (beserta judulnya) tidak muncul pada dokumen dan penomoran
+     butir klausul menyesuaikan otomatis. */
+  { sec:'Uraian Pekerjaan (opsional — kosongkan bila tidak dipakai)', fields:[
+    {k:'latar_belakang',  l:'Latar Belakang',     t:'narasi', def:''},
+    {k:'permasalahan',    l:'Permasalahan',       t:'narasi', def:''},
+    {k:'maksud_tujuan',   l:'Maksud dan Tujuan',  t:'narasi', def:''},
+  ]},
 ];
 /* daftar semua field (flat) */
 const SPK_FIELDS_FLAT = SPK_FIELD_GROUPS.reduce((a,g)=>a.concat(g.fields),[]);
@@ -18029,7 +18053,8 @@ function spkBuildCtx(data){
   ctx.dasar_bakn_tgl_pjg = spkDateLong(d.tgl_bakn);
 
   // ---- PIHAK PERTAMA (dari bidang SK Pimpinan Unit) ----
-  ctx.p1_wakil = d.nama_pengguna || '';
+  ctx.p1_wakil = String(d.nama_pengguna||'').toUpperCase();   // selalu UPPERCASE di dokumen
+  ctx.nama_pengguna = ctx.p1_wakil;
   ctx.p1_jabatan = d.jabatan_pengguna || '';
   ctx.p1_sk = d.no_sk || '';
   ctx.p1_nama_singkat = d.nama_unit || d.singkatan_unit || '';
@@ -18052,10 +18077,11 @@ function spkBuildCtx(data){
   ctx.rekening_no = d.no_rekening || '';
   ctx.rekening_atas_nama = d.pemilik_rekening || '';
 
-  // ---- Uraian pekerjaan tidak termasuk dalam Field Kontrak Excel ----
-  ctx.latar_belakang = '';
-  ctx.permasalahan = '';
-  ctx.maksud_tujuan = '';
+  // ---- Uraian pekerjaan (opsional): kosong bila tidak diisi, sehingga butir
+  //      yang bersangkutan otomatis hilang dari dokumen & penomoran menyesuaikan.
+  ctx.latar_belakang = spkNarasiHtml(d.latar_belakang);
+  ctx.permasalahan   = spkNarasiHtml(d.permasalahan);
+  ctx.maksud_tujuan  = spkNarasiHtml(d.maksud_tujuan);
 
   // === Kode = nama field: pastikan {{key}} langsung menghasilkan output siap-dokumen ===
   // (tanggal → format panjang, nilai → Rupiah, field otomatis → nilai terhitung).
@@ -18582,7 +18608,8 @@ function spkCopyCode(k){
 function spkFieldInput(f){
   const v = spkState.data[f.k];
   // 4 field per baris; kecuali Rincian Akta Pendirian & Perubahan yang 2 field per baris
-  const span = (f.k==='akta_pendirian'||f.k==='akta_perubahan') ? ' style="flex:1 1 calc(50% - 15px)"' : '';
+  const span = (f.k==='akta_pendirian'||f.k==='akta_perubahan') ? ' style="flex:1 1 calc(50% - 15px)"'
+             : (f.t==='narasi') ? ' style="flex:1 1 100%"' : '';
   if(f.auto){
     // Field otomatis: tampil sebagai field terkunci "Data terkunci" (nilai dihitung
     // otomatis di belakang layar & dipakai pada dokumen). Gaya sama seperti field
@@ -18693,7 +18720,7 @@ function renderSpkSusun(){
     return '<label class="spk-kl-pick'+(on?' on':'')+'">'+
       '<input type="checkbox" '+(on?'checked':'')+' onchange="spkToggleSel(\''+fkEscJs(String(k.id))+'\');this.closest(\'.spk-kl-pick\').classList.toggle(\'on\',this.checked)">'+
       '<span class="spk-kl-no">'+(i+1)+'</span>'+
-      '<span class="spk-kl-judul">'+fkEsc(k.judul||'(Tanpa judul)')+'</span>'+
+      '<span class="spk-kl-judul">'+(k.judul?spkJudulSan(k.judul):'(Tanpa judul)')+'</span>'+
     '</label>';
   }).join('') : '<div class="empty" style="padding:22px"><div>Belum ada klausul. Tambahkan lewat menu <b>Ubah Klausul Kontrak</b>.</div></div>';
 
@@ -19218,17 +19245,57 @@ function spkNoBreakRefNumbers(html){
 /* Judul klausul: huruf kapital, aman-HTML, dan istilah asing dicetak miring
    (mis. FORCE MAJEURE, GOOD CORPORATE GOVERNANCE) — dipakai di Daftar Isi & judul klausul. */
 const SPK_ITALIC_TERMS=['GOOD CORPORATE GOVERNANCE','FORCE MAJEURE'];
+/* ---- Judul klausul boleh mengandung format MIRING/tebal/garis-bawah ----
+   Judul disimpan sebagai HTML sederhana (hanya <i>/<em>/<b>/<strong>/<u>),
+   sehingga bagian yang dimiringkan pada template Word (atau lewat tombol I di
+   editor judul) tampil MIRING pula di website, Daftar Isi, dan cetakan. */
+function spkJudulSan(j){
+  var s=String(j==null?'':j);
+  if(s.indexOf('<')<0) return fkEsc(s);                  // judul lama (teks polos)
+  var box=document.createElement('div'); box.innerHTML=s;
+  (function clean(node){
+    var kids=Array.prototype.slice.call(node.childNodes);
+    kids.forEach(function(c){
+      if(c.nodeType===3) return;                          // teks
+      if(c.nodeType!==1){ c.parentNode.removeChild(c); return; }
+      clean(c);
+      var tag=c.tagName.toLowerCase();
+      if(tag==='i'||tag==='em'||tag==='b'||tag==='strong'||tag==='u'){
+        while(c.attributes.length) c.removeAttribute(c.attributes[0].name);
+        return;
+      }
+      while(c.firstChild) c.parentNode.insertBefore(c.firstChild, c);  // buka bungkus
+      c.parentNode.removeChild(c);
+    });
+  })(box);
+  return box.innerHTML;
+}
+function spkJudulPlain(j){
+  var s=String(j==null?'':j);
+  if(s.indexOf('<')<0) return s.trim();
+  var box=document.createElement('div'); box.innerHTML=s;
+  return String(box.textContent||'').replace(/\s+/g,' ').trim();
+}
+/* Ubah huruf pada seluruh simpul teks (tag <i>/<b>/<u> dipertahankan) */
+function spkJudulCase(html, mode){
+  var box=document.createElement('div'); box.innerHTML=html;
+  var w=document.createTreeWalker(box, NodeFilter.SHOW_TEXT, null, false), n;
+  while((n=w.nextNode())){
+    n.nodeValue = (mode==='upper') ? n.nodeValue.toUpperCase() : spkTitleCase(n.nodeValue.toLowerCase());
+  }
+  return box.innerHTML;
+}
 function spkFmtJudul(judul){
-  let s=fkEsc(String(judul||'').toUpperCase());
-  SPK_ITALIC_TERMS.forEach(t=>{ s=s.split(t).join('<i>'+t+'</i>'); });
+  let s=spkJudulCase(spkJudulSan(judul),'upper');
+  SPK_ITALIC_TERMS.forEach(t=>{ if(s.indexOf('<i>'+t)<0) s=s.split(t).join('<i>'+t+'</i>'); });
   return s;
 }
 /* Judul versi Title Case — dipakai pada Daftar Isi (mengikuti desain cover/daftar isi) */
 function spkFmtJudulTitle(judul){
-  let s=fkEsc(spkTitleCase(String(judul||'').toLowerCase()));
+  let s=spkJudulCase(spkJudulSan(judul),'title');
   SPK_ITALIC_TERMS.forEach(t=>{
     const tc=spkTitleCase(t.toLowerCase());
-    s=s.split(tc).join('<i>'+tc+'</i>');
+    if(s.indexOf('<i>'+tc)<0) s=s.split(tc).join('<i>'+tc+'</i>');
   });
   return s;
 }
@@ -19278,6 +19345,7 @@ function spkWEToolbarHtml(){
         '</select>'+
         '<button type="button" id="spk-we-fp" title="Format Painter — Ctrl+Alt+C salin format, Ctrl+Alt+V tempel format (klik ganda: mode terkunci)" onmousedown="return spkWEmd(event)" onclick="spkWEPainterClick()" ondblclick="spkWEPainterSticky()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="M18.4 2.6a2 2 0 0 1 2.8 2.8L12 14.6l-3.4-3.4Z"/><path d="M8.6 11.2 5.9 13.9a3 3 0 0 0-.8 2.9L3 21l4.2-2.1a3 3 0 0 0 2.9-.8l2.7-2.7Z"/></svg></button>'+
         '<button type="button" title="Bersihkan format" onmousedown="return spkWEmd(event)" onclick="spkWECmd(\'removeFormat\')">&#10006;</button>'+
+        '<button type="button" id="spk-we-ph" title="Tandai sebagai CONTOH (transparan) — hanya panduan pengisian; tidak ikut tercetak, dan bila seluruh isi butir masih contoh, butir tersebut otomatis hilang &amp; penomoran menyesuaikan" onmousedown="return spkWEmd(event)" onclick="spkWETogglePh()">&#9675; Contoh</button>'+
       '</div>'+
     '</div>'+
     '<div class="spk-we-trow">'+
@@ -19716,9 +19784,26 @@ function spkWEBlock(val){
   spkWECount();
 }
 
+/* --- Tandai / batalkan tanda "CONTOH" (transparan) pada paragraf terpilih ---
+   Paragraf bertanda .spk-ph = contoh pengisian (panduan). Aturannya:
+     - tidak pernah ikut tercetak pada dokumen;
+     - bila SELURUH isi sebuah butir masih berupa contoh (datanya belum diisi),
+       butir tersebut beserta judulnya otomatis dihilangkan dan penomoran butir
+       sisanya digeser otomatis (mis. 1.4 menjadi 1.1). */
+function spkWETogglePh(){
+  var doc=document.getElementById('spk-we-doc'); if(!doc) return; doc.focus();
+  var ps=spkWESelectedPs(); if(!ps.length) return;
+  var on = !ps.every(function(p){ return p.classList.contains('spk-ph'); });
+  ps.forEach(function(p){ p.classList.toggle('spk-ph', on); });
+  spkWESyncBlockSelect();
+  spkWECount();
+}
+
 /* Sinkronkan dropdown gaya dengan paragraf aktif */
 function spkWESyncBlockSelect(){
   try{ spkWERulerSync(); }catch(e){}
+  var pph=spkWECurrentP(), bph=document.getElementById('spk-we-ph');
+  if(bph) bph.classList.toggle('active', !!(pph && pph.classList.contains('spk-ph')));
   var sel=document.getElementById('spk-we-block'); if(!sel) return;
   var p=spkWECurrentP(); if(!p) return;
   var cls=(p.className.match(/\b(kl0|kl1|kl2|klp|klp1|klp2)\b/)||[])[1]||'kl0';
@@ -21180,6 +21265,158 @@ function spkRenumberKlausul(html, newNo){
   return box.innerHTML;
 }
 /* =========================================================================
+   ISIAN CONTOH (TRANSPARAN) + PENOMORAN BUTIR OTOMATIS  — BERLAKU SEMUA KLAUSUL
+   Aturan:
+     1) Blok CONTOH tidak pernah ikut tercetak. Yang dianggap contoh:
+        - paragraf bertanda kelas .spk-ph (tombol "Contoh" pada editor);
+        - teks panduan berpola "(Isi .....)" / "(Diisi .....)";
+        - baris titik-titik saja;
+        - blok yang menjadi KOSONG setelah mail-merge ({{kode}} tak terisi).
+     2) Sebuah BUTIR (mis. "1.1. Latar Belakang") yang seluruh isinya masih
+        contoh (datanya belum diisi) DIHAPUS beserta judulnya.
+     3) Butir yang tersisa DINOMORI ULANG otomatis: 1.1, 1.2, 1.3 ... (termasuk
+        sub-butir 1.1.1, 1.1.2 ...). Contoh: bila Latar Belakang, Permasalahan,
+        dan Maksud & Tujuan tidak diisi, maka "1.4. Pedoman Pelaksanaan
+        Pekerjaan" otomatis menjadi "1.1. Pedoman Pelaksanaan Pekerjaan".
+     4) Bila judul butir cocok dengan field narasi (Latar Belakang /
+        Permasalahan / Maksud dan Tujuan) dan datanya DIISI pada Data Mail
+        Merge, isian tersebut otomatis menggantikan teks contohnya.
+   ========================================================================= */
+const SPK_NARASI_MAP=[
+  {key:'latar_belakang', re:/latar\s*belakang/i},
+  {key:'permasalahan',   re:/permasalahan|pemasalahan/i},
+  {key:'maksud_tujuan',  re:/maksud/i}
+];
+const SPK_TOK_BUTIR=/^\s*(\d{1,2})\.(\d{1,2})\.?(?![\d.])/;        /* 1.1   */
+const SPK_TOK_SUB  =/^\s*(\d{1,2})\.(\d{1,2})\.(\d{1,2})\.?(?!\d)/;/* 1.1.1 */
+
+function spkBlkText(el){
+  return String((el&&el.textContent)||'').replace(/\u00A0/g,' ').replace(/\s+/g,' ').trim();
+}
+/* Apakah blok ini sekadar CONTOH / kosong (tidak boleh tercetak)? */
+function spkIsPhBlock(el){
+  if(!el) return true;
+  if(el.classList && el.classList.contains('spk-ph')) return true;
+  if(el.__kvv) return false;                                    // nilai baris "Label : nilai" — jangan diusik
+  var t=spkBlkText(el);
+  if(t===':') return false;                                     // pemisah baris "Label : nilai"
+  if(t==='') return true;                                       // kosong / merge kosong
+  if(/^[.\u2026\u00B7\u2022\-\u2013\u2014_\s]+$/.test(t)) return true;   // hanya titik-titik
+  if(/^[(\[]?\s*(isi|diisi|di\s*isi|contoh)\b/i.test(t) && /[.\u2026)\]]\s*$/.test(t)) return true;
+  return false;
+}
+/* Nilai field narasi -> HTML paragraf dokumen (kl*) */
+function spkNarasiHtml(v){
+  var s=String(v==null?'':v);
+  if(!s.replace(/<[^>]+>/g,'').replace(/&nbsp;/g,' ').trim()) return '';
+  return /<p[\s>]/i.test(s) ? s : spkFormatNarasi(s);
+}
+/* Tulis ulang nomor di awal paragraf (mis. "1.4." -> "1.1.") */
+function spkSetTok(el, tok){
+  var w=document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null, false), n, v;
+  while((n=w.nextNode())){
+    v=n.nodeValue;
+    if(!v || !v.replace(/[\s\u00A0]/g,'')) continue;
+    n.nodeValue = v.replace(/^([\s\u00A0]*)(\d{1,2}(?:\.\d{1,2})+\.?)([\s\u00A0]*)/,
+      function(m,a,b,c){ return a+tok+(c && c.length ? c : ' '); });
+    return;
+  }
+}
+function spkPruneKlausul(html, klNo, data){
+  var src=String(html||''); if(!src.trim()) return src;
+  var box=document.createElement('div'); box.innerHTML=src;
+  var blocks=Array.prototype.slice.call(box.children);
+  if(!blocks.length) return src;
+
+  /* Baris "Label : nilai" (3 paragraf berurutan) dipertahankan utuh, walau
+     nilainya kosong — supaya perataan gaya Word (spkTidyKeyValue) tetap jalan. */
+  blocks.forEach(function(el,idx){
+    if(spkBlkText(el)===':' && blocks[idx+1]) blocks[idx+1].__kvv=true;
+  });
+
+  /* --- 1) Bangun struktur: [pre] + butir{head, kids:[blok | sub{head,body}]} --- */
+  var pre=[], items=[], cur=null, sub=null;
+  blocks.forEach(function(el){
+    var t=spkBlkText(el);
+    if(SPK_TOK_SUB.test(t)){
+      if(cur){ sub={head:el, body:[]}; cur.kids.push({t:'sub', s:sub}); return; }
+    } else if(SPK_TOK_BUTIR.test(t)){
+      cur={head:el, kids:[]}; items.push(cur); sub=null; return;
+    }
+    if(!cur){ pre.push(el); return; }
+    if(sub) sub.body.push(el); else cur.kids.push({t:'blk', el:el});
+  });
+  /* Klausul tanpa penomoran butir: cukup buang blok contohnya saja.
+     (Bila seluruhnya contoh -> biarkan apa adanya: klausul memang belum diisi.) */
+  if(!items.length){
+    var keep=blocks.filter(function(e){ return !spkIsPhBlock(e); });
+    if(!keep.length) return src;
+    var o0=document.createElement('div');
+    keep.forEach(function(e){ o0.appendChild(e); });
+    return o0.innerHTML;
+  }
+
+  /* --- 2) Isi otomatis dari field narasi (bila judul butir cocok & data diisi) --- */
+  items.forEach(function(it){
+    var title=spkBlkText(it.head).replace(SPK_TOK_BUTIR,'').replace(/^[.\s:)\-]+/,'').trim();
+    var key='';
+    SPK_NARASI_MAP.forEach(function(m){ if(!key && m.re.test(title)) key=m.key; });
+    var val = key ? spkNarasiHtml(data && data[key]) : '';
+    if(!val) return;
+    var holder=document.createElement('div'); holder.innerHTML=val;
+    var news=Array.prototype.slice.call(holder.children).map(function(p){
+      if(p.tagName!=='P'){ var np=document.createElement('p'); np.className='kl0'; np.innerHTML=p.innerHTML; return np; }
+      if(!/\b(kl0|kl1|kl2|klp|klp1|klp2|kldesc)\b/.test(p.className||'')) p.className=((p.className||'')+' kl0').trim();
+      p.classList.remove('spk-ph');
+      return p;
+    });
+    var kids=[], placed=false;
+    it.kids.forEach(function(k){
+      if(k.t==='blk' && spkIsPhBlock(k.el)){
+        if(!placed){ news.forEach(function(p){ kids.push({t:'blk', el:p}); }); placed=true; }
+        return;                                     // teks contoh dibuang
+      }
+      kids.push(k);
+    });
+    if(!placed) news.forEach(function(p){ kids.push({t:'blk', el:p}); });
+    it.kids=kids;
+  });
+
+  /* --- 3) Tentukan butir / sub-butir yang tidak terisi (dibuang) --- */
+  items.forEach(function(it){
+    it.kids.forEach(function(k){
+      if(k.t!=='sub') return;
+      var isi=k.s.body.filter(function(e){ return !spkIsPhBlock(e); });
+      k.s.drop = (k.s.body.length>0 && isi.length===0);
+      k.s.body = isi;
+    });
+    var kids=it.kids.filter(function(k){
+      return (k.t==='sub') ? !k.s.drop : !spkIsPhBlock(k.el);
+    });
+    it.drop = (it.kids.length>0 && kids.length===0);   // punya isi, tetapi semuanya contoh
+    it.kids = kids;
+  });
+
+  /* --- 4) Susun ulang & nomori ulang otomatis --- */
+  var out=document.createElement('div'), i=0;
+  pre.forEach(function(e){ if(!spkIsPhBlock(e)) out.appendChild(e); });
+  items.forEach(function(it){
+    if(it.drop) return;
+    i++;
+    spkSetTok(it.head, klNo+'.'+i+'.');
+    out.appendChild(it.head);
+    var j=0;
+    it.kids.forEach(function(k){
+      if(k.t==='blk'){ out.appendChild(k.el); return; }
+      j++;
+      spkSetTok(k.s.head, klNo+'.'+i+'.'+j+'.');
+      out.appendChild(k.s.head);
+      k.s.body.forEach(function(e){ out.appendChild(e); });
+    });
+  });
+  return out.innerHTML;
+}
+/* =========================================================================
    DOKUMEN SPK — SATU KESATUAN (5 bagian)
      1) Cover Surat Perintah Kerja
      2) Daftar Isi
@@ -21358,7 +21595,9 @@ function spkDocHtml(data, klausul){
   const preamble = spkNumberFix(spkTidyKeyValue(spkMerge(SPK_PREAMBLE_TPL, ctx)));
   const clausesHtml = (klausul||[]).map((k,i)=>
     '<div class="spk-clause"><div class="spk-cl-h"><span class="n'+((i+1)>=10?' r':'')+'"></span>'+spkFmtJudul(k.judul)+'</div>'+
-    '<div class="spk-cl">'+spkNumberFix(spkTidyKeyValue(spkMerge(spkRenumberKlausul(k.isi||'', i+1), ctx)))+'</div></div>'
+    '<div class="spk-cl">'+spkNumberFix(spkTidyKeyValue(
+        spkPruneKlausul(spkMerge(spkRenumberKlausul(k.isi||'', i+1), ctx), i+1, data)
+      ))+'</div></div>'
   ).join('');
   const isiBody=
     '<div class="spk-bab">BAB I &middot; PARA PIHAK</div>'+
@@ -21448,7 +21687,7 @@ function renderSpkKlausul(){
     const preview = String(k.isi||'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim().slice(0,150);
     return '<div class="spk-klx'+(off?' off':'')+'">'+
       '<div class="spk-klx-no">'+(i+1)+'</div>'+
-      '<div class="spk-klx-main"><div class="spk-klx-judul">'+fkEsc(k.judul||'(Tanpa judul)')+(off?' <span class="spk-badge-off">non-aktif</span>':'')+'</div>'+
+      '<div class="spk-klx-main"><div class="spk-klx-judul">'+(k.judul?spkJudulSan(k.judul):'(Tanpa judul)')+(off?' <span class="spk-badge-off">non-aktif</span>':'')+'</div>'+
         '<div class="spk-klx-prev">'+fkEsc(preview)+(preview.length>=150?'…':'')+'</div></div>'+
       '<div class="spk-klx-act">'+
         '<button class="act act-mv" title="Naikkan" '+(i===0?'disabled':'')+' onclick="spkKlausulMove(\''+kid+'\',-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>'+
@@ -21461,9 +21700,7 @@ function renderSpkKlausul(){
   }).join('') : '<div class="empty" style="padding:26px"><div>Belum ada klausul.</div></div>';
   /* Bar tombol: Simpan Profil | Muat Profil | Batalkan Pilihan (bila profil dipakai) | Tambah Klausul */
   const aktifProfil = spkKlProfil.active;
-  const btnBatal = aktifProfil
-    ? '<button type="button" class="jp-profil-btn is-cancel" onclick="spkKlProfilCancel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg><span>Batalkan Pilihan</span></button>'
-    : '';
+  const btnBatal = '<button type="button" class="jp-profil-btn is-cancel" title="Kembalikan pustaka klausul ke bawaan: 3 klausul dengan contoh pengisian" onclick="spkKlProfilCancel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg><span>'+(aktifProfil?'Batalkan Pilihan':'Kembalikan ke Bawaan')+'</span></button>';
   const tagProfil = aktifProfil
     ? '<span class="spk-klprof-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:13px;height:13px"><path d="M20 6 9 17l-5-5"/></svg>Profil: '+fkEsc(aktifProfil)+'</span>'
     : '';
@@ -21577,17 +21814,16 @@ function spkKlProfilDoLoad(name){
       toast('Profil "'+name+'" dimuat','ok');
     }});
 }
+/* "Batalkan Pilihan" -> pustaka klausul kembali ke KEADAAN BAWAAN:
+   3 klausul (KLAUSUL 1 s.d. 3) berisi contoh pengisian "Isi Klausul ......" */
 function spkKlProfilCancel(){
-  if(!spkKlProfil.active) return;
-  const back=spkKlProfil.backup;
-  if(!back || !back.length){ spkKlProfil.active=''; spkKlProfil.backup=null; renderSpkKlausul(); toast('Pilihan profil dibatalkan','ok'); return; }
   openConfirm({ icon:'warn', title:'Batalkan Pilihan Profil',
-    text:'Kembalikan pustaka klausul ke keadaan sebelum profil "'+spkKlProfil.active+'" dimuat?',
+    text:'Pustaka klausul akan dikembalikan ke keadaan bawaan: 3 klausul (KLAUSUL 1, KLAUSUL 2, KLAUSUL 3) dengan contoh pengisian. Lanjutkan?',
     onYes:async()=>{
-      try{ await withActionLoader('Mengembalikan', async()=>{ await spkKlProfilWrite(back); }); }
+      try{ await withActionLoader('Mengembalikan ke bawaan', async()=>{ await spkKlProfilWrite(SPK_KLAUSUL_SEED.map(s=>Object.assign({},s))); }); }
       catch(err){ console.error(err); toast('Gagal mengembalikan: '+errMsg(err),'err'); return; }
       spkKlProfil.active=''; spkKlProfil.backup=null;
-      renderSpkKlausul(); toast('Pilihan profil dibatalkan','ok');
+      renderSpkKlausul(); toast('Pustaka klausul kembali ke bawaan (3 klausul)','ok');
     }});
 }
 function spkKlausulMove(id, dir){
@@ -21619,7 +21855,7 @@ function spkKlausulToggle(id){
 function spkKlausulDelete(id){
   if(typeof requireInput==='function' && !requireInput()) return;
   const k=records_klausul.find(x=>String(x.id)===String(id)); if(!k) return;
-  openConfirm({ icon:'del', title:'Hapus Klausul', text:'Hapus klausul "'+(k.judul||'')+'"?',
+  openConfirm({ icon:'del', title:'Hapus Klausul', text:'Hapus klausul "'+spkJudulPlain(k.judul)+'"?',
     onYes:async()=>{
       try{ await withActionLoader('Menghapus', async()=>{ await StoreSpkKlausul.remove(id); await refreshDataKlausul(); }); }
       catch(err){ console.error(err); toast('Gagal menghapus: '+errMsg(err),'warn'); return; }
@@ -21963,7 +22199,7 @@ function spkDocxTemplateBlob(judul, isiHtml, noKl){
     /* Baris judul: memakai PENOMORAN OTOMATIS Word (numId 1) — nomornya bukan teks
        biasa, sehingga tetap berurutan bila klausul ditambah/dipindah. */
     spkPXml2('KlausulJudul', '<w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr>',
-      spkRunXml(String(judul||'JUDUL KLAUSUL'),{}) );
+      (spkJudulPlain(judul) ? spkRunsFromHtml(spkJudulSan(judul)) : spkRunXml('JUDUL KLAUSUL',{})) );
   var isi=spkHtmlToWordParas(isiHtml);
   body += isi || spkPXml('KlausulIsi','');
   /* Word mensyaratkan paragraf setelah tabel: jika isi berakhir dengan tabel,
@@ -22336,7 +22572,13 @@ function spkWordXmlToKlausul(xmlText, stylesXml, numberingXml){
     if(key.indexOf('petunjuk')===0) continue;               // baris petunjuk -> abaikan
     var t=spkWpText(b.p);
     if(key==='klausuljudul'){                               // baris judul klausul
-      if(!judul) judul=t.plain.replace(/^((?:\d+\.)+|\d+[.)])\s*/,'').trim();
+      if(!judul){
+        /* Format huruf (miring/tebal/garis bawah) pada judul DIPERTAHANKAN */
+        var jh=String(t.html||'').replace(/\t/g,' ')
+          .replace(/^((?:<(?:b|i|u)>)*)\s*((?:\d+\.)+|\d+[.)])[\s\u00a0]*/, '$1');
+        judul = spkJudulSan(jh).replace(/^\s+|\s+$/g,'');
+        if(!spkJudulPlain(judul)) judul='';
+      }
       continue;
     }
     /* nomor OTOMATIS Word (dihitung berurutan, meski teksnya kosong tetap sah) */
@@ -22441,8 +22683,12 @@ function spkKlausulOpenEditor(k){
       '</div>'+
       '<div class="spk-ov-body">'+
         '<div class="spk-kldoc-top">'+
-          '<div class="field" style="margin:0"><label>Judul Klausul</label>'+
-            '<input type="text" id="spk-kldoc-judul" value="'+fkEsc(isEdit?(k.judul||''):'')+'" placeholder="mis. HARGA PEKERJAAN" oninput="spkKlDocHead()"></div>'+
+          '<div class="field" style="margin:0"><label>Judul Klausul <span style="font-weight:400;color:#8a99a0">— pilih teks lalu tekan tombol <i>I</i> (atau Ctrl+I) untuk memiringkan</span></label>'+
+            '<div class="spk-kldoc-jwrap">'+
+              '<div id="spk-kldoc-judul" class="spk-kldoc-jinput" contenteditable="true" spellcheck="false" data-ph="mis. HARGA PEKERJAAN" oninput="spkKlDocHead()">'+(isEdit?spkJudulSan(k.judul||''):'')+'</div>'+
+              '<button type="button" class="spk-kldoc-jbtn" title="Miring (Ctrl+I)" onmousedown="return spkWEmd(event)" onclick="spkKlDocItalic()"><i>I</i></button>'+
+            '</div>'+
+          '</div>'+
           '<div class="spk-kldoc-tools">'+
             '<button type="button" class="btn btn-teal btn-sm" onclick="spkKlDocDownload()">'+
               '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg> Download Template (.docx)</button>'+
@@ -22480,12 +22726,23 @@ function spkKlausulOpenEditor(k){
   spkKlDocHead(); spkKlDocPreview();
   setTimeout(function(){ var el=document.getElementById('spk-kldoc-judul'); if(el) el.focus(); },60);
 }
-function spkKlDocJudul(){ var el=document.getElementById('spk-kldoc-judul'); return el?String(el.value||'').trim():''; }
+function spkKlDocJudul(){
+  var el=document.getElementById('spk-kldoc-judul');
+  return el ? spkJudulSan(String(el.innerHTML||'').replace(/<br\s*\/?>/gi,' ').trim()) : '';
+}
+function spkKlDocJudulPlain(){ return spkJudulPlain(spkKlDocJudul()); }
+/* Miringkan bagian judul yang dipilih (tombol I / Ctrl+I) */
+function spkKlDocItalic(){
+  var el=document.getElementById('spk-kldoc-judul'); if(!el) return;
+  el.focus();
+  try{ document.execCommand('italic'); }catch(e){}
+  spkKlDocHead();
+}
 function spkKlDocHead(){
   var el=document.getElementById('spk-kldoc-head'); if(!el) return;
   var jd=spkKlDocJudul();
   el.innerHTML='<span class="n">'+fkEsc(String(spkKlDoc.no))+'.</span>'+
-    (jd?fkEsc(jd):'<span class="ph">JUDUL KLAUSUL</span>')+
+    (spkJudulPlain(jd)?spkFmtJudul(jd):'<span class="ph">JUDUL KLAUSUL</span>')+
     '<span class="spk-we-clhead-tag">(pratinjau — isi klausul di bawah ini sejajar dengan huruf sesudah nomor)</span>';
 }
 function spkKlDocPreview(){
@@ -22523,9 +22780,9 @@ function spkKlDocDzHide(){ var dz=document.getElementById('spk-kldoc-dz'); if(dz
 function spkKlDocBrowse(){ var f=document.getElementById('spk-kldoc-file'); if(f){ f.value=''; f.click(); } }
 function spkKlDocDownload(){
   try{
-    var jd=spkKlDocJudul();
+    var jd=spkKlDocJudul(), jp=spkJudulPlain(jd);
     var blob=spkDocxTemplateBlob(jd, spkKlDoc.isi, spkKlDoc.no);
-    var nm='Template Klausul'+(jd?(' - '+jd):' Baru');
+    var nm='Template Klausul'+(jp?(' - '+jp):' Baru');
     nm=nm.replace(/[\\/:*?"<>|]+/g,'-').slice(0,90)+'.docx';
     var a=document.createElement('a'), url=URL.createObjectURL(blob);
     a.href=url; a.download=nm; document.body.appendChild(a); a.click();
@@ -22551,7 +22808,7 @@ async function spkKlDocReadFile(file){
       var res=spkWordXmlToKlausul(dec.decode(xml), sty, num);
       if(!res.html) throw new Error('Tidak ada isi klausul yang terbaca pada template.');
       spkKlDoc.isi=res.html; spkKlDoc.fileName=file.name; spkKlDoc.dirty=true;
-      if(res.judul){ var j=document.getElementById('spk-kldoc-judul'); if(j && !j.value.trim()) j.value=res.judul; }
+      if(res.judul){ var j=document.getElementById('spk-kldoc-judul'); if(j && !spkJudulPlain(j.innerHTML)) j.innerHTML=spkJudulSan(res.judul); }
     });
   }catch(err){ console.error(err); toast('Gagal membaca .docx: '+errMsg(err),'err'); return; }
   spkKlDocDzHide();
@@ -22595,7 +22852,7 @@ function spkKlDocAskClose(){
 }
 function spkKlDocSave(){
   var jd=spkKlDocJudul();
-  if(!jd){ toast('Judul klausul wajib diisi','warn'); return; }
+  if(!spkJudulPlain(jd)){ toast('Judul klausul wajib diisi','warn'); return; }
   var isi=String(spkKlDoc.isi||'');
   if(!isi.replace(/<[^>]+>/g,'').trim()){ toast('Isi klausul masih kosong — unggah template .docx terlebih dahulu','warn'); return; }
   if(typeof requireInput==='function' && !requireInput()) return;
@@ -22630,12 +22887,12 @@ function spkKlausulView(id){
     ov.addEventListener('click', e=>{ if(e.target.id==='spk-klausul-view-ov') spkKlausulViewClose(); }); }
   ov.innerHTML=
     '<div class="spk-ov-modal spk-ov-we">'+
-      '<div class="spk-ov-head"><span class="spk-ov-title">Lihat Klausul — '+fkEsc(k.judul||'')+'</span>'+
+      '<div class="spk-ov-head"><span class="spk-ov-title">Lihat Klausul — '+spkJudulPlain(k.judul)+'</span>'+
         '<div style="display:flex;gap:8px"><button class="btn btn-teal btn-sm" onclick="spkKlausulViewToEdit(\''+fkEscJs(String(k.id))+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Ubah</button>'+
         '<button class="btn btn-ghost btn-sm" onclick="spkKlausulViewClose()">Tutup</button></div></div>'+
       '<div class="spk-ov-body">'+
         '<div class="spk-we-pagearea"><div class="spk-we-page">'+
-          '<div class="spk-cl">'+(k.judul?'<p class="spk-cl-h" style="font-weight:700;text-transform:uppercase;margin:0 0 3pt">'+fkEsc(k.judul)+'</p>':'')+inner+'</div>'+
+          '<div class="spk-cl">'+(k.judul?'<p class="spk-cl-h" style="font-weight:700;text-transform:uppercase;margin:0 0 3pt">'+spkFmtJudul(k.judul)+'</p>':'')+inner+'</div>'+
         '</div></div>'+
       '</div>'+
     '</div>';
