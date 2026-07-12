@@ -18480,12 +18480,12 @@ function spkRefreshAuto(){
   });
 }
 const SPK_LOCK_OVL = '<span class="lock-overlay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Data terkunci</span>';
-/* Label + chip KODE placeholder. Klausul terhubung ke data lewat kode {{key}} ini,
-   bukan lewat label — sehingga mengganti nama (label) field tidak memutus tautan.
-   Klik chip untuk menyalin kode, lalu tempel di template klausul. */
+/* Label field Mail Merge — chip KODE placeholder ({{key}}) DIHILANGKAN dari tampilan
+   agar form lebih bersih. Tautan klausul → data tetap memakai kode {{key}} di balik
+   layar (tidak berubah); daftar lengkap nama field & kodenya ada di berkas Excel
+   "Daftar Field & Chip Code Mail Merge SPK". */
 function spkLbl(f){
-  if(f.t==='select') return fkEsc(f.l); // field kontrol, tidak dipakai di dokumen
-  return fkEsc(f.l)+' <span class="spk-code" title="Kode untuk klausul — klik untuk menyalin" onclick="spkCopyCode(\''+f.k+'\')">{{'+f.k+'}}</span>';
+  return fkEsc(f.l);
 }
 function spkCopyCode(k){
   const t='{{'+k+'}}';
