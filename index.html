@@ -18327,7 +18327,31 @@ async function refreshDataKlausul(){
     }
   }catch(err){ console.error('SPK klausul:',err); spkSeedInMemory(); }
 }
-async function spkInit(){ await refreshDataKlausul(); await refreshDataSpk(); try{ rerenderActiveView(); }catch(e){} }
+/* ---- Migrasi otomatis SEKALI-JALAN: paksa Pustaka Klausul ke bawaan 3 klausul kosong ----
+   Data lama bawaan (6 klausul contoh: URAIAN PEKERJAAN, HAK DAN KEWAJIBAN, dst.) yang
+   masih tersimpan di database diganti OTOMATIS satu kali dengan 3 klausul kosong
+   (KLAUSUL 1, 2, 3) — tanpa perlu menekan tombol apa pun.
+
+   Aman & tidak mengganggu pekerjaan Anda ke depan:
+   - Pemicunya SANGAT sempit: hanya berjalan bila klausul PERTAMA berjudul
+     "URAIAN PEKERJAAN" (ciri khas data lama). Begitu terganti menjadi "KLAUSUL 1",
+     syarat ini otomatis tidak terpenuhi lagi -> pustaka yang sudah Anda sesuaikan
+     TIDAK akan pernah tersentuh, termasuk di perangkat lain.
+   - Ditandai selesai lewat localStorage (spk_kl_migrated_default3) agar hanya sekali.
+   - Isi lama tetap dicadangkan ke localStorage (spk_kl_backup_v1) agar bisa dipulihkan. */
+async function spkKlEnsureDefaultOnce(){
+  try{
+    if(localStorage.getItem('spk_kl_migrated_default3')==='1') return;
+    const cur=(records_klausul||[]).slice();
+    const first=String((cur[0]&&cur[0].judul)||'').replace(/<[^>]+>/g,'').trim().toUpperCase();
+    if(first==='URAIAN PEKERJAAN'){
+      try{ localStorage.setItem('spk_kl_backup_v1', JSON.stringify(cur)); }catch(_){}
+      await spkKlProfilWrite(SPK_KLAUSUL_SEED.map(s=>Object.assign({},s)));
+    }
+    localStorage.setItem('spk_kl_migrated_default3','1');
+  }catch(err){ console.error('spkKlEnsureDefaultOnce:',err); }
+}
+async function spkInit(){ await refreshDataKlausul(); await spkKlEnsureDefaultOnce(); await refreshDataSpk(); try{ rerenderActiveView(); }catch(e){} }
 
 /* ================= STATE PENYUSUNAN ================= */
 let spkEditId=null;
@@ -21835,6 +21859,10 @@ function spkPageScript(){
     ' }else{ while(sec.firstChild) holder.appendChild(sec.firstChild); }',
     ' var extra=(" "+sec.className+" ").replace(" spk-page "," ").replace(" spk-flow "," ").replace(/\\s+/g," ").trim();',
     ' var sheets=[], body=null, stack=[];',
+    /* Ruang minimum yang harus tersisa di bawah halaman agar sebuah klausul boleh
+       DIMULAI di sana (kira-kira judul + 3-4 baris isi). Bila kurang, klausul
+       digeser ke halaman berikutnya demi kerapian. */
+    ' var MINCL=mm2px(24);',
     ' function mk(){',
     '   var sh=document.createElement("section");',
     '   sh.className=("spk-page spk-sheet "+extra).trim();',
@@ -21865,8 +21893,22 @@ function spkPageScript(){
     ' function tgt(){ return stack.length? stack[stack.length-1].el : body; }',
     ' function over(){ return body.scrollHeight > body.clientHeight+1; }',
     ' function kosong(){ return !((body.textContent||"").replace(/[\\s\\u00A0]/g,"")) && !body.querySelector("img,table"); }',
+    ' function usedBottom(){ var k=els(body); if(!k.length) return 0; var bt=body.getBoundingClientRect().top; return k[k.length-1].getBoundingClientRect().bottom - bt; }',
+    ' function remain(){ return body.clientHeight - usedBottom(); }',
     ' function put(node){',
-    '   if(node.nodeType===1 && hasCls(node,"spk-signpage") && !kosong()){ mk(); }',
+    '   if(node.nodeType===1 && hasCls(node,"spk-signpage")){',
+    '     if(!kosong() && body.querySelector(".spk-signpage")){ mk(); tgt().appendChild(node); return; }',
+    '     var t0=tgt(); t0.appendChild(node); var fit0=!over(); t0.removeChild(node);',
+    '     if(fit0){ t0.appendChild(node); return; }',
+    '     var lastCl=null, kk=els(body);',
+    '     if(kk.length){ var cand=kk[kk.length-1]; if(hasCls(cand,"spk-clause") && !hasCls(cand,"spk-cont")) lastCl=cand; }',
+    '     if(lastCl) body.removeChild(lastCl);',
+    '     mk();',
+    '     if(lastCl) tgt().appendChild(lastCl);',
+    '     tgt().appendChild(node);',
+    '     return;',
+    '   }',
+    '   if(node.nodeType===1 && hasCls(node,"spk-clause") && !hasCls(node,"spk-cont") && !kosong() && remain()<MINCL){ mk(); }',
     '   var t=tgt();',
     '   t.appendChild(node);',
     '   if(!over()) return;',
