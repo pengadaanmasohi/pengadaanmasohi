@@ -16951,15 +16951,22 @@ function spkLampiranDocInner(data){
   finally{ hpsPreviewState = sv; }
   html = html.replace('HARGA PERKIRAAN SENDIRI (HPS)', 'LAMPIRAN SURAT PERINTAH KERJA');
   html = html.replace(/<div class="fkl-doc-docno">[\s\S]*?<\/div>/,
-    '<div class="fkl-doc-docno">'+fkEsc(data.nomor_kontrak||'')+'</div>');
+    '<div class="fkl-doc-docno">'+fkEsc(data.nomor_kontrak||'\u2014')+'</div>');
   html = html.replace('>Rencana Anggaran Biaya<', '>Nilai Pekerjaan<');
   /* Ganti blok tanda tangan bawaan HPS (Pengguna Barang/Jasa & Pejabat Pelaksana)
-     dengan blok tanda tangan LAMPIRAN dua pihak (PIHAK KEDUA & PIHAK PERTAMA)
-     sesuai contoh yang diminta. */
-  html = html.replace(/<tr class="ttd-row">[\s\S]*?<\/table><\/td><\/tr>/, '');
+     dengan blok tanda tangan LAMPIRAN dua pihak (PIHAK KEDUA & PIHAK PERTAMA).
+
+     PENTING: tanda tangan ditulis ULANG DI DALAM <tr class="ttd-row"> yang sama,
+     sehingga tetap berada di <tbody class="hps-tail"> bersama Jumlah / DPP /
+     PPn / Jumlah Total / Terbilang. Sebelumnya baris itu DIHAPUS lalu tanda
+     tangan ditempel di LUAR tabel, sehingga ikatannya putus: tanda tangan bisa
+     pindah sendirian ke halaman berikutnya dan meninggalkan baris rekapnya.
+     Dengan cara ini perilakunya sama persis dengan Perhitungan HPS. */
   try{
     const ctx=spkBuildCtx(data||{});
-    html += spkLampSignBlockHtml(ctx, data||{});
+    const ttd=spkLampSignBlockHtml(ctx, data||{});
+    html = html.replace(/<tr class="ttd-row">[\s\S]*?<\/table><\/td><\/tr>/,
+      '<tr class="ttd-row"><td colspan="9">'+ttd+'</td></tr>');
   }catch(e){ console.error(e); }
   return html;
 }
@@ -16999,6 +17006,10 @@ function spkPageScript(){
     ' if(n.nodeType!==1) return true;',
     ' var t=n.tagName;',
     ' if(t==="P"||t==="TR"||t==="IMG"||t==="BR"||t==="HR"||t==="LI"||t==="THEAD"||t==="TFOOT"||t==="COLGROUP") return true;',
+    /* tbody.hps-tail = rekap (Jumlah/DPP/PPn/Total/Terbilang) + tanda tangan.
+       Diperlakukan sebagai SATU blok utuh: bila tak cukup ruang, seluruhnya turun
+       bersama ke halaman berikutnya — tanda tangan tidak pernah berdiri sendiri. */
+    ' if(hasCls(n,"hps-tail")) return true;',
     ' if(hasCls(n,"spk-cl-h")||hasCls(n,"spk-kv")||hasCls(n,"spk-party")||hasCls(n,"spk-bab")||hasCls(n,"spk-sign")||hasCls(n,"spk-sign-eyebrow")||hasCls(n,"spk-lampsign")) return true;',
     ' return els(n).length===0;',
     '}',
