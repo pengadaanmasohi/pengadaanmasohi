@@ -14372,10 +14372,16 @@ function spkDocCss2(){
   '.spk-cover .cv-parties .ps{font-size:11.5px;color:#8F8E8E;margin-top:3px}'+
   '.spk-cover .cv-spacer{flex:1 1 auto;min-height:14mm}'+
   '.spk-cover .cv-grid{display:flex;flex-wrap:wrap}'+
-  '.spk-cover .cv-grid .f{flex:0 0 50%;padding:13px 34px 13px 0;border-top:1px solid #E2E2E2}'+
-  '.spk-cover .cv-grid .f:nth-child(even){padding-right:0;padding-left:34px}'+
+  '.spk-cover .cv-grid .f{flex:0 0 50%;padding:14px 30px 14px 0;border-top:1px solid #E2E2E2}'+
+  /* Garis pemisah vertikal antar kolom (kolom ganjil = kiri) */
+  '.spk-cover .cv-grid .f:nth-child(odd){border-right:1px solid #E2E2E2}'+
+  '.spk-cover .cv-grid .f:nth-child(even){padding-right:0;padding-left:30px}'+
   '.spk-cover .fk{font-size:9px;font-weight:700;letter-spacing:.16em;color:#8F8E8E}'+
-  '.spk-cover .fv{font-size:13px;font-weight:800;color:#201E1D;margin-top:6px;line-height:1.35}'+
+  /* Nilai dibuat RATA KIRI-KANAN agar blok teks panjang rapi bertepi lurus */
+  '.spk-cover .fv{font-size:13px;font-weight:800;color:#201E1D;margin-top:7px;line-height:1.45;'+
+    'text-align:justify;text-justify:inter-word;hyphens:none}'+
+  /* Baris terakhir paragraf justify tetap rata kiri (bawaan), dan nilai kosong dibuat redup */
+  '.spk-cover .fv.kosong{color:#C2C6CC}'+
   '.spk-cover .cv-nilai{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;border-top:1px solid #E2E2E2;padding-top:12px;margin-top:0}'+
   '.spk-cover .cv-nilai .fk{font-size:9px;font-weight:700;letter-spacing:.16em;color:#8F8E8E}'+
   '.spk-cover .cv-nilai .terb{font-size:11px;color:#8F8E8E;margin-top:6px}'+
@@ -14392,13 +14398,15 @@ function spkDocCss2(){
   '.spk-tocpage .toc-meta span{display:block;font-size:8.5px;font-weight:700;letter-spacing:.14em;color:#1B3A6B}'+
   '.spk-tocpage .toc-accent{width:56px;border-top:4px solid #F6B40E;margin-bottom:14px}'+
   '.spk-tocpage .toc-rule{border-top:2px solid #201E1D;margin:16px 0 6px}'+
+  '.spk-toc2{margin-top:4px}'+
+  '.spk-toc2 .row:last-child{border-bottom:1px solid #E2E2E2}'+
   '.spk-toc2 .row{display:flex;align-items:baseline;gap:0;padding:17px 2px;border-top:1px solid #E2E2E2;border-bottom:0;font-size:14px}'+
   '.spk-toc2 .row:first-child{border-top:0}'+
-  '.spk-toc2 .row .no{flex:0 0 auto;width:44px;font-weight:800;color:#1B3A6B;font-size:17px}'+
+  '.spk-toc2 .row .no{flex:0 0 auto;width:44px;font-weight:800;color:#1B3A6B;font-size:17px;font-variant-numeric:tabular-nums}'+
   '.spk-toc2 .row .nm{flex:0 0 auto;font-weight:600;color:#201E1D;font-size:14px;max-width:70%}'+
   '.spk-toc2 .row .nm i{font-style:italic}'+
-  '.spk-toc2 .row .dot{flex:1;border-bottom:1.5px dotted #C9C9C9;transform:translateY(-3px);margin:0 10px}'+
-  '.spk-toc2 .row .pg{flex:0 0 auto;font-weight:800;color:#1B3A6B;font-size:15px;min-width:1.4em;text-align:right}'+
+  '.spk-toc2 .row .dot{flex:1;border-bottom:1.5px dotted #D6DAE0;transform:translateY(-3px);margin:0 14px}'+
+  '.spk-toc2 .row .pg{flex:0 0 auto;font-weight:800;color:#1B3A6B;font-size:15px;min-width:2em;text-align:right;font-variant-numeric:tabular-nums}'+
   /* ---------- KOP & FOOTER BERULANG (halaman isi) ---------- */
   'table.spk-run{width:100%;border-collapse:collapse;border:0;background:transparent}'+
   'table.spk-run > thead > tr > td,table.spk-run > tbody > tr > td,table.spk-run > tfoot > tr > td{padding:0;border:0;background:transparent}'+
@@ -14437,8 +14445,12 @@ function spkDocCss2(){
      tanggal di atas kolom PIHAK PERTAMA, nama bergaris bawah. */
   '.spk-lampsign{page-break-before:auto;break-before:auto;padding-top:0;margin-top:26px;break-inside:avoid;page-break-inside:avoid}'+
   '.spk-lampsign .spk-sign{margin-top:0}'+
-  '.spk-lampsign .spk-sign td{width:50%;text-align:center;vertical-align:top;font-size:11pt;padding:4px 6px;font-family:Arial,Helvetica,sans-serif}'+
-  '.spk-lampsign .ttd-date{min-height:1.2em;font-size:11pt;margin-bottom:2px}'+
+  /* Tanda tangan LAMPIRAN mengikuti font & ukuran isi lampiran (.fkl-doc):
+     'Plus Jakarta Sans' 12,5px warna #1a2b31 — sama seperti baris "Nama Pekerjaan".
+     Sebelumnya dipaksa Arial 11pt sehingga terlihat berbeda sendiri. */
+  '.spk-lampsign .spk-sign td{width:50%;text-align:center;vertical-align:top;padding:4px 6px;'+
+    "font-family:'Plus Jakarta Sans','Segoe UI',sans-serif;font-size:12.5px;color:#1a2b31}"+
+  '.spk-lampsign .ttd-date{min-height:1.2em;font-size:12.5px;margin-bottom:2px;color:#22343a;font-weight:500}'+
   '.spk-lampsign .role{font-weight:700}'+
   '.spk-lampsign .org{font-weight:700;line-height:1.25}'+
   '.spk-lampsign .nm{font-weight:700;text-decoration:underline;margin-top:70px}'+
@@ -16783,7 +16795,11 @@ function spkCoverHtml(data, ctx, judulBaris){
   const esc=fkEsc;
   const logo = SPK_LOGO_SRC? '<img src="'+SPK_LOGO_SRC+'" alt="PLN">' : '';
   const unit = ctx.p1_nama_singkat || 'Unit Pelaksana Pelayanan Pelanggan Masohi';
-  const fld=(k,v)=>'<div class="f"><div class="fk">'+esc(k)+'</div><div class="fv">'+esc(v||'—')+'</div></div>';
+  const fld=(k,v)=>{
+    const kosong = !(v && String(v).trim());
+    return '<div class="f"><div class="fk">'+esc(k)+'</div>'+
+      '<div class="fv'+(kosong?' kosong':'')+'">'+(kosong?'—':esc(v))+'</div></div>';
+  };
   const judulHtml = String(judulBaris||'').split(' ').map(w=>'<span>'+esc(w)+'</span>').join(' ');
   return ''+
   '<section class="spk-page spk-cover">'+
@@ -16953,6 +16969,16 @@ function spkLampiranDocInner(data){
   html = html.replace(/<div class="fkl-doc-docno">[\s\S]*?<\/div>/,
     '<div class="fkl-doc-docno">'+fkEsc(data.nomor_kontrak||'\u2014')+'</div>');
   html = html.replace('>Rencana Anggaran Biaya<', '>Nilai Pekerjaan<');
+  /* Blok "DATA PEKERJAAN" bawaan HPS memuat baris yang tidak relevan untuk Lampiran
+     SPK (nilainya sudah tampil di cover & di tabel rincian). Baris berikut dibuang
+     HANYA di Lampiran — dokumen Perhitungan HPS tidak terpengaruh. */
+  ['Nilai Pekerjaan','No. Anggaran','Tgl. Anggaran','Metode Pengadaan'].forEach(function(lbl){
+    const pola = lbl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    html = html.replace(new RegExp('<tr>\\s*<td class="k">'+pola+'<\\/td>[\\s\\S]*?<\\/tr>'), '');
+  });
+  /* Judul seksi "A Data Pekerjaan" & "B Uraian Pekerjaan & Rincian Harga" juga
+     dibuang di Lampiran: yang tersisa hanya Nama/Lokasi Pekerjaan + tabel harga. */
+  html = html.replace(/<div class="fkl-sec-h">[\s\S]*?<\/div>/g, '');
   /* Ganti blok tanda tangan bawaan HPS (Pengguna Barang/Jasa & Pejabat Pelaksana)
      dengan blok tanda tangan LAMPIRAN dua pihak (PIHAK KEDUA & PIHAK PERTAMA).
 
