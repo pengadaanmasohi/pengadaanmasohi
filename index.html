@@ -19162,10 +19162,13 @@ function spkDocCss2(){
   '@page{size:A4 portrait;margin:2.54cm}'+
   'html,body{background:#fff}'+
   '.spk-doc{counter-reset:spkcl}'+
-  '.spk-page{page-break-after:always;break-after:page}'+
+  '.spk-page{position:relative;page-break-after:always;break-after:page}'+
   '.spk-page:last-child{page-break-after:auto;break-after:auto}'+
-  /* ---------- COVER ---------- */
-  '.spk-cover{font-family:'+G+';color:#111;display:flex;flex-direction:column;min-height:238mm}'+
+  /* ---------- COVER ----------
+     Tinggi cover dibuat PERSIS setinggi area cetak A4 (297mm - margin atas 2,54cm
+     - margin bawah 2,54cm = 246,2mm), sehingga ukuran cover di pratinjau layar
+     dan di hasil Cetak/PDF benar-benar sama (tidak ada sisa 8mm seperti semula). */
+  '.spk-cover{font-family:'+G+';color:#111;display:flex;flex-direction:column;min-height:246.2mm}'+
   '.spk-cover .cv-top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}'+
   '.spk-cover .cv-brand{display:flex;align-items:center;gap:14px}'+
   '.spk-cover .cv-brand img{width:46px;height:auto;display:block}'+
@@ -19251,12 +19254,23 @@ function spkDocCss2(){
     '.spk-doc{margin:0 auto}'+
     '.spk-page{width:210mm;min-height:297mm;background:#fff;margin:0 auto 22px;padding:2.54cm;box-shadow:0 8px 30px rgba(10,20,28,.34);overflow:hidden}'+
     '.spk-page.spk-flow{height:auto;overflow:visible}'+
+    /* ===== PEMISAH HALAMAN DI PRATINJAU (seperti Rekap HPS) =====
+       Lembar "isi" (spk-flow) tumbuh memanjang, jadi batas halaman fisik tidak
+       terlihat. Lapisan .spk-guide (dibuat oleh spkPageScript) menggambar garis
+       batas tepat di posisi tempat browser akan memotong halaman saat dicetak,
+       plus label nomor halaman berikutnya. Hanya tampil di layar. */
+    '.spk-guide{position:absolute;left:0;right:0;top:0;bottom:0;pointer-events:none;z-index:6}'+
+    '.spk-guide .gband{position:absolute;left:-2.54cm;right:-2.54cm;height:16px;background:rgba(229,72,77,.09)}'+
+    '.spk-guide .gl{position:absolute;left:-2.54cm;right:-2.54cm;height:0;border-top:1.5px dashed #E5484D}'+
+    '.spk-guide .gl::after{content:attr(data-lbl);position:absolute;right:2.54cm;top:-8px;transform:translateY(-100%);background:#E5484D;color:#fff;font:800 9px/1.2 Arial,Helvetica,sans-serif;letter-spacing:.08em;padding:3px 8px;border-radius:5px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.25)}'+
+    '.spk-guide .gl.top::after{right:auto;left:2.54cm;top:auto;bottom:-8px;transform:translateY(100%);background:#0E7C86}'+
   '}'+
   /* ---------- CETAK ---------- */
   '@media print{'+
     'html,body{background:#fff;margin:0;padding:0}'+
     '.spk-page{width:auto;min-height:0;margin:0;padding:0;box-shadow:none}'+
-    '.spk-cover{min-height:238mm}'+
+    '.spk-cover{min-height:246.2mm}'+
+    '.spk-guide{display:none!important}'+
     '.fkl-print-page{width:auto;min-height:0;margin:0;padding:0;box-shadow:none}'+
     'table.spk-run > thead{display:table-header-group}'+
     'table.spk-run > tfoot{display:table-footer-group}'+
@@ -21715,20 +21729,85 @@ function spkLampiranDocInner(data){
   return html;
 }
 
-/* ---------- Skrip kecil: mengisi nomor halaman pada Daftar Isi ---------- */
-function spkTocScript(){
-  return '<script>(function(){function run(){try{'+
-    'var pr=document.createElement("div");pr.style.cssText="position:absolute;visibility:hidden;height:246.2mm";'+
-    'document.body.appendChild(pr);var ph=pr.offsetHeight;pr.parentNode.removeChild(pr);'+
-    'var flow=document.getElementById("spk-flow");if(!flow)return;'+
-    'var hd=flow.querySelector(".spk-rhd"),ft=flow.querySelector(".spk-rft");'+
-    'var avail=ph-((hd?hd.offsetHeight:0)+(ft?ft.offsetHeight:0)+18);if(avail<120)return;'+
-    'var base=3,top0=flow.getBoundingClientRect().top;'+
-    'var cls=flow.querySelectorAll(".spk-clause"),pgs=document.querySelectorAll(".spk-toc2 .pg");'+
-    'for(var i=0;i<cls.length;i++){var off=cls[i].getBoundingClientRect().top-top0;'+
-    'var pg=base+Math.floor(off/avail);if(pgs[i])pgs[i].textContent=String(pg);}'+
-    '}catch(e){}}if(document.readyState==="complete")run();else window.addEventListener("load",run);})();<\/script>';
+/* ---------- Skrip halaman: nomor halaman Daftar Isi + PEMISAH HALAMAN ----------
+   Satu perhitungan dipakai untuk dua hal sekaligus, supaya tidak pernah beda:
+     1) Nomor halaman pada Daftar Isi.
+     2) Garis "batas halaman" pada pratinjau (lapisan .spk-guide), yang digambar
+        tepat di titik tempat browser akan memotong halaman ketika dicetak.
+
+   Cara hitung (mengikuti mesin cetak browser):
+     - Tinggi area cetak A4 = 297mm - margin atas 2,54cm - margin bawah 2,54cm
+       = 246,2mm  (lihat @page pada spkDocCss2).
+     - Pada lembar isi (.spk-flow) kop & footer dipasang lewat <thead>/<tfoot>
+       sehingga BERULANG di setiap halaman fisik. Jadi ruang isi per halaman
+       = 246,2mm - tinggi <thead> - tinggi <tfoot>.
+     - Batas halaman ke-k berada pada kelipatan k x ruang-isi, dihitung dari awal
+       sel <tbody>. Untuk lembar tanpa kop/footer (Lampiran) ruang isi = 246,2mm.
+   Garis hanya tampil di layar (@media print menyembunyikannya). */
+function spkPageScript(){
+  return '<script>(function(){'+
+    'function mm2px(mm){var d=document.createElement("div");'+
+      'd.style.cssText="position:absolute;visibility:hidden;left:-9999px;height:"+mm+"mm";'+
+      'document.body.appendChild(d);var h=d.getBoundingClientRect().height;'+
+      'd.parentNode.removeChild(d);return h;}'+
+    'function metrics(sec,PH){'+
+      'var cs=getComputedStyle(sec);'+
+      'var th=sec.querySelector("table.spk-run > thead"),tf=sec.querySelector("table.spk-run > tfoot");'+
+      'var tb=sec.querySelector("table.spk-run > tbody > tr > td");'+
+      'var hH=th?th.getBoundingClientRect().height:0;'+
+      'var fH=tf?tf.getBoundingClientRect().height:0;'+
+      'var avail=PH-hH-fH;'+
+      'var off,cH;'+
+      'if(tb){off=tb.getBoundingClientRect().top-sec.getBoundingClientRect().top;'+
+        'cH=tb.getBoundingClientRect().height;}'+
+      'else{var pt=parseFloat(cs.paddingTop)||0,pb=parseFloat(cs.paddingBottom)||0;'+
+        'off=pt;cH=sec.getBoundingClientRect().height-pt-pb;}'+
+      'return {avail:avail,off:off,cH:cH};}'+
+    'function run(){try{'+
+      'var PH=mm2px(246.2);if(!PH||PH<200)return;'+
+      'var pages=document.querySelectorAll(".spk-doc > .spk-page");'+
+      'var flow=document.getElementById("spk-flow");'+
+      'var pageNo=0;'+
+      'for(var i=0;i<pages.length;i++){'+
+        'var sec=pages[i];'+
+        'var old=sec.querySelector(":scope > .spk-guide");if(old)old.parentNode.removeChild(old);'+
+        'if(!sec.classList.contains("spk-flow")){pageNo++;continue;}'+
+        'var m=metrics(sec,PH);'+
+        'if(!(m.avail>120)){pageNo++;continue;}'+
+        'var n=Math.max(0,Math.floor((m.cH-2)/m.avail));'+   /* jumlah pemotongan */
+        'var layer=document.createElement("div");layer.className="spk-guide";'+
+        'for(var k=1;k<=n;k++){'+
+          'var y=m.off+k*m.avail;'+
+          'var bd=document.createElement("div");bd.className="gband";'+
+          'bd.style.top=(y-8)+"px";layer.appendChild(bd);'+
+          'var ln=document.createElement("div");ln.className="gl";ln.style.top=y+"px";'+
+          'ln.setAttribute("data-lbl","BATAS BAWAH HALAMAN "+(pageNo+k));'+
+          'layer.appendChild(ln);'+
+          'var l2=document.createElement("div");l2.className="gl top";l2.style.top=y+"px";'+
+          'l2.style.borderTop="0";'+
+          'l2.setAttribute("data-lbl","AWAL HALAMAN "+(pageNo+k+1));'+
+          'layer.appendChild(l2);'+
+        '}'+
+        'sec.appendChild(layer);'+
+        /* Nomor halaman Daftar Isi dihitung dari lembar isi utama */
+        'if(sec===flow){'+
+          'var base=pageNo+1,top0=sec.getBoundingClientRect().top;'+
+          'var cls=sec.querySelectorAll(".spk-clause"),pgs=document.querySelectorAll(".spk-toc2 .pg");'+
+          'for(var j=0;j<cls.length;j++){'+
+            'var o=cls[j].getBoundingClientRect().top-top0-m.off;'+
+            'if(o<0)o=0;'+
+            'if(pgs[j])pgs[j].textContent=String(base+Math.floor(o/m.avail));'+
+          '}'+
+        '}'+
+        'pageNo+=(n+1);'+
+      '}'+
+    '}catch(e){}}'+
+    'if(document.readyState==="complete")run();else window.addEventListener("load",run);'+
+    'var t=null;window.addEventListener("resize",function(){clearTimeout(t);t=setTimeout(run,150);});'+
+  '})();<\/script>';
 }
+/* Nama lama tetap dipertahankan agar pemanggilan lain (bila ada) tidak rusak */
+function spkTocScript(){ return spkPageScript(); }
 
 function spkDocHtml(data, klausul){
   data=data||{};
@@ -21768,7 +21847,7 @@ function spkDocHtml(data, klausul){
     spkDocCss()+spkDocCss2()+
     '</style></head><body><div class="spk-doc">'+
       cover+toc+isi+coverLamp+lampiran+
-    '</div>'+spkTocScript()+'</body></html>';
+    '</div>'+spkPageScript()+'</body></html>';
 }
 
 /* ---------- Pratinjau & Cetak ----------
