@@ -14328,7 +14328,7 @@ function spkDocCss2(){
   '.spk-cover{font-family:'+G+';color:#201E1D;display:flex;flex-direction:column;min-height:246.2mm}'+
   '.spk-cover .cv-top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}'+
   '.spk-cover .cv-brand{display:flex;align-items:center;gap:14px}'+
-  '.spk-cover .cv-brand img{height:46px;width:auto;display:block}'+
+  '.spk-cover .cv-brand img{height:56px;width:auto;display:block}'+
   '.spk-cover .cv-org{line-height:1.35}'+
   '.spk-cover .cv-org span{display:block;font-size:9px;letter-spacing:.2em;color:#8F8E8E;font-weight:700}'+
   '.spk-cover .cv-org b{display:block;font-size:16px;color:#201E1D;font-weight:800}'+
@@ -14336,8 +14336,8 @@ function spkDocCss2(){
   '.spk-cover .cv-no span{display:block;font-size:9px;letter-spacing:.2em;color:#8F8E8E;font-weight:700}'+
   '.spk-cover .cv-no b{display:block;font-size:12.5px;color:#201E1D;font-weight:800;letter-spacing:.02em}'+
   '.spk-cover .cv-no i{display:block;font-style:normal;font-size:11px;color:#8F8E8E;margin-top:2px}'+
-  '.spk-cover .cv-rule{border-top:1.4px solid #201E1D;margin:13px 0 0}'+
-  '.spk-cover .cv-rule2{border-top:1.4px solid #201E1D;margin:20px 0 0}'+
+  '.spk-cover .cv-rule{border-top:2px solid #201E1D;margin:13px 0 0}'+
+  '.spk-cover .cv-rule2{border-top:2px solid #201E1D;margin:20px 0 0}'+
   '.spk-cover .cv-eyebrow{margin-top:40px;font-size:9px;font-weight:700;letter-spacing:.22em;color:#1B3A6B}'+
   '.spk-cover .cv-title{margin:15px 0 0;font-size:60px;line-height:.98;font-weight:800;letter-spacing:-.03em;color:#201E1D;max-width:66%}'+
   '.spk-cover .cv-title span{display:inline}'+
@@ -14376,16 +14376,16 @@ function spkDocCss2(){
   /* ---------- KOP & FOOTER BERULANG (halaman isi) ---------- */
   'table.spk-run{width:100%;border-collapse:collapse;border:0;background:transparent}'+
   'table.spk-run > thead > tr > td,table.spk-run > tbody > tr > td,table.spk-run > tfoot > tr > td{padding:0;border:0;background:transparent}'+
-  '.spk-rhd{display:flex;align-items:center;justify-content:space-between;gap:14px;padding-bottom:8px;border-bottom:1.4px solid #201E1D;margin-bottom:16px;font-family:'+G+'}'+
+  '.spk-rhd{display:flex;align-items:center;justify-content:space-between;gap:14px;padding-bottom:8px;border-bottom:2px solid #201E1D;margin-bottom:16px;font-family:'+G+'}'+
   '.spk-rhd .l{display:flex;align-items:center;gap:12px}'+
-  '.spk-rhd img{height:38px;width:auto;display:block}'+
+  '.spk-rhd img{height:47px;width:auto;display:block}'+
   '.spk-rhd .o{line-height:1.3}'+
   '.spk-rhd .o span{display:block;font-size:8.5px;letter-spacing:.2em;color:#8F8E8E;font-weight:700}'+
   '.spk-rhd .o b{display:block;font-size:14px;color:#201E1D;font-weight:800}'+
   '.spk-rhd .r{text-align:right;line-height:1.4}'+
   '.spk-rhd .r b{display:block;font-size:13px;font-weight:800;color:#201E1D;letter-spacing:.13em}'+
   '.spk-rhd .r span{display:block;font-size:11px;color:#8F8E8E;letter-spacing:.02em;margin-top:2px}'+
-  '.spk-rft{border-top:1.4px solid #201E1D;margin-top:16px;padding-top:8px;font-family:'+G+'}'+
+  '.spk-rft{border-top:2px solid #201E1D;margin-top:16px;padding-top:8px;font-family:'+G+'}'+
   '.spk-rft .ft-unit{text-align:center;font-size:9px;font-weight:700;letter-spacing:.2em;color:#8F8E8E;margin-bottom:8px}'+
   '.spk-rft .ft-rule{border-top:1px solid #E2E2E2;margin-bottom:12px}'+
   '.spk-rft .ft-row{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:12px;font-weight:700;color:#201E1D;letter-spacing:.01em}'+
@@ -16785,8 +16785,8 @@ function spkCoverHtml(data, ctx, judulBaris){
         '<div class="terb">('+esc(ctx.nilai_terbilang||'')+')</div></div>'+
       '<div class="r">'+esc(ctx.nilai_rp||'')+'</div>'+
     '</div>'+
-    '<div class="cv-foot"><div>'+esc(SPK_ALAMAT_1)+'</div><div>'+esc(SPK_ALAMAT_2)+'</div></div>'+
     '<div class="cv-rule"></div>'+
+    '<div class="cv-foot"><div>'+esc(SPK_ALAMAT_1)+'</div><div>'+esc(SPK_ALAMAT_2)+'</div></div>'+
   '</section>';
 }
 
@@ -16803,7 +16803,7 @@ function spkTocHtml(data, klausul){
   '<section class="spk-page spk-tocpage">'+
     '<div class="toc-head">'+
       '<h1>Daftar Isi</h1>'+
-      '<div class="toc-meta"><b>SURAT PERINTAH KERJA</b><span>'+esc(data.nomor_kontrak||'')+'</span></div>'+
+      '<div class="toc-meta"><b>SURAT PERINTAH KERJA</b><span>'+esc(data.nomor_kontrak||'\u2014')+'</span></div>'+
     '</div>'+
     '<div class="toc-rule"></div>'+
     '<div class="spk-toc2">'+rows+'</div>'+
