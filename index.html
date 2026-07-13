@@ -9104,8 +9104,11 @@ function openJadwalKerja(editId){
       const rec=(records_jadwal||[]).find(r=>String(r.id)===String(editId));
       jpEditId = rec ? rec.id : null;
       jpState = rec ? jpRecordToState(rec) : jpBlankState();
-    }else if(!jpState){
-      jpState=jpBlankState();
+    }else{
+      /* Input baru: selalu mulai bersih -> tanpa pilihan pekerjaan & tanpa profil */
+      jpEditId = null;
+      jpState = jpBlankState();
+      resetInputBaru('jadwal');
     }
     showView('jadwal-kerja');
   });
@@ -10551,7 +10554,9 @@ function pnNextSeq(modul, counter, year){
 function openPnAmbil(modul){
   if(!PN_MODULES[modul]) modul='pl';
   if(pnState.ambil.modul!==modul) pnState.lastResult=null;
-  pnState.ambil.modul=modul; showView('pn-ambil');
+  pnState.ambil.modul=modul;
+  resetInputBaru('pn');            // input baru: pilihan pekerjaan dibatalkan
+  showView('pn-ambil');
 }
 function openPnLihat(){
   // Tabel gabungan: Pengadaan Langsung + Tender ditampilkan bersama.
@@ -11269,6 +11274,7 @@ function openFklInput(editId){
   }else{
     fklEditId = null;
     fklState[fklModul] = fklBlankState();
+    resetInputBaru('fkl');
   }
   fklSaveState();
   fklStep=1; showView('form-kelengkapan');
@@ -11974,6 +11980,7 @@ function openPnwInput(editId){
     pnwState = rec ? pnwRecordToState(rec) : pnwBlankState();
   }else{
     pnwEditId = null; pnwState = pnwBlankState();
+    resetInputBaru('pnw');
   }
   pnwStep=1; pnwActiveSampul='s1'; pnwActivePenyedia=0;
   pnwSaveState(); showView('form-pembukaan');
@@ -13021,6 +13028,7 @@ function openRhoInput(editId){
     rhoState = rec ? rhoRecordToState(rec) : rhoBlankState();
   }else{
     rhoEditId=null; rhoState=rhoBlankState();
+    resetInputBaru('rho');
   }
   rhoStep=1; rhoEnsureRefs(); rhoSaveState(); showView('form-rho');
 }
@@ -13961,6 +13969,65 @@ function dpRecordToState(rec){
   DP_SHARED_KEYS.forEach(k=>{ info[k]=(s.info&&s.info[k]!=null)?s.info[k]:(rec[k]!=null?rec[k]:''); });
   return { info };
 }
+/* =========================================================================
+   INPUT DATA BARU SELALU BERSIH
+   Setiap kali membuka form untuk DATA BARU (bukan Ubah/Edit):
+     - "Pilih Pekerjaan" (tautan Data Pekerjaan) otomatis DIBATALKAN
+     - "Muat Profil" (Jadwal / Persyaratan) otomatis DILEPAS
+   sehingga bawaannya: tanpa pilihan pekerjaan & tanpa muatan profil.
+   ========================================================================= */
+function lepasPilihanPekerjaan(o){
+  if(!o || typeof o!=='object') return o;
+  ['dpId','dpNama','__dpId','__dpNama','__pnLock','hpsId','hpsNama'].forEach(function(k){ delete o[k]; });
+  return o;
+}
+function lepasProfil(o){
+  if(!o || typeof o!=='object') return o;
+  o.profilLoaded=false; o.profilName='';
+  return o;
+}
+function resetInputBaru(modul){
+  try{
+    switch(modul){
+      case 'fkl':
+        if(typeof fklState!=='undefined' && fklState[fklModul]){
+          lepasPilihanPekerjaan(fklState[fklModul].info); lepasProfil(fklState[fklModul]);
+          if(typeof fklSaveState==='function') fklSaveState();
+        }
+        break;
+      case 'pnw':
+        if(typeof pnwState!=='undefined'){
+          lepasPilihanPekerjaan(pnwState.info); lepasProfil(pnwState);
+          pnwState.syarat={};
+          if(typeof pnwEnsureSyarat==='function') pnwEnsureSyarat();
+          if(typeof pnwSaveState==='function') pnwSaveState();
+        }
+        break;
+      case 'rho':
+        if(typeof rhoState!=='undefined'){ lepasPilihanPekerjaan(rhoState.info); if(typeof rhoSaveState==='function') rhoSaveState(); }
+        break;
+      case 'hps':
+        if(typeof hpsState!=='undefined'){ lepasPilihanPekerjaan(hpsState.info); if(typeof hpsSaveState==='function') hpsSaveState(); }
+        break;
+      case 'ana':
+        if(typeof anaState!=='undefined'){ lepasPilihanPekerjaan(anaState.info); if(typeof anaSaveState==='function') anaSaveState(); }
+        break;
+      case 'jadwal':
+        if(typeof jpState!=='undefined' && jpState){ lepasPilihanPekerjaan(jpState); lepasProfil(jpState); }
+        break;
+      case 'pn':
+        if(typeof pnState!=='undefined' && pnState.ambil) lepasPilihanPekerjaan(pnState.ambil);
+        break;
+      case 'spk':
+        if(typeof spkState!=='undefined' && spkState){
+          lepasPilihanPekerjaan(spkState.data);
+          if(spkState.lamp) lepasPilihanPekerjaan(spkState.lamp);
+        }
+        break;
+    }
+  }catch(e){ console.error('resetInputBaru:', e); }
+}
+
 function openDpInput(editId){
   if(!isAdmin()){ toast('Menu ini hanya untuk akun admin','warn'); return; }
   if(editId){
@@ -14487,6 +14554,7 @@ function openHpsInput(editId){
     hpsState = rec ? hpsRecordToState(rec) : hpsBlankState();
   }else{
     hpsEditId=null; hpsState=hpsBlankState();
+    resetInputBaru('hps');
   }
   hpsStep=1; hpsEnsureItems(); hpsSaveState(); showView('form-hps');
 }
@@ -15538,6 +15606,7 @@ function openAnalisaInput(editId){
     anaState = rec ? anaRecordToState(rec) : anaBlankState();
   }else{
     anaEditId=null; anaState=anaBlankState();
+    resetInputBaru('ana');
   }
   anaStep=1; anaAhspActive=0; anaEnsure(); anaSaveState(); showView('form-analisa');
 }
@@ -18078,14 +18147,12 @@ const SPK_FIELD_GROUPS = [
     {k:'jabatan_direksi', l:'Jabatan Direksi Pekerjaan', t:'text', span:2, def:''},
     {k:'jabatan_pengawas', l:'Jabatan Pengawas Pekerjaan', t:'text', span:2, def:''},
   ]},
-  /* Isian klausul yang bersifat OPSIONAL. Bila dikosongkan, butir yang
-     bersangkutan (beserta judulnya) tidak muncul pada dokumen dan penomoran
-     butir klausul menyesuaikan otomatis. */
-  { sec:'Uraian Pekerjaan (opsional — kosongkan bila tidak dipakai)', fields:[
-    {k:'latar_belakang',  l:'Latar Belakang',     t:'narasi', def:''},
-    {k:'permasalahan',    l:'Permasalahan',       t:'narasi', def:''},
-    {k:'maksud_tujuan',   l:'Maksud dan Tujuan',  t:'narasi', def:''},
-  ]},
+  /* [DIHAPUS] Kartu "Uraian Pekerjaan (opsional)" — field Latar Belakang,
+     Permasalahan, dan Maksud dan Tujuan beserta tombol "Isi Teks ..." dan kotak
+     "Pratinjau kerapian" tidak lagi ditampilkan pada form Penyusunan Kontrak.
+     Isi butir tersebut kini ditulis langsung pada Pustaka Klausul / dokumen Word
+     klausul. Blok contoh (placeholder) di dalam klausul tetap otomatis dibuang
+     oleh spkPruneKlausul() karena datanya kosong. */
 ];
 /* daftar semua field (flat) */
 const SPK_FIELDS_FLAT = SPK_FIELD_GROUPS.reduce((a,g)=>a.concat(g.fields),[]);
@@ -18658,7 +18725,9 @@ async function spkNewKontrak(){
   spkEditId=null;
   // segarkan daftar kontrak agar default SK Pimpinan Unit = data TERAKHIR disimpan
   try{ await refreshDataSpk(); }catch(e){}
-  spkState=spkBlankState(); spkStep=1; renderSpkSusun(); showView('spk-susun');
+  spkState=spkBlankState();
+  resetInputBaru('spk');           // kontrak baru: tanpa pilihan pekerjaan & tautan HPS
+  spkStep=1; renderSpkSusun(); showView('spk-susun');
 }
 
 /* Nilai field otomatis (read-only) berdasarkan data induk */
@@ -19222,6 +19291,19 @@ function spkDocCss2(){
   '.spk-lampsign .org{font-weight:700;line-height:1.25}'+
   '.spk-lampsign .nm{font-weight:700;text-decoration:underline;margin-top:70px}'+
   '.spk-lampsign .jab{font-weight:700}'+
+  /* ---------- LEMBAR ISI HASIL PEMECAHAN HALAMAN (spkPageScript) ----------
+     Isi kontrak & lampiran dipecah menjadi lembar A4 sungguhan: kop di atas,
+     isi di tengah (tinggi tetap), footer paraf menempel di dasar lembar. */
+  '.spk-sheet{display:flex;flex-direction:column;min-height:246.2mm;page-break-before:auto;break-before:auto}'+
+  '.spk-sheet > .sh-hd{flex:0 0 auto}'+
+  '.spk-sheet > .sh-bd{flex:1 1 auto;overflow:hidden}'+
+  '.spk-sheet > .sh-ft{flex:0 0 auto;margin-top:auto}'+
+  /* halaman tanda tangan sudah berada pada lembarnya sendiri -> jangan paksa
+     pindah halaman lagi (agar tidak muncul halaman kosong saat dicetak) */
+  '.spk-sheet .spk-signpage{page-break-before:auto;break-before:auto;padding-top:0}'+
+  /* klausul yang bersambung ke lembar berikutnya TIDAK menambah nomor klausul */
+  '.spk-clause.spk-cont{counter-increment:none}'+
+  '.spk-sheet .spk-cl,.spk-sheet .spk-cl *,.spk-sheet .spk-clause,.spk-sheet .spk-clause *,.spk-sheet .spk-cl-h,.spk-sheet .spk-cl-h *,.spk-sheet .spk-sign,.spk-sheet .spk-sign *{font-family:Arial,Helvetica,sans-serif;font-size:11pt}'+
   /* ---------- PRATINJAU DI LAYAR (lembar A4) ---------- */
   '@media screen{'+
     'html,body{background:#54585c;margin:0;padding:24px 0}'+
@@ -19243,6 +19325,7 @@ function spkDocCss2(){
   '@media print{'+
     'html,body{background:#fff;margin:0;padding:0}'+
     '.spk-page{width:auto;min-height:0;margin:0;padding:0;box-shadow:none}'+
+    '.spk-sheet{min-height:243mm}'+
     '.spk-cover{min-height:246.2mm}'+
     '.spk-guide{display:none!important}'+
     '.fkl-print-page{width:auto;min-height:0;margin:0;padding:0;box-shadow:none}'+
@@ -21719,66 +21802,152 @@ function spkLampiranDocInner(data){
        sel <tbody>. Untuk lembar tanpa kop/footer (Lampiran) ruang isi = 246,2mm.
    Garis hanya tampil di layar (@media print menyembunyikannya). */
 function spkPageScript(){
-  return '<script>(function(){'+
-    'function mm2px(mm){var d=document.createElement("div");'+
-      'd.style.cssText="position:absolute;visibility:hidden;left:-9999px;height:"+mm+"mm";'+
-      'document.body.appendChild(d);var h=d.getBoundingClientRect().height;'+
-      'd.parentNode.removeChild(d);return h;}'+
-    'function metrics(sec,PH){'+
-      'var cs=getComputedStyle(sec);'+
-      'var th=sec.querySelector("table.spk-run > thead"),tf=sec.querySelector("table.spk-run > tfoot");'+
-      'var tb=sec.querySelector("table.spk-run > tbody > tr > td");'+
-      'var hH=th?th.getBoundingClientRect().height:0;'+
-      'var fH=tf?tf.getBoundingClientRect().height:0;'+
-      'var avail=PH-hH-fH;'+
-      'var off,cH;'+
-      'if(tb){off=tb.getBoundingClientRect().top-sec.getBoundingClientRect().top;'+
-        'cH=tb.getBoundingClientRect().height;}'+
-      'else{var pt=parseFloat(cs.paddingTop)||0,pb=parseFloat(cs.paddingBottom)||0;'+
-        'off=pt;cH=sec.getBoundingClientRect().height-pt-pb;}'+
-      'return {avail:avail,off:off,cH:cH};}'+
-    'function run(){try{'+
-      'var PH=mm2px(246.2);if(!PH||PH<200)return;'+
-      'var pages=document.querySelectorAll(".spk-doc > .spk-page");'+
-      'var flow=document.getElementById("spk-flow");'+
-      'var pageNo=0;'+
-      'for(var i=0;i<pages.length;i++){'+
-        'var sec=pages[i];'+
-        'var old=sec.querySelector(":scope > .spk-guide");if(old)old.parentNode.removeChild(old);'+
-        'if(!sec.classList.contains("spk-flow")){pageNo++;continue;}'+
-        'var m=metrics(sec,PH);'+
-        'if(!(m.avail>120)){pageNo++;continue;}'+
-        'var n=Math.max(0,Math.floor((m.cH-2)/m.avail));'+   /* jumlah pemotongan */
-        'var layer=document.createElement("div");layer.className="spk-guide";'+
-        'for(var k=1;k<=n;k++){'+
-          'var y=m.off+k*m.avail;'+
-          'var bd=document.createElement("div");bd.className="gband";'+
-          'bd.style.top=(y-8)+"px";layer.appendChild(bd);'+
-          'var ln=document.createElement("div");ln.className="gl";ln.style.top=y+"px";'+
-          'ln.setAttribute("data-lbl","BATAS BAWAH HALAMAN "+(pageNo+k));'+
-          'layer.appendChild(ln);'+
-          'var l2=document.createElement("div");l2.className="gl top";l2.style.top=y+"px";'+
-          'l2.style.borderTop="0";'+
-          'l2.setAttribute("data-lbl","AWAL HALAMAN "+(pageNo+k+1));'+
-          'layer.appendChild(l2);'+
-        '}'+
-        'sec.appendChild(layer);'+
-        /* Nomor halaman Daftar Isi dihitung dari lembar isi utama */
-        'if(sec===flow){'+
-          'var base=pageNo+1,top0=sec.getBoundingClientRect().top;'+
-          'var cls=sec.querySelectorAll(".spk-clause"),pgs=document.querySelectorAll(".spk-toc2 .pg");'+
-          'for(var j=0;j<cls.length;j++){'+
-            'var o=cls[j].getBoundingClientRect().top-top0-m.off;'+
-            'if(o<0)o=0;'+
-            'if(pgs[j])pgs[j].textContent=String(base+Math.floor(o/m.avail));'+
-          '}'+
-        '}'+
-        'pageNo+=(n+1);'+
-      '}'+
-    '}catch(e){}}'+
-    'if(document.readyState==="complete")run();else window.addEventListener("load",run);'+
-    'var t=null;window.addEventListener("resize",function(){clearTimeout(t);t=setTimeout(run,150);});'+
-  '})();<\/script>';
+  /* Isi kontrak & lampiran DIPECAH menjadi lembar A4 sungguhan (.spk-sheet),
+     sama seperti Cover & Daftar Isi. Tiap lembar membawa kop (spkRunHeadHtml)
+     di atas dan footer paraf (spkRunFootHtml) di bawah, sehingga pada pratinjau
+     batas kertas, kop, dan footer terlihat persis seperti hasil cetak.
+     Nomor halaman pada Daftar Isi diisi dari nomor lembar yang sebenarnya. */
+  var js=[
+    '(function(){',
+    'var DONE=false, TRY=0;',
+    'function mm2px(mm){var d=document.createElement("div");',
+    ' d.style.cssText="position:absolute;visibility:hidden;left:-9999px;height:"+mm+"mm";',
+    ' document.body.appendChild(d);var h=d.getBoundingClientRect().height;',
+    ' d.parentNode.removeChild(d);return h;}',
+    'function els(n){var o=[],k=n.firstChild;while(k){if(k.nodeType===1)o.push(k);k=k.nextSibling;}return o;}',
+    'function hasCls(n,c){return n.classList&&n.classList.contains(c);}',
+    /* blok yang TIDAK boleh dipecah (dipindah utuh ke lembar berikutnya) */
+    'function atom(n){',
+    ' if(n.nodeType!==1) return true;',
+    ' var t=n.tagName;',
+    ' if(t==="P"||t==="TR"||t==="IMG"||t==="BR"||t==="HR"||t==="LI"||t==="THEAD"||t==="TFOOT"||t==="COLGROUP") return true;',
+    ' if(hasCls(n,"spk-cl-h")||hasCls(n,"spk-kv")||hasCls(n,"spk-party")||hasCls(n,"spk-bab")||hasCls(n,"spk-sign")||hasCls(n,"spk-sign-eyebrow")||hasCls(n,"spk-lampsign")) return true;',
+    ' return els(n).length===0;',
+    '}',
+    'function build(sec, PH, UID){',
+    ' var run=sec.querySelector("table.spk-run");',
+    ' var headHtml="", footHtml="";',
+    ' var holder=document.createElement("div");',
+    ' if(run){',
+    '   var th=run.querySelector("thead > tr > td"), tf=run.querySelector("tfoot > tr > td"), tb=run.querySelector("tbody > tr > td");',
+    '   headHtml=th?th.innerHTML:""; footHtml=tf?tf.innerHTML:"";',
+    '   if(tb){ while(tb.firstChild) holder.appendChild(tb.firstChild); }',
+    ' }else{ while(sec.firstChild) holder.appendChild(sec.firstChild); }',
+    ' var extra=(" "+sec.className+" ").replace(" spk-page "," ").replace(" spk-flow "," ").replace(/\\s+/g," ").trim();',
+    ' var sheets=[], body=null, stack=[];',
+    ' function mk(){',
+    '   var sh=document.createElement("section");',
+    '   sh.className=("spk-page spk-sheet "+extra).trim();',
+    '   var h=null,f=null;',
+    '   if(headHtml){ h=document.createElement("div"); h.className="sh-hd"; h.innerHTML=headHtml; sh.appendChild(h); }',
+    '   var b=document.createElement("div"); b.className="sh-bd"; sh.appendChild(b);',
+    '   if(footHtml){ f=document.createElement("div"); f.className="sh-ft"; f.innerHTML=footHtml; sh.appendChild(f); }',
+    '   sec.parentNode.insertBefore(sh, sec);',
+    '   sheets.push(sh);',
+    '   var hh=h?h.getBoundingClientRect().height:0;',
+    '   var fh=f?f.getBoundingClientRect().height:0;',
+    '   b.style.height=Math.max(80,(PH-hh-fh-6))+"px";',
+    '   b.style.overflow="hidden";',
+    '   body=b;',
+    '   for(var i=0;i<stack.length;i++){',
+    '     var sl=stack[i].src.cloneNode(false);',
+    '     sl.setAttribute("data-spksh", stack[i].uid);',
+    '     if(sl.classList) sl.classList.add("spk-cont");',
+    '     if(sl.tagName==="TABLE"){',
+    '       var cg=stack[i].src.querySelector("colgroup"); if(cg) sl.appendChild(cg.cloneNode(true));',
+    '       var td=stack[i].src.querySelector("thead");    if(td) sl.appendChild(td.cloneNode(true));',
+    '     }',
+    '     (i===0?body:stack[i-1].el).appendChild(sl);',
+    '     stack[i].el=sl;',
+    '   }',
+    '   return body;',
+    ' }',
+    ' function tgt(){ return stack.length? stack[stack.length-1].el : body; }',
+    ' function over(){ return body.scrollHeight > body.clientHeight+1; }',
+    ' function kosong(){ return !((body.textContent||"").replace(/[\\s\\u00A0]/g,"")) && !body.querySelector("img,table"); }',
+    ' function put(node){',
+    '   if(node.nodeType===1 && hasCls(node,"spk-signpage") && !kosong()){ mk(); }',
+    '   var t=tgt();',
+    '   t.appendChild(node);',
+    '   if(!over()) return;',
+    '   t.removeChild(node);',
+    '   if(!atom(node)){',
+    '     var uid=String(++UID.n);',
+    '     var sl=node.cloneNode(false);',
+    '     sl.setAttribute("data-spksh", uid);',
+    '     t.appendChild(sl);',
+    '     if(over() && !kosong()){ t.removeChild(sl); mk(); put(node); return; }',
+    '     if(sl.tagName==="TABLE"){',
+    '       var cg=node.querySelector("colgroup"); if(cg) sl.appendChild(cg.cloneNode(true));',
+    '     }',
+    '     stack.push({src:node, el:sl, uid:uid});',
+    '     var kids=els(node);',
+    '     for(var i=0;i<kids.length;i++) put(kids[i]);',
+    '     stack.pop();',
+    '     return;',
+    '   }',
+    '   if(kosong()){ t.appendChild(node); return; }',   /* blok lebih tinggi dari 1 halaman */
+    '   mk();',
+    '   tgt().appendChild(node);',
+    ' }',
+    ' mk();',
+    ' var nodes=els(holder);',
+    ' for(var i=0;i<nodes.length;i++) put(nodes[i]);',
+    /* bersihkan cangkang & lembar yang kosong */
+    ' for(var i=0;i<sheets.length;i++){',
+    '   var shells=sheets[i].querySelectorAll("[data-spksh]");',
+    '   for(var j=shells.length-1;j>=0;j--){',
+    '     var e=shells[j];',
+    '     if(!((e.textContent||"").replace(/[\\s\\u00A0]/g,"")) && !e.querySelector("img,table,td")) e.parentNode.removeChild(e);',
+    '   }',
+    ' }',
+    ' for(var i=sheets.length-1;i>=0;i--){',
+    '   var bd=sheets[i].querySelector(".sh-bd");',
+    '   if(bd && !((bd.textContent||"").replace(/[\\s\\u00A0]/g,"")) && !bd.querySelector("img,table")) sheets[i].parentNode.removeChild(sheets[i]);',
+    ' }',
+    ' sec.parentNode.removeChild(sec);',
+    '}',
+    /* klausul yang terpotong: hanya lembar PERTAMA yang menaikkan nomor klausul */
+    'function tandaiLanjutan(){',
+    ' var seen={}, cl=document.querySelectorAll(".spk-doc .spk-clause");',
+    ' for(var i=0;i<cl.length;i++){',
+    '   var u=cl[i].getAttribute("data-spksh")||("x"+i);',
+    '   if(seen[u]) cl[i].classList.add("spk-cont"); else { cl[i].classList.remove("spk-cont"); seen[u]=1; }',
+    ' }',
+    '}',
+    /* nomor halaman Daftar Isi = nomor lembar tempat klausul dimulai */
+    'function nomorToc(){',
+    ' var pages=document.querySelectorAll(".spk-doc > .spk-page");',
+    ' var pgs=document.querySelectorAll(".spk-toc2 .pg");',
+    ' var k=0;',
+    ' for(var i=0;i<pages.length;i++){',
+    '   var cls=pages[i].querySelectorAll(".spk-clause:not(.spk-cont)");',
+    '   for(var j=0;j<cls.length;j++){ if(pgs[k]) pgs[k].textContent=String(i+1); k++; }',
+    ' }',
+    '}',
+    'function jalan(){',
+    ' if(DONE) return;',
+    ' var PH=mm2px(246.2);',
+    ' if(!PH||PH<200){ if(TRY++<80) setTimeout(jalan,100); return; }',
+    ' DONE=true;',
+    ' var doc=document.querySelector(".spk-doc");',
+    ' var backup=doc?doc.innerHTML:"";',
+    ' try{',
+    '   var UID={n:0};',
+    '   var list=document.querySelectorAll(".spk-doc > .spk-page.spk-flow");',
+    '   for(var i=0;i<list.length;i++) build(list[i], PH, UID);',
+    '   tandaiLanjutan();',
+    '   nomorToc();',
+    ' }catch(e){',
+    '   try{ console.error("spk paginate:", e); if(doc) doc.innerHTML=backup; }catch(_){}',
+    ' }',
+    ' try{ window.__spkPaged=true; }catch(e2){}',
+    '}',
+    'if(document.readyState==="loading") window.addEventListener("load", jalan); else jalan();',
+    'window.addEventListener("load", jalan);',
+    '})();'
+  ].join('\n');
+  return '<scr'+'ipt>'+js+'</scr'+'ipt>';
 }
 /* Nama lama tetap dipertahankan agar pemanggilan lain (bila ada) tidak rusak */
 function spkTocScript(){ return spkPageScript(); }
@@ -21870,9 +22039,19 @@ function spkPrint(){
     if(typeof withHiddenPageTitle==='function') withHiddenPageTitle(run); else run();
     setTimeout(()=>{ const f=document.getElementById('spk-print-frame'); if(f) f.remove(); }, 1500);
   };
+  /* Tunggu sampai isi selesai dipecah menjadi lembar A4 (spkPageScript) agar
+     hasil cetak sama persis dengan pratinjau. */
+  let printed=false;
+  const goPaged=(sisa)=>{
+    if(printed) return;
+    let siap=false;
+    try{ siap=!!(ifr.contentWindow && ifr.contentWindow.__spkPaged); }catch(e){ siap=true; }
+    if(siap || sisa<=0){ printed=true; go(); return; }
+    setTimeout(()=>goPaged(sisa-60), 60);
+  };
   const imgs=doc.images?Array.from(doc.images):[];
-  if(imgs.length){ let n=imgs.length; const dec=()=>{ if(--n<=0) setTimeout(go,60); }; imgs.forEach(im=>{ if(im.complete) dec(); else{ im.onload=dec; im.onerror=dec; } }); setTimeout(go,1200); }
-  else setTimeout(go,120);
+  if(imgs.length){ let n=imgs.length; const dec=()=>{ if(--n<=0) setTimeout(()=>goPaged(3000),60); }; imgs.forEach(im=>{ if(im.complete) dec(); else{ im.onload=dec; im.onerror=dec; } }); setTimeout(()=>goPaged(3000),1200); }
+  else setTimeout(()=>goPaged(3000),120);
 }
 
 /* ================= HALAMAN: UBAH KLAUSUL KONTRAK ================= */
