@@ -7167,10 +7167,19 @@ function fklDocTitleBlock(titleHtml, nama, codes){
 }
 
 function fklDocBaseCss(){ const el=document.getElementById('fkl-doc-css'); return el?el.textContent:''; }
+/* Dokumen Cetak/PDF adalah dokumen HTML MANDIRI (iframe/window baru). Font yang
+   dimuat di halaman utama TIDAK diwariskan ke sana, sehingga 'Plus Jakarta Sans'
+   sebelumnya selalu jatuh ke Segoe UI/Arial. Link berikut memuat font itu langsung
+   di dalam dokumen cetak. */
+function fklDocFontLink(){
+  return '<link rel="preconnect" href="https://fonts.googleapis.com">'+
+    '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'+
+    '<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">';
+}
 function fklDocShell(extraCss, innerHtml){
   return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8">'+
     '<meta name="viewport" content="width=device-width, initial-scale=1">'+
-    '<title>&#8203;</title>'+
+    '<title>&#8203;</title>'+fklDocFontLink()+
     '<style>'+fklDocBaseCss()+(extraCss||'')+'</style></head><body>'+
     '<table class="fkl-page-wrap">'+
       '<thead><tr><td><div class="fkl-vspace"></div></td></tr></thead>'+
@@ -12822,7 +12831,7 @@ function hpscBuild(dp){
   pages+=hpscCoverSimple('SUMBER HARGA','REFERENSI HARGA', dp, 'Kumpulan Referensi Harga Barang / Jasa');    // 8
   if(rhoRec) pages+=hpscModulePage(hpscModuleFrag('rho', rhoRec));    // 9 (opsional)
   return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>&#8203;</title>'+
-    '<style>'+hpscAllCss()+'</style></head><body>'+pages+'</body></html>';
+    fklDocFontLink()+'<style>'+hpscAllCss()+'</style></head><body>'+pages+'</body></html>';
 }
 function hpsShowComposite(){
   const sel=document.getElementById('rekap-dp-select'); const id=sel?sel.value:'';
@@ -14381,7 +14390,10 @@ function spkDocCss2(){
   '.spk-rft .ft-rule{border-top:1px solid #E2E2E2;margin-bottom:12px}'+
   '.spk-rft .ft-row{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:12px;font-weight:700;color:#201E1D;letter-spacing:.01em}'+
   '.spk-rft .ln{display:inline-block;width:3.2cm;border-bottom:1px solid #201E1D;margin:0 6px;vertical-align:middle}'+
-  '.spk-rft .c{font-weight:700;color:#201E1D}'+
+  '.spk-rft .c{font-weight:700;color:#201E1D;text-align:center;flex:0 0 auto}'+
+  '.spk-rft .ft-row .ft-unit{margin-bottom:2px}'+
+  '.spk-rft .ft-pg{font-size:11px;font-weight:800;color:#201E1D;letter-spacing:.02em}'+
+  '.spk-rft .l,.spk-rft .r{white-space:nowrap}'+
   /* ---------- ISI: BAB & tanda tangan ---------- */
   '.spk-bab{text-align:center;font-family:'+G+';font-size:8.5px;font-weight:800;letter-spacing:.24em;color:#1E6FBF;margin:0 0 12px}'+
   '.spk-signpage{page-break-before:always;break-before:page;padding-top:8mm}'+
@@ -14566,11 +14578,29 @@ function spkJudulPlain(j){
   return String(box.textContent||'').replace(/\s+/g,' ').trim();
 }
 /* Ubah huruf pada seluruh simpul teks (tag <i>/<b>/<u> dipertahankan) */
+/* Title case untuk JUDUL KLAUSUL (Daftar Isi & kop klausul):
+   - kata sambung/depan tetap huruf kecil, kecuali kata pertama
+   - huruf pertama diambil dari huruf sesungguhnya, sehingga "(force majeure)"
+     menjadi "(Force Majeure)", bukan "(force Majeure)" */
+var SPK_KATA_KECIL = ['dan','atau','di','ke','dari','untuk','pada','yang','dalam','dengan','oleh','serta','terhadap','antara','sebagai','the','of','in','and','a','an'];
+function spkSmartTitleCase(s, awal){
+  var kata=String(s||'').toLowerCase().split(/(\s+)/);
+  var idx=(awal===false)?1:0;
+  return kata.map(function(w){
+    if(/^\s+$/.test(w) || !w) return w;
+    var inti=w.replace(/[^a-z\u00e0-\u024f]/g,'');
+    var pertama=(idx++===0);
+    if(!pertama && SPK_KATA_KECIL.indexOf(inti)>=0) return w;
+    return w.replace(/[a-z\u00e0-\u024f]/, function(c){ return c.toUpperCase(); });
+  }).join('');
+}
 function spkJudulCase(html, mode){
   var box=document.createElement('div'); box.innerHTML=html;
   var w=document.createTreeWalker(box, NodeFilter.SHOW_TEXT, null, false), n;
+  var awal=true;
   while((n=w.nextNode())){
-    n.nodeValue = (mode==='upper') ? n.nodeValue.toUpperCase() : spkTitleCase(n.nodeValue.toLowerCase());
+    if(mode==='upper'){ n.nodeValue=n.nodeValue.toUpperCase(); }
+    else { n.nodeValue=spkSmartTitleCase(n.nodeValue, awal); if(n.nodeValue.trim()) awal=false; }
   }
   return box.innerHTML;
 }
@@ -16790,10 +16820,15 @@ function spkRunHeadHtml(data){
   '</div>';
 }
 function spkRunFootHtml(){
+  /* CSS (spkDocCss2) menata footer lewat .ft-row yang display:flex. Sebelumnya
+     .l/.c/.r ditaruh langsung di .spk-rft tanpa .ft-row, sehingga ketiganya
+     menumpuk rata kiri. Nomor halaman (.ft-pg) diisi oleh spkPageScript(). */
   return '<div class="spk-rft">'+
-    '<div class="l">PIHAK PERTAMA <span class="ln"></span></div>'+
-    '<div class="c">UP3 MASOHI</div>'+
-    '<div class="r"><span class="ln"></span> PIHAK KEDUA</div>'+
+    '<div class="ft-row">'+
+      '<div class="l">PIHAK PERTAMA <span class="ln"></span></div>'+
+      '<div class="c"><div class="ft-unit">UP3 MASOHI</div><div class="ft-pg">&#8203;</div></div>'+
+      '<div class="r"><span class="ln"></span> PIHAK KEDUA</div>'+
+    '</div>'+
   '</div>';
 }
 
@@ -17053,6 +17088,15 @@ function spkPageScript(){
     '   for(var j=0;j<cls.length;j++){ if(pgs[k]) pgs[k].textContent=String(i+1); k++; }',
     ' }',
     '}',
+    /* Nomor halaman footer: "N dari M" untuk lembar isi & lampiran */
+    'function nomorFooter(){',
+    ' var sh=document.querySelectorAll(".spk-doc > .spk-page.spk-sheet");',
+    ' var tot=sh.length;',
+    ' for(var i=0;i<tot;i++){',
+    '   var t=sh[i].querySelector(".ft-pg");',
+    '   if(t) t.textContent=(i+1)+" dari "+tot;',
+    ' }',
+    '}',
     'function jalan(){',
     ' if(DONE) return;',
     ' var PH=mm2px(246.2);',
@@ -17066,13 +17110,27 @@ function spkPageScript(){
     '   for(var i=0;i<list.length;i++) build(list[i], PH, UID);',
     '   tandaiLanjutan();',
     '   nomorToc();',
+    '   nomorFooter();',
     ' }catch(e){',
     '   try{ console.error("spk paginate:", e); if(doc) doc.innerHTML=backup; }catch(_){}',
     ' }',
     ' try{ window.__spkPaged=true; }catch(e2){}',
     '}',
-    'if(document.readyState==="loading") window.addEventListener("load", jalan); else jalan();',
-    'window.addEventListener("load", jalan);',
+    /* Paginasi mengukur TINGGI teks. Bila dijalankan sebelum Plus Jakarta Sans
+       selesai dimuat, tinggi terukur memakai font cadangan sehingga pemenggalan
+       halaman & nomor Daftar Isi meleset. Karena itu tunggu font siap dulu. */
+    'function mulai(){',
+    ' try{',
+    '   if(document.fonts && document.fonts.ready && document.fonts.ready.then){',
+    '     document.fonts.ready.then(function(){ jalan(); });',
+    '     setTimeout(jalan, 3000);',
+    '     return;',
+    '   }',
+    ' }catch(e){}',
+    ' jalan();',
+    '}',
+    'if(document.readyState==="loading") window.addEventListener("load", mulai); else mulai();',
+    'window.addEventListener("load", mulai);',
     '})();'
   ].join('\n');
   return '<scr'+'ipt>'+js+'</scr'+'ipt>';
@@ -17112,7 +17170,8 @@ function spkDocHtml(data, klausul){
   const coverLamp=spkCoverHtml(data, ctx, 'Lampiran SPK');
   const lampiran='<section class="spk-page spk-flow spk-lampsheet">'+spkLampiranDocInner(data)+'</section>';
 
-  return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><title>&#8203;</title><style>'+
+  return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><title>&#8203;</title>'+
+    (typeof fklDocFontLink==='function'?fklDocFontLink():'')+'<style>'+
     (typeof fklDocBaseCss==='function'?fklDocBaseCss():'')+
     (typeof hpsExtraDocCss==='function'?hpsExtraDocCss():'')+
     spkDocCss()+spkDocCss2()+
