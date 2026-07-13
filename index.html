@@ -22127,11 +22127,6 @@ function renderSpkKlausul(){
   const btnBatal = aktifProfil
     ? '<button type="button" class="jp-profil-btn is-cancel" title="Batalkan profil yang dimuat &amp; kembalikan pustaka klausul ke bawaan" onclick="spkKlProfilCancel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg><span>Batalkan Pilihan</span></button>'
     : '';
-  // "Kembalikan ke Bawaan" tampil saat TIDAK ada profil aktif -> ganti isi
-  // pustaka klausul dengan 3 klausul kosong bawaan (KLAUSUL 1, 2, 3).
-  const btnReset = aktifProfil
-    ? ''
-    : '<button type="button" class="jp-profil-btn is-cancel" title="Ganti seluruh isi pustaka klausul dengan 3 klausul kosong bawaan (KLAUSUL 1, 2, 3)" onclick="spkKlausulResetDefault()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg><span>Kembalikan ke Bawaan</span></button>';
   const tagProfil = aktifProfil
     ? '<span class="spk-klprof-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:13px;height:13px"><path d="M20 6 9 17l-5-5"/></svg>Profil: '+fkEsc(aktifProfil)+'</span>'
     : '';
@@ -22143,7 +22138,6 @@ function renderSpkKlausul(){
           '<button type="button" class="jp-profil-btn is-save" onclick="spkKlProfilOpenSave()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg><span>Simpan Profil</span></button>'+
           '<button type="button" class="jp-profil-btn is-load" onclick="spkKlProfilOpenLoad()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6M9 14h6"/></svg><span>Muat Profil</span></button>'+
           btnBatal+
-          btnReset+
           '<button class="btn btn-green btn-sm" onclick="spkKlausulNew()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Tambah Klausul</button>'+
         '</span>'+
       '</div>'+
@@ -22234,15 +22228,13 @@ function spkKlProfilDoLoad(name){
   const p=spkKlProfilAll().find(x=>String(x.name)===String(name));
   if(!p || !Array.isArray(p.items) || !p.items.length){ toast('Profil tidak ditemukan','warn'); return; }
   const backup=spkKlProfilSnapshot();
-  openConfirm({ icon:'warn', title:'Muat Profil Klausul',
-    text:'Pustaka klausul saat ini akan diganti dengan profil "'+name+'" ('+p.items.length+' klausul). Lanjutkan?',
-    onYes:async()=>{
-      try{ await withActionLoader('Memuat profil', async()=>{ await spkKlProfilWrite(p.items); }); }
-      catch(err){ console.error(err); toast('Gagal memuat profil: '+errMsg(err),'err'); return; }
-      spkKlProfil.active=name; spkKlProfil.backup=backup;
-      spkKlProfilClose(); renderSpkKlausul();
-      toast('Profil "'+name+'" dimuat','ok');
-    }});
+  (async()=>{
+    try{ await withActionLoader('Memuat profil', async()=>{ await spkKlProfilWrite(p.items); }); }
+    catch(err){ console.error(err); toast('Gagal memuat profil: '+errMsg(err),'err'); return; }
+    spkKlProfil.active=name; spkKlProfil.backup=backup;
+    spkKlProfilClose(); renderSpkKlausul();
+    toast('Profil "'+name+'" dimuat','ok');
+  })();
 }
 /* "Batalkan Pilihan" -> pustaka klausul kembali ke KEADAAN BAWAAN:
    3 klausul (KLAUSUL 1 s.d. 3) berisi contoh pengisian "Isi Klausul ......" */
