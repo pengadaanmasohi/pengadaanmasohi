@@ -4896,7 +4896,7 @@ function jpBuildDocHtml(){
   const st=jpState; const rows=jpCompute();
   /* Blok Data Pekerjaan — gaya sama seperti dokumen pada menu Harga Perkiraan Sendiri */
   const fmtNilai=(st.nilai!==''&&st.nilai!=null)?('Rp '+Number(st.nilai).toLocaleString('id-ID')):'-';
-  const infoRow=(k,v)=>'<tr><td class="k">'+k+'</td><td class="s">:</td><td class="v">'+fkEsc(v||'-')+'</td></tr>';
+  const infoRow=(k,v)=>'<tr><td class="k">'+k+'</td><td class="s">:</td><td class="v" style="text-align:justify">'+fkEsc(v||'-')+'</td></tr>';
   /* Ringkasan (poin C) — logika sama persis dengan kartu ringkasan di form:
      Rencana Terkontrak = Akhir tahapan terakhir; Durasi Pengadaan = selisih Awal
      tahapan pertama s.d. Akhir tahapan terakhir. */
@@ -7057,7 +7057,7 @@ function fklBuildDocHtml(){
   const list=fklSelectedDocs(), c=fklCountAda();
   const fmtNilai = (info.nilai!=='' && info.nilai!=null && info.nilai!=='') ? 'Rp '+Number(info.nilai).toLocaleString('id-ID') : '-';
   const tglTerima = info.tgl_terima ? pnwDateLong(info.tgl_terima) : '..........................';
-  const infoRow=(k,v)=>'<tr><td class="k">'+k+'</td><td class="s">:</td><td class="v">'+fkEsc(v||'-')+'</td></tr>';
+  const infoRow=(k,v)=>'<tr><td class="k">'+k+'</td><td class="s">:</td><td class="v" style="text-align:justify">'+fkEsc(v||'-')+'</td></tr>';
 
   const chkRows=list.map((nama,i)=>{
     const val=st.ada[nama];
@@ -8134,7 +8134,7 @@ function pnwBuildDocHtml(sk){
   const kats=pnwSelectedKategori(st,sk);
   const fmtNilai = (info.nilai!=='' && info.nilai!=null) ? 'Rp '+Number(info.nilai).toLocaleString('id-ID') : '-';
   const tglDoc = st.__tgl ? pnwDateLong(st.__tgl) : pnwDateLong((new Date()).toISOString().slice(0,10));
-  const infoRow=(k,v)=>'<tr><td class="k">'+k+'</td><td class="s">:</td><td class="v">'+fkEsc(v||'-')+'</td></tr>';
+  const infoRow=(k,v)=>'<tr><td class="k">'+k+'</td><td class="s">:</td><td class="v" style="text-align:justify">'+fkEsc(v||'-')+'</td></tr>';
 
   // Per penyedia: satu blok tabel
   const penyBlocks = st.penyedia.map((nm,pidx)=>{
@@ -9176,7 +9176,7 @@ function rhoDeleteRecord(id){
 function rhoBuildDocHtml(){
   const st=rhoActiveState(); const info=st.info||{};
   const fmtNilai=(info.nilai!==''&&info.nilai!=null)?('Rp '+Number(info.nilai).toLocaleString('id-ID')):'-';
-  const infoRow=(k,v)=>'<tr><td class="k">'+k+'</td><td class="s">:</td><td class="v">'+fkEsc(v||'-')+'</td></tr>';
+  const infoRow=(k,v)=>'<tr><td class="k">'+k+'</td><td class="s">:</td><td class="v" style="text-align:justify">'+fkEsc(v||'-')+'</td></tr>';
   const K=Math.max(1,Math.min(10, parseInt(st.jumlahRef,10)||1));
 
   const itemBlocks=(st.items||[]).map((nm,i)=>{
@@ -10575,7 +10575,7 @@ function hpsDeleteRecord(id){
 function hpsBuildDocHtml(){
   const st=hpsActiveState(); hpsResyncLockedHarga(st); const info=st.info||{};
   const fmtNilai=(info.nilai!==''&&info.nilai!=null)?('Rp '+Number(info.nilai).toLocaleString('id-ID')):'-';
-  const infoRow=(k,v)=>'<tr><td class="k">'+k+'</td><td class="s">:</td><td class="v">'+fkEsc(v||'-')+'</td></tr>';
+  const infoRow=(k,v)=>'<tr><td class="k">'+k+'</td><td class="s">:</td><td class="v" style="text-align:justify">'+fkEsc(v||'-')+'</td></tr>';
 
   /* ---- Baris item + Judul / Sub-Judul (bernomor sesuai gaya terpilih) ---- */
   let bodyRows='';
@@ -12149,7 +12149,7 @@ function anaBuildDocHtml(section){
 function anaBuildDocHargaSatuan(st){
   const info=st.info||{}; const kst=st.konstruksi||{items:[]};
   const fmtNilai=(info.nilai!==''&&info.nilai!=null)?('Rp '+Number(info.nilai).toLocaleString('id-ID')):'-';
-  const infoRow=(k,v)=>'<tr><td class="k">'+k+'</td><td class="s">:</td><td class="v">'+fkEsc(v||'-')+'</td></tr>';
+  const infoRow=(k,v)=>'<tr><td class="k">'+k+'</td><td class="s">:</td><td class="v" style="text-align:justify">'+fkEsc(v||'-')+'</td></tr>';
   const items=kst.items||[];
   let hsRows='';
   jsWalk(items,{judulOn:false,subOn:false},{
@@ -12240,7 +12240,7 @@ function anaBuildDocAhsp(st){
 function anaBuildDocHtmlUmum(st){
   const info=st.info||{};
   const fmtNilai=(info.nilai!==''&&info.nilai!=null)?('Rp '+Number(info.nilai).toLocaleString('id-ID')):'-';
-  const infoRow=(k,v)=>'<tr><td class="k">'+k+'</td><td class="s">:</td><td class="v">'+fkEsc(v||'-')+'</td></tr>';
+  const infoRow=(k,v)=>'<tr><td class="k">'+k+'</td><td class="s">:</td><td class="v" style="text-align:justify">'+fkEsc(v||'-')+'</td></tr>';
   const struct=(st.refs&&st.refs[0]&&st.refs[0].items)||[];
   const nRef=st.jumlahRef||(st.refs?st.refs.length:0);
   const rok=anaNum(st.rok);
@@ -12919,7 +12919,7 @@ function rekapExtraDocCss(){
   'table.rekap-tbl td.num{text-align:right;white-space:nowrap}';
 }
 function rekapStandaloneDocHtml(dp, hpsList, anaList){
-  const infoRow=(k,v)=>'<tr><td class="k">'+k+'</td><td class="s">:</td><td class="v">'+fkEsc(v||'-')+'</td></tr>';
+  const infoRow=(k,v)=>'<tr><td class="k">'+k+'</td><td class="s">:</td><td class="v" style="text-align:justify">'+fkEsc(v||'-')+'</td></tr>';
   const hpsBody = hpsList.length ? hpsList.map((r,i)=>'<tr>'+
       '<td class="no">'+(i+1)+'</td>'+
       '<td class="tgl">'+fkEsc(r.tgl_hps?pnwDateLong(r.tgl_hps):'-')+'</td>'+
@@ -13189,10 +13189,11 @@ const SPK_FIELD_GROUPS = [
   { sec:'Informasi Pengadaan', fields:[
     {k:'nama_pekerjaan', l:'Nama Pekerjaan', t:'text', span:2, def:''},
     {k:'lokasi_pekerjaan', l:'Lokasi Pekerjaan', t:'text', span:2, def:''},
-    {k:'pelaksana', l:'Bidang Pelaksana', t:'text', def:''},
+    {k:'pelaksana', l:'Bidang Pelaksana', t:'text', dpLock:true, def:''},
     {k:'jenis_anggaran', l:'Jenis Anggaran', t:'text', def:''},
     {k:'no_anggaran', l:'No. Anggaran', t:'text', span:2, def:''},
     {k:'tgl_anggaran', l:'Tgl. Anggaran', t:'date', def:''},
+    {k:'metode_pengadaan', l:'Metode Pengadaan', t:'text', dpLock:true, def:''},
     {k:'no_eproc', l:'No. Eproc', t:'text', span:2, def:''},
     {k:'pengumuman_awal', l:'Tgl. Pengumuman (awal)', t:'date', def:''},
     {k:'pengumuman_akhir', l:'Tgl. Pengumuman (akhir)', t:'date', def:''},
@@ -13202,7 +13203,6 @@ const SPK_FIELD_GROUPS = [
     {k:'tgl_bae', l:'Tgl. BA Evaluasi Penawaran', t:'date', def:''},
     {k:'no_bakn', l:'No. BA Klarifikasi dan Negosiasi', t:'text', span:2, def:''},
     {k:'tgl_bakn', l:'Tgl. BA Klarifikasi dan Negosiasi', t:'date', def:''},
-    {k:'no_penawaran', l:'No. Penawaran', t:'text', span:2, def:''},
   ]},
   { sec:'Informasi Kontrak', fields:[
     {k:'nomor_kontrak', l:'No. Kontrak', t:'text', span:2, def:''},
@@ -13807,6 +13807,7 @@ async function spkApplyDp(rec){
   if(info.tgl_anggaran) d.tgl_anggaran=info.tgl_anggaran;
   if(info.jenis_anggaran) d.jenis_anggaran=info.jenis_anggaran;
   if(info.bidang_pelaksana) d.pelaksana=info.bidang_pelaksana;
+  if(info.metode) d.metode_pengadaan=info.metode;
   // Nomor & tanggal BA (Pembukaan, Evaluasi, Klarifikasi & Negosiasi) dari Penetapan Nomor
   let pnCount=0;
   try{ await refreshDataPenetapan(); }catch(e){}
@@ -13918,6 +13919,13 @@ function spkFieldInput(f){
     const tp=(f.t==='date')?'date':'text';
     return '<div class="field locked"'+span+'><label>'+spkLbl(f)+'</label>'+
       '<input type="'+tp+'" id="spk-fld-'+f.k+'" value="'+fkEsc(v||'')+'" readonly disabled>'+
+      SPK_LOCK_OVL+'</div>';
+  }
+  // Field yang terisi otomatis dari Data Pekerjaan (mis. Bidang Pelaksana, Metode
+  // Pengadaan) -> terkunci selama sebuah Data Pekerjaan masih tertaut.
+  if(f.dpLock && spkState.data.__dpId){
+    return '<div class="field locked"'+span+'><label>'+spkLbl(f)+'</label>'+
+      '<input type="text" id="spk-fld-'+f.k+'" value="'+fkEsc(v||'')+'" readonly disabled>'+
       SPK_LOCK_OVL+'</div>';
   }
   if(f.t==='select'){
@@ -14413,7 +14421,9 @@ function spkDocCss2(){
   '.spk-rft .ft-pg{font-size:11px;font-weight:800;color:#201E1D;letter-spacing:.02em}'+
   '.spk-rft .l,.spk-rft .r{white-space:nowrap}'+
   /* ---------- ISI: BAB & tanda tangan ---------- */
-  '.spk-bab{text-align:center;font-family:'+G+';font-size:8.5px;font-weight:800;letter-spacing:.24em;color:#1E6FBF;margin:0 0 12px}'+
+  '.spk-bab{text-align:center;font-family:'+G+';margin:0 0 14px}'+
+  '.spk-bab b{display:block;font-size:13pt;font-weight:800;color:#201E1D;text-decoration:underline;text-underline-offset:3px;letter-spacing:.05em;text-transform:uppercase}'+
+  '.spk-bab span{display:block;font-size:11pt;font-weight:700;color:#201E1D;letter-spacing:.02em;margin-top:3px}'+
   '.spk-signpage{page-break-before:always;break-before:page;padding-top:8mm}'+
   '.spk-sign-eyebrow{text-align:center;font-family:'+G+';font-size:8.5px;font-weight:800;letter-spacing:.24em;color:#1E6FBF;margin:0 0 24px}'+
   '.spk-signpage .spk-sign{margin-top:10px}'+
@@ -17174,7 +17184,7 @@ function spkDocHtml(data, klausul){
       ))+'</div></div>'
   ).join('');
   const isiBody=
-    '<div class="spk-bab">BAB I &middot; PARA PIHAK</div>'+
+    '<div class="spk-bab"><b>SURAT PERINTAH KERJA</b>'+(data.nomor_kontrak?('<span>'+esc(data.nomor_kontrak)+'</span>'):'')+'</div>'+
     '<div class="spk-cl">'+preamble+'</div>'+
     clausesHtml+
     spkSignBlockHtml(ctx,'1')+
