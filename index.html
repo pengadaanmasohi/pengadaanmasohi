@@ -19235,6 +19235,16 @@ function spkDocCss2(){
   '.spk-lampsheet{page-break-before:always;break-before:page}'+
   '.spk-lampsheet .fkl-doc{padding:0;overflow:visible;background:transparent}'+
   '.spk-lampsheet .fkl-doc-title{font-size:16px}'+
+  /* Blok tanda tangan pada Lampiran: dua pihak (PIHAK KEDUA & PIHAK PERTAMA),
+     tanggal di atas kolom PIHAK PERTAMA, nama bergaris bawah. */
+  '.spk-lampsign{page-break-before:auto;break-before:auto;padding-top:0;margin-top:26px;break-inside:avoid;page-break-inside:avoid}'+
+  '.spk-lampsign .spk-sign{margin-top:0}'+
+  '.spk-lampsign .spk-sign td{width:50%;text-align:center;vertical-align:top;font-size:11pt;padding:4px 6px;font-family:Arial,Helvetica,sans-serif}'+
+  '.spk-lampsign .ttd-date{min-height:1.2em;font-size:11pt;margin-bottom:2px}'+
+  '.spk-lampsign .role{font-weight:700}'+
+  '.spk-lampsign .org{font-weight:700;line-height:1.25}'+
+  '.spk-lampsign .nm{font-weight:700;text-decoration:underline;margin-top:70px}'+
+  '.spk-lampsign .jab{font-weight:700}'+
   /* ---------- PRATINJAU DI LAYAR (lembar A4) ---------- */
   '@media screen{'+
     'html,body{background:#54585c;margin:0;padding:24px 0}'+
@@ -21620,6 +21630,37 @@ function spkSignBlockHtml(ctx, rangkap){
   '</div>';
 }
 
+/* ---------- Blok tanda tangan LAMPIRAN ----------
+   Sesuai contoh: dua kolom — PIHAK KEDUA (kiri) & PIHAK PERTAMA (kanan),
+   dengan baris tanggal "Masohi, <tgl>" di atas kolom PIHAK PERTAMA. */
+function spkLampSignBlockHtml(ctx, data){
+  const esc=fkEsc;
+  // Tanggal: "Masohi, 03 Juli 2026" (hari di-nol-depankan agar sama dengan contoh)
+  let tglLamp='';
+  const raw=(data && data.tanggal_kontrak) ? String(data.tanggal_kontrak) : '';
+  const p=raw.split('-');
+  if(p.length===3){ tglLamp=(('0'+(+p[2])).slice(-2))+' '+(SPK_BULAN[(+p[1])-1]||'')+' '+p[0]; }
+  else{ tglLamp=String(ctx.tanggal_kontrak||''); }
+  const kotaTtd = (data && data.kota_ttd) ? String(data.kota_ttd) : 'Masohi';
+  return '<div class="spk-signpage spk-lampsign">'+
+    '<table class="spk-sign"><tr>'+
+      // Kolom kiri: PIHAK KEDUA (penyedia). Baris tanggal dikosongkan (spacer) agar
+      // kedua kolom sejajar dengan kolom kanan yang memuat tanggal.
+      '<td><div class="ttd-date">&nbsp;</div>'+
+        '<div class="role">PIHAK KEDUA</div>'+
+        '<div class="org">'+esc(ctx.p2_nama_hormat||'')+'</div>'+
+        '<div class="nm">'+esc(ctx.p2_wakil||'')+'</div>'+
+        '<div class="jab">'+esc(ctx.p2_jabatan||'')+'</div></td>'+
+      // Kolom kanan: PIHAK PERTAMA (PLN), dengan tanggal di atas.
+      '<td><div class="ttd-date">'+esc(kotaTtd)+', '+esc(tglLamp)+'</div>'+
+        '<div class="role">PIHAK PERTAMA</div>'+
+        '<div class="org">'+esc(ctx.p1_nama_singkat||'PT PLN (Persero)')+'</div>'+
+        '<div class="nm">'+esc(ctx.p1_wakil||'')+'</div>'+
+        '<div class="jab">'+esc(ctx.p1_jabatan||'')+'</div></td>'+
+    '</tr></table>'+
+  '</div>';
+}
+
 /* ---------- Lampiran: dokumen bergaya Perhitungan HPS ---------- */
 function spkLampOfData(data){
   const L=(data && data.__lampiran && typeof data.__lampiran==='object') ? data.__lampiran : {items:[]};
@@ -21663,6 +21704,14 @@ function spkLampiranDocInner(data){
   html = html.replace(/<div class="fkl-doc-docno">[\s\S]*?<\/div>/,
     '<div class="fkl-doc-docno">'+fkEsc(data.nomor_kontrak||'')+'</div>');
   html = html.replace('>Rencana Anggaran Biaya<', '>Nilai Pekerjaan<');
+  /* Ganti blok tanda tangan bawaan HPS (Pengguna Barang/Jasa & Pejabat Pelaksana)
+     dengan blok tanda tangan LAMPIRAN dua pihak (PIHAK KEDUA & PIHAK PERTAMA)
+     sesuai contoh yang diminta. */
+  html = html.replace(/<tr class="ttd-row">[\s\S]*?<\/table><\/td><\/tr>/, '');
+  try{
+    const ctx=spkBuildCtx(data||{});
+    html += spkLampSignBlockHtml(ctx, data||{});
+  }catch(e){ console.error(e); }
   return html;
 }
 
