@@ -13183,7 +13183,7 @@ const SPK_DEF_MAKSUD="Adapun maksud dan tujuan dilaksanakannya pekerjaan ini ada
 const SPK_DEF_AKTA_PENDIRIAN = 'Akta Notaris Nomor: (no. akta..) tanggal (tgl. akta...) dibuat dihadapan Notaris (nama notaris...), yang disahkan berdasarkan Surat Keputusan Menteri Hukum dan Hak Asasi Manusia Nomor: (no. SK...) tanggal (tgl SK...) beserta Akta-akta Perubahannya';
 const SPK_DEF_AKTA_PERUBAHAN = 'berdasarkan Akta Notaris Nomor: (no. akta...) tanggal (tgl. akta...) dibuat dihadapan (nama notaris...), yang disahkan berdasarkan Surat Keputusan Menteri Hukum dan Hak Asasi Manusia Nomor: (no. SK...) tanggal (tgl. SK...)';
 /* Field SK Pimpinan Unit — dipakai untuk fitur "default = data terakhir disimpan" */
-const SPK_SK_KEYS = ['nama_pengguna','jabatan_pengguna','no_sk','nama_unit','singkatan_unit','lokasi_unit'];
+const SPK_SK_KEYS = ['nama_pengguna','jabatan_pengguna','no_sk','tgl_sk','nama_unit','singkatan_unit','lokasi_unit'];
 
 const SPK_FIELD_GROUPS = [
   { sec:'Informasi Pengadaan', fields:[
@@ -13219,7 +13219,8 @@ const SPK_FIELD_GROUPS = [
     {k:'perubahan', l:'Perubahan?', t:'select', opts:['Ya','Tidak'], def:''},
     {k:'nama_pengguna', l:'Nama Pengguna', t:'text', span:2, lockedBy:'perubahan', def:''},
     {k:'jabatan_pengguna', l:'Jabatan', t:'text', lockedBy:'perubahan', def:''},
-    {k:'no_sk', l:'No. SK Keputusan', t:'text', span:2, lockedBy:'perubahan', def:''},
+    {k:'no_sk', l:'No. Keputusan Direksi', t:'text', span:2, lockedBy:'perubahan', def:''},
+    {k:'tgl_sk', l:'Tgl. Keputusan Direksi', t:'date', lockedBy:'perubahan', def:''},
     {k:'nama_unit', l:'Nama Unit', t:'text', span:2, lockedBy:'perubahan', def:''},
     {k:'singkatan_unit', l:'Singkatan Unit', t:'text', lockedBy:'perubahan', def:''},
     {k:'lokasi_unit', l:'Lokasi Unit', t:'text', span:2, lockedBy:'perubahan', def:''},
@@ -13252,11 +13253,17 @@ const SPK_FIELD_GROUPS = [
 /* daftar semua field (flat) */
 const SPK_FIELDS_FLAT = SPK_FIELD_GROUPS.reduce((a,g)=>a.concat(g.fields),[]);
 
+/* Teks tetap (statis) profil PT PLN (Persero) untuk PIHAK PERTAMA.
+   Bukan field mail-merge — hanya bagian bercetak kuning pada dokumen yang
+   menjadi input (nama wakil, jabatan, no. & tgl. Keputusan Direksi, nama unit,
+   alamat unit). Bagian ini sama untuk semua kontrak. */
+const SPK_P1_AKTA_PLN = "Perusahaan Berbadan Hukum yang merupakan Badan Usaha Milik Negara (BUMN) yang didirikan berdasarkan Akta Notaris Nomor: 169 tanggal 30 Juli 1994 dibuat di hadapan Notaris SUTJIPTO, SH., yang disahkan berdasarkan Surat Keputusan Menteri Kehakiman Republik Indonesia Nomor: C2-11.519.HT.01.01.TH'94 tanggal 01 Agustus 1994 beserta akta-akta perubahannya.";
+
 /* ---------- Preamble (pembuka) — memakai placeholder ---------- */
 const SPK_PREAMBLE_TPL =
  '<p class="kl0">Pada hari ini <b>{{hari_ttd}}, tanggal {{tgl_kontrak_terbilang}} ({{tgl_kontrak_num}})</b>, kami yang bertanda tangan dibawah ini :</p>'+
  '<div class="spk-party"><div class="spk-party-h"><span class="n">I.</span>PT PLN (PERSERO):</div>'+
- '<p class="spk-party-d">{{p1_akta}} Dalam hal ini diwakili oleh <b>{{p1_wakil}}</b> selaku {{p1_jabatan}} berdasarkan {{p1_sk}}. Bertindak untuk dan atas nama {{p1_nama_singkat}} yang berkedudukan di {{p1_alamat}}, selanjutnya dalam Perjanjian ini disebut sebagai (<b>&ldquo;PIHAK PERTAMA&rdquo;</b>);</p></div>'+
+ '<p class="spk-party-d">{{p1_akta}} Dalam hal ini diwakili oleh <b>{{p1_wakil}}</b> selaku {{p1_jabatan}} berdasarkan Keputusan Direksi PT PLN (Persero) Nomor: {{p1_sk}} tanggal {{p1_sk_tgl}}. Bertindak untuk dan atas Nama {{p1_nama_singkat}} yang berkedudukan di {{p1_alamat}}, selanjutnya dalam Perjanjian ini disebut sebagai (<b>&ldquo;PIHAK PERTAMA&rdquo;</b>);</p></div>'+
  '<div class="spk-party"><div class="spk-party-h"><span class="n">II.</span>{{p2_nama}}:</div>'+
  '<p class="spk-party-d">{{p2_akta}} Dalam hal ini diwakili oleh <b>{{p2_wakil}}</b> selaku {{p2_jabatan}} berdasarkan {{p2_akta_jabatan}}. Bertindak untuk dan atas nama {{p2_nama_hormat}} yang berkedudukan di {{p2_alamat}}, selanjutnya dalam Perjanjian ini disebut sebagai (<b>&ldquo;PIHAK KEDUA&rdquo;</b>).</p></div>'+
  '<p class="kl0 spk-berdasar"><b><u>Berdasarkan :</u></b></p>'+
@@ -13265,7 +13272,7 @@ const SPK_PREAMBLE_TPL =
  '<p class="spk-dlist"><span class="n">3.</span>Berita Acara Pembukaan Penawaran Nomor: {{dasar_bapp_no}} tanggal {{dasar_bapp_tgl_pjg}};</p>'+
  '<p class="spk-dlist"><span class="n">4.</span>Berita Acara Evaluasi Penawaran Nomor: {{dasar_bae_no}} tanggal {{dasar_bae_tgl_pjg}};</p>'+
  '<p class="spk-dlist"><span class="n">5.</span>Berita Acara Klarifikasi dan Negosiasi Nomor: {{dasar_bakn_no}} tanggal {{dasar_bakn_tgl_pjg}}.</p>'+
- '<p class="kl0">Maka dengan ini <b>PIHAK PERTAMA</b> menugaskan kepada <b>PIHAK KEDUA</b> untuk melaksanakan pekerjaan sebagaimana tersebut dalam ketentuan sebagai berikut :</p>';
+ '<p class="kl0 spk-menugaskan">Maka dengan ini <b>PIHAK PERTAMA</b> menugaskan kepada <b>PIHAK KEDUA</b> untuk melaksanakan pekerjaan sebagaimana tersebut dalam ketentuan sebagai berikut :</p>';
 
 /* ---------- Util angka & tanggal ---------- */
 function spkNum(v){ const n=Number(String(v==null?'':v).replace(/[^0-9.-]/g,'')); return isFinite(n)?n:0; }
@@ -13317,10 +13324,11 @@ function spkBuildCtx(data){
   ctx.nama_pengguna = ctx.p1_wakil;
   ctx.p1_jabatan = d.jabatan_pengguna || '';
   ctx.p1_sk = d.no_sk || '';
+  ctx.p1_sk_tgl = spkDateLong(d.tgl_sk);            // tgl Keputusan Direksi (format panjang)
   ctx.p1_nama_singkat = d.nama_unit || d.singkatan_unit || '';
   ctx.p1_nama = String(d.nama_unit||'').toUpperCase();
   ctx.p1_alamat = d.lokasi_unit || '';
-  ctx.p1_akta = '';
+  ctx.p1_akta = SPK_P1_AKTA_PLN;                    // profil PT PLN — teks tetap (statis)
 
   // ---- PIHAK KEDUA (dari bidang Informasi Penyedia) ----
   ctx.p2_nama = String(d.nama_perusahaan||'').toUpperCase();
@@ -14282,9 +14290,14 @@ function spkDocCss(){
      baris sambungan sejajar teks di atasnya (mengikuti penggaris Word) */
   '.spk-cl p.spk-dlist{margin:0 0 4pt;padding-left:0.7cm;text-indent:-0.7cm;text-align:justify;line-height:1.15}'+
   '.spk-cl p.spk-dlist .n{display:inline-block;width:0.7cm;text-indent:0}'+
-  /* Nomor/kode referensi panjang di daftar "Berdasarkan" tetap utuh (tak diputus
-     di "/" atau "-"), agar justify tidak menimbulkan celah spasi lebar. */
-  '.spk-cl p.spk-dlist .nbrk{white-space:nowrap}'+
+  /* Nomor/kode referensi panjang di daftar "Berdasarkan" boleh dipotong di titik
+     mana pun agar mengisi baris justify secara rapat — sisa nomor turun ke baris
+     berikutnya, sehingga tidak timbul celah spasi lebar di tengah baris. */
+  '.spk-cl p.spk-dlist .refn{word-break:break-all}'+
+  /* Kalimat penutup pembuka ("Maka dengan ini ... menugaskan ...") selalu dimulai
+     pada halaman baru (halaman ke-2 isi), terpisah dari blok identitas PARA PIHAK
+     dan daftar "Berdasarkan" pada halaman pertama. */
+  '.spk-cl p.spk-menugaskan{break-before:page;page-break-before:always;margin-top:0}'+
   /* Blok tanda tangan akhir */
   '.spk-sign{margin-top:30px;width:100%;border-collapse:collapse}'+
   '.spk-sign td{width:50%;text-align:center;vertical-align:top;font-size:11pt;padding:4px}'+
@@ -14379,7 +14392,7 @@ function spkDocCss2(){
   /* ---------- KOP & FOOTER BERULANG (halaman isi) ---------- */
   'table.spk-run{width:100%;border-collapse:collapse;border:0;background:transparent}'+
   'table.spk-run > thead > tr > td,table.spk-run > tbody > tr > td,table.spk-run > tfoot > tr > td{padding:0;border:0;background:transparent}'+
-  '.spk-rhd{display:flex;align-items:center;justify-content:space-between;gap:14px;padding-bottom:28px;border-bottom:2px solid #201E1D;margin-bottom:16px;font-family:'+G+'}'+
+  '.spk-rhd{display:flex;align-items:center;justify-content:space-between;gap:14px;padding-bottom:12px;border-bottom:2px solid #201E1D;margin-bottom:16px;font-family:'+G+'}'+
   '.spk-rhd .l{display:flex;align-items:center;gap:16px}'+
   '.spk-rhd img{height:47px;width:auto;display:block}'+
   /* Garis pemisah vertikal (tinggi 38px, tebal 1px, #C7C7C7, jarak 16px). */
@@ -14510,10 +14523,10 @@ function spkNumberFix(html){
   );
   /* Pada daftar "Berdasarkan" (spk-dlist) yang rata kanan-kiri (justify), nomor
      referensi panjang seperti "0019.BAPP.PL/DAN.01.03/F17060000/2026" atau
-     "EPROC-4230-20260624-4230-00003" jangan sampai terpotong di tengah (browser
-     memutus pada "/" atau "-"), karena akan menimbulkan celah spasi lebar. Setiap
-     token panjang seperti itu dibungkus <span class="nbrk"> agar tetap utuh —
-     bila tak muat, seluruh nomor turun ke baris berikut sebagai satu kesatuan. */
+     "EPROC-4230-20260624-4230-00003" dibungkus <span class="refn"> agar boleh
+     dipotong di karakter mana pun. Baris justify terisi rapat sampai tepi kanan,
+     lalu sisa nomor turun ke baris berikutnya, sehingga tidak muncul celah spasi
+     lebar di tengah baris. */
   /* Simbol poin (bullet) di awal paragraf kl2 -> bungkus <span class="n"> agar
      jarak simbol->teks seragam (tab 0,75 cm) seperti nomor. */
   html = html.replace(
@@ -14522,12 +14535,13 @@ function spkNumberFix(html){
       return '<p class="kl2 spk-sl"'+(attrs||'')+'><span class="n">'+ch+'</span>'+sp;
     }
   );
-  html = spkNoBreakRefNumbers(html);
+  html = spkBreakRefNumbers(html);
   return html;
 }
 /* Bungkus token "kode/nomor" (mengandung "/" atau rangkaian huruf-angka dengan
-   "-"/"." menyambung) di dalam paragraf spk-dlist dengan <span class="nbrk">. */
-function spkNoBreakRefNumbers(html){
+   "-"/"." menyambung) di dalam paragraf spk-dlist dengan <span class="refn">
+   agar boleh dipotong di karakter mana pun saat baris justify perlu diisi rapat. */
+function spkBreakRefNumbers(html){
   return String(html||'').replace(/<p class="spk-dlist">[\s\S]*?<\/p>/g, function(p){
     // Pisahkan tag <span class="n">..</span> di depan agar tidak ikut diproses.
     return p.replace(/(<span class="n">[\s\S]*?<\/span>)?([\s\S]*?)(<\/p>)/,
@@ -14540,7 +14554,7 @@ function spkNoBreakRefNumbers(html){
             // sangat panjang (>=15 krkt) yang jelas bukan kata biasa.
             const hasDigit = /[0-9]/.test(tok);
             if(!hasDigit && tok.length < 15) return mm;
-            return pre + '<span class="nbrk">' + tok + '</span>';
+            return pre + '<span class="refn">' + tok + '</span>';
           }
         );
         return (numSpan||'') + protectedBody + end;
@@ -17352,8 +17366,7 @@ function spkKlProfilOpenLoad(){
   spkKlProfilOverlay(
     '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6M9 14h6"/></svg>Muat Profil Klausul</div>'+
     '<div class="pnw-profil-sub">Pustaka klausul saat ini akan <b>diganti</b> oleh isi profil. Keadaan sebelumnya disimpan sementara sehingga dapat dikembalikan lewat <b>Batalkan Pilihan</b>.</div>'+
-    '<div class="pnw-profil-list">'+items+'</div>'+
-    '<div class="pnw-profil-actions"><button type="button" class="btn btn-ghost" onclick="spkKlProfilClose()">Tutup</button></div>'
+    '<div class="pnw-profil-list">'+items+'</div>'
   );
 }
 async function spkKlProfilDoDelete(name){
