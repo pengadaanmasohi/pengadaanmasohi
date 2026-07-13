@@ -13187,12 +13187,12 @@ const SPK_SK_KEYS = ['nama_pengguna','jabatan_pengguna','no_sk','tgl_sk','nama_u
 
 const SPK_FIELD_GROUPS = [
   { sec:'Informasi Pengadaan', fields:[
-    {k:'nama_pekerjaan', l:'Nama Pekerjaan', t:'text', span:2, def:''},
-    {k:'lokasi_pekerjaan', l:'Lokasi Pekerjaan', t:'text', span:2, def:''},
+    {k:'nama_pekerjaan', l:'Nama Pekerjaan', t:'text', span:2, dpLock:true, def:''},
+    {k:'lokasi_pekerjaan', l:'Lokasi Pekerjaan', t:'text', span:2, dpLock:true, def:''},
     {k:'pelaksana', l:'Bidang Pelaksana', t:'text', dpLock:true, def:''},
-    {k:'jenis_anggaran', l:'Jenis Anggaran', t:'text', def:''},
-    {k:'no_anggaran', l:'No. Anggaran', t:'text', span:2, def:''},
-    {k:'tgl_anggaran', l:'Tgl. Anggaran', t:'date', def:''},
+    {k:'jenis_anggaran', l:'Jenis Anggaran', t:'text', dpLock:true, def:''},
+    {k:'no_anggaran', l:'No. Anggaran', t:'text', span:2, dpLock:true, def:''},
+    {k:'tgl_anggaran', l:'Tgl. Anggaran', t:'date', dpLock:true, def:''},
     {k:'metode_pengadaan', l:'Metode Pengadaan', t:'text', dpLock:true, def:''},
     {k:'no_eproc', l:'No. Eproc', t:'text', span:2, def:''},
     {k:'pengumuman_awal', l:'Tgl. Pengumuman (awal)', t:'date', def:''},
@@ -13440,18 +13440,18 @@ async function refreshDataKlausul(){
      "URAIAN PEKERJAAN" (ciri khas data lama). Begitu terganti menjadi "KLAUSUL 1",
      syarat ini otomatis tidak terpenuhi lagi -> pustaka yang sudah Anda sesuaikan
      TIDAK akan pernah tersentuh, termasuk di perangkat lain.
-   - Ditandai selesai lewat localStorage (spk_kl_migrated_default3) agar hanya sekali.
-   - Isi lama tetap dicadangkan ke localStorage (spk_kl_backup_v1) agar bisa dipulihkan. */
+   - Ditandai selesai lewat localStorage (spk_kl_migrated_default3_v2) agar hanya sekali.
+   - Isi lama tetap dicadangkan ke localStorage (spk_kl_backup_v2) agar bisa dipulihkan. */
 async function spkKlEnsureDefaultOnce(){
   try{
-    if(localStorage.getItem('spk_kl_migrated_default3')==='1') return;
+    if(localStorage.getItem('spk_kl_migrated_default3_v2')==='1') return;
     const cur=(records_klausul||[]).slice();
     const first=String((cur[0]&&cur[0].judul)||'').replace(/<[^>]+>/g,'').trim().toUpperCase();
     if(first==='URAIAN PEKERJAAN'){
-      try{ localStorage.setItem('spk_kl_backup_v1', JSON.stringify(cur)); }catch(_){}
+      try{ localStorage.setItem('spk_kl_backup_v2', JSON.stringify(cur)); }catch(_){}
       await spkKlProfilWrite(SPK_KLAUSUL_SEED.map(s=>Object.assign({},s)));
     }
-    localStorage.setItem('spk_kl_migrated_default3','1');
+    localStorage.setItem('spk_kl_migrated_default3_v2','1');
   }catch(err){ console.error('spkKlEnsureDefaultOnce:',err); }
 }
 async function spkInit(){ await refreshDataKlausul(); await spkKlEnsureDefaultOnce(); await refreshDataSpk(); try{ rerenderActiveView(); }catch(e){} }
@@ -13905,28 +13905,27 @@ function spkFieldInput(f){
   // 4 field per baris; kecuali Rincian Akta Pendirian & Perubahan yang 2 field per baris
   const span = (f.k==='akta_pendirian'||f.k==='akta_perubahan') ? ' style="flex:1 1 calc(50% - 15px)"'
              : (f.t==='narasi') ? ' style="flex:1 1 100%"' : '';
+  // Field terkunci: nilai TETAP TAMPIL namun tidak dapat diedit (readonly). Tanggal
+  // ditampilkan dd/mm/yyyy agar terbaca sebagai teks biasa.
+  const spkDispDate=(x)=>{ const p=String(x||'').split('-'); return (p.length===3)?(p[2]+'/'+p[1]+'/'+p[0]):(x||''); };
+  const lockedField=(disp)=> '<div class="field"'+span+'><label>'+spkLbl(f)+'</label>'+
+    '<input type="text" id="spk-fld-'+f.k+'" value="'+fkEsc(disp)+'" readonly '+
+    'style="background:#f3f5f7;color:#2b2f36;cursor:default" '+
+    'title="Terisi otomatis — tidak dapat diubah di sini"></div>';
   if(f.auto){
-    // Field otomatis: tampil sebagai field terkunci "Data terkunci" (nilai dihitung
-    // otomatis di belakang layar & dipakai pada dokumen). Gaya sama seperti field
-    // terkunci lain di aplikasi.
+    // Field otomatis: nilai dihitung otomatis di belakang layar; tampil terbaca
+    // namun tidak dapat diedit.
     const av = spkAutoVal(f.auto, spkState.data);
-    return '<div class="field locked"'+span+'><label>'+spkLbl(f)+'</label>'+
-      '<input type="text" id="spk-fld-'+f.k+'" value="'+fkEsc(av)+'" readonly disabled>'+
-      SPK_LOCK_OVL+'</div>';
+    return lockedField(av);
   }
   // Field yang terisi otomatis dari Penetapan Nomor (No./Tgl. BA) -> terkunci
   if(spkPnLocked(f.k)){
-    const tp=(f.t==='date')?'date':'text';
-    return '<div class="field locked"'+span+'><label>'+spkLbl(f)+'</label>'+
-      '<input type="'+tp+'" id="spk-fld-'+f.k+'" value="'+fkEsc(v||'')+'" readonly disabled>'+
-      SPK_LOCK_OVL+'</div>';
+    return lockedField(f.t==='date'?spkDispDate(v):(v||''));
   }
-  // Field yang terisi otomatis dari Data Pekerjaan (mis. Bidang Pelaksana, Metode
-  // Pengadaan) -> terkunci selama sebuah Data Pekerjaan masih tertaut.
+  // Field yang terisi otomatis dari Data Pekerjaan (Nama/Lokasi/Bidang/Jenis/No. &
+  // Tgl. Anggaran/Metode Pengadaan) -> terkunci selama sebuah Data Pekerjaan tertaut.
   if(f.dpLock && spkState.data.__dpId){
-    return '<div class="field locked"'+span+'><label>'+spkLbl(f)+'</label>'+
-      '<input type="text" id="spk-fld-'+f.k+'" value="'+fkEsc(v||'')+'" readonly disabled>'+
-      SPK_LOCK_OVL+'</div>';
+    return lockedField(f.t==='date'?spkDispDate(v):(v||''));
   }
   if(f.t==='select'){
     const opts=(f.opts||[]).map(o=>'<option value="'+fkEsc(o)+'"'+((v===o)?' selected':'')+'>'+fkEsc(o)+'</option>').join('');
@@ -13937,10 +13936,8 @@ function spkFieldInput(f){
   if(f.lockedBy){
     const locked = String(spkState.data[f.lockedBy]||'')!=='Ya';
     if(locked){
-      // Tampilkan nilai bawaan (data terakhir disimpan) dalam keadaan terkunci
-      return '<div class="field locked"'+span+'><label>'+spkLbl(f)+'</label>'+
-        '<input type="text" id="spk-fld-'+f.k+'" value="'+fkEsc(v||'')+'" readonly disabled>'+
-        SPK_LOCK_OVL+'</div>';
+      // Tampilkan nilai bawaan (data terakhir disimpan) — terbaca namun terkunci
+      return lockedField(f.t==='date'?spkDispDate(v):(v||''));
     }
     return '<div class="field"'+span+'><label>'+spkLbl(f)+'</label>'+
       '<input type="text" id="spk-fld-'+f.k+'" value="'+fkEsc(v||'')+'" oninput="spkSet(\''+f.k+'\',this.value)"></div>';
