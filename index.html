@@ -4878,6 +4878,91 @@ const Store = {
 /* Data pekerjaan sepenuhnya disimpan di Supabase; localStorage tidak dipakai lagi. */
 function lsPersist(arr){ /* no-op: penyimpanan lokal dinonaktifkan */ }
 
+/* ============ STORE: PROFIL (Supabase, tersinkron antar-perangkat) ============
+   Profil Jadwal, Persyaratan, & Klausul SPK dulu hanya tersimpan di localStorage
+   sehingga hilang saat logout / pindah perangkat. Sekarang disimpan di tabel
+   Supabase "app_profiles" (lihat SQL terlampir) dengan cache di memori agar
+   pemanggilan lama yang sinkron (mis. jpProfilAll()) tetap bekerja.
+   Kolom tabel: kind (text), name (text), payload (jsonb), updated_at (timestamptz).
+   PRIMARY KEY (kind, name). */
+const PROFILE_TABLE = 'app_profiles';
+/* Cache per-jenis profil. Diisi saat login (profilesLoadAll) & write-through saat simpan. */
+const profileCache = { jadwal: [], syarat: [], klausul: [] };
+let profilesReady = false;
+/* Muat semua profil dari Supabase ke cache. Dipanggil sekali setelah login.
+   Bila gagal (tabel belum dibuat / offline), cache tetap kosong & aplikasi
+   berjalan normal — profil hanya tidak tersinkron sampai koneksi/ tabel siap. */
+async function profilesLoadAll(){
+  profilesReady = false;
+  if(!(USE_SUPABASE && db)){ profilesReady=true; return; }
+  try{
+    const {data,error}=await db.from(PROFILE_TABLE).select('kind,name,payload').order('updated_at',{ascending:false});
+    if(error) throw error;
+    profileCache.jadwal=[]; profileCache.syarat=[]; profileCache.klausul=[];
+    (data||[]).forEach(row=>{
+      const k=row.kind; if(!profileCache[k]) return;
+      let obj=row.payload;
+      if(typeof obj==='string'){ try{ obj=JSON.parse(obj); }catch(e){ obj=null; } }
+      if(obj && typeof obj==='object'){ if(obj.name==null) obj.name=row.name; profileCache[k].push(obj); }
+    });
+  }catch(err){
+    console.error('Gagal memuat profil dari Supabase:', err);
+  }finally{ profilesReady=true; }
+  // Migrasi satu kali: profil lama yang masih tersimpan di localStorage diunggah
+  // ke Supabase agar tidak hilang & mulai tersinkron antar-perangkat.
+  try{ await profilesMigrateFromLocal(); }catch(e){ console.error('Migrasi profil lokal gagal:', e); }
+}
+async function profilesMigrateFromLocal(){
+  if(!(USE_SUPABASE && db)) return;
+  const MIG_FLAG='app_profiles_migrated_v1';
+  try{ if(localStorage.getItem(MIG_FLAG)) return; }catch(e){ return; }
+  const map=[['jadwal','jp_jadwal_profiles_v1'],['syarat','pnw_syarat_profiles_v1'],['klausul','spk_klausul_profiles_v1']];
+  let migrated=0;
+  for(const [kind,key] of map){
+    let arr=[]; try{ const r=localStorage.getItem(key); arr=r?JSON.parse(r):[]; }catch(e){ arr=[]; }
+    if(!Array.isArray(arr)) continue;
+    for(const obj of arr){
+      if(!obj || !obj.name) continue;
+      // Jangan timpa profil server yang sudah ada dengan nama sama
+      const exists=(profileCache[kind]||[]).some(p=>String(p.name).toLowerCase()===String(obj.name).toLowerCase());
+      if(exists) continue;
+      if(await profilesUpsert(kind, obj)) migrated++;
+    }
+  }
+  try{ localStorage.setItem(MIG_FLAG,'1'); }catch(e){}
+  if(migrated>0) toast(migrated+' profil lama dipindahkan ke server & kini tersinkron','ok');
+}
+/* Baca profil dari cache (sinkron). */
+function profilesGet(kind){ return (profileCache[kind]||[]).slice(); }
+/* Simpan/replace SATU profil (upsert) ke Supabase + cache. */
+async function profilesUpsert(kind, obj){
+  const name=String(obj&&obj.name||'').trim(); if(!name) return false;
+  const arr=profileCache[kind]||(profileCache[kind]=[]);
+  const idx=arr.findIndex(p=>String(p.name).toLowerCase()===name.toLowerCase());
+  if(idx>=0) arr[idx]=obj; else arr.push(obj);
+  if(USE_SUPABASE && db){
+    try{
+      const {error}=await db.from(PROFILE_TABLE)
+        .upsert({ kind, name, payload:obj, updated_at:new Date().toISOString() }, { onConflict:'kind,name' });
+      if(error) throw error;
+    }catch(err){ console.error('Gagal menyimpan profil ke Supabase:', err); toast('Profil gagal tersimpan ke server: '+errMsg(err),'err'); return false; }
+  }
+  return true;
+}
+/* Hapus SATU profil dari Supabase + cache. */
+async function profilesDelete(kind, name){
+  const arr=profileCache[kind]||[];
+  const i=arr.findIndex(p=>String(p.name)===String(name));
+  if(i>=0) arr.splice(i,1);
+  if(USE_SUPABASE && db){
+    try{
+      const {error}=await db.from(PROFILE_TABLE).delete().eq('kind',kind).eq('name',String(name));
+      if(error) throw error;
+    }catch(err){ console.error('Gagal menghapus profil di Supabase:', err); toast('Profil gagal dihapus di server: '+errMsg(err),'err'); return false; }
+  }
+  return true;
+}
+
 /* Ambil pesan error Supabase yang paling informatif */
 function errMsg(err){
   if(!err) return 'kesalahan tidak diketahui';
@@ -5177,6 +5262,8 @@ function enterApp(role, view){
   window.__grandDashEntrance = true;   // tandai: tampilkan animasi masuk megah utk dashboard
   showView(view||'dashboard', null, true);   // #2: tanpa loader "Memuat" (hanya animasi selamat datang)
   startIdleTimer();   // mulai hitung mundur auto-logout 5 menit idle
+  // Muat profil (Jadwal/Persyaratan/Klausul) dari Supabase agar tersinkron antar-perangkat
+  try{ profilesLoadAll(); }catch(e){ console.error(e); }
 }
 function applyRole(role){
   document.querySelectorAll('.topnav-link[data-role], .topnav-item[data-role], .topnav-sub[data-role], .btn[data-role], .fk-seg-btn[data-role], .mod-seg[data-role]').forEach(l=>{
@@ -9224,8 +9311,8 @@ function jpMoveTahap(i, dir){
    berurutan mulai dari Awal tahapan pertama yang sedang aktif. Disimpan di
    localStorage browser, terpisah dari data jadwal di Supabase. */
 const JP_PROFIL_KEY='jp_jadwal_profiles_v1';
-function jpProfilAll(){ try{ const r=localStorage.getItem(JP_PROFIL_KEY); const a=r?JSON.parse(r):[]; return Array.isArray(a)?a:[]; }catch(e){ return []; } }
-function jpProfilStore(list){ try{ localStorage.setItem(JP_PROFIL_KEY, JSON.stringify(list)); return true; }catch(e){ toast('Gagal menyimpan profil di penyimpanan browser','err'); return false; } }
+/* Profil Jadwal kini tersimpan di Supabase (cache: profileCache.jadwal). */
+function jpProfilAll(){ return profilesGet('jadwal'); }
 /* Snapshot profil = SIFAT jadwal, bukan tanggal mati. Tiap tahapan merekam:
    - nama & keterangan
    - awalJam (jam mulai tahapan)
@@ -9282,14 +9369,12 @@ function jpProfilOpenSave(){
   );
   setTimeout(()=>{ const el=document.getElementById('jp-profil-name'); if(el) el.focus(); },60);
 }
-function jpProfilDoSave(){
+async function jpProfilDoSave(){
   const el=document.getElementById('jp-profil-name'); const name=(el&&el.value||'').trim();
   if(!name){ toast('Isi nama profil dulu','warn'); if(el) el.focus(); return; }
-  const list=jpProfilAll(); const snap=jpProfilSnapshot();
+  const snap=jpProfilSnapshot();
   snap.name=name; snap.savedAt=Date.now(); snap.count=snap.tahapan.length;
-  const idx=list.findIndex(p=>String(p.name).toLowerCase()===name.toLowerCase());
-  if(idx>=0) list[idx]=snap; else list.push(snap);
-  if(jpProfilStore(list)){ toast('Profil "'+name+'" tersimpan','ok'); jpProfilClose(); }
+  if(await profilesUpsert('jadwal', snap)){ toast('Profil "'+name+'" tersimpan','ok'); jpProfilClose(); }
 }
 function jpProfilOpenLoad(){
   const list=jpProfilAll();
@@ -9307,9 +9392,8 @@ function jpProfilOpenLoad(){
     '<div class="pnw-profil-actions"><button type="button" class="btn btn-ghost" onclick="jpProfilClose()">Tutup</button></div>'
   );
 }
-function jpProfilDoDelete(name){
-  let list=jpProfilAll(); list=list.filter(x=>String(x.name)!==String(name));
-  if(jpProfilStore(list)){ toast('Profil "'+name+'" dihapus','ok'); if(list.length) jpProfilOpenLoad(); else jpProfilClose(); }
+async function jpProfilDoDelete(name){
+  if(await profilesDelete('jadwal', name)){ toast('Profil "'+name+'" dihapus','ok'); if(jpProfilAll().length) jpProfilOpenLoad(); else jpProfilClose(); }
 }
 /* Terapkan profil: rekonstruksi tanggal dari SIFAT yang terekam.
    Titik acuan = tanggal Awal tahapan pertama yang sedang aktif di layar. */
@@ -12057,8 +12141,8 @@ function pnwOnSyaratInput(el){ const st=pnwState; const sk=el.dataset.sk, kat=el
    untuk pengadaan dengan persyaratan yang sama. Disimpan di localStorage browser
    (bertahan antar-sesi), terpisah dari data pekerjaan yang tersimpan di Supabase. */
 const PNW_PROFIL_KEY='pnw_syarat_profiles_v1';
-function pnwProfilAll(){ try{ const r=localStorage.getItem(PNW_PROFIL_KEY); const a=r?JSON.parse(r):[]; return Array.isArray(a)?a:[]; }catch(e){ return []; } }
-function pnwProfilStore(list){ try{ localStorage.setItem(PNW_PROFIL_KEY, JSON.stringify(list)); return true; }catch(e){ toast('Gagal menyimpan profil di penyimpanan browser','err'); return false; } }
+/* Profil Persyaratan kini tersimpan di Supabase (cache: profileCache.syarat). */
+function pnwProfilAll(){ return profilesGet('syarat'); }
 function pnwProfilSnapshot(){ const st=pnwState; return { pilih: JSON.parse(JSON.stringify(st.pilih||{})), syarat: JSON.parse(JSON.stringify(st.syarat||{})) }; }
 function pnwProfilCount(snap){ let n=0; Object.values((snap&&snap.syarat)||{}).forEach(katObj=>Object.values(katObj||{}).forEach(arr=>{ (arr||[]).forEach(v=>{ if(String(v==null?'':v).trim()) n++; }); })); return n; }
 function pnwProfilOverlay(inner){
@@ -12082,13 +12166,11 @@ function pnwProfilOpenSave(){
   );
   setTimeout(()=>{ const el=document.getElementById('pnw-profil-name'); if(el) el.focus(); },60);
 }
-function pnwProfilDoSave(){
+async function pnwProfilDoSave(){
   const el=document.getElementById('pnw-profil-name'); const name=(el&&el.value||'').trim();
   if(!name){ toast('Isi nama profil dulu','warn'); if(el) el.focus(); return; }
-  const list=pnwProfilAll(); const snap=pnwProfilSnapshot(); snap.name=name; snap.savedAt=Date.now(); snap.count=pnwProfilCount(snap);
-  const idx=list.findIndex(p=>String(p.name).toLowerCase()===name.toLowerCase());
-  if(idx>=0) list[idx]=snap; else list.push(snap);
-  if(pnwProfilStore(list)){ toast('Profil "'+name+'" tersimpan','ok'); pnwProfilClose(); }
+  const snap=pnwProfilSnapshot(); snap.name=name; snap.savedAt=Date.now(); snap.count=pnwProfilCount(snap);
+  if(await profilesUpsert('syarat', snap)){ toast('Profil "'+name+'" tersimpan','ok'); pnwProfilClose(); }
 }
 function pnwProfilOpenLoad(){
   const list=pnwProfilAll();
@@ -12114,9 +12196,8 @@ function pnwProfilDoLoad(name){
   pnwEnsureSyarat(); pnwSaveState(); pnwProfilClose(); renderPnwForm();
   toast('Profil "'+name+'" dimuat','ok');
 }
-function pnwProfilDoDelete(name){
-  let list=pnwProfilAll(); list=list.filter(x=>String(x.name)!==String(name));
-  if(pnwProfilStore(list)){ toast('Profil "'+name+'" dihapus','ok'); if(list.length) pnwProfilOpenLoad(); else pnwProfilClose(); }
+async function pnwProfilDoDelete(name){
+  if(await profilesDelete('syarat', name)){ toast('Profil "'+name+'" dihapus','ok'); if(pnwProfilAll().length) pnwProfilOpenLoad(); else pnwProfilClose(); }
 }
 /* Batalkan profil: kosongkan kembali uraian persyaratan ke tampilan default */
 function pnwProfilCancel(){
@@ -17617,8 +17698,8 @@ document.getElementById('pn-preview-overlay').addEventListener('click',e=>{ if(e
 .spk-narasi-input{width:100%;font-family:inherit;line-height:1.5;resize:vertical;min-height:120px}
 .spk-narasi-prevwrap{margin-top:10px}
 .spk-narasi-prevlabel{font-size:10.5px;color:#6B7885;font-weight:800;letter-spacing:.04em;text-transform:uppercase;margin-bottom:5px}
-.spk-narasi-prev{font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.45;color:#1c2733;background:#F8FAFB;border:1px solid #E2E7EB;border-radius:10px;padding:12px 15px;max-height:300px;overflow:auto}
-.spk-narasi-prev p{margin:0 0 9px;text-align:justify}
+.spk-narasi-prev{font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.15;color:#1c2733;background:#F8FAFB;border:1px solid #E2E7EB;border-radius:10px;padding:12px 15px;max-height:300px;overflow:auto}
+.spk-narasi-prev p{margin:0 0 9px;text-align:justify;line-height:1.15}
 .spk-narasi-prev p:last-child{margin-bottom:0}
 .spk-narasi-prev p.klp{text-indent:1.5em}
 .spk-narasi-prev p.klp1{margin-left:1.5em;text-indent:1.5em}
@@ -17833,6 +17914,12 @@ document.getElementById('pn-preview-overlay').addEventListener('click',e=>{ if(e
 .spk-we-page .spk-cl p .n{display:inline-block;width:.75cm;text-indent:0;text-align:left}
 .spk-we-page .spk-cl i{font-style:italic}
 .spk-we-page .spk-cl b{font-weight:700}
+/* Pastikan SELURUH isi klausul (paragraf, blok pihak, baris label:nilai, daftar,
+   dsb.) memakai jarak baris 1,15 di layar — sama seperti pengaturan di Word.
+   Catch-all agar tidak ada elemen yang jatuh ke line-height default (~1). */
+.spk-we-page .spk-cl,.spk-we-page .spk-cl *,
+.spk-we-doc,.spk-we-doc *,
+.spk-narasi-prev,.spk-narasi-prev *{line-height:1.15}
 /* Contoh pengisian klausul (placeholder): titik-titik sampai batas margin kanan,
    huruf samar/transparan — tinggal ditimpa lewat template Word. */
 .spk-cl p.spk-ph,.spk-we-page .spk-cl p.spk-ph{color:rgba(0,0,0,.22);white-space:nowrap;overflow:hidden;text-align:left}
@@ -18932,7 +19019,7 @@ function spkDocCss(){
      Hanya ISI kontrak yang dirapikan mengikuti tampilan Word (Arial). */
   '@page{size:A4 portrait;margin:2.54cm}'+
   '*{box-sizing:border-box}'+
-  'body{font-family:"Times New Roman",Georgia,serif;color:#1c1c1c;margin:0;font-size:11.5px;line-height:1.5}'+
+  'body{font-family:"Times New Roman",Georgia,serif;color:#1c1c1c;margin:0;font-size:11.5px;line-height:1.15}'+
   '.spk-doc{counter-reset:spkcl}'+
   /* Penomoran judul klausul dibuat OTOMATIS (counter), bukan teks biasa */
   '.spk-clause{counter-increment:spkcl}'+
@@ -21709,9 +21796,14 @@ function renderSpkKlausul(){
       '</div>'+
     '</div>';
   }).join('') : '<div class="empty" style="padding:26px"><div>Belum ada klausul.</div></div>';
-  /* Bar tombol: Simpan Profil | Muat Profil | Batalkan Pilihan (bila profil dipakai) | Tambah Klausul */
+  /* Bar tombol: Simpan Profil | Muat Profil | Batalkan Pilihan (HANYA bila profil dipakai) | Tambah Klausul */
   const aktifProfil = spkKlProfil.active;
-  const btnBatal = '<button type="button" class="jp-profil-btn is-cancel" title="Kembalikan pustaka klausul ke bawaan: 3 klausul dengan contoh pengisian" onclick="spkKlProfilCancel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg><span>'+(aktifProfil?'Batalkan Pilihan':'Kembalikan ke Bawaan')+'</span></button>';
+  // "Batalkan Pilihan" hanya tampil saat sebuah profil sedang dimuat. Menekannya
+  // mengembalikan pustaka klausul ke keadaan bawaan (default). Tanpa profil aktif,
+  // tombol ini tidak ditampilkan sama sekali.
+  const btnBatal = aktifProfil
+    ? '<button type="button" class="jp-profil-btn is-cancel" title="Batalkan profil yang dimuat &amp; kembalikan pustaka klausul ke bawaan" onclick="spkKlProfilCancel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg><span>Batalkan Pilihan</span></button>'
+    : '';
   const tagProfil = aktifProfil
     ? '<span class="spk-klprof-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:13px;height:13px"><path d="M20 6 9 17l-5-5"/></svg>Profil: '+fkEsc(aktifProfil)+'</span>'
     : '';
@@ -21739,11 +21831,11 @@ function renderSpkKlausul(){
    ========================================================= */
 const SPK_KL_PROFIL_KEY='spk_klausul_profiles_v1';
 var spkKlProfil={ active:'', backup:null };
-function spkKlProfilAll(){ try{ const r=localStorage.getItem(SPK_KL_PROFIL_KEY); const a=r?JSON.parse(r):[]; return Array.isArray(a)?a:[]; }catch(e){ return []; } }
-function spkKlProfilStore(list){ try{ localStorage.setItem(SPK_KL_PROFIL_KEY, JSON.stringify(list)); return true; }catch(e){ toast('Gagal menyimpan profil di penyimpanan peramban','err'); return false; } }
+/* Profil Klausul SPK kini tersimpan di Supabase (cache: profileCache.klausul). */
+function spkKlProfilAll(){ return profilesGet('klausul'); }
 function spkKlProfilSnapshot(){
   return (records_klausul||[]).map(function(k,i){
-    return { judul:String(k.judul||''), isi:String(k.isi||''), urutan:(Number(k.urutan)||((i+1)*10)), aktif:(k.aktif!==false) };
+    return { judul:String(k.judul||''), isi:String(k.isi||''), urutan:(Number(k.urutan)||((i+1)*10)), aktif:(k.aktif!==false), isi_docx:String(k.isi_docx||'') };
   });
 }
 function spkKlProfilOverlay(inner){
@@ -21768,15 +21860,12 @@ function spkKlProfilOpenSave(){
   );
   setTimeout(function(){ const el=document.getElementById('spk-klprofil-name'); if(el) el.focus(); },60);
 }
-function spkKlProfilDoSave(){
+async function spkKlProfilDoSave(){
   const el=document.getElementById('spk-klprofil-name'); const name=(el&&el.value||'').trim();
   if(!name){ toast('Isi nama profil dulu','warn'); if(el) el.focus(); return; }
-  const list=spkKlProfilAll();
   const snap={ name:name, savedAt:Date.now(), items:spkKlProfilSnapshot() };
   snap.count=snap.items.length;
-  const idx=list.findIndex(p=>String(p.name).toLowerCase()===name.toLowerCase());
-  if(idx>=0) list[idx]=snap; else list.push(snap);
-  if(spkKlProfilStore(list)){ toast('Profil "'+name+'" tersimpan','ok'); spkKlProfilClose(); }
+  if(await profilesUpsert('klausul', snap)){ toast('Profil "'+name+'" tersimpan','ok'); spkKlProfilClose(); }
 }
 function spkKlProfilOpenLoad(){
   const list=spkKlProfilAll();
@@ -21794,9 +21883,8 @@ function spkKlProfilOpenLoad(){
     '<div class="pnw-profil-actions"><button type="button" class="btn btn-ghost" onclick="spkKlProfilClose()">Tutup</button></div>'
   );
 }
-function spkKlProfilDoDelete(name){
-  let list=spkKlProfilAll(); list=list.filter(x=>String(x.name)!==String(name));
-  if(spkKlProfilStore(list)){ toast('Profil "'+name+'" dihapus','ok'); if(list.length) spkKlProfilOpenLoad(); else spkKlProfilClose(); }
+async function spkKlProfilDoDelete(name){
+  if(await profilesDelete('klausul', name)){ toast('Profil "'+name+'" dihapus','ok'); if(spkKlProfilAll().length) spkKlProfilOpenLoad(); else spkKlProfilClose(); }
 }
 /* Tulis ulang seluruh pustaka klausul dari daftar item (hapus semua -> buat ulang) */
 async function spkKlProfilWrite(items){
@@ -21804,7 +21892,9 @@ async function spkKlProfilWrite(items){
   for(let i=0;i<lama.length;i++){ await StoreSpkKlausul.remove(lama[i].id); }
   for(let i=0;i<items.length;i++){
     const it=items[i];
-    await StoreSpkKlausul.create({ judul:it.judul||'', isi:it.isi||'', urutan:(Number(it.urutan)||((i+1)*10)), aktif:(it.aktif!==false) });
+    const recW={ judul:it.judul||'', isi:it.isi||'', urutan:(Number(it.urutan)||((i+1)*10)), aktif:(it.aktif!==false) };
+    if(it.isi_docx) recW.isi_docx=String(it.isi_docx);
+    await StoreSpkKlausul.create(recW);
   }
   await refreshDataKlausul();
   // pilihan klausul pada kontrak yang sedang disusun mengikuti pustaka yang baru
@@ -22665,7 +22755,7 @@ function spkWordXmlToKlausul(xmlText, stylesXml, numberingXml){
 }
 
 /* ================= MODAL: UBAH / TAMBAH KLAUSUL (via template Word) ================= */
-var spkKlDoc = { rec:null, isi:'', no:1, fileName:'', dirty:false };
+var spkKlDoc = { rec:null, isi:'', no:1, fileName:'', dirty:false, docx:'' };
 
 function spkKlausulOpenEditor(k){
   var isEdit=!!(k && k.id);
@@ -22676,7 +22766,8 @@ function spkKlausulOpenEditor(k){
     var i=isEdit? aktif.findIndex(function(x){ return String(x.id)===String(k.id); }) : -1;
     noKl=(i>=0)?(i+1):(aktif.length+1);
   }catch(e){}
-  spkKlDoc={ rec:isEdit?k:null, isi:isEdit?String(k.isi||''):'', no:noKl, fileName:'', dirty:false };
+  spkKlDoc={ rec:isEdit?k:null, isi:isEdit?String(k.isi||''):'', no:noKl, fileName:'', dirty:false,
+             docx:(isEdit && k && k.isi_docx)?String(k.isi_docx):'' };
 
   var ov=document.getElementById('spk-kldoc-ov');
   if(!ov){
@@ -22775,9 +22866,13 @@ function spkKlDocPreview(){
   }
   var m=document.getElementById('spk-kldoc-meta');
   if(m){
-    m.innerHTML = spkKlDoc.fileName
-      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;vertical-align:-2px;color:#12805c"><path d="M20 6 9 17l-5-5"/></svg> Terunggah: <b>'+fkEsc(spkKlDoc.fileName)+'</b>'
-      : (spkKlDoc.rec ? 'Isi klausul saat ini dipakai. Unggah .docx untuk menggantinya.' : 'Belum ada berkas .docx diunggah.');
+    if(spkKlDoc.fileName){
+      m.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;vertical-align:-2px;color:#12805c"><path d="M20 6 9 17l-5-5"/></svg> Terunggah: <b>'+fkEsc(spkKlDoc.fileName)+'</b> — berkas asli disimpan, unduhan akan sama persis';
+    }else if(spkKlDoc.docx){
+      m.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;vertical-align:-2px;color:#12805c"><path d="M20 6 9 17l-5-5"/></svg> Berkas .docx asli tersimpan — unduhan sama persis dengan saat diunggah. Unggah .docx baru untuk menggantinya.';
+    }else{
+      m.innerHTML = spkKlDoc.rec ? 'Isi klausul saat ini dipakai. Unggah .docx untuk menggantinya.' : 'Belum ada berkas .docx diunggah.';
+    }
   }
 }
 /* Tombol "Upload Template" -> tampilkan kotak Drag & Drop di bawahnya */
@@ -22792,9 +22887,17 @@ function spkKlDocBrowse(){ var f=document.getElementById('spk-kldoc-file'); if(f
 function spkKlDocDownload(){
   try{
     var jd=spkKlDocJudul(), jp=spkJudulPlain(jd);
-    var blob=spkDocxTemplateBlob(jd, spkKlDoc.isi, spkKlDoc.no);
     var nm='Template Klausul'+(jp?(' - '+jp):' Baru');
     nm=nm.replace(/[\\/:*?"<>|]+/g,'-').slice(0,90)+'.docx';
+    var blob;
+    /* Bila ada berkas .docx ASLI (dari unggahan / tersimpan di record), kembalikan
+       apa adanya agar penomoran & jarak spasi baris SAMA PERSIS dengan saat diunggah.
+       Hanya bila belum pernah ada unggahan, template dibangun ulang dari isi HTML. */
+    if(spkKlDoc.docx){
+      blob=new Blob([spkB642u8(spkKlDoc.docx)], {type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+    }else{
+      blob=spkDocxTemplateBlob(jd, spkKlDoc.isi, spkKlDoc.no);
+    }
     var a=document.createElement('a'), url=URL.createObjectURL(blob);
     a.href=url; a.download=nm; document.body.appendChild(a); a.click();
     setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); },800);
@@ -22819,12 +22922,27 @@ async function spkKlDocReadFile(file){
       var res=spkWordXmlToKlausul(dec.decode(xml), sty, num);
       if(!res.html) throw new Error('Tidak ada isi klausul yang terbaca pada template.');
       spkKlDoc.isi=res.html; spkKlDoc.fileName=file.name; spkKlDoc.dirty=true;
+      /* Simpan BYTE ASLI berkas .docx (base64). Saat template diunduh kembali,
+         berkas asli inilah yang dikembalikan apa adanya sehingga penomoran,
+         jarak spasi baris, dan seluruh struktur SAMA PERSIS dengan saat diunggah. */
+      try{ spkKlDoc.docx = spkAb2b64(buf); }catch(e){ spkKlDoc.docx=''; }
       if(res.judul){ var j=document.getElementById('spk-kldoc-judul'); if(j && !spkJudulPlain(j.innerHTML)) j.innerHTML=spkJudulSan(res.judul); }
     });
   }catch(err){ console.error(err); toast('Gagal membaca .docx: '+errMsg(err),'err'); return; }
   spkKlDocDzHide();
   spkKlDocHead(); spkKlDocPreview();
   toast('Isi klausul berhasil dibaca dari template','ok');
+}
+/* ArrayBuffer/Uint8Array <-> base64 (untuk menyimpan berkas .docx asli) */
+function spkAb2b64(buf){
+  var u8=(buf instanceof Uint8Array)?buf:new Uint8Array(buf), s='', CH=0x8000;
+  for(var i=0;i<u8.length;i+=CH){ s+=String.fromCharCode.apply(null, u8.subarray(i,i+CH)); }
+  return btoa(s);
+}
+function spkB642u8(b64){
+  var bin=atob(String(b64||'')), n=bin.length, u8=new Uint8Array(n);
+  for(var i=0;i<n;i++) u8[i]=bin.charCodeAt(i);
+  return u8;
 }
 function spkKlDocBindDrop(){
   var stop=function(e){ e.preventDefault(); e.stopPropagation(); };
@@ -22868,13 +22986,20 @@ function spkKlDocSave(){
   if(!isi.replace(/<[^>]+>/g,'').trim()){ toast('Isi klausul masih kosong — unggah template .docx terlebih dahulu','warn'); return; }
   if(typeof requireInput==='function' && !requireInput()) return;
   var k=spkKlDoc.rec;
+  var docxVal=spkKlDoc.docx||'';   // byte .docx asli (base64) bila ada unggahan
   (async function(){
     try{
       await withActionLoader('Menyimpan', async function(){
-        if(k && k.id){ await StoreSpkKlausul.update(k.id,{judul:jd, isi:isi}); }
+        if(k && k.id){
+          var upd={judul:jd, isi:isi};
+          if(docxVal) upd.isi_docx=docxVal;   // simpan berkas asli agar unduhan identik
+          await StoreSpkKlausul.update(k.id, upd);
+        }
         else{
           var maxU=records_klausul.reduce(function(m,x){ return Math.max(m, Number(x.urutan)||0); },0);
-          await StoreSpkKlausul.create({judul:jd, isi:isi, urutan:maxU+10, aktif:true});
+          var recNew={judul:jd, isi:isi, urutan:maxU+10, aktif:true};
+          if(docxVal) recNew.isi_docx=docxVal;
+          await StoreSpkKlausul.create(recNew);
         }
         await refreshDataKlausul();
       });
