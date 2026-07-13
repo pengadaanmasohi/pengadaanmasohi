@@ -17249,7 +17249,18 @@ function hpscBuild(dp){
   const jadwalRec=hpscMatch(records_jadwal, nama);
   const rhoRec=hpscMatch(records_rho, nama);
   const penHps=hpscPenetapanHpsDoc(nama);   // dokumen HPS dari Penetapan Nomor (bila ada)
-  const hpsTotal=hpsRec?hpsRec.nilai_total:0;
+  // Hitung total HPS SEBENARNYA — sama seperti daftar "Lihat HPS": bila tertaut ke
+  // Analisa (Umum) di-resync dulu dari analisa terkini, lalu total dihitung ulang dari
+  // state (hpsSummary), bukan mengandalkan nilai_total tersimpan yang bisa basi.
+  let hpsTotal=0;
+  if(hpsRec){
+    const stt=hpsRec.state||{}; const info=stt.info||{};
+    const linkedUmum=!!(info.analisaId && info.analisaJenis==='Umum');
+    if(linkedUmum && typeof hpsResyncLockedHarga==='function') hpsResyncLockedHarga(stt);
+    hpsTotal = linkedUmum
+      ? hpsSummary(stt).totT
+      : ((hpsRec.nilai_total!=null)?hpsRec.nilai_total:hpsSummary(stt).totT);
+  }
   const tglHps=(penHps&&penHps.tgl_terbit) || (hpsRec?hpsRec.tgl_hps:'');
   const nomor=(penHps&&penHps.no) || (hpsRec?((hpsRec.state&&hpsRec.state.info&&hpsRec.state.info.nomor)||hpsRec.nomor||''):'');
   let refNames=[];
