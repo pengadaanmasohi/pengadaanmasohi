@@ -14359,7 +14359,9 @@ function spkDocCss2(){
   '.spk-cover .cv-no i{display:block;font-style:normal;font-size:11px;color:#8F8E8E;margin-top:2px}'+
   '.spk-cover .cv-rule{border-top:2px solid #201E1D;margin:13px 0 0}'+
   '.spk-cover .cv-rule2{border-top:2px solid #201E1D;margin:20px 0 0}'+
-  '.spk-cover .cv-eyebrow{margin-top:40px;font-size:9px;font-weight:700;letter-spacing:.22em;color:#1B3A6B}'+
+  /* Aksen kuning PLN sebagai pembuka blok judul */
+  '.spk-cover .cv-accent{width:56px;border-top:4px solid #F6B40E;margin-top:38px}'+
+  '.spk-cover .cv-eyebrow{margin-top:16px;font-size:9px;font-weight:700;letter-spacing:.22em;color:#1B3A6B}'+
   '.spk-cover .cv-title{margin:15px 0 0;font-size:60px;line-height:.98;font-weight:800;letter-spacing:-.03em;color:#201E1D;max-width:66%}'+
   '.spk-cover .cv-title span{display:inline}'+
   '.spk-cover .cv-parties{display:flex;gap:0;margin-top:18px}'+
@@ -14370,14 +14372,16 @@ function spkDocCss2(){
   '.spk-cover .cv-parties .ps{font-size:11.5px;color:#8F8E8E;margin-top:3px}'+
   '.spk-cover .cv-spacer{flex:1 1 auto;min-height:14mm}'+
   '.spk-cover .cv-grid{display:flex;flex-wrap:wrap}'+
-  '.spk-cover .cv-grid .f{flex:0 0 50%;padding:12px 34px 12px 0;border-top:1px solid #E2E2E2}'+
+  '.spk-cover .cv-grid .f{flex:0 0 50%;padding:13px 34px 13px 0;border-top:1px solid #E2E2E2}'+
   '.spk-cover .cv-grid .f:nth-child(even){padding-right:0;padding-left:34px}'+
   '.spk-cover .fk{font-size:9px;font-weight:700;letter-spacing:.16em;color:#8F8E8E}'+
   '.spk-cover .fv{font-size:13px;font-weight:800;color:#201E1D;margin-top:6px;line-height:1.35}'+
   '.spk-cover .cv-nilai{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;border-top:1px solid #E2E2E2;padding-top:12px;margin-top:0}'+
   '.spk-cover .cv-nilai .fk{font-size:9px;font-weight:700;letter-spacing:.16em;color:#8F8E8E}'+
   '.spk-cover .cv-nilai .terb{font-size:11px;color:#8F8E8E;margin-top:6px}'+
-  '.spk-cover .cv-nilai .r{font-size:26px;font-weight:800;color:#201E1D;white-space:nowrap}'+
+  '.spk-cover .cv-nilai .r{font-size:26px;font-weight:800;color:#1B3A6B;white-space:nowrap}'+
+  /* Panel nilai pekerjaan: latar lembut + aksen biru agar jadi titik fokus cover */
+  '.spk-cover .cv-nilai{background:#F5F7FA;border-left:4px solid #1B3A6B;padding:16px 18px;margin-top:20px}'+
   '.spk-cover .cv-foot{margin-top:14px;font-size:11px;color:#8F8E8E;line-height:1.7}'+
   /* ---------- DAFTAR ISI ---------- */
   '.spk-tocpage{font-family:'+G+';color:#201E1D}'+
@@ -14386,14 +14390,15 @@ function spkDocCss2(){
   '.spk-tocpage .toc-meta{text-align:right;line-height:1.6}'+
   '.spk-tocpage .toc-meta b{display:block;font-size:9px;font-weight:700;letter-spacing:.18em;color:#1B3A6B}'+
   '.spk-tocpage .toc-meta span{display:block;font-size:8.5px;font-weight:700;letter-spacing:.14em;color:#1B3A6B}'+
-  '.spk-tocpage .toc-rule{border-top:1.4px solid #201E1D;margin:16px 0 6px}'+
+  '.spk-tocpage .toc-accent{width:56px;border-top:4px solid #F6B40E;margin-bottom:14px}'+
+  '.spk-tocpage .toc-rule{border-top:2px solid #201E1D;margin:16px 0 6px}'+
   '.spk-toc2 .row{display:flex;align-items:baseline;gap:0;padding:17px 2px;border-top:1px solid #E2E2E2;border-bottom:0;font-size:14px}'+
   '.spk-toc2 .row:first-child{border-top:0}'+
   '.spk-toc2 .row .no{flex:0 0 auto;width:44px;font-weight:800;color:#1B3A6B;font-size:17px}'+
   '.spk-toc2 .row .nm{flex:0 0 auto;font-weight:600;color:#201E1D;font-size:14px;max-width:70%}'+
   '.spk-toc2 .row .nm i{font-style:italic}'+
   '.spk-toc2 .row .dot{flex:1;border-bottom:1.5px dotted #C9C9C9;transform:translateY(-3px);margin:0 10px}'+
-  '.spk-toc2 .row .pg{flex:0 0 auto;font-weight:800;color:#201E1D;font-size:15px;min-width:1.4em;text-align:right}'+
+  '.spk-toc2 .row .pg{flex:0 0 auto;font-weight:800;color:#1B3A6B;font-size:15px;min-width:1.4em;text-align:right}'+
   /* ---------- KOP & FOOTER BERULANG (halaman isi) ---------- */
   'table.spk-run{width:100%;border-collapse:collapse;border:0;background:transparent}'+
   'table.spk-run > thead > tr > td,table.spk-run > tbody > tr > td,table.spk-run > tfoot > tr > td{padding:0;border:0;background:transparent}'+
@@ -16786,10 +16791,9 @@ function spkCoverHtml(data, ctx, judulBaris){
       '<div class="cv-brand">'+logo+
         '<div class="cv-org"><span>PT PLN (PERSERO)</span><b>UP3 Masohi</b></div>'+
       '</div>'+
-      '<div class="cv-no"><span>NOMOR KONTRAK</span><b>'+esc(data.nomor_kontrak||'—')+'</b>'+
-        '<i>'+esc(ctx.tanggal_kontrak_pjg||'')+'</i></div>'+
     '</div>'+
     '<div class="cv-rule"></div>'+
+    '<div class="cv-accent"></div>'+
     '<div class="cv-eyebrow">PENGADAAN LANGSUNG</div>'+
     '<h1 class="cv-title">'+judulHtml+'</h1>'+
     '<div class="cv-rule2"></div>'+
@@ -16799,6 +16803,8 @@ function spkCoverHtml(data, ctx, judulBaris){
     '</div>'+
     '<div class="cv-spacer"></div>'+
     '<div class="cv-grid">'+
+      fld('NOMOR KONTRAK', data.nomor_kontrak)+
+      fld('TANGGAL KONTRAK', ctx.tanggal_kontrak_pjg)+
       fld('PEKERJAAN', data.nama_pekerjaan)+
       fld('LOKASI', data.lokasi_pekerjaan)+
       fld('PELAKSANA', data.pelaksana)+
@@ -16827,6 +16833,7 @@ function spkTocHtml(data, klausul){
   }).join('');
   return ''+
   '<section class="spk-page spk-tocpage">'+
+    '<div class="toc-accent"></div>'+
     '<div class="toc-head">'+
       '<h1>Daftar Isi</h1>'+
       '<div class="toc-meta"><b>SURAT PERINTAH KERJA</b><span>'+esc(data.nomor_kontrak||'\u2014')+'</span></div>'+
@@ -16862,7 +16869,7 @@ function spkRunFootHtml(){
 function spkSignBlockHtml(ctx, rangkap){
   const esc=fkEsc;
   return '<div class="spk-signpage">'+
-    '<div class="spk-sign-eyebrow">TANDA TANGAN PARA PIHAK · RANGKAP '+rangkap+'</div>'+
+    '<div class="spk-sign-eyebrow">TANDA TANGAN PARA PIHAK</div>'+
     '<table class="spk-sign"><tr>'+
       '<td><div class="role">PIHAK PERTAMA</div><div>'+esc(ctx.p1_nama_singkat||'PT PLN (Persero)')+'</div>'+
         '<div class="nm">'+esc(ctx.p1_wakil||'')+'</div><div class="jab">'+esc(ctx.p1_jabatan||'')+'</div></td>'+
@@ -17043,6 +17050,9 @@ function spkPageScript(){
     ' function usedBottom(){ var k=els(body); if(!k.length) return 0; var bt=body.getBoundingClientRect().top; return k[k.length-1].getBoundingClientRect().bottom - bt; }',
     ' function remain(){ return body.clientHeight - usedBottom(); }',
     ' function put(node){',
+    /* Penanda halaman baru: blok ber-class "spk-forcepage" SELALU memulai lembar
+       baru (kecuali lembar saat ini memang masih kosong). */
+    '   if(node.nodeType===1 && hasCls(node,"spk-forcepage") && !kosong()){ mk(); }',
     '   if(node.nodeType===1 && hasCls(node,"spk-signpage")){',
     '     if(!kosong() && body.querySelector(".spk-signpage")){ mk(); tgt().appendChild(node); return; }',
     '     var t0=tgt(); t0.appendChild(node); var fit0=!over(); t0.removeChild(node);',
@@ -17173,7 +17183,18 @@ function spkDocHtml(data, klausul){
   // 2) Daftar Isi
   const toc=spkTocHtml(data, klausul);
   // 3) Isi kontrak (kop + footer berulang tiap halaman)
-  const preamble = spkNumberFix(spkTidyKeyValue(spkMerge(SPK_PREAMBLE_TPL, ctx)));
+  let preamble = spkNumberFix(spkTidyKeyValue(spkMerge(SPK_PREAMBLE_TPL, ctx)));
+  /* Paragraf "Maka dengan ini PIHAK PERTAMA menugaskan..." harus MEMULAI halaman
+     baru. CSS break-before:page tidak berpengaruh karena halaman isi dipecah oleh
+     paginator JS (spkPageScript), bukan oleh mesin cetak. Karena itu paragraf ini
+     dikeluarkan jadi blok tingkat atas ber-class "spk-forcepage", yang dikenali
+     paginator sebagai penanda halaman baru. */
+  let preambleAtas = preamble, preambleMenugaskan = '';
+  const _iM = preamble.indexOf('spk-menugaskan');
+  if(_iM > -1){
+    const _p = preamble.lastIndexOf('<p', _iM);
+    if(_p > -1){ preambleAtas = preamble.slice(0,_p); preambleMenugaskan = preamble.slice(_p); }
+  }
   const clausesHtml = (klausul||[]).map((k,i)=>
     '<div class="spk-clause"><div class="spk-cl-h"><span class="n'+((i+1)>=10?' r':'')+'"></span>'+spkFmtJudul(k.judul)+'</div>'+
     '<div class="spk-cl">'+spkNumberFix(spkTidyKeyValue(
@@ -17182,10 +17203,10 @@ function spkDocHtml(data, klausul){
   ).join('');
   const isiBody=
     '<div class="spk-bab"><b>SURAT PERINTAH KERJA</b>'+(data.nomor_kontrak?('<span>'+esc(data.nomor_kontrak)+'</span>'):'')+'</div>'+
-    '<div class="spk-cl">'+preamble+'</div>'+
+    '<div class="spk-cl">'+preambleAtas+'</div>'+
+    (preambleMenugaskan ? '<div class="spk-cl spk-forcepage">'+preambleMenugaskan+'</div>' : '')+
     clausesHtml+
-    spkSignBlockHtml(ctx,'1')+
-    spkSignBlockHtml(ctx,'2');
+    spkSignBlockHtml(ctx,'1');   /* hanya 1 rangkap */
   const isi=
     '<section class="spk-page spk-flow" id="spk-flow">'+
       '<table class="spk-run"><thead><tr><td>'+spkRunHeadHtml(data)+'</td></tr></thead>'+
