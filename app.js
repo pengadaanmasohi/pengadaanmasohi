@@ -14168,14 +14168,22 @@ function spkAktaHlHtml(text){
   if(/\n$/.test(esc)) esc+=' ';   // jaga tinggi baris terakhir bila diakhiri newline
   return esc || '&nbsp;';
 }
+function spkAktaHlAutoGrow(el){
+  if(!el || el.offsetParent===null) return;   // lewati bila belum tampil (scrollHeight belum valid)
+  el.style.height='auto';
+  el.style.height=(el.scrollHeight+2)+'px';   // +2 = tebal border atas & bawah (border-box)
+}
 function spkAktaHlInput(el,k){
   spkSet(k, el.value);
+  spkAktaHlAutoGrow(el);
   var bd=document.getElementById('spk-hlbd-'+k);
-  if(bd){ bd.innerHTML=spkAktaHlHtml(el.value); bd.scrollTop=el.scrollTop; bd.scrollLeft=el.scrollLeft; }
+  if(bd) bd.innerHTML=spkAktaHlHtml(el.value);
 }
-function spkAktaHlScroll(el,k){
-  var bd=document.getElementById('spk-hlbd-'+k);
-  if(bd){ bd.scrollTop=el.scrollTop; bd.scrollLeft=el.scrollLeft; }
+/* Setel tinggi awal semua textarea bersorot agar pas isi. Ditunda ke frame berikutnya
+   karena render bisa terjadi saat halaman masih tersembunyi (tinggi belum terukur). */
+function spkHlInitAll(){
+  var run=function(){ var els=document.querySelectorAll('.spk-hl-input'); for(var i=0;i<els.length;i++) spkAktaHlAutoGrow(els[i]); };
+  if(typeof requestAnimationFrame==='function') requestAnimationFrame(run); else setTimeout(run,0);
 }
 function spkEnsureHlStyle(){
   if(document.getElementById('spk-hl-style')) return;
@@ -14185,11 +14193,11 @@ function spkEnsureHlStyle(){
       "font-family:'Inter','Segoe UI',Arial,sans-serif;font-size:12px;line-height:1.55;"+
       'padding:10px 12px;border:1px solid transparent;border-radius:11px;'+
       'box-sizing:border-box;width:100%;margin:0;letter-spacing:normal;text-align:left;'+
-      'white-space:pre-wrap;overflow-wrap:break-word;word-break:break-word}'+
+      'white-space:pre-wrap;overflow-wrap:break-word;word-break:normal}'+
     '.spk-hlwrap .spk-hl-backdrop{position:absolute;top:0;left:0;right:0;bottom:0;z-index:1;'+
       'pointer-events:none;overflow:hidden;background:linear-gradient(180deg,#ffffff,#fafdfe);color:#12242b}'+
     '.spk-hlwrap .spk-hl-backdrop .spk-hl-red{color:#E5484D;font-weight:600}'+
-    '.spk-hlwrap .spk-hl-input{position:relative;z-index:2;display:block;resize:vertical;min-height:78px;'+
+    '.spk-hlwrap .spk-hl-input{position:relative;z-index:2;display:block;resize:none;overflow:hidden;min-height:78px;'+
       'color:transparent;-webkit-text-fill-color:transparent;caret-color:#12242b;'+
       'background:transparent;border-color:#cdd9de;'+
       'box-shadow:0 1px 2px rgba(16,40,50,.06),inset 0 1px 0 rgba(255,255,255,.6)}'+
@@ -14261,7 +14269,7 @@ function spkFieldInput(f){
         '<div class="spk-hlwrap">'+
           '<div class="spk-hl-backdrop" id="spk-hlbd-'+f.k+'" aria-hidden="true">'+spkAktaHlHtml(val0)+'</div>'+
           '<textarea class="spk-hl-input" rows="3" spellcheck="false" '+
-            'oninput="spkAktaHlInput(this,\''+f.k+'\')" onscroll="spkAktaHlScroll(this,\''+f.k+'\')">'+fkEsc(val0)+'</textarea>'+
+            'oninput="spkAktaHlInput(this,\''+f.k+'\')">'+fkEsc(val0)+'</textarea>'+
         '</div></div>';
     }
     return '<div class="field"'+span+'><label>'+spkLbl(f)+'</label><textarea rows="3" oninput="spkSet(\''+f.k+'\',this.value)">'+fkEsc(v||'')+'</textarea></div>';
@@ -14372,6 +14380,7 @@ function renderSpkSusun(){
       '<div class="jp-actions" style="justify-content:flex-end;margin-top:4px">'+
         '<button class="btn btn-teal" onclick="spkGoStep(2)">Berikutnya: Ubah Klausul Kontrak <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>'+
       '</div>';
+    spkHlInitAll();
   }else if(spkStep===2){
     cont.innerHTML =
       stepper+
