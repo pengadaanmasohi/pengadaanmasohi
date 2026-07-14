@@ -9938,6 +9938,20 @@ function jsHpsColPct(items,cfg){
   const ur =Math.max(14, 100 - no - sat - vol - 55);   // 55 = lima kolom harga
   return {no, ur, sat, vol};
 }
+/* Lebar kolom KHUSUS tabel rincian Lampiran SPK.
+   Sama seperti dokumen HPS, tetapi kolom Sat & Vol dipepatkan agar HANYA cukup untuk
+   teks terpanjangnya — mana yang lebih lebar antara DATA di kolom itu atau JUDUL
+   kolomnya ("Sat"/"Vol"). Seluruh sisa lebarnya dialihkan ke kolom Uraian Pekerjaan.
+   Perkiraan: lebar isi Lampiran = 180mm (~680px), font 8,7px, overhead sel ~14px. */
+function spkLampColPct(items,cfg){
+  const L=jsSatVolLen(items);   // satLen & volLen sudah = max(3="Sat"/"Vol", data terpanjang)
+  const fit=len=>Math.round(((len*5.4+14)/680*100)*10)/10;   // persen, 1 desimal
+  const no =jsKolPct(jsNoLen(items,cfg));
+  const sat=Math.max(4.4, fit(L.satLen));   // 4,4% = lantai agar judul "Sat" tak terpotong
+  const vol=Math.max(4.4, fit(L.volLen));   // 4,4% = lantai agar judul "Vol" tak terpotong
+  const ur =Math.max(14, Math.round((100 - no - sat - vol - 55)*10)/10);
+  return {no, ur, sat, vol};
+}
 /* Lebar minimum (px) kolom No, Sat & Vol pada dokumen Analisa (table-layout auto). */
 function jsAnaColPx(items,cfg){
   const L=jsSatVolLen(items);
@@ -17310,6 +17324,16 @@ function spkLampiranDocInner(data){
     const ttd=spkLampSignBlockHtml(ctx, data||{});
     html = html.replace(/<tr class="ttd-row">[\s\S]*?<\/table><\/td><\/tr>/,
       '<tr class="ttd-row"><td colspan="9">'+ttd+'</td></tr>');
+  }catch(e){ console.error(e); }
+  /* Pepatkan lebar kolom Sat & Vol agar hanya cukup untuk teks terpanjangnya
+     (data atau judul kolom), lalu berikan seluruh sisanya ke Uraian Pekerjaan.
+     Colgroup bawaan HPS ditimpa KHUSUS di Lampiran; dokumen HPS tidak terpengaruh. */
+  try{
+    const lampSt=spkLampHpsState(data||{});
+    const cw=spkLampColPct(lampSt.items, jsCfg(lampSt));
+    html = html.replace(/<colgroup>[\s\S]*?<\/colgroup>/,
+      '<colgroup><col style="width:'+cw.no+'%"><col style="width:'+cw.ur+'%"><col style="width:'+cw.sat+'%"><col style="width:'+cw.vol+'%">'+
+        '<col style="width:11%"><col style="width:11%"><col style="width:11%"><col style="width:11%"><col style="width:11%"></colgroup>');
   }catch(e){ console.error(e); }
   return html;
 }
