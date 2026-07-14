@@ -14477,7 +14477,15 @@ function spkDocCss2(){
   '.spk-signpage .spk-sign{margin-top:10px}'+
   /* ---------- LEMBAR LAMPIRAN (dokumen bergaya HPS) ---------- */
   '.spk-lampsheet{page-break-before:always;break-before:page}'+
-  '.spk-lampsheet .fkl-doc{padding:0;overflow:visible;background:transparent}'+
+  /* LEBAR ISI HALAMAN LAMPIRAN = LEBAR ISI HALAMAN DOKUMEN HPS.
+       HPS : 210mm - 2 x 15,0mm = 180,0 mm
+       SPK : 210mm - 2 x 25,4mm = 159,2 mm   (margin dokumen kontrak 2,54 cm)
+     Selisih 20,8mm membuat tabel yang sama terjepit ~12% sehingga judul kolomnya
+     pecah dan tabel terlihat gepeng. Margin negatif 10,4mm di kiri & kanan
+     mengembalikan lebar isi Lampiran ke 180mm, identik dengan Perhitungan HPS.
+     Berlaku di layar maupun cetak, dan ikut terpakai pada salinan halaman lanjutan. */
+  '.spk-lampsheet .fkl-doc{padding:0;overflow:visible;background:transparent;'+
+    'margin-left:-10.4mm;margin-right:-10.4mm}'+
   /* Jarak dari baris "Lokasi Pekerjaan" (akhir tabel info) ke tabel rincian harga.
      Dulu jarak ini disumbang oleh judul seksi "B" (margin 22px) yang kini dihapus.
      :not(.spk-cont) => hanya tabel ASLI yang diberi jarak; salinan tabel pada
@@ -17027,7 +17035,9 @@ function spkLampHpsState(data){
     },
     jumlahItem: items.length||1,
     judulOn: anyJudul?'Ya':'Tidak', judulNum:'',
-    subjudulOn: anySub?'Ya':'Tidak', subjudulNum:'',
+    /* Sub-judul diberi huruf A, B, C ... persis seperti dokumen Perhitungan HPS.
+       Sebelumnya dikosongkan, sehingga kolom No pada baris sub-judul kosong. */
+    subjudulOn: anySub?'Ya':'Tidak', subjudulNum:'A',
     items: items.length?items:[spkLampNormItem({})]
   };
 }
