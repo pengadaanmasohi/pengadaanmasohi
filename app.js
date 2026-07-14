@@ -10736,6 +10736,9 @@ function hpsExtraDocCss(){
   'table.hps-doc-tbl thead tr:last-child th{border-bottom:1.5px solid #0b6a73}'+
   'table.hps-doc-tbl th,table.hps-doc-tbl td{border:1px solid #7d979c;padding:3px 5px;font-size:8.7px;line-height:1.3;vertical-align:middle;word-wrap:break-word;overflow-wrap:anywhere}'+
   'table.hps-doc-tbl thead th{background:#0E7C86;color:#fff;font-weight:700;text-align:center;letter-spacing:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  /* Judul kolom TIDAK boleh dipenggal di tengah kata ("Bara/ng", "Juml/ah").
+     Sel data tetap boleh (nomor/kode panjang), hanya <th> yang dikecualikan. */
+  'table.hps-doc-tbl thead th{overflow-wrap:break-word;word-break:normal;hyphens:none}'+
   'table.hps-doc-tbl thead th.ur{text-align:center}'+
   'table.hps-doc-tbl thead tr.numh td{background:#e7f2f3;color:#0b3d42;font-weight:700;text-align:center;font-style:italic;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   'table.hps-doc-tbl thead th.no{white-space:nowrap}'+
@@ -14397,18 +14400,18 @@ function spkDocCss2(){
   '.spk-cover .cv-eyebrow{margin-top:16px;font-size:9px;font-weight:700;letter-spacing:.22em;color:#1B3A6B}'+
   '.spk-cover .cv-title{margin:15px 0 0;font-size:60px;line-height:.98;font-weight:800;letter-spacing:-.03em;color:#201E1D;max-width:66%}'+
   '.spk-cover .cv-title span{display:inline}'+
-  '.spk-cover .cv-parties{display:flex;gap:0;margin-top:18px}'+
-  '.spk-cover .cv-parties .p{flex:1;padding:12px 0 12px 0}'+
-  '.spk-cover .cv-parties .p:last-child{border-left:1px solid #E2E2E2;padding-left:32px}'+
+  /* DARI/KEPADA & grid data memakai RITME KOLOM YANG SAMA: dua blok 50% dengan
+     celah 10px di tengah. Celah itulah pemisahnya — jadi garis vertikal atas dan
+     bawah otomatis jatuh di titik yang persis sama (dulu beda karena yang satu
+     pakai flex:1 + border-left, yang lain flex:0 0 50% + border-right). */
+  '.spk-cover .cv-parties{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}'+
+  '.spk-cover .cv-parties .p{flex:0 0 calc(50% - 5px);background:#F5F7FA;padding:14px 16px}'+
   '.spk-cover .cv-parties .pl{font-size:9px;font-weight:700;letter-spacing:.2em;color:#1B3A6B;margin-bottom:9px}'+
   '.spk-cover .cv-parties .pn{font-size:16px;font-weight:800;color:#201E1D;line-height:1.3}'+
   '.spk-cover .cv-parties .ps{font-size:11.5px;color:#8F8E8E;margin-top:3px}'+
   '.spk-cover .cv-spacer{flex:1 1 auto;min-height:14mm}'+
-  '.spk-cover .cv-grid{display:flex;flex-wrap:wrap}'+
-  '.spk-cover .cv-grid .f{flex:0 0 50%;padding:14px 30px 14px 0;border-top:1px solid #E2E2E2}'+
-  /* Garis pemisah vertikal antar kolom (kolom ganjil = kiri) */
-  '.spk-cover .cv-grid .f:nth-child(odd){border-right:1px solid #E2E2E2}'+
-  '.spk-cover .cv-grid .f:nth-child(even){padding-right:0;padding-left:30px}'+
+  '.spk-cover .cv-grid{display:flex;flex-wrap:wrap;gap:10px}'+
+  '.spk-cover .cv-grid .f{flex:0 0 calc(50% - 5px);background:#F5F7FA;padding:12px 16px}'+
   '.spk-cover .fk{font-size:9px;font-weight:700;letter-spacing:.16em;color:#8F8E8E}'+
   /* Nilai dibuat RATA KIRI-KANAN agar blok teks panjang rapi bertepi lurus */
   '.spk-cover .fv{font-size:13px;font-weight:800;color:#201E1D;margin-top:7px;line-height:1.45;'+
@@ -14420,7 +14423,7 @@ function spkDocCss2(){
   '.spk-cover .cv-nilai .terb{font-size:11px;color:#8F8E8E;margin-top:6px}'+
   '.spk-cover .cv-nilai .r{font-size:26px;font-weight:800;color:#1B3A6B;white-space:nowrap}'+
   /* Panel nilai pekerjaan: latar lembut + aksen biru agar jadi titik fokus cover */
-  '.spk-cover .cv-nilai{background:#F5F7FA;border-left:4px solid #1B3A6B;padding:16px 18px;margin-top:20px}'+
+  '.spk-cover .cv-nilai{background:#EEF2F7;border-left:4px solid #1B3A6B;padding:16px 18px;margin-top:10px;border-top:0}'+
   '.spk-cover .cv-foot{margin-top:14px;font-size:11px;color:#8F8E8E;line-height:1.7}'+
   /* ---------- DAFTAR ISI ---------- */
   '.spk-tocpage{font-family:'+G+';color:#201E1D}'+
@@ -14514,6 +14517,12 @@ function spkDocCss2(){
   '.spk-lampsign .org{font-size:12.5px;font-weight:700;color:#1a2b31;line-height:1.3}'+
   '.spk-lampsign .nm{font-size:12.5px;font-weight:700;color:#1a2b31;text-decoration:underline;margin-top:70px}'+
   '.spk-lampsign .jab{font-size:12.5px;font-weight:700;color:#1a2b31}'+
+  /* Penyeragaman TEGAS: setiap baris teks di kedua kolom tanda tangan lampiran
+     (PIHAK KEDUA & PIHAK PERTAMA) memakai ukuran & tinggi baris yang sama persis,
+     apa pun aturan bawaan yang mencoba menimpanya. */
+  '.spk-lampsign .spk-sign td,'+
+  '.spk-lampsign .spk-sign td > div{font-size:12.5px;line-height:1.35}'+
+  '.spk-lampsign .spk-sign td > div.ttd-date{font-weight:500}'+
   /* ---------- LEMBAR ISI HASIL PEMECAHAN HALAMAN (spkPageScript) ----------
      Isi kontrak & lampiran dipecah menjadi lembar A4 sungguhan: kop di atas,
      isi di tengah (tinggi tetap), footer paraf menempel di dasar lembar. */
