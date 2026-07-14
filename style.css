@@ -3163,3 +3163,90 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
 .spk-kldoc-dzx svg{width:13px;height:13px}
 .spk-kldoc-dzx:hover{background:#e8edf1;color:#3d4a55}
 
+
+/* =========================================================================
+   PENYERAGAMAN TOMBOL — Profil / Batalkan Pilihan / Pilih Pekerjaan
+   Ukuran & gaya disamakan dengan tombol utama (.btn) seperti "Reset" &
+   "Input Data": radius 12px, padding 10px 17px, font 11.5px, ikon 16px,
+   gradien + bayangan, serta animasi angkat saat disorot.
+   Blok ini sengaja diletakkan PALING BAWAH agar menimpa gaya lama.
+   ========================================================================= */
+.jp-profil-btn,
+.dp-pick-btn,
+.dp-unpick-btn{
+  border:none;
+  border-radius:12px;
+  padding:10px 17px;
+  font-family:'Plus Jakarta Sans',sans-serif;
+  font-weight:700;
+  font-size:11.5px;
+  letter-spacing:.2px;
+  text-transform:none;
+  line-height:1.2;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  cursor:pointer;
+  white-space:nowrap;
+  position:relative;
+  isolation:isolate;
+  transition:transform .16s cubic-bezier(.16,1,.3,1),box-shadow .22s ease,filter .2s ease;
+}
+.jp-profil-btn svg,
+.dp-pick-btn svg,
+.dp-unpick-btn svg{width:16px;height:16px;flex:0 0 auto}
+.jp-profil-btn:hover,
+.dp-pick-btn:hover,
+.dp-unpick-btn:hover{transform:translateY(-2px)}
+.jp-profil-btn:active,
+.dp-pick-btn:active,
+.dp-unpick-btn:active{transform:translateY(0) scale(.98)}
+
+/* Simpan Profil -> kuning (setara .btn-amber) */
+.jp-profil-btn.is-save{
+  background:linear-gradient(135deg,var(--yellow),#ffca3a);
+  color:#5a3d00;
+  box-shadow:0 4px 14px rgba(246,180,14,.32),inset 0 1px 0 rgba(255,255,255,.4);
+}
+.jp-profil-btn.is-save:hover{box-shadow:0 8px 22px rgba(246,180,14,.48),inset 0 1px 0 rgba(255,255,255,.5);filter:brightness(1.04)}
+
+/* Muat Profil & Pilih Pekerjaan -> teal (setara .btn-teal) */
+.jp-profil-btn.is-load,
+.dp-pick-btn{
+  background:linear-gradient(135deg,var(--teal),var(--cyan));
+  color:#fff;
+  box-shadow:0 4px 14px rgba(14,124,134,.32),inset 0 1px 0 rgba(255,255,255,.25);
+}
+.jp-profil-btn.is-load:hover,
+.dp-pick-btn:hover{box-shadow:0 8px 22px rgba(14,124,134,.44),inset 0 1px 0 rgba(255,255,255,.3);filter:brightness(1.04)}
+
+/* Batalkan Profil / Batalkan Pilihan -> merah (setara .btn-red) */
+.jp-profil-btn.is-cancel,
+.dp-unpick-btn{
+  background:linear-gradient(135deg,var(--red),#e25151);
+  color:#fff;
+  border:none;
+  box-shadow:0 4px 14px rgba(211,58,58,.28),inset 0 1px 0 rgba(255,255,255,.22);
+}
+.jp-profil-btn.is-cancel:hover,
+.dp-unpick-btn:hover{background:linear-gradient(135deg,var(--red),#e25151);box-shadow:0 8px 22px rgba(211,58,58,.42),inset 0 1px 0 rgba(255,255,255,.28);filter:brightness(1.04)}
+
+/* Tombol profil pada menu Persyaratan (Pembukaan Penawaran) — sudah memakai
+   kelas .btn, cukup dikembalikan ke ukuran tombol utama. */
+.pnw-profil-btn{padding:10px 17px;font-size:11.5px;gap:8px}
+.pnw-profil-btn svg{width:16px;height:16px}
+
+/* Ikon di dalam judul kartu tidak ikut diwarnai teal oleh .form-section-title svg */
+.form-section-title .jp-profil-btn svg,
+.form-section-title .dp-pick-btn svg,
+.form-section-title .dp-unpick-btn svg{color:inherit;stroke:currentColor;opacity:1}
+
+/* Bar tombol pustaka klausul & tombol pilih pekerjaan: beri jarak seragam */
+.spk-klbar{gap:10px}
+.dp-pick-wrap{display:inline-flex;align-items:center;gap:10px}
+
+/* Layar sempit: teks tombol tetap tampil, padding sedikit dirapatkan */
+@media(max-width:1180px){
+  .jp-profil-btn span{display:inline}
+  .jp-profil-btn,.dp-pick-btn,.dp-unpick-btn{padding:9px 13px;font-size:11px}
+}
