@@ -13530,8 +13530,8 @@ const SPK_DEF_MAKSUD="Adapun maksud dan tujuan dilaksanakannya pekerjaan ini ada
    & terisi sendiri; "Perubahan?" dropdown; field SK terkunci bila Perubahan≠Ya. */
 /* Teks bawaan (default) Rincian Akta Pendirian & Rincian Akta Perubahan.
    Tetap dapat disunting bebas oleh pengguna pada form Data Mail Merge. */
-const SPK_DEF_AKTA_PENDIRIAN = 'Akta Notaris Nomor: (no. akta..) tanggal (tgl. akta...) dibuat dihadapan Notaris (nama notaris...), yang disahkan berdasarkan Surat Keputusan Menteri Hukum dan Hak Asasi Manusia Nomor: (no. SK...) tanggal (tgl SK...) beserta Akta-akta Perubahannya';
-const SPK_DEF_AKTA_PERUBAHAN = 'berdasarkan Akta Notaris Nomor: (no. akta...) tanggal (tgl. akta...) dibuat dihadapan (nama notaris...), yang disahkan berdasarkan Surat Keputusan Menteri Hukum dan Hak Asasi Manusia Nomor: (no. SK...) tanggal (tgl. SK...)';
+const SPK_DEF_AKTA_PENDIRIAN = 'yang didirikan berdasarkan Akta Notaris No. (no. akta..) tanggal (tgl. akta...) dibuat dihadapan Notaris (nama notaris...), yang disahkan berdasarkan Surat Keputusan Menteri Hukum dan Hak Asasi Manusia No. (no. SK...) tanggal (tgl SK...) beserta Akta - akta Perubahannya.';
+const SPK_DEF_AKTA_PERUBAHAN = 'Akta Notaris No. (no. akta...) tanggal (tgl. akta...) dibuat dihadapan (nama notaris...), yang disahkan berdasarkan Surat Keputusan Menteri Hukum dan Hak Asasi Manusia No. (no. SK...) tanggal (tgl. SK...)';
 /* Field SK Pimpinan Unit — dipakai untuk fitur "default = data terakhir disimpan" */
 const SPK_SK_KEYS = ['nama_pengguna','jabatan_pengguna','no_sk','tgl_sk','nama_unit','singkatan_unit','lokasi_unit'];
 
@@ -13611,13 +13611,13 @@ const SPK_FIELDS_FLAT = SPK_FIELD_GROUPS.reduce((a,g)=>a.concat(g.fields),[]);
    Bukan field mail-merge — hanya bagian bercetak kuning pada dokumen yang
    menjadi input (nama wakil, jabatan, no. & tgl. Keputusan Direksi, nama unit,
    alamat unit). Bagian ini sama untuk semua kontrak. */
-const SPK_P1_AKTA_PLN = "Perusahaan Berbadan Hukum yang merupakan Badan Usaha Milik Negara (BUMN) yang didirikan berdasarkan Akta Notaris Nomor: 169 tanggal 30 Juli 1994 dibuat di hadapan Notaris SUTJIPTO, SH., yang disahkan berdasarkan Surat Keputusan Menteri Kehakiman Republik Indonesia Nomor: C2-11.519.HT.01.01.TH'94 tanggal 01 Agustus 1994 beserta akta-akta perubahannya.";
+const SPK_P1_AKTA_PLN = "Perusahaan Berbadan Hukum yang merupakan Badan Usaha Milik Negara (BUMN) yang didirikan berdasarkan Akta Notaris No. 169 tanggal 30 Juli 1994 dibuat di hadapan Notaris SUTJIPTO, SH., yang disahkan berdasarkan Surat Keputusan Menteri Kehakiman Republik Indonesia No. C2-11.519.HT.01.01.TH'94 tanggal 01 Agustus 1994 beserta akta - akta perubahannya.";
 
 /* ---------- Preamble (pembuka) — memakai placeholder ---------- */
 const SPK_PREAMBLE_TPL =
  '<p class="kl0">Pada hari ini <b>{{hari_ttd}}, tanggal {{tgl_kontrak_terbilang}} ({{tgl_kontrak_num}})</b>, kami yang bertanda tangan dibawah ini :</p>'+
  '<div class="spk-party"><div class="spk-party-h"><span class="n">I.</span>PT PLN (PERSERO):</div>'+
- '<p class="spk-party-d">{{p1_akta}} Dalam hal ini diwakili oleh <b>{{p1_wakil}}</b> selaku {{p1_jabatan}} berdasarkan Keputusan Direksi PT PLN (Persero) Nomor: {{p1_sk}} tanggal {{p1_sk_tgl}}. Bertindak untuk dan atas Nama {{p1_nama_singkat}} yang berkedudukan di {{p1_alamat}}, selanjutnya dalam Perjanjian ini disebut sebagai (<b>&ldquo;PIHAK PERTAMA&rdquo;</b>);</p></div>'+
+ '<p class="spk-party-d">{{p1_akta}} Dalam hal ini diwakili oleh <b>{{p1_wakil}}</b> selaku {{p1_jabatan}} berdasarkan Keputusan Direksi PT PLN (Persero) Nomor: {{p1_sk}} tanggal {{p1_sk_tgl}}. Bertindak untuk dan atas nama PT PLN (Persero) {{p1_nama_singkat}} yang berkedudukan di {{p1_alamat}}, selanjutnya dalam Perjanjian ini disebut sebagai (<b>&ldquo;PIHAK PERTAMA&rdquo;</b>);</p></div>'+
  '<div class="spk-party"><div class="spk-party-h"><span class="n">II.</span>{{p2_nama}}:</div>'+
  '<p class="spk-party-d">{{p2_akta}} Dalam hal ini diwakili oleh <b>{{p2_wakil}}</b> selaku {{p2_jabatan}} berdasarkan {{p2_akta_jabatan}}. Bertindak untuk dan atas nama {{p2_nama_hormat}} yang berkedudukan di {{p2_alamat}}, selanjutnya dalam Perjanjian ini disebut sebagai (<b>&ldquo;PIHAK KEDUA&rdquo;</b>).</p></div>'+
  '<p class="kl0 spk-berdasar"><b><u>Berdasarkan :</u></b></p>'+
@@ -13714,8 +13714,13 @@ function spkBuildCtx(data){
   ctx.p2_jabatan = d.jabatan_pimpinan || '';
   ctx.p2_alamat = d.lokasi_perusahaan || '';
   var _jp = spkJenisPerusahaan(d.nama_perusahaan);
-  ctx.p2_akta = (_jp? _jp+' ':'') + (d.akta_pendirian||'');
-  ctx.p2_akta_jabatan = d.akta_perubahan || '';
+  var _ap = String(d.akta_pendirian||'').replace(/\s+$/,'');       /* pastikan diakhiri titik → "…Perubahannya. Dalam hal ini…" jadi kalimat baru */
+  if(_ap && !/[.!?]$/.test(_ap)) _ap += '.';
+  ctx.p2_akta = (_jp? _jp+' ':'') + _ap;
+  /* Template preamble sudah memuat kata "berdasarkan" sebelum {{p2_akta_jabatan}},
+     jadi buang "berdasarkan" di awal nilai (bila ada) agar tidak jadi
+     "berdasarkan berdasarkan" — berlaku juga utk kontrak lama yg sudah tersimpan. */
+  ctx.p2_akta_jabatan = String(d.akta_perubahan||'').replace(/^\s*berdasarkan\s+/i, '');
 
   // ---- Pembayaran ----
   ctx.bank_nama = d.nama_bank || '';
@@ -13748,6 +13753,13 @@ function spkMerge(tpl, ctx){
     if(Object.prototype.hasOwnProperty.call(ctx,k)) return (ctx[k]==null?'':String(ctx[k]));
     return m;
   });
+}
+/* Ubah SEMUA penulisan "Nomor:" -> "No." pada isi kontrak (klausul & uraian).
+   Dijalankan pada tahap render SETELAH merge, sehingga mencakup teks tetap,
+   default field, maupun klausul yg diketik pengguna. Cover/kop/lampiran tidak
+   diproses. Cocokkan "Nomor" + spasi opsional + ":" (case-insensitive). */
+function spkNomorToNo(html){
+  return String(html==null?'':html).replace(/Nomor\s*:/gi, 'No.');
 }
 /* Rapikan pola "Label / : / nilai" (tiga paragraf berurutan) menjadi satu baris
    sejajar seperti tampilan Word — dipakai pada blok Nama/Lokasi Pekerjaan dsb. */
@@ -14900,7 +14912,7 @@ function spkDocCss(){
      (text-wrap:balance), sehingga tidak ada baris pertama kepanjangan lalu baris
      kedua tinggal 2 kata. Dipakai cara ini—bukan <br> manual—agar tetap rapi
      berapa pun panjang nama unit yang masuk dari mail merge. */
-  '.spk-sign .org{font-weight:700;line-height:1.4;text-wrap:balance;text-align:center}'+
+  '.spk-sign .org{font-weight:700;line-height:'+spkLHCss(1.15)+';text-wrap:balance;text-align:center}'+
   /* Jabatan ditebalkan, seragam dengan tanda tangan Lampiran (.spk-lampsign .jab) */
   '.spk-sign .jab{color:#000;font-weight:700}'+
   /* ===== Seragamkan SELURUH teks ISI kontrak = Arial 11pt =====
@@ -15051,11 +15063,11 @@ function spkDocCss2(){
   '.spk-rft .l,.spk-rft .r{white-space:nowrap}'+
   /* ---------- ISI: BAB & tanda tangan ---------- */
   /* Jarak dari blok judul (SURAT PERINTAH KERJA + nomor kontrak) ke teks pertama
-     "Pada hari ini ..." = 24pt. */
+     "Pada hari ini ..." = 12pt. */
   /* Judul "SURAT PERINTAH KERJA" + Nomor Kontrak (halaman 1 isi kontrak):
      WARNA HITAM, jenis huruf mengikuti ISI KONTRAK (Inter/Arial 11pt),
      dan garis pembatas antara judul dengan nomor kontrak juga HITAM. */
-  '.spk-bab{text-align:center;font-family:"Inter","Segoe UI",Arial,sans-serif;margin:0 0 24pt}'+
+  '.spk-bab{text-align:center;font-family:"Inter","Segoe UI",Arial,sans-serif;margin:0 0 12pt}'+
   '.spk-bab b{display:block;font-family:"Inter","Segoe UI",Arial,sans-serif;font-size:13pt;font-weight:800;color:#000;text-decoration:underline;text-decoration-color:#000;text-decoration-thickness:2px;text-underline-offset:5px;letter-spacing:.05em;text-transform:uppercase;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   '.spk-bab span{display:block;font-family:"Inter","Segoe UI",Arial,sans-serif;font-size:11pt;font-weight:700;color:#000;letter-spacing:.06em;margin-top:7px}'+
   /* Jarak dari kalimat "…kami yang bertanda tangan dibawah ini :" ke blok
@@ -18199,7 +18211,7 @@ function spkDocHtml(data, klausul){
   // 2) Daftar Isi
   const toc=spkTocHtml(data, klausul);
   // 3) Isi kontrak (kop + footer berulang tiap halaman)
-  let preamble = spkNumberFix(spkTidyKeyValue(spkMerge(SPK_PREAMBLE_TPL, ctx)));
+  let preamble = spkNomorToNo(spkNumberFix(spkTidyKeyValue(spkMerge(SPK_PREAMBLE_TPL, ctx))));
   /* Paragraf "Maka dengan ini PIHAK PERTAMA menugaskan..." harus MEMULAI halaman
      baru. CSS break-before:page tidak berpengaruh karena halaman isi dipecah oleh
      paginator JS (spkPageScript), bukan oleh mesin cetak. Karena itu paragraf ini
@@ -18213,9 +18225,9 @@ function spkDocHtml(data, klausul){
   }
   const clausesHtml = (klausul||[]).map((k,i)=>
     '<div class="spk-clause"><div class="spk-cl-h"><span class="n'+((i+1)>=10?' r':'')+'"></span>'+spkFmtJudul(k.judul)+'</div>'+
-    '<div class="spk-cl">'+spkNumberFix(spkTidyKeyValue(
+    '<div class="spk-cl">'+spkNomorToNo(spkNumberFix(spkTidyKeyValue(
         spkPruneKlausul(spkMerge(spkRenumberKlausul(k.isi||'', i+1), ctx), i+1, data)
-      ))+'</div></div>'
+      )))+'</div></div>'
   ).join('');
   const isiBody=
     '<div class="spk-bab"><b>SURAT PERINTAH KERJA</b>'+(data.nomor_kontrak?('<span>'+esc(data.nomor_kontrak)+'</span>'):'')+'</div>'+
