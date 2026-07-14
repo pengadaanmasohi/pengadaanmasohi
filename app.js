@@ -13219,7 +13219,11 @@ const SPK_FIELD_GROUPS = [
   { sec:'Informasi Pengadaan', fields:[
     {k:'nama_pekerjaan', l:'Nama Pekerjaan', t:'text', span:2, dpLock:true, def:''},
     {k:'lokasi_pekerjaan', l:'Lokasi Pekerjaan', t:'text', span:2, dpLock:true, def:''},
-    {k:'pelaksana', l:'Bidang Pelaksana', t:'text', dpLock:true, def:''},
+    /* Bidang Pelaksana: dropdown dengan opsi PERSIS sama dengan Monitoring
+       (BIDANG_OPTS — Transaksi Energi Listrik, dll). Terisi otomatis & terkunci
+       bila sebuah Data Pekerjaan tertaut; bila Data Pekerjaan belum mengisinya,
+       dropdown tetap dapat dipilih manual di sini. */
+    {k:'pelaksana', l:'Bidang Pelaksana', t:'select', opts:BIDANG_OPTS, dpLock:true, def:''},
     {k:'jenis_anggaran', l:'Jenis Anggaran', t:'text', dpLock:true, def:''},
     {k:'no_anggaran', l:'No. Anggaran', t:'text', span:2, dpLock:true, def:''},
     {k:'tgl_anggaran', l:'Tgl. Anggaran', t:'date', dpLock:true, def:''},
@@ -13874,7 +13878,9 @@ async function spkApplyDp(rec){
   if(info.no_anggaran) d.no_anggaran=info.no_anggaran;
   if(info.tgl_anggaran) d.tgl_anggaran=info.tgl_anggaran;
   if(info.jenis_anggaran) d.jenis_anggaran=info.jenis_anggaran;
-  if(info.bidang_pelaksana) d.pelaksana=info.bidang_pelaksana;
+  // Bidang Pelaksana SELALU mengikuti Data Pekerjaan terpilih (dikosongkan bila
+  // Data Pekerjaan tsb belum mengisinya, agar tidak membawa sisa pilihan lama).
+  d.pelaksana = info.bidang_pelaksana || '';
   if(info.metode) d.metode_pengadaan=info.metode;
   // Nomor & tanggal BA (Pembukaan, Evaluasi, Klarifikasi & Negosiasi) dari Penetapan Nomor
   let pnCount=0;
@@ -13992,7 +13998,9 @@ function spkFieldInput(f){
   }
   // Field yang terisi otomatis dari Data Pekerjaan (Nama/Lokasi/Bidang/Jenis/No. &
   // Tgl. Anggaran/Metode Pengadaan) -> terkunci selama sebuah Data Pekerjaan tertaut.
-  if(f.dpLock && spkState.data.__dpId){
+  // Pengecualian: bila Data Pekerjaan belum mengisi Bidang Pelaksana, field tidak
+  // dikunci kosong — dropdown tetap ditampilkan agar dapat dipilih manual.
+  if(f.dpLock && spkState.data.__dpId && !(f.k==='pelaksana' && !String(v||'').trim())){
     return lockedField(f.t==='date'?spkDispDate(v):(v||''));
   }
   if(f.t==='select'){
@@ -14523,9 +14531,12 @@ function spkDocCss2(){
   /* ---------- ISI: BAB & tanda tangan ---------- */
   /* Jarak dari blok judul (SURAT PERINTAH KERJA + nomor kontrak) ke teks pertama
      "Pada hari ini ..." = 24pt. */
-  '.spk-bab{text-align:center;font-family:'+G+';margin:0 0 24pt}'+
-  '.spk-bab b{display:block;font-size:13pt;font-weight:800;color:#1B3A6B;text-decoration:underline;text-decoration-color:#F6B40E;text-decoration-thickness:2.5px;text-underline-offset:5px;letter-spacing:.05em;text-transform:uppercase;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
-  '.spk-bab span{display:block;font-size:11pt;font-weight:700;color:#1B3A6B;letter-spacing:.06em;margin-top:7px}'+
+  /* Judul "SURAT PERINTAH KERJA" + Nomor Kontrak (halaman 1 isi kontrak):
+     WARNA HITAM, jenis huruf mengikuti ISI KONTRAK (Inter/Arial 11pt),
+     dan garis pembatas antara judul dengan nomor kontrak juga HITAM. */
+  '.spk-bab{text-align:center;font-family:"Inter","Segoe UI",Arial,sans-serif;margin:0 0 24pt}'+
+  '.spk-bab b{display:block;font-family:"Inter","Segoe UI",Arial,sans-serif;font-size:13pt;font-weight:800;color:#000;text-decoration:underline;text-decoration-color:#000;text-decoration-thickness:2px;text-underline-offset:5px;letter-spacing:.05em;text-transform:uppercase;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  '.spk-bab span{display:block;font-family:"Inter","Segoe UI",Arial,sans-serif;font-size:11pt;font-weight:700;color:#000;letter-spacing:.06em;margin-top:7px}'+
   '.spk-signpage{page-break-before:always;break-before:page;padding-top:8mm}'+
   '.spk-sign-eyebrow{text-align:center;font-family:'+G+';font-size:8.5px;font-weight:800;letter-spacing:.24em;color:#1E6FBF;margin:0 0 24px}'+
   '.spk-signpage .spk-sign{margin-top:10px}'+
@@ -17550,7 +17561,7 @@ function renderSpkKlausul(){
           '<button type="button" class="jp-profil-btn is-save" onclick="spkKlProfilOpenSave()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg><span>Simpan Profil</span></button>'+
           '<button type="button" class="jp-profil-btn is-load" onclick="spkKlProfilOpenLoad()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6M9 14h6"/></svg><span>Muat Profil</span></button>'+
           btnBatal+
-          '<button class="btn btn-green btn-sm" onclick="spkKlausulNew()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Tambah Klausul</button>'+
+          '<button class="btn btn-green" onclick="spkKlausulNew()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Tambah Klausul</button>'+
         '</span>'+
       '</div>'+
       '<div class="spk-klx-list">'+rows+'</div>'+
