@@ -15354,43 +15354,39 @@ function spkNumberFix(html){
   html = spkBreakRefNumbers(html);
   return html;
 }
-/* ---- KOTAK NOMOR SERAGAM + RATA KANAN (seperti penomoran "Right" di Word) ----
-   Lebar "HUG" per paragraf membuat nomor 2 digit (8.10.) mendorong teksnya ke kanan,
-   sehingga teks butir 1 digit (8.9.) dan 2 digit tidak sejajar.
-   Di sini seluruh butir pada SATU kelompok (tingkat + awalan sama, mis. 8.9 s.d. 8.12)
-   memakai LEBAR KOTAK YANG SAMA = lebar nomor terpanjang, dan nomornya RATA KANAN:
-     - titik akhir nomor sejajar,
-     - teks semua butir mulai di kolom yang sama,
-     - baris ke-2 tetap sejajar dengan huruf pertama teks (hanging indent).
-   Huruf/romawi (a. b. / i. ii.) ikut diseragamkan lebarnya, tetapi tetap rata kiri. */
+/* ---- KOTAK NOMOR SERAGAM + RATA KANAN (penomoran "Right" gaya Word) ----
+   HANYA untuk kelompok ANGKA yang lebar nomornya BERBEDA (campuran 1 digit & 2 digit,
+   mis. 8.9 s.d. 8.12). Daftar yang nomornya sudah sama lebar (a./b./c., 1./2./3.,
+   8.1 s.d. 8.9) TIDAK disentuh sedikit pun — tetap seperti sebelumnya.
+   Pada kelompok campuran: lebar kotak = nomor terpanjang, nomor rata kanan, sehingga
+   titik akhir nomor sejajar dan teks 1 digit & 2 digit mulai di kolom yang sama
+   (baris ke-2 tetap sejajar dengan huruf pertama teks). */
 function spkNumUniform(html){
   var s=String(html==null?'':html);
   if(s.indexOf('spk-sl')<0) return s;
   try{
     var box=document.createElement('div'); box.innerHTML=s;
-    var ps=box.querySelectorAll('p.spk-sl'), grup={}, i, k;
+    var ps=box.querySelectorAll('p.spk-sl'), grup={}, i, k, ubah=false;
     for(i=0;i<ps.length;i++){
       var p=ps[i], n=p.firstElementChild;
       if(!n || n.tagName!=='SPAN' || !n.classList || !n.classList.contains('n')) continue;
       var tok=String(n.textContent||'').replace(/[\s\u00A0]+/g,'');
-      if(!tok) continue;
-      var angka=/^(?:[0-9]+[.)])+$/.test(tok);                 /* "1." "10." "8.9." "3.1.1." */
+      if(!tok || !/^(?:[0-9]+[.)])+$/.test(tok)) continue;      /* hanya nomor ANGKA */
+      var w=spkTextWidthCm(tok); if(!(w>0)) continue;
       /* Kelompok = tingkat paragraf + awalan nomor (segmen terakhir dibuang):
-         "8.9." & "8.12." -> awalan "8."  (satu kelompok)
-         "9.1."           -> awalan "9."  (kelompok lain)  */
+         "8.9." & "8.12." -> awalan "8."; "9.1." -> awalan "9." (kelompok lain). */
       var lvl=(p.classList.contains('kl2')?'kl2':'kl1')+(p.classList.contains('spk-lv1')?'|lv1':'');
-      var awal=angka ? tok.replace(/[0-9]+[.)]$/,'') : 'abc';
-      k=lvl+'|'+(angka?'n':'a')+'|'+awal;
-      if(!grup[k]) grup[k]={angka:angka, w:0, items:[]};
-      var w=spkTextWidthCm(tok);
-      if(!(w>0)) continue;
-      if(w>grup[k].w) grup[k].w=w;
+      k=lvl+'|'+tok.replace(/[0-9]+[.)]$/,'');
+      if(!grup[k]) grup[k]={min:w, max:w, items:[]};
+      if(w<grup[k].min) grup[k].min=w;
+      if(w>grup[k].max) grup[k].max=w;
       grup[k].items.push({p:p, n:n});
     }
     for(k in grup){
       var g=grup[k];
-      if(g.items.length<2 || !(g.w>0)) continue;                /* butir tunggal -> biarkan apa adanya */
-      var W=Math.max(0.4, Math.round((g.w+0.14)*100)/100);      /* nomor terpanjang + jeda 0,14 cm */
+      if(g.items.length<2) continue;
+      if((g.max-g.min) < 0.03) continue;                        /* lebar sudah seragam -> jangan diusik */
+      var W=Math.max(0.4, Math.round((g.max+0.14)*100)/100);    /* nomor terpanjang + jeda 0,14 cm */
       for(i=0;i<g.items.length;i++){
         var it=g.items[i];
         var base=(it.p.classList.contains('kl2') && !it.p.classList.contains('spk-lv1')) ? 0.75 : 0;
@@ -15398,10 +15394,11 @@ function spkNumUniform(html){
         it.p.style.textIndent='-'+W.toFixed(2)+'cm';            /* baris ke-2 sejajar teks */
         it.n.style.width=W.toFixed(2)+'cm';
         it.n.style.minWidth=W.toFixed(2)+'cm';
-        it.n.style.textAlign=g.angka?'right':'left';            /* angka rata kanan -> titik sejajar */
+        it.n.style.textAlign='right';                           /* rata kanan -> titik sejajar */
       }
+      ubah=true;
     }
-    return box.innerHTML;
+    return ubah ? box.innerHTML : s;                            /* tak ada yang diubah -> HTML asli */
   }catch(e){ return s; }
 }
 /* Bungkus token "kode/nomor" (mengandung "/" atau rangkaian huruf-angka dengan
