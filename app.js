@@ -13554,52 +13554,87 @@ const StoreSpkKlausul={
     const {error}=await db.from(SPK_KLAUSUL_TABLE).delete().eq('id',id); if(error) throw error; }
 };
 
-/* seed di memori dipakai bila DB belum tersedia / kosong, agar pratinjau tetap jalan */
-function spkSeedInMemory(){
-  records_klausul = SPK_KLAUSUL_SEED.map((s,i)=>Object.assign({id:'seed_'+i}, s));
+/* =========================================================================
+   PUSTAKA KLAUSUL — MILIK MASING-MASING KONTRAK (bukan global lagi)
+   -------------------------------------------------------------------------
+   * Kontrak BARU  -> pustaka selalu mulai dari BAWAAN: 3 klausul kosong.
+   * Kontrak lama  -> dibuka lewat "Ubah": pustaka dimuat dari kontrak itu
+                      sendiri (disimpan di data.__klausulLib), sehingga
+                      menyunting klausul kontrak A tidak mengubah kontrak B.
+   * Profil Klausul (Simpan/Muat Profil) tetap menjadi cara memakai ulang
+     satu set klausul yang sudah jadi di kontrak mana pun.
+   Tabel klausul_spk TIDAK dipakai lagi sebagai pustaka kerja (isi lamanya
+   otomatis diselamatkan menjadi profil "Pustaka Lama" — lihat migrasi di bawah).
+   ========================================================================= */
+function spkKlUid(){ return 'kl_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+/* Pustaka bawaan: 3 klausul kosong */
+function spkKlDefault(){ return SPK_KLAUSUL_SEED.map(s=>Object.assign({id:spkKlUid()}, s)); }
+function spkSeedInMemory(){ records_klausul = spkKlDefault(); }
+/* Simpan pustaka yang sedang tampil KE DALAM kontrak yang sedang disusun */
+function spkKlSync(){
+  if(!spkState) return;
+  spkState.data = spkState.data || {};
+  try{ spkState.data.__klausulLib = JSON.parse(JSON.stringify(records_klausul||[])); }catch(e){}
+}
+/* Muat pustaka milik sebuah kontrak tersimpan (atau bawaan bila belum ada) */
+function spkKlLoadFor(rec){
+  let lib=null;
+  if(rec){
+    const d=(rec.data && typeof rec.data==='object') ? rec.data : {};
+    if(Array.isArray(d.__klausulLib) && d.__klausulLib.length) lib=d.__klausulLib;
+    else if(Array.isArray(rec.klausul) && rec.klausul.length){
+      // kontrak lama (sebelum pustaka per-kontrak): pakai klausul yang tercetak
+      lib=rec.klausul.map((k,i)=>({ id:String(k.id||spkKlUid()), judul:k.judul||'', isi:k.isi||'',
+                                    isi_docx:k.isi_docx||'', urutan:(i+1)*10, aktif:true }));
+    }
+  }
+  if(lib && lib.length){
+    try{ records_klausul = JSON.parse(JSON.stringify(lib)).map(k=>Object.assign({}, k, {id:String(k.id||spkKlUid())})); }
+    catch(e){ records_klausul = spkKlDefault(); }
+  }else{
+    records_klausul = spkKlDefault();
+  }
 }
 async function refreshDataSpk(){
   try{ records_spk=await StoreSpkKontrak.list(); }
   catch(err){ console.error('SPK kontrak:',err); records_spk=records_spk||[]; }
 }
+/* Tidak lagi membaca tabel klausul_spk — pustaka mengikuti kontrak yang aktif. */
 async function refreshDataKlausul(){
-  try{
-    const rows=await StoreSpkKlausul.list();
-    if(rows && rows.length){ records_klausul=rows; }
-    else{
-      // DB tersambung tapi kosong -> seed 15 klausul bawaan ke DB (sekali)
-      try{
-        for(let i=0;i<SPK_KLAUSUL_SEED.length;i++){ await StoreSpkKlausul.create(SPK_KLAUSUL_SEED[i]); }
-        records_klausul=await StoreSpkKlausul.list();
-      }catch(e2){ console.error('SPK seed gagal:',e2); spkSeedInMemory(); }
-    }
-  }catch(err){ console.error('SPK klausul:',err); spkSeedInMemory(); }
+  if(spkState && spkState.data && Array.isArray(spkState.data.__klausulLib) && spkState.data.__klausulLib.length){
+    try{ records_klausul = JSON.parse(JSON.stringify(spkState.data.__klausulLib)); }catch(e){}
+  }else if(!Array.isArray(records_klausul) || !records_klausul.length){
+    records_klausul = spkKlDefault();
+  }
 }
-/* ---- Migrasi otomatis SEKALI-JALAN: paksa Pustaka Klausul ke bawaan 3 klausul kosong ----
-   Data lama bawaan (6 klausul contoh: URAIAN PEKERJAAN, HAK DAN KEWAJIBAN, dst.) yang
-   masih tersimpan di database diganti OTOMATIS satu kali dengan 3 klausul kosong
-   (KLAUSUL 1, 2, 3) — tanpa perlu menekan tombol apa pun.
-
-   Aman & tidak mengganggu pekerjaan Anda ke depan:
-   - Pemicunya SANGAT sempit: hanya berjalan bila klausul PERTAMA berjudul
-     "URAIAN PEKERJAAN" (ciri khas data lama). Begitu terganti menjadi "KLAUSUL 1",
-     syarat ini otomatis tidak terpenuhi lagi -> pustaka yang sudah Anda sesuaikan
-     TIDAK akan pernah tersentuh, termasuk di perangkat lain.
-   - Ditandai selesai lewat localStorage (spk_kl_migrated_default3_v2) agar hanya sekali.
-   - Isi lama tetap dicadangkan ke localStorage (spk_kl_backup_v2) agar bisa dipulihkan. */
-async function spkKlEnsureDefaultOnce(){
+/* ---- Penyelamat SEKALI-JALAN ----
+   Pustaka klausul lama yang masih tersimpan di tabel klausul_spk disalin menjadi
+   sebuah Profil bernama "Pustaka Lama" agar tidak hilang & tetap bisa dimuat
+   kapan saja lewat tombol "Muat Profil". Tabel aslinya TIDAK dihapus. */
+async function spkKlMigrateLibraryToProfile(){
   try{
-    if(localStorage.getItem('spk_kl_migrated_default3_v2')==='1') return;
-    const cur=(records_klausul||[]).slice();
-    const first=String((cur[0]&&cur[0].judul)||'').replace(/<[^>]+>/g,'').trim().toUpperCase();
-    if(first==='URAIAN PEKERJAAN'){
-      try{ localStorage.setItem('spk_kl_backup_v2', JSON.stringify(cur)); }catch(_){}
-      await spkKlProfilWrite(SPK_KLAUSUL_SEED.map(s=>Object.assign({},s)));
+    if(localStorage.getItem('spk_kl_lib_to_profile_v1')==='1') return;
+    let rows=[];
+    try{ rows=await StoreSpkKlausul.list(); }catch(e){ return; }   // DB tak siap -> coba lagi lain kali
+    const berisi=(rows||[]).some(r=>String(r.isi||'').replace(/<[^>]+>/g,'').trim().length>0);
+    if(rows && rows.length && berisi){
+      const sudahAda=(profilesGet('klausul')||[]).some(p=>String(p.name||'').toLowerCase()==='pustaka lama');
+      if(!sudahAda){
+        const items=rows.map((k,i)=>({ judul:String(k.judul||''), isi:String(k.isi||''),
+          urutan:(Number(k.urutan)||((i+1)*10)), aktif:(k.aktif!==false), isi_docx:String(k.isi_docx||'') }));
+        await profilesUpsert('klausul', { name:'Pustaka Lama', savedAt:Date.now(), items:items, count:items.length });
+        toast('Pustaka klausul lama disimpan sebagai profil "Pustaka Lama"','ok');
+      }
     }
-    localStorage.setItem('spk_kl_migrated_default3_v2','1');
-  }catch(err){ console.error('spkKlEnsureDefaultOnce:',err); }
+    localStorage.setItem('spk_kl_lib_to_profile_v1','1');
+  }catch(err){ console.error('spkKlMigrateLibraryToProfile:', err); }
 }
-async function spkInit(){ await refreshDataKlausul(); await spkKlEnsureDefaultOnce(); await refreshDataSpk(); try{ rerenderActiveView(); }catch(e){} }
+async function spkInit(){
+  records_klausul = spkKlDefault();
+  await refreshDataSpk();
+  await spkKlMigrateLibraryToProfile();
+  try{ rerenderActiveView(); }catch(e){}
+}
 
 /* ================= STATE PENYUSUNAN ================= */
 let spkEditId=null;
@@ -14038,7 +14073,11 @@ async function spkNewKontrak(){
   spkEditId=null;
   // segarkan daftar kontrak agar default SK Pimpinan Unit = data TERAKHIR disimpan
   try{ await refreshDataSpk(); }catch(e){}
+  // Pustaka klausul milik kontrak ini: SELALU mulai dari bawaan (3 klausul kosong)
+  records_klausul = spkKlDefault();
+  spkKlProfil.active=''; spkKlProfil.backup=null;
   spkState=spkBlankState();
+  spkKlSync();
   resetInputBaru('spk');           // kontrak baru: tanpa pilihan pekerjaan & tautan HPS
   spkStep=1; renderSpkSusun(); showView('spk-susun');
 }
@@ -14306,6 +14345,7 @@ async function spkSaveKontrak(){
   if(!nama){ toast('Nama Pekerjaan wajib diisi','warn'); return; }
   const klausul=spkSelectedClauses();
   if(!klausul.length){ toast('Pilih minimal satu klausul kontrak','warn'); return; }
+  spkKlSync();   // pustaka klausul ikut disimpan di dalam kontrak (data.__klausulLib)
   const rec={
     nomor_kontrak: String(spkState.data.nomor_kontrak||'').trim(),
     nama_pekerjaan: nama,
@@ -14380,7 +14420,11 @@ function renderSpkView(){
 function spkViewGoto(p){ spkViewPage=p; renderSpkView(); }
 function spkEditRecord(id){
   const rec=(records_spk||[]).find(r=>String(r.id)===String(id)); if(!rec) return;
+  // Pustaka klausul dimuat dari kontrak ini sendiri (bukan pustaka global)
+  spkKlLoadFor(rec);
+  spkKlProfil.active=''; spkKlProfil.backup=null;
   spkEditId=rec.id; spkState=spkRecordToState(rec); spkStep=1;
+  spkKlSync();
   renderSpkSusun(); showView('spk-susun');
 }
 function spkDeleteRecord(id){
@@ -17686,6 +17730,7 @@ function renderSpkKlausul(){
           '<button class="btn btn-green" onclick="spkKlausulNew()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Tambah Klausul</button>'+
         '</span>'+
       '</div>'+
+      '<div class="hps-hint" style="margin:0 0 12px">Pustaka klausul ini <b>milik kontrak yang sedang disusun</b>. Menyunting, menambah, atau menghapus klausul di sini <b>tidak mengubah kontrak lain</b>. Kontrak baru selalu dimulai dari 3 klausul kosong — pakai <b>Muat Profil</b> untuk memanggil set klausul yang sudah jadi.</div>'+
       '<div class="spk-klx-list">'+rows+'</div>'+
     '</div>';
 }
@@ -17755,15 +17800,13 @@ async function spkKlProfilDoDelete(name){
 }
 /* Tulis ulang seluruh pustaka klausul dari daftar item (hapus semua -> buat ulang) */
 async function spkKlProfilWrite(items){
-  const lama=(records_klausul||[]).slice();
-  for(let i=0;i<lama.length;i++){ await StoreSpkKlausul.remove(lama[i].id); }
-  for(let i=0;i<items.length;i++){
-    const it=items[i];
-    const recW={ judul:it.judul||'', isi:it.isi||'', urutan:(Number(it.urutan)||((i+1)*10)), aktif:(it.aktif!==false) };
+  records_klausul = (items||[]).map((it,i)=>{
+    const recW={ id:spkKlUid(), judul:it.judul||'', isi:it.isi||'',
+                 urutan:(Number(it.urutan)||((i+1)*10)), aktif:(it.aktif!==false) };
     if(it.isi_docx) recW.isi_docx=String(it.isi_docx);
-    await StoreSpkKlausul.create(recW);
-  }
-  await refreshDataKlausul();
+    return recW;
+  });
+  spkKlSync();
   // pilihan klausul pada kontrak yang sedang disusun mengikuti pustaka yang baru
   if(spkState) spkState.sel = records_klausul.filter(k=>k.aktif!==false).map(k=>String(k.id));
 }
@@ -17813,32 +17856,32 @@ function spkKlausulMove(id, dir){
   // Tukar posisi lalu tulis ulang urutan (10,20,30, ...) agar selalu konsisten
   const arr=records_klausul.slice();
   const tmp=arr[i]; arr[i]=arr[j]; arr[j]=tmp;
-  (async()=>{
-    try{ await withActionLoader('Menyimpan urutan', async()=>{
-      for(let n=0;n<arr.length;n++){
-        const u=(n+1)*10;
-        if(Number(arr[n].urutan)!==u) await StoreSpkKlausul.update(arr[n].id,{urutan:u});
-      }
-      await refreshDataKlausul();
-    }); }catch(err){ console.error(err); toast('Gagal mengubah urutan: '+errMsg(err),'warn'); return; }
-    renderSpkKlausul();
-  })();
+  arr.forEach((k,n)=>{ k.urutan=(n+1)*10; });
+  records_klausul=arr;
+  spkKlSync();
+  renderSpkKlausul();
 }
 function spkKlausulToggle(id){
   const k=records_klausul.find(x=>String(x.id)===String(id)); if(!k) return;
-  (async()=>{
-    try{ await withActionLoader('Menyimpan', async()=>{ await StoreSpkKlausul.update(k.id,{aktif:!(k.aktif!==false)}); await refreshDataKlausul(); }); }
-    catch(err){ console.error(err); toast('Gagal: '+errMsg(err),'warn'); return; }
-    renderSpkKlausul();
-  })();
+  k.aktif = !(k.aktif!==false);
+  if(spkState){
+    const on=(k.aktif!==false), sid=String(k.id);
+    const i=spkState.sel.indexOf(sid);
+    if(on && i<0) spkState.sel.push(sid);
+    if(!on && i>=0) spkState.sel.splice(i,1);
+  }
+  spkKlSync();
+  renderSpkKlausul();
 }
 function spkKlausulDelete(id){
   if(typeof requireInput==='function' && !requireInput()) return;
   const k=records_klausul.find(x=>String(x.id)===String(id)); if(!k) return;
-  openConfirm({ icon:'del', title:'Hapus Klausul', text:'Hapus klausul "'+spkJudulPlain(k.judul)+'"?',
-    onYes:async()=>{
-      try{ await withActionLoader('Menghapus', async()=>{ await StoreSpkKlausul.remove(id); await refreshDataKlausul(); }); }
-      catch(err){ console.error(err); toast('Gagal menghapus: '+errMsg(err),'warn'); return; }
+  openConfirm({ icon:'del', title:'Hapus Klausul', text:'Hapus klausul "'+spkJudulPlain(k.judul)+'"? (hanya pada kontrak ini)',
+    onYes:()=>{
+      records_klausul = records_klausul.filter(x=>String(x.id)!==String(id));
+      records_klausul.forEach((x,n)=>{ x.urutan=(n+1)*10; });
+      if(spkState){ const i=spkState.sel.indexOf(String(id)); if(i>=0) spkState.sel.splice(i,1); }
+      spkKlSync();
       toast('Klausul dihapus','ok'); renderSpkKlausul();
     }});
 }
@@ -18871,26 +18914,21 @@ function spkKlDocSave(){
   if(typeof requireInput==='function' && !requireInput()) return;
   var k=spkKlDoc.rec;
   var docxVal=spkKlDoc.docx||'';   // byte .docx asli (base64) bila ada unggahan
-  (async function(){
-    try{
-      await withActionLoader('Menyimpan', async function(){
-        if(k && k.id){
-          var upd={judul:jd, isi:isi};
-          if(docxVal) upd.isi_docx=docxVal;   // simpan berkas asli agar unduhan identik
-          await StoreSpkKlausul.update(k.id, upd);
-        }
-        else{
-          var maxU=records_klausul.reduce(function(m,x){ return Math.max(m, Number(x.urutan)||0); },0);
-          var recNew={judul:jd, isi:isi, urutan:maxU+10, aktif:true};
-          if(docxVal) recNew.isi_docx=docxVal;
-          await StoreSpkKlausul.create(recNew);
-        }
-        await refreshDataKlausul();
-      });
-    }catch(err){ console.error(err); toast('Gagal menyimpan: '+errMsg(err),'err'); return; }
-    spkKlDoc.dirty=false; spkKlDocClose();
-    toast('Klausul disimpan','ok'); renderSpkKlausul();
-  })();
+  try{
+    if(k && k.id){
+      var cur=records_klausul.find(function(x){ return String(x.id)===String(k.id); });
+      if(cur){ cur.judul=jd; cur.isi=isi; if(docxVal) cur.isi_docx=docxVal; }
+    }else{
+      var maxU=records_klausul.reduce(function(m,x){ return Math.max(m, Number(x.urutan)||0); },0);
+      var recNew={id:spkKlUid(), judul:jd, isi:isi, urutan:maxU+10, aktif:true};
+      if(docxVal) recNew.isi_docx=docxVal;
+      records_klausul.push(recNew);
+      if(spkState) spkState.sel.push(String(recNew.id));   // klausul baru langsung terpilih
+    }
+    spkKlSync();
+  }catch(err){ console.error(err); toast('Gagal menyimpan: '+errMsg(err),'err'); return; }
+  spkKlDoc.dirty=false; spkKlDocClose();
+  toast('Klausul disimpan','ok'); renderSpkKlausul();
 }
 /* Lihat klausul: pratinjau isi persis seperti dokumen (read-only). */
 function spkKlausulView(id){
