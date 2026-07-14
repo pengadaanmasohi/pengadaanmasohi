@@ -13530,7 +13530,7 @@ const SPK_DEF_MAKSUD="Adapun maksud dan tujuan dilaksanakannya pekerjaan ini ada
    & terisi sendiri; "Perubahan?" dropdown; field SK terkunci bila Perubahan≠Ya. */
 /* Teks bawaan (default) Rincian Akta Pendirian & Rincian Akta Perubahan.
    Tetap dapat disunting bebas oleh pengguna pada form Data Mail Merge. */
-const SPK_DEF_AKTA_PENDIRIAN = 'yang didirikan berdasarkan Akta Notaris No. (no. akta..) tanggal (tgl. akta...) dibuat dihadapan Notaris (nama notaris...), yang disahkan berdasarkan Surat Keputusan Menteri Hukum dan Hak Asasi Manusia No. (no. SK...) tanggal (tgl SK...) beserta Akta - akta Perubahannya.';
+const SPK_DEF_AKTA_PENDIRIAN = 'yang didirikan berdasarkan akta Notaris No. (no. akta..) tanggal (tgl. akta...) dibuat dihadapan Notaris (nama notaris...), yang disahkan berdasarkan Surat Keputusan Menteri Hukum dan Hak Asasi Manusia No. (no. SK...) tanggal (tgl SK...) beserta akta-akta Perubahannya.';
 const SPK_DEF_AKTA_PERUBAHAN = 'Akta Notaris No. (no. akta...) tanggal (tgl. akta...) dibuat dihadapan (nama notaris...), yang disahkan berdasarkan Surat Keputusan Menteri Hukum dan Hak Asasi Manusia No. (no. SK...) tanggal (tgl. SK...)';
 /* Field SK Pimpinan Unit — dipakai untuk fitur "default = data terakhir disimpan" */
 const SPK_SK_KEYS = ['nama_pengguna','jabatan_pengguna','no_sk','tgl_sk','nama_unit','singkatan_unit','lokasi_unit'];
@@ -13611,7 +13611,7 @@ const SPK_FIELDS_FLAT = SPK_FIELD_GROUPS.reduce((a,g)=>a.concat(g.fields),[]);
    Bukan field mail-merge — hanya bagian bercetak kuning pada dokumen yang
    menjadi input (nama wakil, jabatan, no. & tgl. Keputusan Direksi, nama unit,
    alamat unit). Bagian ini sama untuk semua kontrak. */
-const SPK_P1_AKTA_PLN = "Perusahaan Berbadan Hukum yang merupakan Badan Usaha Milik Negara (BUMN) yang didirikan berdasarkan Akta Notaris No. 169 tanggal 30 Juli 1994 dibuat di hadapan Notaris SUTJIPTO, SH., yang disahkan berdasarkan Surat Keputusan Menteri Kehakiman Republik Indonesia No. C2-11.519.HT.01.01.TH'94 tanggal 01 Agustus 1994 beserta akta - akta perubahannya.";
+const SPK_P1_AKTA_PLN = "Perusahaan Berbadan Hukum yang merupakan Badan Usaha Milik Negara (BUMN) yang didirikan berdasarkan Akta Notaris No. 169 tanggal 30 Juli 1994 dibuat di hadapan Notaris SUTJIPTO, SH., yang disahkan berdasarkan Surat Keputusan Menteri Kehakiman Republik Indonesia No. C2-11.519.HT.01.01.TH'94 tanggal 01 Agustus 1994 beserta akta-akta perubahannya.";
 
 /* ---------- Preamble (pembuka) — memakai placeholder ---------- */
 const SPK_PREAMBLE_TPL =
@@ -13714,8 +13714,12 @@ function spkBuildCtx(data){
   ctx.p2_jabatan = d.jabatan_pimpinan || '';
   ctx.p2_alamat = d.lokasi_perusahaan || '';
   var _jp = spkJenisPerusahaan(d.nama_perusahaan);
-  var _ap = String(d.akta_pendirian||'').replace(/\s+$/,'');       /* pastikan diakhiri titik → "…Perubahannya. Dalam hal ini…" jadi kalimat baru */
-  if(_ap && !/[.!?]$/.test(_ap)) _ap += '.';
+  var _ap = String(d.akta_pendirian||'').replace(/\s+$/,'');
+  /* Awali "yang didirikan berdasarkan akta Notaris" ("akta" huruf kecil); rapikan juga
+     data lama yang diawali "Akta Notaris" tanpa frasa atau yang masih kapital "Akta". */
+  _ap = _ap.replace(/^\s*(?:yang didirikan berdasarkan\s+)?Akta Notaris/i, 'yang didirikan berdasarkan akta Notaris');
+  _ap = _ap.replace(/[Aa]kta\s*-\s*[Aa]kta/g, 'akta-akta');        /* "Akta - akta"/"Akta-akta" → "akta-akta" */
+  if(_ap && !/[.!?]$/.test(_ap)) _ap += '.';                       /* pastikan diakhiri titik → kalimat baru "Dalam hal ini…" */
   ctx.p2_akta = (_jp? _jp+' ':'') + _ap;
   /* Template preamble sudah memuat kata "berdasarkan" sebelum {{p2_akta_jabatan}},
      jadi buang "berdasarkan" di awal nilai (bila ada) agar tidak jadi
