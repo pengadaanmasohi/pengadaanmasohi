@@ -14374,12 +14374,10 @@ function spkDocCss2(){
   const G="'Plus Jakarta Sans','Segoe UI',Arial,sans-serif";
   return ''+
   '@page{size:A4 portrait;margin:2.54cm}'+
-  /* Halaman LAMPIRAN memakai margin SAMPING 15mm (atas & bawah tetap 2,54cm),
-     sehingga lebar isinya 210 - 2x15 = 180mm — sama persis dengan dokumen
-     Perhitungan HPS. Margin atas/bawah sengaja TIDAK diubah supaya tinggi area
-     cetak tetap 246,2mm dan perhitungan paginator tidak ikut berubah. */
-  '@page lampiran{size:A4 portrait;margin:2.54cm 15mm}'+
-  '.spk-lampsheet{page:lampiran}'+
+  /* Halaman Lampiran memakai ukuran & margin yang SAMA dengan halaman kontrak:
+     A4 portrait, margin normal 2,54 cm (mengikuti @page di atas). Aturan halaman
+     khusus 15mm sudah dicabut — tidak diperlukan lagi setelah bug colgroup ganda
+     pada paginator diperbaiki, sebab tabel kini melebar penuh dengan benar. */
   'html,body{background:#fff}'+
   '.spk-doc{counter-reset:spkcl}'+
   '.spk-page{position:relative;page-break-after:always;break-after:page}'+
@@ -14557,7 +14555,6 @@ function spkDocCss2(){
   '@media screen{'+
     'html,body{background:#54585c;margin:0;padding:24px 0}'+
     '.spk-doc{margin:0 auto}'+
-    '.spk-page.spk-lampsheet{padding-left:15mm;padding-right:15mm}'+
     '.spk-page{width:210mm;min-height:297mm;background:#fff;margin:0 auto 22px;padding:2.54cm;box-shadow:0 8px 30px rgba(10,20,28,.34);overflow:hidden}'+
     '.spk-page.spk-flow{height:auto;overflow:visible}'+
     /* ===== PEMISAH HALAMAN DI PRATINJAU (seperti Rekap HPS) =====
