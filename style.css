@@ -2960,17 +2960,17 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
 .spk-we-ruler svg{display:block;overflow:visible}
 /* Area kertas A4 — Portrait, margin Normal (2,54 cm) persis seperti Microsoft Word */
 .spk-we-pagearea{background:#e7eaed;padding:22px 14px 40px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;overflow:auto;flex:1}
-.spk-we-page{width:210mm;min-height:297mm;flex:0 0 auto;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.16);padding:12mm 15mm;box-sizing:border-box;position:relative;
+.spk-we-page{width:210mm;min-height:297mm;flex:0 0 auto;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.16);padding:25.4mm;box-sizing:border-box;position:relative;
   /* garis bantu batas halaman: muncul tiap kelipatan tinggi A4 (297mm) */
   background-image:repeating-linear-gradient(to bottom,rgba(0,0,0,0) 0,rgba(0,0,0,0) calc(297mm - 2px),#c9d1d8 calc(297mm - 2px),#c9d1d8 297mm)}
 /* Panduan margin disembunyikan — tampil sebagai kertas putih polos seperti Word.
-   (Teks tetap dibatasi margin oleh padding 12mm/15mm pada .spk-we-page.) */
+   (Teks tetap dibatasi margin normal 25,4 mm pada .spk-we-page.) */
 .spk-we-page::before{content:none}
 .spk-we-page>*{position:relative;z-index:1}
 /* Kanvas edit: samakan persis dengan .spk-cl dokumen (Arial 11pt, indent 0,75cm) */
 /* Isi klausul pada dokumen SPK selalu menjorok 0,75cm (sejajar dengan huruf
    sesudah nomor klausul) -> kanvas editor dibuat sama persis. */
-.spk-we-doc{outline:none;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.15;color:#000;min-height:273mm;padding-left:.75cm}
+.spk-we-doc{outline:none;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.15;color:#000;min-height:246.2mm;padding-left:.75cm}
 /* Baris judul klausul (pratinjau, tidak dapat diedit) */
 .spk-we-clhead{font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;text-transform:uppercase;color:#000;line-height:1.15;
   margin:0 0 3pt;padding-left:.75cm;text-indent:-.75cm;user-select:none}
@@ -3101,12 +3101,13 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
 .spk-we-page .spk-cl,.spk-we-page .spk-cl *,
 .spk-we-doc,.spk-we-doc *,
 .spk-narasi-prev,.spk-narasi-prev *{line-height:1.15}
-/* Contoh pengisian klausul (placeholder): titik-titik sampai batas margin kanan,
-   huruf samar/transparan — tinggal ditimpa lewat template Word. */
-.spk-cl p.spk-ph,.spk-we-page .spk-cl p.spk-ph{color:rgba(0,0,0,.22);white-space:nowrap;overflow:hidden;text-align:left}
-/* Contoh pengisian pada EDITOR & pratinjau narasi: huruf transparan (samar),
-   boleh membungkus baris. Blok bertanda ini TIDAK PERNAH ikut tercetak. */
-.spk-we-doc p.spk-ph,.spk-narasi-prev p.spk-ph{color:rgba(0,0,0,.28)}
+/* Contoh pengisian klausul (placeholder) di Pustaka Klausul: titik-titik sampai
+   batas margin kanan, HURUF HITAM (bukan samar/transparan) agar keterangan
+   "Isi Klausul ......" terbaca jelas. Blok bertanda .spk-ph tetap TIDAK PERNAH
+   ikut tercetak — warnanya hanya soal keterbacaan di layar. */
+.spk-cl p.spk-ph,.spk-we-page .spk-cl p.spk-ph{color:#000;white-space:nowrap;overflow:hidden;text-align:left}
+/* Contoh pengisian pada EDITOR & pratinjau narasi: ikut hitam, boleh membungkus baris. */
+.spk-we-doc p.spk-ph,.spk-narasi-prev p.spk-ph{color:#000}
 .spk-we-toolbar button#spk-we-ph.active{background:#eef2f4;border-color:#b6c2cb;color:#5b6b78}
 /* Kolom Judul Klausul yang dapat dimiringkan (contenteditable + tombol I) */
 .spk-kldoc-jwrap{display:flex;align-items:stretch;gap:6px}
