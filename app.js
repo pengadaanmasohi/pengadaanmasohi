@@ -15350,8 +15350,59 @@ function spkNumberFix(html){
       return '<p class="kl2 spk-sl"'+(attrs||'')+'><span class="n">'+ch+'</span>'+sp;
     }
   );
+  html = spkNumUniform(html);
   html = spkBreakRefNumbers(html);
   return html;
+}
+/* ---- KOTAK NOMOR SERAGAM + RATA KANAN (seperti penomoran "Right" di Word) ----
+   Lebar "HUG" per paragraf membuat nomor 2 digit (8.10.) mendorong teksnya ke kanan,
+   sehingga teks butir 1 digit (8.9.) dan 2 digit tidak sejajar.
+   Di sini seluruh butir pada SATU kelompok (tingkat + awalan sama, mis. 8.9 s.d. 8.12)
+   memakai LEBAR KOTAK YANG SAMA = lebar nomor terpanjang, dan nomornya RATA KANAN:
+     - titik akhir nomor sejajar,
+     - teks semua butir mulai di kolom yang sama,
+     - baris ke-2 tetap sejajar dengan huruf pertama teks (hanging indent).
+   Huruf/romawi (a. b. / i. ii.) ikut diseragamkan lebarnya, tetapi tetap rata kiri. */
+function spkNumUniform(html){
+  var s=String(html==null?'':html);
+  if(s.indexOf('spk-sl')<0) return s;
+  try{
+    var box=document.createElement('div'); box.innerHTML=s;
+    var ps=box.querySelectorAll('p.spk-sl'), grup={}, i, k;
+    for(i=0;i<ps.length;i++){
+      var p=ps[i], n=p.firstElementChild;
+      if(!n || n.tagName!=='SPAN' || !n.classList || !n.classList.contains('n')) continue;
+      var tok=String(n.textContent||'').replace(/[\s\u00A0]+/g,'');
+      if(!tok) continue;
+      var angka=/^(?:[0-9]+[.)])+$/.test(tok);                 /* "1." "10." "8.9." "3.1.1." */
+      /* Kelompok = tingkat paragraf + awalan nomor (segmen terakhir dibuang):
+         "8.9." & "8.12." -> awalan "8."  (satu kelompok)
+         "9.1."           -> awalan "9."  (kelompok lain)  */
+      var lvl=(p.classList.contains('kl2')?'kl2':'kl1')+(p.classList.contains('spk-lv1')?'|lv1':'');
+      var awal=angka ? tok.replace(/[0-9]+[.)]$/,'') : 'abc';
+      k=lvl+'|'+(angka?'n':'a')+'|'+awal;
+      if(!grup[k]) grup[k]={angka:angka, w:0, items:[]};
+      var w=spkTextWidthCm(tok);
+      if(!(w>0)) continue;
+      if(w>grup[k].w) grup[k].w=w;
+      grup[k].items.push({p:p, n:n});
+    }
+    for(k in grup){
+      var g=grup[k];
+      if(g.items.length<2 || !(g.w>0)) continue;                /* butir tunggal -> biarkan apa adanya */
+      var W=Math.max(0.4, Math.round((g.w+0.14)*100)/100);      /* nomor terpanjang + jeda 0,14 cm */
+      for(i=0;i<g.items.length;i++){
+        var it=g.items[i];
+        var base=(it.p.classList.contains('kl2') && !it.p.classList.contains('spk-lv1')) ? 0.75 : 0;
+        it.p.style.marginLeft=(base+W).toFixed(2)+'cm';         /* kolom teks SAMA untuk semua butir */
+        it.p.style.textIndent='-'+W.toFixed(2)+'cm';            /* baris ke-2 sejajar teks */
+        it.n.style.width=W.toFixed(2)+'cm';
+        it.n.style.minWidth=W.toFixed(2)+'cm';
+        it.n.style.textAlign=g.angka?'right':'left';            /* angka rata kanan -> titik sejajar */
+      }
+    }
+    return box.innerHTML;
+  }catch(e){ return s; }
 }
 /* Bungkus token "kode/nomor" (mengandung "/" atau rangkaian huruf-angka dengan
    "-"/"." menyambung) di dalam paragraf spk-dlist dengan <span class="refn">
