@@ -14341,7 +14341,11 @@ function spkDocCss(){
   '.spk-sign td{width:50%;text-align:center;vertical-align:top;font-size:11pt;padding:4px}'+
   '.spk-sign .role{font-weight:700}.spk-sign .nm{font-weight:700;text-decoration:underline;margin-top:70px}'+
   /* Baris nama instansi di bawah "PIHAK PERTAMA" ditebalkan, sama seperti di Lampiran */
-  '.spk-sign .org{font-weight:700;line-height:1.3}'+
+  /* Nama instansi dipecah menjadi baris-baris yang SEIMBANG panjangnya
+     (text-wrap:balance), sehingga tidak ada baris pertama kepanjangan lalu baris
+     kedua tinggal 2 kata. Dipakai cara ini—bukan <br> manual—agar tetap rapi
+     berapa pun panjang nama unit yang masuk dari mail merge. */
+  '.spk-sign .org{font-weight:700;line-height:1.3;text-wrap:balance;text-align:center}'+
   '.spk-sign .jab{color:#000}'+
   /* ===== Seragamkan SELURUH teks ISI kontrak = Arial 11pt =====
      Mencakup preamble, semua klausul (judul & isi), daftar, blok pihak, baris
@@ -14370,6 +14374,12 @@ function spkDocCss2(){
   const G="'Plus Jakarta Sans','Segoe UI',Arial,sans-serif";
   return ''+
   '@page{size:A4 portrait;margin:2.54cm}'+
+  /* Halaman LAMPIRAN memakai margin SAMPING 15mm (atas & bawah tetap 2,54cm),
+     sehingga lebar isinya 210 - 2x15 = 180mm — sama persis dengan dokumen
+     Perhitungan HPS. Margin atas/bawah sengaja TIDAK diubah supaya tinggi area
+     cetak tetap 246,2mm dan perhitungan paginator tidak ikut berubah. */
+  '@page lampiran{size:A4 portrait;margin:2.54cm 15mm}'+
+  '.spk-lampsheet{page:lampiran}'+
   'html,body{background:#fff}'+
   '.spk-doc{counter-reset:spkcl}'+
   '.spk-page{position:relative;page-break-after:always;break-after:page}'+
@@ -14484,8 +14494,7 @@ function spkDocCss2(){
      pecah dan tabel terlihat gepeng. Margin negatif 10,4mm di kiri & kanan
      mengembalikan lebar isi Lampiran ke 180mm, identik dengan Perhitungan HPS.
      Berlaku di layar maupun cetak, dan ikut terpakai pada salinan halaman lanjutan. */
-  '.spk-lampsheet .fkl-doc{padding:0;overflow:visible;background:transparent;'+
-    'margin-left:-10.4mm;margin-right:-10.4mm}'+
+  '.spk-lampsheet .fkl-doc{padding:0;overflow:visible;background:transparent}'+
   /* Jarak dari baris "Lokasi Pekerjaan" (akhir tabel info) ke tabel rincian harga.
      Dulu jarak ini disumbang oleh judul seksi "B" (margin 22px) yang kini dihapus.
      :not(.spk-cont) => hanya tabel ASLI yang diberi jarak; salinan tabel pada
@@ -14522,7 +14531,7 @@ function spkDocCss2(){
      — yang mulai berlaku sejak blok ini dipindah ke DALAM tabel — sehingga
      "PIHAK PERTAMA" (12px) terlihat lebih kecil dari "PT PLN (Persero)" (12,5px). */
   '.spk-lampsign .role{font-size:12.5px;font-weight:700;color:#1a2b31}'+
-  '.spk-lampsign .org{font-size:12.5px;font-weight:700;color:#1a2b31;line-height:1.3}'+
+  '.spk-lampsign .org{font-size:12.5px;font-weight:700;color:#1a2b31;line-height:1.3;text-wrap:balance}'+
   '.spk-lampsign .nm{font-size:12.5px;font-weight:700;color:#1a2b31;text-decoration:underline;margin-top:70px}'+
   '.spk-lampsign .jab{font-size:12.5px;font-weight:700;color:#1a2b31}'+
   /* Penyeragaman TEGAS: setiap baris teks di kedua kolom tanda tangan lampiran
@@ -14548,6 +14557,7 @@ function spkDocCss2(){
   '@media screen{'+
     'html,body{background:#54585c;margin:0;padding:24px 0}'+
     '.spk-doc{margin:0 auto}'+
+    '.spk-page.spk-lampsheet{padding-left:15mm;padding-right:15mm}'+
     '.spk-page{width:210mm;min-height:297mm;background:#fff;margin:0 auto 22px;padding:2.54cm;box-shadow:0 8px 30px rgba(10,20,28,.34);overflow:hidden}'+
     '.spk-page.spk-flow{height:auto;overflow:visible}'+
     /* ===== PEMISAH HALAMAN DI PRATINJAU (seperti Rekap HPS) =====
@@ -16941,7 +16951,7 @@ function spkRunHeadHtml(data){
   const logo = SPK_LOGO_SRC? '<img src="'+SPK_LOGO_SRC+'" alt="PLN">' : '';
   return '<div class="spk-rhd">'+
     '<div class="l">'+logo+'<div class="o"><span>PT PLN (PERSERO)</span><b>UP3 Masohi</b></div></div>'+
-    '<div class="r"><b>SURAT PERINTAH KERJA</b><span>'+esc(data.nomor_kontrak||'')+'</span></div>'+
+    '<div class="r"><b>SURAT PERINTAH KERJA</b><span>'+esc(data.nomor_kontrak||'\u2014')+'</span></div>'+
   '</div>';
 }
 function spkRunFootHtml(){
@@ -17206,7 +17216,18 @@ function spkPageScript(){
     '     }',
     '     stack.push({src:node, el:sl, uid:uid});',
     '     var kids=els(node);',
-    '     for(var i=0;i<kids.length;i++) put(kids[i]);',
+    '     var isTbl=(node.tagName==="TABLE");',
+    '     for(var i=0;i<kids.length;i++){',
+    '       var kd=kids[i];',
+    /* <colgroup> SUDAH disalin ke cangkang di atas. Bila yang asli ikut ditempel,
+       tabel jadi punya DUA colgroup -> jumlah kolom berlipat (9 jadi 18) -> isi
+       terjepit ke separuh kiri dan tabel terlihat "gepeng". */
+    '       if(isTbl && kd.tagName==="COLGROUP") continue;',
+    /* <thead> DISALIN, bukan dipindah, supaya tabel ASLI tetap memilikinya dan
+       mk() masih bisa mengulang kop tabel di halaman lanjutan. */
+    '       if(isTbl && kd.tagName==="THEAD"){ tgt().appendChild(kd.cloneNode(true)); continue; }',
+    '       put(kd);',
+    '     }',
     '     stack.pop();',
     '     return;',
     '   }',
