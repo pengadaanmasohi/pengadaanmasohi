@@ -3135,6 +3135,9 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
 /* Baris "Label : nilai" (spk-kv) — sejajar seperti Word. Aturan ini dulunya
    hanya ada di CSS dokumen (spkDocCss) sehingga di modal Lihat/pratinjau
    label:nilai tampak menyatu. Disamakan di sini agar tampilan konsisten. */
+/* Angka tabular pada kotak nomor: digit '1' dan '2' sama lebar, sehingga '4.1.'
+   dan '4.2.' berhenti di titik yang sama (seperti penomoran Word). */
+.spk-cl .n,.spk-cl-h .n,.spk-clause .n,.spk-we-doc .n,.spk-we-page .n,.spk-narasi-prev .n{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1,"lnum" 1}
 .spk-cl .spk-kv{display:flex;margin:0 0 var(--spk-kv-gap,4pt);line-height:var(--spk-lh,1.32)}
 .spk-cl .spk-kv .k{flex:0 0 34%;max-width:34%}
 .spk-cl .spk-kv .s{flex:0 0 auto;width:1.2em}
