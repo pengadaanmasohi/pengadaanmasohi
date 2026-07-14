@@ -19354,10 +19354,15 @@ function spkWordXmlToKlausul(xmlText, stylesXml, numberingXml){
     var t=spkWpText(b.p);
     if(key==='klausuljudul'){                               // baris judul klausul
       if(!judul){
-        /* Format huruf (miring/tebal/garis bawah) pada judul DIPERTAHANKAN */
+        /* Format huruf (miring/tebal/garis bawah) pada judul DIPERTAHANKAN.
+           Judul di template pakai gaya "Klausul Judul" ber-efek All Caps (w:caps):
+           di Word tampak HURUF BESAR walau yang diketik huruf kecil/campuran, tapi
+           teks mentah .docx menyimpan huruf aslinya. Agar tampilan web = tampilan
+           Word (dan seragam dgn kop klausul yg memang selalu kapital), judul
+           dinaikkan ke huruf besar -- tag <i>/<b>/<u> tetap dipertahankan. */
         var jh=String(t.html||'').replace(/\t/g,' ')
           .replace(/^((?:<(?:b|i|u)>)*)\s*((?:\d+\.)+|\d+[.)])[\s\u00a0]*/, '$1');
-        judul = spkJudulSan(jh).replace(/^\s+|\s+$/g,'');
+        judul = spkJudulCase(spkJudulSan(jh),'upper').replace(/^\s+|\s+$/g,'');
         if(!spkJudulPlain(judul)) judul='';
       }
       continue;
