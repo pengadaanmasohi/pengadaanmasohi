@@ -14914,7 +14914,10 @@ function spkDocCss(){
     '.spk-doc{margin:0 auto}'+
     '.spk-page{width:210mm;height:297mm;min-height:297mm;background:#fff;margin:0 auto 22px;padding:25.4mm;box-shadow:0 8px 30px rgba(10,20,28,.34);overflow:hidden}'+
     /* Lembar TABEL Lampiran SPK: margin lebih rapat supaya kolom-kolom harga muat */
-    '.spk-page.spk-lampsheet{padding:12mm 15mm}'+
+    /* Cover (SPK & Lampiran) memakai margin yang sama dengan lembar tabel Lampiran:
+       12mm atas/bawah, 15mm kiri/kanan — desain cover butuh bidang lebih lebar.
+       Halaman isi kontrak & Daftar Isi tetap margin normal 2,54cm. */
+    '.spk-page.spk-lampsheet,.spk-page.spk-cover{padding:12mm 15mm}'+
     '.spk-page.spk-flow{height:auto;overflow:visible}'+
   '}';
 }
@@ -14937,10 +14940,10 @@ function spkDocCss2(){
   '.spk-page{position:relative;page-break-after:always;break-after:page}'+
   '.spk-page:last-child{page-break-after:auto;break-after:auto}'+
   /* ---------- COVER ----------
-     Tinggi cover dibuat PERSIS setinggi area ketik A4 dengan margin normal
-     (297mm - 25,4mm - 25,4mm = 246,2mm), sehingga ukuran cover di pratinjau layar
+     Tinggi cover dibuat PERSIS setinggi bidang cover (297mm - 12mm - 12mm = 273mm),
+     sehingga ukuran cover di pratinjau layar
      dan di hasil Cetak/PDF benar-benar sama (tidak ada sisa 8mm seperti semula). */
-  '.spk-cover{font-family:'+G+';color:#201E1D;display:flex;flex-direction:column;min-height:246.2mm}'+
+  '.spk-cover{font-family:'+G+';color:#201E1D;display:flex;flex-direction:column;min-height:273mm}'+
   '.spk-cover .cv-top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}'+
   '.spk-cover .cv-brand{display:flex;align-items:center;gap:16px}'+
   '.spk-cover .cv-brand img{height:56px;width:auto;display:block}'+
@@ -15137,7 +15140,10 @@ function spkDocCss2(){
     '.spk-doc{margin:0 auto}'+
     '.spk-page{width:210mm;height:297mm;min-height:297mm;background:#fff;margin:0 auto 22px;padding:25.4mm;box-shadow:0 8px 30px rgba(10,20,28,.34);overflow:hidden}'+
     /* Lembar TABEL Lampiran SPK: margin lebih rapat supaya kolom-kolom harga muat */
-    '.spk-page.spk-lampsheet{padding:12mm 15mm}'+
+    /* Cover (SPK & Lampiran) memakai margin yang sama dengan lembar tabel Lampiran:
+       12mm atas/bawah, 15mm kiri/kanan — desain cover butuh bidang lebih lebar.
+       Halaman isi kontrak & Daftar Isi tetap margin normal 2,54cm. */
+    '.spk-page.spk-lampsheet,.spk-page.spk-cover{padding:12mm 15mm}'+
     '.spk-page.spk-flow{height:auto;overflow:visible}'+
     /* ===== PEMISAH HALAMAN DI PRATINJAU (seperti Rekap HPS) =====
        Lembar "isi" (spk-flow) tumbuh memanjang, jadi batas halaman fisik tidak
@@ -15164,14 +15170,17 @@ function spkDocCss2(){
        (12mm atas/bawah, 15mm kiri/kanan) — persis seperti dokumen HPS (.hpsc-page).
        overflow:hidden menjamin lembar tidak pernah tumpah ke halaman berikutnya. */
     '.spk-page{width:210mm;height:297mm;min-height:297mm;margin:0;padding:25.4mm;box-shadow:none;overflow:hidden;page-break-after:always;break-after:page}'+
-    '.spk-page.spk-lampsheet{padding:12mm 15mm}'+
+    /* Cover (SPK & Lampiran) memakai margin yang sama dengan lembar tabel Lampiran:
+       12mm atas/bawah, 15mm kiri/kanan — desain cover butuh bidang lebih lebar.
+       Halaman isi kontrak & Daftar Isi tetap margin normal 2,54cm. */
+    '.spk-page.spk-lampsheet,.spk-page.spk-cover{padding:12mm 15mm}'+
     '.spk-page:last-child{page-break-after:auto;break-after:auto}'+
     /* Cadangan: bila paginator gagal jalan, lembar isi (.spk-flow) belum dipecah —
        biarkan memanjang & dipotong mesin cetak, jangan dipaksa 297mm. */
     '.spk-page.spk-flow{height:auto;min-height:0;overflow:visible}'+
     /* Tinggi lembar sudah ditentukan kotak halaman; min-height tak diperlukan lagi */
     '.spk-sheet{min-height:0}'+
-    '.spk-cover{min-height:246.2mm}'+
+    '.spk-cover{min-height:273mm}'+
     '.spk-guide{display:none!important}'+
     '.fkl-print-page{width:auto;min-height:0;margin:0;padding:0;box-shadow:none}'+
     'table.spk-run > thead{display:table-header-group}'+
