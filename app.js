@@ -13360,7 +13360,7 @@ const SPK_FIELD_GROUPS = [
     {k:'tanggal_kontrak', l:'Tgl. Awal Kontrak', t:'date', def:''},
     {k:'auto_terbilang_tgl', l:'Terbilang Tgl. Awal Kontrak', auto:'terbilang_tgl', span:2},
     {k:'auto_tgl_strip', l:'Tgl. Awal Kontrak (-)', auto:'tgl_strip'},
-    {k:'tgl_akhir_kontrak', l:'Tgl. Akhir Kontrak', t:'date', def:''},
+    {k:'tgl_akhir_kontrak', l:'Tgl. Akhir Kontrak', t:'date', auto:'tgl_akhir', def:''},
     {k:'nilai_pekerjaan', l:'Nilai Pekerjaan (+ PPN)', t:'rupiah', def:''},
     {k:'auto_terbilang_nilai', l:'Terbilang Nilai Pekerjaan', auto:'terbilang_nilai', span:2},
     {k:'jangka_waktu', l:'Jangka Waktu Pelaksanaan (hari)', t:'number', def:''},
@@ -13436,10 +13436,25 @@ function spkDateNum(iso){ if(!iso) return ''; const p=String(iso).split('-'); if
 function spkDayName(iso){ if(!iso) return ''; const p=String(iso).split('-'); if(p.length!==3) return ''; const dt=new Date(+p[0],+p[1]-1,+p[2]); return SPK_HARI[dt.getDay()]||''; }
 function spkTglTerbilang(iso){ if(!iso) return ''; const p=String(iso).split('-'); if(p.length!==3) return iso; const d=+p[2],m=+p[1],y=+p[0];
   return spkTerbilang(d)+' bulan '+(SPK_BULAN[m-1]||'')+' tahun '+spkTerbilang(y); }
+/* Tgl. Akhir Kontrak = Tgl. Awal Kontrak + Jangka Waktu Pelaksanaan (hari).
+   Hasil ISO 'YYYY-MM-DD'. Kosong bila salah satu masukan belum ada/valid. */
+function spkComputeTglAkhir(data){
+  data=data||{};
+  const iso=data.tanggal_kontrak;
+  const hari=spkNum(data.jangka_waktu);
+  if(!iso || !(hari>0)) return '';
+  const p=String(iso).split('-'); if(p.length!==3) return '';
+  const dt=new Date(+p[0], (+p[1])-1, +p[2]);
+  if(isNaN(dt.getTime())) return '';
+  dt.setDate(dt.getDate()+hari);
+  const mm=('0'+(dt.getMonth()+1)).slice(-2), dd=('0'+dt.getDate()).slice(-2);
+  return dt.getFullYear()+'-'+mm+'-'+dd;
+}
 
 /* Bangun konteks (semua placeholder final) dari data field */
 function spkBuildCtx(data){
   const d=Object.assign({}, data||{});
+  d.tgl_akhir_kontrak = spkComputeTglAkhir(d);   // selalu = Tgl. Awal + Jangka Waktu (hari)
   const ctx={};
   /* Semua field bertipe TANGGAL (mis. Tgl. Keputusan Direksi) diisi di form
      memakai pemilih tanggal (dd/mm/yyyy), namun saat masuk ke KLAUSUL/DOKUMEN
@@ -14110,6 +14125,7 @@ function spkAutoVal(kind, data){
   switch(kind){
     case 'terbilang_tgl': { var iso=data.tanggal_kontrak; if(!iso) return ''; var hr=spkDayName(iso); return (hr?hr+', ':'')+'tanggal '+spkTglTerbilang(iso); }
     case 'tgl_strip': return data.tanggal_kontrak? spkDateNum(data.tanggal_kontrak) : '';
+    case 'tgl_akhir': { var isoA=spkComputeTglAkhir(data); if(!isoA) return ''; var qa=isoA.split('-'); return qa[2]+'/'+qa[1]+'/'+qa[0]; }
     case 'terbilang_nilai': return (data.nilai_pekerjaan!==''&&data.nilai_pekerjaan!=null)? spkTerbilangRupiah(data.nilai_pekerjaan) : '';
     case 'terbilang_jangka': return (data.jangka_waktu!==''&&data.jangka_waktu!=null&&spkNum(data.jangka_waktu)>0)? spkTerbilang(data.jangka_waktu) : '';
     case 'jenis_perusahaan': return spkJenisPerusahaan(data.nama_perusahaan);
@@ -14119,6 +14135,8 @@ function spkAutoVal(kind, data){
 /* Segarkan nilai semua field otomatis di DOM tanpa render ulang penuh */
 function spkRefreshAuto(){
   if(!spkState) return;
+  // Tgl. Akhir Kontrak dihitung otomatis (Tgl. Awal + Jangka Waktu) & disimpan ke state
+  spkState.data.tgl_akhir_kontrak = spkComputeTglAkhir(spkState.data);
   SPK_FIELDS_FLAT.forEach(function(f){
     if(!f.auto) return;
     var el=document.getElementById('spk-fld-'+f.k);
@@ -14357,6 +14375,8 @@ async function spkSaveKontrak(){
   if(!spkState){ toast('Data belum diisi','warn'); return; }
   const nama=String(spkState.data.nama_pekerjaan||'').trim();
   if(!nama){ toast('Nama Pekerjaan wajib diisi','warn'); return; }
+  // Pastikan Tgl. Akhir Kontrak = Tgl. Awal + Jangka Waktu tersimpan (walau form tak diedit)
+  spkState.data.tgl_akhir_kontrak = spkComputeTglAkhir(spkState.data);
   const klausul=spkSelectedClauses();
   if(!klausul.length){ toast('Pilih minimal satu klausul kontrak','warn'); return; }
   spkKlSync();   // pustaka klausul ikut disimpan di dalam kontrak (data.__klausulLib)
