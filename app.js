@@ -7957,9 +7957,44 @@ function pnwBatal(){
 }
 
 /* ---------- Simpan ---------- */
+/* Progres pemeriksaan SATU sampul: berapa baris seluruhnya & berapa yang sudah
+   ditandai (Ada/Tidak Ada). Dipakai untuk mengizinkan Sampul Dua disimpan kosong. */
+function pnwSampulProgres(sk, st){
+  st = st || pnwActiveState();
+  const kats=pnwSelectedKategori(st,sk);
+  let total=0, isi=0;
+  (st.penyedia||[]).forEach((_,pidx)=>{
+    kats.forEach(kat=>{ ((st.syarat[sk]||{})[kat]||[]).forEach(baris=>{
+      total++;
+      const c=pnwGetPeriksa(sk,pidx,kat,baris);
+      if(c.ada===true || c.ada===false) isi++;
+    }); });
+  });
+  return { total:total, isi:isi, belum:total-isi, kosong:(isi===0) };
+}
+/* Sampul yang WAJIB lengkap saat menyimpan.
+   Sampul Satu selalu wajib. Sampul Dua hanya wajib bila SUDAH mulai diperiksa —
+   bila masih kosong sama sekali, dokumen tetap boleh disimpan (Sampul Satu & Dua
+   memang lazim dibuka pada hari yang berbeda) dan dapat dilengkapi kemudian. */
+function pnwSampulWajib(st){
+  st = st || pnwActiveState();
+  return pnwSampulList(st).filter(sk=>{
+    if(sk!=='s2') return true;
+    return !pnwSampulProgres(sk, st).kosong;
+  });
+}
+/* Sampul yang sudah punya isi — dipakai untuk dokumen gabungan (cetak/pratinjau) */
+function pnwSampulTerisi(st){
+  st = st || pnwActiveState();
+  const ada=pnwSampulList(st).filter(sk=>{
+    const p=pnwSampulProgres(sk, st);
+    return p.total>0 && p.isi>0;
+  });
+  return ada.length ? ada : ['s1'];
+}
 function pnwCountBelum(){
   const st=pnwState; let belum=0;
-  pnwSampulList(st).forEach(sk=>{
+  pnwSampulWajib(st).forEach(sk=>{
     const kats=pnwSelectedKategori(st,sk);
     st.penyedia.forEach((_,pidx)=>{
       kats.forEach(kat=>{ (st.syarat[sk][kat]||[]).forEach(baris=>{ const c=pnwGetPeriksa(sk,pidx,kat,baris); if(c.ada!==true && c.ada!==false) belum++; }); });
@@ -7971,7 +8006,7 @@ function pnwCountBelum(){
    Mengembalikan {sk, pidx, nama} atau null bila semua sudah lengkap. */
 function pnwFirstBelum(){
   const st=pnwState;
-  const sampuls=pnwSampulList(st);
+  const sampuls=pnwSampulWajib(st);
   for(let s=0;s<sampuls.length;s++){
     const sk=sampuls[s];
     const kats=pnwSelectedKategori(st,sk);
@@ -8016,6 +8051,10 @@ async function pnwSimpan(){
     }catch(err){ console.error(err); toast('Gagal menyimpan: '+errMsg(err),'err'); return; }
     if(!ok) return;
     toast(pnwEditId?'Data berhasil diperbarui':'Data berhasil disimpan','ok');
+    // Beritahu bila Sampul Dua sengaja dibiarkan kosong (boleh dilengkapi kemudian)
+    if(pnwIsTwoSampul(st) && pnwSampulProgres('s2', st).kosong){
+      setTimeout(()=>toast('Sampul Dua belum diperiksa — dapat dilengkapi kemudian lewat tombol Ubah','warn'), 900);
+    }
     pnwEditId=null; pnwState=pnwBlankState(); pnwSaveState(); pnwStep=1;
     showView('pnw-view');
   };
@@ -8071,35 +8110,25 @@ function renderPnwView(){
     const tgl=r.tgl_periksa||'';
     const two = jenis==='Dua Sampul';
     const rid=fkEsc(String(r.id));
-    // Baris aksi: jika dua sampul, dua baris data (Sampul Satu / Sampul Dua) dgn aksi terpisah
-    const mkActions=(sk)=>'<div class="action-cell" style="justify-content:center">'+
+    // Satu baris per data. Tombol Lihat membuka DOKUMEN GABUNGAN (Sampul Satu +
+    // Sampul Dua, halaman terpisah). Sampul Dua yang belum diperiksa ditandai.
+    const s2Kosong = two ? pnwSampulProgres('s2', stt).kosong : false;
+    const jenisCell = two
+      ? ('Dua Sampul' + (s2Kosong ? '<span class="pnw-s2-tag">Sampul Dua belum diisi</span>' : ''))
+      : 'Satu Sampul';
+    const actions='<div class="action-cell" style="justify-content:center">'+
         '<button class="act act-edit" title="Ubah" onclick="openPnwInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
-        '<button class="act act-view" title="Lihat" onclick="pnwPreviewRecord(\''+rid+'\',\''+sk+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
+        '<button class="act act-view" title="Lihat" onclick="pnwPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
         '<button class="act act-del" title="Hapus" onclick="pnwDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>'+
       '</div>';
-    if(two){
-      return '<tr>'+
-        '<td class="col-no" rowspan="2">'+(start+i+1)+'</td>'+
-        '<td class="wrap-cell col-nama-freeze" rowspan="2">'+fkEsc(nama)+'</td>'+
-        '<td class="fkl-col-lokasi" rowspan="2">'+fkEsc(lokasi||'—')+'</td>'+
-        '<td rowspan="2">'+fkEsc(metode||'—')+'</td>'+
-        '<td class="pnw-jd-cell">Sampul Satu</td>'+
-        '<td class="col-date" rowspan="2">'+fkEsc(tgl?pnwDateLong(tgl):'—')+'</td>'+
-        '<td>'+mkActions('s1')+'</td>'+
-      '</tr>'+
-      '<tr>'+
-        '<td class="pnw-jd-cell">Sampul Dua</td>'+
-        '<td>'+mkActions('s2')+'</td>'+
-      '</tr>';
-    }
     return '<tr>'+
       '<td class="col-no">'+(start+i+1)+'</td>'+
       '<td class="wrap-cell col-nama-freeze">'+fkEsc(nama)+'</td>'+
       '<td class="fkl-col-lokasi">'+fkEsc(lokasi||'—')+'</td>'+
       '<td>'+fkEsc(metode||'—')+'</td>'+
-      '<td class="pnw-jd-cell">Satu Sampul</td>'+
+      '<td class="pnw-jd-cell">'+jenisCell+'</td>'+
       '<td class="col-date">'+fkEsc(tgl?pnwDateLong(tgl):'—')+'</td>'+
-      '<td>'+mkActions('s1')+'</td>'+
+      '<td>'+actions+'</td>'+
     '</tr>';
   }).join('');
   if(pg){
@@ -8113,10 +8142,9 @@ function renderPnwView(){
   }
 }
 function pnwViewGoto(p){ pnwViewPage=p; renderPnwView(); }
-function pnwPreviewRecord(id, sk){
+function pnwPreviewRecord(id){
   const rec=records_pembukaan.find(r=>String(r.id)===String(id)); if(!rec) return;
   pnwPreviewState = pnwRecordToState(rec);
-  pnwPreviewSampul = (sk==='s2') ? 's2' : 's1';
   pnwOpenPreview();
 }
 function pnwDeleteRecord(id){
@@ -8236,11 +8264,22 @@ function pnwBuildDocHtml(sk){
     '</div>'+
   '</div>';
 }
+/* Dokumen mandiri: GABUNGAN seluruh sampul yang sudah terisi.
+   Sampul Satu & Sampul Dua digabung dalam satu berkas, masing-masing mulai di
+   halaman baru. Bila Sampul Dua belum diperiksa, hanya Sampul Satu yang dicetak. */
 function pnwStandaloneDocHtml(){
-  return fklDocShell(pnwExtraDocCss(), pnwBuildDocHtml(pnwPreviewSampul));
+  const st=pnwActiveState();
+  const list = pnwIsTwoSampul(st) ? pnwSampulTerisi(st) : ['s1'];
+  const isi = list.map(sk=>pnwBuildDocHtml(sk)).join('');
+  return fklDocShell(pnwExtraDocCss(), isi);
 }
 function pnwExtraDocCss(){
   return ''+
+  /* Dokumen gabungan: tiap sampul berikutnya SELALU mulai di halaman baru.
+     Di layar (pratinjau) diberi garis pemisah agar batas antar form terlihat. */
+  '.pnw-doc + .pnw-doc{page-break-before:always;break-before:page}'+
+  '@media screen{.pnw-doc + .pnw-doc{margin-top:26px;padding-top:26px;border-top:2px dashed #cbd5d8}}'+
+  '@media print{.pnw-doc + .pnw-doc{margin-top:0;padding-top:0;border-top:none}}'+
   '.pnw-penyedia-block{margin:6px 0 14px}'+
   '.pnw-penyedia-name{font-family:"Plus Jakarta Sans",sans-serif;font-weight:800;font-size:12px;letter-spacing:.4px;color:#0b3d42;background:#e3f2f3;border:1px solid #bfe0e2;border-radius:6px;padding:6px 10px;margin-bottom:6px;text-transform:uppercase}'+
   '.fkl-chk td.kt,.fkl-chk th.kt{width:22%;text-align:left}'+
@@ -8264,8 +8303,16 @@ function pnwOpenPreview(){
   const _mdl=ov.querySelector('.pn-preview-modal'); if(_mdl) _mdl.classList.remove('is-max');
   if(typeof pnPreviewResetMaxBtn==='function') pnPreviewResetMaxBtn();
   const titleEl=document.getElementById('pn-preview-title');
-  const two=pnwIsTwoSampul(pnwActiveState());
-  if(titleEl) titleEl.textContent='Pratinjau — Form Pembukaan Penawaran'+(two?(' ('+pnwSampulLabel(pnwPreviewSampul)+')'):'');
+  const _st=pnwActiveState();
+  const two=pnwIsTwoSampul(_st);
+  if(titleEl){
+    let sub='';
+    if(two){
+      const isi=pnwSampulTerisi(_st);
+      sub = (isi.length>1) ? ' (Sampul Satu & Sampul Dua)' : (' ('+pnwSampulLabel(isi[0])+')');
+    }
+    titleEl.textContent='Pratinjau — Form Pembukaan Penawaran'+sub;
+  }
   const body=document.getElementById('pn-preview-body');
   if(body){
     body.classList.add('fkl-preview-body');
