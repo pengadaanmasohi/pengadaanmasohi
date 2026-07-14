@@ -14552,7 +14552,7 @@ function spkDocCss(){
      (text-wrap:balance), sehingga tidak ada baris pertama kepanjangan lalu baris
      kedua tinggal 2 kata. Dipakai cara ini—bukan <br> manual—agar tetap rapi
      berapa pun panjang nama unit yang masuk dari mail merge. */
-  '.spk-sign .org{font-weight:700;line-height:1.15;text-wrap:balance;text-align:center}'+
+  '.spk-sign .org{font-weight:700;line-height:1.4;text-wrap:balance;text-align:center}'+
   '.spk-sign .jab{color:#000}'+
   /* ===== Seragamkan SELURUH teks ISI kontrak = Arial 11pt =====
      Mencakup preamble, semua klausul (judul & isi), daftar, blok pihak, baris
@@ -14704,8 +14704,8 @@ function spkDocCss2(){
   /* Jarak antar blok PIHAK (I. PT PLN → II. Penyedia) = 12 pt */
   '.spk-cl .spk-party{margin-bottom:12pt}'+
   '.spk-signpage{page-break-before:always;break-before:page;padding-top:8mm}'+
-  '.spk-sign-eyebrow{text-align:center;font-family:'+G+';font-size:8.5px;font-weight:800;letter-spacing:.24em;color:#1E6FBF;margin:0 0 24px}'+
-  '.spk-signpage .spk-sign{margin-top:10px}'+
+  /* Jarak dari klausul terakhir ke blok tanda tangan = 24 pt */
+  '.spk-signpage .spk-sign{margin-top:24pt}'+
   /* ---------- LEMBAR LAMPIRAN (dokumen bergaya HPS) ---------- */
   '.spk-lampsheet{page-break-before:always;break-before:page}'+
   /* LEBAR ISI HALAMAN LAMPIRAN = LEBAR ISI HALAMAN DOKUMEN HPS.
@@ -14752,7 +14752,7 @@ function spkDocCss2(){
      — yang mulai berlaku sejak blok ini dipindah ke DALAM tabel — sehingga
      "PIHAK PERTAMA" (12px) terlihat lebih kecil dari "PT PLN (Persero)" (12,5px). */
   '.spk-lampsign .role{font-size:12.5px;font-weight:700;color:#1a2b31}'+
-  '.spk-lampsign .org{font-size:12.5px;font-weight:700;color:#1a2b31;line-height:1.3;text-wrap:balance}'+
+  '.spk-lampsign .org{font-size:12.5px;font-weight:700;color:#1a2b31;line-height:1.4;text-wrap:balance}'+
   '.spk-lampsign .nm{font-size:12.5px;font-weight:700;color:#1a2b31;text-decoration:underline;margin-top:70px}'+
   '.spk-lampsign .jab{font-size:12.5px;font-weight:700;color:#1a2b31}'+
   /* Penyeragaman TEGAS: setiap baris teks di kedua kolom tanda tangan lampiran
@@ -17200,12 +17200,11 @@ function spkOrgP1(ctx){
 function spkSignBlockHtml(ctx, rangkap){
   const esc=fkEsc;
   return '<div class="spk-signpage">'+
-    '<div class="spk-sign-eyebrow">TANDA TANGAN PARA PIHAK</div>'+
     '<table class="spk-sign"><tr>'+
+      '<td><div class="role">PIHAK KEDUA</div><div class="org">'+esc(ctx.p2_nama_hormat||'')+'</div>'+
+        '<div class="nm">'+esc(ctx.p2_wakil||'')+'</div><div class="jab">'+esc(ctx.p2_jabatan||'')+'</div></td>'+
       '<td><div class="role">PIHAK PERTAMA</div><div class="org">'+esc(spkOrgP1(ctx))+'</div>'+
         '<div class="nm">'+esc(ctx.p1_wakil||'')+'</div><div class="jab">'+esc(ctx.p1_jabatan||'')+'</div></td>'+
-      '<td><div class="role">PIHAK KEDUA</div><div>'+esc(ctx.p2_nama_hormat||'')+'</div>'+
-        '<div class="nm">'+esc(ctx.p2_wakil||'')+'</div><div class="jab">'+esc(ctx.p2_jabatan||'')+'</div></td>'+
     '</tr></table>'+
   '</div>';
 }
