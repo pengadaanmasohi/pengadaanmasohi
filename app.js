@@ -14878,6 +14878,11 @@ function spkDocCss(){
      pada halaman baru (halaman ke-2 isi), terpisah dari blok identitas PARA PIHAK
      dan daftar "Berdasarkan" pada halaman pertama. */
   '.spk-cl p.spk-menugaskan{break-before:page;page-break-before:always;margin-top:0}'+
+  /* Bila paragraf "Maka dengan ini..." DISAMBUNG di lembar yang sama dengan daftar
+     berita acara (karena daftarnya sudah lebih dari 1 lembar), beri jarak 12pt agar
+     tidak menempel pada butir terakhir. Saat ia memulai lembar baru, jaraknya tetap 0
+     supaya teks mulai persis di batas margin atas. */
+  '.spk-cl.spk-joined,.spk-cl.spk-joined p.spk-menugaskan{margin-top:12pt}'+
   /* Blok tanda tangan akhir */
   '.spk-sign{margin-top:30px;width:100%;border-collapse:collapse}'+
   '.spk-sign td{width:50%;text-align:center;vertical-align:top;font-size:11pt;padding:4px}'+
@@ -18006,9 +18011,21 @@ function spkPageScript(){
     ' function usedBottom(){ var k=els(body); if(!k.length) return 0; var bt=body.getBoundingClientRect().top; return k[k.length-1].getBoundingClientRect().bottom - bt; }',
     ' function remain(){ return body.clientHeight - usedBottom(); }',
     ' function put(node){',
-    /* Penanda halaman baru: blok ber-class "spk-forcepage" SELALU memulai lembar
-       baru (kecuali lembar saat ini memang masih kosong). */
-    '   if(node.nodeType===1 && hasCls(node,"spk-forcepage") && !kosong()){ mk(); }',
+    /* Penanda halaman baru: blok ber-class "spk-forcepage" (paragraf "Maka dengan ini
+       PIHAK PERTAMA menugaskan...") memulai lembar baru HANYA bila bagian pembuka
+       (identitas PARA PIHAK + daftar "Berdasarkan": nomor-nomor berita acara) masih
+       muat dalam SATU lembar.
+
+       Alasannya: bila daftar berita acara sendiri sudah tumpah ke lembar kedua,
+       memaksa halaman baru lagi akan menyisakan lembar kedua yang nyaris kosong dan
+       mendorong paragraf ini ke lembar ketiga. Maka dalam keadaan itu paragraf ini
+       DISAMBUNG langsung setelah berita acara terakhir.
+       sheets.length === 1  -> pembuka muat 1 lembar  -> paksa lembar baru
+       sheets.length >= 2   -> pembuka sudah > 1 lembar -> sambung di lembar berjalan */
+    '   if(node.nodeType===1 && hasCls(node,"spk-forcepage") && !kosong()){',
+    '     if(sheets.length<=1){ mk(); }',
+    '     else if(node.classList){ node.classList.add("spk-joined"); }',   /* disambung -> beri jarak */
+    '   }',
     '   if(node.nodeType===1 && hasCls(node,"spk-signpage")){',
     '     if(!kosong() && body.querySelector(".spk-signpage")){ mk(); tgt().appendChild(node); return; }',
     '     var t0=tgt(); t0.appendChild(node); var fit0=!over(); t0.removeChild(node);',
