@@ -14607,6 +14607,11 @@ function spkDocCss2(){
   '.spk-bab{text-align:center;font-family:"Inter","Segoe UI",Arial,sans-serif;margin:0 0 24pt}'+
   '.spk-bab b{display:block;font-family:"Inter","Segoe UI",Arial,sans-serif;font-size:13pt;font-weight:800;color:#000;text-decoration:underline;text-decoration-color:#000;text-decoration-thickness:2px;text-underline-offset:5px;letter-spacing:.05em;text-transform:uppercase;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   '.spk-bab span{display:block;font-family:"Inter","Segoe UI",Arial,sans-serif;font-size:11pt;font-weight:700;color:#000;letter-spacing:.06em;margin-top:7px}'+
+  /* Jarak dari kalimat "…kami yang bertanda tangan dibawah ini :" ke blok
+     "I. PT PLN (PERSERO):" beserta uraiannya = 12 pt. */
+  '.spk-cl p.kl0 + .spk-party{margin-top:12pt}'+
+  /* Jarak antar blok PIHAK (I. PT PLN → II. Penyedia) = 12 pt */
+  '.spk-cl .spk-party{margin-bottom:12pt}'+
   '.spk-signpage{page-break-before:always;break-before:page;padding-top:8mm}'+
   '.spk-sign-eyebrow{text-align:center;font-family:'+G+';font-size:8.5px;font-weight:800;letter-spacing:.24em;color:#1E6FBF;margin:0 0 24px}'+
   '.spk-signpage .spk-sign{margin-top:10px}'+
