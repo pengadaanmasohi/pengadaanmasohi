@@ -14406,32 +14406,36 @@ function spkDocCss2(){
   /* Aksen kuning PLN sebagai pembuka blok judul */
   '.spk-cover .cv-accent{width:56px;border-top:4px solid #F6B40E;margin-top:38px}'+
   '.spk-cover .cv-eyebrow{margin-top:16px;font-size:9px;font-weight:700;letter-spacing:.22em;color:#1B3A6B}'+
-  '.spk-cover .cv-title{margin:15px 0 0;font-size:60px;line-height:.98;font-weight:800;letter-spacing:-.03em;color:#201E1D;max-width:66%}'+
+  '.spk-cover .cv-title{margin:15px 0 0;font-size:60px;line-height:.98;font-weight:800;letter-spacing:-.03em;color:#1B3A6B;max-width:66%}'+
   '.spk-cover .cv-title span{display:inline}'+
+  /* Kata terakhir judul diberi warna emas PLN sebagai aksen (mis. "Lampiran SPK",
+     "Surat Perintah Kerja") agar judul lebih hidup namun tetap resmi. */
+  '.spk-cover .cv-title span:last-child{color:#E0A200;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   /* DARI/KEPADA & grid data memakai RITME KOLOM YANG SAMA: dua blok 50% dengan
      celah 10px di tengah. Celah itulah pemisahnya — jadi garis vertikal atas dan
      bawah otomatis jatuh di titik yang persis sama (dulu beda karena yang satu
      pakai flex:1 + border-left, yang lain flex:0 0 50% + border-right). */
   '.spk-cover .cv-parties{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}'+
-  '.spk-cover .cv-parties .p{flex:0 0 calc(50% - 5px);background:#F5F7FA;padding:14px 16px}'+
+  '.spk-cover .cv-parties .p{flex:0 0 calc(50% - 5px);background:linear-gradient(135deg,#FAFBFE,#EDF2FB);border:1px solid #E3E9F3;border-left:3px solid #F6B40E;border-radius:8px;padding:14px 16px;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   '.spk-cover .cv-parties .pl{font-size:9px;font-weight:700;letter-spacing:.2em;color:#1B3A6B;margin-bottom:9px}'+
   '.spk-cover .cv-parties .pn{font-size:16px;font-weight:800;color:#201E1D;line-height:1.3}'+
   '.spk-cover .cv-parties .ps{font-size:11.5px;color:#8F8E8E;margin-top:3px}'+
   '.spk-cover .cv-spacer{flex:1 1 auto;min-height:14mm}'+
   '.spk-cover .cv-grid{display:flex;flex-wrap:wrap;gap:10px}'+
-  '.spk-cover .cv-grid .f{flex:0 0 calc(50% - 5px);background:#F5F7FA;padding:12px 16px}'+
-  '.spk-cover .fk{font-size:9px;font-weight:700;letter-spacing:.16em;color:#8F8E8E}'+
+  '.spk-cover .cv-grid .f{flex:0 0 calc(50% - 5px);background:linear-gradient(135deg,#FAFBFE,#EDF2FB);border:1px solid #E3E9F3;border-left:3px solid #F6B40E;border-radius:8px;padding:12px 16px;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  '.spk-cover .fk{font-size:9px;font-weight:700;letter-spacing:.16em;color:#1B3A6B}'+
   /* Nilai dibuat RATA KIRI-KANAN agar blok teks panjang rapi bertepi lurus */
   '.spk-cover .fv{font-size:13px;font-weight:800;color:#201E1D;margin-top:7px;line-height:1.45;'+
     'text-align:justify;text-justify:inter-word;hyphens:none}'+
   /* Baris terakhir paragraf justify tetap rata kiri (bawaan), dan nilai kosong dibuat redup */
   '.spk-cover .fv.kosong{color:#C2C6CC}'+
   '.spk-cover .cv-nilai{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;border-top:1px solid #E2E2E2;padding-top:12px;margin-top:0}'+
-  '.spk-cover .cv-nilai .fk{font-size:9px;font-weight:700;letter-spacing:.16em;color:#8F8E8E}'+
-  '.spk-cover .cv-nilai .terb{font-size:11px;color:#8F8E8E;margin-top:6px}'+
-  '.spk-cover .cv-nilai .r{font-size:26px;font-weight:800;color:#1B3A6B;white-space:nowrap}'+
-  /* Panel nilai pekerjaan: latar lembut + aksen biru agar jadi titik fokus cover */
-  '.spk-cover .cv-nilai{background:#EEF2F7;border-left:4px solid #1B3A6B;padding:16px 18px;margin-top:10px;border-top:0}'+
+  '.spk-cover .cv-nilai .fk{font-size:9px;font-weight:700;letter-spacing:.16em;color:#F6B40E}'+
+  '.spk-cover .cv-nilai .terb{font-size:11px;color:#C3D2EA;margin-top:6px}'+
+  '.spk-cover .cv-nilai .r{font-size:26px;font-weight:800;color:#fff;white-space:nowrap}'+
+  /* Panel nilai pekerjaan jadi titik fokus cover: gradasi biru tua PLN dengan
+     aksen emas & teks terang, kontras kuat terhadap kartu data di atasnya. */
+  '.spk-cover .cv-nilai{background:linear-gradient(135deg,#1B3A6B,#274E86);border-left:4px solid #F6B40E;border-radius:10px;padding:16px 18px;margin-top:10px;border-top:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   '.spk-cover .cv-foot{margin-top:14px;font-size:11px;color:#8F8E8E;line-height:1.7}'+
   /* ---------- DAFTAR ISI ---------- */
   '.spk-tocpage{font-family:'+G+';color:#201E1D}'+
@@ -14476,8 +14480,8 @@ function spkDocCss2(){
   '.spk-rft .l,.spk-rft .r{white-space:nowrap}'+
   /* ---------- ISI: BAB & tanda tangan ---------- */
   /* Jarak dari blok judul (SURAT PERINTAH KERJA + nomor kontrak) ke teks pertama
-     "Pada hari ini ..." = 12pt. Sebelumnya 14px (~10,5pt). */
-  '.spk-bab{text-align:center;font-family:'+G+';margin:0 0 12pt}'+
+     "Pada hari ini ..." = 24pt. */
+  '.spk-bab{text-align:center;font-family:'+G+';margin:0 0 24pt}'+
   '.spk-bab b{display:block;font-size:13pt;font-weight:800;color:#201E1D;text-decoration:underline;text-underline-offset:3px;letter-spacing:.05em;text-transform:uppercase}'+
   '.spk-bab span{display:block;font-size:11pt;font-weight:700;color:#201E1D;letter-spacing:.02em;margin-top:3px}'+
   '.spk-signpage{page-break-before:always;break-before:page;padding-top:8mm}'+
