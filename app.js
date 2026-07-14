@@ -14250,7 +14250,7 @@ function spkDocCss(){
      Hanya ISI kontrak yang dirapikan mengikuti tampilan Word (Arial). */
   '@page{size:A4 portrait;margin:2.54cm}'+
   '*{box-sizing:border-box}'+
-  'body{font-family:"Times New Roman",Georgia,serif;color:#1c1c1c;margin:0;font-size:11.5px;line-height:1.15}'+
+  'body{font-family:"Lora",Georgia,serif;color:#1c1c1c;margin:0;font-size:11.5px;line-height:1.15}'+
   '.spk-doc{counter-reset:spkcl}'+
   /* Penomoran judul klausul dibuat OTOMATIS (counter), bukan teks biasa */
   '.spk-clause{counter-increment:spkcl}'+
@@ -14274,7 +14274,7 @@ function spkDocCss(){
      Sub-klausul (X.1) & sub-sub (a. / X.1.1) memakai hanging tab 0,75 cm yang
        konsisten, bertingkat 0,75 cm tiap level — persis penggaris Word. */
   '.spk-clause{margin:0}'+
-  '.spk-clause,.spk-clause *,.spk-cl,.spk-cl *,.spk-cl-h,.spk-cl-h *{font-family:Arial,Helvetica,sans-serif}'+
+  '.spk-clause,.spk-clause *,.spk-cl,.spk-cl *,.spk-cl-h,.spk-cl-h *{font-family:"Lora",Georgia,serif}'+
   /* Kotak nomor judul klausul dipersempit 0,75cm -> 0,65cm: cukup untuk nomor
      2 digit (mis. "15." = ~0,54cm pada Arial bold 11pt) plus sedikit jarak,
      sehingga judul lebih dekat ke nomornya. */
@@ -14351,7 +14351,7 @@ function spkDocCss(){
      Mencakup preamble, semua klausul (judul & isi), daftar, blok pihak, baris
      "Label : nilai", dan blok tanda tangan. Ketebalan/format (bold, garis bawah)
      tetap dipertahankan; hanya jenis huruf & ukuran yang diseragamkan. */
-  '.spk-flow .spk-cl,.spk-flow .spk-cl *,.spk-flow .spk-clause,.spk-flow .spk-clause *,.spk-flow .spk-cl-h,.spk-flow .spk-cl-h *,.spk-flow .spk-sign,.spk-flow .spk-sign *{font-family:Arial,Helvetica,sans-serif;font-size:11pt}'+
+  '.spk-flow .spk-cl,.spk-flow .spk-cl *,.spk-flow .spk-clause,.spk-flow .spk-clause *,.spk-flow .spk-cl-h,.spk-flow .spk-cl-h *,.spk-flow .spk-sign,.spk-flow .spk-sign *{font-family:"Lora",Georgia,serif;font-size:11pt}'+
   /* ===== Tampilan PRATINJAU di layar (bukan cetak) =====
      Menampilkan tiap bagian sebagai lembar A4 putih (210×297mm) di atas latar
      abu-abu, dengan bayangan & margin dalam 2,54cm — meniru gaya pratinjau
@@ -14422,11 +14422,11 @@ function spkDocCss2(){
   '.spk-cover .cv-parties .ps{font-size:11.5px;color:#8F8E8E;margin-top:3px}'+
   '.spk-cover .cv-spacer{flex:1 1 auto;min-height:14mm}'+
   '.spk-cover .cv-grid{display:flex;flex-wrap:wrap;gap:10px}'+
-  '.spk-cover .cv-grid .f{flex:0 0 calc(50% - 5px);background:linear-gradient(135deg,#FAFBFE,#EDF2FB);border:1px solid #E3E9F3;border-left:3px solid #F6B40E;border-radius:8px;padding:12px 16px;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  '.spk-cover .cv-grid .f{flex:0 0 calc(50% - 5px);min-width:0;background:linear-gradient(135deg,#FAFBFE,#EDF2FB);border:1px solid #E3E9F3;border-left:3px solid #F6B40E;border-radius:8px;padding:12px 16px;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   '.spk-cover .fk{font-size:9px;font-weight:700;letter-spacing:.16em;color:#1B3A6B}'+
   /* Nilai dibuat RATA KIRI-KANAN agar blok teks panjang rapi bertepi lurus */
   '.spk-cover .fv{font-size:13px;font-weight:800;color:#201E1D;margin-top:7px;line-height:1.45;'+
-    'text-align:justify;text-justify:inter-word;hyphens:none}'+
+    'text-align:justify;text-justify:inter-word;hyphens:none;overflow-wrap:anywhere}'+
   /* Baris terakhir paragraf justify tetap rata kiri (bawaan), dan nilai kosong dibuat redup */
   '.spk-cover .fv.kosong{color:#C2C6CC}'+
   '.spk-cover .cv-nilai{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;border-top:1px solid #E2E2E2;padding-top:12px;margin-top:0}'+
@@ -14554,7 +14554,7 @@ function spkDocCss2(){
   '.spk-sheet .spk-signpage{page-break-before:auto;break-before:auto;padding-top:0}'+
   /* klausul yang bersambung ke lembar berikutnya TIDAK menambah nomor klausul */
   '.spk-clause.spk-cont{counter-increment:none}'+
-  '.spk-sheet .spk-cl,.spk-sheet .spk-cl *,.spk-sheet .spk-clause,.spk-sheet .spk-clause *,.spk-sheet .spk-cl-h,.spk-sheet .spk-cl-h *,.spk-sheet .spk-sign,.spk-sheet .spk-sign *{font-family:Arial,Helvetica,sans-serif;font-size:11pt}'+
+  '.spk-sheet .spk-cl,.spk-sheet .spk-cl *,.spk-sheet .spk-clause,.spk-sheet .spk-clause *,.spk-sheet .spk-cl-h,.spk-sheet .spk-cl-h *,.spk-sheet .spk-sign,.spk-sheet .spk-sign *{font-family:"Lora",Georgia,serif;font-size:11pt}'+
   /* ---------- PRATINJAU DI LAYAR (lembar A4) ---------- */
   '@media screen{'+
     'html,body{background:#54585c;margin:0;padding:24px 0}'+
@@ -17261,23 +17261,32 @@ function spkPageScript(){
     '   if(seen[u]) cl[i].classList.add("spk-cont"); else { cl[i].classList.remove("spk-cont"); seen[u]=1; }',
     ' }',
     '}',
-    /* nomor halaman Daftar Isi = nomor lembar tempat klausul dimulai */
+    /* nomor halaman Daftar Isi = nomor lembar ISI KONTRAK (SPK) tempat klausul
+       dimulai. Lembar Lampiran TIDAK dihitung, agar konsisten dengan footer. */
     'function nomorToc(){',
-    ' var pages=document.querySelectorAll(".spk-doc > .spk-page");',
+    ' var sheets=document.querySelectorAll(".spk-doc > .spk-page.spk-sheet");',
     ' var pgs=document.querySelectorAll(".spk-toc2 .pg");',
-    ' var k=0;',
-    ' for(var i=0;i<pages.length;i++){',
-    '   var cls=pages[i].querySelectorAll(".spk-clause:not(.spk-cont)");',
-    '   for(var j=0;j<cls.length;j++){ if(pgs[k]) pgs[k].textContent=String(i+1); k++; }',
+    ' var k=0, n=0;',
+    ' for(var i=0;i<sheets.length;i++){',
+    '   if(hasCls(sheets[i],"spk-lampsheet")) continue;',
+    '   n++;',
+    '   var cls=sheets[i].querySelectorAll(".spk-clause:not(.spk-cont)");',
+    '   for(var j=0;j<cls.length;j++){ if(pgs[k]) pgs[k].textContent=String(n); k++; }',
     ' }',
     '}',
-    /* Nomor halaman footer: "N dari M" untuk lembar isi & lampiran */
+    /* Nomor halaman footer: "N dari M" HANYA untuk lembar isi kontrak (SPK).
+       Lembar Lampiran SPK tidak ikut dihitung, dan nomornya dikosongkan. */
     'function nomorFooter(){',
     ' var sh=document.querySelectorAll(".spk-doc > .spk-page.spk-sheet");',
-    ' var tot=sh.length;',
+    ' var body=[];',
+    ' for(var i=0;i<sh.length;i++){ if(!hasCls(sh[i],"spk-lampsheet")) body.push(sh[i]); }',
+    ' var tot=body.length;',
     ' for(var i=0;i<tot;i++){',
-    '   var t=sh[i].querySelector(".ft-pg");',
+    '   var t=body[i].querySelector(".ft-pg");',
     '   if(t) t.textContent=(i+1)+" dari "+tot;',
+    ' }',
+    ' for(var i=0;i<sh.length;i++){',
+    '   if(hasCls(sh[i],"spk-lampsheet")){ var t2=sh[i].querySelector(".ft-pg"); if(t2) t2.textContent=String.fromCharCode(8203); }',
     ' }',
     '}',
     'function jalan(){',
@@ -17365,7 +17374,10 @@ function spkDocHtml(data, klausul){
   const lampiran='<section class="spk-page spk-flow spk-lampsheet">'+spkLampiranDocInner(data)+'</section>';
 
   return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><title>&#8203;</title>'+
-    (typeof fklDocFontLink==='function'?fklDocFontLink():'')+'<style>'+
+    (typeof fklDocFontLink==='function'?fklDocFontLink():'')+
+    /* Font isi kontrak: Lora — serif modern & formal untuk badan dokumen */
+    '<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">'+
+    '<style>'+
     (typeof fklDocBaseCss==='function'?fklDocBaseCss():'')+
     (typeof hpsExtraDocCss==='function'?hpsExtraDocCss():'')+
     spkDocCss()+spkDocCss2()+
