@@ -15019,6 +15019,11 @@ function spkDocCss2(){
   /* ---------- KOP & FOOTER BERULANG (halaman isi) ---------- */
   'table.spk-run{width:100%;border-collapse:collapse;border:0;background:transparent}'+
   'table.spk-run > thead > tr > td,table.spk-run > tbody > tr > td,table.spk-run > tfoot > tr > td{padding:0;border:0;background:transparent}'+
+  /* ===== JARAK GARIS <-> TULISAN DIBUAT CERMIN (SIMETRIS) =====
+     Kop : tulisan -12px- GARIS -16px- isi halaman
+     Kaki: isi halaman -16px- GARIS -12px- tulisan
+     Dulu kaki memakai padding-top 19px, jadi jarak garis->tulisan di bawah 7px lebih
+     jauh daripada di atas. Sekarang keduanya 12px. */
   '.spk-rhd{display:flex;align-items:center;justify-content:space-between;gap:14px;padding-bottom:12px;border-bottom:2px solid #201E1D;margin-bottom:16px;font-family:'+G+'}'+
   '.spk-rhd .l{display:flex;align-items:center;gap:16px}'+
   '.spk-rhd img{height:47px;width:auto;display:block}'+
@@ -15030,7 +15035,7 @@ function spkDocCss2(){
   '.spk-rhd .r{text-align:right;line-height:1.4}'+
   '.spk-rhd .r b{display:block;font-size:12px;font-weight:800;color:#201E1D;letter-spacing:.13em}'+
   '.spk-rhd .r span{display:block;font-size:10.5px;color:#8F8E8E;letter-spacing:.02em;margin-top:3px}'+
-  '.spk-rft{border-top:2px solid #201E1D;margin-top:16px;padding-top:19px;font-family:'+G+'}'+
+  '.spk-rft{border-top:2px solid #201E1D;margin-top:16px;padding-top:12px;font-family:'+G+'}'+
   '.spk-rft .ft-unit{text-align:center;font-size:9px;font-weight:700;letter-spacing:.2em;color:#8F8E8E;margin-bottom:8px}'+
   '.spk-rft .ft-rule{border-top:1px solid #E2E2E2;margin-bottom:12px}'+
   '.spk-rft .ft-row{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:12px;font-weight:700;color:#201E1D;letter-spacing:.01em}'+
