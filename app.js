@@ -13859,6 +13859,7 @@ function spkKlLoadFor(rec){
 async function refreshDataSpk(){
   try{ records_spk=await StoreSpkKontrak.list(); }
   catch(err){ console.error('SPK kontrak:',err); records_spk=records_spk||[]; }
+  try{ await spkPdfRefreshList(); }catch(e){}     /* status PDF final tiap kontrak */
 }
 /* Tidak lagi membaca tabel klausul_spk — pustaka mengikuti kontrak yang aktif. */
 async function refreshDataKlausul(){
@@ -14717,7 +14718,7 @@ function spkViewRows(){
   return rows;
 }
 function spkEmptyRow(){
-  return '<tr><td colspan="6"><div class="empty">'+
+  return '<tr><td colspan="7"><div class="empty">'+
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>'+
     '<div>Belum ada kontrak tersimpan</div></div></td></tr>';
 }
@@ -14740,7 +14741,16 @@ function renderSpkView(){
       '<td class="wrap-cell col-nama-freeze">'+fkEsc(r.nama_pekerjaan||'—')+'</td>'+
       '<td class="col-date">'+fkEsc(r.tanggal?spkDateLong(r.tanggal):'—')+'</td>'+
       '<td style="text-align:right;white-space:nowrap">'+fkEsc(r.nilai!=null?spkRupiah(r.nilai):'—')+'</td>'+
+      '<td style="text-align:center">'+(spkPdfHas(r.id)
+        ? '<span class="spk-pdf-badge ok">PDF final</span>'
+        : '<span class="spk-pdf-badge">Draf</span>')+'</td>'+
       '<td><div class="action-cell" style="justify-content:center">'+
+        '<button class="act act-word" title="Unduh .docx final (buka di Word, simpan jadi PDF)" onclick="spkDocxKontrakDownload(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg></button>'+
+        '<button class="act act-pdf" title="'+(spkPdfHas(r.id)?'Ganti PDF final':'Unggah PDF final')+'" onclick="spkPdfPick(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 9l5-5 5 5M12 4v12"/></svg></button>'+
+        (spkPdfHas(r.id)
+          ? '<button class="act act-pdfdl" title="Unduh PDF final" onclick="spkPdfDownload(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg></button>'+
+            '<button class="act act-pdfdel" title="Hapus PDF final" onclick="spkPdfDelete(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>'
+          : '')+
         '<button class="act act-edit" title="Ubah" onclick="spkEditRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
         '<button class="act act-view" title="Lihat" onclick="spkPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
         '<button class="act act-del" title="Hapus" onclick="spkDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>'+
@@ -14781,6 +14791,9 @@ function spkDeleteRecord(id){
 /* Pratinjau dari record tersimpan */
 function spkPreviewRecord(id){
   const rec=(records_spk||[]).find(r=>String(r.id)===String(id)); if(!rec) return;
+  /* PDF final = dokumen resmi. Bila sudah ada, tampilkan PDF-nya (bukan draf HTML,
+     yang tidak akan pernah 100% sama dengan Word). */
+  if(spkPdfHas(id)){ spkPdfView(id); return; }
   spkOpenPreview(rec.data||{}, (Array.isArray(rec.klausul)?rec.klausul:[]));
 }
 /* Pratinjau dari form yang sedang disusun */
@@ -18413,6 +18426,458 @@ function spkDocHtml(data, klausul){
    Memakai modal pratinjau bersama (pn-preview-overlay) yang sama persis dengan
    Rekap HPS: header dengan tombol Perbesar + Cetak/PDF + tutup, isi berupa iframe. */
 let spkPreviewData=null, spkPreviewKlausul=null;
+
+/* =========================================================================
+   PDF FINAL — "Word yang menata halaman, bukan browser"
+     1) Unduh .docx final dari aplikasi.
+     2) Buka di Microsoft Word -> File > Save As > PDF.
+     3) Unggah PDF itu ke sini. Sejak saat itu PDF-lah DOKUMEN RESMI kontrak:
+        tombol Lihat / Unduh memakai PDF, bukan render HTML.
+   Render HTML tetap ada, tapi statusnya DRAF (untuk menyusun & memeriksa isi).
+
+   PENYIMPANAN: Supabase Storage, bucket "spk-final", berkas "kontrak/<id>.pdf".
+   Tidak ada kolom tabel baru; status diambil dari daftar berkas di bucket.
+   ========================================================================= */
+const SPK_PDF_BUCKET = 'spk-final';
+let spkPdfMap = {};                      /* id kontrak -> {path, at} */
+
+async function spkPdfRefreshList(){
+  if(!spkSupaReady()){ spkPdfMap={}; return; }
+  try{
+    const {data,error} = await db.storage.from(SPK_PDF_BUCKET).list('kontrak',{limit:1000});
+    if(error) throw error;
+    const map={};
+    (data||[]).forEach(function(f){
+      const m=/^(.+)\.pdf$/i.exec(f.name||'');
+      if(m) map[m[1]]={path:'kontrak/'+f.name, at:(f.updated_at||f.created_at||'')};
+    });
+    spkPdfMap=map;
+  }catch(e){
+    console.warn('PDF final: bucket "'+SPK_PDF_BUCKET+'" belum tersedia.', e && e.message);
+    spkPdfMap={};
+  }
+}
+function spkPdfHas(id){ return !!spkPdfMap[String(id)]; }
+function spkPdfPath(id){ return 'kontrak/'+String(id)+'.pdf'; }
+function spkFileName(rec, ext){
+  const t=String((rec&&(rec.nomor_kontrak||rec.nama_pekerjaan))||'SPK')
+    .replace(/[\\/:*?"<>|]+/g,'-').replace(/\s+/g,' ').trim().slice(0,80);
+  return 'SPK - '+t+'.'+ext;
+}
+
+/* Pilih berkas PDF dari komputer lalu unggah */
+function spkPdfPick(id){
+  let inp=document.getElementById('spk-pdf-input');
+  if(!inp){
+    inp=document.createElement('input');
+    inp.type='file'; inp.accept='application/pdf,.pdf'; inp.id='spk-pdf-input';
+    inp.style.display='none'; document.body.appendChild(inp);
+  }
+  inp.value='';
+  inp.onchange=function(){ const f=inp.files && inp.files[0]; if(f) spkPdfUpload(id, f); };
+  inp.click();
+}
+async function spkPdfUpload(id, file){
+  if(!spkSupaReady()){ toast('Koneksi Supabase tidak tersedia','warn'); return; }
+  if(file.type!=='application/pdf' && !/\.pdf$/i.test(file.name||'')){ toast('Berkas harus PDF','warn'); return; }
+  if(file.size > 25*1024*1024){ toast('Ukuran PDF melebihi 25 MB','warn'); return; }
+  try{
+    await withActionLoader('Mengunggah PDF', async function(){
+      const {error}=await db.storage.from(SPK_PDF_BUCKET)
+        .upload(spkPdfPath(id), file, {upsert:true, contentType:'application/pdf'});
+      if(error) throw error;
+      await spkPdfRefreshList();
+      renderSpkView();
+    });
+    toast('PDF final tersimpan — dokumen resmi kini memakai PDF ini','ok');
+  }catch(e){
+    console.error(e);
+    toast('Gagal mengunggah PDF: '+((e&&e.message)||'periksa bucket "spk-final"'),'warn');
+  }
+}
+async function spkPdfUrl(id){
+  const {data,error}=await db.storage.from(SPK_PDF_BUCKET).createSignedUrl(spkPdfPath(id), 3600);
+  if(error) throw error;
+  return data && data.signedUrl;
+}
+async function spkPdfView(id){
+  try{ const url=await spkPdfUrl(id); if(url) spkPdfOpenViewer(id, url); }
+  catch(e){ toast('PDF tidak dapat dibuka','warn'); }
+}
+async function spkPdfDownload(id){
+  try{
+    const rec=(records_spk||[]).find(function(r){ return String(r.id)===String(id); });
+    const url=await spkPdfUrl(id);
+    const a=document.createElement('a');
+    a.href=url; a.download=spkFileName(rec,'pdf'); a.rel='noopener';
+    document.body.appendChild(a); a.click(); a.remove();
+  }catch(e){ toast('PDF tidak dapat diunduh','warn'); }
+}
+async function spkPdfDelete(id){
+  if(!confirm('Hapus PDF final kontrak ini? Dokumen resmi akan kembali memakai draf HTML.')) return;
+  try{
+    await withActionLoader('Menghapus PDF', async function(){
+      const {error}=await db.storage.from(SPK_PDF_BUCKET).remove([spkPdfPath(id)]);
+      if(error) throw error;
+      await spkPdfRefreshList();
+      renderSpkView();
+    });
+    toast('PDF final dihapus','ok');
+  }catch(e){ toast('Gagal menghapus PDF','warn'); }
+}
+/* Tampilkan PDF pada modal pratinjau bersama */
+function spkPdfOpenViewer(id, url){
+  const rec=(records_spk||[]).find(function(r){ return String(r.id)===String(id); });
+  const ov=document.getElementById('pn-preview-overlay');
+  if(!ov){ window.open(url,'_blank','noopener'); return; }
+  const titleEl=document.getElementById('pn-preview-title');
+  if(titleEl) titleEl.textContent='Dokumen Resmi (PDF) — '+((rec&&rec.nomor_kontrak)||(rec&&rec.nama_pekerjaan)||'');
+  const body=document.getElementById('pn-preview-body');
+  if(body){
+    body.classList.add('fkl-preview-body');
+    body.innerHTML='<iframe id="fkl-preview-frame" title="PDF Final" src="'+url+'#toolbar=1"></iframe>';
+  }
+  ov.classList.add('show');
+}
+
+/* ---- .docx FINAL (SELURUH DOKUMEN) -------------------------------------------
+   Isinya: Cover -> Daftar Isi (field TOC Word) -> Isi kontrak -> Tanda tangan.
+   Kop & footer dipasang sebagai header/footer Word, jadi BERULANG otomatis di tiap
+   halaman, lengkap dengan logo dan nomor halaman ("Halaman N dari M") memakai field
+   PAGE/SECTIONPAGES. Daftar isi memakai field TOC: nomor halamannya diisi Word sendiri.
+   Aturan pengetikan ISI kontrak tidak disentuh sama sekali -> 100% seperti Word Anda.
+   ----------------------------------------------------------------------------- */
+const SPK_DXC = { NAVY:'1B3A6B', KUNING:'F6B40E', GELAP:'201E1D', ABU:'8F8E8E', GARIS:'E2E2E2' };
+
+/* data URI -> byte + ukuran asli PNG (dibaca dari IHDR) */
+function spkDxLogo(){
+  try{
+    const src=String(SPK_LOGO_SRC||'');
+    const i=src.indexOf('base64,'); if(i<0) return null;
+    const bin=atob(src.slice(i+7));
+    const b=new Uint8Array(bin.length);
+    for(let k=0;k<bin.length;k++) b[k]=bin.charCodeAt(k);
+    let w=0,h=0;
+    if(b.length>24 && b[0]===0x89 && b[1]===0x50){                       /* PNG: IHDR */
+      const dv=new DataView(b.buffer);
+      w=dv.getUint32(16); h=dv.getUint32(20);
+    }
+    if(!w||!h){ w=256; h=256; }
+    return {bytes:b, w:w, h:h};
+  }catch(e){ return null; }
+}
+/* Gambar sebaris (inline) setinggi hCm, lebar mengikuti rasio asli */
+function spkDxPic(rId, logo, hCm, id){
+  const EMU=360000;                                    /* 1 cm */
+  const cy=Math.round(hCm*EMU);
+  const cx=Math.round(hCm*(logo.w/logo.h)*EMU);
+  return '<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0">'+
+    '<wp:extent cx="'+cx+'" cy="'+cy+'"/><wp:docPr id="'+id+'" name="Logo PLN '+id+'"/>'+
+    '<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">'+
+      '<pic:pic><pic:nvPicPr><pic:cNvPr id="'+id+'" name="logo.png"/><pic:cNvPicPr/></pic:nvPicPr>'+
+      '<pic:blipFill><a:blip r:embed="'+rId+'"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>'+
+      '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="'+cx+'" cy="'+cy+'"/></a:xfrm>'+
+      '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>'+
+      '</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>';
+}
+const SPK_DX_NS =
+  ' xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"'+
+  ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"'+
+  ' xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"'+
+  ' xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"'+
+  ' xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"';
+
+/* run teks bebas gaya */
+function spkDxRun(t, o){
+  o=o||{};
+  let rPr='';
+  if(o.b) rPr+='<w:b/>';
+  if(o.i) rPr+='<w:i/>';
+  if(o.caps) rPr+='<w:caps/>';
+  if(o.sz) rPr+='<w:sz w:val="'+o.sz+'"/><w:szCs w:val="'+o.sz+'"/>';
+  if(o.color) rPr+='<w:color w:val="'+o.color+'"/>';
+  if(o.spacing) rPr+='<w:spacing w:val="'+o.spacing+'"/>';
+  if(o.u) rPr+='<w:u w:val="single"/>';
+  return '<w:r>'+(rPr?('<w:rPr>'+rPr+'</w:rPr>'):'')+'<w:t xml:space="preserve">'+spkXmlEsc(String(t==null?'':t))+'</w:t></w:r>';
+}
+/* Word MENOLAK berkas bila anak <w:pPr> tidak urut sesuai skema. Fungsi ini menyusun
+   ulang tag apa pun yang diberikan ke urutan yang benar:
+   pStyle -> numPr -> pBdr -> shd -> tabs -> spacing -> ind -> jc -> outlineLvl */
+const SPK_DX_PPR_ORDER=['pStyle','numPr','pBdr','shd','tabs','spacing','ind','jc','outlineLvl'];
+function spkDxPPr(pPr){
+  const src=String(pPr||''); if(!src) return '';
+  let out='';
+  SPK_DX_PPR_ORDER.forEach(function(tag){
+    const re=new RegExp('<w:'+tag+'(?:\\s[^>]*)?(?:/>|>[\\s\\S]*?</w:'+tag+'>)','g');
+    const m=src.match(re);
+    if(m) out+=m.join('');
+  });
+  return out;
+}
+function spkDxP(pPr, runs){ return '<w:p><w:pPr>'+spkDxPPr(pPr)+'</w:pPr>'+(runs||'')+'</w:p>'; }
+function spkDxBorderBottom(color, sz){ return '<w:pBdr><w:bottom w:val="single" w:sz="'+sz+'" w:space="4" w:color="'+color+'"/></w:pBdr>'; }
+/* Sel tabel sederhana */
+function spkDxTc(wTw, xml, opt){
+  opt=opt||{};
+  let pr='<w:tcW w:w="'+wTw+'" w:type="dxa"/>';
+  if(opt.fill) pr+='<w:shd w:val="clear" w:color="auto" w:fill="'+opt.fill+'"/>';
+  if(opt.left) pr+='<w:tcBorders><w:left w:val="single" w:sz="18" w:space="0" w:color="'+opt.left+'"/></w:tcBorders>';
+  if(opt.valign) pr+='<w:vAlign w:val="'+opt.valign+'"/>';
+  return '<w:tc><w:tcPr>'+pr+'</w:tcPr>'+xml+'</w:tc>';
+}
+function spkDxTbl(grid, rows, opt){
+  opt=opt||{};
+  const none=['top','left','bottom','right','insideH','insideV'].map(function(b){
+    return '<w:'+b+' w:val="'+((opt.borders&&opt.borders[b])?'single':'none')+'" w:sz="'+((opt.borders&&opt.borders[b])||0)+'" w:space="0" w:color="'+((opt.color)||'auto')+'"/>';
+  }).join('');
+  return '<w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/><w:tblBorders>'+none+'</w:tblBorders>'+
+    '<w:tblCellMar><w:top w:w="'+(opt.padY||0)+'" w:type="dxa"/><w:left w:w="'+(opt.padX||0)+'" w:type="dxa"/>'+
+    '<w:bottom w:w="'+(opt.padY||0)+'" w:type="dxa"/><w:right w:w="'+(opt.padX||0)+'" w:type="dxa"/></w:tblCellMar>'+
+    '</w:tblPr><w:tblGrid>'+grid.map(function(g){ return '<w:gridCol w:w="'+g+'"/>'; }).join('')+'</w:tblGrid>'+
+    rows+'</w:tbl>';
+}
+
+/* ---------------- KOP (header, berulang tiap halaman) ---------------- */
+function spkDxHeaderXml(data, logo){
+  const P='<w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="left"/>';
+  const R='<w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="right"/>';
+  const cLogo = logo ? spkDxP(P, spkDxPic('rId1', logo, 1.24, 101)) : spkDxP(P,'');
+  const cOrg  = spkDxP(P, spkDxRun('PT PLN (PERSERO)',{b:true,sz:15,color:SPK_DXC.ABU,spacing:40}))+
+                spkDxP(P, spkDxRun('UP3 Masohi',{b:true,sz:24,color:SPK_DXC.GELAP}));
+  const cKan  = spkDxP(R, spkDxRun('SURAT PERINTAH KERJA',{b:true,sz:22,color:SPK_DXC.GELAP,spacing:26}))+
+                spkDxP(R, spkDxRun(String(data.nomor_kontrak||'\u2014'),{sz:18,color:SPK_DXC.ABU}));
+  const row = '<w:tr>'+spkDxTc(1000,cLogo,{valign:'center'})+spkDxTc(3400,cOrg,{valign:'center'})+
+              spkDxTc(4900,cKan,{valign:'center'})+'</w:tr>';
+  const tbl = spkDxTbl([1000,3400,4900], row, {borders:{bottom:12}, color:SPK_DXC.GELAP, padX:60});
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:hdr'+SPK_DX_NS+'>'+
+    tbl+ spkDxP('<w:spacing w:after="0" w:line="120" w:lineRule="exact"/>','') +
+  '</w:hdr>';
+}
+/* ---------------- FOOTER (paraf + nomor halaman) ---------------- */
+function spkDxFooterXml(){
+  const L='<w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="left"/>';
+  const C='<w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/>';
+  const R='<w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="right"/>';
+  const fld=function(instr){ return '<w:fldSimple w:instr="'+instr+'"><w:r><w:rPr><w:sz w:val="17"/><w:color w:val="'+SPK_DXC.ABU+'"/></w:rPr><w:t>1</w:t></w:r></w:fldSimple>'; };
+  const cKiri  = spkDxP(L, spkDxRun('PIHAK PERTAMA  ______',{b:true,sz:19,color:SPK_DXC.GELAP}));
+  const cTengah= spkDxP(C, spkDxRun('UP3 MASOHI',{b:true,sz:15,color:SPK_DXC.ABU,spacing:40}))+
+                 spkDxP(C, spkDxRun('Halaman ',{sz:17,color:SPK_DXC.ABU})+fld(' PAGE ')+
+                            spkDxRun(' dari ',{sz:17,color:SPK_DXC.ABU})+fld(' SECTIONPAGES '));
+  const cKanan = spkDxP(R, spkDxRun('______  PIHAK KEDUA',{b:true,sz:19,color:SPK_DXC.GELAP}));
+  const row='<w:tr>'+spkDxTc(3200,cKiri,{valign:'center'})+spkDxTc(2900,cTengah,{valign:'center'})+
+            spkDxTc(3200,cKanan,{valign:'center'})+'</w:tr>';
+  const tbl=spkDxTbl([3200,2900,3200], row, {borders:{top:12}, color:SPK_DXC.GELAP, padX:60, padY:80});
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:ftr'+SPK_DX_NS+'>'+ tbl +
+    spkDxP('<w:spacing w:after="0" w:line="120" w:lineRule="exact"/>','') + '</w:ftr>';
+}
+/* ---------------- COVER ---------------- */
+function spkDxCover(data, ctx, logo){
+  const N='<w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="left"/>';
+  let x='';
+  if(logo) x += spkDxP(N, spkDxPic('rId5', logo, 1.6, 201));
+  x += spkDxP('<w:spacing w:before="60" w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="left"/>',
+        spkDxRun('PT PLN (PERSERO)',{b:true,sz:15,color:SPK_DXC.ABU,spacing:40}));
+  x += spkDxP('<w:spacing w:after="120" w:line="240" w:lineRule="auto"/>'+spkDxBorderBottom(SPK_DXC.GELAP,12),
+        spkDxRun('UP3 Masohi',{b:true,sz:26,color:SPK_DXC.GELAP}));
+  /* aksen kuning */
+  x += spkDxP('<w:spacing w:before="240" w:after="120" w:line="240" w:lineRule="auto"/><w:ind w:right="9000"/>'+
+        spkDxBorderBottom(SPK_DXC.KUNING,24), '');
+  x += spkDxP('<w:spacing w:after="60" w:line="240" w:lineRule="auto"/>',
+        spkDxRun('PENGADAAN LANGSUNG',{b:true,sz:16,color:SPK_DXC.NAVY,spacing:60}));
+  x += spkDxP('<w:spacing w:after="120" w:line="240" w:lineRule="auto"/>',
+        spkDxRun('SURAT PERINTAH KERJA',{b:true,sz:52,color:SPK_DXC.GELAP}));
+  x += spkDxP('<w:spacing w:after="240" w:line="240" w:lineRule="auto"/>'+spkDxBorderBottom(SPK_DXC.GARIS,6), '');
+  /* DARI / KEPADA */
+  const P0='<w:spacing w:after="0" w:line="240" w:lineRule="auto"/>';
+  const unit = ctx.p1_nama_singkat || 'Unit Pelaksana Pelayanan Pelanggan Masohi';
+  const cDari = spkDxP(P0, spkDxRun('DARI',{b:true,sz:15,color:SPK_DXC.NAVY,spacing:40}))+
+                spkDxP(P0, spkDxRun('PT PLN (Persero)',{b:true,sz:26,color:SPK_DXC.GELAP}))+
+                spkDxP(P0, spkDxRun(unit,{sz:18,color:SPK_DXC.ABU}));
+  const cKpd  = spkDxP(P0, spkDxRun('KEPADA',{b:true,sz:15,color:SPK_DXC.NAVY,spacing:40}))+
+                spkDxP(P0, spkDxRun(ctx.p2_nama_hormat||'\u2014',{b:true,sz:26,color:SPK_DXC.GELAP}));
+  x += spkDxTbl([4650,4650], '<w:tr>'+spkDxTc(4650,cDari)+spkDxTc(4650,cKpd)+'</w:tr>', {padY:60});
+  x += spkDxP('<w:spacing w:after="120" w:line="240" w:lineRule="auto"/>','');
+  /* grid data (4 baris x 2 kolom), kotak abu dengan garis kiri kuning */
+  const fld=function(k,v){
+    const val=(v && String(v).trim())?String(v):'\u2014';
+    return spkDxP(P0, spkDxRun(k,{b:true,sz:14,color:SPK_DXC.ABU,spacing:40}))+
+           spkDxP(P0, spkDxRun(val,{b:true,sz:20,color:SPK_DXC.GELAP}));
+  };
+  const cel=function(k,v){ return spkDxTc(4650, fld(k,v), {fill:'F4F7FC', left:SPK_DXC.KUNING}); };
+  const g=[
+    ['NOMOR KONTRAK', data.nomor_kontrak, 'TANGGAL KONTRAK', ctx.tanggal_kontrak_pjg],
+    ['PEKERJAAN', data.nama_pekerjaan, 'LOKASI', data.lokasi_pekerjaan],
+    ['PELAKSANA', data.pelaksana, 'AKHIR PEKERJAAN', ctx.akhir_pekerjaan_pjg],
+    ['SUMBER ANGGARAN', ctx.sumber_dana_no, 'TANGGAL ANGGARAN', ctx.sumber_dana_tgl_pjg]
+  ].map(function(r){ return '<w:tr>'+cel(r[0],r[1])+cel(r[2],r[3])+'</w:tr>'; }).join('');
+  x += spkDxTbl([4650,4650], g, {padX:120, padY:100});
+  /* nilai pekerjaan */
+  x += spkDxP('<w:spacing w:before="240" w:after="60" w:line="240" w:lineRule="auto"/>'+
+        '<w:pBdr><w:top w:val="single" w:sz="6" w:space="6" w:color="'+SPK_DXC.GARIS+'"/></w:pBdr>','');
+  const cNil = spkDxP(P0, spkDxRun('NILAI PEKERJAAN',{b:true,sz:14,color:SPK_DXC.ABU,spacing:40}))+
+               spkDxP(P0, spkDxRun('('+String(ctx.nilai_terbilang||'')+')',{i:true,sz:17,color:SPK_DXC.ABU}));
+  const cRp  = spkDxP('<w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="right"/>',
+                 spkDxRun(String(ctx.nilai_rp||''),{b:true,sz:32,color:SPK_DXC.NAVY}));
+  x += spkDxTbl([5600,3700], '<w:tr>'+spkDxTc(5600,cNil,{valign:'bottom'})+spkDxTc(3700,cRp,{valign:'bottom'})+'</w:tr>', {padY:40});
+  /* alamat */
+  x += spkDxP('<w:spacing w:before="240" w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/>'+
+        '<w:pBdr><w:top w:val="single" w:sz="12" w:space="8" w:color="'+SPK_DXC.GELAP+'"/></w:pBdr>',
+        spkDxRun(SPK_ALAMAT_1,{sz:15,color:SPK_DXC.ABU}));
+  x += spkDxP('<w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/>',
+        spkDxRun(SPK_ALAMAT_2,{sz:15,color:SPK_DXC.ABU}));
+  return x;
+}
+/* ---------------- DAFTAR ISI (field TOC Word) ---------------- */
+function spkDxToc(data){
+  let x='';
+  x += spkDxP('<w:spacing w:after="120" w:line="240" w:lineRule="auto"/><w:ind w:right="9200"/>'+
+        spkDxBorderBottom(SPK_DXC.KUNING,24), '');
+  x += spkDxP('<w:spacing w:after="0" w:line="240" w:lineRule="auto"/>',
+        spkDxRun('Daftar Isi',{b:true,sz:44,color:SPK_DXC.GELAP}));
+  x += spkDxP('<w:spacing w:after="0" w:line="240" w:lineRule="auto"/>',
+        spkDxRun('SURAT PERINTAH KERJA',{b:true,sz:18,color:SPK_DXC.GELAP,spacing:26}));
+  x += spkDxP('<w:spacing w:after="240" w:line="240" w:lineRule="auto"/>'+spkDxBorderBottom(SPK_DXC.GARIS,6),
+        spkDxRun(String(data.nomor_kontrak||'\u2014'),{sz:18,color:SPK_DXC.ABU}));
+  /* Field TOC: nomor halaman diisi Word (klik "Yes" saat dokumen dibuka / tekan F9) */
+  x += '<w:p><w:pPr><w:spacing w:after="0" w:line="276" w:lineRule="auto"/><w:jc w:val="left"/></w:pPr>'+
+       '<w:fldSimple w:instr=" TOC \\o &quot;1-1&quot; \\h \\z \\u ">'+
+       spkDxRun('Klik kanan pada daftar ini lalu pilih "Update Field" bila nomor halaman belum tampil.',{i:true,sz:18,color:SPK_DXC.ABU})+
+       '</w:fldSimple></w:p>';
+  return x;
+}
+/* ---------------- TANDA TANGAN ---------------- */
+function spkDxSign(ctx){
+  const C='<w:spacing w:after="0" w:line="276" w:lineRule="auto"/><w:jc w:val="center"/>';
+  const kol=function(peran, org, nama, jab){
+    return spkDxP(C, spkDxRun(peran,{b:true,sz:20}))+
+           spkDxP(C, spkDxRun(org||'',{sz:20}))+
+           spkDxP('<w:spacing w:before="1000" w:after="0" w:line="276" w:lineRule="auto"/><w:jc w:val="center"/>',
+                  spkDxRun(nama||'',{b:true,sz:20,u:true}))+
+           spkDxP(C, spkDxRun(jab||'',{sz:20}));
+  };
+  const row='<w:tr>'+
+    spkDxTc(4650, kol('PIHAK KEDUA', ctx.p2_nama_hormat, ctx.p2_wakil, ctx.p2_jabatan))+
+    spkDxTc(4650, kol('PIHAK PERTAMA', (typeof spkOrgP1==='function'?spkOrgP1(ctx):'PT PLN (Persero)'), ctx.p1_wakil, ctx.p1_jabatan))+
+  '</w:tr>';
+  return spkDxP('<w:spacing w:before="480" w:after="0"/>','') + spkDxTbl([4650,4650], row, {padY:60});
+}
+
+function spkDocxKontrakBlob(rec){
+  const data=(rec&&rec.data)||{};
+  const klausul=(rec&&Array.isArray(rec.klausul))?rec.klausul:[];
+  let ctx={}; try{ ctx=spkBuildCtx(data); }catch(e){}
+  const enc=new TextEncoder(), D=SPK_DX, logo=spkDxLogo();
+
+  /* ---- sectPr: 1) Cover  2) Daftar Isi  3) Isi kontrak (dengan kop & footer) ---- */
+  const pg='<w:pgSz w:w="'+D.A4_W+'" w:h="'+D.A4_H+'" w:orient="portrait"/>';
+  const marCover='<w:pgMar w:top="850" w:right="850" w:bottom="850" w:left="850" w:header="0" w:footer="0" w:gutter="0"/>';
+  const marIsi  ='<w:pgMar w:top="1418" w:right="'+D.MARGIN+'" w:bottom="1418" w:left="'+D.MARGIN+'" w:header="708" w:footer="567" w:gutter="0"/>';
+  /* Urutan wajib dalam <w:sectPr>: (header/footer) -> type -> pgSz -> pgMar -> pgNumType */
+  const secCover='<w:sectPr><w:type w:val="nextPage"/>'+pg+marCover+'</w:sectPr>';
+  const secToc  ='<w:sectPr><w:type w:val="nextPage"/>'+pg+marCover+'</w:sectPr>';
+  /* Bagian ISI: kop (header) & footer berulang + nomor halaman dimulai dari 1 */
+  const secIsi  ='<w:headerReference r:type="default" r:id="rId3"/>'+
+                 '<w:footerReference r:type="default" r:id="rId4"/>'+
+                 '<w:type w:val="nextPage"/>'+pg+marIsi+'<w:pgNumType w:start="1"/>';
+
+  let body='';
+  /* 1) COVER */
+  body += spkDxCover(data, ctx, logo);
+  body += '<w:p><w:pPr>'+secCover+'</w:pPr></w:p>';
+  /* 2) DAFTAR ISI */
+  body += spkDxToc(data);
+  body += '<w:p><w:pPr>'+secToc+'</w:pPr></w:p>';
+  /* 3) ISI KONTRAK — judul + pembuka + klausul + tanda tangan */
+  body += spkPXml2('KlausulIsi','<w:jc w:val="center"/><w:spacing w:after="0"/>',
+            spkRunXml('SURAT PERINTAH KERJA',{b:true}));
+  if(data.nomor_kontrak){
+    body += spkPXml2('KlausulIsi','<w:jc w:val="center"/><w:spacing w:after="240"/>',
+              spkRunXml('No. '+String(data.nomor_kontrak),{}));
+  }
+  try{
+    const pre=spkNomorToNo(spkNumberFix(spkTidyKeyValue(spkMerge(SPK_PREAMBLE_TPL, ctx))));
+    body += spkHtmlToWordParas(pre) || '';
+  }catch(e){ console.warn('pembuka .docx:', e); }
+  klausul.forEach(function(k,i){
+    const no=i+1;
+    body += spkPXml2('KlausulJudul','<w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr>',
+              spkRunsFromHtml(spkJudulSan(k.judul||'')));
+    let isi='';
+    try{
+      isi=spkNomorToNo(spkNumberFix(spkTidyKeyValue(
+            spkPruneKlausul(spkMerge(spkRenumberKlausul(k.isi||'', no), ctx), no, data))));
+    }catch(e){ isi=String(k.isi||''); }
+    body += spkHtmlToWordParas(isi) || spkPXml('KlausulIsi','');
+  });
+  body += spkDxSign(ctx);
+  if(/<\/w:tbl>\s*$/.test(body)) body += spkPXml('KlausulIsi','');
+
+  const docXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+    '<w:document'+SPK_DX_NS+'><w:body>'+ body +'<w:sectPr>'+secIsi+'</w:sectPr></w:body></w:document>';
+
+  const ct='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+    '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'+
+    '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'+
+    '<Default Extension="xml" ContentType="application/xml"/>'+
+    '<Default Extension="png" ContentType="image/png"/>'+
+    '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'+
+    '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>'+
+    '<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>'+
+    '<Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/>'+
+    '<Override PartName="/word/header1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml"/>'+
+    '<Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/>'+
+    '</Types>';
+  const rels='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
+    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>'+
+    '</Relationships>';
+  const drels='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
+    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'+
+    '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>'+
+    '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header" Target="header1.xml"/>'+
+    '<Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/>'+
+    '<Relationship Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/logo.png"/>'+
+    '<Relationship Id="rId6" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/>'+
+    '</Relationships>';
+  const hrels='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
+    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/logo.png"/>'+
+    '</Relationships>';
+  /* updateFields -> Word menawarkan memperbarui Daftar Isi saat dokumen dibuka */
+  const setxml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+    '<w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'+
+    '<w:updateFields w:val="true"/></w:settings>';
+
+  const files=[
+    {name:'[Content_Types].xml', data:enc.encode(ct)},
+    {name:'_rels/.rels',         data:enc.encode(rels)},
+    {name:'word/document.xml',   data:enc.encode(docXml)},
+    {name:'word/_rels/document.xml.rels', data:enc.encode(drels)},
+    {name:'word/styles.xml',     data:enc.encode(spkStylesXml())},
+    {name:'word/numbering.xml',  data:enc.encode(spkNumberingXml(1))},
+    {name:'word/settings.xml',   data:enc.encode(setxml)},
+    {name:'word/header1.xml',    data:enc.encode(spkDxHeaderXml(data, logo))},
+    {name:'word/footer1.xml',    data:enc.encode(spkDxFooterXml())},
+    {name:'word/_rels/header1.xml.rels', data:enc.encode(hrels)}
+  ];
+  if(logo) files.push({name:'word/media/logo.png', data:logo.bytes});
+  return spkZipBuild(files);
+}
+function spkDocxKontrakDownload(id){
+  const rec=(records_spk||[]).find(function(r){ return String(r.id)===String(id); });
+  if(!rec){ toast('Kontrak tidak ditemukan','warn'); return; }
+  try{
+    const blob=spkDocxKontrakBlob(rec);
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=spkFileName(rec,'docx');
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+    toast('Buka di Word, simpan sebagai PDF, lalu unggah PDF-nya di sini','ok');
+  }catch(e){ console.error(e); toast('Gagal membuat .docx','warn'); }
+}
+
 function spkOpenPreview(data, klausul){
   spkPreviewData=data; spkPreviewKlausul=klausul;
   const html=spkDocHtml(data, klausul);
@@ -18922,7 +19387,8 @@ function spkStylesXml(){
     /* Judul klausul: nomor di margin, teks judul pada 0,75 cm (hanging) */
     spkStyXml('KlausulJudul','Klausul Judul',
       '<w:ind w:left="'+SPK_DX.IND_JUDUL+'" w:hanging="'+SPK_DX.IND_JUDUL+'"/>',
-      tabH+'<w:spacing w:before="240" w:after="60" w:line="276" w:lineRule="auto"/><w:jc w:val="left"/>',
+      /* outlineLvl 0 -> judul klausul dikenali sebagai entri DAFTAR ISI otomatis Word */
+      tabH+'<w:spacing w:before="240" w:after="60" w:line="276" w:lineRule="auto"/><w:jc w:val="left"/><w:outlineLvl w:val="0"/>',
       '<w:b/><w:caps/>')+
     /* Isi klausul: sejajar dengan huruf sesudah nomor (0,75 cm) */
     spkStyXml('KlausulIsi','Klausul Isi','<w:ind w:left="'+SPK_DX.IND+'"/>','','')+
