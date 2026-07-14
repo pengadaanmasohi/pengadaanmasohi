@@ -281,7 +281,7 @@ function lsPersist(arr){ /* no-op: penyimpanan lokal dinonaktifkan */ }
    PRIMARY KEY (kind, name). */
 const PROFILE_TABLE = 'app_profiles';
 /* Cache per-jenis profil. Diisi saat login (profilesLoadAll) & write-through saat simpan. */
-const profileCache = { jadwal: [], syarat: [], klausul: [] };
+const profileCache = { jadwal: [], syarat: [], klausul: [], penyedia: [] };
 let profilesReady = false;
 /* Muat semua profil dari Supabase ke cache. Dipanggil sekali setelah login.
    Bila gagal (tabel belum dibuat / offline), cache tetap kosong & aplikasi
@@ -292,7 +292,7 @@ async function profilesLoadAll(){
   try{
     const {data,error}=await db.from(PROFILE_TABLE).select('kind,name,payload').order('updated_at',{ascending:false});
     if(error) throw error;
-    profileCache.jadwal=[]; profileCache.syarat=[]; profileCache.klausul=[];
+    profileCache.jadwal=[]; profileCache.syarat=[]; profileCache.klausul=[]; profileCache.penyedia=[];
     (data||[]).forEach(row=>{
       const k=row.kind; if(!profileCache[k]) return;
       let obj=row.payload;
@@ -14105,6 +14105,7 @@ async function spkNewKontrak(){
   // Pustaka klausul milik kontrak ini: SELALU mulai dari bawaan (3 klausul kosong)
   records_klausul = spkKlDefault();
   spkKlProfil.active=''; spkKlProfil.backup=null;
+  spkPyProfil.active=''; spkPyProfil.backup=null;
   spkState=spkBlankState();
   spkKlSync();
   resetInputBaru('spk');           // kontrak baru: tanpa pilihan pekerjaan & tautan HPS
@@ -14270,8 +14271,16 @@ function renderSpkSusun(){
     // Tombol "Pilih Pekerjaan" (pojok kanan atas kartu pertama) — sama seperti pada
     // menu Harga Perkiraan Sendiri. Mengisi field mail merge & Lampiran dari HPS.
     const pickBtn = (gi===0) ? dpPickBtnHtml('spk') : '';
+    const secIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M4 4h16v16H4z" opacity="0"/><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>';
+    // Kartu "Informasi Penyedia" mendapat bar Profil (Simpan / Muat / Batalkan) di kanan-atas.
+    const titleHtml = (g.sec==='Informasi Penyedia')
+      ? '<div class="form-section-title" style="justify-content:space-between">'+
+          '<span>'+secIcon+' '+fkEsc(g.sec)+spkPyProfilTagHtml()+'</span>'+
+          spkPyProfilBarHtml()+
+        '</div>'
+      : '<div class="form-section-title">'+secIcon+' '+fkEsc(g.sec)+pickBtn+'</div>';
     return '<div class="form-card">'+
-      '<div class="form-section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M4 4h16v16H4z" opacity="0"/><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg> '+fkEsc(g.sec)+pickBtn+'</div>'+
+      titleHtml+
       '<div class="form-flow" style="--cols:'+cols+'">'+fieldsHtml+'</div>'+
     '</div>';
   }).join('');
@@ -14457,6 +14466,7 @@ function spkEditRecord(id){
   // Pustaka klausul dimuat dari kontrak ini sendiri (bukan pustaka global)
   spkKlLoadFor(rec);
   spkKlProfil.active=''; spkKlProfil.backup=null;
+  spkPyProfil.active=''; spkPyProfil.backup=null;
   spkEditId=rec.id; spkState=spkRecordToState(rec); spkStep=1;
   spkKlSync();
   renderSpkSusun(); showView('spk-susun');
@@ -17891,6 +17901,122 @@ function spkKlausulResetDefault(){
       spkKlProfil.active=''; spkKlProfil.backup=null;
       renderSpkKlausul(); toast('Pustaka klausul kembali ke bawaan (3 klausul kosong)','ok');
     }});
+}
+
+/* ================= PROFIL INFORMASI PENYEDIA =================
+   Profil = rekaman seluruh field "Informasi Penyedia" (nama perusahaan, lokasi,
+   pimpinan, rekening, penawaran, akta pendirian & perubahan). Disimpan di Supabase
+   pada tabel profil yang SAMA (app_profiles) dengan kind='penyedia' — TIDAK perlu
+   tabel/skrip SQL baru. Cache: profileCache.penyedia.
+   - Simpan Profil    : merekam data penyedia saat ini dengan sebuah nama
+   - Muat Profil      : mengisi field penyedia dari profil terpilih (data lama dibackup)
+   - Batalkan Pilihan : mengembalikan data penyedia ke keadaan sebelum profil dimuat
+   Kontrak baru tetap mulai dari tampilan bawaan (field kosong + teks akta default).
+   ============================================================= */
+const SPK_PY_PROFIL_KIND='penyedia';
+var spkPyProfil={ active:'', backup:null };
+/* Daftar key field yang termasuk "Informasi Penyedia" (kecuali field otomatis).
+   No. Penawaran & Tgl. Penawaran DIKECUALIKAN: keduanya spesifik per-kontrak,
+   bukan bagian identitas penyedia yang dipakai ulang antar-kontrak. */
+const SPK_PY_PROFIL_EXCLUDE = ['no_penawaran_penyedia','tgl_penawaran'];
+function spkPyProfilFields(){
+  const g=(SPK_FIELD_GROUPS||[]).find(x=>x.sec==='Informasi Penyedia');
+  return g ? g.fields.filter(f=>!f.auto && SPK_PY_PROFIL_EXCLUDE.indexOf(f.k)<0).map(f=>f.k) : [];
+}
+function spkPyProfilAll(){ return profilesGet(SPK_PY_PROFIL_KIND); }
+function spkPyProfilSnapshot(){
+  const d=(spkState&&spkState.data)||{}; const out={};
+  spkPyProfilFields().forEach(k=>{ out[k]=(d[k]!=null? d[k] : ''); });
+  return out;
+}
+/* Isi field penyedia dari sebuah objek nilai lalu segarkan tampilan & field otomatis. */
+function spkPyProfilApply(vals){
+  if(!spkState || !vals) return;
+  spkPyProfilFields().forEach(k=>{ if(Object.prototype.hasOwnProperty.call(vals,k)) spkState.data[k]=vals[k]; });
+  spkRefreshAuto();
+  renderSpkSusun();
+}
+/* Tag "Profil: <nama>" di sebelah judul section (muncul saat profil sedang dimuat). */
+function spkPyProfilTagHtml(){
+  return spkPyProfil.active
+    ? '<span class="spk-klprof-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:13px;height:13px"><path d="M20 6 9 17l-5-5"/></svg>Profil: '+fkEsc(spkPyProfil.active)+'</span>'
+    : '';
+}
+/* Bar tombol Simpan / Muat / (Batalkan) di kanan-atas kartu Informasi Penyedia. */
+function spkPyProfilBarHtml(){
+  const btnBatal = spkPyProfil.active
+    ? '<button type="button" class="jp-profil-btn is-cancel" title="Kembalikan data penyedia ke keadaan sebelum profil dimuat" onclick="spkPyProfilCancel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg><span>Batalkan Pilihan</span></button>'
+    : '';
+  return '<span class="spk-klbar">'+
+    '<button type="button" class="jp-profil-btn is-save" onclick="spkPyProfilOpenSave()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg><span>Simpan Profil</span></button>'+
+    '<button type="button" class="jp-profil-btn is-load" onclick="spkPyProfilOpenLoad()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6M9 14h6"/></svg><span>Muat Profil</span></button>'+
+    btnBatal+
+  '</span>';
+}
+function spkPyProfilOverlay(inner){
+  let ov=document.getElementById('pnw-profil-ov');
+  if(!ov){ ov=document.createElement('div'); ov.id='pnw-profil-ov'; ov.className='pnw-profil-ov'; document.body.appendChild(ov); }
+  ov.onclick=(e)=>{ if(e.target===ov) spkPyProfilClose(); };
+  ov.innerHTML='<div class="pnw-profil-modal" role="dialog">'+inner+'</div>'; ov.style.display='flex';
+}
+function spkPyProfilClose(){ const ov=document.getElementById('pnw-profil-ov'); if(ov) ov.style.display='none'; }
+function spkPyProfilOpenSave(){
+  const snap=spkPyProfilSnapshot();
+  const adaIsi=Object.keys(snap).some(k=>String(snap[k]||'').trim()!=='');
+  if(!adaIsi){ toast('Isi data penyedia dulu sebelum menyimpan profil','warn'); return; }
+  const list=spkPyProfilAll();
+  const existing = list.length ? ('<div class="pnw-profil-existing">Profil tersimpan: '+list.map(p=>fkEsc(p.name)).join(' &middot; ')+'</div>') : '';
+  spkPyProfilOverlay(
+    '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Simpan Profil Penyedia</div>'+
+    '<div class="pnw-profil-sub">Menyimpan seluruh data <b>Informasi Penyedia</b> (nama perusahaan, lokasi, pimpinan, rekening, penawaran, akta) sebagai satu profil yang dapat dimuat kembali kapan saja.</div>'+
+    '<input id="spk-pyprofil-name" class="pnw-profil-input" type="text" placeholder="Nama profil (mis. PT Seram Indo Pratama)" maxlength="60" onkeydown="if(event.key===\'Enter\')spkPyProfilDoSave()">'+
+    existing+
+    '<div class="pnw-profil-actions"><button type="button" class="btn btn-ghost" onclick="spkPyProfilClose()">Batal</button>'+
+    '<button type="button" class="btn btn-teal" onclick="spkPyProfilDoSave()">Simpan Profil</button></div>'
+  );
+  setTimeout(function(){ const el=document.getElementById('spk-pyprofil-name'); if(el) el.focus(); },60);
+}
+async function spkPyProfilDoSave(){
+  const el=document.getElementById('spk-pyprofil-name'); const name=(el&&el.value||'').trim();
+  if(!name){ toast('Isi nama profil dulu','warn'); if(el) el.focus(); return; }
+  const snap={ name:name, savedAt:Date.now(), data:spkPyProfilSnapshot() };
+  if(await profilesUpsert(SPK_PY_PROFIL_KIND, snap)){ toast('Profil "'+name+'" tersimpan','ok'); spkPyProfilClose(); }
+}
+function spkPyProfilOpenLoad(){
+  const list=spkPyProfilAll();
+  if(!list.length){ toast('Belum ada profil penyedia. Simpan dulu lewat tombol "Simpan Profil".','warn'); return; }
+  const items=list.slice().sort((a,b)=>(b.savedAt||0)-(a.savedAt||0)).map(function(p){
+    const sub=fkEsc((p.data&&p.data.nama_perusahaan)||p.name);
+    return '<div class="pnw-profil-item"><div class="pnw-profil-item-info"><div class="pnw-profil-item-name">'+fkEsc(p.name)+'</div>'+
+      '<div class="pnw-profil-item-meta">'+sub+'</div></div>'+
+      '<div class="pnw-profil-item-btns"><button type="button" class="btn btn-teal pnw-profil-mini" onclick="spkPyProfilDoLoad(\''+fkEscJs(p.name)+'\')">Muat</button>'+
+      '<button type="button" class="btn btn-ghost pnw-profil-mini" onclick="spkPyProfilDoDelete(\''+fkEscJs(p.name)+'\')">Hapus</button></div></div>';
+  }).join('');
+  spkPyProfilOverlay(
+    '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6M9 14h6"/></svg>Muat Profil Penyedia</div>'+
+    '<div class="pnw-profil-sub">Data <b>Informasi Penyedia</b> saat ini akan <b>diganti</b> oleh isi profil. Keadaan sebelumnya disimpan sementara sehingga dapat dikembalikan lewat <b>Batalkan Pilihan</b>.</div>'+
+    '<div class="pnw-profil-list">'+items+'</div>'
+  );
+}
+async function spkPyProfilDoDelete(name){
+  if(await profilesDelete(SPK_PY_PROFIL_KIND, name)){ toast('Profil "'+name+'" dihapus','ok'); if(spkPyProfilAll().length) spkPyProfilOpenLoad(); else spkPyProfilClose(); }
+}
+function spkPyProfilDoLoad(name){
+  if(typeof requireInput==='function' && !requireInput()) return;
+  const p=spkPyProfilAll().find(x=>String(x.name)===String(name));
+  if(!p || !p.data){ toast('Profil tidak ditemukan','warn'); return; }
+  const backup=spkPyProfilSnapshot();
+  spkPyProfil.active=name; spkPyProfil.backup=backup;   // set sebelum render agar tag & tombol Batalkan muncul
+  spkPyProfilApply(p.data);
+  spkPyProfilClose();
+  toast('Profil "'+name+'" dimuat','ok');
+}
+/* "Batalkan Pilihan" -> kembalikan data penyedia ke keadaan sebelum profil dimuat. */
+function spkPyProfilCancel(){
+  const bk=spkPyProfil.backup;
+  spkPyProfil.active=''; spkPyProfil.backup=null;
+  if(bk) spkPyProfilApply(bk); else renderSpkSusun();
+  toast('Data penyedia dikembalikan seperti sebelum profil dimuat','ok');
 }
 function spkKlausulMove(id, dir){
   if(typeof requireInput==='function' && !requireInput()) return;
