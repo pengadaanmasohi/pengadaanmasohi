@@ -13768,9 +13768,22 @@ function spkNomorToNo(html){
 /* Rapikan pola "Label / : / nilai" (tiga paragraf berurutan) menjadi satu baris
    sejajar seperti tampilan Word — dipakai pada blok Nama/Lokasi Pekerjaan dsb. */
 function spkTidyKeyValue(html){
-  return String(html||'').replace(
-    /<p class="kl0">([^<:]{1,45})<\/p>\s*<p class="kl0">:<\/p>\s*<p class="kl0">([^<]*)<\/p>/g,
-    '<div class="spk-kv"><span class="k">$1</span><span class="s">:</span><span class="v">$2</span></div>'
+  var src=spkFixLH(html);                                    /* rapikan spasi baris lama dulu */
+  /* Margin (spasi sebelum/sesudah) paragraf sumber DIBAWA ke baris .spk-kv, supaya
+     jarak yang diatur pengguna (mis. 12 pt setelah "Lokasi") tidak hilang & tidak
+     menyusut menjadi 4 pt bawaan CSS. */
+  function kvSty(attr){
+    var m=/style\s*=\s*"([^"]*)"/i.exec(attr||''); if(!m) return '';
+    var keep=String(m[1]).match(/margin-(?:top|bottom)\s*:\s*[^;"]+/gi);
+    return keep ? (' style="'+keep.join(';')+'"') : '';
+  }
+  return String(src||'').replace(
+    /<p class="kl0"([^>]*)>([^<:]{1,45})<\/p>\s*<p class="kl0"[^>]*>:<\/p>\s*<p class="kl0"([^>]*)>([^<]*)<\/p>/g,
+    function(m, aK, k, aV, v){
+      var sty=kvSty(aV) || kvSty(aK);
+      return '<div class="spk-kv"'+sty+'><span class="k">'+k+'</span>'+
+             '<span class="s">:</span><span class="v">'+v+'</span></div>';
+    }
   );
 }
 
@@ -14790,10 +14803,60 @@ function spkPreviewCurrent(){
    Selama ini dokumen memakai line-height:1.15 sambil menyebutnya "1,15", padahal
    yang tercetak adalah spasi tunggal. Semua nilai kini dikonversi lewat SPK_LH_K
    supaya angka yang tertulis di aplikasi = angka yang sama di Word. */
-const SPK_LH_K = 1.15;                                   /* tinggi baris tunggal (em) */
+/* K = TINGGI BARIS TUNGGAL font dokumen (em). Nilai tetap 1,15 hanya benar untuk
+   Arial/Calibri; Inter ~1,21 dan Book Antiqua ~1,29 -> memakai 1,15 untuk semua font
+   membuat hasil web lebih RAPAT daripada Word. Karena itu K diukur langsung dari font
+   yang benar-benar dipakai (CSS line-height:normal = "Single" di Word). */
+let SPK_LH_K = 1.15;                                     /* tinggi baris tunggal (em) */
+const SPK_DOC_FONT = '"Inter","Segoe UI",Arial,sans-serif';
+function spkFontK(fam, size){
+  try{
+    var d=document.getElementById('spk-lh-probe');
+    if(!d){ d=document.createElement('div'); d.id='spk-lh-probe'; document.body.appendChild(d); }
+    d.style.cssText='position:absolute;visibility:hidden;left:-9999px;top:0;white-space:nowrap;'+
+      'margin:0;padding:0;border:0;line-height:normal;font-family:'+(fam||SPK_DOC_FONT)+
+      ';font-size:'+(size||'11pt');
+    d.textContent='Hg';
+    var k=d.getBoundingClientRect().height/parseFloat(getComputedStyle(d).fontSize);
+    return (k>1 && k<2) ? Math.round(k*1000)/1000 : null;
+  }catch(e){ return null; }
+}
+/* Ukur K sekali (setelah font web selesai dimuat), lalu sebarkan ke CSS lewat --spk-lh
+   sehingga style.css & CSS dokumen memakai angka yang sama. */
+function spkLHInit(){
+  var k=spkFontK(SPK_DOC_FONT,'11pt');
+  if(k) SPK_LH_K=k;
+  try{ document.documentElement.style.setProperty('--spk-lh', spkLHCss(1.15)); }catch(e){}
+}
+try{
+  if(document.fonts && document.fonts.ready && document.fonts.ready.then) document.fonts.ready.then(spkLHInit);
+  else if(document.readyState!=='loading') spkLHInit();
+  else document.addEventListener('DOMContentLoaded', spkLHInit);
+}catch(e){}
 function spkLHCss(word){                                  /* nilai Word -> line-height CSS */
   var n=parseFloat(word); if(isNaN(n)) return '';
   return String(Math.round(n*SPK_LH_K*1000)/1000);
+}
+/* ---- NORMALISASI SPASI BARIS LAMA -------------------------------------------
+   Klausul yang tersimpan/di-impor sebelum koreksi K membawa inline
+   line-height:1.15 (yang sebenarnya = spasi TUNGGAL Word) dan style inline itu
+   MENGALAHKAN CSS dokumen. Nilai <=1,2 dianggap "1,15 gaya lama" lalu dikonversi ke
+   nilai Word yang benar. Spasi "Pas/Exactly" (pt/px/cm/%) dan spasi >=1,5 dibiarkan. */
+function spkFixLH(html){
+  var s=String(html==null?'':html);
+  if(!s || s.indexOf('line-height')<0) return s;
+  try{
+    var box=document.createElement('div'); box.innerHTML=s;
+    var els=box.querySelectorAll('p,div,li,span'), i, lh, n;
+    for(i=0;i<els.length;i++){
+      lh=String((els[i].style && els[i].style.lineHeight)||'').trim();
+      if(!lh || lh==='normal') continue;
+      if(/(pt|px|cm|mm|in|%)$/i.test(lh)) continue;        /* spasi pas -> hormati */
+      n=parseFloat(lh);
+      if(!isNaN(n) && n<=1.2) els[i].style.lineHeight=spkLHCss(1.15);
+    }
+    return box.innerHTML;
+  }catch(e){ return s; }
 }
 function spkLHWord(css){                                  /* line-height CSS -> nilai Word */
   var n=parseFloat(css); if(isNaN(n)) return null;
@@ -14806,7 +14869,10 @@ function spkDocCss(){
      Hanya ISI kontrak yang dirapikan mengikuti tampilan Word (Arial). */
   '@page{size:A4 portrait;margin:0}'+
   '*{box-sizing:border-box}'+
-  'body{font-family:"Inter","Segoe UI",Arial,sans-serif;color:#1c1c1c;margin:0;font-size:11.5px;line-height:1.15}'+
+  /* Variabel dokumen: --spk-lh = nilai CSS untuk "1,15 baris" gaya Word (hasil koreksi K),
+     --spk-kv-gap = jarak bawaan baris "Label : nilai" bila tidak diatur sendiri. */
+  ':root{--spk-lh:'+spkLHCss(1.15)+';--spk-kv-gap:4pt}'+
+  'body{font-family:"Inter","Segoe UI",Arial,sans-serif;color:#1c1c1c;margin:0;font-size:11.5px;line-height:var(--spk-lh,1.32)}'+
   '.spk-doc{counter-reset:spkcl}'+
   /* Penomoran judul klausul dibuat OTOMATIS (counter), bukan teks biasa */
   '.spk-clause{counter-increment:spkcl}'+
@@ -14871,7 +14937,7 @@ function spkDocCss(){
      sejajar di tingkat-1 (0,75 cm) seperti Word; huruf a./b. tetap di 1,5 cm. */
   '.spk-cl p.kl2.spk-lv1{margin-left:1.27cm;text-indent:-1.27cm;padding-left:0}'+
   /* Baris "Label : nilai" agar sejajar seperti Word */
-  '.spk-cl .spk-kv{display:flex;margin:0 0 4pt;line-height:'+spkLHCss(1.15)+'}'+
+  '.spk-cl .spk-kv{display:flex;margin:0 0 var(--spk-kv-gap,4pt);line-height:'+spkLHCss(1.15)+'}'+
   '.spk-cl .spk-kv .k{flex:0 0 34%;max-width:34%}'+
   '.spk-cl .spk-kv .s{flex:0 0 auto;width:1.2em}'+
   '.spk-cl .spk-kv .v{flex:1;text-align:justify}'+
@@ -15154,6 +15220,15 @@ function spkDocCss2(){
   '.spk-sheet > .sh-hd{flex:0 0 auto}'+
   '.spk-sheet > .sh-bd{flex:1 1 auto;overflow:hidden}'+
   '.spk-sheet > .sh-ft{flex:0 0 auto;margin-top:auto}'+
+  /* ---- JUDUL KLAUSUL DI AWAL LEMBAR ----
+     Blok pertama pada setiap lembar TIDAK boleh membawa "spasi sebelum" (judul klausul
+     bawaannya 12 pt) karena akan mendorongnya turun dari margin atas. Sama seperti Word
+     dengan opsi "Suppress Space Before after hard page break". Jarak dari kop ke judul
+     cukup diatur oleh kop itu sendiri. */
+  '.spk-sheet > .sh-bd > *:first-child{margin-top:0 !important}'+
+  '.spk-sheet > .sh-bd > .spk-clause:first-child > .spk-cl-h:first-child{margin-top:0 !important;padding-top:0}'+
+  '.spk-sheet > .sh-bd > .spk-clause:first-child > .spk-cl-h:first-child + .spk-cl{margin-top:0}'+
+  '.spk-sheet > .sh-hd + .sh-bd{padding-top:0}'+
   /* halaman tanda tangan sudah berada pada lembarnya sendiri -> jangan paksa
      pindah halaman lagi (agar tidak muncul halaman kosong saat dicetak) */
   '.spk-sheet .spk-signpage{page-break-before:auto;break-before:auto;padding-top:0}'+
@@ -15637,7 +15712,7 @@ function spkWENormalizeIn(html){
     }
     if(p.innerHTML.trim()==='') p.innerHTML='<br>';
   }
-  return tmp.innerHTML;
+  return spkFixLH(tmp.innerHTML);      /* spasi baris lama (1,15 = tunggal) -> 1,15 gaya Word */
 }
 
 /* --- Serialisasi keluar: hasil HTML bersih dengan kelas dokumen kl* --- */
@@ -16027,21 +16102,28 @@ function spkWEAlign(dir){
 }
 
 /* --- Cari <p> yang sedang aktif (tempat kursor) --- */
+/* Blok paragraf editor = <p> DAN baris "Label : nilai" (.spk-kv, sebuah <div>).
+   Tanpa ini, dialog Paragraf / spasi baris tidak pernah mengenai baris kv sehingga
+   pengaturan 12 pt pada baris "Lokasi" tidak berpengaruh. */
+const SPK_WE_BLK_SEL='p,.spk-kv';
+function spkWEIsBlk(n){
+  return !!(n && n.nodeType===1 && (n.tagName==='P' || (n.classList && n.classList.contains('spk-kv'))));
+}
 function spkWECurrentP(){
   var sel=window.getSelection(); if(!sel.rangeCount) return null;
   var node=sel.anchorNode; if(!node) return null;
   if(node.nodeType===3) node=node.parentNode;
   var doc=document.getElementById('spk-we-doc');
-  while(node && node!==doc && node.tagName!=='P') node=node.parentNode;
-  return (node && node.tagName==='P')? node : null;
+  while(node && node!==doc && !spkWEIsBlk(node)) node=node.parentNode;
+  return spkWEIsBlk(node)? node : null;
 }
 
-/* Semua <p> yang tersentuh seleksi */
+/* Semua blok (p / baris kv) yang tersentuh seleksi */
 function spkWESelectedPs(){
   var doc=document.getElementById('spk-we-doc'); if(!doc) return [];
   var sel=window.getSelection(); if(!sel.rangeCount) { var p=spkWECurrentP(); return p?[p]:[]; }
   var range=sel.getRangeAt(0);
-  var ps=Array.prototype.slice.call(doc.querySelectorAll('p'));
+  var ps=Array.prototype.slice.call(doc.querySelectorAll(SPK_WE_BLK_SEL));
   var hit=ps.filter(function(p){ return range.intersectsNode ? range.intersectsNode(p) : true; });
   if(!hit.length){ var c=spkWECurrentP(); if(c) hit=[c]; }
   return hit;
@@ -16694,7 +16776,7 @@ function spkWETakeTargets(){
   spkWETargets=null;
   if(!ps.length) ps=spkWESelectedPs();
   if(!ps.length){ var c=spkWECurrentP(); if(c) ps=[c]; }
-  if(!ps.length && doc){ var all=doc.querySelectorAll('p'); if(all.length) ps=[all[all.length-1]]; }
+  if(!ps.length && doc){ var all=doc.querySelectorAll(SPK_WE_BLK_SEL); if(all.length) ps=[all[all.length-1]]; }
   return ps;
 }
 /* Kembalikan sorotan ke paragraf yang baru diproses */
@@ -18147,6 +18229,18 @@ function spkPageScript(){
     ' }',
     ' sec.parentNode.removeChild(sec);',
     '}',
+    /* Blok pertama pada tiap lembar: buang spasi-sebelum (mis. judul klausul 12 pt)
+       agar judul duduk PERSIS di margin atas, tidak terdorong ke bawah. Berlaku juga
+       untuk paragraf yang membawa margin-top inline dari Word. */
+    'function rapikanAtasLembar(){',
+    ' var bd=document.querySelectorAll(".spk-doc .spk-page.spk-sheet > .sh-bd");',
+    ' for(var i=0;i<bd.length;i++){',
+    '   var k=bd[i].firstElementChild; if(!k) continue;',
+    '   try{ k.style.marginTop="0"; }catch(e){}',
+    '   var h=k.firstElementChild;',
+    '   if(h && hasCls(h,"spk-cl-h")){ try{ h.style.marginTop="0"; h.style.paddingTop="0"; }catch(e2){} }',
+    ' }',
+    '}',
     /* klausul yang terpotong: hanya lembar PERTAMA yang menaikkan nomor klausul */
     'function tandaiLanjutan(){',
     ' var seen={}, cl=document.querySelectorAll(".spk-doc .spk-clause");',
@@ -18217,6 +18311,7 @@ function spkPageScript(){
     '   var list=document.querySelectorAll(".spk-doc > .spk-page.spk-flow");',
     '   for(var i=0;i<list.length;i++) build(list[i], hasCls(list[i],"spk-lampsheet")?PHL:PH, UID);',
     '   tandaiLanjutan();',
+    '   rapikanAtasLembar();',
     '   nomorToc();',
     '   nomorFooter();',
     '   fitLastRow();',
@@ -18942,9 +19037,11 @@ function spkRunsFromHtml(html){
   return rx;
 }
 /* Sel tabel: paragraf gaya "Klausul Isi" tanpa indent kiri (rata tabel) */
-function spkKvCellXml(w, runsXml){
+function spkKvCellXml(w, runsXml, sp){
+  sp=sp||{};
+  var spc='<w:spacing w:before="'+(+sp.before||0)+'" w:after="'+(+sp.after||0)+'"/>';
   return '<w:tc><w:tcPr><w:tcW w:w="'+w+'" w:type="dxa"/></w:tcPr>'+
-    '<w:p><w:pPr><w:pStyle w:val="KlausulIsi"/><w:spacing w:after="0"/><w:ind w:left="0"/></w:pPr>'+(runsXml||'')+'</w:p></w:tc>';
+    '<w:p><w:pPr><w:pStyle w:val="KlausulIsi"/>'+spc+'<w:ind w:left="0"/></w:pPr>'+(runsXml||'')+'</w:p></w:tc>';
 }
 /* Baris spk-kv (label:nilai) -> tabel 3 kolom borderless, sejajar isi klausul
    (menjorok 0,75 cm). Kolom: label | : | nilai. Round-trip dari tampilan web. */
@@ -18960,10 +19057,11 @@ function spkKvTableXml(rows){
   var grid='<w:tblGrid><w:gridCol w:w="'+W1+'"/><w:gridCol w:w="'+W2+'"/><w:gridCol w:w="'+W3+'"/></w:tblGrid>';
   var trs='';
   for(i=0;i<rows.length;i++){
+    var sp=rows[i].sp||{};                                  /* spasi baris kv (twips) */
     trs+='<w:tr>'+
-      spkKvCellXml(W1, spkRunsFromHtml(rows[i].k))+
-      spkKvCellXml(W2, spkRunXml(':',{}))+
-      spkKvCellXml(W3, spkRunsFromHtml(rows[i].v))+
+      spkKvCellXml(W1, spkRunsFromHtml(rows[i].k), sp)+
+      spkKvCellXml(W2, spkRunXml(':',{}), sp)+
+      spkKvCellXml(W3, spkRunsFromHtml(rows[i].v), sp)+
     '</w:tr>';
   }
   return '<w:tbl>'+pr+grid+trs+'</w:tbl>';
@@ -18980,7 +19078,9 @@ function spkHtmlToWordParas(html){
     /* baris "Label : nilai" -> kumpulkan lalu keluarkan sebagai tabel */
     if(el.classList && el.classList.contains('spk-kv')){
       var kEl=el.querySelector('.k'), vEl=el.querySelector('.v');
-      kvRun.push({ k:kEl?kEl.innerHTML:'', v:vEl?vEl.innerHTML:'' });
+      var _tw=function(v){ var n=spkWECssPt(v); return n==null?0:Math.round(n*20); };  /* pt -> twips */
+      kvRun.push({ k:kEl?kEl.innerHTML:'', v:vEl?vEl.innerHTML:'',
+                   sp:{ before:_tw(el.style.marginTop), after:_tw(el.style.marginBottom) } });
       continue;
     }
     if(el.querySelector && el.querySelector('p,div')) continue;   // lewati pembungkus
@@ -19260,11 +19360,24 @@ function spkWTblToHtml(tbl){
     var cells=[]; for(j=0;j<tcs.length;j++) cells.push(spkWTcText(tcs[j]));
     var filled=0; for(j=0;j<cells.length;j++){ if(cells[j].plain!=='') filled++; }
     if(!filled) continue;                                        // baris kosong -> lewati
+    /* Spasi sebelum/sesudah (w:spacing) paragraf di dalam baris tabel Word DIBACA dan
+       dipasang sebagai style inline pada .spk-kv -> 12 pt di Word tetap 12 pt di web. */
+    var wps=trs[i].getElementsByTagNameNS(SPK_W_NS,'p'), aft=0, bef=0, q, qPr, qSp;
+    for(q=0;q<wps.length;q++){
+      qPr=wps[q].getElementsByTagNameNS(SPK_W_NS,'pPr')[0];
+      qSp=qPr?spkReadPPr(qPr).sp:{};
+      if(qSp.after!=null)  aft=Math.max(aft, +qSp.after||0);
+      if(qSp.before!=null) bef=Math.max(bef, +qSp.before||0);
+    }
+    var rowSty='';
+    if(bef) rowSty+='margin-top:'+spkTwPt(bef)+'pt;';
+    if(aft) rowSty+='margin-bottom:'+spkTwPt(aft)+'pt;';
+    rowSty = rowSty ? (' style="'+rowSty+'"') : '';
     if(cells.length===3 && cells[1].plain===':'){                // label | : | nilai
-      html+='<div class="spk-kv"><span class="k"'+kStyle+'>'+cells[0].html+'</span>'+
+      html+='<div class="spk-kv"'+rowSty+'><span class="k"'+kStyle+'>'+cells[0].html+'</span>'+
             '<span class="s"'+sStyle+'>:</span><span class="v">'+cells[2].html+'</span></div>';
     }else if(cells.length===2){                                  // label | nilai
-      html+='<div class="spk-kv"><span class="k"'+kStyle+'>'+cells[0].html+'</span>'+
+      html+='<div class="spk-kv"'+rowSty+'><span class="k"'+kStyle+'>'+cells[0].html+'</span>'+
             '<span class="s"'+sStyle+'>:</span><span class="v">'+cells[1].html+'</span></div>';
     }else{                                                       // tabel lain -> gabung kolom
       var parts=[]; for(j=0;j<cells.length;j++){ if(cells[j].html) parts.push(cells[j].html); }
