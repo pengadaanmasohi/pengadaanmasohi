@@ -10749,6 +10749,17 @@ function hpsExtraDocCss(){
   'table.hps-doc-tbl tr.ttd-row{break-inside:avoid;page-break-inside:avoid}'+
   'table.hps-doc-tbl tr.ttd-row > td{padding:22px 10px 6px;background:transparent;border:none}'+
   'table.hps-doc-tbl tr.ttd-row table.ttd,table.hps-doc-tbl tr.ttd-row table.ttd td{border:none;background:transparent;padding:0}'+
+  /* Tanda tangan LAMPIRAN (.spk-lampsign) kini berada DI DALAM tabel agar menyatu
+     dengan baris rekap. Tanpa aturan di bawah, ia ikut terkena
+     'table.hps-doc-tbl td{border:1px solid ...}' sehingga muncul garis kotak, dan
+     tabel dalamnya bisa mengganggu perhitungan lebar kolom tabel induk.
+     Aturan berikut membebaskan border/latar DAN mengunci tabel tanda tangan agar
+     tidak pernah mempengaruhi lebar kolom tabel harga. */
+  'table.hps-doc-tbl tr.ttd-row > td{border:none;background:transparent}'+
+  'table.hps-doc-tbl tr.ttd-row .spk-lampsign,'+
+  'table.hps-doc-tbl tr.ttd-row table.spk-sign,'+
+  'table.hps-doc-tbl tr.ttd-row table.spk-sign td{border:none;background:transparent}'+
+  'table.hps-doc-tbl tr.ttd-row table.spk-sign{width:100%;table-layout:fixed;border-collapse:collapse}'+
   '.hps-foot{margin-top:26px;break-inside:avoid;page-break-inside:avoid}'+
   '.hps-foot .ttd,tr.ttd-row .ttd{width:100%;margin:0;border-collapse:collapse}'+
   '.hps-foot .ttd td,tr.ttd-row .ttd td{width:50%;text-align:center;vertical-align:top;padding:0 12px}'+
@@ -14440,6 +14451,16 @@ function spkDocCss2(){
   /* ---------- LEMBAR LAMPIRAN (dokumen bergaya HPS) ---------- */
   '.spk-lampsheet{page-break-before:always;break-before:page}'+
   '.spk-lampsheet .fkl-doc{padding:0;overflow:visible;background:transparent}'+
+  /* Jarak dari baris "Lokasi Pekerjaan" (akhir tabel info) ke tabel rincian harga.
+     Dulu jarak ini disumbang oleh judul seksi "B" (margin 22px) yang kini dihapus.
+     :not(.spk-cont) => hanya tabel ASLI yang diberi jarak; salinan tabel pada
+     halaman lanjutan (ditandai .spk-cont oleh paginator) tidak ikut terdorong. */
+  '.spk-lampsheet table.hps-doc-tbl:not(.spk-cont){margin-top:24pt}'+
+  /* Kolom label pada tabel info bawaan dokumen lebarnya 34% — jauh melebihi
+     kebutuhan teks "Nama Pekerjaan"/"Lokasi Pekerjaan", sehingga titik dua dan
+     nilainya terdorong jauh ke kanan. Dipersempit KHUSUS di Lampiran SPK
+     (dokumen HPS & lainnya tetap 34%). */
+  '.spk-lampsheet table.fkl-info td.k{width:20%}'+
   '.spk-lampsheet .fkl-doc-title{font-size:16px}'+
   /* Blok tanda tangan pada Lampiran: dua pihak (PIHAK KEDUA & PIHAK PERTAMA),
      tanggal di atas kolom PIHAK PERTAMA, nama bergaris bawah. */
