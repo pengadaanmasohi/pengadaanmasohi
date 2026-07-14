@@ -5082,7 +5082,7 @@ function renderJadwalView(){
       '<td class="col-date">'+fkEsc(r.tgl_selesai?pnwDateLong(r.tgl_selesai):'—')+'</td>'+
       '<td><div class="action-cell" style="justify-content:center">'+
         '<button class="act act-edit" title="Ubah" onclick="openJadwalKerja(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
-        '<button class="act act-view" title="Cetak / Pratinjau PDF" onclick="jadwalPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
+        '<button class="act act-view" title="Lihat" onclick="jadwalPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
         '<button class="act act-del" title="Hapus" onclick="jadwalDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>'+
       '</div></td>'+
     '</tr>';
@@ -6049,7 +6049,7 @@ function pnApplyDp(rec){
   pnState.ambil.dpNama=rec.nama_pekerjaan||((rec.state&&rec.state.info&&rec.state.info.nama))||'';
   renderPnAmbil();
   const kEl=document.getElementById('pn-uni-klas'); if(kEl && kv) kEl.value=kv;
-  toast('Data pekerjaan diterapkan: '+pnState.ambil.dpNama,'ok');
+  toast('Data pekerjaan berhasil diterapkan','ok');
 }
 function pnLepasDp(){
   const kv=(document.getElementById('pn-uni-klas')||{}).value||'';
@@ -7001,8 +7001,8 @@ function renderFklView(){
       '<td class="col-date">'+fkEsc(tgl?fklDateLong(tgl):'—')+'</td>'+
       '<td>'+fkEsc(fklMetodeShort(metode))+'</td>'+
       '<td><div class="action-cell" style="justify-content:center">'+
-        '<button class="act act-edit" title="Edit" onclick="openFklInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
-        '<button class="act act-view" title="Lihat (Pratinjau PDF)" onclick="fklPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
+        '<button class="act act-edit" title="Ubah" onclick="openFklInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
+        '<button class="act act-view" title="Lihat" onclick="fklPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
         '<button class="act act-del" title="Hapus" onclick="fklDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>'+
       '</div></td>'+
     '</tr>';
@@ -8073,8 +8073,8 @@ function renderPnwView(){
     const rid=fkEsc(String(r.id));
     // Baris aksi: jika dua sampul, dua baris data (Sampul Satu / Sampul Dua) dgn aksi terpisah
     const mkActions=(sk)=>'<div class="action-cell" style="justify-content:center">'+
-        '<button class="act act-edit" title="Edit" onclick="openPnwInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
-        '<button class="act act-view" title="Lihat (Pratinjau PDF)" onclick="pnwPreviewRecord(\''+rid+'\',\''+sk+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
+        '<button class="act act-edit" title="Ubah" onclick="openPnwInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
+        '<button class="act act-view" title="Lihat" onclick="pnwPreviewRecord(\''+rid+'\',\''+sk+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
         '<button class="act act-del" title="Hapus" onclick="pnwDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>'+
       '</div>';
     if(two){
@@ -8565,7 +8565,7 @@ function rhoApplyDp(rec){
   rhoSaveState();
   rhoRevealPick=true;   // pemicu animasi reveal konten di bawah tombol
   renderRhoForm();
-  toast('Data pekerjaan diterapkan: '+st.info.dpNama,'ok');
+  toast('Data pekerjaan berhasil diterapkan','ok');
 }
 /* Lepas pilihan Data Pekerjaan → kembali ke kondisi belum dipilih (wajib pilih ulang) */
 function rhoLepasDp(){
@@ -9151,8 +9151,8 @@ function renderRhoView(){
       '<td style="text-align:center">'+jr+'</td>'+
       '<td class="col-date">'+fkEsc(tgl?rhoDateLong(tgl):'—')+'</td>'+
       '<td><div class="action-cell" style="justify-content:center">'+
-        '<button class="act act-edit" title="Edit" onclick="openRhoInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
-        '<button class="act act-view" title="Lihat (Pratinjau PDF)" onclick="rhoPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
+        '<button class="act act-edit" title="Ubah" onclick="openRhoInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
+        '<button class="act act-view" title="Lihat" onclick="rhoPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
         '<button class="act act-del" title="Hapus" onclick="rhoDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>'+
       '</div></td>'+
     '</tr>';
@@ -9586,9 +9586,20 @@ function dpDeleteRecord(id){
 
 /* ================= PILIH DATA PEKERJAAN (dipakai bersama oleh HPS & Analisa) ================= */
 let _dpPickerTarget=null;   // 'hps' | 'ana'
+/* Segarkan daftar dokumen modul terkait agar status "sudah digunakan" akurat
+   walau pengguna belum sempat membuka halaman daftarnya. */
+const DP_USE_REFRESH = {
+  hps:'refreshDataHps', ana:'refreshDataAnalisa', rho:'refreshDataRho',
+  pnw:'refreshDataPembukaan', fkl:'refreshDataKelengkapan',
+  jadwal:'refreshDataJadwal', spk:'refreshDataSpk'
+};
+async function dpRefreshTarget(target){
+  const fn=DP_USE_REFRESH[target];
+  if(fn && typeof window[fn]==='function'){ try{ await window[fn](); }catch(e){ console.error(e); } }
+}
 function openDpPicker(target){
   _dpPickerTarget=target;
-  refreshDataDp().then(()=>{
+  Promise.all([refreshDataDp(), dpRefreshTarget(target)]).then(()=>{
     const ov=document.getElementById('dp-picker-overlay'); if(!ov) return;
     const srch=document.getElementById('dp-picker-search'); if(srch) srch.value='';
     renderDpPickerList();
@@ -9604,15 +9615,60 @@ function renderDpPickerList(){
   if(!rows.length){ list.innerHTML='<div class="hps-ana-empty">Belum ada data tersimpan.<br>Silakan buat lewat menu <b>Data Pekerjaan</b> terlebih dahulu.</div>'; return; }
   list.innerHTML=rows.map(r=>{
     const rid=fkEsc(String(r.id));
-    return '<div class="hps-ana-item" onclick="dpPickerSelect(\''+rid+'\')">'+
+    const dipakai=!!dpUsedBy(_dpPickerTarget, String(r.id));
+    const tag=dipakai?'<span class="dp-used-tag">Sudah digunakan</span>':'';
+    return '<div class="hps-ana-item'+(dipakai?' is-used':'')+'" onclick="dpPickerSelect(\''+rid+'\')">'+
       '<div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg></div>'+
-      '<div class="tx"><b>'+fkEsc(r.nama_pekerjaan||'—')+'</b><span>'+fkEsc(r.lokasi||'—')+' • '+fkEsc(r.metode||'—')+'</span></div>'+
+      '<div class="tx"><b>'+fkEsc(r.nama_pekerjaan||'—')+tag+'</b><span>'+fkEsc(r.lokasi||'—')+' • '+fkEsc(r.metode||'—')+'</span></div>'+
       '<div class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>'+
     '</div>';
   }).join('');
 }
+/* ================= CEGAH PEMAKAIAN GANDA DATA PEKERJAAN =================
+   Satu Data Pekerjaan hanya boleh dipakai oleh SATU dokumen pada modul yang sama.
+   Bila dokumen tersimpan sudah memakainya, pilihan ditolak dengan pesan
+   "Data pekerjaan sudah digunakan". Saat MENGUBAH dokumen, tautannya sendiri
+   tentu tidak dihitung sebagai bentrok.
+   Catatan: Penetapan Nomor ('pn') sengaja TIDAK dibatasi, karena satu pekerjaan
+   memang dirancang untuk menampung banyak nomor dokumen sekaligus. */
+const DP_USE_TARGETS = {
+  hps:    { label:'Perhitungan HPS',       list:()=>(typeof records_hps!=='undefined'?records_hps:[]),         edit:()=>(typeof hpsEditId!=='undefined'?hpsEditId:null) },
+  ana:    { label:'Analisa Harga Satuan',  list:()=>(typeof records_ana!=='undefined'?records_ana:[]),         edit:()=>(typeof anaEditId!=='undefined'?anaEditId:null) },
+  rho:    { label:'Riwayat Harga',         list:()=>(typeof records_rho!=='undefined'?records_rho:[]),         edit:()=>(typeof rhoEditId!=='undefined'?rhoEditId:null) },
+  pnw:    { label:'Pembukaan Penawaran',   list:()=>(typeof records_pembukaan!=='undefined'?records_pembukaan:[]),   edit:()=>(typeof pnwEditId!=='undefined'?pnwEditId:null) },
+  fkl:    { label:'Kelengkapan Dokumen',   list:()=>(typeof records_kelengkapan!=='undefined'?records_kelengkapan:[]), edit:()=>(typeof fklEditId!=='undefined'?fklEditId:null) },
+  jadwal: { label:'Jadwal Pengadaan',      list:()=>(typeof records_jadwal!=='undefined'?records_jadwal:[]),   edit:()=>(typeof jpEditId!=='undefined'?jpEditId:null) },
+  spk:    { label:'Kontrak (SPK)',         list:()=>(typeof records_spk!=='undefined'?records_spk:[]),         edit:()=>(typeof spkEditId!=='undefined'?spkEditId:null) }
+};
+/* Ambil tautan Data Pekerjaan dari sebuah record — bentuk penyimpanannya berbeda
+   antar modul (state.info.dpId / info.dpId / state.dpId / data.__dpId). */
+function dpIdOfRecord(r){
+  if(!r || typeof r!=='object') return '';
+  const s=(r.state && typeof r.state==='object') ? r.state : {};
+  const cand = (s.info && s.info.dpId) || (r.info && r.info.dpId) || s.dpId ||
+               (r.data && r.data.__dpId) || '';
+  return cand ? String(cand) : '';
+}
+/* Kembalikan record yang SUDAH memakai Data Pekerjaan ini (null bila belum) */
+function dpUsedBy(target, dpId){
+  const t=DP_USE_TARGETS[target];
+  if(!t || !dpId) return null;
+  let list=[]; try{ list=t.list()||[]; }catch(e){ list=[]; }
+  let cur=null;  try{ cur=t.edit(); }catch(e){ cur=null; }
+  return list.find(r=>{
+    if(cur && String(r.id)===String(cur)) return false;   // dokumen yang sedang diubah
+    return dpIdOfRecord(r)===String(dpId);
+  }) || null;
+}
+
 function dpPickerSelect(id){
   const rec=(records_dp||[]).find(r=>String(r.id)===String(id)); if(!rec) return;
+  // Tolak bila Data Pekerjaan ini sudah dipakai dokumen lain pada modul yang sama
+  const dipakai=dpUsedBy(_dpPickerTarget, String(rec.id));
+  if(dipakai){
+    toast('Data pekerjaan sudah digunakan','err');
+    return;
+  }
   if(_dpPickerTarget==='hps' && typeof hpsApplyDp==='function') hpsApplyDp(rec);
   else if(_dpPickerTarget==='ana' && typeof anaApplyDp==='function') anaApplyDp(rec);
   else if(_dpPickerTarget==='rho' && typeof rhoApplyDp==='function') rhoApplyDp(rec);
@@ -9689,7 +9745,7 @@ function pnwApplyDp(rec){
   st.info.dpId=String(rec.id);
   pnwSaveState();
   if(typeof renderPnwForm==='function') renderPnwForm();
-  toast('Data pekerjaan diterapkan: '+(rec.nama_pekerjaan||info.nama||''),'ok');
+  toast('Data pekerjaan berhasil diterapkan','ok');
 }
 /* Terapkan Data Pekerjaan terpilih ke modul Kelengkapan Dokumen */
 function fklApplyDp(rec){
@@ -9699,7 +9755,7 @@ function fklApplyDp(rec){
   st.info.dpId=String(rec.id);
   fklSaveState();
   if(typeof renderFormKelengkapan==='function') renderFormKelengkapan();
-  toast('Data pekerjaan diterapkan: '+(rec.nama_pekerjaan||info.nama||''),'ok');
+  toast('Data pekerjaan berhasil diterapkan','ok');
 }
 /* Terapkan Data Pekerjaan terpilih ke modul Tentukan Jadwal */
 function jadwalApplyDp(rec){
@@ -9714,7 +9770,7 @@ function jadwalApplyDp(rec){
   if(info.jenis_anggaran!=null&&info.jenis_anggaran!=='') jpState.jenisAnggaran=info.jenis_anggaran;
   jpState.dpId=String(rec.id);
   if(typeof renderJadwalKerja==='function') renderJadwalKerja();
-  toast('Data pekerjaan diterapkan: '+(rec.nama_pekerjaan||info.nama||''),'ok');
+  toast('Data pekerjaan berhasil diterapkan','ok');
 }
 
 /* ##################### AKHIR MODUL DATA PEKERJAAN #################### */
@@ -10098,9 +10154,9 @@ function hpsApplyDp(rec){
     const aRec=hpsCariAnalisaUntukDp(st.info.dpId, st.info.dpNama);
     if(aRec) hpsTerapkanAnalisa(aRec);
     renderHpsForm();
-    if(aRec && st.info.analisaJenis==='Umum') toast('Data pekerjaan & analisa diterapkan: '+st.info.dpNama,'ok');
-    else toast('Data pekerjaan diterapkan: '+st.info.dpNama,'ok');
-  }).catch(()=>{ renderHpsForm(); toast('Data pekerjaan diterapkan: '+st.info.dpNama,'ok'); });
+    if(aRec && st.info.analisaJenis==='Umum') toast('Data pekerjaan berhasil diterapkan (beserta analisa)','ok');
+    else toast('Data pekerjaan berhasil diterapkan','ok');
+  }).catch(()=>{ renderHpsForm(); toast('Data pekerjaan berhasil diterapkan','ok'); });
 }
 /* Lepas pilihan Data Pekerjaan → kembali ke kondisi belum dipilih (wajib pilih ulang) */
 function hpsLepasDp(){
@@ -10552,8 +10608,8 @@ function renderHpsView(){
       '<td class="col-num" style="text-align:right;font-weight:700">'+hpsRp(nilai)+'</td>'+
       '<td class="col-date">'+fkEsc(tgl?hpsDateLong(tgl):'—')+'</td>'+
       '<td><div class="action-cell" style="justify-content:center">'+
-        '<button class="act act-edit" title="Edit" onclick="openHpsInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
-        '<button class="act act-view" title="Lihat (Pratinjau PDF)" onclick="hpsPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
+        '<button class="act act-edit" title="Ubah" onclick="openHpsInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
+        '<button class="act act-view" title="Lihat" onclick="hpsPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
         '<button class="act act-del" title="Hapus" onclick="hpsDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>'+
       '</div></td>'+
     '</tr>';
@@ -11180,7 +11236,7 @@ function anaApplyDp(rec){
   anaSaveState();
   anaRevealPick=true;   // pemicu animasi reveal konten di bawah tombol
   renderAnalisaForm();
-  toast('Data pekerjaan diterapkan: '+st.info.dpNama,'ok');
+  toast('Data pekerjaan berhasil diterapkan','ok');
 }
 /* Lepas pilihan Data Pekerjaan → kembali ke kondisi belum dipilih (wajib pilih ulang) */
 function anaLepasDp(){
@@ -12133,8 +12189,8 @@ function renderAnalisaView(){
       '<td style="text-align:center">'+ji+'</td>'+
       '<td style="text-align:center">'+jr+'</td>'+
       '<td><div class="action-cell" style="justify-content:center">'+
-        '<button class="act act-edit" title="Edit" onclick="openAnalisaInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
-        '<button class="act act-view" title="Cetak (Pratinjau PDF)" onclick="anaPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
+        '<button class="act act-edit" title="Ubah" onclick="openAnalisaInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
+        '<button class="act act-view" title="Lihat" onclick="anaPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
         '<button class="act act-del" title="Hapus" onclick="anaDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>'+
       '</div></td>'+
     '</tr>';
@@ -13909,10 +13965,10 @@ async function spkApplyDp(rec){
     L.jumlahItem=L.items.length;
     L.hpsId=String(hpsRec.id);
     L.hpsNama=hpsRec.nama_pekerjaan||nama;
-    toast('Pekerjaan diterapkan — Lampiran terisi otomatis dari Perhitungan HPS','ok');
+    toast('Data pekerjaan berhasil diterapkan — Lampiran terisi otomatis dari Perhitungan HPS','ok');
   }else{
     L.hpsId=''; L.hpsNama='';
-    toast('Pekerjaan diterapkan. Belum ada data HPS untuk pekerjaan ini — isi Lampiran manual.','warn');
+    toast('Data pekerjaan berhasil diterapkan. Belum ada data HPS untuk pekerjaan ini — isi Lampiran manual.','warn');
   }
   if(pnCount) toast('Nomor & tanggal BA terisi otomatis dari Penetapan Nomor (terkunci)','ok');
   else toast('Belum ada nomor BA pada Penetapan untuk pekerjaan ini — isi manual','warn');
@@ -14252,8 +14308,8 @@ function renderSpkView(){
       '<td class="col-date">'+fkEsc(r.tanggal?spkDateLong(r.tanggal):'—')+'</td>'+
       '<td style="text-align:right;white-space:nowrap">'+fkEsc(r.nilai!=null?spkRupiah(r.nilai):'—')+'</td>'+
       '<td><div class="action-cell" style="justify-content:center">'+
-        '<button class="act act-view" title="Cetak / Pratinjau" onclick="spkPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
         '<button class="act act-edit" title="Ubah" onclick="spkEditRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
+        '<button class="act act-view" title="Lihat" onclick="spkPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
         '<button class="act act-del" title="Hapus" onclick="spkDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>'+
       '</div></td>'+
     '</tr>';
@@ -17544,8 +17600,8 @@ function renderSpkKlausul(){
       '<div class="spk-klx-act">'+
         '<button class="act act-mv" title="Naikkan" '+(i===0?'disabled':'')+' onclick="spkKlausulMove(\''+kid+'\',-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>'+
         '<button class="act act-mv" title="Turunkan" '+(i===last?'disabled':'')+' onclick="spkKlausulMove(\''+kid+'\',1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12l7 7 7-7"/></svg></button>'+
-        '<button class="act" title="Lihat" onclick="spkKlausulView(\''+kid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
         '<button class="act act-edit" title="Ubah" onclick="spkKlausulEdit(\''+kid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
+        '<button class="act act-view" title="Lihat" onclick="spkKlausulView(\''+kid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
         '<button class="act act-del" title="Hapus" onclick="spkKlausulDelete(\''+kid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>'+
       '</div>'+
     '</div>';
