@@ -13255,8 +13255,8 @@ const SPK_FIELD_GROUPS = [
     {k:'jabatan_pengguna', l:'Jabatan', t:'text', lockedBy:'perubahan', def:''},
     {k:'no_sk', l:'No. Keputusan Direksi', t:'text', span:2, lockedBy:'perubahan', def:''},
     {k:'tgl_sk', l:'Tgl. Keputusan Direksi', t:'date', lockedBy:'perubahan', def:''},
-    {k:'nama_unit', l:'Nama Unit', t:'text', span:2, lockedBy:'perubahan', def:''},
-    {k:'singkatan_unit', l:'Singkatan Unit', t:'text', lockedBy:'perubahan', def:''},
+    {k:'nama_unit', l:'Nama Unit', t:'text', span:2, lockedBy:'perubahan', def:'', ph:'cth. Unit Pelaksana Pelayanan Pelanggan Masohi'},
+    {k:'singkatan_unit', l:'Singkatan Unit', t:'text', lockedBy:'perubahan', def:'', ph:'cth. UP3 Masohi'},
     {k:'lokasi_unit', l:'Lokasi Unit', t:'text', span:2, lockedBy:'perubahan', def:''},
   ]},
   { sec:'Informasi Penyedia', fields:[
@@ -13324,7 +13324,15 @@ function spkTglTerbilang(iso){ if(!iso) return ''; const p=String(iso).split('-'
 function spkBuildCtx(data){
   const d=Object.assign({}, data||{});
   const ctx={};
-  SPK_FIELDS_FLAT.forEach(f=>{ ctx[f.k]= (d[f.k]!=null && d[f.k]!=='') ? d[f.k] : ''; });
+  /* Semua field bertipe TANGGAL (mis. Tgl. Keputusan Direksi) diisi di form
+     memakai pemilih tanggal (dd/mm/yyyy), namun saat masuk ke KLAUSUL/DOKUMEN
+     kontrak selalu ditulis dalam format panjang Indonesia — mis. 14 Juli 2026.
+     Nilai aslinya (ISO) tetap tersedia lewat placeholder {{key_iso}} bila perlu. */
+  SPK_FIELDS_FLAT.forEach(f=>{
+    const raw = (d[f.k]!=null && d[f.k]!=='') ? d[f.k] : '';
+    if(f.t==='date'){ ctx[f.k]=spkDateLong(raw); ctx[f.k+'_iso']=raw; }
+    else ctx[f.k]=raw;
+  });
   // ---- Nilai otomatis (mengikuti Field Kontrak Excel) ----
   ctx.nilai_rp = spkRupiah(d.nilai_pekerjaan);
   ctx.nilai_terbilang = spkTerbilangRupiah(d.nilai_pekerjaan);
@@ -14016,7 +14024,7 @@ function spkFieldInput(f){
       return lockedField(f.t==='date'?spkDispDate(v):(v||''));
     }
     return '<div class="field"'+span+'><label>'+spkLbl(f)+'</label>'+
-      '<input type="text" id="spk-fld-'+f.k+'" value="'+fkEsc(v||'')+'" oninput="spkSet(\''+f.k+'\',this.value)"></div>';
+      '<input type="text" id="spk-fld-'+f.k+'" value="'+fkEsc(v||'')+'"'+(f.ph?(' placeholder="'+fkEsc(f.ph)+'"'):'')+' oninput="spkSet(\''+f.k+'\',this.value)"></div>';
   }
   if(f.t==='textarea'){
     return '<div class="field"'+span+'><label>'+spkLbl(f)+'</label><textarea rows="3" oninput="spkSet(\''+f.k+'\',this.value)">'+fkEsc(v||'')+'</textarea></div>';
@@ -14039,7 +14047,7 @@ function spkFieldInput(f){
     const disp = (v!==''&&v!=null)? Number(spkNum(v)).toLocaleString('id-ID') : '';
     return '<div class="field"'+span+'><label>'+spkLbl(f)+'</label><input type="text" inputmode="numeric" placeholder="Rp" value="'+fkEsc(disp)+'" oninput="spkSetRupiah(\''+f.k+'\',this)"></div>';
   }
-  return '<div class="field"'+span+'><label>'+spkLbl(f)+'</label><input type="text" value="'+fkEsc(v||'')+'" oninput="spkSet(\''+f.k+'\',this.value)"></div>';
+  return '<div class="field"'+span+'><label>'+spkLbl(f)+'</label><input type="text" value="'+fkEsc(v||'')+'"'+(f.ph?(' placeholder="'+fkEsc(f.ph)+'"'):'')+' oninput="spkSet(\''+f.k+'\',this.value)"></div>';
 }
 function spkSet(k,v){ if(!spkState) return; spkState.data[k]=v; spkRefreshAuto(); }
 /* "Perubahan?" pada SK Pimpinan Unit:
