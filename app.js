@@ -14250,7 +14250,7 @@ function spkDocCss(){
      Hanya ISI kontrak yang dirapikan mengikuti tampilan Word (Arial). */
   '@page{size:A4 portrait;margin:2.54cm}'+
   '*{box-sizing:border-box}'+
-  'body{font-family:"Lora",Georgia,serif;color:#1c1c1c;margin:0;font-size:11.5px;line-height:1.15}'+
+  'body{font-family:"Spectral",Georgia,serif;color:#1c1c1c;margin:0;font-size:11.5px;line-height:1.15}'+
   '.spk-doc{counter-reset:spkcl}'+
   /* Penomoran judul klausul dibuat OTOMATIS (counter), bukan teks biasa */
   '.spk-clause{counter-increment:spkcl}'+
@@ -14274,7 +14274,7 @@ function spkDocCss(){
      Sub-klausul (X.1) & sub-sub (a. / X.1.1) memakai hanging tab 0,75 cm yang
        konsisten, bertingkat 0,75 cm tiap level — persis penggaris Word. */
   '.spk-clause{margin:0}'+
-  '.spk-clause,.spk-clause *,.spk-cl,.spk-cl *,.spk-cl-h,.spk-cl-h *{font-family:"Lora",Georgia,serif}'+
+  '.spk-clause,.spk-clause *,.spk-cl,.spk-cl *,.spk-cl-h,.spk-cl-h *{font-family:"Spectral",Georgia,serif}'+
   /* Kotak nomor judul klausul dipersempit 0,75cm -> 0,65cm: cukup untuk nomor
      2 digit (mis. "15." = ~0,54cm pada Arial bold 11pt) plus sedikit jarak,
      sehingga judul lebih dekat ke nomornya. */
@@ -14345,13 +14345,13 @@ function spkDocCss(){
      (text-wrap:balance), sehingga tidak ada baris pertama kepanjangan lalu baris
      kedua tinggal 2 kata. Dipakai cara ini—bukan <br> manual—agar tetap rapi
      berapa pun panjang nama unit yang masuk dari mail merge. */
-  '.spk-sign .org{font-weight:700;line-height:1.3;text-wrap:balance;text-align:center}'+
+  '.spk-sign .org{font-weight:700;line-height:1.15;text-wrap:balance;text-align:center}'+
   '.spk-sign .jab{color:#000}'+
   /* ===== Seragamkan SELURUH teks ISI kontrak = Arial 11pt =====
      Mencakup preamble, semua klausul (judul & isi), daftar, blok pihak, baris
      "Label : nilai", dan blok tanda tangan. Ketebalan/format (bold, garis bawah)
      tetap dipertahankan; hanya jenis huruf & ukuran yang diseragamkan. */
-  '.spk-flow .spk-cl,.spk-flow .spk-cl *,.spk-flow .spk-clause,.spk-flow .spk-clause *,.spk-flow .spk-cl-h,.spk-flow .spk-cl-h *,.spk-flow .spk-sign,.spk-flow .spk-sign *{font-family:"Lora",Georgia,serif;font-size:11pt}'+
+  '.spk-flow .spk-cl,.spk-flow .spk-cl *,.spk-flow .spk-clause,.spk-flow .spk-clause *,.spk-flow .spk-cl-h,.spk-flow .spk-cl-h *,.spk-flow .spk-sign,.spk-flow .spk-sign *{font-family:"Spectral",Georgia,serif;font-size:11pt}'+
   /* ===== Tampilan PRATINJAU di layar (bukan cetak) =====
      Menampilkan tiap bagian sebagai lembar A4 putih (210×297mm) di atas latar
      abu-abu, dengan bayangan & margin dalam 2,54cm — meniru gaya pratinjau
@@ -14427,6 +14427,10 @@ function spkDocCss2(){
   /* Nilai dibuat RATA KIRI-KANAN agar blok teks panjang rapi bertepi lurus */
   '.spk-cover .fv{font-size:13px;font-weight:800;color:#201E1D;margin-top:7px;line-height:1.45;'+
     'text-align:justify;text-justify:inter-word;hyphens:none;overflow-wrap:anywhere}'+
+  /* SUMBER ANGGARAN dijaga tetap 1 baris; bila terlalu panjang, ukuran fontnya
+     dikecilkan otomatis oleh fitLastRow() sampai muat (min 8px), lalu ukuran itu
+     diterapkan juga ke TANGGAL ANGGARAN agar sebaris seragam. */
+  '.spk-cover .fv-fit{white-space:nowrap;overflow-wrap:normal;text-align:left}'+
   /* Baris terakhir paragraf justify tetap rata kiri (bawaan), dan nilai kosong dibuat redup */
   '.spk-cover .fv.kosong{color:#C2C6CC}'+
   '.spk-cover .cv-nilai{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;border-top:1px solid #E2E2E2;padding-top:12px;margin-top:0}'+
@@ -14482,8 +14486,8 @@ function spkDocCss2(){
   /* Jarak dari blok judul (SURAT PERINTAH KERJA + nomor kontrak) ke teks pertama
      "Pada hari ini ..." = 24pt. */
   '.spk-bab{text-align:center;font-family:'+G+';margin:0 0 24pt}'+
-  '.spk-bab b{display:block;font-size:13pt;font-weight:800;color:#201E1D;text-decoration:underline;text-underline-offset:3px;letter-spacing:.05em;text-transform:uppercase}'+
-  '.spk-bab span{display:block;font-size:11pt;font-weight:700;color:#201E1D;letter-spacing:.02em;margin-top:3px}'+
+  '.spk-bab b{display:block;font-size:13pt;font-weight:800;color:#1B3A6B;text-decoration:underline;text-decoration-color:#F6B40E;text-decoration-thickness:2.5px;text-underline-offset:5px;letter-spacing:.05em;text-transform:uppercase;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  '.spk-bab span{display:block;font-size:11pt;font-weight:700;color:#1B3A6B;letter-spacing:.06em;margin-top:7px}'+
   '.spk-signpage{page-break-before:always;break-before:page;padding-top:8mm}'+
   '.spk-sign-eyebrow{text-align:center;font-family:'+G+';font-size:8.5px;font-weight:800;letter-spacing:.24em;color:#1E6FBF;margin:0 0 24px}'+
   '.spk-signpage .spk-sign{margin-top:10px}'+
@@ -14554,7 +14558,7 @@ function spkDocCss2(){
   '.spk-sheet .spk-signpage{page-break-before:auto;break-before:auto;padding-top:0}'+
   /* klausul yang bersambung ke lembar berikutnya TIDAK menambah nomor klausul */
   '.spk-clause.spk-cont{counter-increment:none}'+
-  '.spk-sheet .spk-cl,.spk-sheet .spk-cl *,.spk-sheet .spk-clause,.spk-sheet .spk-clause *,.spk-sheet .spk-cl-h,.spk-sheet .spk-cl-h *,.spk-sheet .spk-sign,.spk-sheet .spk-sign *{font-family:"Lora",Georgia,serif;font-size:11pt}'+
+  '.spk-sheet .spk-cl,.spk-sheet .spk-cl *,.spk-sheet .spk-clause,.spk-sheet .spk-clause *,.spk-sheet .spk-cl-h,.spk-sheet .spk-cl-h *,.spk-sheet .spk-sign,.spk-sheet .spk-sign *{font-family:"Spectral",Georgia,serif;font-size:11pt}'+
   /* ---------- PRATINJAU DI LAYAR (lembar A4) ---------- */
   '@media screen{'+
     'html,body{background:#54585c;margin:0;padding:24px 0}'+
@@ -16882,10 +16886,10 @@ function spkCoverHtml(data, ctx, judulBaris){
   const esc=fkEsc;
   const logo = SPK_LOGO_SRC? '<img src="'+SPK_LOGO_SRC+'" alt="PLN">' : '';
   const unit = ctx.p1_nama_singkat || 'Unit Pelaksana Pelayanan Pelanggan Masohi';
-  const fld=(k,v)=>{
+  const fld=(k,v,cls)=>{
     const kosong = !(v && String(v).trim());
     return '<div class="f"><div class="fk">'+esc(k)+'</div>'+
-      '<div class="fv'+(kosong?' kosong':'')+'">'+(kosong?'—':esc(v))+'</div></div>';
+      '<div class="fv'+(kosong?' kosong':'')+(cls?' '+cls:'')+'">'+(kosong?'—':esc(v))+'</div></div>';
   };
   const judulHtml = String(judulBaris||'').split(' ').map(w=>'<span>'+esc(w)+'</span>').join(' ');
   return ''+
@@ -16912,8 +16916,8 @@ function spkCoverHtml(data, ctx, judulBaris){
       fld('LOKASI', data.lokasi_pekerjaan)+
       fld('PELAKSANA', data.pelaksana)+
       fld('AKHIR PEKERJAAN', ctx.akhir_pekerjaan_pjg)+
-      fld('SUMBER ANGGARAN', ctx.sumber_dana_no)+
-      fld('TANGGAL ANGGARAN', ctx.sumber_dana_tgl_pjg)+
+      fld('SUMBER ANGGARAN', ctx.sumber_dana_no, 'fv-lastrow fv-fit')+
+      fld('TANGGAL ANGGARAN', ctx.sumber_dana_tgl_pjg, 'fv-lastrow')+
     '</div>'+
     '<div class="cv-nilai">'+
       '<div class="l"><div class="fk">NILAI PEKERJAAN</div>'+
@@ -17274,6 +17278,24 @@ function spkPageScript(){
     '   for(var j=0;j<cls.length;j++){ if(pgs[k]) pgs[k].textContent=String(n); k++; }',
     ' }',
     '}',
+    /* SUMBER ANGGARAN dijaga 1 baris: perkecil font (dari 13px, step 0,5, min 8px)
+       hingga muat, lalu terapkan ukuran yang sama ke seluruh nilai baris terakhir
+       (SUMBER & TANGGAL ANGGARAN) supaya seragam. Dijalankan setelah font siap. */
+    'function fitLastRow(){',
+    ' var covers=document.querySelectorAll(".spk-cover");',
+    ' for(var c=0;c<covers.length;c++){',
+    '   var fit=covers[c].querySelector(".fv-fit");',
+    '   if(!fit) continue;',
+    '   var size=13; fit.style.whiteSpace="nowrap"; fit.style.fontSize=size+"px";',
+    '   var g=0;',
+    '   while(fit.scrollWidth > fit.clientWidth+0.5 && g++<60){',
+    '     size-=0.5; if(size<=8){ size=8; fit.style.fontSize="8px"; break; }',
+    '     fit.style.fontSize=size+"px";',
+    '   }',
+    '   var row=covers[c].querySelectorAll(".fv-lastrow");',
+    '   for(var r=0;r<row.length;r++) row[r].style.fontSize=size+"px";',
+    ' }',
+    '}',
     /* Nomor halaman footer: "N dari M" HANYA untuk lembar isi kontrak (SPK).
        Lembar Lampiran SPK tidak ikut dihitung, dan nomornya dikosongkan. */
     'function nomorFooter(){',
@@ -17303,6 +17325,7 @@ function spkPageScript(){
     '   tandaiLanjutan();',
     '   nomorToc();',
     '   nomorFooter();',
+    '   fitLastRow();',
     ' }catch(e){',
     '   try{ console.error("spk paginate:", e); if(doc) doc.innerHTML=backup; }catch(_){}',
     ' }',
@@ -17375,8 +17398,8 @@ function spkDocHtml(data, klausul){
 
   return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><title>&#8203;</title>'+
     (typeof fklDocFontLink==='function'?fklDocFontLink():'')+
-    /* Font isi kontrak: Lora — serif modern & formal untuk badan dokumen */
-    '<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">'+
+    /* Font isi kontrak: Spectral — serif modern & elegan untuk badan dokumen */
+    '<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">'+
     '<style>'+
     (typeof fklDocBaseCss==='function'?fklDocBaseCss():'')+
     (typeof hpsExtraDocCss==='function'?hpsExtraDocCss():'')+
@@ -17654,7 +17677,7 @@ function spkKlausulEdit(id){ const k=records_klausul.find(x=>String(x.id)===Stri
 /* =====================================================================
    PUSTAKA KLAUSUL — TEMPLATE WORD (.docx)
    Editor teks dihilangkan. Isi klausul kini disunting lewat Microsoft Word:
-     1) Unduh Template (.docx)  -> A4, Portrait, Margin Normal (2,54 cm), Arial 11
+     1) Unduh Template (.docx)  -> A4, Portrait, Margin Normal (2,54 cm), Spectral 11
      2) Ketik isi klausul di Word
      3) Unggah Template (.docx) -> isi otomatis dibaca & disimpan
    Teks yang diketik pada template berada DI BAWAH judul klausul dan SEJAJAR
@@ -17774,7 +17797,7 @@ function spkStylesXml(){
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
   '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'+
     '<w:docDefaults><w:rPrDefault><w:rPr>'+
-      '<w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:eastAsia="Arial" w:cs="Arial"/>'+
+      '<w:rFonts w:ascii="Spectral" w:hAnsi="Spectral" w:eastAsia="Spectral" w:cs="Spectral"/>'+
       '<w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="id-ID"/>'+
     '</w:rPr></w:rPrDefault>'+
     '<w:pPrDefault><w:pPr>'+
@@ -17979,7 +18002,7 @@ function spkDocxTemplateBlob(judul, isiHtml, noKl){
   var guide=function(t){ return spkPXml('PetunjukTemplate', spkRunXml(t,{})); };
   var body =
     guide('PETUNJUK (baris abu-abu ini otomatis DIABAIKAN saat diunggah — boleh dibiarkan):')+
-    guide('1) Ketik isi klausul HANYA di bawah baris judul. Halaman sudah diatur A4, Portrait, margin Normal 2,54 cm, huruf Arial 11.')+
+    guide('1) Ketik isi klausul HANYA di bawah baris judul. Halaman sudah diatur A4, Portrait, margin Normal 2,54 cm, huruf Spectral 11.')+
     guide('2) Gunakan Style Word: "Klausul Isi" (teks biasa), "Klausul Butir 1" (nomor 1.1.), "Klausul Butir 2" (huruf a.), "Klausul Paragraf" (paragraf menjorok).')+
     guide('3) Penomoran butir boleh memakai penomoran otomatis Word ATAU diketik manual (mis. 1.1. / a.) lalu TAB — keduanya terbaca sama persis.')+
     guide('4) Nomor judul klausul memakai penomoran otomatis Word (bukan angka yang diketik) — cukup ubah teks judulnya saja.')+
@@ -18613,7 +18636,10 @@ async function spkKlDocReadFile(file){
          berkas asli inilah yang dikembalikan apa adanya sehingga penomoran,
          jarak spasi baris, dan seluruh struktur SAMA PERSIS dengan saat diunggah. */
       try{ spkKlDoc.docx = spkAb2b64(buf); }catch(e){ spkKlDoc.docx=''; }
-      if(res.judul){ var j=document.getElementById('spk-kldoc-judul'); if(j && !spkJudulPlain(j.innerHTML)) j.innerHTML=spkJudulSan(res.judul); }
+      /* Nama klausul SELALU disamakan dengan judul pada template (bila template
+         memuat baris judul). Format miring/tebal/garis bawah pada judul ikut
+         terbawa sehingga tampil sama di pustaka klausul & dokumen SPK. */
+      if(res.judul){ var j=document.getElementById('spk-kldoc-judul'); if(j) j.innerHTML=spkJudulSan(res.judul); }
     });
   }catch(err){ console.error(err); toast('Gagal membaca .docx: '+errMsg(err),'err'); return; }
   spkKlDocDzHide();
