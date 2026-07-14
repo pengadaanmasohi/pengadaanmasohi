@@ -14079,6 +14079,12 @@ function spkFieldInput(f){
       // Tampilkan nilai bawaan (data terakhir disimpan) — terbaca namun terkunci
       return lockedField(f.t==='date'?spkDispDate(v):(v||''));
     }
+    // Terbuka: hormati tipe field. Tanggal -> pemilih tanggal (dd/mm/yyyy);
+    // di dokumen/klausul nanti otomatis ditulis panjang (cth. 14 Juli 2026).
+    if(f.t==='date'){
+      return '<div class="field"'+span+'><label>'+spkLbl(f)+'</label>'+
+        '<input type="date" id="spk-fld-'+f.k+'" value="'+fkEsc(v||'')+'" onchange="spkSet(\''+f.k+'\',this.value)"></div>';
+    }
     return '<div class="field"'+span+'><label>'+spkLbl(f)+'</label>'+
       '<input type="text" id="spk-fld-'+f.k+'" value="'+fkEsc(v||'')+'"'+(f.ph?(' placeholder="'+fkEsc(f.ph)+'"'):'')+' oninput="spkSet(\''+f.k+'\',this.value)"></div>';
   }
