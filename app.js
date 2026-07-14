@@ -18026,6 +18026,41 @@ function spkPageScript(){
     ' function kosong(){ return !((body.textContent||"").replace(/[\\s\\u00A0]/g,"")) && !body.querySelector("img,table"); }',
     ' function usedBottom(){ var k=els(body); if(!k.length) return 0; var bt=body.getBoundingClientRect().top; return k[k.length-1].getBoundingClientRect().bottom - bt; }',
     ' function remain(){ return body.clientHeight - usedBottom(); }',
+    /* ==== PEMECAHAN PARAGRAF ANTAR-HALAMAN (alir seperti Word) ====
+       Titik potong = batas kata (setelah spasi), tidak memotong di tengah kata
+       maupun di dalam kotak nomor (span.n). Kepala tetap membawa nomor & indent
+       gantung; ekor jadi lanjutan (text-indent:0, margin-atas 0) sejajar teks. */
+    ' function wordPoints(p){',
+    '   var pts=[], w=document.createTreeWalker(p, NodeFilter.SHOW_TEXT, null, false), tn;',
+    '   while(tn=w.nextNode()){',
+    '     var inN=false, a=tn.parentNode;',
+    '     while(a && a!==p){ if(a.classList && a.classList.contains("n")){ inN=true; break; } a=a.parentNode; }',
+    '     if(inN) continue;',
+    '     var v=tn.nodeValue||"";',
+    '     for(var k=1;k<v.length;k++){ if(/[\\s\\u00A0]/.test(v.charAt(k-1)) && !/[\\s\\u00A0]/.test(v.charAt(k))) pts.push({node:tn, offset:k}); }',
+    '   }',
+    '   return pts;',
+    ' }',
+    ' function splitParaToFit(node, t){',
+    '   var pts=wordPoints(node); if(!pts.length) return null;',
+    '   var lo=0, hi=pts.length-1, best=-1, guard=0;',
+    '   while(lo<=hi && guard++<40){',
+    '     var mid=(lo+hi)>>1, tmp=node.cloneNode(false), r=document.createRange();',
+    '     r.setStart(node,0); r.setEnd(pts[mid].node, pts[mid].offset);',
+    '     tmp.appendChild(r.cloneContents()); t.appendChild(tmp);',
+    '     var fits=!over(); t.removeChild(tmp);',
+    '     if(fits){ best=mid; lo=mid+1; } else { hi=mid-1; }',
+    '   }',
+    '   if(best<0) return null;',
+    '   var head=node.cloneNode(false), rh=document.createRange();',
+    '   rh.setStart(node,0); rh.setEnd(pts[best].node, pts[best].offset); head.appendChild(rh.cloneContents());',
+    '   var tail=node.cloneNode(false), rt=document.createRange();',
+    '   rt.setStart(pts[best].node, pts[best].offset); rt.setEnd(node, node.childNodes.length); tail.appendChild(rt.cloneContents());',
+    '   if(!((tail.textContent||"").replace(/[\\s\\u00A0]/g,""))) return null;',
+    '   head.style.marginBottom="0"; if((node.style.textAlign||"")==="justify") head.style.textAlignLast="justify";',
+    '   tail.style.textIndent="0"; tail.style.marginTop="0";',
+    '   t.appendChild(head); return tail;',
+    ' }',
     ' function put(node){',
     /* Penanda halaman baru: blok ber-class "spk-forcepage" (paragraf "Maka dengan ini
        PIHAK PERTAMA menugaskan...") memulai lembar baru HANYA bila bagian pembuka
@@ -18054,7 +18089,10 @@ function spkPageScript(){
     '     tgt().appendChild(node);',
     '     return;',
     '   }',
-    '   if(node.nodeType===1 && hasCls(node,"spk-clause") && !hasCls(node,"spk-cont") && !kosong() && remain()<MINCL){ mk(); }',
+    '   if(node.nodeType===1 && hasCls(node,"spk-clause") && !hasCls(node,"spk-cont") && !kosong() && remain()<MINCL){',
+    '     var _tt=tgt(); _tt.appendChild(node); var _fit=!over(); _tt.removeChild(node);',   /* klausul yang MUAT utuh di sisa ruang tak perlu digeser -> hindari ruang kosong sia-sia */
+    '     if(!_fit) mk();',
+    '   }',
     '   var t=tgt();',
     '   t.appendChild(node);',
     '   if(!over()) return;',
@@ -18084,6 +18122,9 @@ function spkPageScript(){
     '     }',
     '     stack.pop();',
     '     return;',
+    '   }',
+    '   if(node.nodeType===1 && node.tagName==="P" && !hasCls(node,"spk-cl-h") && !hasCls(node,"spk-party-h") && !hasCls(node,"spk-bab") && !hasCls(node,"spk-ph") && !hasCls(node,"spk-sign-eyebrow")){',   /* paragraf isi: pecah antar-halaman spy halaman terisi penuh (judul/kop dikecualikan) */
+    '     try{ var _tail=splitParaToFit(node, t); if(_tail){ mk(); put(_tail); return; } }catch(_e){}',
     '   }',
     '   if(kosong()){ t.appendChild(node); return; }',   /* blok lebih tinggi dari 1 halaman */
     '   mk();',
@@ -19135,7 +19176,9 @@ function spkParaCss(eff, noInd){
   css+='margin-top:'+spkTwPt(eff.sp.before||0)+'pt;';
   css+='margin-bottom:'+spkTwPt(eff.sp.after||0)+'pt;';
   var line=+eff.sp.line||240, lr=eff.sp.lineRule||'auto';
-  css+='line-height:'+((lr==='auto') ? (Math.round(line/240*1000)/1000) : (spkTwPt(line)+'pt'))+';';
+  /* Word "auto" (kelipatan) -> line-height CSS DENGAN koreksi SPK_LH_K, sama seperti
+     isi kontrak lainnya, supaya "1,15" di Word tampil "1,15" di web (bukan spasi tunggal). */
+  css+='line-height:'+((lr==='auto') ? (Math.round(line/240*SPK_LH_K*1000)/1000) : (spkTwPt(line)+'pt'))+';';
   if(eff.jc){
     var jm={both:'justify',center:'center',right:'right',left:'left',start:'left',end:'right'};
     if(jm[eff.jc]) css+='text-align:'+jm[eff.jc]+';';
