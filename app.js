@@ -17070,7 +17070,7 @@ function spkLampiranDocInner(data){
   /* Blok "DATA PEKERJAAN" bawaan HPS memuat baris yang tidak relevan untuk Lampiran
      SPK (nilainya sudah tampil di cover & di tabel rincian). Baris berikut dibuang
      HANYA di Lampiran — dokumen Perhitungan HPS tidak terpengaruh. */
-  ['Nilai Pekerjaan','No. Anggaran','Tgl. Anggaran','Metode Pengadaan'].forEach(function(lbl){
+  ['Nilai Pekerjaan','Metode Pengadaan'].forEach(function(lbl){
     const pola = lbl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     html = html.replace(new RegExp('<tr>\\s*<td class="k">'+pola+'<\\/td>[\\s\\S]*?<\\/tr>'), '');
   });
