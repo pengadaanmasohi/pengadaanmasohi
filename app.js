@@ -13728,6 +13728,44 @@ async function spkLampDownloadTemplate(){
     ws.getCell(r,6).numFmt='#,##0';
     ws.getCell(r,7).numFmt='#,##0';
   }
+  /* --- Sheet tambahan "Ringkasan Nilai" (INFORMASI SAJA) ---
+     Berisi Total Nilai Pekerjaan Sebelum & Setelah PPN, dihitung dengan RUMUS
+     yang mengikuti PERSIS rekap Lampiran di pratinjau:
+       - nilai per baris dibulatkan dulu: ROUND(Vol×HargaBarang)+ROUND(Vol×HargaJasa)
+       - Jumlah (sebelum PPN) = jumlah seluruh baris
+       - DPP = ROUND(Jumlah × 11/12) ; PPN = ROUND(DPP × 12%)
+       - Total (setelah PPN) = Jumlah + PPN
+     Sheet ini TIDAK dibaca kembali oleh website (hanya sheet "Data" yang dibaca). */
+  const lastRow=maxRow+1;
+  const ws2=wb.addWorksheet('Ringkasan Nilai');
+  ws2.columns=[{width:42},{width:24}];
+  ws2.mergeCells('A1:B1');
+  const tCell=ws2.getCell('A1');
+  tCell.value='RINGKASAN NILAI PEKERJAAN';
+  tCell.font={bold:true,color:{argb:'FFFFFFFF'},size:12};
+  tCell.alignment={vertical:'middle',horizontal:'center'};
+  tCell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0E7C86'}};
+  ws2.getRow(1).height=26;
+  ws2.mergeCells('A2:B2');
+  const nCell=ws2.getCell('A2');
+  nCell.value='Informasi tambahan — dihitung otomatis dari sheet "Data". Tidak termasuk Lampiran SPK di website.';
+  nCell.font={italic:true,color:{argb:'FF6B7A80'},size:9};
+  nCell.alignment={vertical:'middle',horizontal:'left',wrapText:true};
+  ws2.getRow(2).height=24;
+  const thin2={style:'thin',color:{argb:'FFBFCAD0'}};
+  const bd2={top:thin2,left:thin2,bottom:thin2,right:thin2};
+  const sumBefore=
+    'SUMPRODUCT(ROUND(IFERROR(Data!$E$2:$E$'+lastRow+'*Data!$F$2:$F$'+lastRow+',0),0))'+
+    '+SUMPRODUCT(ROUND(IFERROR(Data!$E$2:$E$'+lastRow+'*Data!$G$2:$G$'+lastRow+',0),0))';
+  const mkRow=(r,label,formula,strong)=>{
+    const a=ws2.getCell(r,1), b=ws2.getCell(r,2);
+    a.value=label; a.font={bold:true,color:{argb: strong?'FF0E7C86':'FF1C1C1C'}}; a.alignment={vertical:'middle'};
+    b.value={formula:formula}; b.numFmt='"Rp"#,##0'; b.font={bold:!!strong}; b.alignment={vertical:'middle',horizontal:'right'};
+    if(strong){ a.fill=b.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFEAF6F7'}}; }
+    a.border=b.border=bd2;
+  };
+  mkRow(4,'Total Nilai Pekerjaan (Sebelum PPN)', sumBefore, false);
+  mkRow(5,'Total Nilai Pekerjaan (Setelah PPN)', 'B4+ROUND(ROUND(B4*11/12,0)*0.12,0)', true);
   const buf=await wb.xlsx.writeBuffer();
   const blob=new Blob([buf],{type:'application/octet-stream'});
   const a=document.createElement('a');
@@ -14250,7 +14288,7 @@ function spkDocCss(){
      Hanya ISI kontrak yang dirapikan mengikuti tampilan Word (Arial). */
   '@page{size:A4 portrait;margin:2.54cm}'+
   '*{box-sizing:border-box}'+
-  'body{font-family:"Spectral",Georgia,serif;color:#1c1c1c;margin:0;font-size:11.5px;line-height:1.15}'+
+  'body{font-family:"Inter","Segoe UI",Arial,sans-serif;color:#1c1c1c;margin:0;font-size:11.5px;line-height:1.15}'+
   '.spk-doc{counter-reset:spkcl}'+
   /* Penomoran judul klausul dibuat OTOMATIS (counter), bukan teks biasa */
   '.spk-clause{counter-increment:spkcl}'+
@@ -14274,7 +14312,7 @@ function spkDocCss(){
      Sub-klausul (X.1) & sub-sub (a. / X.1.1) memakai hanging tab 0,75 cm yang
        konsisten, bertingkat 0,75 cm tiap level — persis penggaris Word. */
   '.spk-clause{margin:0}'+
-  '.spk-clause,.spk-clause *,.spk-cl,.spk-cl *,.spk-cl-h,.spk-cl-h *{font-family:"Spectral",Georgia,serif}'+
+  '.spk-clause,.spk-clause *,.spk-cl,.spk-cl *,.spk-cl-h,.spk-cl-h *{font-family:"Inter","Segoe UI",Arial,sans-serif}'+
   /* Kotak nomor judul klausul dipersempit 0,75cm -> 0,65cm: cukup untuk nomor
      2 digit (mis. "15." = ~0,54cm pada Arial bold 11pt) plus sedikit jarak,
      sehingga judul lebih dekat ke nomornya. */
@@ -14351,7 +14389,7 @@ function spkDocCss(){
      Mencakup preamble, semua klausul (judul & isi), daftar, blok pihak, baris
      "Label : nilai", dan blok tanda tangan. Ketebalan/format (bold, garis bawah)
      tetap dipertahankan; hanya jenis huruf & ukuran yang diseragamkan. */
-  '.spk-flow .spk-cl,.spk-flow .spk-cl *,.spk-flow .spk-clause,.spk-flow .spk-clause *,.spk-flow .spk-cl-h,.spk-flow .spk-cl-h *,.spk-flow .spk-sign,.spk-flow .spk-sign *{font-family:"Spectral",Georgia,serif;font-size:11pt}'+
+  '.spk-flow .spk-cl,.spk-flow .spk-cl *,.spk-flow .spk-clause,.spk-flow .spk-clause *,.spk-flow .spk-cl-h,.spk-flow .spk-cl-h *,.spk-flow .spk-sign,.spk-flow .spk-sign *{font-family:"Inter","Segoe UI",Arial,sans-serif;font-size:11pt}'+
   /* ===== Tampilan PRATINJAU di layar (bukan cetak) =====
      Menampilkan tiap bagian sebagai lembar A4 putih (210×297mm) di atas latar
      abu-abu, dengan bayangan & margin dalam 2,54cm — meniru gaya pratinjau
@@ -14558,7 +14596,7 @@ function spkDocCss2(){
   '.spk-sheet .spk-signpage{page-break-before:auto;break-before:auto;padding-top:0}'+
   /* klausul yang bersambung ke lembar berikutnya TIDAK menambah nomor klausul */
   '.spk-clause.spk-cont{counter-increment:none}'+
-  '.spk-sheet .spk-cl,.spk-sheet .spk-cl *,.spk-sheet .spk-clause,.spk-sheet .spk-clause *,.spk-sheet .spk-cl-h,.spk-sheet .spk-cl-h *,.spk-sheet .spk-sign,.spk-sheet .spk-sign *{font-family:"Spectral",Georgia,serif;font-size:11pt}'+
+  '.spk-sheet .spk-cl,.spk-sheet .spk-cl *,.spk-sheet .spk-clause,.spk-sheet .spk-clause *,.spk-sheet .spk-cl-h,.spk-sheet .spk-cl-h *,.spk-sheet .spk-sign,.spk-sheet .spk-sign *{font-family:"Inter","Segoe UI",Arial,sans-serif;font-size:11pt}'+
   /* ---------- PRATINJAU DI LAYAR (lembar A4) ---------- */
   '@media screen{'+
     'html,body{background:#54585c;margin:0;padding:24px 0}'+
@@ -17398,8 +17436,8 @@ function spkDocHtml(data, klausul){
 
   return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><title>&#8203;</title>'+
     (typeof fklDocFontLink==='function'?fklDocFontLink():'')+
-    /* Font isi kontrak: Spectral — serif modern & elegan untuk badan dokumen */
-    '<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">'+
+    /* Font isi kontrak: Inter — sans modern & bersih untuk badan dokumen */
+    '<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">'+
     '<style>'+
     (typeof fklDocBaseCss==='function'?fklDocBaseCss():'')+
     (typeof hpsExtraDocCss==='function'?hpsExtraDocCss():'')+
@@ -17677,7 +17715,7 @@ function spkKlausulEdit(id){ const k=records_klausul.find(x=>String(x.id)===Stri
 /* =====================================================================
    PUSTAKA KLAUSUL — TEMPLATE WORD (.docx)
    Editor teks dihilangkan. Isi klausul kini disunting lewat Microsoft Word:
-     1) Unduh Template (.docx)  -> A4, Portrait, Margin Normal (2,54 cm), Spectral 11
+     1) Unduh Template (.docx)  -> A4, Portrait, Margin Normal (2,54 cm), Inter 11
      2) Ketik isi klausul di Word
      3) Unggah Template (.docx) -> isi otomatis dibaca & disimpan
    Teks yang diketik pada template berada DI BAWAH judul klausul dan SEJAJAR
@@ -17797,7 +17835,7 @@ function spkStylesXml(){
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
   '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'+
     '<w:docDefaults><w:rPrDefault><w:rPr>'+
-      '<w:rFonts w:ascii="Spectral" w:hAnsi="Spectral" w:eastAsia="Spectral" w:cs="Spectral"/>'+
+      '<w:rFonts w:ascii="Inter" w:hAnsi="Inter" w:eastAsia="Inter" w:cs="Inter"/>'+
       '<w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="id-ID"/>'+
     '</w:rPr></w:rPrDefault>'+
     '<w:pPrDefault><w:pPr>'+
@@ -18002,7 +18040,7 @@ function spkDocxTemplateBlob(judul, isiHtml, noKl){
   var guide=function(t){ return spkPXml('PetunjukTemplate', spkRunXml(t,{})); };
   var body =
     guide('PETUNJUK (baris abu-abu ini otomatis DIABAIKAN saat diunggah — boleh dibiarkan):')+
-    guide('1) Ketik isi klausul HANYA di bawah baris judul. Halaman sudah diatur A4, Portrait, margin Normal 2,54 cm, huruf Spectral 11.')+
+    guide('1) Ketik isi klausul HANYA di bawah baris judul. Halaman sudah diatur A4, Portrait, margin Normal 2,54 cm, huruf Inter 11.')+
     guide('2) Gunakan Style Word: "Klausul Isi" (teks biasa), "Klausul Butir 1" (nomor 1.1.), "Klausul Butir 2" (huruf a.), "Klausul Paragraf" (paragraf menjorok).')+
     guide('3) Penomoran butir boleh memakai penomoran otomatis Word ATAU diketik manual (mis. 1.1. / a.) lalu TAB — keduanya terbaca sama persis.')+
     guide('4) Nomor judul klausul memakai penomoran otomatis Word (bukan angka yang diketik) — cukup ubah teks judulnya saja.')+
