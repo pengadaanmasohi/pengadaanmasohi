@@ -15304,11 +15304,6 @@ function spkDocCss2(){
    rata-kanan agar titik desimalnya sejajar dengan nomor 1 digit. Label majemuk
    memakai lebar kolom otomatis (min 0,75 cm) supaya "11.1.1." tetap mendapat
    jarak cukup tanpa menabrak teks. */
-/* Jarak nomor -> teks (cm). Word memakai jeda kecil; 0,14 cm terasa terlalu longgar.
-   SPK_NUM_PAD = padding kanan kotak nomor (sedikit lebih kecil dari jeda agar titik
-   terakhir nomor tidak terdorong). Ubah dua angka ini bila ingin lebih rapat/renggang. */
-const SPK_NUM_GAP = 0.08;
-const SPK_NUM_PAD = 0.06;
 function spkNumberFix(html){
   html = String(html||'').replace(
     /<p class="(kl1|kl2)"((?:\s+[a-zA-Z-]+="[^"]*")*)>((?:[0-9]+\.)+|[0-9]+\)|[A-Za-z][.)]|[ivxlcdmIVXLCDM]{2,4}[.)])(&nbsp;|\s)/g,
@@ -15331,8 +15326,7 @@ function spkNumberFix(html){
          punya hanging sendiri (margin-left/text-indent inline), jadi baris ke-2 sejajar
          tepat di bawah huruf pertama. Nomor 2 digit (8.10) otomatis mendorong teksnya
          sedikit ke kanan — natural seperti Word. */
-      /* Jeda nomor->teks: 0,08 cm (sebelumnya 0,14 cm terasa terlalu jauh dibanding Word). */
-      var hug=Math.max(0.4, Math.round((spkTextWidthCm(tok)+SPK_NUM_GAP)*100)/100);
+      var hug=Math.max(0.4, Math.round((spkTextWidthCm(tok)+0.14)*100)/100);
       var base=(cls==='kl2' && !forceLv1)?0.75:0;
       var ml=(base+hug).toFixed(2), ti=hug.toFixed(2);
       var a=attrs||'';
@@ -15346,15 +15340,9 @@ function spkNumberFix(html){
          berhenti di titik yang berbeda ("4.1." vs "4.2."). Dengan rata kanan, titik akhir
          nomor selalu sejajar dan jarak nomor->teks seragam — seperti penomoran Word.
          Huruf (a./b.) & simbol tetap rata kiri. */
-      var isNum = /^(?:[0-9]+[.)])+$/.test(tok);
-      /* Nomor ANGKA dipaksa memakai Arial: digitnya TABULAR (semua angka sama lebar),
-         jadi "10.1." sama panjang dengan "10.2." dan tepi kirinya sejajar — tidak
-         bergantung fitur "tnum" yang ternyata tidak aktif pada font isi. Lebar kotak
-         nomor juga diukur dengan Arial (spkTextWidthCm), jadi persis cocok. */
-      var ntab = isNum ? 'font-family:Arial,Helvetica,sans-serif;font-variant-numeric:tabular-nums;'+
-                         'font-feature-settings:"tnum" 1,"lnum" 1;font-kerning:none;' : '';
-      var nstyle=ntab+'width:'+ti+'cm;display:inline-block;box-sizing:border-box;padding-right:'+SPK_NUM_PAD+'cm;'+
-        'text-indent:0;white-space:nowrap;text-align:'+((right||isNum)?'right':'left');
+      /* white-space:nowrap -> nomor (mis. "8.10.") tidak pernah terpotong ke baris baru;
+         padding 0,12 < jeda 0,14 -> ada sedikit ruang agar titik terakhir tak terdorong. */
+      var nstyle='width:'+ti+'cm;display:inline-block;box-sizing:border-box;padding-right:0.12cm;text-indent:0;white-space:nowrap;text-align:'+(right?'right':'left');
       /* Tanpa spasi literal setelah nomor: jarak diatur oleh kotak nomor. */
       return '<p class="'+pcls+'"'+a+'><span class="'+cls2+'" style="'+nstyle+'">'+tok+'</span>';
     }
@@ -15373,56 +15361,8 @@ function spkNumberFix(html){
       return '<p class="kl2 spk-sl"'+(attrs||'')+'><span class="n">'+ch+'</span>'+sp;
     }
   );
-  html = spkNumUniform(html);
   html = spkBreakRefNumbers(html);
   return html;
-}
-/* ---- KOTAK NOMOR SERAGAM + RATA KANAN (penomoran "Right" gaya Word) ----
-   HANYA untuk kelompok ANGKA yang lebar nomornya BERBEDA (campuran 1 digit & 2 digit,
-   mis. 8.9 s.d. 8.12). Daftar yang nomornya sudah sama lebar (a./b./c., 1./2./3.,
-   8.1 s.d. 8.9) TIDAK disentuh sedikit pun — tetap seperti sebelumnya.
-   Pada kelompok campuran: lebar kotak = nomor terpanjang, nomor rata kanan, sehingga
-   titik akhir nomor sejajar dan teks 1 digit & 2 digit mulai di kolom yang sama
-   (baris ke-2 tetap sejajar dengan huruf pertama teks). */
-function spkNumUniform(html){
-  var s=String(html==null?'':html);
-  if(s.indexOf('spk-sl')<0) return s;
-  try{
-    var box=document.createElement('div'); box.innerHTML=s;
-    var ps=box.querySelectorAll('p.spk-sl'), grup={}, i, k, ubah=false;
-    for(i=0;i<ps.length;i++){
-      var p=ps[i], n=p.firstElementChild;
-      if(!n || n.tagName!=='SPAN' || !n.classList || !n.classList.contains('n')) continue;
-      var tok=String(n.textContent||'').replace(/[\s\u00A0]+/g,'');
-      if(!tok || !/^(?:[0-9]+[.)])+$/.test(tok)) continue;      /* hanya nomor ANGKA */
-      var w=spkTextWidthCm(tok); if(!(w>0)) continue;
-      /* Kelompok = tingkat paragraf + awalan nomor (segmen terakhir dibuang):
-         "8.9." & "8.12." -> awalan "8."; "9.1." -> awalan "9." (kelompok lain). */
-      var lvl=(p.classList.contains('kl2')?'kl2':'kl1')+(p.classList.contains('spk-lv1')?'|lv1':'');
-      k=lvl+'|'+tok.replace(/[0-9]+[.)]$/,'');
-      if(!grup[k]) grup[k]={min:w, max:w, items:[]};
-      if(w<grup[k].min) grup[k].min=w;
-      if(w>grup[k].max) grup[k].max=w;
-      grup[k].items.push({p:p, n:n});
-    }
-    for(k in grup){
-      var g=grup[k];
-      if(g.items.length<2) continue;
-      if((g.max-g.min) < 0.03) continue;                        /* lebar sudah seragam -> jangan diusik */
-      var W=Math.max(0.4, Math.round((g.max+SPK_NUM_GAP)*100)/100);  /* nomor terpanjang + jeda */
-      for(i=0;i<g.items.length;i++){
-        var it=g.items[i];
-        var base=(it.p.classList.contains('kl2') && !it.p.classList.contains('spk-lv1')) ? 0.75 : 0;
-        it.p.style.marginLeft=(base+W).toFixed(2)+'cm';         /* kolom teks SAMA untuk semua butir */
-        it.p.style.textIndent='-'+W.toFixed(2)+'cm';            /* baris ke-2 sejajar teks */
-        it.n.style.width=W.toFixed(2)+'cm';
-        it.n.style.minWidth=W.toFixed(2)+'cm';
-        it.n.style.textAlign='right';                           /* rata kanan -> titik sejajar */
-      }
-      ubah=true;
-    }
-    return ubah ? box.innerHTML : s;                            /* tak ada yang diubah -> HTML asli */
-  }catch(e){ return s; }
 }
 /* Bungkus token "kode/nomor" (mengandung "/" atau rangkaian huruf-angka dengan
    "-"/"." menyambung) di dalam paragraf spk-dlist dengan <span class="refn">
@@ -19356,11 +19296,17 @@ function spkParaCss(eff, noInd){
   }
   return css;
 }
-/* Kotak nomor: lebarnya = hanging indent Word -> jarak nomor->teks IDENTIK
-   dengan Word; bila nomornya lebih lebar, kotak melebar (teks terdorong). */
-function spkNumBox(txt, hangCm){
-  return '<span class="n" style="display:inline-block;width:auto;min-width:'+hangCm+
-    'cm;text-indent:0;white-space:nowrap;text-align:left">'+txt+'</span>';
+/* Kotak nomor = PERSIS seperti Word:
+     - lebarnya TETAP selebar hanging indent Word (bukan melebar mengikuti nomor),
+       sehingga teks semua butir selalu mulai di kolom yang sama (tab stop Word);
+     - perataan nomor di dalam kotak mengikuti w:lvlJc Word (left/center/right).
+   Dengan lvlJc=right, nomor 1 digit & 2 digit berakhir di kolom yang sama —
+   sama seperti pengaturan penomoran rata kanan di Word. */
+function spkNumBox(txt, hangCm, jc){
+  var al=(jc==='right'||jc==='end')?'right':((jc==='center')?'center':'left');
+  return '<span class="n" style="display:inline-block;width:'+hangCm+'cm;box-sizing:border-box;'+
+    (al==='right'?'padding-right:0.10cm;':'')+
+    'text-indent:0;white-space:nowrap;text-align:'+al+'">'+txt+'</span>';
 }
 /* Peta styleId -> NAMA gaya (dinormalkan) dari word/styles.xml */
 function spkStyleNameMap(stylesXml){
@@ -19490,10 +19436,14 @@ function spkParseNumbering(xml){
         var lt=lvls[j].getElementsByTagNameNS(SPK_W_NS,'lvlText')[0];
         var st=lvls[j].getElementsByTagNameNS(SPK_W_NS,'start')[0];
         var li=spkReadPPr(lvls[j].getElementsByTagNameNS(SPK_W_NS,'pPr')[0]);
+        /* PERATAAN NOMOR dari Word (w:lvlJc): left / center / right.
+           Inilah yang membuat nomor 1 digit & 2 digit sejajar di Word. */
+        var lj=lvls[j].getElementsByTagNameNS(SPK_W_NS,'lvlJc')[0];
         abs[aid][il]={
           fmt:  nf?(nf.getAttributeNS(SPK_W_NS,'val')||'decimal'):'decimal',
           text: lt?(lt.getAttributeNS(SPK_W_NS,'val')||''):'',
           start:st?(parseInt(st.getAttributeNS(SPK_W_NS,'val'),10)||1):1,
+          jc:   lj?(lj.getAttributeNS(SPK_W_NS,'val')||'left'):'left',
           ind:  li.ind||{}
         };
       }
@@ -19601,8 +19551,10 @@ function spkWordXmlToKlausul(xmlText, stylesXml, numberingXml){
     /* === properti EFEKTIF paragraf, persis urutan Word:
        docDefaults -> rantai gaya (basedOn) -> definisi penomoran -> pPr langsung === */
     var eff=spkStyleChain(propMap, b.sid);
+    var lvlDef2=null;
     if(b.numId && b.numId!=='0'){
       var lvlDef=spkNumLvl(numbering, b.numId, b.ilvl);
+      lvlDef2=lvlDef;
       if(lvlDef && lvlDef.ind){
         if(lvlDef.ind.left!=null) eff.ind.left=lvlDef.ind.left;
         if(lvlDef.ind.hanging!=null){ eff.ind.hanging=lvlDef.ind.hanging; if(lvlDef.ind.hanging>0) eff.ind.firstLine=0; }
@@ -19621,7 +19573,8 @@ function spkWordXmlToKlausul(xmlText, stylesXml, numberingXml){
          indent Word -> jarak nomor->teks & baris lanjutan SAMA seperti Word. */
       if(cls!=='kl1' && cls!=='kl2') cls=((+b.ilvl)>=1)?'kl2':'kl1';
       if(hangCm>=0.2){
-        out=spkNumBox(spkXmlEsc(numStr), hangCm)+out.replace(/^[\t ]+/,'');
+        var lvlJc=(lvlDef2 && lvlDef2.jc) ? lvlDef2.jc : 'left';   /* perataan nomor dari Word */
+        out=spkNumBox(spkXmlEsc(numStr), hangCm, lvlJc)+out.replace(/^[\t ]+/,'');
         wrapped=true;
       }else{
         out=spkXmlEsc(numStr)+' '+out;
@@ -19633,7 +19586,7 @@ function spkWordXmlToKlausul(xmlText, stylesXml, numberingXml){
       var mm=/^((?:<(?:b|i|u)>)*)((?:\d+\.)+|\d+\)|[A-Za-z][.)])[\t\u00a0 ]+/.exec(out);
       if(mm && hangCm>=0.2 && !/^(CV|CD|MM|DVD|DIV|MMC|LC|DC|ID|IL|IM)[.)]$/i.test(mm[2])){
         if(cls!=='kl1' && cls!=='kl2') cls=((+eff.ind.left||0)>=1100)?'kl2':'kl1';
-        out=mm[1]+spkNumBox(mm[2], hangCm)+out.slice(mm[0].length);
+        out=mm[1]+spkNumBox(mm[2], hangCm, (lvlDef2&&lvlDef2.jc)||'left')+out.slice(mm[0].length);
         wrapped=true;
       }else{
         if(cls==='kl0'||cls==='kldesc'){                    // deteksi nomor yang diketik manual
