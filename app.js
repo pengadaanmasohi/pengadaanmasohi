@@ -14808,7 +14808,9 @@ function spkDocCss(){
   /* kl0 = paragraf biasa (sejajar teks judul); kldesc = deskripsi menjorok */
   '.spk-cl p.kl0{margin-left:0;text-indent:0}'+
   /* Contoh pengisian (placeholder): titik-titik sampai batas margin kanan, huruf samar */
-  '.spk-cl p.spk-ph{color:rgba(0,0,0,.22);white-space:nowrap;overflow:hidden;text-align:left}'+
+  /* Placeholder klausul kosong: huruf HITAM (dulu samar/transparan). Blok ini tetap
+     disaring keluar sebelum dicetak (spkIsPhBlock), jadi tidak muncul di PDF. */
+  '.spk-cl p.spk-ph{color:#000;white-space:nowrap;overflow:hidden;text-align:left}'+
   '.spk-cl p.kldesc{margin-left:0.75cm}'+
   /* Fallback bila nomor TIDAK ter-wrap (jarang): tetap hanging bertingkat */
   '.spk-cl p.kl1{margin-left:0.75cm;text-indent:-0.75cm}'+
@@ -14873,7 +14875,8 @@ function spkDocCss(){
      kedua tinggal 2 kata. Dipakai cara ini—bukan <br> manual—agar tetap rapi
      berapa pun panjang nama unit yang masuk dari mail merge. */
   '.spk-sign .org{font-weight:700;line-height:1.4;text-wrap:balance;text-align:center}'+
-  '.spk-sign .jab{color:#000}'+
+  /* Jabatan ditebalkan, seragam dengan tanda tangan Lampiran (.spk-lampsign .jab) */
+  '.spk-sign .jab{color:#000;font-weight:700}'+
   /* ===== Seragamkan SELURUH teks ISI kontrak = Arial 11pt =====
      Mencakup preamble, semua klausul (judul & isi), daftar, blok pihak, baris
      "Label : nilai", dan blok tanda tangan. Ketebalan/format (bold, garis bawah)
@@ -14888,7 +14891,9 @@ function spkDocCss(){
     'html,body{background:#54585c}'+
     'body{margin:0;padding:24px 0}'+
     '.spk-doc{margin:0 auto}'+
-    '.spk-page{width:210mm;height:297mm;min-height:297mm;background:#fff;margin:0 auto 22px;padding:12mm 15mm;box-shadow:0 8px 30px rgba(10,20,28,.34);overflow:hidden}'+
+    '.spk-page{width:210mm;height:297mm;min-height:297mm;background:#fff;margin:0 auto 22px;padding:25.4mm;box-shadow:0 8px 30px rgba(10,20,28,.34);overflow:hidden}'+
+    /* Lembar TABEL Lampiran SPK: margin lebih rapat supaya kolom-kolom harga muat */
+    '.spk-page.spk-lampsheet{padding:12mm 15mm}'+
     '.spk-page.spk-flow{height:auto;overflow:visible}'+
   '}';
 }
@@ -14902,7 +14907,8 @@ function spkDocCss2(){
   return ''+
   '@page{size:A4 portrait;margin:0}'+
   /* Halaman Lampiran memakai ukuran & margin yang SAMA dengan halaman kontrak:
-     A4 portrait, margin 12mm atas/bawah & 15mm kiri/kanan (mengikuti @page di atas). Aturan halaman
+     A4 portrait. CATATAN: halaman kontrak memakai margin NORMAL 2,54cm, sedangkan
+     lembar TABEL Lampiran SPK memakai 12mm/15mm agar kolom harga muat. Aturan halaman
      khusus 15mm sudah dicabut — tidak diperlukan lagi setelah bug colgroup ganda
      pada paginator diperbaiki, sebab tabel kini melebar penuh dengan benar. */
   'html,body{background:#fff}'+
@@ -14910,10 +14916,10 @@ function spkDocCss2(){
   '.spk-page{position:relative;page-break-after:always;break-after:page}'+
   '.spk-page:last-child{page-break-after:auto;break-after:auto}'+
   /* ---------- COVER ----------
-     Tinggi cover dibuat PERSIS setinggi area cetak A4 (297mm - margin atas 12mm
-     - margin bawah 12mm = 273mm), sehingga ukuran cover di pratinjau layar
+     Tinggi cover dibuat PERSIS setinggi area ketik A4 dengan margin normal
+     (297mm - 25,4mm - 25,4mm = 246,2mm), sehingga ukuran cover di pratinjau layar
      dan di hasil Cetak/PDF benar-benar sama (tidak ada sisa 8mm seperti semula). */
-  '.spk-cover{font-family:'+G+';color:#201E1D;display:flex;flex-direction:column;min-height:273mm}'+
+  '.spk-cover{font-family:'+G+';color:#201E1D;display:flex;flex-direction:column;min-height:246.2mm}'+
   '.spk-cover .cv-top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}'+
   '.spk-cover .cv-brand{display:flex;align-items:center;gap:16px}'+
   '.spk-cover .cv-brand img{height:56px;width:auto;display:block}'+
@@ -15094,7 +15100,7 @@ function spkDocCss2(){
   /* ---------- LEMBAR ISI HASIL PEMECAHAN HALAMAN (spkPageScript) ----------
      Isi kontrak & lampiran dipecah menjadi lembar A4 sungguhan: kop di atas,
      isi di tengah (tinggi tetap), footer paraf menempel di dasar lembar. */
-  '.spk-sheet{display:flex;flex-direction:column;min-height:273mm;page-break-before:auto;break-before:auto}'+
+  '.spk-sheet{display:flex;flex-direction:column;min-height:0;page-break-before:auto;break-before:auto}'+
   '.spk-sheet > .sh-hd{flex:0 0 auto}'+
   '.spk-sheet > .sh-bd{flex:1 1 auto;overflow:hidden}'+
   '.spk-sheet > .sh-ft{flex:0 0 auto;margin-top:auto}'+
@@ -15108,7 +15114,9 @@ function spkDocCss2(){
   '@media screen{'+
     'html,body{background:#54585c;margin:0;padding:24px 0}'+
     '.spk-doc{margin:0 auto}'+
-    '.spk-page{width:210mm;height:297mm;min-height:297mm;background:#fff;margin:0 auto 22px;padding:12mm 15mm;box-shadow:0 8px 30px rgba(10,20,28,.34);overflow:hidden}'+
+    '.spk-page{width:210mm;height:297mm;min-height:297mm;background:#fff;margin:0 auto 22px;padding:25.4mm;box-shadow:0 8px 30px rgba(10,20,28,.34);overflow:hidden}'+
+    /* Lembar TABEL Lampiran SPK: margin lebih rapat supaya kolom-kolom harga muat */
+    '.spk-page.spk-lampsheet{padding:12mm 15mm}'+
     '.spk-page.spk-flow{height:auto;overflow:visible}'+
     /* ===== PEMISAH HALAMAN DI PRATINJAU (seperti Rekap HPS) =====
        Lembar "isi" (spk-flow) tumbuh memanjang, jadi batas halaman fisik tidak
@@ -15134,14 +15142,15 @@ function spkDocCss2(){
        Kini @page{margin:0} dan tiap lembar tetap 210x297mm dengan padding sendiri
        (12mm atas/bawah, 15mm kiri/kanan) — persis seperti dokumen HPS (.hpsc-page).
        overflow:hidden menjamin lembar tidak pernah tumpah ke halaman berikutnya. */
-    '.spk-page{width:210mm;height:297mm;min-height:297mm;margin:0;padding:12mm 15mm;box-shadow:none;overflow:hidden;page-break-after:always;break-after:page}'+
+    '.spk-page{width:210mm;height:297mm;min-height:297mm;margin:0;padding:25.4mm;box-shadow:none;overflow:hidden;page-break-after:always;break-after:page}'+
+    '.spk-page.spk-lampsheet{padding:12mm 15mm}'+
     '.spk-page:last-child{page-break-after:auto;break-after:auto}'+
     /* Cadangan: bila paginator gagal jalan, lembar isi (.spk-flow) belum dipecah —
        biarkan memanjang & dipotong mesin cetak, jangan dipaksa 297mm. */
     '.spk-page.spk-flow{height:auto;min-height:0;overflow:visible}'+
     /* Tinggi lembar sudah ditentukan kotak halaman; min-height tak diperlukan lagi */
     '.spk-sheet{min-height:0}'+
-    '.spk-cover{min-height:273mm}'+
+    '.spk-cover{min-height:246.2mm}'+
     '.spk-guide{display:none!important}'+
     '.fkl-print-page{width:auto;min-height:0;margin:0;padding:0;box-shadow:none}'+
     'table.spk-run > thead{display:table-header-group}'+
@@ -15872,8 +15881,8 @@ function spkWEPageCount(){
 /* --- Paginasi ala Word ---
    Menyisipkan "spacer" tak-teredit di batas halaman sehingga paragraf yang akan
    melewati margin bawah otomatis TURUN ke area ketik halaman berikutnya (melompati
-   zona margin bawah + margin atas). Tinggi area ketik per halaman = 297mm − 2×12mm
-   = 273mm; awal area ketik tiap halaman = kelipatan 297mm (koordinat dari atas doc).
+   zona margin bawah + margin atas). Tinggi area ketik per halaman = 297mm − 2×25,4mm
+   = 246,2mm; awal area ketik tiap halaman = kelipatan 297mm (koordinat dari atas doc).
    Dijalankan setelah mengetik (debounce). Spacer dibuang saat menyimpan. */
 var _spkPagBusy=false;
 function spkWEPaginate(){
@@ -15884,7 +15893,7 @@ function spkWEPaginate(){
     Array.prototype.slice.call(doc.children).forEach(function(el){
       if(el.nodeType===1 && el.classList && el.classList.contains('spk-pagebreak')) doc.removeChild(el);
     });
-    var PX=96/25.4, USABLE=273*PX, PAGE=297*PX;
+    var PX=96/25.4, USABLE=246.2*PX, PAGE=297*PX;
     var kids=Array.prototype.slice.call(doc.children);
     for(var i=0;i<kids.length;i++){
       var b=kids[i]; if(b.nodeType!==1) continue;
@@ -15920,7 +15929,7 @@ function spkWEToggleRuler(on){
    L   = titik nol paragraf (batas margin + OFF), CW = lebar kolom teks. */
 function spkWERulerGeom(){
   var PX=96/25.4;                 // px per mm (96 dpi)
-  var W=Math.round(210*PX), M=Math.round(15*PX), CM=10*PX;
+  var W=Math.round(210*PX), M=Math.round(25.4*PX), CM=10*PX;
   var d=document.getElementById('spk-we-doc');
   var OFF=d ? (parseFloat(getComputedStyle(d).paddingLeft)||0) : 0;
   return { PX:PX, W:W, M:M, CM:CM, OFF:OFF, L:M+OFF, CW:(W-2*M)-OFF };
@@ -17899,7 +17908,11 @@ function spkPageScript(){
     '}',
     'function jalan(){',
     ' if(DONE) return;',
-    ' var PH=mm2px(273);',
+    /* Tinggi area isi berbeda per jenis lembar:
+         - halaman kontrak : margin normal 2,54cm -> 297 - 25,4 - 25,4 = 246,2mm
+         - lembar Lampiran : margin 12mm          -> 297 - 12 - 12     = 273mm  */
+    ' var PH=mm2px(246.2);',
+    ' var PHL=mm2px(273);',
     ' if(!PH||PH<200){ if(TRY++<80) setTimeout(jalan,100); return; }',
     ' DONE=true;',
     ' var doc=document.querySelector(".spk-doc");',
@@ -17907,7 +17920,7 @@ function spkPageScript(){
     ' try{',
     '   var UID={n:0};',
     '   var list=document.querySelectorAll(".spk-doc > .spk-page.spk-flow");',
-    '   for(var i=0;i<list.length;i++) build(list[i], PH, UID);',
+    '   for(var i=0;i<list.length;i++) build(list[i], hasCls(list[i],"spk-lampsheet")?PHL:PH, UID);',
     '   tandaiLanjutan();',
     '   nomorToc();',
     '   nomorFooter();',
