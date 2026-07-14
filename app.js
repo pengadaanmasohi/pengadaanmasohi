@@ -13387,8 +13387,8 @@ const SPK_FIELD_GROUPS = [
     {k:'pemilik_rekening', l:'Pemilik Rekening', t:'text', span:2, def:''},
     {k:'no_penawaran_penyedia', l:'No. Penawaran', t:'text', span:2, def:''},
     {k:'tgl_penawaran', l:'Tgl. Penawaran', t:'date', def:''},
-    {k:'akta_pendirian', l:'Rincian Akta Pendirian', t:'textarea', span:2, def:SPK_DEF_AKTA_PENDIRIAN},
-    {k:'akta_perubahan', l:'Rincian Akta Perubahan', t:'textarea', span:2, def:SPK_DEF_AKTA_PERUBAHAN},
+    {k:'akta_pendirian', l:'Rincian Akta Pendirian', t:'textarea', span:2, hl:true, def:SPK_DEF_AKTA_PENDIRIAN},
+    {k:'akta_perubahan', l:'Rincian Akta Perubahan', t:'textarea', span:2, hl:true, def:SPK_DEF_AKTA_PERUBAHAN},
   ]},
   { sec:'Pengendali Pekerjaan', fields:[
     {k:'jabatan_direksi', l:'Jabatan Direksi Pekerjaan', t:'text', span:2, def:''},
@@ -14157,6 +14157,49 @@ function spkCopyCode(k){
   try{ navigator.clipboard.writeText(t).then(function(){ toast('Kode '+t+' disalin','ok'); },function(){ toast('Kode: '+t,'info'); }); }
   catch(e){ toast('Kode: '+t,'info'); }
 }
+/* ===== Sorotan placeholder pada textarea Akta =====
+   Teknik overlay: satu lapisan latar (backdrop) menampilkan salinan teks dengan
+   bagian "( ... )" berwarna MERAH; textarea di atasnya dibuat transparan (kursor
+   tetap terlihat). Begitu placeholder diganti — tanda kurung hilang — teksnya
+   otomatis menjadi HITAM. CSS-nya disuntik sekali agar cukup ganti app.js saja. */
+function spkAktaHlHtml(text){
+  var esc=fkEsc(String(text==null?'':text));
+  esc=esc.replace(/\([^)]*\)/g, function(m){ return '<span class="spk-hl-red">'+m+'</span>'; });
+  if(/\n$/.test(esc)) esc+=' ';   // jaga tinggi baris terakhir bila diakhiri newline
+  return esc || '&nbsp;';
+}
+function spkAktaHlInput(el,k){
+  spkSet(k, el.value);
+  var bd=document.getElementById('spk-hlbd-'+k);
+  if(bd){ bd.innerHTML=spkAktaHlHtml(el.value); bd.scrollTop=el.scrollTop; bd.scrollLeft=el.scrollLeft; }
+}
+function spkAktaHlScroll(el,k){
+  var bd=document.getElementById('spk-hlbd-'+k);
+  if(bd){ bd.scrollTop=el.scrollTop; bd.scrollLeft=el.scrollLeft; }
+}
+function spkEnsureHlStyle(){
+  if(document.getElementById('spk-hl-style')) return;
+  var css=
+    '.spk-hlwrap{position:relative;width:100%}'+
+    '.spk-hlwrap .spk-hl-backdrop,.spk-hlwrap .spk-hl-input{'+
+      "font-family:'Inter','Segoe UI',Arial,sans-serif;font-size:12px;line-height:1.55;"+
+      'padding:10px 12px;border:1px solid transparent;border-radius:11px;'+
+      'box-sizing:border-box;width:100%;margin:0;letter-spacing:normal;text-align:left;'+
+      'white-space:pre-wrap;overflow-wrap:break-word;word-break:break-word}'+
+    '.spk-hlwrap .spk-hl-backdrop{position:absolute;top:0;left:0;right:0;bottom:0;z-index:1;'+
+      'pointer-events:none;overflow:hidden;background:transparent;color:#12242b}'+
+    '.spk-hlwrap .spk-hl-backdrop .spk-hl-red{color:#E5484D;font-weight:600}'+
+    '.spk-hlwrap .spk-hl-input{position:relative;z-index:2;display:block;resize:vertical;min-height:78px;'+
+      'color:transparent;-webkit-text-fill-color:transparent;caret-color:#12242b;'+
+      'background:linear-gradient(180deg,#ffffff,#fafdfe);border-color:#cdd9de;'+
+      'box-shadow:0 1px 2px rgba(16,40,50,.06),inset 0 1px 0 rgba(255,255,255,.6)}'+
+    '.spk-hlwrap .spk-hl-input:focus{outline:none;border-color:var(--teal);background:#fff;'+
+      'box-shadow:0 0 0 3px rgba(14,124,134,.16),0 4px 12px rgba(14,124,134,.16)}'+
+    '.spk-hlwrap .spk-hl-input::selection{background:rgba(14,124,134,.20);color:transparent;-webkit-text-fill-color:transparent}'+
+    '.spk-hlwrap .spk-hl-input::-moz-selection{background:rgba(14,124,134,.20);color:transparent}';
+  var st=document.createElement('style'); st.id='spk-hl-style'; st.textContent=css;
+  (document.head||document.documentElement).appendChild(st);
+}
 function spkFieldInput(f){
   const v = spkState.data[f.k];
   // 4 field per baris; kecuali Rincian Akta Pendirian & Perubahan yang 2 field per baris
@@ -14208,6 +14251,18 @@ function spkFieldInput(f){
       '<input type="text" id="spk-fld-'+f.k+'" value="'+fkEsc(v||'')+'"'+(f.ph?(' placeholder="'+fkEsc(f.ph)+'"'):'')+' oninput="spkSet(\''+f.k+'\',this.value)"></div>';
   }
   if(f.t==='textarea'){
+    if(f.hl){
+      // Textarea dengan penanda placeholder: bagian "( ... )" ditampilkan MERAH
+      // (belum diisi); setelah diganti isinya (tanda kurung hilang) menjadi HITAM.
+      spkEnsureHlStyle();
+      const val0=v||'';
+      return '<div class="field"'+span+'><label>'+spkLbl(f)+'</label>'+
+        '<div class="spk-hlwrap">'+
+          '<div class="spk-hl-backdrop" id="spk-hlbd-'+f.k+'" aria-hidden="true">'+spkAktaHlHtml(val0)+'</div>'+
+          '<textarea class="spk-hl-input" rows="3" spellcheck="false" '+
+            'oninput="spkAktaHlInput(this,\''+f.k+'\')" onscroll="spkAktaHlScroll(this,\''+f.k+'\')">'+fkEsc(val0)+'</textarea>'+
+        '</div></div>';
+    }
     return '<div class="field"'+span+'><label>'+spkLbl(f)+'</label><textarea rows="3" oninput="spkSet(\''+f.k+'\',this.value)">'+fkEsc(v||'')+'</textarea></div>';
   }
   if(f.t==='narasi'){
