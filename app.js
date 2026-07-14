@@ -14904,6 +14904,10 @@ function spkDocCss(){
   '.spk-cl-h .n{display:inline-block;width:0.65cm;text-indent:0;text-align:left}'+
   /* Perataan nomor tunggal 2 digit (mis. 10.) rata kanan -> titik sejajar */
   '.spk-clause .n.r,.spk-cl-h .n.r{text-align:right;padding-right:0.1cm;box-sizing:border-box}'+
+  /* ANGKA TABULAR: di font proporsional, digit "1" lebih sempit dari "2" sehingga
+     "4.1." dan "4.2." berbeda lebar dan titiknya tidak sejajar. tnum menyamakan
+     lebar semua digit — persis seperti penomoran di Word. */
+  '.spk-clause .n,.spk-cl-h .n,.spk-cl .n{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1,"lnum" 1}'+
   '.spk-cl{margin:0;font-size:11pt;color:#000;line-height:'+spkLHCss(1.15)+'}'+
   /* Isi klausul menjorok sejajar dengan TEKS judul (0,75 cm dari margin) */
   '.spk-clause .spk-cl{padding-left:0.75cm}'+
@@ -15300,6 +15304,11 @@ function spkDocCss2(){
    rata-kanan agar titik desimalnya sejajar dengan nomor 1 digit. Label majemuk
    memakai lebar kolom otomatis (min 0,75 cm) supaya "11.1.1." tetap mendapat
    jarak cukup tanpa menabrak teks. */
+/* Jarak nomor -> teks (cm). Word memakai jeda kecil; 0,14 cm terasa terlalu longgar.
+   SPK_NUM_PAD = padding kanan kotak nomor (sedikit lebih kecil dari jeda agar titik
+   terakhir nomor tidak terdorong). Ubah dua angka ini bila ingin lebih rapat/renggang. */
+const SPK_NUM_GAP = 0.08;
+const SPK_NUM_PAD = 0.06;
 function spkNumberFix(html){
   html = String(html||'').replace(
     /<p class="(kl1|kl2)"((?:\s+[a-zA-Z-]+="[^"]*")*)>((?:[0-9]+\.)+|[0-9]+\)|[A-Za-z][.)]|[ivxlcdmIVXLCDM]{2,4}[.)])(&nbsp;|\s)/g,
@@ -15322,7 +15331,8 @@ function spkNumberFix(html){
          punya hanging sendiri (margin-left/text-indent inline), jadi baris ke-2 sejajar
          tepat di bawah huruf pertama. Nomor 2 digit (8.10) otomatis mendorong teksnya
          sedikit ke kanan — natural seperti Word. */
-      var hug=Math.max(0.4, Math.round((spkTextWidthCm(tok)+0.14)*100)/100);
+      /* Jeda nomor->teks: 0,08 cm (sebelumnya 0,14 cm terasa terlalu jauh dibanding Word). */
+      var hug=Math.max(0.4, Math.round((spkTextWidthCm(tok)+SPK_NUM_GAP)*100)/100);
       var base=(cls==='kl2' && !forceLv1)?0.75:0;
       var ml=(base+hug).toFixed(2), ti=hug.toFixed(2);
       var a=attrs||'';
@@ -15330,8 +15340,21 @@ function spkNumberFix(html){
       if(/\bstyle="/.test(a)) a=a.replace(/style="([^"]*)"/, 'style="'+extra+';$1"');
       else a=a+' style="'+extra+'"';
       /* white-space:nowrap -> nomor (mis. "8.10.") tidak pernah terpotong ke baris baru;
-         padding 0,12 < jeda 0,14 -> ada sedikit ruang agar titik terakhir tak terdorong. */
-      var nstyle='width:'+ti+'cm;display:inline-block;box-sizing:border-box;padding-right:0.12cm;text-indent:0;white-space:nowrap;text-align:'+(right?'right':'left');
+         padding 0,12 < jeda 0,14 -> ada sedikit ruang agar titik terakhir tak terdorong.
+         RATA KANAN untuk semua nomor ANGKA (1. / 10. / 4.1. / 3.1.1.): pada font
+         proporsional digit "1" lebih sempit dari "2", sehingga nomor yang dirata-kirikan
+         berhenti di titik yang berbeda ("4.1." vs "4.2."). Dengan rata kanan, titik akhir
+         nomor selalu sejajar dan jarak nomor->teks seragam — seperti penomoran Word.
+         Huruf (a./b.) & simbol tetap rata kiri. */
+      var isNum = /^(?:[0-9]+[.)])+$/.test(tok);
+      /* Nomor ANGKA dipaksa memakai Arial: digitnya TABULAR (semua angka sama lebar),
+         jadi "10.1." sama panjang dengan "10.2." dan tepi kirinya sejajar — tidak
+         bergantung fitur "tnum" yang ternyata tidak aktif pada font isi. Lebar kotak
+         nomor juga diukur dengan Arial (spkTextWidthCm), jadi persis cocok. */
+      var ntab = isNum ? 'font-family:Arial,Helvetica,sans-serif;font-variant-numeric:tabular-nums;'+
+                         'font-feature-settings:"tnum" 1,"lnum" 1;font-kerning:none;' : '';
+      var nstyle=ntab+'width:'+ti+'cm;display:inline-block;box-sizing:border-box;padding-right:'+SPK_NUM_PAD+'cm;'+
+        'text-indent:0;white-space:nowrap;text-align:'+((right||isNum)?'right':'left');
       /* Tanpa spasi literal setelah nomor: jarak diatur oleh kotak nomor. */
       return '<p class="'+pcls+'"'+a+'><span class="'+cls2+'" style="'+nstyle+'">'+tok+'</span>';
     }
@@ -15386,7 +15409,7 @@ function spkNumUniform(html){
       var g=grup[k];
       if(g.items.length<2) continue;
       if((g.max-g.min) < 0.03) continue;                        /* lebar sudah seragam -> jangan diusik */
-      var W=Math.max(0.4, Math.round((g.max+0.14)*100)/100);    /* nomor terpanjang + jeda 0,14 cm */
+      var W=Math.max(0.4, Math.round((g.max+SPK_NUM_GAP)*100)/100);  /* nomor terpanjang + jeda */
       for(i=0;i<g.items.length;i++){
         var it=g.items[i];
         var base=(it.p.classList.contains('kl2') && !it.p.classList.contains('spk-lv1')) ? 0.75 : 0;
