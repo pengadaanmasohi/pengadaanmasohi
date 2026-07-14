@@ -3250,3 +3250,9 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
   .jp-profil-btn span{display:inline}
   .jp-profil-btn,.dp-pick-btn,.dp-unpick-btn{padding:9px 13px;font-size:11px}
 }
+
+/* Data Pekerjaan yang SUDAH DIGUNAKAN dokumen lain pada modul yang sama */
+.hps-ana-item.is-used{opacity:.62;background:#faf7f7;border-color:#eccfcf}
+.hps-ana-item.is-used:hover{border-color:#e0a8a8}
+.hps-ana-item.is-used .ic{background:#c9cfd2;color:#fff}
+.dp-used-tag{display:inline-flex;align-items:center;margin-left:8px;padding:2px 8px;border-radius:999px;background:#fbe6e6;color:#b02626;border:1px solid #eec5c5;font-family:'Plus Jakarta Sans',sans-serif;font-size:9.5px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;vertical-align:middle}
