@@ -14762,6 +14762,27 @@ function spkPreviewCurrent(){
   spkOpenPreview(spkState.data, kl);
 }
 
+/* ============ SPASI BARIS: ARTI "1,15" DI WORD vs DI CSS ============
+   Word menghitung penspasian baris dari TINGGI BARIS TUNGGAL font (ascent + descent
+   + line gap), BUKAN dari ukuran hurufnya. Untuk Arial/Calibri/Inter tinggi baris
+   tunggal itu ~1,15 em. Jadi di Word:
+       "1,0  baris"  ~= 1,15 em
+       "1,15 baris"  ~= 1,15 x 1,15 = 1,32 em
+       "1,5  baris"  ~= 1,73 em
+   Sementara CSS `line-height:1.15` berarti 1,15 x UKURAN HURUF = 1,15 em, yang
+   sebenarnya sama dengan spasi TUNGGAL Word — bukan 1,15.
+   Selama ini dokumen memakai line-height:1.15 sambil menyebutnya "1,15", padahal
+   yang tercetak adalah spasi tunggal. Semua nilai kini dikonversi lewat SPK_LH_K
+   supaya angka yang tertulis di aplikasi = angka yang sama di Word. */
+const SPK_LH_K = 1.15;                                   /* tinggi baris tunggal (em) */
+function spkLHCss(word){                                  /* nilai Word -> line-height CSS */
+  var n=parseFloat(word); if(isNaN(n)) return '';
+  return String(Math.round(n*SPK_LH_K*1000)/1000);
+}
+function spkLHWord(css){                                  /* line-height CSS -> nilai Word */
+  var n=parseFloat(css); if(isNaN(n)) return null;
+  return Math.round((n/SPK_LH_K)*100)/100;
+}
 /* ================= DOKUMEN KONTRAK (cover + daftar isi + isi) ================= */
 function spkDocCss(){
   return ''+
@@ -14797,14 +14818,14 @@ function spkDocCss(){
   /* Kotak nomor judul klausul dipersempit 0,75cm -> 0,65cm: cukup untuk nomor
      2 digit (mis. "15." = ~0,54cm pada Arial bold 11pt) plus sedikit jarak,
      sehingga judul lebih dekat ke nomornya. */
-  '.spk-cl-h{font-weight:700;font-size:11pt;color:#000;line-height:1.15;text-transform:uppercase;text-align:left;margin:12pt 0 3pt;padding-left:0.65cm;text-indent:-0.65cm}'+
+  '.spk-cl-h{font-weight:700;font-size:11pt;color:#000;line-height:'+spkLHCss(1.15)+';text-transform:uppercase;text-align:left;margin:12pt 0 3pt;padding-left:0.65cm;text-indent:-0.65cm}'+
   '.spk-cl-h .n{display:inline-block;width:0.65cm;text-indent:0;text-align:left}'+
   /* Perataan nomor tunggal 2 digit (mis. 10.) rata kanan -> titik sejajar */
   '.spk-clause .n.r,.spk-cl-h .n.r{text-align:right;padding-right:0.1cm;box-sizing:border-box}'+
-  '.spk-cl{margin:0;font-size:11pt;color:#000;line-height:1.15}'+
+  '.spk-cl{margin:0;font-size:11pt;color:#000;line-height:'+spkLHCss(1.15)+'}'+
   /* Isi klausul menjorok sejajar dengan TEKS judul (0,75 cm dari margin) */
   '.spk-clause .spk-cl{padding-left:0.75cm}'+
-  '.spk-cl p{margin:0 0 6pt;text-align:justify;line-height:1.15}'+
+  '.spk-cl p{margin:0 0 6pt;text-align:justify;line-height:'+spkLHCss(1.15)+'}'+
   /* kl0 = paragraf biasa (sejajar teks judul); kldesc = deskripsi menjorok */
   '.spk-cl p.kl0{margin-left:0;text-indent:0}'+
   /* Contoh pengisian (placeholder): titik-titik sampai batas margin kanan, huruf samar */
@@ -14834,20 +14855,20 @@ function spkDocCss(){
      sejajar di tingkat-1 (0,75 cm) seperti Word; huruf a./b. tetap di 1,5 cm. */
   '.spk-cl p.kl2.spk-lv1{margin-left:1.27cm;text-indent:-1.27cm;padding-left:0}'+
   /* Baris "Label : nilai" agar sejajar seperti Word */
-  '.spk-cl .spk-kv{display:flex;margin:0 0 4pt;line-height:1.15}'+
+  '.spk-cl .spk-kv{display:flex;margin:0 0 4pt;line-height:'+spkLHCss(1.15)+'}'+
   '.spk-cl .spk-kv .k{flex:0 0 34%;max-width:34%}'+
   '.spk-cl .spk-kv .s{flex:0 0 auto;width:1.2em}'+
   '.spk-cl .spk-kv .v{flex:1;text-align:justify}'+
   /* Blok PIHAK pada pembuka: label (I./II.) menggantung, deskripsi sejajar di bawah label */
   '.spk-cl .spk-party{margin:0 0 9pt}'+
-  '.spk-cl .spk-party-h{font-weight:700;line-height:1.15;padding-left:0.75cm;text-indent:-0.75cm;margin:0}'+
+  '.spk-cl .spk-party-h{font-weight:700;line-height:'+spkLHCss(1.15)+';padding-left:0.75cm;text-indent:-0.75cm;margin:0}'+
   '.spk-cl .spk-party-h .n{display:inline-block;width:0.75cm;text-indent:0}'+
-  '.spk-cl .spk-party-d{margin:0;padding-left:0.75cm;text-align:justify;line-height:1.15}'+
+  '.spk-cl .spk-party-d{margin:0;padding-left:0.75cm;text-align:justify;line-height:'+spkLHCss(1.15)+'}'+
   /* "Berdasarkan :" rata margin kiri (sejajar "Pada hari ini"), jarak 12 pt dari blok pihak */
   '.spk-cl p.spk-berdasar{margin-top:12pt;margin-left:0;padding-left:0}'+
   /* Daftar "Berdasarkan": nomor tunggal (1. a. I.) dengan jarak tab ~0,7 cm,
      baris sambungan sejajar teks di atasnya (mengikuti penggaris Word) */
-  '.spk-cl p.spk-dlist{margin:0 0 4pt;padding-left:0.7cm;text-indent:-0.7cm;text-align:justify;line-height:1.15}'+
+  '.spk-cl p.spk-dlist{margin:0 0 4pt;padding-left:0.7cm;text-indent:-0.7cm;text-align:justify;line-height:'+spkLHCss(1.15)+'}'+
   '.spk-cl p.spk-dlist .n{display:inline-block;width:0.7cm;text-indent:0}'+
   /* Nomor/kode referensi panjang di daftar "Berdasarkan" boleh dipotong di titik
      mana pun agar mengisi baris justify secara rapat — sisa nomor turun ke baris
@@ -15361,6 +15382,7 @@ function spkWEToolbarHtml(){
       '<div class="spk-we-grp">'+
         '<select id="spk-we-case" title="Ubah huruf" onchange="spkWECase(this.value)">'+
           '<option value="">Aa Huruf</option>'+
+          '<option value="sentence">Kalimat</option>'+
           '<option value="upper">HURUF BESAR</option>'+
           '<option value="lower">huruf kecil</option>'+
           '<option value="cap">Kapital Awal</option>'+
@@ -15619,7 +15641,202 @@ function spkWESerialize(doc){
 var _spkPagTimer=null;
 function spkWEPaginateSoon(){ clearTimeout(_spkPagTimer); _spkPagTimer=setTimeout(spkWEPaginate, 250); }
 /* --- Ikat event pada kanvas --- */
+/* ============ TEMPEL (PASTE) DARI WORD / WEB ============
+   Sebelumnya editor tidak punya penangan paste, jadi HTML mentah Word masuk apa
+   adanya. Word membawa serta:
+     - style "text-transform:uppercase" / "mso-style-textoutline" (huruf KAPITAL
+       hanyalah FORMAT, teks aslinya huruf biasa) -> teks tampak kapital semua,
+     - margin-left / text-indent / mso-list bawaan Word -> indentasi kacau,
+     - <span style="font-family:...;font-size:...">, kelas MsoNormal, dll.
+   Semua itu dibuang. Yang dipertahankan hanya STRUKTUR PARAGRAF dan penekanan
+   dasar (tebal / miring / garis bawah). Tiap paragraf lalu diberi kelas milik
+   aplikasi ini:
+     kl0 = teks biasa  -> SEJAJAR dengan teks judul klausul (sesudah nomor)
+     kl1 = diawali "1." / "1.1" / "2)"  -> hanging indent 0,75cm
+     kl2 = diawali "a." / "b)"          -> hanging indent bertingkat
+   Dengan begitu isi klausul SELALU lurus dengan judulnya, apa pun sumber salinan. */
+const SPK_WE_INLINE_KEEP={B:1,STRONG:1,I:1,EM:1,U:1,SUP:1,SUB:1};
+function spkWEInlineHtml(node){
+  var out='';
+  for(var k=node.firstChild;k;k=k.nextSibling){
+    if(k.nodeType===3){ out+=fkEsc(String(k.nodeValue||'').replace(/[\s\u00A0]+/g,' ')); continue; }
+    if(k.nodeType!==1) continue;
+    var t=k.tagName;
+    if(t==='BR'){ out+=' '; continue; }
+    var inner=spkWEInlineHtml(k);
+    if(!inner.replace(/<[^>]+>/g,'').trim()) continue;
+    if(SPK_WE_INLINE_KEEP[t]){
+      var tag=(t==='STRONG')?'b':(t==='EM')?'i':t.toLowerCase();
+      out+='<'+tag+'>'+inner+'</'+tag+'>';
+    }else{
+      out+=inner;                       /* span/font/div pembungkus -> buang tag, ambil isinya */
+    }
+  }
+  return out;
+}
+/* HTML tempelan -> daftar potongan HTML per paragraf (tanpa style & kelas apa pun) */
+/* ---- JARAK / SPASI PARAGRAF: IKUT WORD, BUKAN BAWAAN APLIKASI ----
+   Aplikasi punya aturan bawaan (.spk-cl p{margin:0 0 6pt;line-height:1.15;text-align:justify}
+   dan judul klausul spasi-sebelum 12pt). Aturan itu HANYA berlaku bila sumber tempelan
+   tidak menyebut jaraknya sendiri. Word menyalin ukurannya secara inline pada tiap
+   <p> (margin-top / margin-bottom / line-height / text-align, kadang lewat awalan
+   mso-para-*), jadi nilai-nilai itu dibaca dan dipasang kembali sebagai style inline —
+   style inline mengalahkan CSS bawaan, sehingga:
+     - "spasi sebelum" & "spasi sesudah" persis seperti di Word,
+     - spasi baris (1; 1,15; 1,5; ganda; atau nilai pt) persis seperti di Word,
+     - perataan (kiri / tengah / kanan / rata kanan-kiri) persis seperti di Word.
+   Yang TETAP ditata aplikasi hanyalah INDENTASI (kelas kl0/kl1/kl2), supaya isi klausul
+   selalu lurus dengan teks judulnya. Nilai inline ini juga terbaca kembali oleh
+   spkPPrFromCss() saat diekspor ke .docx, jadi bolak-balik Word <-> web tetap sama. */
+function spkWECssPt(v){
+  v=String(v==null?'':v).trim(); if(!v) return null;
+  var m=/^(-?[\d.]+)\s*(pt|cm|mm|in|px|pc)?$/i.exec(v); if(!m) return null;
+  var n=parseFloat(m[1]); if(isNaN(n)) return null;
+  var u=(m[2]||'pt').toLowerCase();
+  var f=(u==='cm')?28.3465:(u==='mm')?2.83465:(u==='in')?72:(u==='px')?0.75:(u==='pc')?12:1;
+  return n*f;
+}
+function spkWEStyleOf(el){
+  var raw=String((el && el.getAttribute && el.getAttribute('style'))||'').toLowerCase();
+  if(!raw) return '';
+  function amb(prop){
+    var m=new RegExp('(?:^|;)\\s*'+prop+'\\s*:\\s*([^;]+)','i').exec(raw);
+    return m ? m[1].trim() : '';
+  }
+  var out=[];
+  var mt=amb('margin-top')||amb('mso-para-margin-top');
+  var mb=amb('margin-bottom')||amb('mso-para-margin-bottom');
+  var pt;
+  pt=spkWECssPt(mt); if(pt!=null) out.push('margin-top:'+(Math.round(pt*10)/10)+'pt');
+  pt=spkWECssPt(mb); if(pt!=null) out.push('margin-bottom:'+(Math.round(pt*10)/10)+'pt');
+  var lh=amb('line-height');
+  if(lh && lh!=='normal'){
+    if(/%$/.test(lh)){
+      var pv=parseFloat(lh);
+      if(!isNaN(pv)) out.push('line-height:'+spkLHCss(pv/100));            /* Word 115% -> 1,15 baris */
+    }else if(/^[\d.]+$/.test(lh)){
+      out.push('line-height:'+spkLHCss(parseFloat(lh)));                    /* Word 1,5 baris */
+    }else{
+      var lp=spkWECssPt(lh);
+      if(lp!=null) out.push('line-height:'+(Math.round(lp*10)/10)+'pt');    /* 13.5pt (spasi pas) */
+    }
+  }
+  var ta=amb('text-align');
+  if(/^(left|right|center|justify)$/.test(ta)) out.push('text-align:'+ta);
+  return out.join(';');
+}
+function spkWEHtmlToBlocks(html){
+  var host=document.createElement('div');
+  host.innerHTML=String(html||'').replace(/<!--[\s\S]*?-->/g,'');
+  ['style','script','meta','link','title','xml'].forEach(function(t){
+    var e=host.getElementsByTagName(t);
+    for(var i=e.length-1;i>=0;i--) e[i].parentNode.removeChild(e[i]);
+  });
+  var BLK=/^(P|DIV|LI|H1|H2|H3|H4|H5|H6|TD|TH|BLOCKQUOTE|PRE|SECTION|ARTICLE)$/;
+  var blocks=[];
+  (function walk(n){
+    for(var k=n.firstChild;k;k=k.nextSibling){
+      if(k.nodeType===3){
+        var tx=String(k.nodeValue||'').replace(/[\s\u00A0]+/g,' ').trim();
+        if(tx) blocks.push({h:fkEsc(tx), sty:''});
+        continue;
+      }
+      if(k.nodeType!==1) continue;
+      if(BLK.test(k.tagName)){
+        var punyaBlok=false;
+        for(var c=k.firstChild;c;c=c.nextSibling){ if(c.nodeType===1 && BLK.test(c.tagName)){ punyaBlok=true; break; } }
+        if(punyaBlok){ walk(k); continue; }          /* pembungkus -> telusuri ke dalam */
+        var h=spkWEInlineHtml(k).replace(/\s+/g,' ').trim();
+        if(h.replace(/<[^>]+>/g,'').trim()) blocks.push({h:h, sty:spkWEStyleOf(k)});
+        continue;
+      }
+      walk(k);                                       /* span/font/table/tbody/tr -> lanjut */
+    }
+  })(host);
+  return blocks;
+}
+/* Potongan paragraf -> HTML kl0/kl1/kl2 (+ jarak spasi asli dari Word) */
+function spkWEBlocksToHtml(blocks){
+  var out=[];
+  for(var i=0;i<blocks.length;i++){
+    var b=blocks[i];
+    if(typeof b==='string') b={h:b, sty:''};
+    var h=String((b&&b.h)||'').trim();
+    var teks=h.replace(/<[^>]+>/g,'').replace(/&nbsp;/g,' ').trim();
+    if(!teks) continue;
+    var cls='kl0';                                   /* baku: sejajar teks judul klausul */
+    if(/^\d+\.\d+(?:\.\d+)*\.?\s+/.test(teks) || /^\d+[.)]\s+/.test(teks)) cls='kl1';
+    else if(/^[A-Za-z][.)]\s+/.test(teks)) cls='kl2';
+    var sty=(b&&b.sty)?(' style="'+b.sty+'"'):'';
+    out.push('<p class="'+cls+'"'+sty+'>'+h+'</p>');
+  }
+  return out.join('');
+}
+function spkWEOnPaste(e){
+  var dt=(e && (e.clipboardData||window.clipboardData)); if(!dt) return;
+  var html='', plain='';
+  try{ html=dt.getData('text/html')||''; }catch(_){}
+  try{ plain=dt.getData('text/plain')||dt.getData('Text')||''; }catch(_){}
+  var out='';
+  try{ if(html) out=spkWEBlocksToHtml(spkWEHtmlToBlocks(html)); }catch(err){ console.error(err); out=''; }
+  if(!out && plain){
+    var baris=spkCleanPasteText(plain).split('\n').filter(function(t){ return t.trim(); })
+      .map(function(t){ return {h:fkEsc(t), sty:''}; });   /* teks polos: tak ada info spasi -> pakai bawaan dokumen */
+    out=spkWEBlocksToHtml(baris);
+  }
+  if(!out) return;                                   /* tak ada teks -> biarkan bawaan */
+  e.preventDefault();
+  try{ document.execCommand('insertHTML', false, out); }
+  catch(err2){ try{ document.execCommand('paste'); }catch(_){} }
+  spkWECount(); spkWESyncBlockSelect(); spkWEPaginateSoon();
+}
+/* ---- Ubah huruf (untuk teks yang sumbernya MEMANG diketik kapital) ---- */
+function spkWECaseText(t, mode){
+  t=String(t==null?'':t);
+  if(mode==='upper') return t.toUpperCase();
+  if(mode==='lower') return t.toLowerCase();
+  if(mode==='title'||mode==='cap') return t.toLowerCase().replace(/(^|[\s(\[\u201C"'\/\u2013\u2014-])([a-z\u00e0-\u00ff])/g,
+    function(m,a,b){ return a+b.toUpperCase(); });
+  if(mode==='sentence') return t.toLowerCase().replace(/(^\s*|[.!?:]\s+)([a-z\u00e0-\u00ff])/g,
+    function(m,a,b){ return a+b.toUpperCase(); });
+  return t;
+}
+function spkWECaseNode(root, mode){
+  var w=document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+  var n;
+  while((n=w.nextNode())){
+    var p=n.parentNode;
+    if(p && p.classList && p.classList.contains('n')) continue;   /* nomor otomatis: jangan diusik */
+    n.nodeValue=spkWECaseText(n.nodeValue, mode);
+  }
+}
+function spkWECase(mode){
+  var sel0=document.getElementById('spk-we-case'); if(sel0) sel0.value='';
+  if(!mode) return;
+  var doc=document.getElementById('spk-we-doc'); if(!doc) return;
+  var sel=window.getSelection(); if(!sel || !sel.rangeCount){ toast('Sorot dulu teks yang ingin diubah','warn'); return; }
+  var r=sel.getRangeAt(0);
+  if(!doc.contains(r.commonAncestorContainer)){ toast('Sorot dulu teks di dalam editor','warn'); return; }
+  if(r.collapsed){
+    /* tanpa sorotan -> berlaku untuk paragraf tempat kursor berada */
+    var p=r.startContainer;
+    while(p && p!==doc && !(p.nodeType===1 && /^(P|LI|DIV)$/.test(p.tagName))) p=p.parentNode;
+    if(!p || p===doc){ toast('Sorot dulu teks yang ingin diubah','warn'); return; }
+    spkWECaseNode(p, mode);
+  }else{
+    var box=document.createElement('div');
+    box.appendChild(r.cloneContents());
+    spkWECaseNode(box, mode);
+    r.deleteContents();
+    var frag=document.createDocumentFragment();
+    while(box.firstChild) frag.appendChild(box.firstChild);
+    r.insertNode(frag);
+    sel.removeAllRanges();
+  }
+  spkWECount(); spkWEPaginateSoon();
+}
 function spkWEBindDoc(doc){
+  doc.addEventListener('paste', spkWEOnPaste);
   doc.addEventListener('input', function(){ spkWECount(); spkWESyncBlockSelect(); spkWEPaginateSoon(); });
   doc.addEventListener('keyup', function(){ spkWEGuardNumCaret(); spkWESyncBlockSelect(); });
   doc.addEventListener('mouseup', function(){
@@ -15850,17 +16067,6 @@ function spkWEIndent(dir){
 }
 
 /* --- Ubah huruf --- */
-function spkWECase(mode){
-  var selEl=document.getElementById('spk-we-case'); if(selEl) selEl.value='';
-  if(!mode) return;
-  var sel=window.getSelection(); if(!sel.rangeCount||sel.isCollapsed) return;
-  var txt=sel.toString(); var out=txt;
-  if(mode==='upper') out=txt.toUpperCase();
-  else if(mode==='lower') out=txt.toLowerCase();
-  else if(mode==='cap') out=txt.replace(/\b\w/g,function(c){return c.toUpperCase();});
-  spkWECmd('insertText',out);
-}
-
 /* --- Hitung kata --- */
 function spkWECount(){
   var doc=document.getElementById('spk-we-doc'); var el=document.getElementById('spk-we-count');
@@ -16897,7 +17103,8 @@ function spkWELHOpen(){
   var pop=document.getElementById('spk-we-lhpop');
   if(!pop){ pop=document.createElement('div'); pop.id='spk-we-lhpop'; pop.className='spk-we-lhpop'; wrap.appendChild(pop); }
   var cur=spkWELHCurrent();
-  var vals=[['1','1,0'],['1.15','1,15'],['1.5','1,5'],['2','2,0'],['2.5','2,5'],['3','3,0']];
+  /* label = angka Word, nilai = line-height CSS yang setara */
+  var vals=[[spkLHCss(1),'1,0'],[spkLHCss(1.15),'1,15'],[spkLHCss(1.5),'1,5'],[spkLHCss(2),'2,0'],[spkLHCss(2.5),'2,5'],[spkLHCss(3),'3,0']];
   var html='';
   vals.forEach(function(v){
     var on=(cur && Math.abs(parseFloat(cur)-parseFloat(v[0]))<0.001)?' on':'';
@@ -16922,7 +17129,7 @@ function spkWELHClose(){ var pop=document.getElementById('spk-we-lhpop'); if(pop
 function spkWELHCurrent(){
   var p=spkWECurrentP(); if(!p) return null;
   if(p.style && p.style.lineHeight) return p.style.lineHeight;
-  return '1.15'; // default dokumen
+  return spkLHCss(1.15); // default dokumen = 1,15 gaya Word
 }
 function spkWELHSet(v){
   spkWELHClose();
@@ -16947,14 +17154,14 @@ function spkWEParagraphDialog(){
     m.addEventListener('click', function(e){ if(e.target.id==='spk-we-nfmodal') spkWENFClose(); }); }
   // nilai awal dari paragraf aktif
   var align = (p && p.style && p.style.textAlign) || 'justify';
-  var lh = (p && p.style && p.style.lineHeight) || '1.15';
+  var lh = (p && p.style && p.style.lineHeight) || spkLHCss(1.15);
   var mt = spkWEPtVal((p && p.style && p.style.marginTop)||'', 0);
   var mb = spkWEPtVal((p && p.style && p.style.marginBottom)||'', 6);
   var ml = spkWECmVal((p && p.style && p.style.marginLeft)||'', 0);
   var mr = spkWECmVal((p && p.style && p.style.marginRight)||'', 0);
   var alignOpts=[['left','Kiri'],['center','Tengah'],['right','Kanan'],['justify','Rata Kiri-Kanan']]
     .map(function(o){return '<option value="'+o[0]+'"'+(o[0]===align?' selected':'')+'>'+o[1]+'</option>';}).join('');
-  var lhOpts=[['1','1,0'],['1.15','1,15'],['1.5','1,5'],['2','2,0'],['2.5','2,5'],['3','3,0']]
+  var lhOpts=[[spkLHCss(1),'1,0'],[spkLHCss(1.15),'1,15'],[spkLHCss(1.5),'1,5'],[spkLHCss(2),'2,0'],[spkLHCss(2.5),'2,5'],[spkLHCss(3),'3,0']]
     .map(function(o){return '<option value="'+o[0]+'"'+(Math.abs(parseFloat(o[0])-parseFloat(lh))<0.001?' selected':'')+'>'+o[1]+'</option>';}).join('');
   m.innerHTML=
     '<div class="spk-we-nfcard wide">'+
@@ -17001,7 +17208,7 @@ function spkWECmVal(s, def){
 }
 function spkWEParagraphApply(){
   var align=(document.getElementById('spk-pg-align')||{}).value||'justify';
-  var lh=(document.getElementById('spk-pg-lh')||{}).value||'1.15';
+  var lh=(document.getElementById('spk-pg-lh')||{}).value||spkLHCss(1.15);
   var mt=parseFloat((document.getElementById('spk-pg-mt')||{}).value||'0')||0;
   var mb=parseFloat((document.getElementById('spk-pg-mb')||{}).value||'0')||0;
   var ml=parseFloat((document.getElementById('spk-pg-ml')||{}).value||'0')||0;
@@ -18603,7 +18810,9 @@ function spkPPrFromCss(el){
   if(lh){
     var lhPt=spkCssLen(lh,'pt');
     if(lhPt!=null){ line=spkPtTw(lhPt); rule='exact'; }
-    else if(/^[0-9.]+$/.test(lh)){ line=Math.round(parseFloat(lh)*240); rule='auto'; }
+    /* w:line 240 = 1 baris Word. line-height CSS dibagi SPK_LH_K dulu agar
+       "1,15" di web tetap terbaca "1,15" di Word (bukan 1,32). */
+    else if(/^[0-9.]+$/.test(lh)){ line=Math.round((parseFloat(lh)/SPK_LH_K)*240); rule='auto'; }
   }
   if(before!=null||after!=null||line!=null){
     sp='<w:spacing'+(before!=null?(' w:before="'+before+'"'):'')+
