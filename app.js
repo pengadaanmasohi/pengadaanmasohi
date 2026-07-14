@@ -4963,7 +4963,8 @@ function jpPrint(){
   document.body.appendChild(ifr);
   const doc=ifr.contentWindow.document;
   doc.open(); doc.write(jpStandaloneDocHtml()); doc.close();
-  const go=()=>{
+  const go=()=>fklWaitPaged(ifr, _go);
+  const _go=()=>{
     withHiddenPageTitle(()=>{ try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }catch(e){ try{ window.print(); }catch(_){} } });
     setTimeout(()=>{ const f=document.getElementById('jp-print-frame'); if(f) f.remove(); }, 1500);
   };
@@ -7181,7 +7182,45 @@ function fklDocBaseCss(){
 function fklDocCssPatch(){
   return ''+
     'table.fkl-info td.k{width:1%;white-space:nowrap;padding-right:14px}'+
-    'table.fkl-info td.s{width:1%;white-space:nowrap}';
+    'table.fkl-info td.s{width:1%;white-space:nowrap}'+
+    fklSheetCss();
+}
+/* ===================== LEMBAR A4 BERSAMA (WYSIWYG) =====================
+   SEMUA dokumen cetak (Kelengkapan, Jadwal, Penawaran, Evaluasi, HPS, Analisa
+   Harga, Rekap) dipecah menjadi lembar A4 sungguhan oleh fklPageScript(), persis
+   seperti dokumen SPK. Kuncinya: KOTAK HALAMAN YANG SAMA di layar dan di cetak —
+   210x297mm dengan padding 12mm (atas/bawah) & 15mm (kiri/kanan), @page{margin:0}.
+
+   Sebelumnya pratinjau hanya menampilkan SATU lembar memanjang dan pemenggalan
+   halaman baru terjadi saat dicetak (dikerjakan mesin cetak browser). Akibatnya
+   pratinjau tidak pernah memperlihatkan hasil yang sebenarnya: batas halaman,
+   baris yang terpotong, atau tabel yang pindah halaman baru terlihat di PDF.
+   Dengan lembar sungguhan, apa yang tampil di pratinjau = apa yang tercetak. */
+function fklSheetCss(){
+  return ''+
+  '.fkl-sheet{position:relative;box-sizing:border-box;width:210mm;height:297mm;background:#fff;'+
+    'margin:0 auto 16px;padding:12mm 15mm;box-shadow:0 10px 30px rgba(20,50,60,.18);overflow:hidden;'+
+    'page-break-after:always;break-after:page}'+
+  '.fkl-sheet:last-child{page-break-after:auto;break-after:auto;margin-bottom:0}'+
+  '.fkl-sheet-bd{overflow:hidden}'+
+  /* Isi dokumen sudah dibatasi oleh padding lembar -> padding bawaan .fkl-doc dinolkan */
+  '.fkl-sheet .fkl-doc{padding:0;overflow:visible}'+
+  '@media print{'+
+    /* ===== TANPA HEADER/FOOTER BAWAAN BROWSER =====
+       margin:0 pada @page membuat mesin cetak tidak punya ruang untuk menempelkan
+       header/footer bawaannya (judul halaman, URL, tanggal, "Halaman 1 dari N").
+       Jarak tepi dokumen SEPENUHNYA berasal dari padding lembar (12mm/15mm), jadi
+       hasil cetak tetap punya margin yang benar tanpa tulisan tambahan browser.
+       Aturan ini ditulis ulang di sini (bukan hanya di index.html) agar setiap
+       dokumen membawanya sendiri, apa pun urutan CSS-nya. */
+    '@page{size:A4 portrait;margin:0}'+
+    'html,body{background:#fff;margin:0;padding:0}'+
+    /* Lembar TIDAK berubah bentuk saat dicetak: ukuran, padding, dan pemenggalannya
+       sama persis dengan pratinjau, sehingga PDF tidak pernah "terkompres" atau
+       menyisipkan halaman kosong. */
+    '.fkl-sheet{margin:0;box-shadow:none;page-break-after:always;break-after:page}'+
+    '.fkl-sheet:last-child{page-break-after:auto;break-after:auto}'+
+  '}';
 }
 /* Dokumen Cetak/PDF adalah dokumen HTML MANDIRI (iframe/window baru). Font yang
    dimuat di halaman utama TIDAK diwariskan ke sana, sehingga 'Plus Jakarta Sans'
@@ -7202,7 +7241,164 @@ function fklDocShell(extraCss, innerHtml){
       '<tbody><tr><td><div class="fkl-print-page">'+innerHtml+'</div></td></tr></tbody>'+
       '<tfoot><tr><td><div class="fkl-vspace"></div></td></tr></tfoot>'+
     '</table>'+
+    fklPageScript()+
     '</body></html>';
+}
+
+/* Menunggu paginasi (fklPageScript) selesai sebelum mencetak, supaya hasil cetak
+   memakai lembar yang SAMA dengan yang dilihat di pratinjau. Bila skrip gagal atau
+   terlalu lama (>3 detik), cetak tetap dijalankan memakai tata letak memanjang
+   bawaan (fkl-page-wrap) — jadi tombol Cetak tidak pernah macet. */
+function fklWaitPaged(ifr, fn, sisa){
+  if(sisa==null) sisa=3000;
+  let siap=false;
+  try{ siap = !!(ifr && ifr.contentWindow && ifr.contentWindow.__fklPaged); }
+  catch(e){ siap=true; }
+  if(siap || sisa<=0){ fn(); return; }
+  setTimeout(()=>fklWaitPaged(ifr, fn, sisa-60), 60);
+}
+
+/* ---------- Pemecah halaman bersama (dijalankan DI DALAM dokumen cetak) ----------
+   Mengubah satu lembar memanjang (.fkl-print-page) menjadi deretan lembar A4
+   (.fkl-sheet) setinggi 273mm area isi (297mm - 12mm - 12mm).
+
+   Aturan pemenggalan MENGIKUTI CSS yang sudah ada di tiap dokumen:
+     - break-inside:avoid  -> blok dipindah utuh ke lembar berikutnya (tanda tangan,
+       baris tabel, tbody rekap HPS, kartu evaluasi, dll)
+     - break-before:page   -> blok selalu memulai lembar baru
+   Tabel yang terpotong otomatis mengulang <thead> & <colgroup> di lembar lanjutan.
+   Bila terjadi galat apa pun, dokumen DIKEMBALIKAN ke bentuk semula sehingga
+   pencetakan tetap berjalan seperti sebelumnya. */
+function fklPageScript(){
+  const js=[
+    '(function(){',
+    'var DONE=false;',
+    'function mm2px(mm){var d=document.createElement("div");',
+    ' d.style.cssText="position:absolute;visibility:hidden;left:-9999px;height:"+mm+"mm";',
+    ' document.body.appendChild(d);var h=d.getBoundingClientRect().height;',
+    ' d.parentNode.removeChild(d);return h;}',
+    'function els(n){var o=[],k=n.firstChild;while(k){if(k.nodeType===1)o.push(k);k=k.nextSibling;}return o;}',
+    'function sty(n,p){try{var c=getComputedStyle(n);return c[p]||"";}catch(e){return "";}}',
+    'function utuh(n){var v=sty(n,"breakInside")||sty(n,"pageBreakInside");return v==="avoid";}',
+    'function halamanBaru(n){var v=sty(n,"breakBefore")||sty(n,"pageBreakBefore");return v==="page"||v==="always";}',
+    /* blok yang TIDAK boleh dipecah: dipindah utuh ke lembar berikutnya */
+    'function atom(n){',
+    ' if(n.nodeType!==1) return true;',
+    ' var t=n.tagName;',
+    ' if(t==="P"||t==="TR"||t==="IMG"||t==="BR"||t==="HR"||t==="LI"||t==="THEAD"||t==="TFOOT"||t==="COLGROUP") return true;',
+    /* SVG (ikon, grafik) bukan HTML biasa: selalu diperlakukan utuh */
+    ' if(n.namespaceURI && n.namespaceURI!=="http://www.w3.org/1999/xhtml") return true;',
+    ' if(utuh(n)) return true;',
+    ' return els(n).length===0;',
+    '}',
+    'function bangun(){',
+    ' var wrap=document.querySelector("table.fkl-page-wrap"); if(!wrap) return false;',
+    ' var page=wrap.querySelector(".fkl-print-page"); if(!page) return false;',
+    ' var PH=mm2px(273); if(!PH||PH<200) return false;',
+    ' var MINH=mm2px(22);',              /* ruang minimum agar sebuah judul seksi boleh dimulai */
+    ' var sheets=[], body=null, stack=[];',
+    ' function mk(){',
+    '   var sh=document.createElement("section"); sh.className="fkl-sheet";',
+    '   var b=document.createElement("div"); b.className="fkl-sheet-bd";',
+    '   b.style.height=Math.max(80,PH-2)+"px";',
+    '   sh.appendChild(b);',
+    '   wrap.parentNode.insertBefore(sh, wrap);',   /* harus di DOM agar tinggi terukur */
+    '   sheets.push(sh); body=b;',
+    /* bangun ulang "cangkang" pembungkus (mis. div.fkl-doc, table, tbody) di lembar baru */
+    '   for(var i=0;i<stack.length;i++){',
+    '     var sl=stack[i].src.cloneNode(false);',
+    '     if(sl.tagName==="TABLE"){',
+    '       var cg=stack[i].src.querySelector("colgroup"); if(cg) sl.appendChild(cg.cloneNode(true));',
+    '       var th=stack[i].src.querySelector("thead");    if(th) sl.appendChild(th.cloneNode(true));',
+    '     }',
+    '     (i===0?body:stack[i-1].el).appendChild(sl);',
+    '     stack[i].el=sl;',
+    '   }',
+    '   return body;',
+    ' }',
+    ' function tgt(){ return stack.length? stack[stack.length-1].el : body; }',
+    ' function penuh(){ return body.scrollHeight > body.clientHeight+1; }',
+    ' function kosong(){ return !((body.textContent||"").replace(/[\\s\\u00A0]/g,"")) && !body.querySelector("img,table,svg"); }',
+    ' function pakaiBawah(){ var k=els(body); if(!k.length) return 0; var bt=body.getBoundingClientRect().top; return k[k.length-1].getBoundingClientRect().bottom - bt; }',
+    ' function sisa(){ return body.clientHeight - pakaiBawah(); }',
+    ' function taruh(node){',
+    '   if(node.nodeType===1 && halamanBaru(node) && !kosong()) mk();',
+    /* judul seksi jangan sampai berdiri sendiri di dasar lembar */
+    '   if(node.nodeType===1 && node.classList && node.classList.contains("fkl-sec-h") && !kosong() && sisa()<MINH) mk();',
+    '   var t=tgt();',
+    '   t.appendChild(node);',
+    '   if(!penuh()) return;',
+    '   t.removeChild(node);',
+    '   if(!atom(node)){',
+    '     var sl=node.cloneNode(false);',
+    '     t.appendChild(sl);',
+    '     if(penuh() && !kosong()){ t.removeChild(sl); mk(); taruh(node); return; }',
+    '     if(sl.tagName==="TABLE"){ var cg=node.querySelector("colgroup"); if(cg) sl.appendChild(cg.cloneNode(true)); }',
+    '     stack.push({src:node, el:sl});',
+    '     var kids=els(node), isTbl=(node.tagName==="TABLE");',
+    '     for(var i=0;i<kids.length;i++){',
+    '       var kd=kids[i];',
+    '       if(isTbl && kd.tagName==="COLGROUP") continue;',
+    /* <thead> DISALIN (bukan dipindah) supaya bisa diulang di lembar lanjutan */
+    '       if(isTbl && kd.tagName==="THEAD"){ tgt().appendChild(kd.cloneNode(true)); continue; }',
+    '       taruh(kd);',
+    '     }',
+    '     stack.pop();',
+    '     return;',
+    '   }',
+    '   if(kosong()){ t.appendChild(node); return; }',   /* blok lebih tinggi dari 1 lembar */
+    '   mk(); tgt().appendChild(node);',
+    ' }',
+    ' mk();',
+    ' var nodes=els(page);',
+    ' for(var i=0;i<nodes.length;i++) taruh(nodes[i]);',
+    /* buang lembar & cangkang yang akhirnya kosong */
+    ' for(var i=sheets.length-1;i>=0;i--){',
+    '   var bd=sheets[i].querySelector(".fkl-sheet-bd");',
+    '   if(bd && !((bd.textContent||"").replace(/[\\s\\u00A0]/g,"")) && !bd.querySelector("img,table,svg")) sheets[i].parentNode.removeChild(sheets[i]);',
+    ' }',
+    ' if(!document.querySelector(".fkl-sheet")) return false;',
+    ' wrap.parentNode.removeChild(wrap);',
+    ' return true;',
+    '}',
+    'function jalan(){',
+    ' if(DONE) return; DONE=true;',
+    ' var wrap=document.querySelector("table.fkl-page-wrap");',
+    ' var cadangan=wrap?wrap.outerHTML:"";',
+    ' try{',
+    '   if(!bangun()){',
+    /* gagal membentuk lembar -> pulihkan bentuk semula (cetak memanjang seperti dulu) */
+    '     var sh=document.querySelectorAll(".fkl-sheet");',
+    '     for(var i=sh.length-1;i>=0;i--) sh[i].parentNode.removeChild(sh[i]);',
+    '     var w2=document.querySelector("table.fkl-page-wrap");',
+    '     if(w2 && cadangan) w2.outerHTML=cadangan;',
+    '   }',
+    ' }catch(e){',
+    '   try{',
+    '     console.error("fkl paginate:", e);',
+    '     var sh2=document.querySelectorAll(".fkl-sheet");',
+    '     for(var j=sh2.length-1;j>=0;j--) sh2[j].parentNode.removeChild(sh2[j]);',
+    '     var w3=document.querySelector("table.fkl-page-wrap");',
+    '     if(w3 && cadangan) w3.outerHTML=cadangan;',
+    '   }catch(_){}',
+    ' }',
+    ' try{ window.__fklPaged=true; }catch(e2){}',
+    '}',
+    /* Tinggi teks baru benar setelah font & gambar (logo) selesai dimuat. */
+    'function mulai(){',
+    ' try{',
+    '   if(document.fonts && document.fonts.ready && document.fonts.ready.then){',
+    '     document.fonts.ready.then(function(){ jalan(); });',
+    '     setTimeout(jalan, 2500);',
+    '     return;',
+    '   }',
+    ' }catch(e){}',
+    ' jalan();',
+    '}',
+    'if(document.readyState==="complete") mulai(); else window.addEventListener("load", mulai);',
+    '})();'
+  ].join('\n');
+  return '<script>'+js+'<\/script>';
 }
 
 /* Bangun HTML dokumen lengkap (mandiri) untuk pratinjau iframe & cetak */
@@ -7277,7 +7473,8 @@ function fklPrint(){
   document.body.appendChild(ifr);
   const doc=ifr.contentWindow.document;
   doc.open(); doc.write(fklStandaloneDocHtml()); doc.close();
-  const go=()=>{
+  const go=()=>fklWaitPaged(ifr, _go);
+  const _go=()=>{
     withHiddenPageTitle(()=>{ try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }catch(e){ try{ window.print(); }catch(_){} } });
     setTimeout(()=>{ const f=document.getElementById('fkl-print-frame'); if(f) f.remove(); }, 1500);
   };
@@ -8278,8 +8475,9 @@ function pnwExtraDocCss(){
   /* Dokumen gabungan: tiap sampul berikutnya SELALU mulai di halaman baru.
      Di layar (pratinjau) diberi garis pemisah agar batas antar form terlihat. */
   '.pnw-doc + .pnw-doc{page-break-before:always;break-before:page}'+
-  '@media screen{.pnw-doc + .pnw-doc{margin-top:26px;padding-top:26px;border-top:2px dashed #cbd5d8}}'+
-  '@media print{.pnw-doc + .pnw-doc{margin-top:0;padding-top:0;border-top:none}}'+
+  /* Pemisah antar-penyedia berlaku di LAYAR MAUPUN CETAK. Dulu dibedakan (di cetak
+     dihapus), sehingga tinggi isi di pratinjau tidak sama dengan hasil cetak. */
+  '.pnw-doc + .pnw-doc{margin-top:26px;padding-top:26px;border-top:2px dashed #cbd5d8}'+
   '.pnw-penyedia-block{margin:6px 0 14px}'+
   '.pnw-penyedia-name{font-family:"Plus Jakarta Sans",sans-serif;font-weight:800;font-size:12px;letter-spacing:.4px;color:#0b3d42;background:#e3f2f3;border:1px solid #bfe0e2;border-radius:6px;padding:6px 10px;margin-bottom:6px;text-transform:uppercase}'+
   '.fkl-chk td.kt,.fkl-chk th.kt{width:22%;text-align:left}'+
@@ -8341,7 +8539,8 @@ function pnwPrint(){
   ifr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
   document.body.appendChild(ifr);
   const doc=ifr.contentWindow.document; doc.open(); doc.write(pnwStandaloneDocHtml()); doc.close();
-  const go=()=>{ withHiddenPageTitle(()=>{ try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }catch(e){ try{ window.print(); }catch(_){} } }); setTimeout(()=>{ const f=document.getElementById('pnw-print-frame'); if(f) f.remove(); },1500); };
+  const go=()=>fklWaitPaged(ifr, _go);
+  const _go=()=>{ withHiddenPageTitle(()=>{ try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }catch(e){ try{ window.print(); }catch(_){} } }); setTimeout(()=>{ const f=document.getElementById('pnw-print-frame'); if(f) f.remove(); },1500); };
   const imgs=doc.images?Array.from(doc.images):[];
   if(imgs.length){ let n=imgs.length; const dec=()=>{ if(--n<=0) setTimeout(go,60); }; imgs.forEach(im=>{ if(im.complete) dec(); else { im.onload=dec; im.onerror=dec; } }); setTimeout(go,1200); }
   else setTimeout(go,120);
@@ -9355,7 +9554,8 @@ function rhoPrint(){
   ifr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
   document.body.appendChild(ifr);
   const doc=ifr.contentWindow.document; doc.open(); doc.write(rhoStandaloneDocHtml()); doc.close();
-  const go=()=>{ withHiddenPageTitle(()=>{ try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }catch(e){ try{ window.print(); }catch(_){} } }); setTimeout(()=>{ const f=document.getElementById('rho-print-frame'); if(f) f.remove(); },1500); };
+  const go=()=>fklWaitPaged(ifr, _go);
+  const _go=()=>{ withHiddenPageTitle(()=>{ try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }catch(e){ try{ window.print(); }catch(_){} } }); setTimeout(()=>{ const f=document.getElementById('rho-print-frame'); if(f) f.remove(); },1500); };
   const imgs=doc.images?Array.from(doc.images):[];
   if(imgs.length){ let n=imgs.length; const dec=()=>{ if(--n<=0) setTimeout(go,60); }; imgs.forEach(im=>{ if(im.complete) dec(); else { im.onload=dec; im.onerror=dec; } }); setTimeout(go,1600); }
   else setTimeout(go,120);
@@ -10945,7 +11145,8 @@ function hpsPrint(){
   ifr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
   document.body.appendChild(ifr);
   const doc=ifr.contentWindow.document; doc.open(); doc.write(hpsStandaloneDocHtml()); doc.close();
-  const go=()=>{ withHiddenPageTitle(()=>{ try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }catch(e){ try{ window.print(); }catch(_){} } }); setTimeout(()=>{ const f=document.getElementById('hps-print-frame'); if(f) f.remove(); },1500); };
+  const go=()=>fklWaitPaged(ifr, _go);
+  const _go=()=>{ withHiddenPageTitle(()=>{ try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }catch(e){ try{ window.print(); }catch(_){} } }); setTimeout(()=>{ const f=document.getElementById('hps-print-frame'); if(f) f.remove(); },1500); };
   const imgs=doc.images?Array.from(doc.images):[];
   if(imgs.length){ let n=imgs.length; const dec=()=>{ if(--n<=0) setTimeout(go,60); }; imgs.forEach(im=>{ if(im.complete) dec(); else { im.onload=dec; im.onerror=dec; } }); setTimeout(go,1600); }
   else setTimeout(go,120);
@@ -12597,7 +12798,8 @@ function anaPrint(){
   ifr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
   document.body.appendChild(ifr);
   const doc=ifr.contentWindow.document; doc.open(); doc.write(anaStandaloneDocHtml(anaPreviewSection)); doc.close();
-  const go=()=>{ withHiddenPageTitle(()=>{ try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }catch(e){ try{ window.print(); }catch(_){} } }); setTimeout(()=>{ const f=document.getElementById('ana-print-frame'); if(f) f.remove(); },1500); };
+  const go=()=>fklWaitPaged(ifr, _go);
+  const _go=()=>{ withHiddenPageTitle(()=>{ try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }catch(e){ try{ window.print(); }catch(_){} } }); setTimeout(()=>{ const f=document.getElementById('ana-print-frame'); if(f) f.remove(); },1500); };
   const imgs=doc.images?Array.from(doc.images):[];
   if(imgs.length){ let n=imgs.length; const dec=()=>{ if(--n<=0) setTimeout(go,60); }; imgs.forEach(im=>{ if(im.complete) dec(); else { im.onload=dec; im.onerror=dec; } }); setTimeout(go,1600); }
   else setTimeout(go,120);
@@ -13120,7 +13322,8 @@ function rekapPrint(){
   document.body.appendChild(ifr);
   const doc=ifr.contentWindow.document;
   doc.open(); doc.write(rekapStandaloneDocHtml(dp, hpsList, anaList)); doc.close();
-  const go=()=>{ withHiddenPageTitle(()=>{ try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }catch(e){ try{ window.print(); }catch(_){} } }); setTimeout(()=>{ const f=document.getElementById('rekap-print-frame'); if(f) f.remove(); },1500); };
+  const go=()=>fklWaitPaged(ifr, _go);
+  const _go=()=>{ withHiddenPageTitle(()=>{ try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }catch(e){ try{ window.print(); }catch(_){} } }); setTimeout(()=>{ const f=document.getElementById('rekap-print-frame'); if(f) f.remove(); },1500); };
   const imgs=doc.images?Array.from(doc.images):[];
   if(imgs.length){ let n=imgs.length; const dec=()=>{ if(--n<=0) setTimeout(go,60); }; imgs.forEach(im=>{ if(im.complete) dec(); else { im.onload=dec; im.onerror=dec; } }); setTimeout(go,1600); }
   else setTimeout(go,120);
@@ -14564,7 +14767,7 @@ function spkDocCss(){
   return ''+
   /* Cover, Daftar Isi, & Kop dipertahankan seperti desain sebelumnya (navy).
      Hanya ISI kontrak yang dirapikan mengikuti tampilan Word (Arial). */
-  '@page{size:A4 portrait;margin:2.54cm}'+
+  '@page{size:A4 portrait;margin:0}'+
   '*{box-sizing:border-box}'+
   'body{font-family:"Inter","Segoe UI",Arial,sans-serif;color:#1c1c1c;margin:0;font-size:11.5px;line-height:1.15}'+
   '.spk-doc{counter-reset:spkcl}'+
@@ -14656,6 +14859,14 @@ function spkDocCss(){
   '.spk-sign{margin-top:30px;width:100%;border-collapse:collapse}'+
   '.spk-sign td{width:50%;text-align:center;vertical-align:top;font-size:11pt;padding:4px}'+
   '.spk-sign .role{font-weight:700}.spk-sign .nm{font-weight:700;text-decoration:underline;margin-top:70px}'+
+  /* Baris kepala (PIHAK … + nama instansi) dan baris nama/jabatan dipisah menjadi
+     dua <tr>. Karena tinggi satu baris tabel berlaku sama untuk KEDUA kolom, blok
+     nama & jabatan selalu mulai pada garis yang sama — tidak lagi melorot mengikuti
+     panjang nama instansi masing-masing pihak. Ruang tanda tangan (70px) dijaga oleh
+     margin-top .nm; padding antar-baris dinolkan agar jaraknya tetap seperti semula. */
+  '.spk-sign tr.sg-head td{padding-bottom:0;vertical-align:top}'+
+  '.spk-sign tr.sg-body td{padding-top:0;vertical-align:top}'+
+  '.spk-sign tr.sg-head,.spk-sign tr.sg-body{break-inside:avoid;page-break-inside:avoid}'+
   /* Baris nama instansi di bawah "PIHAK PERTAMA" ditebalkan, sama seperti di Lampiran */
   /* Nama instansi dipecah menjadi baris-baris yang SEIMBANG panjangnya
      (text-wrap:balance), sehingga tidak ada baris pertama kepanjangan lalu baris
@@ -14670,14 +14881,14 @@ function spkDocCss(){
   '.spk-flow .spk-cl,.spk-flow .spk-cl *,.spk-flow .spk-clause,.spk-flow .spk-clause *,.spk-flow .spk-cl-h,.spk-flow .spk-cl-h *,.spk-flow .spk-sign,.spk-flow .spk-sign *{font-family:"Inter","Segoe UI",Arial,sans-serif;font-size:11pt}'+
   /* ===== Tampilan PRATINJAU di layar (bukan cetak) =====
      Menampilkan tiap bagian sebagai lembar A4 putih (210×297mm) di atas latar
-     abu-abu, dengan bayangan & margin dalam 2,54cm — meniru gaya pratinjau
+     abu-abu, dengan bayangan & margin dalam 12mm/15mm — meniru gaya pratinjau
      Rekap HPS agar terlihat rapi seperti hasil cetak. Blok ini HANYA berlaku di
      layar; saat mencetak, margin diatur oleh @page sehingga tidak berlipat. */
   '@media screen{'+
     'html,body{background:#54585c}'+
     'body{margin:0;padding:24px 0}'+
     '.spk-doc{margin:0 auto}'+
-    '.spk-page{width:210mm;min-height:297mm;background:#fff;margin:0 auto 22px;padding:2.54cm;box-shadow:0 8px 30px rgba(10,20,28,.34);overflow:hidden}'+
+    '.spk-page{width:210mm;height:297mm;min-height:297mm;background:#fff;margin:0 auto 22px;padding:12mm 15mm;box-shadow:0 8px 30px rgba(10,20,28,.34);overflow:hidden}'+
     '.spk-page.spk-flow{height:auto;overflow:visible}'+
   '}';
 }
@@ -14689,9 +14900,9 @@ function spkDocCss(){
 function spkDocCss2(){
   const G="'Plus Jakarta Sans','Segoe UI',Arial,sans-serif";
   return ''+
-  '@page{size:A4 portrait;margin:2.54cm}'+
+  '@page{size:A4 portrait;margin:0}'+
   /* Halaman Lampiran memakai ukuran & margin yang SAMA dengan halaman kontrak:
-     A4 portrait, margin normal 2,54 cm (mengikuti @page di atas). Aturan halaman
+     A4 portrait, margin 12mm atas/bawah & 15mm kiri/kanan (mengikuti @page di atas). Aturan halaman
      khusus 15mm sudah dicabut — tidak diperlukan lagi setelah bug colgroup ganda
      pada paginator diperbaiki, sebab tabel kini melebar penuh dengan benar. */
   'html,body{background:#fff}'+
@@ -14699,10 +14910,10 @@ function spkDocCss2(){
   '.spk-page{position:relative;page-break-after:always;break-after:page}'+
   '.spk-page:last-child{page-break-after:auto;break-after:auto}'+
   /* ---------- COVER ----------
-     Tinggi cover dibuat PERSIS setinggi area cetak A4 (297mm - margin atas 2,54cm
-     - margin bawah 2,54cm = 246,2mm), sehingga ukuran cover di pratinjau layar
+     Tinggi cover dibuat PERSIS setinggi area cetak A4 (297mm - margin atas 12mm
+     - margin bawah 12mm = 273mm), sehingga ukuran cover di pratinjau layar
      dan di hasil Cetak/PDF benar-benar sama (tidak ada sisa 8mm seperti semula). */
-  '.spk-cover{font-family:'+G+';color:#201E1D;display:flex;flex-direction:column;min-height:246.2mm}'+
+  '.spk-cover{font-family:'+G+';color:#201E1D;display:flex;flex-direction:column;min-height:273mm}'+
   '.spk-cover .cv-top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}'+
   '.spk-cover .cv-brand{display:flex;align-items:center;gap:16px}'+
   '.spk-cover .cv-brand img{height:56px;width:auto;display:block}'+
@@ -14846,6 +15057,11 @@ function spkDocCss2(){
      (dokumen HPS & lainnya tetap 34%). */
 
   '.spk-lampsheet .fkl-doc-title{font-size:16px}'+
+  /* Isi Lampiran memakai .fkl-doc yang punya padding bawaan 34px/40px. Di dalam
+     lembar SPK jarak tepi sudah diatur padding halaman (12mm/15mm), jadi padding
+     bawaan itu dinolkan — sama seperti dokumen HPS/Analisa yang berdiri sendiri,
+     sehingga lebar tabel & tampilannya seragam di semua dokumen. */
+  '.spk-sheet .fkl-doc,.spk-page .fkl-doc{padding:0;overflow:visible}'+
   /* Blok tanda tangan pada Lampiran: dua pihak (PIHAK KEDUA & PIHAK PERTAMA),
      tanggal di atas kolom PIHAK PERTAMA, nama bergaris bawah. */
   '.spk-lampsign{page-break-before:auto;break-before:auto;padding-top:0;margin-top:13px;break-inside:avoid;page-break-inside:avoid}'+
@@ -14869,11 +15085,16 @@ function spkDocCss2(){
      apa pun aturan bawaan yang mencoba menimpanya. */
   '.spk-lampsign .spk-sign td,'+
   '.spk-lampsign .spk-sign td > div{font-size:12.5px;line-height:1.35}'+
+  /* Struktur dua baris (sg-head / sg-body) — lihat spkSignBlockHtml. Padding di
+     pertemuan kedua baris dinolkan agar jarak vertikalnya persis seperti saat blok
+     ini masih satu sel. */
+  '.spk-lampsign .spk-sign tr.sg-head td{padding-bottom:0}'+
+  '.spk-lampsign .spk-sign tr.sg-body td{padding-top:0}'+
   '.spk-lampsign .spk-sign td > div.ttd-date{font-weight:500}'+
   /* ---------- LEMBAR ISI HASIL PEMECAHAN HALAMAN (spkPageScript) ----------
      Isi kontrak & lampiran dipecah menjadi lembar A4 sungguhan: kop di atas,
      isi di tengah (tinggi tetap), footer paraf menempel di dasar lembar. */
-  '.spk-sheet{display:flex;flex-direction:column;min-height:246.2mm;page-break-before:auto;break-before:auto}'+
+  '.spk-sheet{display:flex;flex-direction:column;min-height:273mm;page-break-before:auto;break-before:auto}'+
   '.spk-sheet > .sh-hd{flex:0 0 auto}'+
   '.spk-sheet > .sh-bd{flex:1 1 auto;overflow:hidden}'+
   '.spk-sheet > .sh-ft{flex:0 0 auto;margin-top:auto}'+
@@ -14887,7 +15108,7 @@ function spkDocCss2(){
   '@media screen{'+
     'html,body{background:#54585c;margin:0;padding:24px 0}'+
     '.spk-doc{margin:0 auto}'+
-    '.spk-page{width:210mm;min-height:297mm;background:#fff;margin:0 auto 22px;padding:2.54cm;box-shadow:0 8px 30px rgba(10,20,28,.34);overflow:hidden}'+
+    '.spk-page{width:210mm;height:297mm;min-height:297mm;background:#fff;margin:0 auto 22px;padding:12mm 15mm;box-shadow:0 8px 30px rgba(10,20,28,.34);overflow:hidden}'+
     '.spk-page.spk-flow{height:auto;overflow:visible}'+
     /* ===== PEMISAH HALAMAN DI PRATINJAU (seperti Rekap HPS) =====
        Lembar "isi" (spk-flow) tumbuh memanjang, jadi batas halaman fisik tidak
@@ -14895,17 +15116,32 @@ function spkDocCss2(){
        batas tepat di posisi tempat browser akan memotong halaman saat dicetak,
        plus label nomor halaman berikutnya. Hanya tampil di layar. */
     '.spk-guide{position:absolute;left:0;right:0;top:0;bottom:0;pointer-events:none;z-index:6}'+
-    '.spk-guide .gband{position:absolute;left:-2.54cm;right:-2.54cm;height:16px;background:rgba(229,72,77,.09)}'+
-    '.spk-guide .gl{position:absolute;left:-2.54cm;right:-2.54cm;height:0;border-top:1.5px dashed #E5484D}'+
-    '.spk-guide .gl::after{content:attr(data-lbl);position:absolute;right:2.54cm;top:-8px;transform:translateY(-100%);background:#E5484D;color:#fff;font:800 9px/1.2 Arial,Helvetica,sans-serif;letter-spacing:.08em;padding:3px 8px;border-radius:5px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.25)}'+
-    '.spk-guide .gl.top::after{right:auto;left:2.54cm;top:auto;bottom:-8px;transform:translateY(100%);background:#0E7C86}'+
+    '.spk-guide .gband{position:absolute;left:-15mm;right:-15mm;height:16px;background:rgba(229,72,77,.09)}'+
+    '.spk-guide .gl{position:absolute;left:-15mm;right:-15mm;height:0;border-top:1.5px dashed #E5484D}'+
+    '.spk-guide .gl::after{content:attr(data-lbl);position:absolute;right:15mm;top:-8px;transform:translateY(-100%);background:#E5484D;color:#fff;font:800 9px/1.2 Arial,Helvetica,sans-serif;letter-spacing:.08em;padding:3px 8px;border-radius:5px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.25)}'+
+    '.spk-guide .gl.top::after{right:auto;left:15mm;top:auto;bottom:-8px;transform:translateY(100%);background:#0E7C86}'+
   '}'+
   /* ---------- CETAK ---------- */
   '@media print{'+
     'html,body{background:#fff;margin:0;padding:0}'+
-    '.spk-page{width:auto;min-height:0;margin:0;padding:0;box-shadow:none}'+
-    '.spk-sheet{min-height:243mm}'+
-    '.spk-cover{min-height:246.2mm}'+
+    /* ===== KOTAK HALAMAN SAMA PERSIS DENGAN PRATINJAU =====
+       Dulu saat mencetak padding lembar dinolkan dan jarak tepi diserahkan ke
+       @page{margin}. Akibatnya model kotaknya BEDA antara layar dan cetak: tinggi
+       lembar (hasil paginator, diukur di layar) tidak lagi pas dengan area cetak,
+       sehingga lembar tumpah sedikit -> muncul HALAMAN KOSONG di antara halaman isi,
+       dan bila ada isi yang melebihi lebar area cetak, browser MENGECILKAN seluruh
+       dokumen agar muat (hasil PDF terlihat 'terkompres').
+       Kini @page{margin:0} dan tiap lembar tetap 210x297mm dengan padding sendiri
+       (12mm atas/bawah, 15mm kiri/kanan) — persis seperti dokumen HPS (.hpsc-page).
+       overflow:hidden menjamin lembar tidak pernah tumpah ke halaman berikutnya. */
+    '.spk-page{width:210mm;height:297mm;min-height:297mm;margin:0;padding:12mm 15mm;box-shadow:none;overflow:hidden;page-break-after:always;break-after:page}'+
+    '.spk-page:last-child{page-break-after:auto;break-after:auto}'+
+    /* Cadangan: bila paginator gagal jalan, lembar isi (.spk-flow) belum dipecah —
+       biarkan memanjang & dipotong mesin cetak, jangan dipaksa 297mm. */
+    '.spk-page.spk-flow{height:auto;min-height:0;overflow:visible}'+
+    /* Tinggi lembar sudah ditentukan kotak halaman; min-height tak diperlukan lagi */
+    '.spk-sheet{min-height:0}'+
+    '.spk-cover{min-height:273mm}'+
     '.spk-guide{display:none!important}'+
     '.fkl-print-page{width:auto;min-height:0;margin:0;padding:0;box-shadow:none}'+
     'table.spk-run > thead{display:table-header-group}'+
@@ -15636,8 +15872,8 @@ function spkWEPageCount(){
 /* --- Paginasi ala Word ---
    Menyisipkan "spacer" tak-teredit di batas halaman sehingga paragraf yang akan
    melewati margin bawah otomatis TURUN ke area ketik halaman berikutnya (melompati
-   zona margin bawah + margin atas). Tinggi area ketik per halaman = 297mm − 2×25,4mm
-   = 246,2mm; awal area ketik tiap halaman = kelipatan 297mm (koordinat dari atas doc).
+   zona margin bawah + margin atas). Tinggi area ketik per halaman = 297mm − 2×12mm
+   = 273mm; awal area ketik tiap halaman = kelipatan 297mm (koordinat dari atas doc).
    Dijalankan setelah mengetik (debounce). Spacer dibuang saat menyimpan. */
 var _spkPagBusy=false;
 function spkWEPaginate(){
@@ -15648,7 +15884,7 @@ function spkWEPaginate(){
     Array.prototype.slice.call(doc.children).forEach(function(el){
       if(el.nodeType===1 && el.classList && el.classList.contains('spk-pagebreak')) doc.removeChild(el);
     });
-    var PX=96/25.4, USABLE=246.2*PX, PAGE=297*PX;
+    var PX=96/25.4, USABLE=273*PX, PAGE=297*PX;
     var kids=Array.prototype.slice.call(doc.children);
     for(var i=0;i<kids.length;i++){
       var b=kids[i]; if(b.nodeType!==1) continue;
@@ -15684,7 +15920,7 @@ function spkWEToggleRuler(on){
    L   = titik nol paragraf (batas margin + OFF), CW = lebar kolom teks. */
 function spkWERulerGeom(){
   var PX=96/25.4;                 // px per mm (96 dpi)
-  var W=Math.round(210*PX), M=Math.round(25.4*PX), CM=10*PX;
+  var W=Math.round(210*PX), M=Math.round(15*PX), CM=10*PX;
   var d=document.getElementById('spk-we-doc');
   var OFF=d ? (parseFloat(getComputedStyle(d).paddingLeft)||0) : 0;
   return { PX:PX, W:W, M:M, CM:CM, OFF:OFF, L:M+OFF, CW:(W-2*M)-OFF };
@@ -17308,13 +17544,23 @@ function spkOrgP1(ctx){
 /* ---------- Blok tanda tangan (1 rangkap) ---------- */
 function spkSignBlockHtml(ctx, rangkap){
   const esc=fkEsc;
+  /* Tabel tanda tangan dipecah menjadi DUA BARIS:
+       baris 1 (sg-head) : "PIHAK …" + nama instansi
+       baris 2 (sg-body) : nama wakil (bergaris bawah) + jabatan
+     Tinggi baris tabel selalu sama untuk kedua kolom, sehingga nama & jabatan
+     PIHAK KEDUA tetap SEJAJAR dengan PIHAK PERTAMA walau nama instansinya
+     memakan jumlah baris yang berbeda (mis. 2 baris vs 3 baris). */
   return '<div class="spk-signpage">'+
-    '<table class="spk-sign"><tr>'+
-      '<td><div class="role">PIHAK KEDUA</div><div class="org">'+esc(ctx.p2_nama_hormat||'')+'</div>'+
-        '<div class="nm">'+esc(ctx.p2_wakil||'')+'</div><div class="jab">'+esc(ctx.p2_jabatan||'')+'</div></td>'+
-      '<td><div class="role">PIHAK PERTAMA</div><div class="org">'+esc(spkOrgP1(ctx))+'</div>'+
-        '<div class="nm">'+esc(ctx.p1_wakil||'')+'</div><div class="jab">'+esc(ctx.p1_jabatan||'')+'</div></td>'+
-    '</tr></table>'+
+    '<table class="spk-sign">'+
+      '<tr class="sg-head">'+
+        '<td><div class="role">PIHAK KEDUA</div><div class="org">'+esc(ctx.p2_nama_hormat||'')+'</div></td>'+
+        '<td><div class="role">PIHAK PERTAMA</div><div class="org">'+esc(spkOrgP1(ctx))+'</div></td>'+
+      '</tr>'+
+      '<tr class="sg-body">'+
+        '<td><div class="nm">'+esc(ctx.p2_wakil||'')+'</div><div class="jab">'+esc(ctx.p2_jabatan||'')+'</div></td>'+
+        '<td><div class="nm">'+esc(ctx.p1_wakil||'')+'</div><div class="jab">'+esc(ctx.p1_jabatan||'')+'</div></td>'+
+      '</tr>'+
+    '</table>'+
   '</div>';
 }
 
@@ -17331,22 +17577,29 @@ function spkLampSignBlockHtml(ctx, data){
   else{ tglLamp=String(ctx.tanggal_kontrak||''); }
   const kotaTtd = (data && data.kota_ttd) ? String(data.kota_ttd) : 'Masohi';
   const orgP1 = spkOrgP1(ctx);   /* sama dengan tanda tangan akhir SPK */
+  /* Sama seperti tanda tangan SPK: dipecah menjadi baris kepala (tanggal +
+     "PIHAK …" + nama instansi) dan baris nama/jabatan, agar kedua kolom SEJAJAR
+     walau nama instansi PIHAK PERTAMA memakan lebih banyak baris. */
   return '<div class="spk-signpage spk-lampsign">'+
-    '<table class="spk-sign"><tr>'+
-      // Kolom kiri: PIHAK KEDUA (penyedia). Baris tanggal dikosongkan (spacer) agar
-      // kedua kolom sejajar dengan kolom kanan yang memuat tanggal.
-      '<td><div class="ttd-date">&nbsp;</div>'+
-        '<div class="role">PIHAK KEDUA</div>'+
-        '<div class="org">'+esc(ctx.p2_nama_hormat||'')+'</div>'+
-        '<div class="nm">'+esc(ctx.p2_wakil||'')+'</div>'+
-        '<div class="jab">'+esc(ctx.p2_jabatan||'')+'</div></td>'+
-      // Kolom kanan: PIHAK PERTAMA (PLN), dengan tanggal di atas.
-      '<td><div class="ttd-date">'+esc(kotaTtd)+', '+esc(tglLamp)+'</div>'+
-        '<div class="role">PIHAK PERTAMA</div>'+
-        '<div class="org">'+esc(orgP1)+'</div>'+
-        '<div class="nm">'+esc(ctx.p1_wakil||'')+'</div>'+
-        '<div class="jab">'+esc(ctx.p1_jabatan||'')+'</div></td>'+
-    '</tr></table>'+
+    '<table class="spk-sign">'+
+      '<tr class="sg-head">'+
+        // Kolom kiri: PIHAK KEDUA (penyedia). Baris tanggal dikosongkan (spacer) agar
+        // kedua kolom sejajar dengan kolom kanan yang memuat tanggal.
+        '<td><div class="ttd-date">&nbsp;</div>'+
+          '<div class="role">PIHAK KEDUA</div>'+
+          '<div class="org">'+esc(ctx.p2_nama_hormat||'')+'</div></td>'+
+        // Kolom kanan: PIHAK PERTAMA (PLN), dengan tanggal di atas.
+        '<td><div class="ttd-date">'+esc(kotaTtd)+', '+esc(tglLamp)+'</div>'+
+          '<div class="role">PIHAK PERTAMA</div>'+
+          '<div class="org">'+esc(orgP1)+'</div></td>'+
+      '</tr>'+
+      '<tr class="sg-body">'+
+        '<td><div class="nm">'+esc(ctx.p2_wakil||'')+'</div>'+
+          '<div class="jab">'+esc(ctx.p2_jabatan||'')+'</div></td>'+
+        '<td><div class="nm">'+esc(ctx.p1_wakil||'')+'</div>'+
+          '<div class="jab">'+esc(ctx.p1_jabatan||'')+'</div></td>'+
+      '</tr>'+
+    '</table>'+
   '</div>';
 }
 
@@ -17440,13 +17693,13 @@ function spkLampiranDocInner(data){
         tepat di titik tempat browser akan memotong halaman ketika dicetak.
 
    Cara hitung (mengikuti mesin cetak browser):
-     - Tinggi area cetak A4 = 297mm - margin atas 2,54cm - margin bawah 2,54cm
-       = 246,2mm  (lihat @page pada spkDocCss2).
+     - Tinggi area cetak A4 = 297mm - margin atas 12mm - margin bawah 12mm
+       = 273mm  (lihat @page pada spkDocCss2).
      - Pada lembar isi (.spk-flow) kop & footer dipasang lewat <thead>/<tfoot>
        sehingga BERULANG di setiap halaman fisik. Jadi ruang isi per halaman
-       = 246,2mm - tinggi <thead> - tinggi <tfoot>.
+       = 273mm - tinggi <thead> - tinggi <tfoot>.
      - Batas halaman ke-k berada pada kelipatan k x ruang-isi, dihitung dari awal
-       sel <tbody>. Untuk lembar tanpa kop/footer (Lampiran) ruang isi = 246,2mm.
+       sel <tbody>. Untuk lembar tanpa kop/footer (Lampiran) ruang isi = 273mm.
    Garis hanya tampil di layar (@media print menyembunyikannya). */
 function spkPageScript(){
   /* Isi kontrak & lampiran DIPECAH menjadi lembar A4 sungguhan (.spk-sheet),
@@ -17646,7 +17899,7 @@ function spkPageScript(){
     '}',
     'function jalan(){',
     ' if(DONE) return;',
-    ' var PH=mm2px(246.2);',
+    ' var PH=mm2px(273);',
     ' if(!PH||PH<200){ if(TRY++<80) setTimeout(jalan,100); return; }',
     ' DONE=true;',
     ' var doc=document.querySelector(".spk-doc");',
