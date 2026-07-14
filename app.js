@@ -7166,7 +7166,23 @@ function fklDocTitleBlock(titleHtml, nama, codes){
     '<div class="fkl-doc-titlegap"></div>';
 }
 
-function fklDocBaseCss(){ const el=document.getElementById('fkl-doc-css'); return el?el.textContent:''; }
+function fklDocBaseCss(){
+  const el=document.getElementById('fkl-doc-css');
+  return (el?el.textContent:'') + fklDocCssPatch();
+}
+/* Penyesuaian yang berlaku untuk SEMUA dokumen cetak (HPS, Lampiran SPK, Jadwal,
+   Kelengkapan, dll) tanpa perlu menyunting index.html.
+
+   Kolom label pada blok "A DATA PEKERJAAN" semula dipatok width:34% — jauh lebih
+   lebar dari kebutuhan, sehingga titik dua & nilainya terdorong ke tengah.
+   Dengan width:1% + white-space:nowrap pada tabel width:100%, kolom label
+   MENYUSUT tepat selebar teks label terpanjang ("Metode Pengadaan" / "Nama
+   Pekerjaan"), lalu sisa ruang seluruhnya diberikan ke kolom nilai. */
+function fklDocCssPatch(){
+  return ''+
+    'table.fkl-info td.k{width:1%;white-space:nowrap;padding-right:14px}'+
+    'table.fkl-info td.s{width:1%;white-space:nowrap}';
+}
 /* Dokumen Cetak/PDF adalah dokumen HTML MANDIRI (iframe/window baru). Font yang
    dimuat di halaman utama TIDAK diwariskan ke sana, sehingga 'Plus Jakarta Sans'
    sebelumnya selalu jatuh ke Segoe UI/Arial. Link berikut memuat font itu langsung
@@ -14256,10 +14272,13 @@ function spkDocCss(){
        konsisten, bertingkat 0,75 cm tiap level — persis penggaris Word. */
   '.spk-clause{margin:0}'+
   '.spk-clause,.spk-clause *,.spk-cl,.spk-cl *,.spk-cl-h,.spk-cl-h *{font-family:Arial,Helvetica,sans-serif}'+
-  '.spk-cl-h{font-weight:700;font-size:11pt;color:#000;line-height:1.15;text-transform:uppercase;text-align:left;margin:12pt 0 3pt;padding-left:0.75cm;text-indent:-0.75cm}'+
-  '.spk-cl-h .n{display:inline-block;width:0.75cm;text-indent:0;text-align:left}'+
+  /* Kotak nomor judul klausul dipersempit 0,75cm -> 0,65cm: cukup untuk nomor
+     2 digit (mis. "15." = ~0,54cm pada Arial bold 11pt) plus sedikit jarak,
+     sehingga judul lebih dekat ke nomornya. */
+  '.spk-cl-h{font-weight:700;font-size:11pt;color:#000;line-height:1.15;text-transform:uppercase;text-align:left;margin:12pt 0 3pt;padding-left:0.65cm;text-indent:-0.65cm}'+
+  '.spk-cl-h .n{display:inline-block;width:0.65cm;text-indent:0;text-align:left}'+
   /* Perataan nomor tunggal 2 digit (mis. 10.) rata kanan -> titik sejajar */
-  '.spk-clause .n.r,.spk-cl-h .n.r{text-align:right;padding-right:0.2cm;box-sizing:border-box}'+
+  '.spk-clause .n.r,.spk-cl-h .n.r{text-align:right;padding-right:0.1cm;box-sizing:border-box}'+
   '.spk-cl{margin:0;font-size:11pt;color:#000;line-height:1.15}'+
   /* Isi klausul menjorok sejajar dengan TEKS judul (0,75 cm dari margin) */
   '.spk-clause .spk-cl{padding-left:0.75cm}'+
@@ -14318,6 +14337,8 @@ function spkDocCss(){
   '.spk-sign{margin-top:30px;width:100%;border-collapse:collapse}'+
   '.spk-sign td{width:50%;text-align:center;vertical-align:top;font-size:11pt;padding:4px}'+
   '.spk-sign .role{font-weight:700}.spk-sign .nm{font-weight:700;text-decoration:underline;margin-top:70px}'+
+  /* Baris nama instansi di bawah "PIHAK PERTAMA" ditebalkan, sama seperti di Lampiran */
+  '.spk-sign .org{font-weight:700;line-height:1.3}'+
   '.spk-sign .jab{color:#000}'+
   /* ===== Seragamkan SELURUH teks ISI kontrak = Arial 11pt =====
      Mencakup preamble, semua klausul (judul & isi), daftar, blok pihak, baris
@@ -14362,7 +14383,8 @@ function spkDocCss2(){
      tinggi 46px, tebal 1px, #C7C7C7, jarak 16px dari logo). */
   '.spk-cover .cv-brand .cv-org{border-left:1px solid #C7C7C7;padding-left:16px}'+
   '.spk-cover .cv-org{line-height:1.35}'+
-  '.spk-cover .cv-org span{display:block;font-size:9px;letter-spacing:.2em;color:#8F8E8E;font-weight:700}'+
+  /* Sedikit jarak antara "PT PLN (PERSERO)" dan "UP3 Masohi" agar tidak menempel */
+  '.spk-cover .cv-org span{display:block;font-size:9px;letter-spacing:.2em;color:#8F8E8E;font-weight:700;margin-bottom:4px}'+
   '.spk-cover .cv-org b{display:block;font-size:16px;color:#201E1D;font-weight:800}'+
   '.spk-cover .cv-no{text-align:right;line-height:1.5}'+
   '.spk-cover .cv-no span{display:block;font-size:9px;letter-spacing:.2em;color:#8F8E8E;font-weight:700}'+
@@ -14427,7 +14449,7 @@ function spkDocCss2(){
   /* Garis pemisah vertikal (tinggi 38px, tebal 1px, #C7C7C7, jarak 16px). */
   '.spk-rhd .l .o{border-left:1px solid #C7C7C7;padding-left:16px}'+
   '.spk-rhd .o{line-height:1.3}'+
-  '.spk-rhd .o span{display:block;font-size:8.5px;letter-spacing:.2em;color:#8F8E8E;font-weight:700}'+
+  '.spk-rhd .o span{display:block;font-size:8.5px;letter-spacing:.2em;color:#8F8E8E;font-weight:700;margin-bottom:3px}'+
   '.spk-rhd .o b{display:block;font-size:14px;color:#201E1D;font-weight:800}'+
   '.spk-rhd .r{text-align:right;line-height:1.4}'+
   '.spk-rhd .r b{display:block;font-size:12px;font-weight:800;color:#201E1D;letter-spacing:.13em}'+
@@ -14442,7 +14464,9 @@ function spkDocCss2(){
   '.spk-rft .ft-pg{font-size:11px;font-weight:800;color:#201E1D;letter-spacing:.02em}'+
   '.spk-rft .l,.spk-rft .r{white-space:nowrap}'+
   /* ---------- ISI: BAB & tanda tangan ---------- */
-  '.spk-bab{text-align:center;font-family:'+G+';margin:0 0 14px}'+
+  /* Jarak dari blok judul (SURAT PERINTAH KERJA + nomor kontrak) ke teks pertama
+     "Pada hari ini ..." = 12pt. Sebelumnya 14px (~10,5pt). */
+  '.spk-bab{text-align:center;font-family:'+G+';margin:0 0 12pt}'+
   '.spk-bab b{display:block;font-size:13pt;font-weight:800;color:#201E1D;text-decoration:underline;text-underline-offset:3px;letter-spacing:.05em;text-transform:uppercase}'+
   '.spk-bab span{display:block;font-size:11pt;font-weight:700;color:#201E1D;letter-spacing:.02em;margin-top:3px}'+
   '.spk-signpage{page-break-before:always;break-before:page;padding-top:8mm}'+
@@ -14455,16 +14479,26 @@ function spkDocCss2(){
      Dulu jarak ini disumbang oleh judul seksi "B" (margin 22px) yang kini dihapus.
      :not(.spk-cont) => hanya tabel ASLI yang diberi jarak; salinan tabel pada
      halaman lanjutan (ditandai .spk-cont oleh paginator) tidak ikut terdorong. */
-  '.spk-lampsheet table.hps-doc-tbl:not(.spk-cont){margin-top:24pt}'+
+  '.spk-lampsheet table.hps-doc-tbl:not(.spk-cont){margin-top:12pt}'+
+  /* Jaminan lebar: tabel rincian Lampiran (termasuk SALINANNYA di halaman lanjutan
+     yang dibuat paginator, ditandai .spk-cont) memakai lebar & tata kolom yang
+     sama persis dengan dokumen Perhitungan HPS. Tanpa ini, lembar yang memuat
+     tabel utama bisa tampil lebih sempit daripada lembar blok Jumlah/DPP/PPn. */
+  /* Jarak dari tabel total ke tanda tangan dipangkas separuh:
+     padding 22px + margin 26px = 48px  ->  11px + 13px = 24px. */
+  '.spk-lampsheet table.hps-doc-tbl tr.ttd-row > td{padding-top:11px}'+
+  '.spk-lampsheet table.hps-doc-tbl,'+
+  '.spk-lampsheet table.hps-doc-tbl.spk-cont{width:100%;table-layout:fixed;border-collapse:collapse}'+
+  '.spk-lampsheet .fkl-doc,.spk-lampsheet .sh-bd > .fkl-doc{width:100%}'+
   /* Kolom label pada tabel info bawaan dokumen lebarnya 34% — jauh melebihi
      kebutuhan teks "Nama Pekerjaan"/"Lokasi Pekerjaan", sehingga titik dua dan
      nilainya terdorong jauh ke kanan. Dipersempit KHUSUS di Lampiran SPK
      (dokumen HPS & lainnya tetap 34%). */
-  '.spk-lampsheet table.fkl-info td.k{width:20%}'+
+
   '.spk-lampsheet .fkl-doc-title{font-size:16px}'+
   /* Blok tanda tangan pada Lampiran: dua pihak (PIHAK KEDUA & PIHAK PERTAMA),
      tanggal di atas kolom PIHAK PERTAMA, nama bergaris bawah. */
-  '.spk-lampsign{page-break-before:auto;break-before:auto;padding-top:0;margin-top:26px;break-inside:avoid;page-break-inside:avoid}'+
+  '.spk-lampsign{page-break-before:auto;break-before:auto;padding-top:0;margin-top:13px;break-inside:avoid;page-break-inside:avoid}'+
   '.spk-lampsign .spk-sign{margin-top:0}'+
   /* Tanda tangan LAMPIRAN mengikuti font & ukuran isi lampiran (.fkl-doc):
      'Plus Jakarta Sans' 12,5px warna #1a2b31 — sama seperti baris "Nama Pekerjaan".
@@ -14472,10 +14506,14 @@ function spkDocCss2(){
   '.spk-lampsign .spk-sign td{width:50%;text-align:center;vertical-align:top;padding:4px 6px;'+
     "font-family:'Plus Jakarta Sans','Segoe UI',sans-serif;font-size:12.5px;color:#1a2b31}"+
   '.spk-lampsign .ttd-date{min-height:1.2em;font-size:12.5px;margin-bottom:2px;color:#22343a;font-weight:500}'+
-  '.spk-lampsign .role{font-weight:700}'+
-  '.spk-lampsign .org{font-weight:700;line-height:1.25}'+
-  '.spk-lampsign .nm{font-weight:700;text-decoration:underline;margin-top:70px}'+
-  '.spk-lampsign .jab{font-weight:700}'+
+  /* SEMUA baris tanda tangan lampiran memakai ukuran & warna yang sama (12,5px).
+     Sebelumnya ".role" diam-diam kena aturan bawaan HPS 'tr.ttd-row .role{font-size:12px}'
+     — yang mulai berlaku sejak blok ini dipindah ke DALAM tabel — sehingga
+     "PIHAK PERTAMA" (12px) terlihat lebih kecil dari "PT PLN (Persero)" (12,5px). */
+  '.spk-lampsign .role{font-size:12.5px;font-weight:700;color:#1a2b31}'+
+  '.spk-lampsign .org{font-size:12.5px;font-weight:700;color:#1a2b31;line-height:1.3}'+
+  '.spk-lampsign .nm{font-size:12.5px;font-weight:700;color:#1a2b31;text-decoration:underline;margin-top:70px}'+
+  '.spk-lampsign .jab{font-size:12.5px;font-weight:700;color:#1a2b31}'+
   /* ---------- LEMBAR ISI HASIL PEMECAHAN HALAMAN (spkPageScript) ----------
      Isi kontrak & lampiran dipecah menjadi lembar A4 sungguhan: kop di atas,
      isi di tengah (tinggi tetap), footer paraf menempel di dasar lembar. */
@@ -16902,13 +16940,22 @@ function spkRunFootHtml(){
   '</div>';
 }
 
-/* ---------- Blok tanda tangan (dicetak 2 rangkap) ---------- */
+/* Nama PIHAK PERTAMA yang dipakai di SEMUA blok tanda tangan:
+   "PT PLN (Persero) " + nama unit dari data (mail merge).
+   Bila data unit kosong, dipakai cadangan "Unit Pelaksana Pelayanan Pelanggan Masohi".
+   Bila nama unit dari data sudah diawali "PT PLN", tidak ditempeli lagi agar tak dobel. */
+function spkOrgP1(ctx){
+  const unit = String((ctx && ctx.p1_nama_singkat) || '').trim() || 'Unit Pelaksana Pelayanan Pelanggan Masohi';
+  return /^PT\s*PLN/i.test(unit) ? unit : ('PT PLN (Persero) ' + unit);
+}
+
+/* ---------- Blok tanda tangan (1 rangkap) ---------- */
 function spkSignBlockHtml(ctx, rangkap){
   const esc=fkEsc;
   return '<div class="spk-signpage">'+
     '<div class="spk-sign-eyebrow">TANDA TANGAN PARA PIHAK</div>'+
     '<table class="spk-sign"><tr>'+
-      '<td><div class="role">PIHAK PERTAMA</div><div>'+esc(ctx.p1_nama_singkat||'PT PLN (Persero)')+'</div>'+
+      '<td><div class="role">PIHAK PERTAMA</div><div class="org">'+esc(spkOrgP1(ctx))+'</div>'+
         '<div class="nm">'+esc(ctx.p1_wakil||'')+'</div><div class="jab">'+esc(ctx.p1_jabatan||'')+'</div></td>'+
       '<td><div class="role">PIHAK KEDUA</div><div>'+esc(ctx.p2_nama_hormat||'')+'</div>'+
         '<div class="nm">'+esc(ctx.p2_wakil||'')+'</div><div class="jab">'+esc(ctx.p2_jabatan||'')+'</div></td>'+
@@ -16928,6 +16975,7 @@ function spkLampSignBlockHtml(ctx, data){
   if(p.length===3){ tglLamp=(('0'+(+p[2])).slice(-2))+' '+(SPK_BULAN[(+p[1])-1]||'')+' '+p[0]; }
   else{ tglLamp=String(ctx.tanggal_kontrak||''); }
   const kotaTtd = (data && data.kota_ttd) ? String(data.kota_ttd) : 'Masohi';
+  const orgP1 = spkOrgP1(ctx);   /* sama dengan tanda tangan akhir SPK */
   return '<div class="spk-signpage spk-lampsign">'+
     '<table class="spk-sign"><tr>'+
       // Kolom kiri: PIHAK KEDUA (penyedia). Baris tanggal dikosongkan (spacer) agar
@@ -16940,7 +16988,7 @@ function spkLampSignBlockHtml(ctx, data){
       // Kolom kanan: PIHAK PERTAMA (PLN), dengan tanggal di atas.
       '<td><div class="ttd-date">'+esc(kotaTtd)+', '+esc(tglLamp)+'</div>'+
         '<div class="role">PIHAK PERTAMA</div>'+
-        '<div class="org">'+esc(ctx.p1_nama_singkat||'PT PLN (Persero)')+'</div>'+
+        '<div class="org">'+esc(orgP1)+'</div>'+
         '<div class="nm">'+esc(ctx.p1_wakil||'')+'</div>'+
         '<div class="jab">'+esc(ctx.p1_jabatan||'')+'</div></td>'+
     '</tr></table>'+
@@ -17565,6 +17613,8 @@ var SPK_DX = {
   A4_W:11906, A4_H:16838,      // A4 portrait
   MARGIN:1440,                 // margin Normal Word = 2,54 cm
   IND:425,                     // 0,75 cm  (sejajar teks sesudah nomor klausul)
+  IND_JUDUL:368,               // 0,65 cm  (jarak nomor -> teks pada JUDUL klausul;
+                               //           pas untuk nomor 2 digit, mis. "15.")
   IND2:850,                    // 1,50 cm
   IND3:1276                    // 2,25 cm
 };
@@ -17667,7 +17717,7 @@ function spkStylesXml(){
   var D=SPK_DX;
   var tab1='<w:tabs><w:tab w:val="left" w:pos="'+D.IND2+'"/></w:tabs>';
   var tab2='<w:tabs><w:tab w:val="left" w:pos="'+D.IND3+'"/></w:tabs>';
-  var tabH='<w:tabs><w:tab w:val="left" w:pos="'+D.IND+'"/></w:tabs>';
+  var tabH='<w:tabs><w:tab w:val="left" w:pos="'+D.IND_JUDUL+'"/></w:tabs>';
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
   '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'+
     '<w:docDefaults><w:rPrDefault><w:rPr>'+
@@ -17680,7 +17730,7 @@ function spkStylesXml(){
     '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>'+
     /* Judul klausul: nomor di margin, teks judul pada 0,75 cm (hanging) */
     spkStyXml('KlausulJudul','Klausul Judul',
-      '<w:ind w:left="'+SPK_DX.IND+'" w:hanging="'+SPK_DX.IND+'"/>',
+      '<w:ind w:left="'+SPK_DX.IND_JUDUL+'" w:hanging="'+SPK_DX.IND_JUDUL+'"/>',
       tabH+'<w:spacing w:before="240" w:after="60" w:line="276" w:lineRule="auto"/><w:jc w:val="left"/>',
       '<w:b/><w:caps/>')+
     /* Isi klausul: sejajar dengan huruf sesudah nomor (0,75 cm) */
@@ -17710,7 +17760,7 @@ function spkNumberingXml(startNo){
         '<w:numFmt w:val="decimal"/>'+
         '<w:lvlText w:val="%1."/>'+
         '<w:lvlJc w:val="left"/>'+
-        '<w:pPr><w:ind w:left="'+D.IND+'" w:hanging="'+D.IND+'"/></w:pPr>'+
+        '<w:pPr><w:ind w:left="'+D.IND_JUDUL+'" w:hanging="'+D.IND_JUDUL+'"/></w:pPr>'+
       '</w:lvl>'+
     '</w:abstractNum>'+
     '<w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num>'+
