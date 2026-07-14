@@ -19297,16 +19297,20 @@ function spkParaCss(eff, noInd){
   return css;
 }
 /* Kotak nomor = PERSIS seperti Word:
-     - lebarnya TETAP selebar hanging indent Word (bukan melebar mengikuti nomor),
-       sehingga teks semua butir selalu mulai di kolom yang sama (tab stop Word);
-     - perataan nomor di dalam kotak mengikuti w:lvlJc Word (left/center/right).
-   Dengan lvlJc=right, nomor 1 digit & 2 digit berakhir di kolom yang sama —
-   sama seperti pengaturan penomoran rata kanan di Word. */
+     - RATA KANAN (w:lvlJc=right): lebar kotak TETAP selebar hanging Word. Nomor
+       ditempel ke sisi kanan kotak; nomor yang lebih panjang (8.10.) memanjang KE KIRI,
+       bukan mendorong teks. Jadi kolom teks semua butir sama, dan titik nomor sejajar.
+     - RATA KIRI (bawaan): lebar MINIMAL selebar hanging; bila nomornya lebih lebar
+       (mis. "3.1.4."), kotak melebar dan teks terdorong — sama seperti Word.
+   Perataan diambil dari w:lvlJc pada numbering.xml, bukan tebakan aplikasi. */
 function spkNumBox(txt, hangCm, jc){
   var al=(jc==='right'||jc==='end')?'right':((jc==='center')?'center':'left');
-  return '<span class="n" style="display:inline-block;width:'+hangCm+'cm;box-sizing:border-box;'+
-    (al==='right'?'padding-right:0.10cm;':'')+
-    'text-indent:0;white-space:nowrap;text-align:'+al+'">'+txt+'</span>';
+  var w=(al==='right')
+    ? 'width:'+hangCm+'cm;'                      /* tetap -> nomor panjang melebar ke kiri */
+    : 'width:auto;min-width:'+hangCm+'cm;';      /* melebar -> teks terdorong (gaya Word) */
+  return '<span class="n" style="display:inline-block;'+w+
+    'box-sizing:border-box;padding-right:0.10cm;text-indent:0;white-space:nowrap;'+
+    'overflow:visible;text-align:'+al+'">'+txt+'</span>';
 }
 /* Peta styleId -> NAMA gaya (dinormalkan) dari word/styles.xml */
 function spkStyleNameMap(stylesXml){
