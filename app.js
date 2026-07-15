@@ -14105,6 +14105,15 @@ function spkMerge(tpl, ctx){
 function spkNomorToNo(html){
   return String(html==null?'':html).replace(/Nomor\s*:/gi, 'No.');
 }
+/* Tebalkan SEMUA tulisan "PIHAK PERTAMA" & "PIHAK KEDUA" pada ISI KLAUSUL.
+   Dipakai HANYA pada tahap render isi klausul — preamble, kop, footer berjalan,
+   lampiran, & blok tanda tangan TIDAK diproses. Spasi asli antar-kata
+   dipertahankan (termasuk &nbsp;). Penebalan ganda (bila teks sudah berada di
+   dalam <b>) tidak masalah: web me-render bold sekali, dan konversi ke Word
+   menelusuri DOM sehingga <b> bersarang tetap dihitung bold sekali. */
+function spkBoldPihak(html){
+  return String(html==null?'':html).replace(/PIHAK(\s+)(PERTAMA|KEDUA)/g, '<b>PIHAK$1$2</b>');
+}
 /* Rapikan pola "Label / : / nilai" (tiga paragraf berurutan) menjadi satu baris
    sejajar seperti tampilan Word — dipakai pada blok Nama/Lokasi Pekerjaan dsb. */
 function spkTidyKeyValue(html){
@@ -19066,9 +19075,9 @@ function spkDocHtml(data, klausul){
   }
   const clausesHtml = (klausul||[]).map((k,i)=>
     '<div class="spk-clause"><div class="spk-cl-h"><span class="n"></span>'+spkFmtJudul(k.judul)+'</div>'+
-    '<div class="spk-cl">'+spkNomorToNo(spkNumberFix(spkTidyKeyValue(
+    '<div class="spk-cl">'+spkBoldPihak(spkNomorToNo(spkNumberFix(spkTidyKeyValue(
         spkPruneKlausul(spkMerge(spkRenumberKlausul(k.isi||'', i+1), ctx), i+1, data)
-      )))+'</div></div>'
+      ))))+'</div></div>'
   ).join('');
   const isiBody=
     '<div class="spk-bab"><b>SURAT PERINTAH KERJA</b>'+(data.nomor_kontrak?('<span>'+esc(data.nomor_kontrak)+'</span>'):'')+'</div>'+
@@ -20581,7 +20590,7 @@ function spkKlausulView(id){
   // nomor klausul mengikuti posisinya di pustaka -> butir & rujukan ikut menyesuaikan
   const noKl=(records_klausul.findIndex(x=>String(x.id)===String(id))+1)||1;
   let inner='';
-  try{ inner=spkNumberFix(spkTidyKeyValue(spkMerge(spkRenumberKlausul(k.isi||'', noKl), ctx))); }
+  try{ inner=spkBoldPihak(spkNumberFix(spkTidyKeyValue(spkMerge(spkRenumberKlausul(k.isi||'', noKl), ctx)))); }
   catch(e){ inner=String(k.isi||''); }
   let ov=document.getElementById('spk-klausul-view-ov');
   if(!ov){ ov=document.createElement('div'); ov.id='spk-klausul-view-ov'; ov.className='spk-ov'; document.body.appendChild(ov);
