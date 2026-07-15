@@ -15556,6 +15556,47 @@ function spkNumUniform(html){
     return ubah ? box.innerHTML : s;
   }catch(e){ return s; }
 }
+/* Jaring pengaman BERBASIS DOM: pastikan SETIAP paragraf kl1/kl2 yang diawali nomor
+   ANGKA (mis. "10.5.", "10.10.") memiliki kotak <span class="n">. Bekerja pada teks
+   hasil parse (bukan regex mentah), jadi kebal terhadap: nomor tanpa spasi
+   ("10.10.Petugas"), ada tag/entity setelah nomor, atau kelas tambahan pada paragraf.
+   Yang SUDAH dikotakkan dilewati. Dipanggil sebelum spkNumUniform agar butir yang
+   sebelumnya lolos ikut dikelompokkan & diseragamkan lebarnya. */
+function spkBoxLeadNumDom(html){
+  var s=String(html==null?'':html);
+  if(s.indexOf('kl1')<0 && s.indexOf('kl2')<0) return s;
+  try{
+    var box=document.createElement('div'); box.innerHTML=s;
+    var ps=box.querySelectorAll('p.kl1, p.kl2'), changed=false, i;
+    for(i=0;i<ps.length;i++){
+      var p=ps[i];
+      var fe=p.firstElementChild;
+      if(fe && fe.tagName==='SPAN' && fe.classList && fe.classList.contains('n')) continue;  /* sudah dikotakkan */
+      /* text-node pertama yang berisi, DAN harus anak langsung <p> (bukan di dalam <i>/<b>) */
+      var w=document.createTreeWalker(p, NodeFilter.SHOW_TEXT, null, false), tn, first=null;
+      while((tn=w.nextNode())){ if(tn.nodeValue && tn.nodeValue.replace(/[\s\u00A0]/g,'')){ first=tn; break; } }
+      if(!first || first.parentNode!==p) continue;
+      var mm=/^([\s\u00A0]*)((?:[0-9]+\.)+)([\s\u00A0]*)/.exec(first.nodeValue);
+      if(!mm) continue;                                    /* tidak diawali nomor ANGKA bertingkat/tunggal */
+      var tok=mm[2];
+      first.nodeValue = first.nodeValue.slice(mm[0].length);
+      var hug=Math.max(0.4, Math.round((spkTextWidthCm(tok)+SPK_NUM_GAP)*100)/100);
+      var multi=/^(?:[0-9]+\.){2,}$/.test(tok);
+      var span=document.createElement('span');
+      span.className='n'+(multi?' m':'');
+      span.setAttribute('style','width:'+hug.toFixed(2)+'cm;display:inline-block;box-sizing:border-box;padding-right:'+SPK_NUM_GAP+'cm;text-indent:0;white-space:nowrap;overflow:visible;text-align:right');
+      span.textContent=tok;
+      p.insertBefore(span, p.firstChild);
+      p.classList.add('spk-sl');
+      if(multi){ p.classList.add('spk-ml'); if(p.classList.contains('kl2')) p.classList.add('spk-lv1'); }
+      var base=(p.classList.contains('kl2') && !p.classList.contains('spk-lv1'))?0.75:0;
+      p.style.marginLeft=(base+hug).toFixed(2)+'cm';
+      p.style.textIndent='-'+hug.toFixed(2)+'cm';
+      changed=true;
+    }
+    return changed ? box.innerHTML : s;
+  }catch(e){ return s; }
+}
 function spkNumberFix(html){
   /* Normalisasi: bila label nomor di AWAL paragraf kl1/kl2 langsung menempel ke teks
      tanpa spasi (mis. "10.10.Petugas" atau "11.1.2.Peristiwa"), sisipkan satu nbsp
@@ -15623,6 +15664,7 @@ function spkNumberFix(html){
       return '<p class="kl2 spk-sl"'+(attrs||'')+'><span class="n">'+ch+'</span>'+sp;
     }
   );
+  html = spkBoxLeadNumDom(html);       /* jaring pengaman: kotakkan nomor yang lolos dari regex */
   html = spkNumUniform(html);          /* samakan lebar kotak untuk daftar 1 & 2 digit */
   html = spkBreakRefNumbers(html);
   return html;
