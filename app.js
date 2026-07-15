@@ -15152,6 +15152,21 @@ function spkDocCss2(){
   '.spk-signpage{page-break-before:always;break-before:page;padding-top:8mm}'+
   /* Jarak dari klausul terakhir ke blok tanda tangan = 24 pt */
   '.spk-signpage .spk-sign{margin-top:24pt}'+
+  /* Ruang tanda tangan DIJAMIN cukup untuk MATERAI Rp10.000 (materai tempel ~21x24 mm,
+     e-meterai ~22 mm). Slot ini mengunci tinggi 26 mm di KEDUA kolom (PIHAK KEDUA &
+     PIHAK PERTAMA) sehingga materai muat tanpa menabrak nama/jabatan, dan kedua kolom
+     tetap sejajar. Kotak panduan putus-putus + label hanya tampil di LAYAR; saat
+     dicetak / diekspor PDF, slot menjadi ruang kosong tanpa garis maupun tulisan. */
+  '.spk-signpage .spk-sign .materai-slot{width:24mm;height:26mm;margin:2mm auto;box-sizing:border-box}'+
+  '.spk-signpage .spk-sign .nm{margin-top:0}'+
+  '@media screen{'+
+    '.spk-signpage .spk-sign .materai-slot{position:relative;border:1px dashed #c2ccd1;border-radius:3px}'+
+    '.spk-signpage .spk-sign .materai-slot::after{content:"Materai\\ARp10.000";white-space:pre-line;position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:8px;line-height:1.3;color:#aab4b9;font-weight:600;letter-spacing:.2px}'+
+  '}'+
+  '@media print{'+
+    '.spk-signpage .spk-sign .materai-slot{border:none}'+
+    '.spk-signpage .spk-sign .materai-slot::after{content:""}'+
+  '}'+
   /* ---------- LEMBAR LAMPIRAN (dokumen bergaya HPS) ---------- */
   '.spk-lampsheet{page-break-before:always;break-before:page}'+
   /* LEBAR ISI HALAMAN LAMPIRAN = LEBAR ISI HALAMAN DOKUMEN HPS.
@@ -17982,8 +17997,8 @@ function spkSignBlockHtml(ctx, rangkap){
         '<td><div class="role">PIHAK PERTAMA</div><div class="org">'+esc(spkOrgP1(ctx))+'</div></td>'+
       '</tr>'+
       '<tr class="sg-body">'+
-        '<td><div class="nm">'+esc(ctx.p2_wakil||'')+'</div><div class="jab">'+esc(ctx.p2_jabatan||'')+'</div></td>'+
-        '<td><div class="nm">'+esc(ctx.p1_wakil||'')+'</div><div class="jab">'+esc(ctx.p1_jabatan||'')+'</div></td>'+
+        '<td><div class="materai-slot" aria-hidden="true"></div><div class="nm">'+esc(ctx.p2_wakil||'')+'</div><div class="jab">'+esc(ctx.p2_jabatan||'')+'</div></td>'+
+        '<td><div class="materai-slot" aria-hidden="true"></div><div class="nm">'+esc(ctx.p1_wakil||'')+'</div><div class="jab">'+esc(ctx.p1_jabatan||'')+'</div></td>'+
       '</tr>'+
     '</table>'+
   '</div>';
@@ -18019,9 +18034,9 @@ function spkLampSignBlockHtml(ctx, data){
           '<div class="org">'+esc(orgP1)+'</div></td>'+
       '</tr>'+
       '<tr class="sg-body">'+
-        '<td><div class="nm">'+esc(ctx.p2_wakil||'')+'</div>'+
+        '<td><div class="materai-slot" aria-hidden="true"></div><div class="nm">'+esc(ctx.p2_wakil||'')+'</div>'+
           '<div class="jab">'+esc(ctx.p2_jabatan||'')+'</div></td>'+
-        '<td><div class="nm">'+esc(ctx.p1_wakil||'')+'</div>'+
+        '<td><div class="materai-slot" aria-hidden="true"></div><div class="nm">'+esc(ctx.p1_wakil||'')+'</div>'+
           '<div class="jab">'+esc(ctx.p1_jabatan||'')+'</div></td>'+
       '</tr>'+
     '</table>'+
