@@ -9854,8 +9854,21 @@ function openDpPicker(target){
   });
 }
 function closeDpPicker(){ const ov=document.getElementById('dp-picker-overlay'); if(ov) ov.classList.remove('show'); }
+/* Badge "Sudah digunakan" harus TETAP terlihat walau nama pekerjaan panjang.
+   Nama dibuat menyusut/terpotong (ellipsis) di dalam baris flex, sedangkan badge
+   tidak ikut menyusut (flex:0 0 auto) sehingga selalu tampil di samping nama. */
+function dpEnsurePickerStyle(){
+  if(document.getElementById('dp-picker-style')) return;
+  var css=
+    '#dp-picker-list .dp-name-row{display:flex;align-items:center;gap:8px;min-width:0}'+
+    '#dp-picker-list .dp-name-row>b{min-width:0;flex:0 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'+
+    '#dp-picker-list .dp-name-row>.dp-used-tag{flex:0 0 auto;margin:0}';
+  var st=document.createElement('style'); st.id='dp-picker-style'; st.textContent=css;
+  (document.head||document.documentElement).appendChild(st);
+}
 function renderDpPickerList(){
   const list=document.getElementById('dp-picker-list'); if(!list) return;
+  dpEnsurePickerStyle();
   const fs=(document.getElementById('dp-picker-search')?.value||'').toLowerCase().trim();
   let rows=(records_dp||[]).slice();
   if(fs) rows=rows.filter(r=>String(r.nama_pekerjaan||'').toLowerCase().includes(fs));
@@ -9866,7 +9879,7 @@ function renderDpPickerList(){
     const tag=dipakai?'<span class="dp-used-tag">Sudah digunakan</span>':'';
     return '<div class="hps-ana-item'+(dipakai?' is-used':'')+'" onclick="dpPickerSelect(\''+rid+'\')">'+
       '<div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg></div>'+
-      '<div class="tx"><b>'+fkEsc(r.nama_pekerjaan||'—')+tag+'</b><span>'+fkEsc(r.lokasi||'—')+' • '+fkEsc(r.metode||'—')+'</span></div>'+
+      '<div class="tx"><div class="dp-name-row"><b>'+fkEsc(r.nama_pekerjaan||'—')+'</b>'+tag+'</div><span>'+fkEsc(r.lokasi||'—')+' • '+fkEsc(r.metode||'—')+'</span></div>'+
       '<div class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></div>'+
     '</div>';
   }).join('');
@@ -10440,7 +10453,7 @@ function hpsOnJumlahItemChange(el){
 /* ================= HITUNGAN (Material / Jasa / Total) ================= */
 function hpsNum(v){ if(v===''||v==null) return 0; if(typeof v==='number') return v; const n=parseFloat(String(v).replace(/,/g,'.')); return isNaN(n)?0:n; }
 function hpsRp(n){ n=Math.round(hpsNum(n)); return n>0 ? ('Rp '+n.toLocaleString('id-ID')) : '–'; }
-function hpsRpDoc(n){ n=Math.round(hpsNum(n)); return n>0 ? n.toLocaleString('id-ID') : '-'; }
+function hpsRpDoc(n){ var x=hpsNum(n); if(!(x>0)) return '-'; var dec=Number.isInteger(x)?0:Math.min(2,(String(x).split('.')[1]||'').length); return x.toLocaleString('id-ID',{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
 function hpsItemMat(it){ return Math.round(jsVolNum(it&&it.vol)*hpsNum(it&&it.hargaMat)); }   // 7 = 4 x 5
 function hpsItemJasa(it){ return Math.round(jsVolNum(it&&it.vol)*hpsNum(it&&it.hargaJasa)); }  // 8 = 4 x 6
 function hpsItemTotal(it){ return hpsItemMat(it)+hpsItemJasa(it); }                          // 9 = 7 + 8
@@ -14141,6 +14154,34 @@ function spkLamp(){
 /* --- Hitungan (sama persis dengan Perhitungan HPS) --- */
 function spkLampNum(v){ if(v===''||v==null) return 0; if(typeof v==='number') return v; const n=parseFloat(String(v).replace(/,/g,'.')); return isNaN(n)?0:n; }
 function spkLampRp(n){ n=Math.round(spkLampNum(n)); return n>0 ? ('Rp '+n.toLocaleString('id-ID')) : '–'; }
+/* ===== Harga desimal (kolom Harga Barang/Jasa Lampiran) =====
+   Menerima nilai desimal gaya Indonesia: koma = desimal, titik = ribuan.
+   Disimpan sebagai ANGKA (Number). Contoh: "4.950,75" -> 4950.75. */
+function spkHargaParse(v){
+  if(v==null||v==='') return '';
+  if(typeof v==='number') return isNaN(v)?'':v;
+  var s=String(v).trim().replace(/[^0-9.,]/g,'');
+  if(s==='') return '';
+  var num;
+  if(s.indexOf(',')>=0){
+    var idx=s.indexOf(',');
+    var ip=s.slice(0,idx).replace(/\./g,'').replace(/[^0-9]/g,'');
+    var dp=s.slice(idx+1).replace(/[^0-9]/g,'').slice(0,2);
+    num=parseFloat((ip||'0')+(dp?('.'+dp):''));
+  } else if(/^\d{1,3}(\.\d{3})+$/.test(s)){
+    num=parseFloat(s.replace(/\./g,''));
+  } else {
+    num=parseFloat(s);
+  }
+  return isNaN(num)?'':num;
+}
+/* Tampilkan angka harga sebagai "Rp 4.950" atau "Rp 4.950,75" (desimal bila ada). */
+function spkHargaText(v){
+  var n=spkHargaParse(v);
+  if(n===''||n==null||isNaN(n)) return '';
+  var dec=Number.isInteger(n)?0:Math.min(2,(String(n).split('.')[1]||'').length);
+  return 'Rp '+Number(n).toLocaleString('id-ID',{minimumFractionDigits:dec,maximumFractionDigits:dec});
+}
 function spkLampMat(it){ return Math.round(jsVolNum(it&&it.vol)*spkLampNum(it&&it.hargaMat)); }
 function spkLampJasa(it){ return Math.round(jsVolNum(it&&it.vol)*spkLampNum(it&&it.hargaJasa)); }
 function spkLampTotal(it){ return spkLampMat(it)+spkLampJasa(it); }
@@ -14204,8 +14245,8 @@ function spkLampTableHtml(){
       '<td class="c-ur"><textarea data-i="'+i+'" rows="1" placeholder="Uraian pekerjaan / barang / jasa ke-'+(i+1)+'" oninput="spkLampOn(this,\'uraian\')">'+fkEsc(it.uraian||'')+'</textarea></td>'+
       '<td class="c-sat"><input type="text" data-i="'+i+'" placeholder="Bh" value="'+fkEsc(it.sat||'')+'" oninput="spkLampOn(this,\'sat\')"></td>'+
       '<td class="c-vol"><input type="text" inputmode="decimal" data-i="'+i+'" placeholder="0" value="'+fkEsc(it.vol!=null?String(it.vol):'')+'" oninput="spkLampOnVol(this)"></td>'+
-      '<td class="c-money"><input type="text" inputmode="numeric" data-i="'+i+'" placeholder="Rp" value="'+rupiahInputText(it.hargaMat)+'" oninput="spkLampOnHarga(this,\'hargaMat\')"></td>'+
-      '<td class="c-money"><input type="text" inputmode="numeric" data-i="'+i+'" placeholder="Rp" value="'+rupiahInputText(it.hargaJasa)+'" oninput="spkLampOnHarga(this,\'hargaJasa\')"></td>'+
+      '<td class="c-money"><input type="text" inputmode="decimal" data-i="'+i+'" placeholder="Rp" value="'+spkHargaText(it.hargaMat)+'" oninput="spkLampOnHarga(this,\'hargaMat\')"></td>'+
+      '<td class="c-money"><input type="text" inputmode="decimal" data-i="'+i+'" placeholder="Rp" value="'+spkHargaText(it.hargaJasa)+'" oninput="spkLampOnHarga(this,\'hargaJasa\')"></td>'+
     '</tr>';
   });
   return '<div class="hps-uraian-wrap"><table class="hps-uraian"><thead>'+
@@ -14220,9 +14261,23 @@ function spkLampOnVol(el){
   if(L.items[i]){ L.items[i].vol=(v===''?'':String(jsVolNum(v))); spkLampRecalcRow(i); }
 }
 function spkLampOnHarga(el,key){
-  onRupiahInput(el);
-  const L=spkLamp(); const i=+el.dataset.i;
-  if(L.items[i]){ L.items[i][key]=parseRupiah(el.value); spkLampRecalcRow(i); }
+  var raw=el.value;
+  var sel=(el.selectionStart!=null)?el.selectionStart:raw.length;
+  var sigBefore=raw.slice(0,sel).replace(/[^0-9,]/g,'').length;
+  var s=raw.replace(/[^0-9.,]/g,'');
+  var hasComma=s.indexOf(',')>=0, ip, dp='';
+  if(hasComma){ var idx=s.indexOf(','); ip=s.slice(0,idx).replace(/\./g,'').replace(/[^0-9]/g,''); dp=s.slice(idx+1).replace(/[^0-9]/g,'').slice(0,2); }
+  else { ip=s.replace(/\./g,'').replace(/[^0-9]/g,''); }
+  var out, numStr;
+  if(ip==='' && !hasComma){ out=''; numStr=''; }
+  else { var ipFmt=(ip==='')?'0':Number(ip).toLocaleString('id-ID'); out='Rp '+ipFmt+(hasComma?(','+dp):''); numStr=(ip||'0')+(dp?('.'+dp):''); }
+  el.value=out;
+  var L=spkLamp(); var i=+el.dataset.i;
+  if(L.items[i]){ var num=(numStr==='')?'':parseFloat(numStr); if(numStr!=='' && isNaN(num)) num=''; L.items[i][key]=num; spkLampRecalcRow(i); }
+  var pos=out.length, seen=0;
+  if(sigBefore===0){ pos=(out.indexOf('Rp ')===0)?3:0; }
+  else { for(var c=0;c<out.length;c++){ if(/[0-9,]/.test(out[c])){ seen++; if(seen===sigBefore){ pos=c+1; break; } } } }
+  try{ el.setSelectionRange(pos,pos); }catch(e){}
 }
 function spkLampRecalcRow(i){
   const L=spkLamp(); const it=L.items[i]; if(!it) return;
@@ -14382,8 +14437,8 @@ function spkLampHandleUpload(ev){
           uraian:String(row[2]==null?'':row[2]).trim(),
           sat:String(row[3]==null?'':row[3]).trim(),
           vol:(String(row[4]).trim()==='')?'':String(jsVolNum(row[4])),
-          hargaMat:(String(row[5]).trim()==='')?'':parseRupiah(String(row[5])),
-          hargaJasa:(String(row[6]).trim()==='')?'':parseRupiah(String(row[6]))
+          hargaMat:(String(row[5]).trim()==='')?'':spkHargaParse(row[5]),
+          hargaJasa:(String(row[6]).trim()==='')?'':spkHargaParse(row[6])
         }));
       }
       if(!items.length){ toast('Tidak ada baris data untuk diimpor','warn'); ev.target.value=''; return; }
