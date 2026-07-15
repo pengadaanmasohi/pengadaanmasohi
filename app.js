@@ -15526,13 +15526,21 @@ function spkNumUniform(html){
            - rata kiri   -> nomor 1 digit rapi di kiri, titik tetap sejajar (lebar sama). */
       var W=Math.max(0.4, natW, Math.round((g.max+SPK_NUM_GAP)*100)/100);
       W=Math.round(W*100)/100;
-      var al='right';   /* daftar ANGKA selalu rata kanan: titik desimal sejajar & jarak titik->teks seragam */
       for(i=0;i<g.items.length;i++){
         var it=g.items[i];
+        /* Perataan PER-BUTIR mengikuti Microsoft Word:
+             - penghitung terakhir 2 digit (…10., …11.) -> RATA KANAN (mengisi kotak,
+               titik di tepi kanan kotak, tidak menabrak teks);
+             - penghitung terakhir 1 digit (…7., …8., …9.) -> RATA KIRI (tetap menempel
+               di margin, tidak ikut menjorok).
+           Karena lebar kotak seragam (= nomor terlebar + jeda), awal TEKS semua butir
+           tetap sejajar apa pun perataannya. */
+        var mmw=/([0-9]+)[.)]$/.exec(it.tok||'');
+        var itAl=(mmw && mmw[1].length>=2) ? 'right' : 'left';
         it.n.style.width=W.toFixed(2)+'cm';
         it.n.style.minWidth=W.toFixed(2)+'cm';
         it.n.style.paddingRight=SPK_NUM_GAP+'cm';        /* jeda tetap nomor->teks */
-        it.n.style.textAlign=al;
+        it.n.style.textAlign=itAl;
         it.n.style.overflow='visible';                   /* nomor lebih panjang memanjang KE KIRI */
         it.p.style.textIndent='-'+W.toFixed(2)+'cm';     /* baris ke-2 sejajar teks */
         if(it.p.classList && it.p.classList.contains('spk-wx')){
@@ -15554,12 +15562,12 @@ function spkNumberFix(html){
      agar label tetap dikenali & dikotakkan seperti label yang berspasi. Idempotent:
      jika sudah ada spasi/nbsp sesudah label, lookahead gagal -> tak ada perubahan. */
   html = String(html||'').replace(
-    /(<p class="(?:kl1|kl2)"(?:\s+[a-zA-Z-]+="[^"]*")*>)((?:[0-9]+\.)+)(?=[A-Za-zÀ-ÿ(])/g,
+    /(<p class="(?:kl1|kl2)(?:\s[^"]*)?"(?:\s+[a-zA-Z-]+="[^"]*")*>)((?:[0-9]+\.)+)(?=[A-Za-zÀ-ÿ(])/g,
     '$1$2\u00A0'
   );
   html = String(html||'').replace(
-    /<p class="(kl1|kl2)"((?:\s+[a-zA-Z-]+="[^"]*")*)>((?:[0-9]+\.)+|[0-9]+\)|[A-Za-z][.)]|[ivxlcdmIVXLCDM]{2,4}[.)])(&nbsp;|\s)/g,
-    function(m, cls, attrs, tok, sp){
+    /<p class="(kl1|kl2)((?:\s[^"]*)?)"((?:\s+[a-zA-Z-]+="[^"]*")*)>((?:[0-9]+\.)+|[0-9]+\)|[A-Za-z][.)]|[ivxlcdmIVXLCDM]{2,4}[.)])(&nbsp;|\s)/g,
+    function(m, cls, restCls, attrs, tok, sp){
       // Lindungi singkatan umum yang kebetulan tampak seperti angka romawi
       // (mis. "CV." "CD." "MM." "DVD.") agar tidak salah dianggap penomoran.
       if(/^(CV|CD|MM|DVD|DIV|MMC|LC|DC|ID|IL|IM)[.)]$/i.test(tok)) return m;
@@ -15572,7 +15580,7 @@ function spkNumberFix(html){
          marjin tingkat-1. */
       const forceLv1 = multi && cls === 'kl2';
       const cls2 = 'n' + (right ? ' r' : '') + (multi ? ' m' : '');
-      const pcls = cls + ' spk-sl' + (multi ? ' spk-ml' : '') + (forceLv1 ? ' spk-lv1' : '');
+      const pcls = cls + (restCls||'') + ' spk-sl' + (multi ? ' spk-ml' : '') + (forceLv1 ? ' spk-lv1' : '');
       /* HUG: lebar kotak nomor = lebar nomor + jeda kecil (0,13 cm) sehingga jarak
          nomor->teks selalu rapat & seragam, baik rata kiri maupun kanan. Tiap paragraf
          punya hanging sendiri (margin-left/text-indent inline), jadi baris ke-2 sejajar
@@ -18327,16 +18335,25 @@ function spkPageScript(){
     ' if(hasCls(n,"spk-cl-h")||hasCls(n,"spk-kv")||hasCls(n,"spk-party")||hasCls(n,"spk-bab")||hasCls(n,"spk-sign")||hasCls(n,"spk-sign-eyebrow")||hasCls(n,"spk-lampsign")) return true;',
     ' return els(n).length===0;',
     '}',
-    /* Sub-judul = paragraf isi yang diakhiri titik dua (":") dan MASIH diikuti isian
-       di bawahnya (mis. "2.2. Hak dan Kewajiban PIHAK KEDUA:"). Dipakai untuk kontrol
-       keep-with-next: sub-judul tak boleh terdampar dengan hanya 1-2 baris isian di
-       dasar halaman -> seluruh blok didorong ke halaman berikutnya demi kerapian. */
+    /* Sub-judul = paragraf dengan penomoran BERTINGKAT di awal (mis. "1.1", "1.3",
+       "2.2", "3.1.1") YANG BUKAN kalimat isi. Sengaja DIBATASI supaya kontrol
+       keep-with-next TIDAK salah memindahkan:
+         - nomor tunggal   : "1. Value kepada Pelanggan:"  (bukan sub-judul)
+         - huruf           : "a. …", "b. …"                (bukan sub-judul)
+         - kalimat pengantar: "… sebagai berikut:"         (tak berawalan nomor)
+         - kalimat isi ber-nomor bertingkat: "5.1. Sanksi atau denda …."  (diakhiri
+           tanda kalimat . ; , -> dianggap ISI, bukan judul)
+       Judul asli seperti "1.3. Maksud dan Tujuan" atau "2.2. Hak dan Kewajiban PIHAK
+       KEDUA:" tetap terdeteksi (berakhir huruf atau ":"). */
     'function isSubHead(n){',
     ' if(n.nodeType!==1 || n.tagName!=="P") return false;',
     ' if(hasCls(n,"spk-ph")||hasCls(n,"spk-sign-eyebrow")||hasCls(n,"spk-bab")) return false;',
-    ' var tx=(n.textContent||"").replace(/[\\s\\u00A0]+$/,"");',
-    ' if(!tx || tx.charAt(tx.length-1)!==":") return false;',
-    ' return !!n.nextElementSibling;',
+    ' var tx=(n.textContent||"").replace(/^[\\s\\u00A0]+/,"").replace(/[\\s\\u00A0]+$/,"");',
+    ' if(!/^\\d+\\.\\d+/.test(tx)) return false;',       /* harus penomoran bertingkat (X.Y ...) */
+    ' if(!n.nextElementSibling) return false;',          /* harus ada isian di bawahnya */
+    ' var last=tx.charAt(tx.length-1);',
+    ' if(last==="."||last===";"||last===",") return false;',   /* kalimat ISI, bukan judul */
+    ' return true;',
     '}',
     'function build(sec, PH, UID){',
     ' var run=sec.querySelector("table.spk-run");',
