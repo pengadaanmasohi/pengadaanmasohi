@@ -13465,7 +13465,14 @@ function hpscModulePage(frag){
     '</table></div>') : '';
 }
 function hpscAllCss(){
-  const base=(document.getElementById('fkl-doc-css')||{}).textContent||'';
+  /* Pakai fklDocBaseCss() (SAMA seperti dokumen mandiri) — bukan hanya textContent
+     #fkl-doc-css. Bedanya ada di fklDocCssPatch() yang MEMUAT fklSheetCss(): tanpa
+     itu, lembar hasil paginasi (.fkl-sheet) tak punya latar putih/ukuran A4/padding,
+     sehingga isi modul (Jadwal, HPS, Analisa, RHO) tampil polos di atas latar abu
+     dan tidak seragam dgn halaman cover. */
+  const base=(typeof fklDocBaseCss==='function')
+    ? fklDocBaseCss()
+    : ((document.getElementById('fkl-doc-css')||{}).textContent||'');
   let x='';
   Object.keys(HPSC_DOC_MODULES).forEach(k=>{ try{ x+=HPSC_DOC_MODULES[k].css(); }catch(e){ console.error('hpscAllCss',k,e); } });
   return base + x + hpscCss() + '.hpsc-modpage{page-break-after:always;break-after:page}.hpsc-modpage:last-child{page-break-after:auto}';
