@@ -7288,6 +7288,13 @@ function fklPageScript(){
     ' if(t==="P"||t==="TR"||t==="IMG"||t==="BR"||t==="HR"||t==="LI"||t==="THEAD"||t==="TFOOT"||t==="COLGROUP") return true;',
     /* SVG (ikon, grafik) bukan HTML biasa: selalu diperlakukan utuh */
     ' if(n.namespaceURI && n.namespaceURI!=="http://www.w3.org/1999/xhtml") return true;',
+    /* Penjaga eksplisit: rekap HPS (Jumlah/DPP/PPn/Total/Terbilang) + tanda tangan
+       berada dalam satu <tbody class="hps-tail">. Beberapa versi Chrome MENGABAIKAN
+       break-inside:avoid pada <tbody> (getComputedStyle mengembalikan "auto"),
+       sehingga utuh() gagal mengenalinya dan tanda tangan bisa berdiri sendiri di
+       halaman berikutnya, meninggalkan angka rekapnya. Dikunci lewat KELAS agar
+       selalu dipindah utuh — sama seperti penjaga di spkPageScript. */
+    ' if(n.classList && (n.classList.contains("hps-tail")||n.classList.contains("ttd-row"))) return true;',
     ' if(utuh(n)) return true;',
     ' return els(n).length===0;',
     '}',
@@ -7400,6 +7407,142 @@ function fklPageScript(){
   ].join('\n');
   return '<script>'+js+'<\/script>';
 }
+
+/* ---------- Paginator Rekap HPS (multi-modul) ----------
+   Rekap HPS menggabungkan beberapa dokumen modul; tiap modul dibungkus dalam
+   <table.fkl-page-wrap> tersendiri. fklPageScript() hanya memaginasi SATU wrap
+   (yang pertama), jadi tidak bisa dipakai apa adanya. hpscPageScript() memakai
+   mesin pemenggal yang SAMA persis (bangunSatu), lalu menjalankannya untuk SETIAP
+   wrap. Halaman sampul (.hpsc-page) tak tersentuh; hanya modul yang dipecah menjadi
+   lembar A4 (.fkl-sheet) sehingga seluruh Rekap menjadi kartu A4 yang seragam dan
+   tidak lagi bertumpuk/berantakan. Bila terjadi galat pada satu modul, modul itu
+   dikembalikan ke bentuk semula tanpa mengganggu modul lain. */
+function hpscPageScript(){
+  const js=[
+    '(function(){',
+    'var DONE=false;',
+    'function mm2px(mm){var d=document.createElement("div");',
+    ' d.style.cssText="position:absolute;visibility:hidden;left:-9999px;height:"+mm+"mm";',
+    ' document.body.appendChild(d);var h=d.getBoundingClientRect().height;',
+    ' d.parentNode.removeChild(d);return h;}',
+    'function els(n){var o=[],k=n.firstChild;while(k){if(k.nodeType===1)o.push(k);k=k.nextSibling;}return o;}',
+    'function sty(n,p){try{var c=getComputedStyle(n);return c[p]||"";}catch(e){return "";}}',
+    'function utuh(n){var v=sty(n,"breakInside")||sty(n,"pageBreakInside");return v==="avoid";}',
+    'function halamanBaru(n){var v=sty(n,"breakBefore")||sty(n,"pageBreakBefore");return v==="page"||v==="always";}',
+    'function atom(n){',
+    ' if(n.nodeType!==1) return true;',
+    ' var t=n.tagName;',
+    ' if(t==="P"||t==="TR"||t==="IMG"||t==="BR"||t==="HR"||t==="LI"||t==="THEAD"||t==="TFOOT"||t==="COLGROUP") return true;',
+    ' if(n.namespaceURI && n.namespaceURI!=="http://www.w3.org/1999/xhtml") return true;',
+    ' if(n.classList && (n.classList.contains("hps-tail")||n.classList.contains("ttd-row"))) return true;',
+    ' if(utuh(n)) return true;',
+    ' return els(n).length===0;',
+    '}',
+    /* Pecah SATU wrap menjadi lembar A4. Mengembalikan jumlah lembar (0=gagal). */
+    'function bangunSatu(wrap){',
+    ' var page=wrap.querySelector(".fkl-print-page"); if(!page) return 0;',
+    ' var PH=mm2px(273); if(!PH||PH<200) return 0;',
+    ' var MINH=mm2px(22);',
+    ' var sheets=[], body=null, stack=[];',
+    ' function mk(){',
+    '   var sh=document.createElement("section"); sh.className="fkl-sheet";',
+    '   var b=document.createElement("div"); b.className="fkl-sheet-bd";',
+    '   b.style.height=Math.max(80,PH-2)+"px";',
+    '   sh.appendChild(b);',
+    '   wrap.parentNode.insertBefore(sh, wrap);',
+    '   sheets.push(sh); body=b;',
+    '   for(var i=0;i<stack.length;i++){',
+    '     var sl=stack[i].src.cloneNode(false);',
+    '     if(sl.tagName==="TABLE"){',
+    '       var cg=stack[i].src.querySelector("colgroup"); if(cg) sl.appendChild(cg.cloneNode(true));',
+    '       var th=stack[i].src.querySelector("thead");    if(th) sl.appendChild(th.cloneNode(true));',
+    '     }',
+    '     (i===0?body:stack[i-1].el).appendChild(sl);',
+    '     stack[i].el=sl;',
+    '   }',
+    '   return body;',
+    ' }',
+    ' function tgt(){ return stack.length? stack[stack.length-1].el : body; }',
+    ' function penuh(){ return body.scrollHeight > body.clientHeight+1; }',
+    ' function kosong(){ return !((body.textContent||"").replace(/[\\s\\u00A0]/g,"")) && !body.querySelector("img,table,svg"); }',
+    ' function pakaiBawah(){ var k=els(body); if(!k.length) return 0; var bt=body.getBoundingClientRect().top; return k[k.length-1].getBoundingClientRect().bottom - bt; }',
+    ' function sisa(){ return body.clientHeight - pakaiBawah(); }',
+    ' function taruh(node){',
+    '   if(node.nodeType===1 && halamanBaru(node) && !kosong()) mk();',
+    '   if(node.nodeType===1 && node.classList && node.classList.contains("fkl-sec-h") && !kosong() && sisa()<MINH) mk();',
+    '   var t=tgt();',
+    '   t.appendChild(node);',
+    '   if(!penuh()) return;',
+    '   t.removeChild(node);',
+    '   if(!atom(node)){',
+    '     var sl=node.cloneNode(false);',
+    '     t.appendChild(sl);',
+    '     if(penuh() && !kosong()){ t.removeChild(sl); mk(); taruh(node); return; }',
+    '     if(sl.tagName==="TABLE"){ var cg=node.querySelector("colgroup"); if(cg) sl.appendChild(cg.cloneNode(true)); }',
+    '     stack.push({src:node, el:sl});',
+    '     var kids=els(node), isTbl=(node.tagName==="TABLE");',
+    '     for(var i=0;i<kids.length;i++){',
+    '       var kd=kids[i];',
+    '       if(isTbl && kd.tagName==="COLGROUP") continue;',
+    '       if(isTbl && kd.tagName==="THEAD"){ tgt().appendChild(kd.cloneNode(true)); continue; }',
+    '       taruh(kd);',
+    '     }',
+    '     stack.pop();',
+    '     return;',
+    '   }',
+    '   if(kosong()){ t.appendChild(node); return; }',
+    '   mk(); tgt().appendChild(node);',
+    ' }',
+    ' mk();',
+    ' var nodes=els(page);',
+    ' for(var i=0;i<nodes.length;i++) taruh(nodes[i]);',
+    ' for(var i=sheets.length-1;i>=0;i--){',
+    '   var bd=sheets[i].querySelector(".fkl-sheet-bd");',
+    '   if(bd && !((bd.textContent||"").replace(/[\\s\\u00A0]/g,"")) && !bd.querySelector("img,table,svg")) sheets[i].parentNode.removeChild(sheets[i]);',
+    ' }',
+    ' if(!sheets.length) return 0;',
+    ' wrap.parentNode.removeChild(wrap);',
+    ' return sheets.length;',
+    '}',
+    'function jalan(){',
+    ' if(DONE) return; DONE=true;',
+    ' var wraps=[].slice.call(document.querySelectorAll("table.fkl-page-wrap"));',
+    ' for(var w=0; w<wraps.length; w++){',
+    '   var wrap=wraps[w]; if(!wrap||!wrap.parentNode) continue;',
+    '   var induk=wrap.parentNode, cadangan=wrap.outerHTML;',
+    '   try{',
+    '     if(!bangunSatu(wrap)){',
+    '       var sh=induk.querySelectorAll(".fkl-sheet");',
+    '       for(var i=sh.length-1;i>=0;i--) sh[i].parentNode.removeChild(sh[i]);',
+    '       if(induk.querySelector("table.fkl-page-wrap")===null && cadangan){ induk.insertAdjacentHTML("afterbegin", cadangan); }',
+    '     }',
+    '   }catch(e){',
+    '     try{',
+    '       console.error("hpsc paginate:", e);',
+    '       var sh2=induk.querySelectorAll(".fkl-sheet");',
+    '       for(var j=sh2.length-1;j>=0;j--) sh2[j].parentNode.removeChild(sh2[j]);',
+    '       if(induk.querySelector("table.fkl-page-wrap")===null && cadangan){ induk.insertAdjacentHTML("afterbegin", cadangan); }',
+    '     }catch(_){}',
+    '   }',
+    ' }',
+    ' try{ window.__hpscPaged=true; window.__fklPaged=true; }catch(e2){}',
+    '}',
+    'function mulai(){',
+    ' try{',
+    '   if(document.fonts && document.fonts.ready && document.fonts.ready.then){',
+    '     document.fonts.ready.then(function(){ jalan(); });',
+    '     setTimeout(jalan, 2500);',
+    '     return;',
+    '   }',
+    ' }catch(e){}',
+    ' jalan();',
+    '}',
+    'if(document.readyState==="complete") mulai(); else window.addEventListener("load", mulai);',
+    '})();'
+  ].join('\n');
+  return '<script>'+js+'<\/script>';
+}
+
 
 /* Bangun HTML dokumen lengkap (mandiri) untuk pratinjau iframe & cetak */
 function fklStandaloneDocHtml(){
@@ -13350,7 +13493,11 @@ function hpscBuild(dp){
   pages+=hpscCoverSimple('SUMBER HARGA','REFERENSI HARGA', dp, 'Kumpulan Referensi Harga Barang / Jasa');    // 8
   if(rhoRec) pages+=hpscModulePage(hpscModuleFrag('rho', rhoRec));    // 9 (opsional)
   return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>&#8203;</title>'+
-    fklDocFontLink()+'<style>'+hpscAllCss()+'</style></head><body>'+pages+'</body></html>';
+    fklDocFontLink()+'<style>'+hpscAllCss()+'</style></head><body>'+pages+
+    /* Pecah tiap dokumen modul (.fkl-page-wrap) menjadi lembar A4 sungguhan, sama
+       seperti cetak per-dokumen. Tanpa ini modul panjang menumpuk/berantakan. */
+    hpscPageScript()+
+    '</body></html>';
 }
 function hpsShowComposite(){
   const sel=document.getElementById('rekap-dp-select'); const id=sel?sel.value:'';
@@ -13415,7 +13562,13 @@ function hpscPrintHtml(html){
     try{ w.onafterprint=bersihkan; }catch(e){}
     try{ w.addEventListener('afterprint', bersihkan); }catch(e){}
     window.addEventListener('focus', onFocus);
-    withHiddenPageTitle(()=>{ try{ w.focus(); w.print(); }catch(e){ try{ window.print(); }catch(_){} } });
+    const cetak=()=>{ withHiddenPageTitle(()=>{ try{ w.focus(); w.print(); }catch(e){ try{ window.print(); }catch(_){} } }); };
+    /* Tunggu hpscPageScript selesai memecah modul menjadi lembar A4 (maks ~3 dtk),
+       supaya yang tercetak adalah lembar rapi — bukan tata letak memanjang. */
+    let sisaTunggu=3000;
+    const tunggu=()=>{ let siap=false; try{ siap=!!(w && w.__hpscPaged); }catch(e){ siap=true; }
+      if(siap || sisaTunggu<=0){ cetak(); return; } sisaTunggu-=60; setTimeout(tunggu,60); };
+    tunggu();
   };
   const imgs=doc.images?Array.from(doc.images):[];
   if(imgs.length){ let n=imgs.length; const dec=()=>{ if(--n<=0) setTimeout(go,80); }; imgs.forEach(im=>{ if(im.complete) dec(); else { im.onload=dec; im.onerror=dec; } }); setTimeout(go,1500); }
