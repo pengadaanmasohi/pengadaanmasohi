@@ -15319,6 +15319,13 @@ function spkNumUniform(html){
     var ps=box.querySelectorAll('p.spk-sl'), grup={}, i, k, ubah=false;
     for(i=0;i<ps.length;i++){
       var p=ps[i], n=p.firstElementChild;
+      /* Butir dari template Word (spk-wx) SUDAH dirapikan oleh spkNumBox: kotak
+         nomor rata kanan berlebar tetap (= hanging Word), sehingga nomor 1 & 2
+         digit otomatis sejajar dan indent asli Word terjaga. Menyeragamkan ulang
+         di sini (ukur ulang pakai metrik Arial + asumsi base indent 0/0,75cm)
+         justru MENIMPA margin-left/text-indent asli -> khusus daftar yang memuat
+         nomor 2 digit (…10., …11.) kolom teksnya jadi meleset. Maka lewati. */
+      if(p.classList && p.classList.contains('spk-wx')) continue;
       if(!n || n.tagName!=='SPAN' || !n.classList || !n.classList.contains('n')) continue;
       var tok=String(n.textContent||'').replace(/[\s\u00A0]+/g,'');
       if(!tok || !/^(?:[0-9]+[.)])+$/.test(tok)) continue;         /* hanya nomor ANGKA */
