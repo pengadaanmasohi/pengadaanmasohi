@@ -14900,8 +14900,8 @@ function spkDocCss(){
   /* Kotak nomor judul klausul dipersempit 0,75cm -> 0,65cm: cukup untuk nomor
      2 digit (mis. "15." = ~0,54cm pada Arial bold 11pt) plus sedikit jarak,
      sehingga judul lebih dekat ke nomornya. */
-  '.spk-cl-h{font-weight:700;font-size:11pt;color:#000;line-height:'+spkLHCss(1.15)+';text-transform:uppercase;text-align:left;margin:12pt 0 3pt;padding-left:0.65cm;text-indent:-0.65cm}'+
-  '.spk-cl-h .n{display:inline-block;width:0.65cm;text-indent:0;text-align:left}'+
+  '.spk-cl-h{font-weight:700;font-size:11pt;color:#000;line-height:'+spkLHCss(1.15)+';text-transform:uppercase;text-align:left;margin:12pt 0 3pt;padding-left:0.75cm;text-indent:-0.75cm}'+
+  '.spk-cl-h .n{display:inline-block;width:0.75cm;text-indent:0;text-align:right;padding-right:0.16cm;box-sizing:border-box}'+
   /* Perataan nomor tunggal 2 digit (mis. 10.) rata kanan -> titik sejajar */
   '.spk-clause .n.r,.spk-cl-h .n.r{text-align:right;padding-right:0.1cm;box-sizing:border-box}'+
   /* ANGKA TABULAR: di font proporsional, digit "1" lebih sempit dari "2" sehingga
@@ -15305,7 +15305,7 @@ function spkDocCss2(){
    memakai lebar kolom otomatis (min 0,75 cm) supaya "11.1.1." tetap mendapat
    jarak cukup tanpa menabrak teks. */
 /* Jeda tetap antara nomor dan teks (cm). Cukup untuk tidak bertabrakan, tidak terlalu jauh. */
-const SPK_NUM_GAP = 0.12;
+const SPK_NUM_GAP = 0.18;
 
 /* Perataan nomor daftar ANGKA per-KELOMPOK (aturan diminta user):
      - Penghitung SELURUHNYA 1 digit (mis. 1. .. 9. atau X.1 .. X.9) -> RATA KIRI.
@@ -15352,7 +15352,7 @@ function spkNumUniform(html){
            - rata kiri   -> nomor 1 digit rapi di kiri, titik tetap sejajar (lebar sama). */
       var W=Math.max(0.4, natW, Math.round((g.max+SPK_NUM_GAP)*100)/100);
       W=Math.round(W*100)/100;
-      var al=hasTwo?'right':'left';
+      var al='right';   /* daftar ANGKA selalu rata kanan: titik desimal sejajar & jarak titik->teks seragam */
       for(i=0;i<g.items.length;i++){
         var it=g.items[i];
         it.n.style.width=W.toFixed(2)+'cm';
@@ -15375,6 +15375,14 @@ function spkNumUniform(html){
   }catch(e){ return s; }
 }
 function spkNumberFix(html){
+  /* Normalisasi: bila label nomor di AWAL paragraf kl1/kl2 langsung menempel ke teks
+     tanpa spasi (mis. "10.10.Petugas" atau "11.1.2.Peristiwa"), sisipkan satu nbsp
+     agar label tetap dikenali & dikotakkan seperti label yang berspasi. Idempotent:
+     jika sudah ada spasi/nbsp sesudah label, lookahead gagal -> tak ada perubahan. */
+  html = String(html||'').replace(
+    /(<p class="(?:kl1|kl2)"(?:\s+[a-zA-Z-]+="[^"]*")*>)((?:[0-9]+\.)+)(?=[A-Za-zÀ-ÿ(])/g,
+    '$1$2\u00A0'
+  );
   html = String(html||'').replace(
     /<p class="(kl1|kl2)"((?:\s+[a-zA-Z-]+="[^"]*")*)>((?:[0-9]+\.)+|[0-9]+\)|[A-Za-z][.)]|[ivxlcdmIVXLCDM]{2,4}[.)])(&nbsp;|\s)/g,
     function(m, cls, attrs, tok, sp){
@@ -18448,7 +18456,7 @@ function spkDocHtml(data, klausul){
     if(_p > -1){ preambleAtas = preamble.slice(0,_p); preambleMenugaskan = preamble.slice(_p); }
   }
   const clausesHtml = (klausul||[]).map((k,i)=>
-    '<div class="spk-clause"><div class="spk-cl-h"><span class="n'+((i+1)>=10?' r':'')+'"></span>'+spkFmtJudul(k.judul)+'</div>'+
+    '<div class="spk-clause"><div class="spk-cl-h"><span class="n"></span>'+spkFmtJudul(k.judul)+'</div>'+
     '<div class="spk-cl">'+spkNomorToNo(spkNumberFix(spkTidyKeyValue(
         spkPruneKlausul(spkMerge(spkRenumberKlausul(k.isi||'', i+1), ctx), i+1, data)
       )))+'</div></div>'
