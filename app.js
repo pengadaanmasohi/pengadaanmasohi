@@ -7101,7 +7101,7 @@ function fklBuildDocHtml(){
     '<h1 class="fkl-doc-title">FORM PEMERIKSAAN KELENGKAPAN<br>DOKUMEN PENGADAAN</h1>'+
     '<div class="fkl-doc-titlegap"></div>'+
 
-    '<div class="fkl-sec-h"><span class="rn">A</span>Uraian Pekerjaan</div>'+
+    '<div class="fkl-sec-h"><span class="rn">A</span>Data Pekerjaan</div>'+
     '<table class="fkl-info"><tbody>'+
       infoRow('Nama Pekerjaan', info.nama)+
       infoRow('Lokasi Pekerjaan', info.lokasi)+
@@ -7183,6 +7183,12 @@ function fklDocCssPatch(){
   return ''+
     'table.fkl-info td.k{width:1%;white-space:nowrap;padding-right:14px}'+
     'table.fkl-info td.s{width:1%;white-space:nowrap}'+
+    /* Huruf awal label (mis. "Nama Pekerjaan") disejajarkan dengan huruf awal teks
+       JUDUL seksi ("Uraian/Data Pekerjaan"). Judul menjorok sejauh lebar huruf
+       seksi ("A") + jarak 10px; padding-kiri 19px menempatkan label tepat di bawah
+       huruf awal judul. Hanya berlaku pada tabel info yang PERSIS di bawah judul
+       seksi, jadi blok tanpa judul (mis. Lampiran SPK) tidak ikut terindent. */
+    '.fkl-sec-h + table.fkl-info td.k{padding-left:19px}'+
     fklSheetCss();
 }
 /* ===================== LEMBAR A4 BERSAMA (WYSIWYG) =====================
@@ -8579,7 +8585,7 @@ function pnwBuildDocHtml(sk){
     '<h1 class="fkl-doc-title">'+judul+'</h1>'+
     '<div class="fkl-doc-titlegap"></div>'+
 
-    '<div class="fkl-sec-h"><span class="rn">A</span>Uraian Pekerjaan</div>'+
+    '<div class="fkl-sec-h"><span class="rn">A</span>Data Pekerjaan</div>'+
     '<table class="fkl-info"><tbody>'+
       infoRow('Nama Pekerjaan', info.nama)+
       infoRow('Lokasi Pekerjaan', info.lokasi)+
@@ -9623,7 +9629,7 @@ function rhoBuildDocHtml(){
     '<div class="fkl-doc-band"></div>'+
     '<h1 class="fkl-doc-title">REFERENSI HARGA ONLINE</h1>'+
     '<div class="fkl-doc-titlegap"></div>'+
-    '<div class="fkl-sec-h"><span class="rn">A</span>Uraian Pekerjaan</div>'+
+    '<div class="fkl-sec-h"><span class="rn">A</span>Data Pekerjaan</div>'+
     '<table class="fkl-info"><tbody>'+
       infoRow('Nama Pekerjaan', info.nama)+
       infoRow('Lokasi Pekerjaan', info.lokasi)+
