@@ -13328,13 +13328,23 @@ function hpscPage(kicker, title, bodyHtml){
   return '<div class="hpsc-page">'+hpscHead(kicker,title)+'<div class="hpsc-body">'+bodyHtml+'</div>'+hpscFoot()+'</div>';
 }
 /* Cover 1 — indeks "Cover HPS" / Empat Dokumen + data pekerjaan */
-function hpscCoverIndex(dp, tglHps, nomor){
+function hpscCoverIndex(dp, tglHps, nomor, have){
+  have = have || {hps:true, ana:true, jadwal:true, ref:true};
   const jenis=(dp.state&&dp.state.info&&dp.state.info.jenis_anggaran)||dp.jenis_anggaran||'';
-  const docs=[['1','Cover HPS','Sampul utama HPS'],['2','Review Pengadaan','Ringkasan harga & referensi'],['3','Jadwal Pengadaan','Tahapan proses pengadaan'],['4','Referensi Harga','Kumpulan referensi harga']];
-  const docHtml=docs.map(d=>'<div class="hpsc-doc"><div class="n">'+d[0]+'</div><div class="tx"><b>'+d[1]+'</b><span>'+d[2]+'</span></div></div>').join('');
+  /* Hanya cantumkan bagian yang benar-benar ada dokumennya (tertaut Nama Pekerjaan),
+     lalu bernomor ulang otomatis — agar daftar cocok dengan lembar yang tercetak. */
+  const secs=[
+    ['Perhitungan HPS','Cover, review & dokumen HPS', !!have.hps],
+    ['Analisa Harga Satuan','Dokumen analisa harga satuan', !!have.ana],
+    ['Jadwal Pengadaan','Cover & tahapan proses pengadaan', !!have.jadwal],
+    ['Referensi Harga','Cover & referensi harga online', !!have.ref]
+  ].filter(d=>d[2]);
+  const docHtml = secs.length
+    ? secs.map((d,i)=>'<div class="hpsc-doc"><div class="n">'+(i+1)+'</div><div class="tx"><b>'+d[0]+'</b><span>'+d[1]+'</span></div></div>').join('')
+    : '<div class="hpsc-doc" style="grid-column:1 / -1"><div class="tx"><b style="color:#7c9297">Belum ada dokumen terkait</b><span>Tambahkan HPS, Analisa, Jadwal, atau Referensi untuk pekerjaan ini</span></div></div>';
   const mini=(cl,cv,extra)=>'<div class="hpsc-mini'+(extra?' '+extra:'')+'"><div class="cl">'+cl+'</div><div class="cv">'+cv+'</div></div>';
   const body=''+
-    '<div class="hpsc-sec"><span class="bdg">A</span><span class="st">EMPAT DOKUMEN</span></div>'+
+    '<div class="hpsc-sec"><span class="bdg">A</span><span class="st">DAFTAR DOKUMEN</span></div>'+
     '<div class="hpsc-doclist">'+docHtml+'</div>'+
     '<div class="hpsc-sec" style="margin-top:8px"><span class="bdg">B</span><span class="st">DATA PEKERJAAN</span></div>'+
     hpscCard('work','PEKERJAAN', dp.nama_pekerjaan)+
@@ -13426,6 +13436,13 @@ const HPSC_DOC_MODULES = {
 function hpscExtractDocFrag(html){
   const m=String(html||'').match(/<body[^>]*>([\s\S]*)<\/body>/i);
   let frag = m ? m[1].trim() : '';
+  /* 0) BUANG semua <script> dokumen mandiri (fklPageScript). Tanpa ini, script
+     tertinggal setelah </table> membuat regex pembungkus di bawah GAGAL cocok
+     (ter-anchor ke </table>$), sehingga fragmen tak terlepas — dokumennya lalu
+     terbungkus ganda + membawa paginatornya sendiri yang bentrok dgn hpscPageScript,
+     dan modul (Perhitungan HPS / Analisa / Jadwal) bisa hilang. Rekap HPS memaginasi
+     sendiri lewat hpscPageScript, jadi pager modul memang tidak diperlukan. */
+  frag = frag.replace(/<script[\s\S]*?<\/script>/gi, '').trim();
   // 1) lepas tabel pembungkus margin (thead/tfoot spacer) → ambil isi <tbody><tr><td>
   const mw = frag.match(/^<table class="fkl-page-wrap"[^>]*>[\s\S]*?<tbody>\s*<tr>\s*<td>([\s\S]*)<\/td>\s*<\/tr>\s*<\/tbody>[\s\S]*<\/table>$/i);
   if(mw) frag = mw[1].trim();
@@ -13488,16 +13505,27 @@ function hpscBuild(dp){
   const anaS=(anaRec&&anaRec.state&&Array.isArray(anaRec.state.sumber))?anaRec.state.sumber:[];
   const rhoS=(rhoRec&&rhoRec.state&&Array.isArray(rhoRec.state.sumber))?rhoRec.state.sumber:[];
   (anaS.length?anaS:rhoS).forEach(x=>{ if(x&&String(x).trim()) refNames.push(String(x).trim()); });
+  /* Tiap bagian (cover + dokumennya) DITERBITKAN HANYA bila datanya ada — tertaut
+     ke Nama Pekerjaan yang sama. Tanpa data: cover & dokumen tidak dibuat sama sekali,
+     sehingga tidak ada lagi lembar/kertas kosong di Rekap HPS. Cover HPS (indeks +
+     Data Pekerjaan) tetap selalu tampil sebagai sampul utama. */
+  const hasHps=!!hpsRec, hasAna=!!anaRec, hasJadwal=!!jadwalRec, hasRho=!!rhoRec;
   let pages='';
-  pages+=hpscCoverIndex(dp, tglHps, nomor);                            // 1
-  pages+=hpscCoverHps(dp, nomor);                                      // 2
-  pages+=hpscCoverReview(dp, hpsTotal, refNames, (anaRec&&anaRec.state)?anaNum(anaRec.state.rok):0);  // 3
-  pages+=hpscModulePage(hpscModuleFrag('hps', hpsRec));               // 4
-  pages+=hpscModulePage(hpscModuleFrag('ana', anaRec));               // 5
-  pages+=hpscCoverSimple('RENCANA PELAKSANAAN','JADWAL PENGADAAN', dp, 'Jadwal & Tahapan Proses Pengadaan'); // 6
-  pages+=hpscModulePage(hpscModuleFrag('jadwal', jadwalRec));         // 7
-  pages+=hpscCoverSimple('SUMBER HARGA','REFERENSI HARGA', dp, 'Kumpulan Referensi Harga Barang / Jasa');    // 8
-  if(rhoRec) pages+=hpscModulePage(hpscModuleFrag('rho', rhoRec));    // 9 (opsional)
+  pages+=hpscCoverIndex(dp, tglHps, nomor, {hps:hasHps, ana:hasAna, jadwal:hasJadwal, ref:hasRho}); // 1 — selalu
+  if(hasHps){
+    pages+=hpscCoverHps(dp, nomor);                                                                  // Cover Harga Perkiraan Sendiri
+    pages+=hpscCoverReview(dp, hpsTotal, refNames, (anaRec&&anaRec.state)?anaNum(anaRec.state.rok):0); // Review Pengadaan
+    pages+=hpscModulePage(hpscModuleFrag('hps', hpsRec));                                            // Dokumen Perhitungan HPS
+  }
+  if(hasAna) pages+=hpscModulePage(hpscModuleFrag('ana', anaRec));                                   // Dokumen Analisa Harga Satuan
+  if(hasJadwal){
+    pages+=hpscCoverSimple('RENCANA PELAKSANAAN','JADWAL PENGADAAN', dp, 'Jadwal & Tahapan Proses Pengadaan'); // Cover Jadwal Pengadaan
+    pages+=hpscModulePage(hpscModuleFrag('jadwal', jadwalRec));                                      // Isi Jadwal Pengadaan
+  }
+  if(hasRho){
+    pages+=hpscCoverSimple('SUMBER HARGA','REFERENSI HARGA', dp, 'Kumpulan Referensi Harga Barang / Jasa');    // Cover Referensi Harga
+    pages+=hpscModulePage(hpscModuleFrag('rho', rhoRec));                                            // Dokumen Referensi Harga Online
+  }
   return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>&#8203;</title>'+
     fklDocFontLink()+'<style>'+hpscAllCss()+'</style></head><body>'+pages+
     /* Pecah tiap dokumen modul (.fkl-page-wrap) menjadi lembar A4 sungguhan, sama
