@@ -15307,10 +15307,14 @@ function spkDocCss2(){
 /* Jeda tetap antara nomor dan teks (cm). Cukup untuk tidak bertabrakan, tidak terlalu jauh. */
 const SPK_NUM_GAP = 0.12;
 
-/* Samakan LEBAR kotak nomor untuk satu kelompok daftar ANGKA yang lebarnya berbeda
-   (mis. 8.9 s.d. 8.12 -> ada 1 digit & 2 digit). Lebar = nomor terpanjang, nomor rata
-   kanan, sehingga TEKS semua butir mulai di kolom yang sama dan titik nomor sejajar.
-   Daftar yang nomornya sudah sama lebar dan daftar HURUF tidak disentuh sama sekali. */
+/* Perataan nomor daftar ANGKA per-KELOMPOK (aturan diminta user):
+     - Penghitung SELURUHNYA 1 digit (mis. 1. .. 9. atau X.1 .. X.9) -> RATA KIRI.
+     - Begitu ADA butir 2 digit dalam urutannya (…10., …11., atau 10., 11.) ->
+       RATA KANAN + lebar kotak diseragamkan = nomor terpanjang, sehingga titik
+       nomor & kolom teks SEMUA butir (1 & 2 digit) sejajar.
+   Butir dari template Word (spk-wx): saat dirata-kanankan, margin-left asli Word
+   DIPERTAHANKAN (kotak dilebarkan ke kiri lewat text-indent) -> tidak menimpa
+   indent Word. Daftar HURUF (a. b. / I. II.) tidak disentuh sama sekali. */
 function spkNumUniform(html){
   var s=String(html==null?'':html);
   if(s.indexOf('spk-sl')<0) return s;
@@ -15319,13 +15323,6 @@ function spkNumUniform(html){
     var ps=box.querySelectorAll('p.spk-sl'), grup={}, i, k, ubah=false;
     for(i=0;i<ps.length;i++){
       var p=ps[i], n=p.firstElementChild;
-      /* Butir dari template Word (spk-wx) SUDAH dirapikan oleh spkNumBox: kotak
-         nomor rata kanan berlebar tetap (= hanging Word), sehingga nomor 1 & 2
-         digit otomatis sejajar dan indent asli Word terjaga. Menyeragamkan ulang
-         di sini (ukur ulang pakai metrik Arial + asumsi base indent 0/0,75cm)
-         justru MENIMPA margin-left/text-indent asli -> khusus daftar yang memuat
-         nomor 2 digit (…10., …11.) kolom teksnya jadi meleset. Maka lewati. */
-      if(p.classList && p.classList.contains('spk-wx')) continue;
       if(!n || n.tagName!=='SPAN' || !n.classList || !n.classList.contains('n')) continue;
       var tok=String(n.textContent||'').replace(/[\s\u00A0]+/g,'');
       if(!tok || !/^(?:[0-9]+[.)])+$/.test(tok)) continue;         /* hanya nomor ANGKA */
@@ -15335,21 +15332,42 @@ function spkNumUniform(html){
       if(!grup[k]) grup[k]={min:w, max:w, items:[]};
       if(w<grup[k].min) grup[k].min=w;
       if(w>grup[k].max) grup[k].max=w;
-      grup[k].items.push({p:p, n:n});
+      grup[k].items.push({p:p, n:n, tok:tok});
     }
     for(k in grup){
       var g=grup[k];
-      if(g.items.length<2 || (g.max-g.min)<0.03) continue;         /* sudah seragam -> lewati */
-      var W=Math.max(0.4, Math.round((g.max+SPK_NUM_GAP)*100)/100);
+      /* hasTwo = ada butir dengan penghitung terakhir 2 digit (>=10) -> grup dirata-kanankan.
+         natW  = lebar hanging asli terlebar di grup (dari spkNumBox/spkNumberFix) supaya
+                 jarak nomor->teks yang sudah ada tidak menyempit. */
+      var hasTwo=false, natW=0;
+      for(i=0;i<g.items.length;i++){
+        var mm=/([0-9]+)[.)]$/.exec(g.items[i].tok||'');
+        if(mm && mm[1].length>=2) hasTwo=true;
+        var cw=parseFloat(g.items[i].n.style.width); if(cw>natW) natW=cw;
+      }
+      /* Lebar kotak nomor SERAGAM sekelompok = cukup untuk nomor TERLEBAR + jeda
+         (SPK_NUM_GAP) supaya titik nomor TIDAK PERNAH menempel/menabrak teks, dan
+         tidak lebih kecil dari hanging asli. Karena semua butir dipatok lebar sama:
+           - rata kanan  -> titik akhir semua nomor (1 & 2 digit) SEJAJAR;
+           - rata kiri   -> nomor 1 digit rapi di kiri, titik tetap sejajar (lebar sama). */
+      var W=Math.max(0.4, natW, Math.round((g.max+SPK_NUM_GAP)*100)/100);
+      W=Math.round(W*100)/100;
+      var al=hasTwo?'right':'left';
       for(i=0;i<g.items.length;i++){
         var it=g.items[i];
-        var base=(it.p.classList.contains('kl2') && !it.p.classList.contains('spk-lv1')) ? 0.75 : 0;
-        it.p.style.marginLeft=(base+W).toFixed(2)+'cm';            /* kolom teks SAMA */
-        it.p.style.textIndent='-'+W.toFixed(2)+'cm';               /* baris ke-2 sejajar teks */
         it.n.style.width=W.toFixed(2)+'cm';
         it.n.style.minWidth=W.toFixed(2)+'cm';
-        it.n.style.paddingRight=SPK_NUM_GAP+'cm';
-        it.n.style.textAlign='right';
+        it.n.style.paddingRight=SPK_NUM_GAP+'cm';        /* jeda tetap nomor->teks */
+        it.n.style.textAlign=al;
+        it.n.style.overflow='visible';                   /* nomor lebih panjang memanjang KE KIRI */
+        it.p.style.textIndent='-'+W.toFixed(2)+'cm';     /* baris ke-2 sejajar teks */
+        if(it.p.classList && it.p.classList.contains('spk-wx')){
+          /* Word: PERTAHANKAN margin-left asli (kolom teks = indent Word tetap);
+             kotak hanya melebar ke KIRI lewat text-indent. */
+        }else{
+          var base=(it.p.classList.contains('kl2') && !it.p.classList.contains('spk-lv1')) ? 0.75 : 0;
+          it.p.style.marginLeft=(base+W).toFixed(2)+'cm';
+        }
       }
       ubah=true;
     }
