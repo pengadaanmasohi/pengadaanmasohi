@@ -18354,8 +18354,8 @@ function spkPageScript(){
        JUDUL klausul (lihat blok put()). MINBODY = tinggi minimum isi yang harus terlihat
        (~3 baris); bila kurang, seluruh klausul (judul + isi) digeser ke halaman
        berikutnya — judul klausul tak boleh tampil dengan hanya 1-2 baris isi. */
-    ' var MINCL=mm2px(34);',
-    ' var MINBODY=mm2px(14);',
+    ' var MINCL=mm2px(46);',
+    ' var MINBODY=mm2px(18);',
     /* Runway minimum untuk SUB-JUDUL: bila sisa ruang di bawah kurang dari ini,
        sub-judul beserta isiannya digeser ke halaman berikutnya (menghindari sub-judul
        + hanya 1-2 baris isian yang menggantung di dasar halaman). */
