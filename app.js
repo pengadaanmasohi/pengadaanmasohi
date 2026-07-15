@@ -14085,8 +14085,16 @@ function spkBuildCtx(data){
 }
 /* Ganti semua {{key}} pada template dengan nilai konteks (sisa placeholder dikosongkan bila tak dikenal, dibiarkan bila kosong) */
 function spkMerge(tpl, ctx){
+  /* Jabatan Direksi & Pengawas Pekerjaan selalu dicetak TEBAL pada dokumen
+     (hanya berlaku bila klausul memakai placeholder {{jabatan_direksi}} /
+     {{jabatan_pengawas}}; nilai kosong tidak dibungkus <b>). */
+  var SPK_BOLD_FIELDS = { jabatan_direksi:1, jabatan_pengawas:1 };
   return String(tpl||'').replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, function(m,k){
-    if(Object.prototype.hasOwnProperty.call(ctx,k)) return (ctx[k]==null?'':String(ctx[k]));
+    if(Object.prototype.hasOwnProperty.call(ctx,k)){
+      var val=(ctx[k]==null?'':String(ctx[k]));
+      if(val && SPK_BOLD_FIELDS[k]) return '<b>'+val+'</b>';
+      return val;
+    }
     return m;
   });
 }
