@@ -15361,7 +15361,7 @@ function spkDocCss(){
      "4.1." dan "4.2." berbeda lebar dan titiknya tidak sejajar. tnum menyamakan
      lebar semua digit — persis seperti penomoran di Word. */
   '.spk-clause .n,.spk-cl-h .n,.spk-cl .n{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1,"lnum" 1}'+
-  '.spk-cl{margin:0;font-size:11pt;color:#000;line-height:'+spkLHCss(1.15)+'}'+
+  '.spk-cl{margin:0;font-size:10pt;color:#000;line-height:'+spkLHCss(1.15)+'}'+
   /* Isi klausul menjorok SEDIKIT LEBIH KANAN dari teks judul (0,75cm judul -> 0,90cm
      isi). Selisih ~0,15cm membuat penomoran sub-klausul (mis. "5.1.", "8.1.") mulai
      sedikit masuk ke kanan dari teks judul klausul — bukan sejajar/keluar ke kiri. */
@@ -15448,7 +15448,10 @@ function spkDocCss(){
      Mencakup preamble, semua klausul (judul & isi), daftar, blok pihak, baris
      "Label : nilai", dan blok tanda tangan. Ketebalan/format (bold, garis bawah)
      tetap dipertahankan; hanya jenis huruf & ukuran yang diseragamkan. */
-  '.spk-flow .spk-cl,.spk-flow .spk-cl *,.spk-flow .spk-clause,.spk-flow .spk-clause *,.spk-flow .spk-cl-h,.spk-flow .spk-cl-h *,.spk-flow .spk-sign,.spk-flow .spk-sign *{font-family:"Inter","Segoe UI",Arial,sans-serif;font-size:11pt}'+
+  '.spk-flow .spk-cl,.spk-flow .spk-cl *,.spk-flow .spk-clause,.spk-flow .spk-clause *,.spk-flow .spk-cl-h,.spk-flow .spk-cl-h *,.spk-flow .spk-sign,.spk-flow .spk-sign *{font-family:"Inter","Segoe UI",Arial,sans-serif}'+
+  /* ISI klausul (badan) diperkecil 1pt -> 10pt; JUDUL klausul (.spk-cl-h) & tanda tangan tetap 11pt */
+  '.spk-flow .spk-cl,.spk-flow .spk-cl *,.spk-flow .spk-clause,.spk-flow .spk-clause *{font-size:10pt}'+
+  '.spk-flow .spk-cl-h,.spk-flow .spk-cl-h *,.spk-flow .spk-sign,.spk-flow .spk-sign *{font-size:11pt}'+
   /* ===== Tampilan PRATINJAU di layar (bukan cetak) =====
      Menampilkan tiap bagian sebagai lembar A4 putih (210×297mm) di atas latar
      abu-abu, dengan bayangan & margin dalam 12mm/15mm — meniru gaya pratinjau
@@ -15708,7 +15711,10 @@ function spkDocCss2(){
   '.spk-sheet .spk-signpage{page-break-before:auto;break-before:auto;padding-top:0}'+
   /* klausul yang bersambung ke lembar berikutnya TIDAK menambah nomor klausul */
   '.spk-clause.spk-cont{counter-increment:none}'+
-  '.spk-sheet .spk-cl,.spk-sheet .spk-cl *,.spk-sheet .spk-clause,.spk-sheet .spk-clause *,.spk-sheet .spk-cl-h,.spk-sheet .spk-cl-h *,.spk-sheet .spk-sign,.spk-sheet .spk-sign *{font-family:"Inter","Segoe UI",Arial,sans-serif;font-size:11pt}'+
+  '.spk-sheet .spk-cl,.spk-sheet .spk-cl *,.spk-sheet .spk-clause,.spk-sheet .spk-clause *,.spk-sheet .spk-cl-h,.spk-sheet .spk-cl-h *,.spk-sheet .spk-sign,.spk-sheet .spk-sign *{font-family:"Inter","Segoe UI",Arial,sans-serif}'+
+  /* ISI klausul (badan) diperkecil 1pt -> 10pt; JUDUL klausul (.spk-cl-h) & tanda tangan tetap 11pt */
+  '.spk-sheet .spk-cl,.spk-sheet .spk-cl *,.spk-sheet .spk-clause,.spk-sheet .spk-clause *{font-size:10pt}'+
+  '.spk-sheet .spk-cl-h,.spk-sheet .spk-cl-h *,.spk-sheet .spk-sign,.spk-sheet .spk-sign *{font-size:11pt}'+
   /* ---------- PRATINJAU DI LAYAR (lembar A4) ---------- */
   '@media screen{'+
     'html,body{background:#54585c;margin:0;padding:24px 0}'+
@@ -19589,6 +19595,9 @@ function spkStyXml(id, name, ind, extraP, extraR){
 }
 function spkStylesXml(){
   var D=SPK_DX;
+  /* Isi klausul diperkecil 1pt: 11pt (sz 22) -> 10pt (sz 20). Judul klausul &
+     tanda tangan tetap 11pt karena mewarisi docDefaults (sz 22). */
+  var szIsi='<w:sz w:val="20"/><w:szCs w:val="20"/>';
   var tab1='<w:tabs><w:tab w:val="left" w:pos="'+D.IND2+'"/></w:tabs>';
   var tab2='<w:tabs><w:tab w:val="left" w:pos="'+D.IND3+'"/></w:tabs>';
   var tabH='<w:tabs><w:tab w:val="left" w:pos="'+D.IND_JUDUL+'"/></w:tabs>';
@@ -19608,13 +19617,13 @@ function spkStylesXml(){
       tabH+'<w:spacing w:before="240" w:after="60" w:line="276" w:lineRule="auto"/><w:jc w:val="left"/>',
       '<w:b/><w:caps/>')+
     /* Isi klausul: sejajar dengan huruf sesudah nomor (0,75 cm) */
-    spkStyXml('KlausulIsi','Klausul Isi','<w:ind w:left="'+SPK_DX.IND+'"/>','','')+
-    spkStyXml('KlausulParagraf','Klausul Paragraf','<w:ind w:left="'+SPK_DX.IND+'" w:firstLine="'+SPK_DX.IND+'"/>','','')+
-    spkStyXml('KlausulButir1','Klausul Butir 1','<w:ind w:left="'+SPK_DX.IND2+'" w:hanging="'+SPK_DX.IND+'"/>',tab1,'')+
-    spkStyXml('KlausulButir2','Klausul Butir 2','<w:ind w:left="'+SPK_DX.IND3+'" w:hanging="'+SPK_DX.IND+'"/>',tab2,'')+
-    spkStyXml('KlausulDeskripsi','Klausul Deskripsi','<w:ind w:left="'+SPK_DX.IND2+'"/>','','')+
-    spkStyXml('KlausulParagraf1','Klausul Paragraf 1','<w:ind w:left="'+SPK_DX.IND2+'" w:firstLine="'+SPK_DX.IND+'"/>','','')+
-    spkStyXml('KlausulParagraf2','Klausul Paragraf 2','<w:ind w:left="'+SPK_DX.IND3+'" w:firstLine="'+SPK_DX.IND+'"/>','','')+
+    spkStyXml('KlausulIsi','Klausul Isi','<w:ind w:left="'+SPK_DX.IND+'"/>','',szIsi)+
+    spkStyXml('KlausulParagraf','Klausul Paragraf','<w:ind w:left="'+SPK_DX.IND+'" w:firstLine="'+SPK_DX.IND+'"/>','',szIsi)+
+    spkStyXml('KlausulButir1','Klausul Butir 1','<w:ind w:left="'+SPK_DX.IND2+'" w:hanging="'+SPK_DX.IND+'"/>',tab1,szIsi)+
+    spkStyXml('KlausulButir2','Klausul Butir 2','<w:ind w:left="'+SPK_DX.IND3+'" w:hanging="'+SPK_DX.IND+'"/>',tab2,szIsi)+
+    spkStyXml('KlausulDeskripsi','Klausul Deskripsi','<w:ind w:left="'+SPK_DX.IND2+'"/>','',szIsi)+
+    spkStyXml('KlausulParagraf1','Klausul Paragraf 1','<w:ind w:left="'+SPK_DX.IND2+'" w:firstLine="'+SPK_DX.IND+'"/>','',szIsi)+
+    spkStyXml('KlausulParagraf2','Klausul Paragraf 2','<w:ind w:left="'+SPK_DX.IND3+'" w:firstLine="'+SPK_DX.IND+'"/>','',szIsi)+
     spkStyXml('PetunjukTemplate','Petunjuk Template','<w:ind w:left="0"/>',
       '<w:spacing w:after="60" w:line="240" w:lineRule="auto"/><w:jc w:val="left"/>',
       '<w:i/><w:color w:val="808080"/><w:sz w:val="18"/><w:szCs w:val="18"/>')+
