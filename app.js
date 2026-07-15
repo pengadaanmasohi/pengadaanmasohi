@@ -18786,13 +18786,38 @@ function spkPageScript(){
     ' function _nLines(el){ var lh=_lineH(el); var h=el.getBoundingClientRect().height; return Math.max(1, Math.round(h/lh)); }',
     ' function _measLines(el, t){ var vis=el.style.visibility; el.style.visibility="hidden"; t.appendChild(el); var n=_nLines(el); t.removeChild(el); el.style.visibility=vis; return n; }',
     ' function _measHeight(el, t){ var vis=el.style.visibility; el.style.visibility="hidden"; t.appendChild(el); var h=el.getBoundingClientRect().height; t.removeChild(el); el.style.visibility=vis; return h; }',
+    /* Titik-potong yang JATUH TEPAT DI BATAS BARIS ALAMI. Dari semua batas kata
+       (wordPoints), sisakan hanya kata yang MENGAWALI sebuah baris visual baru
+       (top-nya turun dibanding kata sebelumnya). Memotong di sini membuat KEPALA
+       selalu berisi baris-baris UTUH (bukan separuh baris), sehingga saat baris
+       terakhir kepala di-justify penuh ia tampak wajar seperti Word — tidak ada
+       2 kata yang direntangkan berjauhan. node ditempel sementara agar terukur. */
+    ' function lineStartPoints(node, t){',
+    '   var pts=wordPoints(node); if(!pts.length) return pts;',
+    '   var reattach=(node.parentNode!==t); if(reattach) t.appendChild(node);',
+    '   var out=[], prevTop=null, EPS=2;',
+    '   for(var i=0;i<pts.length;i++){',
+    '     var nd=pts[i].node, off=pts[i].offset, len=(nd.nodeValue||"").length;',
+    '     if(off>=len) continue;',
+    '     var r=document.createRange(); r.setStart(nd,off); r.setEnd(nd,off+1);',
+    '     var rc=r.getClientRects(); if(!rc||!rc.length) continue;',
+    '     var top=rc[0].top;',
+    '     if(prevTop===null){ prevTop=top; continue; }',
+    '     if(top>prevTop+EPS){ out.push(pts[i]); prevTop=top; }',
+    '     else if(top>prevTop) prevTop=top;',
+    '   }',
+    '   if(reattach) t.removeChild(node);',
+    '   return out;',
+    ' }',
     ' function splitParaToFit(node, t){',
     /* MINHEAD = minimal baris yang WAJIB tersisa di dasar halaman ini (orphan).
        MINTAIL = minimal baris yang WAJIB ikut pindah ke halaman berikutnya (widow).
        -> tidak boleh ada butir/kalimat yang cuma menyisakan 1-2 baris di batas
           halaman; bila terjadi, seluruh butir/paragraf digeser utuh. */
     '   var MINHEAD=3, MINTAIL=2;',
-    '   var pts=wordPoints(node); if(!pts.length) return null;',
+    /* HANYA memotong di batas baris alami -> kepala berisi baris utuh, tak ada
+       baris pendek yang direntangkan justify saat pindah halaman. */
+    '   var pts=lineStartPoints(node, t); if(!pts.length) return null;',
     '   var lo=0, hi=pts.length-1, best=-1, guard=0;',
     '   while(lo<=hi && guard++<40){',
     '     var mid=(lo+hi)>>1, tmp=node.cloneNode(false), r=document.createRange();',
