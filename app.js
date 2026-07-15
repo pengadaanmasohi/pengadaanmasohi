@@ -13687,8 +13687,8 @@ const SPK_DEF_MAKSUD="Adapun maksud dan tujuan dilaksanakannya pekerjaan ini ada
    & terisi sendiri; "Perubahan?" dropdown; field SK terkunci bila Perubahan≠Ya. */
 /* Teks bawaan (default) Rincian Akta Pendirian & Rincian Akta Perubahan.
    Tetap dapat disunting bebas oleh pengguna pada form Data Mail Merge. */
-const SPK_DEF_AKTA_PENDIRIAN = 'yang didirikan berdasarkan akta Notaris No. (no. akta..) tanggal (tgl. akta...) dibuat dihadapan Notaris (nama notaris...), yang disahkan berdasarkan Surat Keputusan Menteri Hukum dan Hak Asasi Manusia No. (no. SK...) tanggal (tgl SK...) beserta akta-akta Perubahannya.';
-const SPK_DEF_AKTA_PERUBAHAN = 'Akta Notaris No. (no. akta...) tanggal (tgl. akta...) dibuat dihadapan (nama notaris...), yang disahkan berdasarkan Surat Keputusan Menteri Hukum dan Hak Asasi Manusia No. (no. SK...) tanggal (tgl. SK...)';
+const SPK_DEF_AKTA_PENDIRIAN = 'akta Notaris No. (no. akta..) tanggal (tgl. akta...) dibuat dihadapan Notaris (nama notaris...), yang disahkan berdasarkan Surat Keputusan Menteri Hukum dan Hak Asasi Manusia No. (no. SK...) tanggal (tgl SK...) beserta akta-akta Perubahannya';
+const SPK_DEF_AKTA_PERUBAHAN = 'akta Notaris No. (no. akta...) tanggal (tgl. akta...) dibuat dihadapan (nama notaris...), yang disahkan berdasarkan Surat Keputusan Menteri Hukum dan Hak Asasi Manusia No. (no. SK...) tanggal (tgl. SK...)';
 /* Field SK Pimpinan Unit — dipakai untuk fitur "default = data terakhir disimpan" */
 const SPK_SK_KEYS = ['nama_pengguna','jabatan_pengguna','no_sk','tgl_sk','nama_unit','singkatan_unit','lokasi_unit'];
 
@@ -13872,16 +13872,19 @@ function spkBuildCtx(data){
   ctx.p2_alamat = d.lokasi_perusahaan || '';
   var _jp = spkJenisPerusahaan(d.nama_perusahaan);
   var _ap = String(d.akta_pendirian||'').replace(/\s+$/,'');
-  /* Awali "yang didirikan berdasarkan akta Notaris" ("akta" huruf kecil); rapikan juga
-     data lama yang diawali "Akta Notaris" tanpa frasa atau yang masih kapital "Akta". */
-  _ap = _ap.replace(/^\s*(?:yang didirikan berdasarkan\s+)?Akta Notaris/i, 'yang didirikan berdasarkan akta Notaris');
+  /* "yang didirikan berdasarkan" + titik akhir = TEMPLATE BAKU pratinjau (bukan teks
+     input). Buang bila terlanjur diketik / tersimpan pada data lama, lalu pasang sekali
+     di depan; "akta" huruf kecil; titik akhir dipasok template, bukan input. */
+  _ap = _ap.replace(/^\s*yang didirikan berdasarkan\s+/i, '');
+  _ap = _ap.replace(/^\s*Akta Notaris/, 'akta Notaris');           /* rapikan kapital "Akta" data lama */
   _ap = _ap.replace(/[Aa]kta\s*-\s*[Aa]kta/g, 'akta-akta');        /* "Akta - akta"/"Akta-akta" → "akta-akta" */
-  if(_ap && !/[.!?]$/.test(_ap)) _ap += '.';                       /* pastikan diakhiri titik → kalimat baru "Dalam hal ini…" */
+  _ap = _ap.replace(/[.\s]+$/,'');                                 /* titik/spasi akhir dibuang: titik dari template */
+  if(_ap) _ap = 'yang didirikan berdasarkan ' + _ap + '.';
   ctx.p2_akta = (_jp? _jp+' ':'') + _ap;
   /* Template preamble sudah memuat kata "berdasarkan" sebelum {{p2_akta_jabatan}},
      jadi buang "berdasarkan" di awal nilai (bila ada) agar tidak jadi
      "berdasarkan berdasarkan" — berlaku juga utk kontrak lama yg sudah tersimpan. */
-  ctx.p2_akta_jabatan = String(d.akta_perubahan||'').replace(/^\s*berdasarkan\s+/i, '');
+  ctx.p2_akta_jabatan = String(d.akta_perubahan||'').replace(/^\s*berdasarkan\s+/i, '').replace(/^\s*Akta Notaris/, 'akta Notaris');
 
   // ---- Pembayaran ----
   ctx.bank_nama = d.nama_bank || '';
@@ -14225,6 +14228,24 @@ function spkLampRecalcRow(i){
   const L=spkLamp(); const it=L.items[i]; if(!it) return;
   const c=document.getElementById('spk-lamp-jt-'+i); if(c) c.innerHTML=spkLampRp(spkLampTotal(it));
   spkLampRenderSummary();
+  spkSyncNilaiPekerjaan();   // Nilai Pekerjaan (+ PPN) mengikuti Total Lampiran (setelah PPN)
+}
+/* Nilai Pekerjaan (+ PPN) pada kartu "Informasi Kontrak" TERKUNCI dan selalu
+   mengambil Total Nilai Lampiran (setelah PPN) = spkLampSummary().totT.
+   Bila Lampiran belum berisi nilai (total 0), nilai tersimpan TIDAK ditimpa kosong
+   agar kontrak lama tanpa Lampiran tidak kehilangan nilainya. Memperbarui state,
+   field terkunci di layar, dan "Terbilang Nilai Pekerjaan". */
+function spkSyncNilaiPekerjaan(){
+  if(!spkState) return 0;
+  var tot=0; try{ tot=spkLampSummary().totT||0; }catch(e){ tot=0; }
+  if(tot>0) spkState.data.nilai_pekerjaan=tot;
+  var el=document.getElementById('spk-fld-nilai_pekerjaan');
+  if(el){
+    var shown=(tot>0)?tot:spkNum(spkState.data.nilai_pekerjaan);
+    el.value=(shown>0)?('Rp '+Number(shown).toLocaleString('id-ID')):'';
+  }
+  if(typeof spkRefreshAuto==='function') spkRefreshAuto();
+  return tot;
 }
 
 /* --- Rekapitulasi (sama seperti Perhitungan HPS) --- */
@@ -14598,6 +14619,44 @@ function spkEnsureHlStyle(){
   var st=document.createElement('style'); st.id='spk-hl-style'; st.textContent=css;
   (document.head||document.documentElement).appendChild(st);
 }
+/* ===== Validasi No. Kontrak ganda (Penyusunan Kontrak — SPK) =====
+   Bila No. Kontrak yang diketik SUDAH pernah disimpan/dipakai pada kontrak lain,
+   field diberi bingkai merah + pesan "No. Kontrak sudah digunakan" di bawahnya.
+   Kontrak yang sedang diedit (spkEditId) dikecualikan agar nomornya sendiri tidak
+   dianggap ganda. Pembandingan tidak sensitif huruf besar/kecil & spasi tepi. */
+function spkNoKontrakDup(val){
+  var v=String(val==null?'':val).trim().toLowerCase();
+  if(!v) return false;
+  var list=(typeof records_spk!=='undefined'&&Array.isArray(records_spk))?records_spk:[];
+  var editId=(typeof spkEditId!=='undefined')?spkEditId:null;
+  for(var i=0;i<list.length;i++){
+    var r=list[i]; if(!r) continue;
+    if(editId!=null && String(r.id)===String(editId)) continue;
+    if(String(r.nomor_kontrak||'').trim().toLowerCase()===v) return true;
+  }
+  return false;
+}
+function spkCheckNoKontrak(){
+  var el=document.getElementById('spk-fld-nomor_kontrak');
+  var msg=document.getElementById('spk-nokontrak-msg');
+  if(!el) return false;
+  var dup=spkNoKontrakDup(spkState?spkState.data.nomor_kontrak:'');
+  if(dup){ el.classList.add('spk-dup-input'); if(msg) msg.style.display=''; }
+  else{ el.classList.remove('spk-dup-input'); if(msg) msg.style.display='none'; }
+  return dup;
+}
+function spkEnsureDupStyle(){
+  if(document.getElementById('spk-dup-style')) return;
+  var css=
+    'input.spk-dup-input{border-color:#E5484D !important;background:#fff5f5 !important;'+
+      'box-shadow:0 0 0 3px rgba(229,72,77,.15) !important}'+
+    'input.spk-dup-input:focus{border-color:#E5484D !important;'+
+      'box-shadow:0 0 0 3px rgba(229,72,77,.22) !important}'+
+    '.spk-dup-msg{display:flex;align-items:center;gap:5px;margin-top:6px;'+
+      'color:#E5484D;font-size:11.5px;font-weight:600;line-height:1.3}';
+  var st=document.createElement('style'); st.id='spk-dup-style'; st.textContent=css;
+  (document.head||document.documentElement).appendChild(st);
+}
 function spkFieldInput(f){
   const v = spkState.data[f.k];
   // 4 field per baris; kecuali Rincian Akta Pendirian & Perubahan yang 2 field per baris
@@ -14610,6 +14669,28 @@ function spkFieldInput(f){
     '<input type="text" id="spk-fld-'+f.k+'" value="'+fkEsc(disp)+'" readonly '+
     'style="background:#f3f5f7;color:#2b2f36;cursor:default" '+
     'title="Terisi otomatis — tidak dapat diubah di sini"></div>';
+  // Nilai Pekerjaan (+ PPN): TERKUNCI, otomatis = Total Nilai Lampiran (setelah PPN).
+  if(f.k==='nilai_pekerjaan'){
+    var _tot=0; try{ _tot=spkLampSummary().totT||0; }catch(e){ _tot=0; }
+    if(_tot>0) spkState.data.nilai_pekerjaan=_tot;
+    var _nv=(_tot>0)?_tot:spkNum(spkState.data.nilai_pekerjaan);
+    var _disp=(_nv>0)?('Rp '+Number(_nv).toLocaleString('id-ID')):'';
+    return '<div class="field"'+span+'><label>'+spkLbl(f)+'</label>'+
+      '<input type="text" id="spk-fld-'+f.k+'" value="'+fkEsc(_disp)+'" readonly '+
+      'style="background:#f3f5f7;color:#2b2f36;cursor:default" '+
+      'title="Terisi otomatis dari Total Nilai Lampiran (setelah PPN) — tidak dapat diubah di sini"></div>';
+  }
+  // No. Kontrak: tandai MERAH + pesan bila nomor sudah pernah disimpan/dipakai.
+  if(f.k==='nomor_kontrak'){
+    spkEnsureDupStyle();
+    var _dupNK=spkNoKontrakDup(v);
+    return '<div class="field"'+span+'><label>'+spkLbl(f)+'</label>'+
+      '<input type="text" id="spk-fld-nomor_kontrak"'+(_dupNK?' class="spk-dup-input"':'')+' value="'+fkEsc(v||'')+'"'+(f.ph?(' placeholder="'+fkEsc(f.ph)+'"'):'')+' oninput="spkSet(\''+f.k+'\',this.value);spkCheckNoKontrak()">'+
+      '<div class="spk-dup-msg" id="spk-nokontrak-msg"'+(_dupNK?'':' style="display:none"')+'>'+
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:13px;height:13px;flex:0 0 auto"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'+
+        'No. Kontrak sudah digunakan</div>'+
+    '</div>';
+  }
   if(f.auto){
     // Field otomatis: nilai dihitung otomatis di belakang layar; tampil terbaca
     // namun tidak dapat diedit.
@@ -14770,6 +14851,7 @@ function renderSpkSusun(){
         '<button class="btn btn-teal" onclick="spkGoStep(2)">Berikutnya: Ubah Klausul Kontrak <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>'+
       '</div>';
     spkHlInitAll();
+    spkCheckNoKontrak();
   }else if(spkStep===2){
     cont.innerHTML =
       stepper+
@@ -18466,7 +18548,19 @@ function spkPageScript(){
     '   }',
     '   return pts;',
     ' }',
+    /* Ukur jumlah baris sebuah blok teks (tinggi / tinggi-baris). Dipakai kendali
+       orphan/widow di bawah agar tak ada butir/paragraf yang tersisa 1-2 baris di
+       batas halaman. */
+    ' function _lineH(el){ var s=getComputedStyle(el); var lh=parseFloat(s.lineHeight); if(!lh||isNaN(lh)){ var fs=parseFloat(s.fontSize); lh=(fs||11)*1.3; } return lh||14; }',
+    ' function _nLines(el){ var lh=_lineH(el); var h=el.getBoundingClientRect().height; return Math.max(1, Math.round(h/lh)); }',
+    ' function _measLines(el, t){ var vis=el.style.visibility; el.style.visibility="hidden"; t.appendChild(el); var n=_nLines(el); t.removeChild(el); el.style.visibility=vis; return n; }',
+    ' function _measHeight(el, t){ var vis=el.style.visibility; el.style.visibility="hidden"; t.appendChild(el); var h=el.getBoundingClientRect().height; t.removeChild(el); el.style.visibility=vis; return h; }',
     ' function splitParaToFit(node, t){',
+    /* MINHEAD = minimal baris yang WAJIB tersisa di dasar halaman ini (orphan).
+       MINTAIL = minimal baris yang WAJIB ikut pindah ke halaman berikutnya (widow).
+       -> tidak boleh ada butir/kalimat yang cuma menyisakan 1-2 baris di batas
+          halaman; bila terjadi, seluruh butir/paragraf digeser utuh. */
+    '   var MINHEAD=3, MINTAIL=2;',
     '   var pts=wordPoints(node); if(!pts.length) return null;',
     '   var lo=0, hi=pts.length-1, best=-1, guard=0;',
     '   while(lo<=hi && guard++<40){',
@@ -18477,14 +18571,39 @@ function spkPageScript(){
     '     if(fits){ best=mid; lo=mid+1; } else { hi=mid-1; }',
     '   }',
     '   if(best<0) return null;',
-    '   var head=node.cloneNode(false), rh=document.createRange();',
-    '   rh.setStart(node,0); rh.setEnd(pts[best].node, pts[best].offset); head.appendChild(rh.cloneContents());',
-    '   var tail=node.cloneNode(false), rt=document.createRange();',
-    '   rt.setStart(pts[best].node, pts[best].offset); rt.setEnd(node, node.childNodes.length); tail.appendChild(rt.cloneContents());',
-    '   if(!((tail.textContent||"").replace(/[\\s\\u00A0]/g,""))) return null;',
-    '   head.style.marginBottom="0"; if((node.style.textAlign||"")==="justify") head.style.textAlignLast="justify";',
-    '   tail.style.textIndent="0"; tail.style.marginTop="0";',
-    '   t.appendChild(head); return tail;',
+    '   var best0=best;',
+    '   function _cut(bi){',
+    '     var head=node.cloneNode(false), rh=document.createRange();',
+    '     rh.setStart(node,0); rh.setEnd(pts[bi].node, pts[bi].offset); head.appendChild(rh.cloneContents());',
+    '     var tail=node.cloneNode(false), rt=document.createRange();',
+    '     rt.setStart(pts[bi].node, pts[bi].offset); rt.setEnd(node, node.childNodes.length); tail.appendChild(rt.cloneContents());',
+    '     return {head:head, tail:tail};',
+    '   }',
+    '   var ht=_cut(best);',
+    '   if(!((ht.tail.textContent||"").replace(/[\\s\\u00A0]/g,""))) return null;',
+    /* KENDALI WIDOW: bila hanya <MINTAIL baris yang pindah ke halaman berikutnya
+       (mis. hanya kata "Perjanjian/Kontrak." pada butir 11.6), mundurkan titik
+       potong agar minimal MINTAIL baris ikut pindah — kepala melepas baris
+       terakhirnya. Berhenti bila kepala sudah mentok di awal. */
+    '   var g2=0;',
+    '   while(best>0 && g2++<80){',
+    '     if(_measLines(ht.tail, t) >= MINTAIL) break;',
+    '     best--; ht=_cut(best);',
+    '   }',
+    '   if(!((ht.tail.textContent||"").replace(/[\\s\\u00A0]/g,""))) return null;',
+    /* KENDALI ORPHAN: bila hanya <MINHEAD baris yang tersisa di dasar halaman ini,
+       jangan dipecah — pindahkan SELURUH butir/paragraf ke halaman berikutnya
+       (return null -> pemanggil menaruhnya utuh di lembar baru). Kecuali bila
+       paragraf memang lebih tinggi dari satu halaman penuh (mustahil utuh): tetap
+       pecah pada titik-muat-maksimum supaya tak ada isi yang hilang. */
+    '   if(_measLines(ht.head, t) < MINHEAD){',
+    '     if(_measHeight(node, t) <= (body.clientHeight - 4)) return null;',
+    '     ht=_cut(best0);',
+    '     if(!((ht.tail.textContent||"").replace(/[\\s\\u00A0]/g,""))) return null;',
+    '   }',
+    '   ht.head.style.marginBottom="0"; if((node.style.textAlign||"")==="justify") ht.head.style.textAlignLast="justify";',
+    '   ht.tail.style.textIndent="0"; ht.tail.style.marginTop="0";',
+    '   t.appendChild(ht.head); return ht.tail;',
     ' }',
     ' function put(node){',
     /* Penanda halaman baru: blok ber-class "spk-forcepage" (paragraf "Maka dengan ini
