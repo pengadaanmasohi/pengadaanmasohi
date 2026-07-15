@@ -10826,7 +10826,7 @@ function hpsViewRows(){
   return rows;
 }
 function hpsEmptyRow(){
-  return '<tr><td colspan="8"><div class="empty">'+
+  return '<tr><td colspan="7"><div class="empty">'+
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/></svg>'+
     '<div>Data tidak tersedia</div></div></td></tr>';
 }
@@ -10835,6 +10835,19 @@ function renderHpsView(){
   const pg=document.getElementById('hps-view-pagination');
   const cEl=document.getElementById('hps-view-count');
   if(!tb) return;
+  /* Kolom "JUMLAH ITEM" dihapus. Judul kolomnya didefinisikan pada HTML shell,
+     jadi dibuang di sini saat render (idempoten: bila sudah tidak ada, tak ada yang
+     dicocokkan). Sel datanya sudah tidak lagi dirender di baris tabel. */
+  try{
+    const _tbl=tb.closest('table');
+    if(_tbl){
+      const _ths=_tbl.querySelectorAll('thead th, thead td');
+      for(let _i=0;_i<_ths.length;_i++){
+        const _t=(_ths[_i].textContent||'').replace(/[^a-z]/gi,'').toLowerCase();
+        if(_t.indexOf('jumlahitem')>=0){ _ths[_i].parentNode.removeChild(_ths[_i]); break; }
+      }
+    }
+  }catch(e){}
   const rows=hpsViewRows();
   if(cEl) cEl.textContent=rows.length;
   if(!rows.length){ tb.innerHTML=hpsEmptyRow(); if(pg) pg.innerHTML=''; return; }
@@ -10865,12 +10878,12 @@ function renderHpsView(){
       '<td class="wrap-cell col-nama-freeze">'+fkEsc(nama)+'</td>'+
       '<td class="fkl-col-lokasi">'+fkEsc(lokasi||'—')+'</td>'+
       '<td>'+fkEsc(metode||'—')+'</td>'+
-      '<td style="text-align:center">'+ji+'</td>'+
       '<td class="col-num" style="text-align:right;font-weight:700">'+hpsRp(nilai)+'</td>'+
       '<td class="col-date">'+fkEsc(tgl?hpsDateLong(tgl):'—')+'</td>'+
       '<td><div class="action-cell" style="justify-content:center">'+
         '<button class="act act-edit" title="Ubah" onclick="openHpsInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
         '<button class="act act-view" title="Lihat" onclick="hpsPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
+        '<button class="act act-excel" title="Export Excel" style="background:#1E7145;color:#fff" onclick="hpsExportExcelRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 8l6 8M15 8l-6 8"/></svg></button>'+
         '<button class="act act-del" title="Hapus" onclick="hpsDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>'+
       '</div></td>'+
     '</tr>';
@@ -10902,6 +10915,150 @@ function hpsDeleteRecord(id){
       toast('Data dihapus','ok'); renderHpsView();
     }
   });
+}
+
+/* Export SATU record HPS ke Excel (.xlsx), mengikuti struktur tabel dokumen HPS:
+   No | Uraian Pekerjaan | Sat | Vol | Harga Satuan (Barang/Jasa) | Jumlah Harga
+   (Barang/Jasa) | Jumlah Total, ditutup rekap (Jumlah/DPP/PPn/Jumlah Total) &
+   Terbilang. Nilai numerik ditulis sebagai ANGKA (bukan teks) agar bisa dihitung. */
+async function hpsExportExcelRecord(id){
+  if(!window.ExcelJS){ toast('Library Excel belum termuat, coba lagi','warn'); return; }
+  const rec=(records_hps||[]).find(r=>String(r.id)===String(id));
+  if(!rec){ toast('Data HPS tidak ditemukan','warn'); return; }
+  const st=hpsRecordToState(rec); hpsResyncLockedHarga(st);
+  const info=st.info||{};
+  const cfg=jsCfg(st);
+  const nama=rec.nama_pekerjaan||info.nama||'-';
+  const lokasi=(rec.lokasi||info.lokasi||'-');
+  const metode=(rec.metode||info.metode||'-');
+  const _tgl=hpsTglEfektif(nama, rec.tgl_hps||info.tgl_hps);
+  const tglTxt=_tgl?hpsDateLong(_tgl):'-';
+
+  const TEAL='FF0E7C86', GREY='FFBFCAD0', GRP='FFE7EFF1', GRAND='FFDDEBEE';
+  const thin={style:'thin',color:{argb:GREY}};
+  const bAll={top:thin,left:thin,bottom:thin,right:thin};
+  const money=ACCT_NODEC;
+
+  const wb=new ExcelJS.Workbook();
+  const ws=wb.addWorksheet('HPS');
+  ws.columns=[{width:5},{width:46},{width:8},{width:8},{width:15},{width:15},{width:16},{width:16},{width:17}];
+
+  const money0=(v)=>{ v=Math.round(hpsNum(v)); return v>0?v:''; };
+  const setCell=(row,col,val,opt)=>{
+    const cell=ws.getCell(row,col); if(val!==undefined && val!=='') cell.value=val;
+    cell.border=bAll;
+    if(opt){
+      if(opt.fill) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:opt.fill}};
+      if(opt.font) cell.font=opt.font;
+      if(opt.align) cell.alignment=opt.align;
+      if(opt.money && typeof cell.value==='number') cell.numFmt=money;
+    }
+    return cell;
+  };
+
+  // ---- Judul dokumen ----
+  ws.mergeCells('A1:I1');
+  const t1=ws.getCell('A1');
+  t1.value='PERHITUNGAN HARGA PERKIRAAN SENDIRI (HPS)';
+  t1.font={bold:true,size:14,color:{argb:'FF16242C'}};
+  t1.alignment={horizontal:'center',vertical:'middle'};
+  ws.getRow(1).height=24;
+
+  let rr=2;
+  [['Nama Pekerjaan',nama],['Lokasi Pekerjaan',lokasi],['Metode Pengadaan',metode],['Tgl. HPS',tglTxt]].forEach(function(p){
+    const k=ws.getCell('A'+rr); k.value=p[0]; k.font={bold:true};
+    ws.mergeCells('B'+rr+':I'+rr);
+    ws.getCell('B'+rr).value=': '+String(p[1]||'-');
+    rr++;
+  });
+  rr++;
+
+  // ---- Header tabel (3 baris: judul, sub, nomor kolom) ----
+  const H1=rr, H2=rr+1, H3=rr+2;
+  ws.mergeCells('A'+H1+':A'+H2); ws.getCell('A'+H1).value='No';
+  ws.mergeCells('B'+H1+':B'+H2); ws.getCell('B'+H1).value='Uraian Pekerjaan';
+  ws.mergeCells('C'+H1+':C'+H2); ws.getCell('C'+H1).value='Sat';
+  ws.mergeCells('D'+H1+':D'+H2); ws.getCell('D'+H1).value='Vol';
+  ws.mergeCells('E'+H1+':F'+H1); ws.getCell('E'+H1).value='Harga Satuan';
+  ws.mergeCells('G'+H1+':H'+H1); ws.getCell('G'+H1).value='Jumlah Harga';
+  ws.mergeCells('I'+H1+':I'+H2); ws.getCell('I'+H1).value='Jumlah Total (Rp)';
+  ws.getCell('E'+H2).value='Barang (Rp)'; ws.getCell('F'+H2).value='Jasa (Rp)';
+  ws.getCell('G'+H2).value='Barang (Rp)'; ws.getCell('H'+H2).value='Jasa (Rp)';
+  const hFont={bold:true,color:{argb:'FFFFFFFF'},size:11};
+  const hAlign={wrapText:true,vertical:'middle',horizontal:'center'};
+  for(let r=H1;r<=H2;r++){ for(let c=1;c<=9;c++){ const cell=ws.getCell(r,c);
+    cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:TEAL}}; cell.font=hFont; cell.alignment=hAlign; cell.border=bAll; } }
+  ['1','2','3','4','5','6','7 = 4x5','8 = 4x6','9 = 7+8'].forEach(function(v,ci){
+    const cell=ws.getCell(H3,ci+1); cell.value=v; cell.font={italic:true,size:9,color:{argb:'FF56707A'}};
+    cell.alignment={horizontal:'center'}; cell.border=bAll;
+  });
+  rr=H3+1;
+
+  // ---- Isi (judul / sub-judul / item) ----
+  const grpFont={bold:true};
+  const putGroup=(no,txt,it,fill)=>{
+    setCell(rr,1,no,{fill:fill,font:grpFont,align:{horizontal:'center'}});
+    setCell(rr,2,txt,{fill:fill,font:grpFont,align:{wrapText:true}});
+    if(it){
+      setCell(rr,3,(it.sat!=null&&String(it.sat).trim())?String(it.sat):'',{fill:fill,align:{horizontal:'center'}});
+      setCell(rr,4,jsVolNum(it.vol)||'',{fill:fill,align:{horizontal:'center'}});
+      setCell(rr,5,money0(it.hargaMat),{fill:fill,money:true});
+      setCell(rr,6,money0(it.hargaJasa),{fill:fill,money:true});
+      setCell(rr,7,hpsItemMat(it)||'',{fill:fill,money:true});
+      setCell(rr,8,hpsItemJasa(it)||'',{fill:fill,money:true});
+      setCell(rr,9,hpsItemTotal(it)||'',{fill:fill,font:grpFont,money:true});
+    }else{
+      for(let c=3;c<=9;c++) setCell(rr,c,'',{fill:fill});
+    }
+    rr++;
+  };
+  jsWalk(st.items,cfg,{
+    judul:(no,txt,it)=>{ putGroup(no,txt,it,GRP); },
+    sub:(no,txt,it)=>{ putGroup(no,'   '+txt,it,GRP); },
+    item:(no,it,idx)=>{
+      const uraian=(it.uraian&&String(it.uraian).trim())?it.uraian:('Barang/Jasa '+(idx+1));
+      setCell(rr,1,no,{align:{horizontal:'center',vertical:'middle'}});
+      setCell(rr,2,uraian,{align:{wrapText:true,vertical:'middle'}});
+      setCell(rr,3,(it.sat!=null&&String(it.sat).trim())?String(it.sat):'',{align:{horizontal:'center',vertical:'middle'}});
+      setCell(rr,4,jsVolNum(it.vol)||'',{align:{horizontal:'center',vertical:'middle'}});
+      setCell(rr,5,money0(it.hargaMat),{money:true});
+      setCell(rr,6,money0(it.hargaJasa),{money:true});
+      setCell(rr,7,hpsItemMat(it)||'',{money:true});
+      setCell(rr,8,hpsItemJasa(it)||'',{money:true});
+      setCell(rr,9,hpsItemTotal(it)||'',{money:true});
+      rr++;
+    }
+  });
+
+  // ---- Rekap + Terbilang ----
+  const s=hpsSummary(st);
+  const sumRow=(lbl,mat,jasa,tot,grand)=>{
+    ws.mergeCells('A'+rr+':F'+rr);
+    setCell(rr,1,lbl,{fill:grand?GRAND:undefined,font:{bold:true},align:{horizontal:'right',vertical:'middle'}});
+    for(let c=2;c<=6;c++) setCell(rr,c,'',{fill:grand?GRAND:undefined});
+    setCell(rr,7,mat||'',{fill:grand?GRAND:undefined,font:{bold:!!grand},money:true});
+    setCell(rr,8,jasa||'',{fill:grand?GRAND:undefined,font:{bold:!!grand},money:true});
+    setCell(rr,9,tot||'',{fill:grand?GRAND:undefined,font:{bold:!!grand},money:true});
+    rr++;
+  };
+  sumRow('Jumlah',s.jM,s.jJ,s.jT);
+  sumRow('DPP',s.dppM,s.dppJ,s.dppT);
+  sumRow('PPn 12%',s.ppnM,s.ppnJ,s.ppnT);
+  sumRow('Jumlah Total',s.totM,s.totJ,s.totT,true);
+  ws.mergeCells('A'+rr+':I'+rr);
+  setCell(rr,1,'Terbilang : '+hpsTerbilangRupiah(s.totT),{font:{italic:true,bold:true},align:{wrapText:true,vertical:'middle'}});
+  for(let c=2;c<=9;c++) setCell(rr,c,'',{});
+  rr++;
+
+  const safe=(String(nama).replace(/[^\w\-]+/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'').slice(0,60))||'HPS';
+  try{
+    const buf=await wb.xlsx.writeBuffer();
+    const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download='HPS_'+safe+'.xlsx';
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    toast('Excel HPS berhasil diunduh','ok');
+  }catch(err){ console.error(err); toast('Gagal export Excel: '+errMsg(err),'warn'); }
 }
 
 /* ================= DOKUMEN PDF ================= */
@@ -14909,8 +15066,10 @@ function spkDocCss(){
      lebar semua digit — persis seperti penomoran di Word. */
   '.spk-clause .n,.spk-cl-h .n,.spk-cl .n{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1,"lnum" 1}'+
   '.spk-cl{margin:0;font-size:11pt;color:#000;line-height:'+spkLHCss(1.15)+'}'+
-  /* Isi klausul menjorok sejajar dengan TEKS judul (0,75 cm dari margin) */
-  '.spk-clause .spk-cl{padding-left:0.75cm}'+
+  /* Isi klausul menjorok SEDIKIT LEBIH KANAN dari teks judul (0,75cm judul -> 0,90cm
+     isi). Selisih ~0,15cm membuat penomoran sub-klausul (mis. "5.1.", "8.1.") mulai
+     sedikit masuk ke kanan dari teks judul klausul — bukan sejajar/keluar ke kiri. */
+  '.spk-clause .spk-cl{padding-left:0.9cm}'+
   '.spk-cl p{margin:0 0 6pt;text-align:justify;line-height:'+spkLHCss(1.15)+'}'+
   /* kl0 = paragraf biasa (sejajar teks judul); kldesc = deskripsi menjorok */
   '.spk-cl p.kl0{margin-left:0;text-indent:0}'+
@@ -18168,6 +18327,17 @@ function spkPageScript(){
     ' if(hasCls(n,"spk-cl-h")||hasCls(n,"spk-kv")||hasCls(n,"spk-party")||hasCls(n,"spk-bab")||hasCls(n,"spk-sign")||hasCls(n,"spk-sign-eyebrow")||hasCls(n,"spk-lampsign")) return true;',
     ' return els(n).length===0;',
     '}',
+    /* Sub-judul = paragraf isi yang diakhiri titik dua (":") dan MASIH diikuti isian
+       di bawahnya (mis. "2.2. Hak dan Kewajiban PIHAK KEDUA:"). Dipakai untuk kontrol
+       keep-with-next: sub-judul tak boleh terdampar dengan hanya 1-2 baris isian di
+       dasar halaman -> seluruh blok didorong ke halaman berikutnya demi kerapian. */
+    'function isSubHead(n){',
+    ' if(n.nodeType!==1 || n.tagName!=="P") return false;',
+    ' if(hasCls(n,"spk-ph")||hasCls(n,"spk-sign-eyebrow")||hasCls(n,"spk-bab")) return false;',
+    ' var tx=(n.textContent||"").replace(/[\\s\\u00A0]+$/,"");',
+    ' if(!tx || tx.charAt(tx.length-1)!==":") return false;',
+    ' return !!n.nextElementSibling;',
+    '}',
     'function build(sec, PH, UID){',
     ' var run=sec.querySelector("table.spk-run");',
     ' var headHtml="", footHtml="";',
@@ -18179,10 +18349,17 @@ function spkPageScript(){
     ' }else{ while(sec.firstChild) holder.appendChild(sec.firstChild); }',
     ' var extra=(" "+sec.className+" ").replace(" spk-page "," ").replace(" spk-flow "," ").replace(/\\s+/g," ").trim();',
     ' var sheets=[], body=null, stack=[];',
-    /* Ruang minimum yang harus tersisa di bawah halaman agar sebuah klausul boleh
-       DIMULAI di sana (kira-kira judul + 3-4 baris isi). Bila kurang, klausul
-       digeser ke halaman berikutnya demi kerapian. */
-    ' var MINCL=mm2px(24);',
+    /* MINCL = gerbang pengecekan: bila sisa ruang di bawah < ini, klausul diuji
+       apakah muat utuh; jika tidak muat, DIUKUR berapa banyak isi yang tampak di bawah
+       JUDUL klausul (lihat blok put()). MINBODY = tinggi minimum isi yang harus terlihat
+       (~3 baris); bila kurang, seluruh klausul (judul + isi) digeser ke halaman
+       berikutnya — judul klausul tak boleh tampil dengan hanya 1-2 baris isi. */
+    ' var MINCL=mm2px(34);',
+    ' var MINBODY=mm2px(14);',
+    /* Runway minimum untuk SUB-JUDUL: bila sisa ruang di bawah kurang dari ini,
+       sub-judul beserta isiannya digeser ke halaman berikutnya (menghindari sub-judul
+       + hanya 1-2 baris isian yang menggantung di dasar halaman). */
+    ' var MINSUBHEAD=mm2px(26);',
     ' function mk(){',
     '   var sh=document.createElement("section");',
     '   sh.className=("spk-page spk-sheet "+extra).trim();',
@@ -18279,9 +18456,26 @@ function spkPageScript(){
     '     return;',
     '   }',
     '   if(node.nodeType===1 && hasCls(node,"spk-clause") && !hasCls(node,"spk-cont") && !kosong() && remain()<MINCL){',
-    '     var _tt=tgt(); _tt.appendChild(node); var _fit=!over(); _tt.removeChild(node);',   /* klausul yang MUAT utuh di sisa ruang tak perlu digeser -> hindari ruang kosong sia-sia */
-    '     if(!_fit) mk();',
+    '     var _tt=tgt(); _tt.appendChild(node); var _fit=!over(); var _push=false;',   /* klausul yang MUAT utuh di sisa ruang tak perlu digeser -> hindari ruang kosong sia-sia */
+    '     if(!_fit){',
+    /* Klausul akan terpotong ke halaman berikut. Ukur berapa banyak ISI yang tampak
+       di bawah JUDUL klausul pada halaman ini. Bila < MINBODY (~3 baris), judul cuma
+       akan ditemani 1-2 baris isi -> geser SELURUH klausul (judul + isi) ke halaman
+       berikutnya. */
+    '       var _h=node.querySelector(".spk-cl-h");',
+    '       var _pb=body.getBoundingClientRect().top + body.clientHeight;',
+    '       var _tb=_h ? _h.getBoundingClientRect().bottom : node.getBoundingClientRect().top;',
+    '       if((_pb - _tb) < MINBODY) _push=true;',
+    '     }',
+    '     _tt.removeChild(node);',
+    '     if(_push) mk();',
     '   }',
+    /* KEEP-WITH-NEXT SUB-JUDUL: sub-judul (mis. "2.2. … :") yang muncul di
+       tengah badan klausul tak boleh terdampar dengan hanya 1-2 baris isian di dasar
+       halaman. Bila sisa ruang < MINSUBHEAD DAN sudah ada isian klausul di atasnya pada
+       halaman ini (els(tgt())>0, jadi bukan judul klausul yang bakal ikut terdorong),
+       mulai halaman baru dulu supaya sub-judul + isiannya tampil utuh & rapi. */
+    '   if(node.nodeType===1 && node.tagName==="P" && isSubHead(node) && !kosong() && els(tgt()).length>0 && remain()<MINSUBHEAD){ mk(); }',
     '   var t=tgt();',
     '   t.appendChild(node);',
     '   if(!over()) return;',
