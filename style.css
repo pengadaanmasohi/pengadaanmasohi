@@ -930,6 +930,25 @@ tbody.tbody-reveal>tr:nth-child(10){animation-delay:.29s}
 }
 @keyframes loginFadeOnly{from{opacity:0}to{opacity:1}}
 
+/* ---------- Efek 3D interaktif kartu login ----------
+   Kartu memiringkan diri mengikuti kursor (parallax perspektif) + kilau yang
+   mengikuti arah cahaya + float 3D lembut saat idle. Transform tilt diberikan ke
+   pembungkus .login-tilt (via JS) supaya TIDAK bentrok dengan animasi masuk
+   (loginZoomOut) yang tetap berjalan pada .login-card di dalamnya. */
+.login-screen{perspective:1600px;perspective-origin:50% 42%}
+.login-tilt{position:relative;z-index:2;width:100%;max-width:840px;transform-style:preserve-3d;will-change:transform}
+.login-tilt .login-card{width:100%;max-width:none;z-index:auto}
+/* Kilau (glare) yang bergerak mengikuti kursor — tampak menonjol di panel gelap */
+.login-card::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:4;
+  background:radial-gradient(440px circle at var(--gx,50%) var(--gy,38%),rgba(255,255,255,.22),rgba(255,255,255,.06) 32%,transparent 62%);
+  opacity:0;transition:opacity .45s ease;mix-blend-mode:screen}
+.login-tilt.is-hot .login-card::after{opacity:1}
+@media (prefers-reduced-motion:reduce){
+  .login-tilt{transform:none!important}
+  .login-card::after{display:none}
+}
+@media(max-width:760px){ .login-tilt{max-width:430px} }
+
 /* ---- Panel kiri: branding ---- */
 .login-brandside{position:relative;padding:44px 38px;color:#eafafb;display:flex;flex-direction:column;justify-content:space-between;
   background:
