@@ -1010,6 +1010,7 @@ function showView(name, loaderMsg, noLoader){
           if(l.dataset.view==='analisa-view' && (name==='analisa-view'||name==='form-analisa')) on=true; // Analisa Harga Satuan induk tetap aktif
           if(l.dataset.view==='hps-view' && (name==='hps-view'||name==='form-hps')) on=true; // Perhitungan HPS induk tetap aktif
           if(l.dataset.view==='pn-lihat' && (name==='pn-lihat'||name==='pn-ambil')) on=true; // Penetapan (menu tunggal) tetap aktif saat Ambil Nomor
+          if(l.dataset.view==='jadwal-view' && (name==='jadwal-view'||name==='jadwal-kerja'||name==='hari-libur')) on=true; // Jadwal (menu tunggal) tetap aktif saat Tentukan Jadwal / Hari Libur
           l.classList.toggle('active', on);
         });
         // tandai & buka grup yang memuat view aktif (akordeon tetap terbuka)
@@ -1022,6 +1023,7 @@ function showView(name, loaderMsg, noLoader){
           if(name==='form-rho') has = has || [...grp.querySelectorAll('.topnav-item')].some(it=>it.dataset.view==='rho-view');
           if(name==='form-analisa') has = has || [...grp.querySelectorAll('.topnav-item')].some(it=>it.dataset.view==='analisa-view');
           if(name==='form-hps') has = has || [...grp.querySelectorAll('.topnav-item')].some(it=>it.dataset.view==='hps-view');
+          if(name==='jadwal-kerja'||name==='hari-libur') has = has || [...grp.querySelectorAll('.topnav-item')].some(it=>it.dataset.view==='jadwal-view'); // Jadwal (menu tunggal): grup induk tetap terbuka saat Tentukan Jadwal / Hari Libur
           // Grup Monitoring mencakup Input Pekerjaan (input/-pl/-tender) & Daftar Pekerjaan (list/-pl/-tender)
           if(grp.dataset.group==='monitor' && monitorAll.includes(name)) has=true;
           grp.classList.toggle('has-active', has);
@@ -1581,7 +1583,7 @@ function renderTable(){
       <td class="col-bidang">${r.bidang_pelaksana||'—'}</td>
       <td class="col-penyedia">${r.nama_penyedia||'—'}</td>
       <td class="col-nilai">${rupiah(r.nilai_kontrak_kr)||'—'}</td>
-      <td>${statusPill(r.status)}</td>
+      <td class="cell-center">${statusPill(r.status)}</td>
       <td>
         <div class="action-cell">
           ${canInput()?`<button class="act act-edit" title="Ubah" onclick="editRecord('${r.id}')">
@@ -5280,6 +5282,15 @@ function jadwalEmptyRow(){
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>'+
     '<div>Data tidak tersedia</div></div></td></tr>';
 }
+/* Durasi Pengadaan = rentang hari kalender dari Tgl. Mulai s.d. Rencana Terkontrak
+   (inklusif kedua ujung). Dipakai menggantikan kolom "Jumlah Tahapan". */
+function jadwalDurasiTxt(mulai, selesai){
+  if(!mulai || !selesai) return '—';
+  var a=new Date(String(mulai)+'T00:00:00'), b=new Date(String(selesai)+'T00:00:00');
+  if(isNaN(a.getTime()) || isNaN(b.getTime())) return '—';
+  var d=Math.round((b.getTime()-a.getTime())/86400000)+1;   // inklusif
+  return d>0 ? (d+' hari') : '—';
+}
 function renderJadwalView(){
   const tb=document.getElementById('jadwal-view-body');
   const pg=document.getElementById('jadwal-view-pagination');
@@ -5298,7 +5309,7 @@ function renderJadwalView(){
     return '<tr>'+
       '<td class="col-no">'+(start+i+1)+'</td>'+
       '<td class="wrap-cell col-nama-freeze">'+fkEsc(r.nama_pekerjaan||'—')+'</td>'+
-      '<td style="text-align:center">'+(r.jumlah_tahapan!=null?r.jumlah_tahapan:'—')+'</td>'+
+      '<td style="text-align:center">'+jadwalDurasiTxt(r.tgl_mulai,r.tgl_selesai)+'</td>'+
       '<td class="col-date">'+fkEsc(r.tgl_mulai?pnwDateLong(r.tgl_mulai):'—')+'</td>'+
       '<td class="col-date">'+fkEsc(r.tgl_selesai?pnwDateLong(r.tgl_selesai):'—')+'</td>'+
       '<td><div class="action-cell" style="justify-content:center">'+
