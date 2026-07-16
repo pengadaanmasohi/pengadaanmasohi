@@ -331,7 +331,7 @@ select:disabled,input:disabled,textarea:disabled,input[readonly]{background:line
 .btn-sm{padding:7px 12px;font-size:10.5px;border-radius:9px}
 
 /* ---------- Table ---------- */
-.table-wrap{overflow:auto;max-height:calc(100vh - 250px);min-height:300px;border-radius:12px;border:1px solid #cfe0e2}
+.table-wrap{overflow:auto;max-height:calc(100vh - 250px);min-height:300px;border-radius:14px;border:6px solid #fff;outline:1px solid #dbe7ea;outline-offset:0;background:#fff;box-shadow:0 6px 22px rgba(16,40,50,.10)}
 table{border-collapse:collapse;width:100%;min-width:980px}
 th,td{padding:2px 4px;text-align:left;font-size:11px;border:1px solid #dce6e9;white-space:nowrap}
 th{background:var(--teal);font-weight:700;color:#fff;font-size:9.5px;text-transform:uppercase;letter-spacing:.5px;text-align:center;position:sticky;top:0;z-index:6;border-color:#0b6b74;white-space:normal;line-height:1.28;vertical-align:middle;min-width:82px}
@@ -361,15 +361,15 @@ td.cell-center{text-align:center}
 .pill-batal{background:#fbe0e0;color:#b22a2a;box-shadow:inset 0 0 0 1px rgba(178,42,42,.18)}
 /* Freeze horizontal (pane) : kolom "No." + "Nama Pekerjaan" dibekukan di kiri,
    sehingga tetap terlihat saat tabel digulir ke kanan. */
-.table-wrap thead th:first-child{position:sticky;top:0;left:0;z-index:8;background:var(--teal)}
+.table-wrap thead th:first-child{position:sticky;top:0;z-index:8;background:var(--teal)}
 /* #4: Kolom No. dipersempit agar pas dengan angka baris (mis. 1–2 digit) — dibekukan di kiri (left:0) */
-.table-wrap th.col-no,.table-wrap td.col-no{width:34px;min-width:34px;max-width:40px;text-align:center;padding-left:4px;padding-right:4px;white-space:nowrap;position:sticky;left:0;z-index:4}
+.table-wrap th.col-no,.table-wrap td.col-no{width:34px;min-width:34px;max-width:40px;text-align:center;padding-left:4px;padding-right:4px;white-space:nowrap}
 .table-wrap thead th.col-no{z-index:8;box-shadow:inset 1px 0 0 #0b6b74, inset -1px 0 0 #0b6b74, inset 0 -1px 0 #0b6b74}
 .table-wrap tbody td.col-no{background:#ffffff!important;box-shadow:inset 1px 0 0 #dce6e9, inset -1px 0 0 #dce6e9, inset 0 -1px 0 #dce6e9, inset 0 1px 0 #dce6e9}
 .table-wrap tbody tr:nth-child(even) td.col-no{background:#f5f9fa!important}
 .table-wrap tbody tr:hover td.col-no{background:var(--teal-soft)!important}
 /* #3: Kolom "Nama Pekerjaan" — freeze pane horizontal, menempel tepat setelah kolom No. (left:34px) */
-.table-wrap th.col-nama-freeze,.table-wrap td.col-nama-freeze{position:sticky;left:34px;z-index:4;white-space:normal;min-width:240px;max-width:300px;word-break:break-word;overflow-wrap:break-word;line-height:1.3}
+.table-wrap th.col-nama-freeze,.table-wrap td.col-nama-freeze{white-space:normal;min-width:240px;max-width:300px;word-break:break-word;overflow-wrap:break-word;line-height:1.3}
 .table-wrap thead th.col-nama-freeze{z-index:8;background:var(--teal);box-shadow:inset 1px 0 0 #0b6b74, inset -1px 0 0 #0b6b74, inset 0 -1px 0 #0b6b74}
 .table-wrap tbody td.col-nama-freeze{background:#ffffff!important;box-shadow:inset -1px 0 0 #dce6e9, inset 1px 0 0 #dce6e9, inset 0 -1px 0 #dce6e9, inset 0 1px 0 #dce6e9}
 .table-wrap tbody tr:nth-child(even) td.col-nama-freeze{background:#f5f9fa!important}
@@ -377,52 +377,36 @@ td.cell-center{text-align:center}
 /* Isi latar penuh via pseudo-element agar tidak ada celah tembus (bug border-collapse
    pada sel sticky). Pseudo diletakkan DI DALAM garis border (inset 1px) agar tidak
    menutupi garis border atas/bawah/kanan pada kolom No. & Nama Pekerjaan. */
-.table-wrap td.col-no,.table-wrap td.col-nama-freeze{background-clip:padding-box;position:sticky}
-.table-wrap td.col-no::before,.table-wrap td.col-nama-freeze::before{
+
+/* ===== Freeze pane horizontal — HANYA menu Monitoring (Daftar Pekerjaan) =====
+   Berlaku eksklusif di #view-list (Kontrak Rinci), #view-list-pl (Pengadaan Langsung),
+   dan #view-list-tender (Tender). Menu lain memakai aturan dasar di atas: kolom
+   mengalir normal (tidak dibekukan ke kiri); baris judul tetap menempel di atas. */
+#view-list .table-wrap thead th:first-child,
+#view-list-pl .table-wrap thead th:first-child,
+#view-list-tender .table-wrap thead th:first-child{left:0;z-index:8}
+#view-list .table-wrap th.col-no,#view-list .table-wrap td.col-no,
+#view-list-pl .table-wrap th.col-no,#view-list-pl .table-wrap td.col-no,
+#view-list-tender .table-wrap th.col-no,#view-list-tender .table-wrap td.col-no{
+  position:sticky;left:0;z-index:4}
+#view-list .table-wrap th.col-nama-freeze,#view-list .table-wrap td.col-nama-freeze,
+#view-list-pl .table-wrap th.col-nama-freeze,#view-list-pl .table-wrap td.col-nama-freeze,
+#view-list-tender .table-wrap th.col-nama-freeze,#view-list-tender .table-wrap td.col-nama-freeze{
+  position:sticky;left:34px;z-index:4}
+#view-list .table-wrap thead th.col-no,#view-list .table-wrap thead th.col-nama-freeze,
+#view-list-pl .table-wrap thead th.col-no,#view-list-pl .table-wrap thead th.col-nama-freeze,
+#view-list-tender .table-wrap thead th.col-no,#view-list-tender .table-wrap thead th.col-nama-freeze{
+  z-index:8}
+/* Isi latar penuh via pseudo-element agar tidak ada celah tembus (bug border-collapse
+   pada sel sticky). Pseudo diletakkan DI DALAM garis border (inset 1px). */
+#view-list .table-wrap td.col-no,#view-list .table-wrap td.col-nama-freeze,
+#view-list-pl .table-wrap td.col-no,#view-list-pl .table-wrap td.col-nama-freeze,
+#view-list-tender .table-wrap td.col-no,#view-list-tender .table-wrap td.col-nama-freeze{
+  background-clip:padding-box}
+#view-list .table-wrap td.col-no::before,#view-list .table-wrap td.col-nama-freeze::before,
+#view-list-pl .table-wrap td.col-no::before,#view-list-pl .table-wrap td.col-nama-freeze::before,
+#view-list-tender .table-wrap td.col-no::before,#view-list-tender .table-wrap td.col-nama-freeze::before{
   content:"";position:absolute;top:0;bottom:0;left:1px;right:1px;background:inherit;z-index:-1}
-/* Freeze pane horizontal (kolom No. & Nama Pekerjaan menempel di kiri) HANYA berlaku
-   untuk menu Monitoring — Daftar Pekerjaan (Kontrak Rinci #view-list, Pengadaan Langsung
-   #view-list-pl, Tender #view-list-tender). Di menu lain kolom mengalir normal (tidak
-   dibekukan ke kiri); baris judul tetap menempel di atas mengikuti aturan umum. */
-#view-fk-input .table-wrap th.col-no,#view-fk-input .table-wrap th.col-nama-freeze,
-#view-fk-view .table-wrap th.col-no,#view-fk-view .table-wrap th.col-nama-freeze,
-#view-pn-lihat .table-wrap th.col-no,#view-pn-lihat .table-wrap th.col-nama-freeze,
-#view-fkl-view .table-wrap th.col-no,#view-fkl-view .table-wrap th.col-nama-freeze,
-#view-pnw-view .table-wrap th.col-no,#view-pnw-view .table-wrap th.col-nama-freeze,
-#view-rho-view .table-wrap th.col-no,#view-rho-view .table-wrap th.col-nama-freeze,
-#view-dp-view .table-wrap th.col-no,#view-dp-view .table-wrap th.col-nama-freeze,
-#view-hps-view .table-wrap th.col-no,#view-hps-view .table-wrap th.col-nama-freeze,
-#view-analisa-view .table-wrap th.col-no,#view-analisa-view .table-wrap th.col-nama-freeze,
-#view-jadwal-view .table-wrap th.col-no,#view-jadwal-view .table-wrap th.col-nama-freeze{
-  left:auto!important;z-index:6!important;
-}
-#view-fk-input .table-wrap td.col-no,#view-fk-input .table-wrap td.col-nama-freeze,
-#view-fk-view .table-wrap td.col-no,#view-fk-view .table-wrap td.col-nama-freeze,
-#view-pn-lihat .table-wrap td.col-no,#view-pn-lihat .table-wrap td.col-nama-freeze,
-#view-fkl-view .table-wrap td.col-no,#view-fkl-view .table-wrap td.col-nama-freeze,
-#view-pnw-view .table-wrap td.col-no,#view-pnw-view .table-wrap td.col-nama-freeze,
-#view-rho-view .table-wrap td.col-no,#view-rho-view .table-wrap td.col-nama-freeze,
-#view-dp-view .table-wrap td.col-no,#view-dp-view .table-wrap td.col-nama-freeze,
-#view-hps-view .table-wrap td.col-no,#view-hps-view .table-wrap td.col-nama-freeze,
-#view-analisa-view .table-wrap td.col-no,#view-analisa-view .table-wrap td.col-nama-freeze,
-#view-jadwal-view .table-wrap td.col-no,#view-jadwal-view .table-wrap td.col-nama-freeze{
-  position:static!important;left:auto!important;z-index:auto!important;
-}
-#view-fk-input .table-wrap td.col-no::before,#view-fk-input .table-wrap td.col-nama-freeze::before,
-#view-fk-view .table-wrap td.col-no::before,#view-fk-view .table-wrap td.col-nama-freeze::before,
-#view-pn-lihat .table-wrap td.col-no::before,#view-pn-lihat .table-wrap td.col-nama-freeze::before,
-#view-fkl-view .table-wrap td.col-no::before,#view-fkl-view .table-wrap td.col-nama-freeze::before,
-#view-pnw-view .table-wrap td.col-no::before,#view-pnw-view .table-wrap td.col-nama-freeze::before,
-#view-rho-view .table-wrap td.col-no::before,#view-rho-view .table-wrap td.col-nama-freeze::before,
-#view-dp-view .table-wrap td.col-no::before,#view-dp-view .table-wrap td.col-nama-freeze::before,
-#view-hps-view .table-wrap td.col-no::before,#view-hps-view .table-wrap td.col-nama-freeze::before,
-#view-analisa-view .table-wrap td.col-no::before,#view-analisa-view .table-wrap td.col-nama-freeze::before,
-#view-jadwal-view .table-wrap td.col-no::before,#view-jadwal-view .table-wrap td.col-nama-freeze::before{
-  content:none!important;
-}
-/* #1 & #2: Freeze pane horizontal (kolom No. & Nama Pekerjaan menempel di kiri)
-   kini berlaku pada SEMUA tabel — Monitoring, File Kontrak, Penetapan – Lihat Nomor,
-   dan Kelengkapan – Lihat Data — memakai aturan freeze dasar di atas. */
 /* Kolom Tgl. Terbit & Berakhir Kontrak — dilebarkan & judul dibungkus agar muat 2 baris */
 .table-wrap th.col-date,.table-wrap td.col-date{min-width:118px!important;width:118px!important;max-width:124px!important;padding-left:4px;padding-right:4px}
 .table-wrap th.col-date{white-space:normal;line-height:1.28;text-align:center;vertical-align:middle}
