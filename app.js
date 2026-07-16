@@ -14458,6 +14458,11 @@ function spkLamp(){
   L.jumlahItem=L.items.length;
   return L;
 }
+/* Struktur Lampiran (Judul, Sub-Judul, Uraian, Sat, Vol) terisi otomatis & TERKUNCI
+   bila Lampiran tertaut ke sebuah Perhitungan HPS. Harga Barang/Jasa tetap manual,
+   karena harga memang tidak diambil dari HPS. */
+function spkLampLocked(){ const L=spkLamp(); return !!(L && L.hpsId); }
+
 /* --- Hitungan (sama persis dengan Perhitungan HPS) --- */
 function spkLampNum(v){ if(v===''||v==null) return 0; if(typeof v==='number') return v; const n=parseFloat(String(v).replace(/,/g,'.')); return isNaN(n)?0:n; }
 function spkLampRp(n){ n=Math.round(spkLampNum(n)); return n>0 ? ('Rp '+n.toLocaleString('id-ID')) : '–'; }
@@ -14524,15 +14529,20 @@ function spkLampTplBarHtml(){
 /* --- Field "Jumlah Barang/Jasa" (menambah / mengurangi baris) --- */
 function spkLampCountFieldHtml(){
   const L=spkLamp();
+  const lock=spkLampLocked();
   let opts='';
   for(let i=1;i<=150;i++) opts+='<option value="'+i+'"'+(L.items.length===i?' selected':'')+'>'+i+'</option>';
+  const note=lock
+    ? '<div class="fkl-hint">Judul, Sub-Judul, Uraian Pekerjaan, Sat &amp; Vol terisi otomatis &amp; terkunci dari Perhitungan HPS: <b style="color:var(--teal-dark)">'+fkEsc(L.hpsNama||'')+'</b>. Harga Barang/Jasa tetap diisi manual.</div>'
+    : '';
   return '<div class="form-flow" style="--cols:4;margin-bottom:14px">'+
     '<div class="field"><label>Jumlah Barang/Jasa</label>'+
-      '<select id="spk-lamp-jumlah" onchange="spkLampOnJumlah(this)">'+opts+'</select>'+
+      '<select id="spk-lamp-jumlah" onchange="spkLampOnJumlah(this)"'+(lock?' disabled':'')+'>'+opts+'</select>'+
     '</div>'+
-  '</div>';
+  '</div>'+note;
 }
 function spkLampOnJumlah(el){
+  if(spkLampLocked()) return;   // jumlah item mengikuti HPS terpilih
   const n=Math.max(1,Math.min(150,parseInt(el.value,10)||1));
   const L=spkLamp(); const cur=L.items.slice(); const next=[];
   for(let i=0;i<n;i++) next.push(spkLampNormItem(cur[i]));
@@ -14543,15 +14553,18 @@ function spkLampOnJumlah(el){
 /* --- Tabel Uraian Lampiran (kolom persis seperti Perhitungan HPS) --- */
 function spkLampTableHtml(){
   const L=spkLamp();
+  const lock=spkLampLocked();
+  const dis=lock?' disabled':'';                 // Judul/Sub-Judul/Uraian/Sat/Vol ikut HPS
+  const clsL=lock?' is-locked':'';
   let rows='';
   L.items.forEach((it,i)=>{
     rows+='<tr>'+
       '<td class="c-no">'+(i+1)+'</td>'+
-      '<td class="c-kel"><input type="text" data-i="'+i+'" placeholder="mis. JASA EDIT DFD" value="'+fkEsc(it.judul||'')+'" oninput="spkLampOn(this,\'judul\')"></td>'+
-      '<td class="c-kel"><input type="text" data-i="'+i+'" placeholder="mis. Edit/Drawing" value="'+fkEsc(it.subjudul||'')+'" oninput="spkLampOn(this,\'subjudul\')"></td>'+
-      '<td class="c-ur"><textarea data-i="'+i+'" rows="1" placeholder="Uraian pekerjaan / barang / jasa ke-'+(i+1)+'" oninput="spkLampOn(this,\'uraian\')">'+fkEsc(it.uraian||'')+'</textarea></td>'+
-      '<td class="c-sat"><input type="text" data-i="'+i+'" placeholder="Bh" value="'+fkEsc(it.sat||'')+'" oninput="spkLampOn(this,\'sat\')"></td>'+
-      '<td class="c-vol"><input type="text" inputmode="decimal" data-i="'+i+'" placeholder="0" value="'+fkEsc(it.vol!=null?String(it.vol):'')+'" oninput="spkLampOnVol(this)"></td>'+
+      '<td class="c-kel'+clsL+'"><input type="text" data-i="'+i+'" placeholder="mis. JASA EDIT DFD" value="'+fkEsc(it.judul||'')+'" oninput="spkLampOn(this,\'judul\')"'+dis+'></td>'+
+      '<td class="c-kel'+clsL+'"><input type="text" data-i="'+i+'" placeholder="mis. Edit/Drawing" value="'+fkEsc(it.subjudul||'')+'" oninput="spkLampOn(this,\'subjudul\')"'+dis+'></td>'+
+      '<td class="c-ur'+clsL+'"><textarea data-i="'+i+'" rows="1" placeholder="Uraian pekerjaan / barang / jasa ke-'+(i+1)+'" oninput="spkLampOn(this,\'uraian\')"'+dis+'>'+fkEsc(it.uraian||'')+'</textarea></td>'+
+      '<td class="c-sat'+clsL+'"><input type="text" data-i="'+i+'" placeholder="Bh" value="'+fkEsc(it.sat||'')+'" oninput="spkLampOn(this,\'sat\')"'+dis+'></td>'+
+      '<td class="c-vol'+clsL+'"><input type="text" inputmode="decimal" data-i="'+i+'" placeholder="0" value="'+fkEsc(it.vol!=null?String(it.vol):'')+'" oninput="spkLampOnVol(this)"'+dis+'></td>'+
       '<td class="c-money"><input type="text" inputmode="decimal" data-i="'+i+'" placeholder="Rp" value="'+spkHargaText(it.hargaMat)+'" oninput="spkLampOnHarga(this,\'hargaMat\')"></td>'+
       '<td class="c-money"><input type="text" inputmode="decimal" data-i="'+i+'" placeholder="Rp" value="'+spkHargaText(it.hargaJasa)+'" oninput="spkLampOnHarga(this,\'hargaJasa\')"></td>'+
     '</tr>';
@@ -14561,8 +14574,9 @@ function spkLampTableHtml(){
       '<th>Harga<br>Barang</th><th>Harga<br>Jasa</th></tr>'+
     '</thead><tbody>'+rows+'</tbody></table></div>';
 }
-function spkLampOn(el,key){ const L=spkLamp(); const i=+el.dataset.i; if(L.items[i]) L.items[i][key]=el.value; }
+function spkLampOn(el,key){ if(spkLampLocked()) return; const L=spkLamp(); const i=+el.dataset.i; if(L.items[i]) L.items[i][key]=el.value; }
 function spkLampOnVol(el){
+  if(spkLampLocked()) return;
   let v=el.value.replace(/[^0-9.,]/g,''); el.value=v;
   const L=spkLamp(); const i=+el.dataset.i;
   if(L.items[i]){ L.items[i].vol=(v===''?'':String(jsVolNum(v))); spkLampRecalcRow(i); }
@@ -14848,6 +14862,12 @@ async function spkApplyDp(rec){
     L.jumlahItem=L.items.length;
     L.hpsId=String(hpsRec.id);
     L.hpsNama=hpsRec.nama_pekerjaan||nama;
+    // Ikuti pengaturan penomoran Judul/Sub-Judul dari HPS agar nomor pada
+    // dokumen Lampiran SPK identik dengan dokumen HPS.
+    L.judulOn    = (hSt.judulOn==='Ya')?'Ya':'Tidak';
+    L.judulNum   = jsNumStyleOk(hSt.judulNum,'');
+    L.subjudulOn = (hSt.subjudulOn==='Ya')?'Ya':'Tidak';
+    L.subjudulNum= jsNumStyleOk(hSt.subjudulNum,'');
     toast('Data pekerjaan berhasil diterapkan — Lampiran terisi otomatis dari Perhitungan HPS','ok');
   }else{
     L.hpsId=''; L.hpsNama='';
@@ -14864,6 +14884,7 @@ function spkLepasDp(){
   delete d.__dpId; delete d.__dpNama;
   delete d.__pnLock;                       // field BA dari Penetapan kembali terbuka
   const L=spkLamp(); L.hpsId=''; L.hpsNama='';
+  delete L.judulOn; delete L.judulNum; delete L.subjudulOn; delete L.subjudulNum;
   renderSpkSusun();
   toast('Pilihan pekerjaan dibatalkan (isian tetap dipertahankan)','ok');
 }
@@ -15310,7 +15331,17 @@ async function spkSaveKontrak(){
 
 /* ================= HALAMAN: LIHAT KONTRAK ================= */
 let spkViewPage=1; const SPK_VIEW_PAGE_SIZE=8;
-function openSpkView(){ refreshDataSpk().then(()=>{ renderSpkView(); showView('spk-view'); }); }
+/* Loader ditampilkan LEBIH DULU agar animasi "Memuat" muncul selama refreshDataSpk()
+   berjalan (sebelumnya showView baru dipanggil SETELAH fetch selesai, sehingga menu
+   terasa menggantung tanpa animasi). renderSpkView tidak dipanggil manual: showView
+   sudah memanggilnya lewat mapping halaman aktif, jadi tidak ada render ganda. */
+function openSpkView(){
+  if(!isAdmin()){ toast('Menu ini hanya untuk akun admin','warn'); return; }
+  showLoader('Memuat');          // tampil sejak awal, bukan setelah fetch selesai
+  refreshDataSpk()
+    .then(()=>showView('spk-view'))
+    .catch(err=>{ console.error(err); showView('spk-view'); });
+}
 function spkViewRows(){
   let rows=(records_spk||[]).slice();
   const fs=(document.getElementById('spk-view-search')?.value||'').toLowerCase().trim();
@@ -18743,6 +18774,7 @@ function spkLampOfData(data){
 }
 function spkLampHpsState(data){
   const items=spkLampOfData(data);
+  const L=((data&&data.__lampiran&&typeof data.__lampiran==='object')?data.__lampiran:{});
   const dp=(typeof records_dp!=='undefined' && Array.isArray(records_dp))
     ? records_dp.find(r=>String(r.id)===String(data.__dpId)) : null;
   const dinfo=(dp && dp.state && dp.state.info) ? dp.state.info : {};
@@ -18757,10 +18789,15 @@ function spkLampHpsState(data){
       pejabat: dinfo.pejabat||'', tgl_hps: data.tanggal_kontrak||''
     },
     jumlahItem: items.length||1,
-    judulOn: anyJudul?'Ya':'Tidak', judulNum:'',
-    /* Sub-judul diberi huruf A, B, C ... persis seperti dokumen Perhitungan HPS.
-       Sebelumnya dikosongkan, sehingga kolom No pada baris sub-judul kosong. */
-    subjudulOn: anySub?'Ya':'Tidak', subjudulNum:'A',
+    /* Gaya penomoran Judul/Sub-Judul MENGIKUTI Perhitungan HPS yang tertaut
+       (disalin ke __lampiran saat Data Pekerjaan dipilih), agar kolom No pada
+       Lampiran SPK identik dengan dokumen HPS. Sebelumnya nilai ini di-hardcode
+       (judul tanpa nomor, sub-judul 'A') sehingga nomornya berbeda dari HPS.
+       Bila belum tertaut, dipakai default lama. */
+    judulOn: anyJudul?'Ya':'Tidak',
+    judulNum: jsNumStyleOk(L.judulNum, L.hpsId?'':''),
+    subjudulOn: anySub?'Ya':'Tidak',
+    subjudulNum: jsNumStyleOk(L.subjudulNum, L.hpsId?'':'A'),
     items: items.length?items:[spkLampNormItem({})]
   };
 }
