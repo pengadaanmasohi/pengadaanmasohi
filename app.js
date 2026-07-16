@@ -9093,7 +9093,21 @@ function pnwExtraDocCss(){
   '.pnw-doc .pnw-hasil th.kt,.pnw-doc .pnw-hasil td.kt{width:40%}'+
   '.pnw-doc .pnw-hasil td.nm{white-space:normal;word-break:break-word;overflow-wrap:break-word}'+
   '.pnw-doc .pnw-hasil td.kt{white-space:normal}'+
-  '.ttd .role2{font-weight:700;font-size:12px;line-height:1.3;color:#16242c;margin-top:1px}';
+  /* ---- Tanda tangan diselaraskan agar MENYATU dengan isi dokumen ----
+     Sebelumnya nama pejabat memakai bobot 800 & ukuran 12,5px sehingga terlihat
+     seperti jenis huruf yang berbeda dan lebih besar dari label di atasnya.
+     Kini SELURUH elemen (tanggal, "Diperiksa oleh,", "Pejabat Pelaksana
+     Pengadaan", dan nama) memakai satu jenis huruf yang sama (Plus Jakarta Sans
+     ditetapkan eksplisit) dengan skala ukuran seragam 12px dan tangga bobot yang
+     rapi (label 600 -> jabatan 700 -> nama 700). */
+  '.fkl-doc-foot .ttd-date,'+
+  '.fkl-doc-foot .ttd .role,'+
+  '.fkl-doc-foot .ttd .role2,'+
+  '.fkl-doc-foot .ttd .nm{font-family:"Plus Jakarta Sans","Segoe UI",sans-serif}'+
+  '.fkl-doc-foot .ttd-date{font-size:12px;font-weight:600;color:#22343a}'+
+  '.fkl-doc-foot .ttd .role{font-size:12px;font-weight:600;letter-spacing:.2px;color:#22343a}'+
+  '.ttd .role2{font-size:12px;font-weight:700;line-height:1.3;letter-spacing:.2px;color:#0d2a30;margin-top:1px}'+
+  '.fkl-doc-foot .ttd .nm{font-size:12px;font-weight:700;letter-spacing:.3px;color:#0d2a30;padding-top:5px}';
 }
 function pnwOpenPreview(){
   const ov=document.getElementById('pn-preview-overlay'); if(!ov) return;
