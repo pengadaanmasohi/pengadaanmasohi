@@ -1806,6 +1806,39 @@ function dashBlip(freq){
     o.start(t); o.stop(t+0.16);
   }catch(e){}
 }
+/* Suara "sapuan cahaya" (whoosh + kilau) — cocok dgn efek shine bergerak pada
+   area brand (logo + MONITORING PENGADAAN). Noise berfilter bandpass menyapu
+   naik (seperti cahaya melintas) + 2 nada tinggi lembut sebagai kilau. */
+function dashSweep(){
+  if(_dashMuted) return;
+  var c=dashAC(); if(!c) return;
+  if(c.state==='suspended'){ try{ c.resume(); }catch(e){} }
+  try{
+    var t=c.currentTime, dur=0.5;
+    var n=Math.floor(c.sampleRate*dur);
+    var buf=c.createBuffer(1,n,c.sampleRate), d=buf.getChannelData(0);
+    for(var i=0;i<n;i++){ d[i]=(Math.random()*2-1)*Math.pow(1-i/n,1.4); }   /* noise meredup */
+    var src=c.createBufferSource(); src.buffer=buf;
+    var bp=c.createBiquadFilter(); bp.type='bandpass'; bp.Q.value=1.1;
+    bp.frequency.setValueAtTime(480,t);
+    bp.frequency.exponentialRampToValueAtTime(3200,t+dur);                    /* sapuan naik */
+    var ng=c.createGain();
+    ng.gain.setValueAtTime(0.0001,t);
+    ng.gain.exponentialRampToValueAtTime(0.045,t+0.07);
+    ng.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    src.connect(bp); bp.connect(ng); ng.connect(c.destination);
+    src.start(t); src.stop(t+dur);
+    [[1046,0.0],[1568,0.07]].forEach(function(p){                            /* kilau */
+      var o=c.createOscillator(), g=c.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(p[0],t+p[1]);
+      g.gain.setValueAtTime(0.0001,t+p[1]);
+      g.gain.exponentialRampToValueAtTime(0.028,t+p[1]+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+p[1]+0.26);
+      o.connect(g); g.connect(c.destination);
+      o.start(t+p[1]); o.stop(t+p[1]+0.3);
+    });
+  }catch(e){}
+}
 function initDashSound(){
   var root=document.getElementById('view-dashboard');
   if(!root || root.__soundReady) return;
@@ -1854,6 +1887,16 @@ function topnavTiltApply(){
 }
 function topnavTiltReset(el){ if(el) el.style.transform=''; }
 function initTopnavFx(){
+  /* Area brand (logo + judul) — bunyi "sapuan cahaya" saat kursor mencapainya,
+     selaras dengan efek shine yang menyapu. pointerenter = sekali saat masuk. */
+  var brand=document.querySelector('.topbar-brand');
+  if(brand && !brand.__fxReady){
+    brand.__fxReady=true;
+    brand.addEventListener('pointerenter', function(ev){
+      if(ev.pointerType && ev.pointerType!=='mouse') return;
+      try{ dashSweep(); }catch(e){}
+    });
+  }
   var root=document.getElementById('topnav');
   if(!root || root.__fxReady) return;
   root.__fxReady=true;
@@ -1884,9 +1927,59 @@ function initTopnavFx(){
     if(_tnEl){ topnavTiltReset(_tnEl); _tnEl=null; }
   }, {passive:true});
 }
+/* ============================================================
+   EFEK 3D + SUARA TAB SEGMEN (SPBJ/Kontrak Rinci · Pengadaan Langsung · Tender)
+   - Hover: bunyi "tik" halus.
+   - Pilih (klik): chime konfirmasi 2 nada + animasi "pop 3D" (tab terangkat &
+     menekan dalam perspektif). Delegasi pada document agar mencakup semua
+     kontrol .fk-seg di berbagai halaman. */
+let _segHoverEl=null;
+function segSelectSound(){
+  if(_dashMuted) return;
+  var c=dashAC(); if(!c) return;
+  if(c.state==='suspended'){ try{ c.resume(); }catch(e){} }
+  try{
+    var t=c.currentTime;
+    [[523.25,0],[783.99,0.07]].forEach(function(p){       /* C5 → G5: konfirmasi lembut */
+      var o=c.createOscillator(), g=c.createGain();
+      o.type='triangle'; o.frequency.setValueAtTime(p[0],t+p[1]);
+      g.gain.setValueAtTime(0.0001,t+p[1]);
+      g.gain.exponentialRampToValueAtTime(0.06,t+p[1]+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+p[1]+0.24);
+      o.connect(g); g.connect(c.destination);
+      o.start(t+p[1]); o.stop(t+p[1]+0.28);
+    });
+  }catch(e){}
+}
+function initSegFx(){
+  if(document.__segFxReady) return; document.__segFxReady=true;
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.addEventListener('pointerover', function(ev){
+    if(ev.pointerType && ev.pointerType!=='mouse') return;
+    var b=ev.target.closest ? ev.target.closest('.fk-seg-btn') : null;
+    if(!b || b===_segHoverEl) return;
+    _segHoverEl=b;
+    if(!b.classList.contains('active')) try{ dashBlip(600); }catch(e){}
+  }, {passive:true});
+  document.addEventListener('pointerout', function(ev){
+    var to=ev.relatedTarget;
+    if(!to || !(to.closest && to.closest('.fk-seg-btn'))) _segHoverEl=null;
+  }, {passive:true});
+  document.addEventListener('click', function(ev){
+    var b=ev.target.closest ? ev.target.closest('.fk-seg-btn') : null;
+    if(!b) return;
+    try{ segSelectSound(); }catch(e){}
+    if(!reduce){
+      b.classList.remove('seg-pop'); void b.offsetWidth; b.classList.add('seg-pop');
+      b.addEventListener('animationend', function h(e){
+        if(e.animationName==='segPop'){ b.classList.remove('seg-pop'); b.removeEventListener('animationend',h); }
+      });
+    }
+  });
+}
 if(typeof document!=='undefined'){
-  if(document.readyState!=='loading'){ try{ initTopnavFx(); }catch(e){} }
-  else document.addEventListener('DOMContentLoaded', function(){ try{ initTopnavFx(); }catch(e){} });
+  if(document.readyState!=='loading'){ try{ initTopnavFx(); initSegFx(); }catch(e){} }
+  else document.addEventListener('DOMContentLoaded', function(){ try{ initTopnavFx(); initSegFx(); }catch(e){} });
 }
 
 function renderDashboard(){
