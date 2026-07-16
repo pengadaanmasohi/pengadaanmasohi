@@ -694,10 +694,26 @@ function applyRole(role){
   renderTableTender();
 }
 /* ====== MENU PENGATURAN (gear) ====== */
+/* Ikon & label tombol "Bunyi Notifikasi" mengikuti kondisi tersimpan. */
+function syncSfxBtn(){
+  const on=(typeof sfxEnabled==='function')?sfxEnabled():true;
+  const ic=document.getElementById('sfx-ic'), lb=document.getElementById('sfx-lbl');
+  if(ic) ic.innerHTML = on
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M22 9l-6 6M16 9l6 6"/></svg>';
+  if(lb) lb.textContent = on ? 'Bunyi Notifikasi: Aktif' : 'Bunyi Notifikasi: Nonaktif';
+}
+/* Menu sengaja TIDAK ditutup: pengguna langsung mendengar nada uji & melihat
+   labelnya berubah, jadi bisa mencoba nyala/mati beberapa kali. */
+function onToggleSfx(){
+  if(typeof sfxToggle==='function') sfxToggle();
+  syncSfxBtn();
+}
 function toggleSettingsMenu(e){
   if(e) e.stopPropagation();
   const w=document.getElementById('settings-wrap'); if(!w) return;
   const open=w.classList.toggle('open');
+  if(open) syncSfxBtn();
   const g=document.getElementById('settings-gear'); if(g) g.setAttribute('aria-expanded', open?'true':'false');
   const m=document.getElementById('settings-menu'); if(m) m.setAttribute('aria-hidden', open?'false':'true');
 }
@@ -3107,9 +3123,67 @@ function handleUploadPl(ev){
 
 /* ============ TOAST ============ */
 let toastT;
+/* ============================================================
+   BUNYI NOTIFIKASI (Web Audio API — tanpa file audio eksternal)
+   Nada dibangkitkan langsung oleh browser, jadi tidak ada aset yang perlu
+   diunduh dan tidak menambah waktu muat.
+
+   Dipasang di dalam toast(), sehingga SEMUA notifikasi yang sudah ada ikut
+   berbunyi sesuai jenisnya — termasuk berhasil/gagal upload dan berhasil/gagal
+   simpan data — tanpa perlu menyentuh 353 pemanggilan toast() satu per satu.
+
+     ok   -> dua nada naik (C6→E6), terdengar "selesai"
+     warn -> satu nada sedang, menahan perhatian
+     err  -> dua nada turun (A4→D4), terdengar "gagal"
+
+   Browser melarang audio berbunyi sebelum pengguna berinteraksi dengan halaman
+   (autoplay policy). AudioContext karena itu dibuat SAAT DIBUTUHKAN, bukan saat
+   halaman dimuat, lalu dipakai ulang. Bila masih 'suspended' (mis. notifikasi
+   muncul sebelum ada klik), resume() dipanggil dan kegagalannya diabaikan —
+   notifikasi visual tetap tampil apa pun yang terjadi pada audio. */
+const SFX_KEY='fkl_sfx_off';
+let _sfxCtx=null;
+function sfxEnabled(){ try{ return localStorage.getItem(SFX_KEY)!=='1'; }catch(e){ return true; } }
+function sfxSetEnabled(on){
+  try{ on ? localStorage.removeItem(SFX_KEY) : localStorage.setItem(SFX_KEY,'1'); }catch(e){}
+  if(on) sfxPlay('ok');   // umpan balik langsung saat dinyalakan
+}
+function sfxToggle(){ const on=!sfxEnabled(); sfxSetEnabled(on); return on; }
+/* Satu nada: osilator + amplop naik-turun agar tidak terdengar "klik" di ujungnya. */
+function _sfxTone(ctx, freq, startAt, dur, peak){
+  const osc=ctx.createOscillator(), gain=ctx.createGain();
+  osc.type='sine'; osc.frequency.setValueAtTime(freq, startAt);
+  // Amplop: senyap -> peak (attack 12ms) -> meluruh halus ke senyap.
+  gain.gain.setValueAtTime(0.0001, startAt);
+  gain.gain.exponentialRampToValueAtTime(peak, startAt+0.012);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startAt+dur);
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.start(startAt); osc.stop(startAt+dur+0.02);
+}
+function sfxPlay(kind){
+  if(!sfxEnabled()) return;
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
+    if(!_sfxCtx) _sfxCtx=new AC();
+    const ctx=_sfxCtx;
+    if(ctx.state==='suspended') ctx.resume().catch(()=>{});
+    const t0=ctx.currentTime+0.01;
+    if(kind==='err'){            // turun: A4 -> D4
+      _sfxTone(ctx, 440.00, t0,       0.16, 0.16);
+      _sfxTone(ctx, 293.66, t0+0.14,  0.30, 0.16);
+    }else if(kind==='warn'){     // satu nada sedang
+      _sfxTone(ctx, 523.25, t0,       0.20, 0.13);
+    }else{                       // ok — naik: C6 -> E6
+      _sfxTone(ctx, 1046.50, t0,      0.11, 0.11);
+      _sfxTone(ctx, 1318.51, t0+0.10, 0.20, 0.11);
+    }
+  }catch(e){ /* audio tidak tersedia: notifikasi visual tetap jalan */ }
+}
+
 function toast(msg,kind){
   const t=document.getElementById('toast');
   const k = kind==='warn' ? 'warn' : (kind==='err'||kind==='fail') ? 'err' : 'ok';
+  sfxPlay(k);
   const ic = k==='warn'
     ? '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4M12 17h.01"/></svg>'
     : k==='err'
