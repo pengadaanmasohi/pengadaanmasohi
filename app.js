@@ -15338,7 +15338,10 @@ let spkViewPage=1; const SPK_VIEW_PAGE_SIZE=8;
 function openSpkView(){
   if(!isAdmin()){ toast('Menu ini hanya untuk akun admin','warn'); return; }
   showLoader('Memuat');          // tampil sejak awal, bukan setelah fetch selesai
-  refreshDataSpk()
+  /* records_hps ikut dimuat: penomoran Judul/Sub-Judul pada dokumen Lampiran
+     dibaca dari record HPS yang tertaut (lihat spkLampNumCfg). Tanpa ini,
+     kontrak lama akan jatuh ke default dan nomor judul tidak muncul. */
+  Promise.all([refreshDataSpk(), refreshDataHps()])
     .then(()=>showView('spk-view'))
     .catch(err=>{ console.error(err); showView('spk-view'); });
 }
@@ -18772,9 +18775,38 @@ function spkLampOfData(data){
   const items=Array.isArray(L.items)?L.items:[];
   return items.map(it=>spkLampNormItem(it));
 }
+/* Gaya penomoran Judul/Sub-Judul untuk dokumen Lampiran: diambil LANGSUNG dari
+   record Perhitungan HPS yang tertaut, agar kolom No pada Lampiran SPK selalu
+   identik dengan dokumen HPS — termasuk untuk kontrak lama yang disimpan sebelum
+   setting ini ikut disalin ke __lampiran. Urutan sumber:
+     1) record HPS yang tertaut (paling sahih; ikut bila HPS diubah),
+     2) salinan pada __lampiran (bila record HPS tak ditemukan/ belum dimuat),
+     3) default lama (judul tanpa nomor, sub-judul 'A') bila tidak tertaut sama sekali. */
+function spkLampNumCfg(data){
+  const L=((data&&data.__lampiran&&typeof data.__lampiran==='object')?data.__lampiran:{});
+  const pick=(v)=>(['','A','a','I','i'].indexOf(v)>=0)?v:null;   // '' = sah (tanpa nomor)
+  let hSt=null;
+  try{
+    const list=(typeof records_hps!=='undefined' && records_hps)?records_hps:[];
+    /* hpsId adalah id RECORD HPS, sedangkan spkCariHps() mencocokkan dpId —
+       jadi cari by-id dulu, baru fallback ke pencocokan dpId/nama. */
+    let rec = L.hpsId ? (list.find(r=>String(r.id)===String(L.hpsId))||null) : null;
+    if(!rec) rec = spkCariHps(data.__dpId, L.hpsNama||data.__dpNama||data.nama_pekerjaan);
+    if(rec) hSt=hpsRecordToState(rec);
+  }catch(e){ console.error('spkLampNumCfg:',e); }
+  const jHps = hSt?pick(hSt.judulNum):null;
+  const sHps = hSt?pick(hSt.subjudulNum):null;
+  const jL   = pick(L.judulNum);
+  const sL   = pick(L.subjudulNum);
+  const tertaut = !!(hSt || L.hpsId);
+  return {
+    judulNum:    (jHps!=null)?jHps:((jL!=null)?jL:''),
+    subjudulNum: (sHps!=null)?sHps:((sL!=null)?sL:(tertaut?'':'A'))
+  };
+}
 function spkLampHpsState(data){
   const items=spkLampOfData(data);
-  const L=((data&&data.__lampiran&&typeof data.__lampiran==='object')?data.__lampiran:{});
+  const num=spkLampNumCfg(data);
   const dp=(typeof records_dp!=='undefined' && Array.isArray(records_dp))
     ? records_dp.find(r=>String(r.id)===String(data.__dpId)) : null;
   const dinfo=(dp && dp.state && dp.state.info) ? dp.state.info : {};
@@ -18789,15 +18821,10 @@ function spkLampHpsState(data){
       pejabat: dinfo.pejabat||'', tgl_hps: data.tanggal_kontrak||''
     },
     jumlahItem: items.length||1,
-    /* Gaya penomoran Judul/Sub-Judul MENGIKUTI Perhitungan HPS yang tertaut
-       (disalin ke __lampiran saat Data Pekerjaan dipilih), agar kolom No pada
-       Lampiran SPK identik dengan dokumen HPS. Sebelumnya nilai ini di-hardcode
-       (judul tanpa nomor, sub-judul 'A') sehingga nomornya berbeda dari HPS.
-       Bila belum tertaut, dipakai default lama. */
     judulOn: anyJudul?'Ya':'Tidak',
-    judulNum: jsNumStyleOk(L.judulNum, L.hpsId?'':''),
+    judulNum: num.judulNum,
     subjudulOn: anySub?'Ya':'Tidak',
-    subjudulNum: jsNumStyleOk(L.subjudulNum, L.hpsId?'':'A'),
+    subjudulNum: num.subjudulNum,
     items: items.length?items:[spkLampNormItem({})]
   };
 }
