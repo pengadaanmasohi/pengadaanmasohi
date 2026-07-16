@@ -15810,7 +15810,7 @@ function spkDocCss2(){
      "PIHAK PERTAMA" (12px) terlihat lebih kecil dari "PT PLN (Persero)" (12,5px). */
   '.spk-lampsign .role{font-size:12.5px;font-weight:700;color:#1a2b31}'+
   '.spk-lampsign .org{font-size:12.5px;font-weight:700;color:#1a2b31;line-height:1.4;text-wrap:balance}'+
-  '.spk-lampsign .nm{font-size:12.5px;font-weight:700;color:#1a2b31;text-decoration:underline;margin-top:80px}'+
+  '.spk-lampsign .nm{font-size:12.5px;font-weight:700;color:#1a2b31;text-decoration:underline;margin-top:60px}'+
   '.spk-lampsign .jab{font-size:12.5px;font-weight:700;color:#1a2b31}'+
   /* Penyeragaman TEGAS: setiap baris teks di kedua kolom tanda tangan lampiran
      (PIHAK KEDUA & PIHAK PERTAMA) memakai ukuran & tinggi baris yang sama persis,
