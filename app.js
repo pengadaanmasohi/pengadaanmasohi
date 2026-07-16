@@ -1009,6 +1009,7 @@ function showView(name, loaderMsg, noLoader){
           if(l.dataset.view==='rho-view' && (name==='rho-view'||name==='form-rho')) on=true; // Referensi Harga Online induk tetap aktif
           if(l.dataset.view==='analisa-view' && (name==='analisa-view'||name==='form-analisa')) on=true; // Analisa Harga Satuan induk tetap aktif
           if(l.dataset.view==='hps-view' && (name==='hps-view'||name==='form-hps')) on=true; // Perhitungan HPS induk tetap aktif
+          if(l.dataset.view==='pn-lihat' && (name==='pn-lihat'||name==='pn-ambil')) on=true; // Penetapan (menu tunggal) tetap aktif saat Ambil Nomor
           l.classList.toggle('active', on);
         });
         // tandai & buka grup yang memuat view aktif (akordeon tetap terbuka)
@@ -14185,6 +14186,11 @@ const SPK_FIELD_GROUPS = [
     {k:'pemilik_rekening', l:'Pemilik Rekening', t:'text', span:2, def:''},
     {k:'no_penawaran_penyedia', l:'No. Penawaran', t:'text', span:2, def:''},
     {k:'tgl_penawaran', l:'Tgl. Penawaran', t:'date', def:''},
+    /* Akta Perubahan? — Ya: Rincian Akta Perubahan dapat diisi & "beserta akta-akta
+       Perubahannya" ditulis pada Akta Pendirian. Selain Ya: Rincian Akta Perubahan
+       terkunci dalam keadaan default (tidak tampil di pratinjau/cetak) & frasa
+       "beserta akta-akta Perubahannya" pada Akta Pendirian dihapus. */
+    {k:'ada_akta_perubahan', l:'Akta Perubahan?', t:'select', opts:['Ya','Tidak'], def:''},
     {k:'akta_pendirian', l:'Rincian Akta Pendirian', t:'textarea', span:2, hl:true, def:SPK_DEF_AKTA_PENDIRIAN},
     {k:'akta_perubahan', l:'Rincian Akta Perubahan', t:'textarea', span:2, hl:true, def:SPK_DEF_AKTA_PERUBAHAN},
   ]},
@@ -14214,7 +14220,7 @@ const SPK_PREAMBLE_TPL =
  '<div class="spk-party"><div class="spk-party-h"><span class="n">I.</span>PT PLN (PERSERO):</div>'+
  '<p class="spk-party-d">{{p1_akta}} Dalam hal ini diwakili oleh <b>{{p1_wakil}}</b> selaku {{p1_jabatan}} berdasarkan Keputusan Direksi PT PLN (Persero) Nomor: {{p1_sk}} tanggal {{p1_sk_tgl}}. Bertindak untuk dan atas nama PT PLN (Persero) {{p1_nama_singkat}} yang berkedudukan di {{p1_alamat}}, selanjutnya dalam Perjanjian ini disebut sebagai (<b>&ldquo;PIHAK PERTAMA&rdquo;</b>);</p></div>'+
  '<div class="spk-party"><div class="spk-party-h"><span class="n">II.</span>{{p2_nama}}:</div>'+
- '<p class="spk-party-d">{{p2_akta}} Dalam hal ini diwakili oleh <b>{{p2_wakil}}</b> selaku {{p2_jabatan}} berdasarkan {{p2_akta_jabatan}}. Bertindak untuk dan atas nama {{p2_nama_hormat}} yang berkedudukan di {{p2_alamat}}, selanjutnya dalam Perjanjian ini disebut sebagai (<b>&ldquo;PIHAK KEDUA&rdquo;</b>).</p></div>'+
+ '<p class="spk-party-d">{{p2_akta}} Dalam hal ini diwakili oleh <b>{{p2_wakil}}</b> selaku {{p2_jabatan}}{{p2_akta_jabatan}}. Bertindak untuk dan atas nama {{p2_nama_hormat}} yang berkedudukan di {{p2_alamat}}, selanjutnya dalam Perjanjian ini disebut sebagai (<b>&ldquo;PIHAK KEDUA&rdquo;</b>).</p></div>'+
  '<p class="kl0 spk-berdasar"><b><u>Berdasarkan :</u></b></p>'+
  '<p class="spk-dlist"><span class="n">1.</span>Undangan kepada Penyedia Barang/Jasa melalui E-Procurement dengan paket pengadaan Nomor: {{dasar_undangan_no}} pada tanggal {{dasar_undangan_tgl}};</p>'+
  '<p class="spk-dlist"><span class="n">2.</span>Surat Penawaran Harga <b>PIHAK KEDUA</b> Nomor: {{dasar_penawaran_no}} tanggal {{dasar_penawaran_tgl_pjg}};</p>'+
@@ -14309,6 +14315,14 @@ function spkBuildCtx(data){
   ctx.p2_jabatan = d.jabatan_pimpinan || '';
   ctx.p2_alamat = d.lokasi_perusahaan || '';
   var _jp = spkJenisPerusahaan(d.nama_perusahaan);
+  /* --- Akta Perubahan? menentukan tampilan bagian akta PIHAK KEDUA ---
+     _adaAP benar bila: dipilih "Ya", ATAU (kontrak lama tanpa field ini) Rincian
+     Akta Perubahan sudah diisi bukan teks default -> supaya output kontrak lama
+     tetap sama. */
+  var _aprRaw = String(d.akta_perubahan||'');
+  var _aprDefault = (_aprRaw.trim()==='' || _aprRaw.trim()===String(SPK_DEF_AKTA_PERUBAHAN).trim());
+  var _adaAPsel = String(d.ada_akta_perubahan||'');
+  var _adaAP = (_adaAPsel==='Ya') || (_adaAPsel==='' && !_aprDefault);
   var _ap = String(d.akta_pendirian||'').replace(/\s+$/,'');
   /* "yang didirikan berdasarkan" + titik akhir = TEMPLATE BAKU pratinjau (bukan teks
      input). Buang bila terlanjur diketik / tersimpan pada data lama, lalu pasang sekali
@@ -14316,13 +14330,21 @@ function spkBuildCtx(data){
   _ap = _ap.replace(/^\s*yang didirikan berdasarkan\s+/i, '');
   _ap = _ap.replace(/^\s*Akta Notaris/, 'akta Notaris');           /* rapikan kapital "Akta" data lama */
   _ap = _ap.replace(/[Aa]kta\s*-\s*[Aa]kta/g, 'akta-akta');        /* "Akta - akta"/"Akta-akta" → "akta-akta" */
+  /* Tanpa akta perubahan -> buang frasa "beserta akta-akta Perubahannya"
+     (termasuk spasi sebelum "beserta"); titik/spasi akhir dirapikan di bawah. */
+  if(!_adaAP) _ap = _ap.replace(/\s*beserta\s+akta-akta\s+perubahan(?:nya)?\b\.?/i, '');
   _ap = _ap.replace(/[.\s]+$/,'');                                 /* titik/spasi akhir dibuang: titik dari template */
   if(_ap) _ap = 'yang didirikan berdasarkan ' + _ap + '.';
   ctx.p2_akta = (_jp? _jp+' ':'') + _ap;
-  /* Template preamble sudah memuat kata "berdasarkan" sebelum {{p2_akta_jabatan}},
-     jadi buang "berdasarkan" di awal nilai (bila ada) agar tidak jadi
-     "berdasarkan berdasarkan" — berlaku juga utk kontrak lama yg sudah tersimpan. */
-  ctx.p2_akta_jabatan = String(d.akta_perubahan||'').replace(/^\s*berdasarkan\s+/i, '').replace(/^\s*Akta Notaris/, 'akta Notaris');
+  /* Rincian Akta Perubahan hanya ditulis bila "Akta Perubahan? = Ya" DAN isinya
+     bukan teks default. Bila tidak, kosong -> klausul " berdasarkan ..." pada
+     preamble otomatis hilang (kata "berdasarkan" kini menjadi bagian dari nilai). */
+  if(_adaAP && !_aprDefault){
+    var _aprv = _aprRaw.replace(/^\s*berdasarkan\s+/i, '').replace(/^\s*Akta Notaris/, 'akta Notaris').replace(/[.\s]+$/,'');
+    ctx.p2_akta_jabatan = ' berdasarkan ' + _aprv;
+  }else{
+    ctx.p2_akta_jabatan = '';
+  }
 
   // ---- Pembayaran ----
   ctx.bank_nama = d.nama_bank || '';
@@ -14602,7 +14624,27 @@ let spkState=null;
 let spkStep=1;
 /* SK Pimpinan Unit — ambil data dari kontrak TERAKHIR DISIMPAN (records_spk urut
    terbaru lebih dulu). Dipakai sebagai nilai bawaan pada kontrak baru sehingga
-   tidak perlu mengetik ulang; hanya diubah bila "Perubahan?" = Ya. */
+   tidak perlu mengetik ulang; hanya diubah bila "Perubahan?" = Ya.
+   Nilai bawaan ini juga DISIMPAN sebagai cadangan lokal (localStorage) supaya
+   tetap muncul walau daftar kontrak (records_spk) belum selesai dimuat dari
+   Supabase saat form kontrak baru dibuka — mencegah default "kadang muncul
+   kadang tidak". */
+const SPK_SK_DEF_CACHE='spk_sk_def_v1';
+function spkSkCacheSave(o){
+  try{
+    if(o && SPK_SK_KEYS.some(k=>String(o[k]||'').trim()!=='')){
+      localStorage.setItem(SPK_SK_DEF_CACHE, JSON.stringify(o));
+    }
+  }catch(e){}
+}
+function spkSkCacheLoad(){
+  try{
+    const s=localStorage.getItem(SPK_SK_DEF_CACHE);
+    if(!s) return null;
+    const o=JSON.parse(s);
+    return (o && typeof o==='object') ? o : null;
+  }catch(e){ return null; }
+}
 function spkLastSkData(){
   const out={};
   const list=(typeof records_spk!=='undefined' && Array.isArray(records_spk))?records_spk:[];
@@ -14612,9 +14654,12 @@ function spkLastSkData(){
     const ada=SPK_SK_KEYS.some(k=>String(d[k]||'').trim()!=='');
     if(!ada) continue;
     SPK_SK_KEYS.forEach(k=>{ out[k]=d[k]!=null?d[k]:''; });
+    spkSkCacheSave(out);            // simpan cadangan lokal
     return out;
   }
-  return out;
+  // records_spk belum siap / kosong -> pakai cadangan terakhir yang tersimpan lokal
+  const cached=spkSkCacheLoad();
+  return cached || out;
 }
 /* Terapkan nilai bawaan SK Pimpinan Unit (data terakhir disimpan) ke sebuah objek data */
 function spkApplyLastSk(data){
@@ -14634,6 +14679,13 @@ function spkBlankState(){
 function spkRecordToState(rec){
   const base=spkBlankState();
   const data=Object.assign({}, base.data, (rec && rec.data && typeof rec.data==='object')?rec.data:{});
+  // Kompatibilitas kontrak lama (tanpa field "Akta Perubahan?"): simpulkan pilihannya
+  // dari isi Rincian Akta Perubahan — sudah diisi (bukan default) -> "Ya", selain itu
+  // "Tidak" — agar tampilan form & pratinjau tetap konsisten.
+  if(!data.ada_akta_perubahan){
+    const _apr=String(data.akta_perubahan||'').trim();
+    data.ada_akta_perubahan = (_apr!=='' && _apr!==String(SPK_DEF_AKTA_PERUBAHAN).trim()) ? 'Ya' : 'Tidak';
+  }
   let sel;
   if(rec && Array.isArray(rec.klausul) && rec.klausul.length){ sel=rec.klausul.map(k=>String(k.id)); }
   else sel=base.sel;
@@ -15321,7 +15373,9 @@ function spkFieldInput(f){
   }
   if(f.t==='select'){
     const opts=(f.opts||[]).map(o=>'<option value="'+fkEsc(o)+'"'+((v===o)?' selected':'')+'>'+fkEsc(o)+'</option>').join('');
-    const fn = (f.k==='perubahan') ? 'spkSetPerubahan(this.value)' : 'spkSet(\''+f.k+'\',this.value);renderSpkSusun()';
+    const fn = (f.k==='perubahan') ? 'spkSetPerubahan(this.value)'
+             : (f.k==='ada_akta_perubahan') ? 'spkSetAdaAktaPerubahan(this.value)'
+             : 'spkSet(\''+f.k+'\',this.value);renderSpkSusun()';
     return '<div class="field"'+span+'><label>'+spkLbl(f)+'</label>'+
       '<select onchange="'+fn+'"><option value="">— pilih —</option>'+opts+'</select></div>';
   }
@@ -15342,6 +15396,20 @@ function spkFieldInput(f){
   }
   if(f.t==='textarea'){
     if(f.hl){
+      // Rincian Akta Perubahan: hanya dapat diisi bila "Akta Perubahan? = Ya".
+      // Selain itu -> DIKUNCI dalam keadaan default (readonly, kursor not-allowed,
+      // tidak tampil di pratinjau/cetak).
+      if(f.k==='akta_perubahan' && String(spkState.data.ada_akta_perubahan||'')!=='Ya'){
+        spkEnsureHlStyle();
+        const dv=SPK_DEF_AKTA_PERUBAHAN;
+        return '<div class="field"'+span+'><label>'+spkLbl(f)+'</label>'+
+          '<div class="spk-hlwrap">'+
+            '<div class="spk-hl-backdrop" id="spk-hlbd-'+f.k+'" aria-hidden="true">'+spkAktaHlHtml(dv)+'</div>'+
+            '<textarea class="spk-hl-input" rows="3" spellcheck="false" readonly '+
+              'style="background:#f3f5f7;cursor:not-allowed" '+
+              'title="Terisi otomatis — pilih Akta Perubahan? = Ya untuk mengisi">'+fkEsc(dv)+'</textarea>'+
+          '</div></div>';
+      }
       // Textarea dengan penanda placeholder: bagian "( ... )" ditampilkan MERAH
       // (belum diisi); setelah diganti isinya (tanda kurung hilang) menjadi HITAM.
       spkEnsureHlStyle();
@@ -15383,6 +15451,17 @@ function spkSetPerubahan(v){
   if(!spkState) return;
   spkState.data.perubahan=v;
   if(String(v)!=='Ya') spkApplyLastSk(spkState.data);
+  spkRefreshAuto();
+  renderSpkSusun();
+}
+/* "Akta Perubahan?" pada Informasi Penyedia:
+   - Ya    -> field Rincian Akta Perubahan dibuka untuk diisi
+   - selain Ya -> field dikunci & dikembalikan ke keadaan default (tak dipakai;
+                  otomatis tidak tampil di pratinjau/cetak) */
+function spkSetAdaAktaPerubahan(v){
+  if(!spkState) return;
+  spkState.data.ada_akta_perubahan=v;
+  if(String(v)!=='Ya') spkState.data.akta_perubahan = SPK_DEF_AKTA_PERUBAHAN;
   spkRefreshAuto();
   renderSpkSusun();
 }
