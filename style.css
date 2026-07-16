@@ -3449,3 +3449,257 @@ table.hps-uraian.spk-lamp-tbl td.c-no{
 @media (prefers-reduced-motion:reduce){
   .table-wrap, .table-wrap tbody tr{ transition:none }
 }
+
+/* ============================================================
+   EFEK 3D — DASHBOARD
+   Berbeda dari tabel daftar: di sini `transform` AMAN dipakai karena tidak ada
+   position:sticky di dalam kartu/panel (kartu bahkan sudah memakai translateY
+   saat hover). Jadi kedalamannya nyata: kartu dimiringkan mengikuti kursor
+   dengan rotateX/rotateY, bukan sekadar bayangan.
+   ============================================================ */
+
+/* Ruang 3D untuk tiap kartu. perspective di elemen induk (.cards) akan membuat
+   semua kartu berbagi SATU titik hilang, sehingga kartu di tepi tampak miring
+   walau tidak disentuh. Karena itu perspective dipasang per-kartu lewat
+   transform sendiri (lihat .card.tilt-on). */
+.cards{ perspective:none }
+
+/* Bidang kartu & isinya berada di ruang 3D yang sama, supaya ikon/angka ikut
+   terangkat saat kartu dimiringkan (parallax). */
+#view-dashboard .card{
+  transform-style:preserve-3d;
+  will-change:transform;
+}
+
+/* Nilai default variabel tilt: 0 = datar. JS hanya mengubah angkanya. */
+#view-dashboard .card{
+  --rx:0deg;    /* rotateX — dari posisi kursor vertikal   */
+  --ry:0deg;    /* rotateY — dari posisi kursor horizontal */
+  --lift:0px;   /* angkat  */
+  --gx:50%;     /* titik kilau  */
+  --gy:50%;
+}
+
+/* Saat kursor di atas kartu: miring + terangkat.
+   translateZ pada anak-anaknya memberi parallax berlapis. */
+/* .card.card.tilt-on = spesifisitas dinaikkan (0,3,1) agar menang atas
+   `#view-dashboard .card:hover{transform:translateY(-4px)}` (baris ~1515) yang
+   spesifisitasnya sama (0,2,1) tetapi tertulis lebih belakang — tanpa ini
+   transform tilt tidak pernah berlaku dan kartu hanya bergeser naik. */
+#view-dashboard .card.card.tilt-on{
+  /* !important wajib: `#view-dashboard .card:hover` (baris ~2414) memakai
+     `transform:translateY(-2px) !important` yang akan mengalahkan aturan ini
+     berapa pun spesifisitasnya. Tanpa !important, kartu hanya bergeser naik
+     2px dan tilt tidak pernah terlihat. Hal yang sama berlaku untuk box-shadow
+     & border-color di aturan itu. */
+  transform:perspective(760px) rotateX(var(--rx)) rotateY(var(--ry)) translateY(var(--lift)) scale(1.018) !important;
+  box-shadow:
+    0 2px 4px rgba(16,40,50,.06),
+    0 8px 16px rgba(16,40,50,.08),
+    0 22px 44px rgba(16,40,50,.14),
+    0 40px 80px rgba(9,94,102,.12) !important;
+  border-color:#cfdde0 !important;
+  z-index:3;
+}
+/* transition hanya saat kembali datar; ketika mengikuti kursor harus instan
+   agar tidak terasa "molor" tertinggal dari gerakan mouse. */
+#view-dashboard .card{ transition:transform .5s cubic-bezier(.2,.8,.2,1), box-shadow .3s ease, border-color .3s ease }
+#view-dashboard .card.tilt-move{ transition:box-shadow .3s ease, border-color .3s ease }
+
+/* Kilau (specular): titik terang lembut mengikuti kursor — inilah yang membuat
+   permukaan terasa seperti kaca/logam, bukan kertas datar. */
+/* `#view-dashboard .card::after{display:none !important}` (baris ~2410)
+   mematikan pseudo ini, jadi display harus dinyalakan ulang dengan !important. */
+#view-dashboard .card::after{
+  content:"";
+  display:block !important;
+  position:absolute; inset:0;
+  border-radius:inherit;
+  background:radial-gradient(340px circle at var(--gx) var(--gy),
+             rgba(255,255,255,.55), rgba(255,255,255,.12) 38%, transparent 62%);
+  opacity:0;
+  transition:opacity .3s ease;
+  pointer-events:none;
+}
+#view-dashboard .card.tilt-on::after{ opacity:1 }
+
+/* Parallax: makin "dekat" (translateZ besar), makin terasa melayang.
+   Ikon sudah punya aturan hover `transform:translateY(-1px) scale(1.04)
+   !important` (baris ~2442). transform tidak bertumpuk, jadi translateZ harus
+   DIGABUNG dengan nilai itu — dan ikut memakai !important, kalau tidak aturan
+   lama yang menang dan parallax ikon tidak muncul sama sekali. */
+#view-dashboard .card .card-ic{ transition:transform .5s cubic-bezier(.2,.8,.2,1) }
+#view-dashboard .card.tilt-on .card-ic{
+  transform:translateY(-1px) scale(1.04) translateZ(38px) !important;
+}
+#view-dashboard .card .v{ transition:transform .5s cubic-bezier(.2,.8,.2,1) }
+#view-dashboard .card.tilt-on .v{ transform:translateZ(26px) }
+#view-dashboard .card.tilt-on .k,
+#view-dashboard .card.tilt-on .sub{ transform:translateZ(14px) }
+#view-dashboard .card .k,
+#view-dashboard .card .sub{ transition:transform .5s cubic-bezier(.2,.8,.2,1) }
+/* Garis aksen kiri ikut maju → terlihat setebal sisi kartu */
+#view-dashboard .card .accent{ transition:transform .5s cubic-bezier(.2,.8,.2,1) }
+#view-dashboard .card.tilt-on .accent{ transform:translateZ(20px) }
+
+/* Panel grafik: kedalaman lebih kalem (isinya grafik, tidak boleh mengganggu
+   keterbacaan) — hanya terangkat & bayangan berlapis, tanpa miring. */
+#view-dashboard .split .panel{
+  transition:transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s ease;
+  box-shadow:
+    0 1px 2px rgba(16,40,50,.05),
+    0 4px 10px rgba(16,40,50,.05),
+    0 12px 28px rgba(16,40,50,.07),
+    inset 0 1px 0 rgba(255,255,255,.85);
+}
+#view-dashboard .split .panel:hover{
+  transform:translateY(-4px);
+  box-shadow:
+    0 2px 4px rgba(16,40,50,.06),
+    0 10px 22px rgba(16,40,50,.09),
+    0 26px 56px rgba(16,40,50,.13),
+    inset 0 1px 0 rgba(255,255,255,.85);
+}
+/* Judul panel timbul tipis */
+#view-dashboard .panel-head{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9), 0 1px 0 rgba(16,40,50,.05);
+}
+
+/* Hormati "kurangi animasi": tilt & angkat dimatikan total. */
+@media (prefers-reduced-motion:reduce){
+  #view-dashboard .card.tilt-on{ transform:none; scale:1 }
+  #view-dashboard .card.tilt-on .card-ic{ transform:scale(.9) }
+  #view-dashboard .card.tilt-on .v,
+  #view-dashboard .card.tilt-on .k,
+  #view-dashboard .card.tilt-on .sub,
+  #view-dashboard .card.tilt-on .accent{ transform:none }
+  #view-dashboard .card::after{ display:none }
+  #view-dashboard .split .panel:hover{ transform:none }
+  #view-dashboard .card,#view-dashboard .split .panel{ transition:none }
+}
+
+/* ============================================================
+   EFEK 3D — MENU INPUT & IKON
+   Prinsip: makin sering dibaca, makin halus efeknya.
+   - Field input  -> relief cekung tipis saja. Miring/melayang pada kotak isian
+                     membuat teks yang sedang diketik ikut miring & melelahkan.
+   - Kartu form   -> terangkat berlapis (kertas di atas meja).
+   - Ikon & tombol-> boleh 3D nyata: kecil, tidak dibaca, jadi aman.
+   Dokumen cetak (.fkl-doc) & tabel pengisian TIDAK disentuh.
+   ============================================================ */
+
+/* ---------- Kartu form: kertas terangkat ---------- */
+.form-card{
+  box-shadow:
+    0 1px 2px rgba(16,40,50,.05),
+    0 4px 10px rgba(16,40,50,.05),
+    0 12px 28px rgba(16,40,50,.07),
+    inset 0 1px 0 rgba(255,255,255,.9);
+  transition:box-shadow .3s ease, transform .3s cubic-bezier(.2,.8,.2,1);
+}
+.form-card:hover{
+  box-shadow:
+    0 2px 4px rgba(16,40,50,.06),
+    0 8px 18px rgba(16,40,50,.07),
+    0 20px 44px rgba(16,40,50,.10),
+    inset 0 1px 0 rgba(255,255,255,.9);
+}
+
+/* Judul seksi: sedikit timbul */
+.form-section-title{ text-shadow:0 1px 0 rgba(255,255,255,.85) }
+
+/* ---------- Field: cekung halus (inset), bukan melayang ----------
+   Inset membuat kotak isian terasa "tenggelam" ke dalam kartu — arah kebalikan
+   dari tombol yang timbul, sehingga hierarkinya terbaca tanpa mengganggu teks. */
+.field input,.field select,.field textarea{
+  box-shadow:
+    inset 0 1px 2px rgba(16,40,50,.07),
+    inset 0 0 0 1px rgba(255,255,255,.5),
+    0 1px 0 rgba(255,255,255,.75);
+  transition:box-shadow .2s ease, border-color .2s ease, transform .2s ease;
+}
+/* Saat diisi: cekungan dilepas & diberi cincin fokus supaya terasa "terangkat
+   mendekat" ke pengguna. Aturan fokus lama tetap berlaku di bawahnya. */
+.field input:focus,.field select:focus,.field textarea:focus{
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.9),
+    0 0 0 3px rgba(14,124,134,.15),
+    0 4px 10px rgba(16,40,50,.10);
+}
+/* Field error: cekungan merah, senada aturan .field-error yang sudah ada */
+.field.field-error input,.field.field-error select{
+  box-shadow:
+    inset 0 1px 3px rgba(211,58,58,.14),
+    0 1px 0 rgba(255,255,255,.7);
+}
+
+/* ---------- Tombol: timbul & tertekan ---------- */
+.btn{
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.28),
+    inset 0 -1px 0 rgba(0,0,0,.12),
+    0 2px 5px rgba(16,40,50,.16);
+}
+.btn:hover{
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.3),
+    0 6px 16px rgba(16,40,50,.22);
+}
+/* Tertekan: bergerak turun + bayangan dalam = terasa seperti tombol fisik */
+.btn:active{
+  transform:translateY(1px);
+  box-shadow:
+    inset 0 2px 5px rgba(0,0,0,.22),
+    0 1px 1px rgba(16,40,50,.12);
+}
+.btn svg{ transition:transform .22s cubic-bezier(.34,1.56,.64,1) }
+.btn:hover svg{ transform:translateZ(6px) scale(1.1) }
+
+/* ---------- IKON ----------
+   Ikon aksi (.act) sudah punya angkat+skala saat hover (baris ~1311); di sini
+   hanya ditambah relief & efek tertekan. `[disabled]` dikecualikan karena
+   aturan `.pn-actions .act[disabled]{transform:none!important}` (baris ~1929)
+   sengaja mematikannya. */
+.act:not([disabled]){
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.3),
+    inset 0 -1px 0 rgba(0,0,0,.14),
+    0 2px 6px rgba(16,40,50,.18);
+}
+.act:not([disabled]):active{
+  transform:translateY(-1px) scale(1.04);
+  box-shadow:
+    inset 0 2px 5px rgba(0,0,0,.26),
+    0 1px 2px rgba(16,40,50,.12);
+}
+
+/* Chip ikon pada kartu (.card-ic) di luar dashboard */
+.card-ic{ transition:transform .3s cubic-bezier(.34,1.56,.64,1), box-shadow .3s ease }
+
+/* Ikon menu atas: sedikit maju & memutar saat disentuh */
+.topnav-link svg,.topnav-item svg,.topnav-trigger svg{
+  transition:transform .28s cubic-bezier(.34,1.56,.64,1);
+}
+.topnav-link:hover svg,.topnav-item:hover svg,.topnav-trigger:hover svg{
+  transform:translateZ(8px) scale(1.14) rotate(-4deg);
+}
+/* Ikon menu Pengaturan */
+.settings-item:hover svg{ transform:scale(1.12) }
+.settings-item svg{ transition:color .15s ease, transform .22s cubic-bezier(.34,1.56,.64,1) }
+/* Gerigi berputar saat disentuh */
+.settings-gear{ transition:transform .4s cubic-bezier(.34,1.56,.64,1) }
+.settings-gear:hover{ transform:rotate(40deg) }
+
+/* Ikon di judul seksi form & panel: timbul tipis */
+.form-section-title svg,.fkl-sec-h svg{ filter:drop-shadow(0 1px 2px rgba(16,40,50,.22)) }
+
+/* ---------- Hormati "kurangi animasi" ---------- */
+@media (prefers-reduced-motion:reduce){
+  .form-card,.form-card:hover,
+  .btn:active,.act:not([disabled]):active{ transform:none }
+  .btn:hover svg,
+  .topnav-link:hover svg,.topnav-item:hover svg,.topnav-trigger:hover svg,
+  .settings-item:hover svg,.settings-gear:hover{ transform:none }
+  .form-card,.field input,.field select,.field textarea,
+  .btn,.btn svg,.act,.card-ic,.settings-gear{ transition:none }
+}
