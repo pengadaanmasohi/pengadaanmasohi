@@ -1810,7 +1810,10 @@ function initDashSound(){
   var root=document.getElementById('view-dashboard');
   if(!root || root.__soundReady) return;
   root.__soundReady=true;
-  var SEL='#dash-cards .card, #dash-nilai .card, .bar-row';
+  /* Bagian yang berbunyi: kartu statistik + DUA panel grafik ("Pekerjaan per
+     Bidang" & "Nilai Pekerjaan per Bidang"). Baris bidang pelaksana (.bar-row)
+     TIDAK lagi berbunyi — cukup saat berpindah antar dua panel tersebut. */
+  var SEL='#dash-cards .card, #dash-nilai .card, .split > .panel';
   root.addEventListener('pointerover', function(ev){
     if(ev.pointerType && ev.pointerType!=='mouse') return;          /* lewati sentuh */
     var part=ev.target.closest ? ev.target.closest(SEL) : null;
@@ -1819,12 +1822,71 @@ function initDashSound(){
     var now=(window.performance&&performance.now)?performance.now():Date.now();
     if(now-_dashSoundT<40) return;                                  /* redam bila terlalu cepat */
     _dashSoundT=now;
-    dashBlip(part.classList.contains('bar-row') ? 452 : 664);       /* bar & kartu beda nada */
+    dashBlip(part.classList.contains('panel') ? 520 : 664);         /* panel grafik & kartu beda nada */
   }, {passive:true});
   root.addEventListener('pointerout', function(ev){
     var to=ev.relatedTarget;
     if(!to || !(to.closest && to.closest(SEL))) _dashSoundPart=null; /* keluar bagian → boleh berbunyi lagi saat masuk */
   }, {passive:true});
+}
+
+/* ============================================================
+   EFEK 3D + SUARA HOVER MENU ATAS (topnav)
+   Setiap item menu (link, trigger grup, item dropdown) memiringkan diri
+   mengikuti kursor (tilt perspektif + terangkat/translateZ) dan mengeluarkan
+   bunyi halus saat kursor mengenainya. Memakai delegasi event pada #topnav
+   (item bisa muncul/hilang menurut peran), dan mesin audio yang sama dgn
+   dashboard (dashBlip). Sentuh & prefers-reduced-motion dilewati untuk tilt. */
+const TN_SEL='.topnav-link, .topnav-trigger, .topnav-item, .topnav-subtrigger';
+const TN_TILT=10;
+let _tnEl=null, _tnRaf=0, _tnPend=null, _tnSoundEl=null;
+function topnavFxSupported(){
+  try{
+    if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+    return window.matchMedia('(hover:hover) and (pointer:fine)').matches;
+  }catch(e){ return false; }
+}
+function topnavTiltApply(){
+  _tnRaf=0; var p=_tnPend; if(!p||!p.el) return;
+  var px=(p.x/p.w)-0.5, py=(p.y/p.h)-0.5;                 /* -0.5 .. 0.5 */
+  var ry=(px*TN_TILT*2).toFixed(2), rx=(-py*TN_TILT*2).toFixed(2);
+  p.el.style.transform='perspective(520px) translateY(-3px) translateZ(10px) rotateX('+rx+'deg) rotateY('+ry+'deg)';
+}
+function topnavTiltReset(el){ if(el) el.style.transform=''; }
+function initTopnavFx(){
+  var root=document.getElementById('topnav');
+  if(!root || root.__fxReady) return;
+  root.__fxReady=true;
+  /* Suara saat masuk item menu baru */
+  root.addEventListener('pointerover', function(ev){
+    if(ev.pointerType && ev.pointerType!=='mouse') return;
+    var it=ev.target.closest ? ev.target.closest(TN_SEL) : null;
+    if(!it || it===_tnSoundEl) return;
+    _tnSoundEl=it;
+    try{ dashBlip(600); }catch(e){}
+  }, {passive:true});
+  root.addEventListener('pointerout', function(ev){
+    var to=ev.relatedTarget;
+    if(!to || !(to.closest && to.closest(TN_SEL))) _tnSoundEl=null;
+  }, {passive:true});
+  /* Tilt 3D mengikuti kursor */
+  root.addEventListener('pointermove', function(ev){
+    if(!topnavFxSupported()) return;
+    if(ev.pointerType && ev.pointerType!=='mouse') return;
+    var it=ev.target.closest ? ev.target.closest(TN_SEL) : null;
+    if(!it){ if(_tnEl){ topnavTiltReset(_tnEl); _tnEl=null; } return; }
+    if(it!==_tnEl){ if(_tnEl) topnavTiltReset(_tnEl); _tnEl=it; }
+    var r=it.getBoundingClientRect();
+    _tnPend={el:it, x:ev.clientX-r.left, y:ev.clientY-r.top, w:r.width, h:r.height};
+    if(!_tnRaf) _tnRaf=requestAnimationFrame(topnavTiltApply);
+  }, {passive:true});
+  root.addEventListener('pointerleave', function(){
+    if(_tnEl){ topnavTiltReset(_tnEl); _tnEl=null; }
+  }, {passive:true});
+}
+if(typeof document!=='undefined'){
+  if(document.readyState!=='loading'){ try{ initTopnavFx(); }catch(e){} }
+  else document.addEventListener('DOMContentLoaded', function(){ try{ initTopnavFx(); }catch(e){} });
 }
 
 function renderDashboard(){
