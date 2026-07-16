@@ -14126,7 +14126,7 @@ const SPK_DEF_MAKSUD="Adapun maksud dan tujuan dilaksanakannya pekerjaan ini ada
 /* Teks bawaan (default) Rincian Akta Pendirian & Rincian Akta Perubahan.
    Tetap dapat disunting bebas oleh pengguna pada form Data Mail Merge. */
 const SPK_DEF_AKTA_PENDIRIAN = 'akta Notaris No. (no. akta..) tanggal (tgl. akta...) dibuat dihadapan Notaris (nama notaris...), yang disahkan berdasarkan Surat Keputusan Menteri Hukum dan Hak Asasi Manusia No. (no. SK...) tanggal (tgl SK...) beserta akta-akta Perubahannya';
-const SPK_DEF_AKTA_PERUBAHAN = 'akta Notaris No. (no. akta...) tanggal (tgl. akta...) dibuat dihadapan (nama notaris...), yang disahkan berdasarkan Surat Keputusan Menteri Hukum dan Hak Asasi Manusia No. (no. SK...) tanggal (tgl. SK...)';
+const SPK_DEF_AKTA_PERUBAHAN = 'akta Notaris No. (no. akta...) tanggal (tgl. akta...) dibuat dihadapan Notaris (nama notaris...), yang disahkan berdasarkan Surat Keputusan Menteri Hukum dan Hak Asasi Manusia No. (no. SK...) tanggal (tgl. SK...)';
 /* Field SK Pimpinan Unit — dipakai untuk fitur "default = data terakhir disimpan" */
 const SPK_SK_KEYS = ['nama_pengguna','jabatan_pengguna','no_sk','tgl_sk','nama_unit','singkatan_unit','lokasi_unit'];
 
