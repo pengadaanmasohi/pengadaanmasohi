@@ -35,6 +35,20 @@
 @media print{#spk-lh-probe{display:none!important}}
 </style>
 
+<!-- Inter di-host lokal — KHUSUS Susun Kontrak. Blok ini HANYA mendefinisikan
+     font "Inter Local"; tidak mengubah tampilan menu lain karena tak ada menu
+     lain yang memakainya. Dipakai oleh kotak ukur baris (#spk-lh-probe) agar
+     jarak baris dokumen kontrak dihitung dari Inter yang benar walau offline.
+     Taruh file .woff2 di folder  fonts/  di samping index.html. -->
+<style id="spk-inter-face">
+@font-face{font-family:'Inter Local';font-style:normal;font-weight:400;font-display:swap;src:url('fonts/Inter-Regular.woff2') format('woff2')}
+@font-face{font-family:'Inter Local';font-style:normal;font-weight:500;font-display:swap;src:url('fonts/Inter-Medium.woff2') format('woff2')}
+@font-face{font-family:'Inter Local';font-style:normal;font-weight:600;font-display:swap;src:url('fonts/Inter-SemiBold.woff2') format('woff2')}
+@font-face{font-family:'Inter Local';font-style:normal;font-weight:700;font-display:swap;src:url('fonts/Inter-Bold.woff2') format('woff2')}
+@font-face{font-family:'Inter Local';font-style:italic;font-weight:400;font-display:swap;src:url('fonts/Inter-Italic.woff2') format('woff2')}
+@font-face{font-family:'Inter Local';font-style:italic;font-weight:600;font-display:swap;src:url('fonts/Inter-SemiBoldItalic.woff2') format('woff2')}
+</style>
+
 <!-- PENTING: blok di bawah HARUS tetap inline. JS membacanya lewat
      document.getElementById('fkl-doc-css').textContent untuk menyusun
      CSS dokumen Cetak/PDF. Jika dipindah ke style.css, semua hasil
