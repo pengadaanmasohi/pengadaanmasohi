@@ -505,6 +505,11 @@ td.cell-center{text-align:center}
 }
 /* Toolbar "bare" (Penetapan & Kelengkapan) tidak punya latar → jangan beri bayangan */
 #view-pn-lihat .toolbar.pn-toolbar-bare,#view-fkl-view .toolbar.pn-toolbar-bare{box-shadow:none}
+/* Penetapan Nomor (menu tunggal): baris Cari melebar penuh di antara judul &
+   tabel; tombol "Ambil Nomor" menempel di kanan. */
+#view-pn-lihat .toolbar.pn-lihat-toolbar{width:100%;margin-left:0;margin-right:0}
+#view-pn-lihat .toolbar.pn-lihat-toolbar .pn-lihat-searchfield{flex:1 1 auto}
+#view-pn-lihat .toolbar.pn-lihat-toolbar #pn-lihat-search{min-width:0;max-width:none;width:100%}
 
 /* ===== Penetapan Nomor / Kelengkapan — Lihat: header rapi & kotak Cari lebih premium ===== */
 #view-pn-lihat .page-head{
@@ -1173,6 +1178,18 @@ tbody.tbody-reveal>tr:nth-child(10){animation-delay:.29s}
   color:#b08400;font-weight:700;font-size:10.5px;letter-spacing:.2px;
   white-space:nowrap;overflow:hidden;pointer-events:none;z-index:2}
 .field.locked .lock-overlay svg{width:11px;height:11px;flex:0 0 auto}
+/* Field data terkunci / otomatis pada form Input Data (Monitoring, Pengadaan
+   Langsung, Tender): setiap kolom yang tidak dapat diisi (readonly / disabled —
+   mis. total otomatis Barang+Jasa, PPN) ditampilkan tidak dapat diinput dengan
+   kursor "not-allowed" & tampilan abu-abu terkunci. */
+#work-form-fields input[readonly], #work-form-fields textarea[readonly],
+#work-form-fields input:disabled, #work-form-fields select:disabled, #work-form-fields textarea:disabled,
+#form-pl-fields input[readonly], #form-pl-fields textarea[readonly],
+#form-pl-fields input:disabled, #form-pl-fields select:disabled, #form-pl-fields textarea:disabled,
+#form-tender-fields input[readonly], #form-tender-fields textarea[readonly],
+#form-tender-fields input:disabled, #form-tender-fields select:disabled, #form-tender-fields textarea:disabled{
+  cursor:not-allowed;background:#f1f4f6;color:#6b7a80;border-style:dashed;
+}
 /* Chip KODE placeholder pada label field mail-merge SPK */
 .spk-code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10px;font-weight:600;color:#0E7C86;background:#e6f4f5;border:1px solid #cfe8ea;border-radius:5px;padding:1px 5px;margin-left:6px;cursor:pointer;white-space:nowrap;vertical-align:middle;transition:background .12s}
 .spk-code:hover{background:#d3ecee}
@@ -1730,8 +1747,8 @@ tr.jp-row-hi td{background:#f2ecd9}
 /* Kolom Awal / Akhir: input Tanggal + Jam berdampingan */
 .jp-dt{white-space:nowrap}
 .jp-dt input{border:1px solid var(--line);border-radius:7px;padding:5px 7px;font-size:11px;background:#fff;width:auto;display:inline-block}
-.jp-dt .jp-dt-tgl{width:126px;margin-right:4px}
-.jp-dt .jp-dt-jam{width:66px;padding-left:6px;padding-right:4px}
+.jp-dt .jp-dt-tgl{width:108px;margin-right:4px}
+.jp-dt .jp-dt-jam{width:86px;padding-left:6px;padding-right:4px}
 .jp-awal-val{font-weight:700;color:#0d2a30;font-size:11.5px;white-space:nowrap}
 .jp-aksi{display:flex;gap:4px;justify-content:center}
 .jp-aksi button{border:none;background:var(--teal-soft);color:var(--teal-dark);border-radius:8px;width:26px;height:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
