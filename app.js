@@ -15278,7 +15278,7 @@ function spkFieldInput(f){
   const spkDispDate=(x)=>{ const p=String(x||'').split('-'); return (p.length===3)?(p[2]+'/'+p[1]+'/'+p[0]):(x||''); };
   const lockedField=(disp)=> '<div class="field"'+span+'><label>'+spkLbl(f)+'</label>'+
     '<input type="text" id="spk-fld-'+f.k+'" value="'+fkEsc(disp)+'" readonly '+
-    'style="background:#f3f5f7;color:#2b2f36;cursor:default" '+
+    'style="background:#f3f5f7;color:#2b2f36;cursor:not-allowed" '+
     'title="Terisi otomatis — tidak dapat diubah di sini"></div>';
   // Nilai Pekerjaan (+ PPN): TERKUNCI, otomatis = Total Nilai Lampiran (setelah PPN).
   if(f.k==='nilai_pekerjaan'){
@@ -15288,7 +15288,7 @@ function spkFieldInput(f){
     var _disp=(_nv>0)?('Rp '+Number(_nv).toLocaleString('id-ID')):'';
     return '<div class="field"'+span+'><label>'+spkLbl(f)+'</label>'+
       '<input type="text" id="spk-fld-'+f.k+'" value="'+fkEsc(_disp)+'" readonly '+
-      'style="background:#f3f5f7;color:#2b2f36;cursor:default" '+
+      'style="background:#f3f5f7;color:#2b2f36;cursor:not-allowed" '+
       'title="Terisi otomatis dari Total Nilai Lampiran (setelah PPN) — tidak dapat diubah di sini"></div>';
   }
   // No. Kontrak: tandai MERAH + pesan bila nomor sudah pernah disimpan/dipakai.
