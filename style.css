@@ -3302,3 +3302,9 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
 /* Sub-tabel lain di menu diselaraskan ke hairline yang sama */
 .pnw-periksa-table td{border-bottom-color:#d5e1e4}
 table.hps-sum td{border-bottom-color:#d5e1e4}
+
+/* Sel Lampiran SPK yang terkunci (struktur mengikuti Perhitungan HPS tertaut) */
+.hps-uraian td.is-locked input,
+.hps-uraian td.is-locked textarea{
+  background:#eef4f5;color:#41565c;cursor:not-allowed;border-color:#d3e0e2;
+}
