@@ -1165,12 +1165,13 @@ tbody.tbody-reveal>tr:nth-child(10){animation-delay:.29s}
 .field.locked input,.field.locked select{background:#f1f4f6;color:#9aa7ad;cursor:not-allowed;border-style:dashed}
 .field .lock-note{font-size:8.5px;color:#b08400;font-weight:600;display:none;align-items:center;gap:3px}
 .field.locked .lock-note{display:flex}
-/* "Data Terkunci" ditaruh menimpa (menutup total) area input — di TENGAH field,
-   bukan di atas label — sehingga placeholder "— Pilih —" & petunjuk pengisian tertimpa. */
+/* Field terkunci: TIDAK lagi menampilkan overlay "Data terkunci". Cukup kotak
+   input abu-abu bergaris putus-putus dengan kursor not-allowed (lihat aturan
+   .field.locked input,.field.locked select di atas). */
 .field.locked{position:relative}
 .lock-overlay{display:none}
 .field.locked .lock-overlay{
-  display:flex;align-items:center;justify-content:center;gap:5px;
+  display:none;align-items:center;justify-content:center;gap:5px;
   position:absolute;left:0;right:0;bottom:0;box-sizing:border-box;
   line-height:18px;padding:10px 12px;
   border:1px dashed #d3b25a;border-radius:11px;
