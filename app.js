@@ -8601,6 +8601,7 @@ function pnwBuildDocHtml(sk){
     '<div class="fkl-sec-h"><span class="rn">B</span>Pemeriksaan Kelengkapan Dokumen Penawaran</div>'+
     penyBlocks+
 
+    '<div class="fkl-doc-tail">'+
     '<div class="fkl-sec-h"><span class="rn">C</span>Hasil Pemeriksaan</div>'+
     hasilBlock+
 
@@ -8609,6 +8610,7 @@ function pnwBuildDocHtml(sk){
       '<table class="ttd ttd-single"><tbody><tr>'+
         '<td><div class="role">Diperiksa oleh,</div><div class="role2">Pejabat Pelaksana Pengadaan</div><div class="gap"></div><div class="nm nm-up">'+fkEsc(st.pejabat?String(st.pejabat).trim().toUpperCase():'(..........................)')+'</div></td>'+
       '</tr></tbody></table>'+
+    '</div>'+
     '</div>'+
   '</div>';
 }
@@ -8651,7 +8653,7 @@ function pnwExtraDocCss(){
   '.pnw-doc .pnw-hasil th.kt,.pnw-doc .pnw-hasil td.kt{width:40%}'+
   '.pnw-doc .pnw-hasil td.nm{white-space:normal;word-break:break-word;overflow-wrap:break-word}'+
   '.pnw-doc .pnw-hasil td.kt{white-space:normal}'+
-  '.ttd .role2{font-weight:700;color:#16242c;margin-top:1px}';
+  '.ttd .role2{font-weight:700;font-size:12px;line-height:1.3;color:#16242c;margin-top:1px}';
 }
 function pnwOpenPreview(){
   const ov=document.getElementById('pn-preview-overlay'); if(!ov) return;
