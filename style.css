@@ -3303,8 +3303,53 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
 .pnw-periksa-table td{border-bottom-color:#d5e1e4}
 table.hps-sum td{border-bottom-color:#d5e1e4}
 
-/* Sel Lampiran SPK yang terkunci (struktur mengikuti Perhitungan HPS tertaut) */
-.hps-uraian td.is-locked input,
-.hps-uraian td.is-locked textarea{
-  background:#eef4f5;color:#41565c;cursor:not-allowed;border-color:#d3e0e2;
+/* ===== Tabel pengisian Lampiran SPK =====
+   Selaras dengan tabel Uraian HPS, dengan perapian khusus:
+   - SEMUA judul kolom rata tengah & sewarna (thead HPS memberi text-align:left
+     pada th.c-ur, sehingga "Uraian Pekerjaan" tadinya tidak sejajar);
+   - "NO" tidak lagi tampak pudar (kolom c-no mewarisi warna teal, bukan putih);
+   - lebar kolom stabil supaya field tidak melar/menyempit antar baris. */
+table.hps-uraian.spk-lamp-tbl thead th{
+  text-align:center;
+  color:#fff;                     /* satu warna untuk semua judul kolom */
+  vertical-align:middle;
+  line-height:1.35;
+  white-space:nowrap;
+}
+/* Menang atas `th.c-no{color:#0b6a73}` (baris 2578) yang membuat "NO" nyaris tak
+   terbaca di atas latar teal, dan atas `thead th.c-ur{text-align:left}` (2573). */
+table.hps-uraian.spk-lamp-tbl thead th.c-no,
+table.hps-uraian.spk-lamp-tbl thead th.c-ur{
+  color:#fff;
+  text-align:center;
+}
+table.hps-uraian.spk-lamp-tbl thead th.c-ur{ min-width:260px }
+
+/* Lebar kolom konsisten. Judul/Sub-Judul dilebarkan: pada 150px placeholder
+   terpotong jadi "mis. JASA EDI1" dan isi asli sulit dibaca. */
+table.hps-uraian.spk-lamp-tbl th.c-kel,
+table.hps-uraian.spk-lamp-tbl td.c-kel{ width:172px;min-width:172px }
+table.hps-uraian.spk-lamp-tbl td.c-kel input{ min-width:0 }
+table.hps-uraian.spk-lamp-tbl th.c-sat,
+table.hps-uraian.spk-lamp-tbl td.c-sat{ width:82px;min-width:82px }
+table.hps-uraian.spk-lamp-tbl th.c-vol,
+table.hps-uraian.spk-lamp-tbl td.c-vol{ width:88px;min-width:88px }
+table.hps-uraian.spk-lamp-tbl th.c-money,
+table.hps-uraian.spk-lamp-tbl td.c-money{ width:132px;min-width:132px }
+
+/* Baris lebih lega + garis pemisah antar kolom yang halus */
+table.hps-uraian.spk-lamp-tbl tbody td{ padding:8px 9px }
+table.hps-uraian.spk-lamp-tbl tbody td + td{ border-left:1px solid #eef4f5 }
+table.hps-uraian.spk-lamp-tbl tbody tr:hover td{ background:#f2fafb }
+
+/* Sel Uraian: textarea tumbuh rapi tanpa scrollbar kembar */
+table.hps-uraian.spk-lamp-tbl textarea{ min-height:38px }
+
+/* Lebar kolom NO pada tabel Lampiran dihitung di JS (jsKolPx) mengikuti yang
+   terpanjang antara judul "No" dan nomor baris terbesar, lalu dipasang sebagai
+   inline style. Aturan lebar tetap 62px dari `table.hps-uraian th.c-no` (baris
+   2578) dinetralkan di sini agar nilai hitungan itu tidak dilawan. */
+table.hps-uraian.spk-lamp-tbl th.c-no,
+table.hps-uraian.spk-lamp-tbl td.c-no{
+  width:auto;min-width:0;max-width:none;
 }
