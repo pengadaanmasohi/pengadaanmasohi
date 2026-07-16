@@ -23,13 +23,12 @@
 <link rel="stylesheet" href="style.css">
 
 <!-- Variabel dokumen SPK.
-     --spk-lh    : nilai CSS untuk "1,15 baris" gaya Word. Diukur ulang oleh JS
-                   (spkLHInit/spkFontK) dari tinggi baris tunggal font dokumen —
-                   nilai di bawah hanya cadangan bila JS belum jalan.
+     --spk-lh    : line-height CSS untuk isi kontrak. Dikunci di 1.15 (sama seperti
+                   dokumen versi lama); koreksi K sudah dimatikan di app.js.
      --spk-kv-gap: jarak bawaan baris "Label : nilai" (.spk-kv) bila tidak diatur
                    sendiri lewat dialog Paragraf / spasi dari Word. -->
 <style id="spk-doc-vars">
-:root{--spk-lh:1.32;--spk-kv-gap:4pt}
+:root{--spk-lh:1.15;--spk-kv-gap:4pt}
 /* Kotak ukur font (dipakai spkFontK) — tidak pernah terlihat & tidak ikut tercetak */
 #spk-lh-probe{position:absolute;visibility:hidden;left:-9999px;top:0;white-space:nowrap;margin:0;padding:0;border:0;line-height:normal}
 @media print{#spk-lh-probe{display:none!important}}
