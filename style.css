@@ -505,11 +505,9 @@ td.cell-center{text-align:center}
 }
 /* Toolbar "bare" (Penetapan & Kelengkapan) tidak punya latar → jangan beri bayangan */
 #view-pn-lihat .toolbar.pn-toolbar-bare,#view-fkl-view .toolbar.pn-toolbar-bare{box-shadow:none}
-/* Penetapan Nomor (menu tunggal): baris Cari melebar penuh di antara judul &
-   tabel; tombol "Ambil Nomor" menempel di kanan. */
-#view-pn-lihat .toolbar.pn-lihat-toolbar{width:100%;margin-left:0;margin-right:0}
-#view-pn-lihat .toolbar.pn-lihat-toolbar .pn-lihat-searchfield{flex:1 1 auto}
-#view-pn-lihat .toolbar.pn-lihat-toolbar #pn-lihat-search{min-width:0;max-width:none;width:100%}
+/* Penetapan Nomor (menu tunggal): field Cari & tombol "Ambil Nomor" sejajar
+   dengan judul pada baris page-head (ukuran Cari mengikuti .pn-head-search). */
+#view-pn-lihat .page-head .head-add-btn{flex:0 0 auto;margin-left:12px}
 
 /* ===== Penetapan Nomor / Kelengkapan — Lihat: header rapi & kotak Cari lebih premium ===== */
 #view-pn-lihat .page-head{
@@ -1810,6 +1808,16 @@ tr.hl-weekend td{background:#f5f8fb}
   .hl-tpl-actions .btn{flex:1 1 auto;justify-content:center}
 }
 @media(max-width:900px){.head-right-tools{width:100%}.mod-seg{width:100%}.mod-seg .fk-seg-btn{flex:1 1 auto;justify-content:center}}
+/* Mobile ≤640px: tab modul (SPBJ/Kontrak Rinci · Pengadaan Langsung · Tender)
+   di-stack vertikal penuh agar tidak berdesakan/menumpuk. "Thumb" (pil geser
+   absolut yang mengasumsikan satu baris) disembunyikan; tab aktif diberi latar
+   teal langsung supaya tetap terlihat aktif. */
+@media(max-width:640px){
+  .mod-seg{flex-direction:column;align-items:stretch;flex-wrap:nowrap}
+  .mod-seg .fk-seg-btn{width:100%;flex:0 0 auto;justify-content:center;padding:10px 12px}
+  .mod-seg .fk-seg-thumb{display:none!important}
+  .mod-seg .fk-seg-btn.active{background:linear-gradient(135deg,var(--teal),var(--cyan));color:#fff;box-shadow:0 5px 14px rgba(14,124,134,.32)}
+}
 /* Kolom & sel File Kontrak */
 /* Kolom Bidang Pelaksana mengacu ukuran tabel Monitoring - Daftar Pekerjaan (col-bidang): lebar tetap 200px + wrap */
 .fk-col-bidang{width:200px;min-width:200px;max-width:200px;text-align:center;white-space:normal;word-break:break-word;overflow-wrap:break-word;line-height:1.3}
