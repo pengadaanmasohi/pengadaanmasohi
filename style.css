@@ -3353,3 +3353,99 @@ table.hps-uraian.spk-lamp-tbl th.c-no,
 table.hps-uraian.spk-lamp-tbl td.c-no{
   width:auto;min-width:0;max-width:none;
 }
+
+/* ============================================================
+   EFEK 3D — TABEL DAFTAR DATA (.table-wrap)
+   Hanya untuk tabel daftar/monitoring. Tabel pengisian (.hps-uraian,
+   .ana-uraian) dan dokumen cetak (.fkl-doc) sengaja TIDAK disentuh.
+
+   Kedalaman dibangun dari bayangan berlapis + gradien, BUKAN dari transform:
+   `transform` pada elemen leluhur membuat position:sticky di dalamnya patah,
+   sedangkan tabel ini mengandalkan sticky untuk header dan kolom beku
+   (No. / Nama Pekerjaan). Perspektif/rotate juga akan mengaburkan teks 11px.
+   ============================================================ */
+
+/* Panel terangkat: bayangan berlapis (dekat = tajam, jauh = lembut) meniru
+   cara benda nyata menjatuhkan bayangan, ditambah highlight tipis di tepi atas. */
+.table-wrap{
+  box-shadow:
+    0 1px 1px rgba(16,40,50,.05),
+    0 2px 4px rgba(16,40,50,.06),
+    0 8px 16px rgba(16,40,50,.08),
+    0 16px 32px rgba(16,40,50,.09),
+    inset 0 1px 0 rgba(255,255,255,.9);
+  transition:box-shadow .28s ease;
+}
+.table-wrap:hover{
+  box-shadow:
+    0 1px 1px rgba(16,40,50,.06),
+    0 3px 6px rgba(16,40,50,.07),
+    0 12px 24px rgba(16,40,50,.10),
+    0 24px 48px rgba(16,40,50,.12),
+    inset 0 1px 0 rgba(255,255,255,.9);
+}
+
+/* Header timbul: gradien terang→gelap memberi arah cahaya dari atas,
+   bayangan bawah membuatnya seolah melayang di atas baris data. */
+.table-wrap thead th{
+  background-image:linear-gradient(180deg, rgba(255,255,255,.16) 0%, rgba(255,255,255,0) 55%, rgba(0,0,0,.10) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.22),
+    0 3px 6px rgba(16,40,50,.16);
+  text-shadow:0 1px 1px rgba(0,0,0,.18);
+}
+/* Sel sticky (kolom beku) memakai latar via pseudo-element ::after — gradien
+   header perlu ikut dipasang di situ, kalau tidak sel beku akan tampil rata
+   sementara sel lain bergradien. */
+.table-wrap thead th:first-child::after,
+.table-wrap thead th.col-nama-freeze::after{
+  background-image:linear-gradient(180deg, rgba(255,255,255,.16) 0%, rgba(255,255,255,0) 55%, rgba(0,0,0,.10) 100%);
+}
+
+/* Baris: garis terang di atas + garis gelap tipis di bawah = kesan tebal/relief */
+.table-wrap tbody tr{
+  transition:background .15s, box-shadow .18s;
+}
+.table-wrap tbody tr:not(:last-child){
+  box-shadow:inset 0 -1px 0 rgba(16,40,50,.07);
+}
+/* Baris disentuh: terangkat — bayangan di bawah + sedikit lebih terang di atas */
+.table-wrap tbody tr:hover{
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.85),
+    0 2px 6px rgba(16,40,50,.13);
+  position:relative;
+  z-index:2;
+}
+
+/* Tombol aksi: sudah punya angkat saat hover — dilengkapi relief agar
+   terlihat sebagai tombol fisik, dan efek "tertekan" saat diklik. */
+.table-wrap .act{
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.34),
+    inset 0 -1px 0 rgba(0,0,0,.14),
+    0 1px 2px rgba(16,40,50,.20);
+}
+.table-wrap .act:hover{
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.34),
+    0 4px 10px rgba(16,40,50,.26);
+}
+.table-wrap .act:active{
+  transform:translateY(0);
+  box-shadow:
+    inset 0 2px 4px rgba(0,0,0,.24),
+    0 1px 1px rgba(16,40,50,.14);
+}
+
+/* Pil status: sedikit timbul. Garis tepi tiap pil (.pill-prog/-kontrak/-batal)
+   dibuat dengan `inset 0 0 0 1px` — sengaja TIDAK ditimpa: cukup tambahkan
+   bayangan luar via drop-shadow agar warna tepi tiap status tetap utuh. */
+.table-wrap .pill{
+  filter:drop-shadow(0 1px 1.5px rgba(16,40,50,.18));
+}
+
+/* Aksesibilitas: hormati "kurangi animasi" pada sistem pengguna */
+@media (prefers-reduced-motion:reduce){
+  .table-wrap, .table-wrap tbody tr{ transition:none }
+}
