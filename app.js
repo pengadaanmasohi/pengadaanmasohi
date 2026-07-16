@@ -15563,11 +15563,11 @@ function spkDocCss(){
   /* Blok tanda tangan akhir */
   '.spk-sign{margin-top:30px;width:100%;border-collapse:collapse}'+
   '.spk-sign td{width:50%;text-align:center;vertical-align:top;font-size:11pt;padding:4px}'+
-  '.spk-sign .role{font-weight:700}.spk-sign .nm{font-weight:700;text-decoration:underline;margin-top:78px}'+
+  '.spk-sign .role{font-weight:700}.spk-sign .nm{font-weight:700;text-decoration:underline;margin-top:82px}'+
   /* Baris kepala (PIHAK … + nama instansi) dan baris nama/jabatan dipisah menjadi
      dua <tr>. Karena tinggi satu baris tabel berlaku sama untuk KEDUA kolom, blok
      nama & jabatan selalu mulai pada garis yang sama — tidak lagi melorot mengikuti
-     panjang nama instansi masing-masing pihak. Ruang tanda tangan (78px) dijaga oleh
+     panjang nama instansi masing-masing pihak. Ruang tanda tangan (82px) dijaga oleh
      margin-top .nm; padding antar-baris dinolkan agar jaraknya tetap seperti semula. */
   '.spk-sign tr.sg-head td{padding-bottom:0;vertical-align:top}'+
   '.spk-sign tr.sg-body td{padding-top:0;vertical-align:top}'+
@@ -15810,7 +15810,7 @@ function spkDocCss2(){
      "PIHAK PERTAMA" (12px) terlihat lebih kecil dari "PT PLN (Persero)" (12,5px). */
   '.spk-lampsign .role{font-size:12.5px;font-weight:700;color:#1a2b31}'+
   '.spk-lampsign .org{font-size:12.5px;font-weight:700;color:#1a2b31;line-height:1.4;text-wrap:balance}'+
-  '.spk-lampsign .nm{font-size:12.5px;font-weight:700;color:#1a2b31;text-decoration:underline;margin-top:68px}'+
+  '.spk-lampsign .nm{font-size:12.5px;font-weight:700;color:#1a2b31;text-decoration:underline;margin-top:78px}'+
   '.spk-lampsign .jab{font-size:12.5px;font-weight:700;color:#1a2b31}'+
   /* Penyeragaman TEGAS: setiap baris teks di kedua kolom tanda tangan lampiran
      (PIHAK KEDUA & PIHAK PERTAMA) memakai ukuran & tinggi baris yang sama persis,
