@@ -1651,7 +1651,11 @@ body.nav-open{overflow:hidden}
 .table-wrap{border-radius:16px;border-color:#d3e2e4}
 th{background:#0E7C86;letter-spacing:.6px;border-color:#0b6b74;padding:12px 14px}
 .table-wrap thead th:first-child{background:#0E7C86}
-td{border-color:#e4edef;padding:12px 14px;color:#26363d}
+/* Teks sel: weight 500 + warna --ink. Sebelumnya weight bawaan (400) pada
+   Plus Jakarta Sans 11px membuat teks tampak tipis/berkabut, terutama pada
+   baris genap yang berlatar #f6fafb. Kontras naik ke ~15:1 (WCAG AAA). */
+td{border-color:#e4edef;padding:12px 14px;color:var(--ink);font-weight:500;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 tbody tr:nth-child(even){background:#f6fafb}
 tbody tr:hover{background:#e9f6f7}
 .table-wrap tbody tr:hover td:first-child{background:#e6f5f6}
