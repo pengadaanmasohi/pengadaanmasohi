@@ -3272,3 +3272,29 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
 
 /* Penanda "Sampul Dua belum diisi" pada tabel Lihat Hasil Pemeriksaan */
 .pnw-s2-tag{display:inline-flex;align-items:center;margin-left:8px;padding:2px 8px;border-radius:999px;background:#fdf1dc;color:#8a5a06;border:1px solid #f0d59a;font-family:'Plus Jakarta Sans',sans-serif;font-size:9.5px;font-weight:800;letter-spacing:.3px;white-space:nowrap}
+
+/* =========================================================================
+   PENYERAGAMAN TABEL MENU — garis pemisah antar data yang halus namun tegas.
+   Berlaku HANYA untuk tabel data di dalam menu (.table-wrap). Tidak menyentuh
+   dokumen Susun Kontrak (SPK) maupun tampilan pratinjau/cetak.
+   Hairline: #d5e1e4 (1px, lembut tetapi cukup memisahkan antar data).
+   ========================================================================= */
+.table-wrap tbody td{border:1px solid #d5e1e4}
+.table-wrap thead th{border-color:#0b6b74}
+.table-wrap tbody td:first-child{border-left:none}
+.table-wrap tbody td:last-child{border-right:none}
+
+/* Monitoring — kolom beku (No./Nama Pekerjaan): samakan garis "palsu"
+   (inset box-shadow) dengan hairline di atas agar konsisten dgn kolom lain. */
+#view-list .table-wrap tbody td.col-no,#view-list .table-wrap tbody td.col-nama-freeze,
+#view-list-pl .table-wrap tbody td.col-no,#view-list-pl .table-wrap tbody td.col-nama-freeze,
+#view-list-tender .table-wrap tbody td.col-no,#view-list-tender .table-wrap tbody td.col-nama-freeze{
+  box-shadow:inset 1px 0 0 #d5e1e4, inset -1px 0 0 #d5e1e4, inset 0 -1px 0 #d5e1e4, inset 0 1px 0 #d5e1e4}
+#view-list .table-wrap thead th.col-no,#view-list .table-wrap thead th.col-nama-freeze,
+#view-list-pl .table-wrap thead th.col-no,#view-list-pl .table-wrap thead th.col-nama-freeze,
+#view-list-tender .table-wrap thead th.col-no,#view-list-tender .table-wrap thead th.col-nama-freeze{
+  box-shadow:inset 1px 0 0 #0b6b74, inset -1px 0 0 #0b6b74, inset 0 -1px 0 #0b6b74}
+
+/* Sub-tabel lain di menu diselaraskan ke hairline yang sama */
+.pnw-periksa-table td{border-bottom-color:#d5e1e4}
+table.hps-sum td{border-bottom-color:#d5e1e4}
