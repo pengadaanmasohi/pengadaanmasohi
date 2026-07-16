@@ -15409,7 +15409,7 @@ function spkPreviewCurrent(){
    membuat hasil web lebih RAPAT daripada Word. Karena itu K diukur langsung dari font
    yang benar-benar dipakai (CSS line-height:normal = "Single" di Word). */
 let SPK_LH_K = 1.15;                                     /* tinggi baris tunggal (em) */
-const SPK_DOC_FONT = '"Inter","Segoe UI",Arial,sans-serif';
+const SPK_DOC_FONT = '"Inter Local","Inter","Segoe UI",Arial,sans-serif';
 function spkFontK(fam, size){
   try{
     var d=document.getElementById('spk-lh-probe');
@@ -15464,8 +15464,25 @@ function spkLHWord(css){                                  /* line-height CSS -> 
   return Math.round((n/SPK_LH_K)*100)/100;
 }
 /* ================= DOKUMEN KONTRAK (cover + daftar isi + isi) ================= */
+/* Inter yang DI-HOST LOKAL — KHUSUS dokumen Susun Kontrak.
+   Family diberi nama tersendiri ("Inter Local") supaya:
+   - Tidak menyentuh/menimpa font menu lain (yang tetap pakai Plus Jakarta Sans / Inter Google).
+   - Bila file lokal ada  -> teks memakai Inter lokal (jalan walau OFFLINE / Google diblokir).
+   - Bila file lokal tidak ada -> otomatis jatuh ke "Inter" (Google), lalu Segoe UI/Arial.
+   Taruh file .woff2 Inter di folder  fonts/  di samping index.html. */
+function spkInterFontFace(){
+  var b='fonts/';
+  return ''+
+  '@font-face{font-family:"Inter Local";font-style:normal;font-weight:400;font-display:swap;src:url("'+b+'Inter-Regular.woff2") format("woff2")}'+
+  '@font-face{font-family:"Inter Local";font-style:normal;font-weight:500;font-display:swap;src:url("'+b+'Inter-Medium.woff2") format("woff2")}'+
+  '@font-face{font-family:"Inter Local";font-style:normal;font-weight:600;font-display:swap;src:url("'+b+'Inter-SemiBold.woff2") format("woff2")}'+
+  '@font-face{font-family:"Inter Local";font-style:normal;font-weight:700;font-display:swap;src:url("'+b+'Inter-Bold.woff2") format("woff2")}'+
+  '@font-face{font-family:"Inter Local";font-style:italic;font-weight:400;font-display:swap;src:url("'+b+'Inter-Italic.woff2") format("woff2")}'+
+  '@font-face{font-family:"Inter Local";font-style:italic;font-weight:600;font-display:swap;src:url("'+b+'Inter-SemiBoldItalic.woff2") format("woff2")}';
+}
 function spkDocCss(){
   return ''+
+  spkInterFontFace()+
   /* Cover, Daftar Isi, & Kop dipertahankan seperti desain sebelumnya (navy).
      Hanya ISI kontrak yang dirapikan mengikuti tampilan Word (Arial). */
   '@page{size:A4 portrait;margin:0}'+
@@ -15473,7 +15490,7 @@ function spkDocCss(){
   /* Variabel dokumen: --spk-lh = nilai CSS untuk "1,15 baris" gaya Word (hasil koreksi K),
      --spk-kv-gap = jarak bawaan baris "Label : nilai" bila tidak diatur sendiri. */
   ':root{--spk-lh:'+spkLHCss(1.15)+';--spk-kv-gap:4pt}'+
-  'body{font-family:"Inter","Segoe UI",Arial,sans-serif;color:#1c1c1c;margin:0;font-size:11.5px;line-height:var(--spk-lh,1.32)}'+
+  'body{font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif;color:#1c1c1c;margin:0;font-size:11.5px;line-height:var(--spk-lh,1.32)}'+
   '.spk-doc{counter-reset:spkcl}'+
   /* Penomoran judul klausul dibuat OTOMATIS (counter), bukan teks biasa */
   '.spk-clause{counter-increment:spkcl}'+
@@ -15497,7 +15514,7 @@ function spkDocCss(){
      Sub-klausul (X.1) & sub-sub (a. / X.1.1) memakai hanging tab 0,75 cm yang
        konsisten, bertingkat 0,75 cm tiap level — persis penggaris Word. */
   '.spk-clause{margin:0}'+
-  '.spk-clause,.spk-clause *,.spk-cl,.spk-cl *,.spk-cl-h,.spk-cl-h *{font-family:"Inter","Segoe UI",Arial,sans-serif}'+
+  '.spk-clause,.spk-clause *,.spk-cl,.spk-cl *,.spk-cl-h,.spk-cl-h *{font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif}'+
   /* Kotak nomor judul klausul dipersempit 0,75cm -> 0,65cm: cukup untuk nomor
      2 digit (mis. "15." = ~0,54cm pada Arial bold 11pt) plus sedikit jarak,
      sehingga judul lebih dekat ke nomornya. */
@@ -15596,7 +15613,7 @@ function spkDocCss(){
      Mencakup preamble, semua klausul (judul & isi), daftar, blok pihak, baris
      "Label : nilai", dan blok tanda tangan. Ketebalan/format (bold, garis bawah)
      tetap dipertahankan; hanya jenis huruf & ukuran yang diseragamkan. */
-  '.spk-flow .spk-cl,.spk-flow .spk-cl *,.spk-flow .spk-clause,.spk-flow .spk-clause *,.spk-flow .spk-cl-h,.spk-flow .spk-cl-h *,.spk-flow .spk-sign,.spk-flow .spk-sign *{font-family:"Inter","Segoe UI",Arial,sans-serif;font-size:11pt}'+
+  '.spk-flow .spk-cl,.spk-flow .spk-cl *,.spk-flow .spk-clause,.spk-flow .spk-clause *,.spk-flow .spk-cl-h,.spk-flow .spk-cl-h *,.spk-flow .spk-sign,.spk-flow .spk-sign *{font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif;font-size:11pt}'+
   /* ===== Tampilan PRATINJAU di layar (bukan cetak) =====
      Menampilkan tiap bagian sebagai lembar A4 putih (210×297mm) di atas latar
      abu-abu, dengan bayangan & margin dalam 12mm/15mm — meniru gaya pratinjau
@@ -15744,9 +15761,9 @@ function spkDocCss2(){
   /* Judul "SURAT PERINTAH KERJA" + Nomor Kontrak (halaman 1 isi kontrak):
      WARNA HITAM, jenis huruf mengikuti ISI KONTRAK (Inter/Arial 11pt),
      dan garis pembatas antara judul dengan nomor kontrak juga HITAM. */
-  '.spk-bab{text-align:center;font-family:"Inter","Segoe UI",Arial,sans-serif;margin:0 0 12pt}'+
-  '.spk-bab b{display:block;font-family:"Inter","Segoe UI",Arial,sans-serif;font-size:12pt;font-weight:800;color:#000;text-decoration:underline;text-decoration-color:#000;text-decoration-thickness:2px;text-underline-offset:5px;letter-spacing:.05em;text-transform:uppercase;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
-  '.spk-bab span{display:block;font-family:"Inter","Segoe UI",Arial,sans-serif;font-size:11pt;font-weight:700;color:#000;letter-spacing:.06em;margin-top:7px}'+
+  '.spk-bab{text-align:center;font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif;margin:0 0 12pt}'+
+  '.spk-bab b{display:block;font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif;font-size:12pt;font-weight:800;color:#000;text-decoration:underline;text-decoration-color:#000;text-decoration-thickness:2px;text-underline-offset:5px;letter-spacing:.05em;text-transform:uppercase;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  '.spk-bab span{display:block;font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif;font-size:11pt;font-weight:700;color:#000;letter-spacing:.06em;margin-top:7px}'+
   /* Jarak dari kalimat "…kami yang bertanda tangan dibawah ini :" ke blok
      "I. PT PLN (PERSERO):" beserta uraiannya = 12 pt. */
   '.spk-cl p.kl0 + .spk-party{margin-top:12pt}'+
@@ -15856,7 +15873,7 @@ function spkDocCss2(){
   '.spk-sheet .spk-signpage{page-break-before:auto;break-before:auto;padding-top:0}'+
   /* klausul yang bersambung ke lembar berikutnya TIDAK menambah nomor klausul */
   '.spk-clause.spk-cont{counter-increment:none}'+
-  '.spk-sheet .spk-cl,.spk-sheet .spk-cl *,.spk-sheet .spk-clause,.spk-sheet .spk-clause *,.spk-sheet .spk-cl-h,.spk-sheet .spk-cl-h *,.spk-sheet .spk-sign,.spk-sheet .spk-sign *{font-family:"Inter","Segoe UI",Arial,sans-serif;font-size:11pt}'+
+  '.spk-sheet .spk-cl,.spk-sheet .spk-cl *,.spk-sheet .spk-clause,.spk-sheet .spk-clause *,.spk-sheet .spk-cl-h,.spk-sheet .spk-cl-h *,.spk-sheet .spk-sign,.spk-sheet .spk-sign *{font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif;font-size:11pt}'+
   /* ---------- PRATINJAU DI LAYAR (lembar A4) ---------- */
   '@media screen{'+
     'html,body{background:#54585c;margin:0;padding:24px 0}'+
