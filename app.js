@@ -15748,11 +15748,11 @@ function spkDocCss2(){
      PIHAK PERTAMA) sehingga materai muat tanpa menabrak nama/jabatan, dan kedua kolom
      tetap sejajar. Kotak panduan putus-putus + label hanya tampil di LAYAR; saat
      dicetak / diekspor PDF, slot menjadi ruang kosong tanpa garis maupun tulisan. */
-  '.spk-signpage .spk-sign .materai-slot{width:24mm;height:26mm;margin:2mm auto;box-sizing:border-box}'+
-  '.spk-signpage .spk-sign .nm{margin-top:0}'+
+  '.spk-signpage .spk-sign .materai-slot{width:24mm;height:0;margin:0 auto;box-sizing:border-box}'+
+  
   '@media screen{'+
-    '.spk-signpage .spk-sign .materai-slot{position:relative;border:1px dashed #c2ccd1;border-radius:3px}'+
-    '.spk-signpage .spk-sign .materai-slot::after{content:"Materai\\ARp10.000";white-space:pre-line;position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:8px;line-height:1.3;color:#aab4b9;font-weight:600;letter-spacing:.2px}'+
+    '.spk-signpage .spk-sign .materai-slot{display:none}'+
+    
   '}'+
   '@media print{'+
     '.spk-signpage .spk-sign .materai-slot{border:none}'+
@@ -15810,7 +15810,7 @@ function spkDocCss2(){
      "PIHAK PERTAMA" (12px) terlihat lebih kecil dari "PT PLN (Persero)" (12,5px). */
   '.spk-lampsign .role{font-size:12.5px;font-weight:700;color:#1a2b31}'+
   '.spk-lampsign .org{font-size:12.5px;font-weight:700;color:#1a2b31;line-height:1.4;text-wrap:balance}'+
-  '.spk-lampsign .nm{font-size:12.5px;font-weight:700;color:#1a2b31;text-decoration:underline;margin-top:60px}'+
+  '.spk-lampsign .nm{font-size:12.5px;font-weight:700;color:#1a2b31;text-decoration:underline;margin-top:68px}'+
   '.spk-lampsign .jab{font-size:12.5px;font-weight:700;color:#1a2b31}'+
   /* Penyeragaman TEGAS: setiap baris teks di kedua kolom tanda tangan lampiran
      (PIHAK KEDUA & PIHAK PERTAMA) memakai ukuran & tinggi baris yang sama persis,
