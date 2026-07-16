@@ -1774,8 +1774,62 @@ function initDashTilt(){
   }, {passive:true});
 }
 
+/* ============================================================
+   EFEK SUARA HOVER DASHBOARD — bunyi halus saat kursor mengenai tiap bagian
+   (kartu statistik & baris bar). Nada DISINTESIS lewat Web Audio API (tanpa
+   file audio). AudioContext hanya bisa berbunyi setelah ada interaksi pengguna
+   (kebijakan browser), jadi di-"unlock" pada gesture pertama (klik/tekan). */
+let _dashAC=null, _dashSoundPart=null, _dashSoundT=0, _dashMuted=false;
+function dashAC(){
+  if(_dashAC) return _dashAC;
+  try{ var AC=window.AudioContext||window.webkitAudioContext; if(!AC) return null; _dashAC=new AC(); }catch(e){ return null; }
+  return _dashAC;
+}
+function dashAudioUnlock(){ var c=dashAC(); if(c && c.state==='suspended'){ try{ c.resume(); }catch(e){} } }
+['pointerdown','keydown','click','touchstart'].forEach(function(ev){
+  try{ document.addEventListener(ev, dashAudioUnlock, {passive:true}); }catch(e){}
+});
+function dashBlip(freq){
+  if(_dashMuted) return;
+  var c=dashAC(); if(!c) return;
+  if(c.state==='suspended'){ try{ c.resume(); }catch(e){} }
+  try{
+    var t=c.currentTime;
+    var o=c.createOscillator(), g=c.createGain();
+    o.type='sine';
+    o.frequency.setValueAtTime(freq, t);
+    o.frequency.exponentialRampToValueAtTime(freq*0.82, t+0.09);   /* glide turun tipis → terasa "tik" lembut */
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.05, t+0.008);            /* pelan & tidak mengganggu */
+    g.gain.exponentialRampToValueAtTime(0.0001, t+0.13);
+    o.connect(g); g.connect(c.destination);
+    o.start(t); o.stop(t+0.16);
+  }catch(e){}
+}
+function initDashSound(){
+  var root=document.getElementById('view-dashboard');
+  if(!root || root.__soundReady) return;
+  root.__soundReady=true;
+  var SEL='#dash-cards .card, #dash-nilai .card, .bar-row';
+  root.addEventListener('pointerover', function(ev){
+    if(ev.pointerType && ev.pointerType!=='mouse') return;          /* lewati sentuh */
+    var part=ev.target.closest ? ev.target.closest(SEL) : null;
+    if(!part || part===_dashSoundPart) return;                      /* hanya saat pindah ke bagian baru */
+    _dashSoundPart=part;
+    var now=(window.performance&&performance.now)?performance.now():Date.now();
+    if(now-_dashSoundT<40) return;                                  /* redam bila terlalu cepat */
+    _dashSoundT=now;
+    dashBlip(part.classList.contains('bar-row') ? 452 : 664);       /* bar & kartu beda nada */
+  }, {passive:true});
+  root.addEventListener('pointerout', function(ev){
+    var to=ev.relatedTarget;
+    if(!to || !(to.closest && to.closest(SEL))) _dashSoundPart=null; /* keluar bagian → boleh berbunyi lagi saat masuk */
+  }, {passive:true});
+}
+
 function renderDashboard(){
   initDashTilt();
+  initDashSound();
   const jEl=document.getElementById('dash-filter-jenis');
   const jenis = jEl ? jEl.value : 'kr';
   const ftEl=document.getElementById('dash-filter-tahun');
@@ -14468,7 +14522,11 @@ var SPK_ASING = [
   'field engineer','project manager','defect liability',
   /* --- Tambahan kata tunggal asing --- */
   'invoice','schedule','subcontractor','warranty','retention','defect',
-  'housekeeping','mockup','rework','punchlist','staging','breakdown'
+  'housekeeping','mockup','rework','punchlist','staging','breakdown',
+  /* --- Istilah asing yang lazim pada Nama Pekerjaan (dimiringkan hanya saat Nama
+     Pekerjaan tertulis di dalam isi klausul; "and" disertakan agar frasa asing
+     tampil miring utuh, mis. "Equipment Safety and Healthy") --- */
+  'equipment','safety','healthy','health','and','of','for','the'
 ];
 var SPK_ASING_RE = null;
 /* Bangun (sekali) satu regex gabungan; frasa/kata terpanjang diuji lebih dulu. */
@@ -19695,7 +19753,13 @@ function spkDocHtml(data, klausul){
     (typeof hpsExtraDocCss==='function'?hpsExtraDocCss():'')+
     spkDocCss()+spkDocCss2()+
     '</style></head><body><div class="spk-doc">'+
-      cover+toc+isi+coverLamp+lampiran+
+      /* Auto-italic istilah asing diterapkan pada SELURUH konten dokumen Susun
+         Kontrak (cover, daftar isi, kop/footer, preamble, klausul, tanda tangan,
+         cover & isi lampiran) — bukan hanya isi klausul. Hanya menyentuh TEKS
+         (di luar tag); <style> & paginator <script> berada di luar bungkus ini
+         sehingga tidak tersentuh. Istilah yang sudah dibungkus <i> pada tahap
+         klausul otomatis dilewati (tanpa italic bertumpuk). */
+      spkKlItalicAsing(cover+toc+isi+coverLamp+lampiran)+
     '</div>'+spkPageScript()+'</body></html>';
 }
 
