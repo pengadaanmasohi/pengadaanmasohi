@@ -253,28 +253,14 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.8L7 14.3"/></svg>
                   Analisa Harga Satuan
                 </button>
-                <!-- Jadwal Pelaksanaan Pengadaan: submenu Tentukan Jadwal / Lihat Jadwal / Tentukan Hari Libur -->
-                <div class="topnav-sub" data-sub="hps-jadwal" data-role="admin">
-                  <button class="topnav-subtrigger" type="button" onclick="toggleFkSub(event,'hps-jadwal')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="m9 16 2 2 4-4"/></svg>
-                    <span class="sub-label">Jadwal Pelaksanaan Pengadaan</span>
-                    <svg class="caret2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
-                  </button>
-                  <div class="topnav-subdrop">
-                    <button class="topnav-item" data-view="jadwal-kerja" data-role="admin" onclick="openJadwalKerja()">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                      Tentukan Jadwal
-                    </button>
-                    <button class="topnav-item" data-view="jadwal-view" data-role="admin" onclick="openJadwalLihat()">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
-                      Lihat Jadwal
-                    </button>
-                    <button class="topnav-item" data-view="hari-libur" data-role="admin" onclick="openHariLibur()">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 15h.01M12 15h.01M16 15h.01"/></svg>
-                      Tentukan Hari Libur
-                    </button>
-                  </div>
-                </div>
+                <!-- Jadwal Pelaksanaan Pengadaan: satu menu (submenu Tentukan Jadwal /
+                     Lihat Jadwal / Tentukan Hari Libur digabung). Klik langsung membuka
+                     Lihat Jadwal; "Jadwal" (Tentukan Jadwal) & "Hari Libur" (Tentukan
+                     Hari Libur) kini diakses lewat tombol di head halaman tersebut. -->
+                <button class="topnav-item" data-view="jadwal-view" data-role="admin" onclick="openJadwalLihat()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="m9 16 2 2 4-4"/></svg>
+                  Jadwal Pelaksanaan Pengadaan
+                </button>
                 <!-- Perhitungan HPS: submenu Hitung HPS / Lihat HPS -->
                 <!-- Perhitungan HPS: satu menu (tanpa submenu Hitung/Lihat).
                      Hitung HPS diakses lewat tombol "Input HPS" di halaman daftar. -->
@@ -1020,22 +1006,16 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
       <div>
         <h2>Penetapan Nomor <span class="count-badge" id="pn-lihat-count">0</span></h2>
       </div>
-    </div>
-    <!-- Baris Cari (di antara judul & tabel) + tombol Ambil Nomor di kanan -->
-    <div class="toolbar pn-lihat-toolbar">
-      <div class="filter-field toolbar-search search-elegant pn-lihat-searchfield">
-        <label>Cari</label>
+      <div class="filter-field toolbar-search pn-search-right search-elegant pn-head-search">
         <div class="search-elegant-box">
           <svg class="search-elegant-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
           <input id="pn-lihat-search" type="text" placeholder="Cari Nama Pekerjaan" oninput="pnFilterLihat()">
         </div>
       </div>
-      <div class="toolbar-actions">
-        <button class="btn btn-teal" data-role="admin" onclick="openPnAmbil('pl')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-          Ambil Nomor
-        </button>
-      </div>
+      <button class="btn btn-teal head-add-btn" data-role="admin" onclick="openPnAmbil('pl')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        Ambil Nomor
+      </button>
     </div>
     <div class="panel">
       <div class="table-wrap">
@@ -1370,6 +1350,12 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
         <h2>Tentukan Jadwal</h2>
         <p>Susun jadwal pelaksanaan pengadaan yang otomatis melewati hari Sabtu, Minggu &amp; hari libur nasional</p>
       </div>
+      <div class="toolbar-actions">
+        <button class="btn btn-red" onclick="openJadwalLihat()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+          Kembali
+        </button>
+      </div>
     </div>
     <div id="jk-content"></div>
   </section>
@@ -1378,7 +1364,7 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
   <section id="view-jadwal-view" class="view">
     <div class="page-head">
       <div>
-        <h2>Jadwal Pelaksanaan Pengadaan — Lihat Jadwal <span class="count-badge" id="jadwal-view-count">0</span></h2>
+        <h2>Jadwal Pelaksanaan Pengadaan <span class="count-badge" id="jadwal-view-count">0</span></h2>
       </div>
       <div class="filter-field toolbar-search pn-search-right search-elegant pn-head-search">
         <div class="search-elegant-box">
@@ -1386,6 +1372,14 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
           <input id="jadwal-view-search" type="text" placeholder="Cari Nama Pekerjaan" oninput="renderJadwalView()">
         </div>
       </div>
+      <button class="btn btn-teal head-add-btn" data-role="admin" onclick="openJadwalKerja()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        Jadwal
+      </button>
+      <button class="btn btn-teal head-add-btn" data-role="admin" onclick="openHariLibur()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 15h.01M12 15h.01M16 15h.01"/></svg>
+        Hari Libur
+      </button>
     </div>
     <div class="panel">
       <div class="table-wrap">
@@ -1394,9 +1388,9 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
             <tr>
               <th class="col-no">No.</th>
               <th class="col-nama-freeze">Nama Pekerjaan</th>
-              <th style="text-align:center">Jumlah Tahapan</th>
-              <th class="col-date">Tgl. Mulai</th>
-              <th class="col-date">Estimasi Selesai</th>
+              <th style="text-align:center">Durasi Pengadaan</th>
+              <th class="col-date">Tgl. Mulai<br>Pengadaan</th>
+              <th class="col-date">Rencana Terkontrak</th>
               <th style="text-align:center;min-width:170px">Aksi</th>
             </tr>
           </thead>
@@ -1413,6 +1407,12 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
       <div>
         <h2>Tentukan Hari Libur <span class="count-badge" id="hl-count">0</span></h2>
         <p>Kelola tanggal merah untuk beberapa tahun ke depan — dipakai otomatis oleh Tentukan Jadwal</p>
+      </div>
+      <div class="toolbar-actions">
+        <button class="btn btn-red" onclick="openJadwalLihat()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+          Kembali
+        </button>
       </div>
     </div>
     <div id="hl-content"></div>
