@@ -15392,14 +15392,23 @@ function spkPreviewCurrent(){
   spkOpenPreview(spkState.data, kl);
 }
 
-/* ============ SPASI BARIS: KOREKSI K DIMATIKAN (kembali ke perilaku lama) ============
-   Sebelumnya nilai spasi dikalikan SPK_LH_K (tinggi baris tunggal font) supaya angka
-   di aplikasi cocok dengan angka di Word. Efeknya: "1,15" menjadi line-height ~1,32-1,48
-   sehingga isi kontrak halaman 1-18 terlihat jauh lebih renggang daripada dokumen lama.
-   Kebijakan sekarang: angka spasi dipakai APA ADANYA sebagai line-height CSS,
-   jadi "1,15" = line-height:1.15 -- persis seperti Draft SPK versi lama.
-   SPK_LH_K dipertahankan hanya agar kode lama yang mungkin masih merujuknya tidak error. */
-let SPK_LH_K = 1;                                        /* tidak dipakai lagi (koreksi dimatikan) */
+/* ============ SPASI BARIS: ARTI "1,15" DI WORD vs DI CSS ============
+   Word menghitung penspasian baris dari TINGGI BARIS TUNGGAL font (ascent + descent
+   + line gap), BUKAN dari ukuran hurufnya. Untuk Arial/Calibri/Inter tinggi baris
+   tunggal itu ~1,15 em. Jadi di Word:
+       "1,0  baris"  ~= 1,15 em
+       "1,15 baris"  ~= 1,15 x 1,15 = 1,32 em
+       "1,5  baris"  ~= 1,73 em
+   Sementara CSS `line-height:1.15` berarti 1,15 x UKURAN HURUF = 1,15 em, yang
+   sebenarnya sama dengan spasi TUNGGAL Word — bukan 1,15.
+   Selama ini dokumen memakai line-height:1.15 sambil menyebutnya "1,15", padahal
+   yang tercetak adalah spasi tunggal. Semua nilai kini dikonversi lewat SPK_LH_K
+   supaya angka yang tertulis di aplikasi = angka yang sama di Word. */
+/* K = TINGGI BARIS TUNGGAL font dokumen (em). Nilai tetap 1,15 hanya benar untuk
+   Arial/Calibri; Inter ~1,21 dan Book Antiqua ~1,29 -> memakai 1,15 untuk semua font
+   membuat hasil web lebih RAPAT daripada Word. Karena itu K diukur langsung dari font
+   yang benar-benar dipakai (CSS line-height:normal = "Single" di Word). */
+let SPK_LH_K = 1.15;                                     /* tinggi baris tunggal (em) */
 const SPK_DOC_FONT = '"Inter Local","Inter","Segoe UI",Arial,sans-serif';
 function spkFontK(fam, size){
   try{
@@ -15413,34 +15422,36 @@ function spkFontK(fam, size){
     return (k>1 && k<2) ? Math.round(k*1000)/1000 : null;
   }catch(e){ return null; }
 }
-/* Setel --spk-lh sekali agar style.css & CSS dokumen memakai angka yang sama.
-   Koreksi K dimatikan -> nilainya tetap 1.15 (spasi dokumen versi lama). */
+/* Ukur K sekali (setelah font web selesai dimuat), lalu sebarkan ke CSS lewat --spk-lh
+   sehingga style.css & CSS dokumen memakai angka yang sama. */
+/* K Inter = 1,21 (ascent+descent+lineGap / unitsPerEm dari berkas font Inter).
+   Dipakai sebagai nilai aman bila pengukuran gagal ATAU bila font dokumen jatuh ke
+   font cadangan (Arial K~1,15) — supaya spasi tetap "1,15 gaya Word", bukan tunggal. */
+const SPK_LH_K_INTER = 1.21;
 function spkLHInit(){
-  /* K tidak lagi diukur/dipakai: --spk-lh dikunci ke 1.15 (spasi dokumen lama). */
-  try{ document.documentElement.style.setProperty('--spk-lh','1.15'); }catch(e){}
-  spkCekFontInter();
-}
-/* Diagnostik: beri tahu di Console bila Inter lokal TIDAK termuat, karena dokumen
-   akan diam-diam jatuh ke Segoe UI/Arial dan tampilannya berbeda dari draft lama. */
-function spkCekFontInter(){
-  try{
-    if(!document.fonts || !document.fonts.check) return;
-    if(document.fonts.check('11pt "Inter Local"')) return;
-    console.warn('[SPK] Font "Inter Local" tidak termuat -> dokumen memakai font cadangan '+
-      '(Segoe UI/Arial). Pastikan berkas fonts/Inter-*.woff2 ada di samping index.html '+
-      'dan halaman dibuka lewat http:// (bukan file://).');
-  }catch(e){}
+  var interOK = false;
+  try{ interOK = !!(document.fonts && document.fonts.check && document.fonts.check('11pt "Inter Local"')); }catch(e){}
+  var k = spkFontK(SPK_DOC_FONT,'11pt');
+  /* Bila Inter lokal tidak termuat, pengukuran memantulkan font cadangan (Arial).
+     Pakai K Inter agar jarak baris tidak diam-diam menyusut jadi spasi tunggal. */
+  if(!interOK){
+    k = SPK_LH_K_INTER;
+    try{ console.warn('[SPK] Font "Inter Local" tidak termuat -> dokumen memakai font '+
+      'cadangan (Segoe UI/Arial). Taruh berkas fonts/Inter-*.woff2 di samping index.html '+
+      'dan buka halaman lewat http:// (bukan file://). Jarak baris memakai K Inter '+
+      '('+SPK_LH_K_INTER+') sebagai cadangan.'); }catch(e){}
+  }
+  if(k) SPK_LH_K=k;
+  try{ document.documentElement.style.setProperty('--spk-lh', spkLHCss(1.15)); }catch(e){}
 }
 try{
   if(document.fonts && document.fonts.ready && document.fonts.ready.then) document.fonts.ready.then(spkLHInit);
   else if(document.readyState!=='loading') spkLHInit();
   else document.addEventListener('DOMContentLoaded', spkLHInit);
 }catch(e){}
-function spkLHCss(word){                                  /* nilai apa adanya -> line-height CSS */
-  /* KONVERSI K DIMATIKAN: angka dipakai langsung sebagai line-height CSS,
-     sehingga "1,15" = line-height:1.15 persis seperti dokumen versi lama. */
+function spkLHCss(word){                                  /* nilai Word -> line-height CSS */
   var n=parseFloat(word); if(isNaN(n)) return '';
-  return String(n);
+  return String(Math.round(n*SPK_LH_K*1000)/1000);
 }
 /* ---- NORMALISASI SPASI BARIS LAMA -------------------------------------------
    Klausul yang tersimpan/di-impor sebelum koreksi K membawa inline
@@ -15448,13 +15459,24 @@ function spkLHCss(word){                                  /* nilai apa adanya ->
    MENGALAHKAN CSS dokumen. Nilai <=1,2 dianggap "1,15 gaya lama" lalu dikonversi ke
    nilai Word yang benar. Spasi "Pas/Exactly" (pt/px/cm/%) dan spasi >=1,5 dibiarkan. */
 function spkFixLH(html){
-  /* NORMALISASI DIMATIKAN: inline line-height:1.15 pada klausul lama dibiarkan
-     apa adanya supaya tampilan sama persis dengan dokumen versi lama. */
-  return String(html==null?'':html);
+  var s=String(html==null?'':html);
+  if(!s || s.indexOf('line-height')<0) return s;
+  try{
+    var box=document.createElement('div'); box.innerHTML=s;
+    var els=box.querySelectorAll('p,div,li,span'), i, lh, n;
+    for(i=0;i<els.length;i++){
+      lh=String((els[i].style && els[i].style.lineHeight)||'').trim();
+      if(!lh || lh==='normal') continue;
+      if(/(pt|px|cm|mm|in|%)$/i.test(lh)) continue;        /* spasi pas -> hormati */
+      n=parseFloat(lh);
+      if(!isNaN(n) && n<=1.2) els[i].style.lineHeight=spkLHCss(1.15);
+    }
+    return box.innerHTML;
+  }catch(e){ return s; }
 }
-function spkLHWord(css){                                  /* line-height CSS -> nilai tampil */
+function spkLHWord(css){                                  /* line-height CSS -> nilai Word */
   var n=parseFloat(css); if(isNaN(n)) return null;
-  return Math.round(n*100)/100;
+  return Math.round((n/SPK_LH_K)*100)/100;
 }
 /* ================= DOKUMEN KONTRAK (cover + daftar isi + isi) ================= */
 /* Inter yang DI-HOST LOKAL — KHUSUS dokumen Susun Kontrak.
@@ -15480,10 +15502,10 @@ function spkDocCss(){
      Hanya ISI kontrak yang dirapikan mengikuti tampilan Word (Arial). */
   '@page{size:A4 portrait;margin:0}'+
   '*{box-sizing:border-box}'+
-  /* Variabel dokumen: --spk-lh = line-height CSS isi kontrak (1.15, tanpa koreksi K),
+  /* Variabel dokumen: --spk-lh = nilai CSS untuk "1,15 baris" gaya Word (hasil koreksi K),
      --spk-kv-gap = jarak bawaan baris "Label : nilai" bila tidak diatur sendiri. */
   ':root{--spk-lh:'+spkLHCss(1.15)+';--spk-kv-gap:4pt}'+
-  'body{font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif;color:#1c1c1c;margin:0;font-size:11.5px;line-height:var(--spk-lh,1.15)}'+
+  'body{font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif;color:#1c1c1c;margin:0;font-size:11.5px;line-height:var(--spk-lh,1.39)}'+
   '.spk-doc{counter-reset:spkcl}'+
   /* Penomoran judul klausul dibuat OTOMATIS (counter), bukan teks biasa */
   '.spk-clause{counter-increment:spkcl}'+
@@ -19870,9 +19892,9 @@ function spkPPrFromCss(el){
   if(lh){
     var lhPt=spkCssLen(lh,'pt');
     if(lhPt!=null){ line=spkPtTw(lhPt); rule='exact'; }
-    /* w:line 240 = 1 baris Word. Koreksi K dimatikan: nilai line-height CSS
-       dipetakan langsung (1.15 -> w:line 276), sama seperti dokumen versi lama. */
-    else if(/^[0-9.]+$/.test(lh)){ line=Math.round(parseFloat(lh)*240); rule='auto'; }
+    /* w:line 240 = 1 baris Word. line-height CSS dibagi SPK_LH_K dulu agar
+       "1,15" di web tetap terbaca "1,15" di Word (bukan 1,32). */
+    else if(/^[0-9.]+$/.test(lh)){ line=Math.round((parseFloat(lh)/SPK_LH_K)*240); rule='auto'; }
   }
   if(before!=null||after!=null||line!=null){
     sp='<w:spacing'+(before!=null?(' w:before="'+before+'"'):'')+
@@ -20153,9 +20175,9 @@ function spkParaCss(eff, noInd){
   css+='margin-top:'+spkTwPt(eff.sp.before||0)+'pt;';
   css+='margin-bottom:'+spkTwPt(eff.sp.after||0)+'pt;';
   var line=+eff.sp.line||240, lr=eff.sp.lineRule||'auto';
-  /* Word "auto" (kelipatan) -> line-height CSS langsung tanpa koreksi K
-     (w:line 276 -> 1.15), konsisten dengan dokumen versi lama. */
-  css+='line-height:'+((lr==='auto') ? (Math.round(line/240*1000)/1000) : (spkTwPt(line)+'pt'))+';';
+  /* Word "auto" (kelipatan) -> line-height CSS DENGAN koreksi SPK_LH_K, sama seperti
+     isi kontrak lainnya, supaya "1,15" di Word tampil "1,15" di web (bukan spasi tunggal). */
+  css+='line-height:'+((lr==='auto') ? (Math.round(line/240*SPK_LH_K*1000)/1000) : (spkTwPt(line)+'pt'))+';';
   if(eff.jc){
     var jm={both:'justify',center:'center',right:'right',left:'left',start:'left',end:'right'};
     if(jm[eff.jc]) css+='text-align:'+jm[eff.jc]+';';
