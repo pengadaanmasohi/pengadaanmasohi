@@ -14533,7 +14533,7 @@ function spkLampCountFieldHtml(){
   let opts='';
   for(let i=1;i<=150;i++) opts+='<option value="'+i+'"'+(L.items.length===i?' selected':'')+'>'+i+'</option>';
   const note=lock
-    ? '<div class="fkl-hint">Judul, Sub-Judul, Uraian Pekerjaan, Sat &amp; Vol terisi otomatis &amp; terkunci dari Perhitungan HPS: <b style="color:var(--teal-dark)">'+fkEsc(L.hpsNama||'')+'</b>. Harga Barang/Jasa tetap diisi manual.</div>'
+    ? '<div class="hps-lock-note"><span>&#128274;</span><span>Judul, Sub-Judul, Uraian Pekerjaan, Sat &amp; Vol terisi otomatis &amp; terkunci dari Perhitungan HPS: <b>'+fkEsc(L.hpsNama||'')+'</b>. Harga Barang &amp; Jasa tetap diisi manual.</span></div>'
     : '';
   return '<div class="form-flow" style="--cols:4;margin-bottom:14px">'+
     '<div class="field"><label>Jumlah Barang/Jasa</label>'+
@@ -14555,11 +14555,19 @@ function spkLampTableHtml(){
   const L=spkLamp();
   const lock=spkLampLocked();
   const dis=lock?' disabled':'';                 // Judul/Sub-Judul/Uraian/Sat/Vol ikut HPS
-  const clsL=lock?' is-locked':'';
+  const clsL=lock?' hps-cell-locked':'';         // konvensi kunci yang sama dengan tabel HPS
+  /* Lebar kolom No mengikuti yang TERPANJANG antara judul kolom ("No", 2 huruf)
+     dan nomor baris terbesar — memakai rumus yang sama dengan dokumen HPS/Analisa
+     (jsKolPx). Nomor di sini berurutan 1..N (bukan per-kelompok seperti jsWalk),
+     jadi panjang maksimumnya = jumlah digit N. Tanpa ini lebarnya tetap 62px:
+     terlalu lega untuk 9 item, dan terlalu sempit bila item > 99. */
+  const noLen=Math.max(2, String(L.items.length).length);
+  const noPx=jsKolPx(noLen);
+  const noStyle=' style="width:'+noPx+'px;min-width:'+noPx+'px;max-width:'+noPx+'px"';
   let rows='';
   L.items.forEach((it,i)=>{
     rows+='<tr>'+
-      '<td class="c-no">'+(i+1)+'</td>'+
+      '<td class="c-no"'+noStyle+'>'+(i+1)+'</td>'+
       '<td class="c-kel'+clsL+'"><input type="text" data-i="'+i+'" placeholder="mis. JASA EDIT DFD" value="'+fkEsc(it.judul||'')+'" oninput="spkLampOn(this,\'judul\')"'+dis+'></td>'+
       '<td class="c-kel'+clsL+'"><input type="text" data-i="'+i+'" placeholder="mis. Edit/Drawing" value="'+fkEsc(it.subjudul||'')+'" oninput="spkLampOn(this,\'subjudul\')"'+dis+'></td>'+
       '<td class="c-ur'+clsL+'"><textarea data-i="'+i+'" rows="1" placeholder="Uraian pekerjaan / barang / jasa ke-'+(i+1)+'" oninput="spkLampOn(this,\'uraian\')"'+dis+'>'+fkEsc(it.uraian||'')+'</textarea></td>'+
@@ -14569,9 +14577,10 @@ function spkLampTableHtml(){
       '<td class="c-money"><input type="text" inputmode="decimal" data-i="'+i+'" placeholder="Rp" value="'+spkHargaText(it.hargaJasa)+'" oninput="spkLampOnHarga(this,\'hargaJasa\')"></td>'+
     '</tr>';
   });
-  return '<div class="hps-uraian-wrap"><table class="hps-uraian"><thead>'+
-    '<tr><th class="c-no">No</th><th>Judul</th><th>Sub-Judul</th><th class="c-ur">Uraian Pekerjaan</th><th>Sat</th><th>Vol</th>'+
-      '<th>Harga<br>Barang</th><th>Harga<br>Jasa</th></tr>'+
+  return '<div class="hps-uraian-wrap"><table class="hps-uraian spk-lamp-tbl"><thead>'+
+    '<tr><th class="c-no"'+noStyle+'>No</th><th class="c-kel">Judul</th><th class="c-kel">Sub-Judul</th>'+
+      '<th class="c-ur">Uraian Pekerjaan</th><th class="c-sat">Sat</th><th class="c-vol">Vol</th>'+
+      '<th class="c-money">Harga Barang</th><th class="c-money">Harga Jasa</th></tr>'+
     '</thead><tbody>'+rows+'</tbody></table></div>';
 }
 function spkLampOn(el,key){ if(spkLampLocked()) return; const L=spkLamp(); const i=+el.dataset.i; if(L.items[i]) L.items[i][key]=el.value; }
