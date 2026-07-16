@@ -105,6 +105,9 @@
 .fkl-doc .hasil.no{background:linear-gradient(180deg,#fdeaea,#f9dcdc);border:1px solid #edbcbc}
 .fkl-doc .hasil.no .hi{background:#b02626;color:#fff}
 .fkl-doc .hasil.no .ht{color:#9c2222}.fkl-doc .hasil.no .hs{color:#a15353}
+/* Bagian C (Hasil Pemeriksaan) + tanda tangan diperlakukan sebagai satu blok
+   utuh: jika tanda tangan pindah halaman, Bagian C ikut pindah bersamanya. */
+.fkl-doc-tail{break-inside:avoid;page-break-inside:avoid}
 /* Tanda terima */
 .fkl-doc-foot{margin-top:26px}
 .fkl-doc-foot .ttd-title{font-weight:800;font-size:12px;color:#0d2a30;text-transform:uppercase;letter-spacing:.3px;text-align:right}
