@@ -1698,7 +1698,81 @@ function cardIcon(k){
   if(key.includes('nilai'))       return P+'<circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.2A2.5 2.5 0 0 1 12 8c1.4 0 2.5.9 2.5 2s-1.1 2-2.5 2-2.5.9-2.5 2 1.1 2 2.5 2a2.5 2.5 0 0 0 2.5-1.2"/></svg>';
   return P+'<rect x="3" y="4" width="18" height="16" rx="2"/></svg>';
 }
+/* ============================================================
+   EFEK 3D KARTU DASHBOARD — miring mengikuti kursor
+   Memakai event delegation pada #view-dashboard, BUKAN listener per-kartu:
+   kartu dibuat ulang (innerHTML=...) setiap ganti filter Jenis/Anggaran/Tahun,
+   sehingga listener yang ditempel langsung akan hilang setiap render.
+
+   Sudut dihitung dari posisi kursor relatif terhadap titik tengah kartu:
+   kursor di kanan -> tepi kanan "masuk" (rotateY positif), kursor di atas ->
+   tepi atas masuk (rotateX positif). Nilai dikirim ke CSS lewat variabel
+   --rx/--ry/--gx/--gy; seluruh transform-nya dikerjakan CSS.
+
+   Diselaraskan ke frame layar (requestAnimationFrame) agar tidak menghitung
+   ulang lebih cepat daripada layar menggambar.
+
+   Perangkat sentuh dilewati: tidak ada kursor untuk diikuti, dan efek hover
+   akan "nyangkut" setelah jari diangkat. */
+const TILT_MAX=7;         // derajat maksimum — di atas ini teks mulai terlihat miring
+let _tiltEl=null, _tiltRaf=0, _tiltPend=null;
+
+function dashTiltSupported(){
+  try{
+    if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+    return window.matchMedia('(hover:hover) and (pointer:fine)').matches;
+  }catch(e){ return false; }
+}
+function dashTiltApply(){
+  _tiltRaf=0;
+  const p=_tiltPend; if(!p||!p.el) return;
+  const {el,x,y,w,h}=p;
+  const px=(x/w)-0.5, py=(y/h)-0.5;          // -0.5 .. 0.5
+  el.style.setProperty('--ry', ( px*TILT_MAX*2).toFixed(2)+'deg');
+  el.style.setProperty('--rx', (-py*TILT_MAX*2).toFixed(2)+'deg');
+  el.style.setProperty('--lift','-6px');
+  el.style.setProperty('--gx', ((x/w)*100).toFixed(1)+'%');
+  el.style.setProperty('--gy', ((y/h)*100).toFixed(1)+'%');
+}
+function dashTiltReset(el){
+  if(!el) return;
+  el.classList.remove('tilt-on','tilt-move');
+  el.style.removeProperty('--rx'); el.style.removeProperty('--ry');
+  el.style.removeProperty('--lift');
+  el.style.removeProperty('--gx'); el.style.removeProperty('--gy');
+}
+function initDashTilt(){
+  const root=document.getElementById('view-dashboard');
+  if(!root || root.__tiltReady) return;
+  root.__tiltReady=true;
+
+  root.addEventListener('pointermove',function(ev){
+    if(!dashTiltSupported()) return;
+    if(ev.pointerType && ev.pointerType!=='mouse') return;
+    const card=ev.target.closest ? ev.target.closest('.cards .card') : null;
+    if(!card){ if(_tiltEl){ dashTiltReset(_tiltEl); _tiltEl=null; } return; }
+    if(card!==_tiltEl){
+      if(_tiltEl) dashTiltReset(_tiltEl);
+      _tiltEl=card;
+      card.classList.add('tilt-on');
+      // tilt-move dipasang di frame berikutnya: biarkan transisi masuk
+      // berjalan dulu, baru gerakannya dibuat instan mengikuti kursor.
+      requestAnimationFrame(()=>{ if(_tiltEl===card) card.classList.add('tilt-move'); });
+    }
+    const r=card.getBoundingClientRect();
+    _tiltPend={el:card, x:ev.clientX-r.left, y:ev.clientY-r.top, w:r.width, h:r.height};
+    if(!_tiltRaf) _tiltRaf=requestAnimationFrame(dashTiltApply);
+  }, {passive:true});
+
+  // pointerleave tidak menyala saat kursor pindah antar kartu di dalam root,
+  // jadi kondisi "keluar kartu" ditangani pointermove di atas.
+  root.addEventListener('pointerleave',function(){
+    if(_tiltEl){ dashTiltReset(_tiltEl); _tiltEl=null; }
+  }, {passive:true});
+}
+
 function renderDashboard(){
+  initDashTilt();
   const jEl=document.getElementById('dash-filter-jenis');
   const jenis = jEl ? jEl.value : 'kr';
   const ftEl=document.getElementById('dash-filter-tahun');
