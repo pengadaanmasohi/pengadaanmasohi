@@ -14459,7 +14459,16 @@ var SPK_ASING = [
   'timeline','feedback','briefing','workshop','training','maintenance','support',
   'supplier','quotation','testing','commissioning','trial','standby','shutdown',
   'startup','milestone','deliverable','tools','trench','genset','handover',
-  'overmacht','aanwijzing'
+  'overmacht','aanwijzing',
+  /* --- Tambahan frasa asing (kontrak pengadaan) --- */
+  'kick off meeting','kick off','kickoff','toolbox meeting','safety briefing',
+  'progress report','daily report','weekly report','monthly report',
+  'provisional hand over','final hand over','defect liability period',
+  'material on site','joint survey','mutual check','site engineer',
+  'field engineer','project manager','defect liability',
+  /* --- Tambahan kata tunggal asing --- */
+  'invoice','schedule','subcontractor','warranty','retention','defect',
+  'housekeeping','mockup','rework','punchlist','staging','breakdown'
 ];
 var SPK_ASING_RE = null;
 /* Bangun (sekali) satu regex gabungan; frasa/kata terpanjang diuji lebih dulu. */
@@ -19462,6 +19471,11 @@ function spkPageScript(){
        halaman ini (els(tgt())>0, jadi bukan judul klausul yang bakal ikut terdorong),
        mulai halaman baru dulu supaya sub-judul + isiannya tampil utuh & rapi. */
     '   if(node.nodeType===1 && node.tagName==="P" && isSubHead(node) && !kosong() && els(tgt()).length>0 && remain()<MINSUBHEAD){ mk(); }',
+    /* KEEP-WITH-NEXT "Berdasarkan :" : judul daftar dasar (nomor-nomor berita acara)
+       tak boleh terdampar sendirian di baris paling bawah halaman. Bila sisa ruang
+       di bawah < MINSUBHEAD (tak cukup untuk judul + butir pertamanya), mulai halaman
+       baru dulu -> "Berdasarkan :" menjadi teks awal di halaman berikutnya. */
+    '   if(node.nodeType===1 && node.tagName==="P" && hasCls(node,"spk-berdasar") && !kosong() && remain()<MINSUBHEAD){ mk(); }',
     '   var t=tgt();',
     '   t.appendChild(node);',
     '   if(!over()) return;',
