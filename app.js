@@ -13975,7 +13975,7 @@ const SPK_FIELDS_FLAT = SPK_FIELD_GROUPS.reduce((a,g)=>a.concat(g.fields),[]);
    Bukan field mail-merge — hanya bagian bercetak kuning pada dokumen yang
    menjadi input (nama wakil, jabatan, no. & tgl. Keputusan Direksi, nama unit,
    alamat unit). Bagian ini sama untuk semua kontrak. */
-const SPK_P1_AKTA_PLN = "Perusahaan Berbadan Hukum yang merupakan Badan Usaha Milik Negara (BUMN) yang didirikan berdasarkan Akta Notaris No. 169 tanggal 30 Juli 1994 dibuat di hadapan Notaris SUTJIPTO, SH., yang disahkan berdasarkan Surat Keputusan Menteri Kehakiman Republik Indonesia No. C2-11.519.HT.01.01.TH'94 tanggal 01 Agustus 1994 beserta akta-akta perubahannya.";
+const SPK_P1_AKTA_PLN = "Perusahaan Berbadan Hukum yang merupakan Badan Usaha Milik Negara (BUMN) yang didirikan berdasarkan Akta Notaris No. 169 tanggal 30 Juli 1994 dibuat di hadapan Notaris SUTJIPTO, SH., yang disahkan berdasarkan Surat Keputusan Menteri Kehakiman Republik Indonesia No. C2-11.519.HT.01.01.TH'94 tanggal 1 Agustus 1994 beserta akta-akta perubahannya.";
 
 /* ---------- Preamble (pembuka) — memakai placeholder ---------- */
 const SPK_PREAMBLE_TPL =
@@ -14119,11 +14119,33 @@ function spkBuildCtx(data){
   return ctx;
 }
 /* Ganti semua {{key}} pada template dengan nilai konteks (sisa placeholder dikosongkan bila tak dikenal, dibiarkan bila kosong) */
+/* "Sembuhkan" placeholder {{key}} yang PECAH oleh Word menjadi beberapa run.
+   Saat klausul diketik/ditempel di Microsoft Word lalu diunggah, satu placeholder
+   seperti {{jangka_waktu_hari}} sering dipecah Word menjadi beberapa run terpisah
+   (mis. akibat penanda ejaan pada kata ber-"_" atau pemberian tebal sebagian).
+   Konverter .docx -> HTML membungkus TIAP run tersendiri dalam <b>/<i>/<u>,
+   sehingga hasilnya bisa berupa <b>{{</b><b>jangka_waktu_hari</b><b>}}</b>.
+   Bila ada tag di antara kurung & nama field, regex merge di bawah tidak cocok
+   dan placeholder tampil apa adanya (mentah) di dokumen. Fungsi ini menyatukan
+   kembali {{ ... }} yang terpotong tag/spasi menjadi {{key}} yang bersih —
+   format tebal/miring di LUAR placeholder tetap dipertahankan. */
+function spkHealPlaceholders(html){
+  return String(html==null?'':html).replace(
+    /\{(?:<[^>]*>|\s)*\{([\s\S]*?)\}(?:<[^>]*>|\s)*\}/g,
+    function(m, inner){
+      var key = inner.replace(/<[^>]*>/g,'').replace(/\s+/g,'');
+      return /^[a-zA-Z0-9_]+$/.test(key) ? '{{'+key+'}}' : m;
+    }
+  );
+}
 function spkMerge(tpl, ctx){
   /* Jabatan Direksi & Pengawas Pekerjaan selalu dicetak TEBAL pada dokumen
      (hanya berlaku bila klausul memakai placeholder {{jabatan_direksi}} /
      {{jabatan_pengawas}}; nilai kosong tidak dibungkus <b>). */
   var SPK_BOLD_FIELDS = { jabatan_direksi:1, jabatan_pengawas:1 };
+  /* Rapikan dulu placeholder yang terpecah oleh Word agar {{key}} kembali utuh
+     sebelum dicocokkan & diganti nilainya. */
+  tpl = spkHealPlaceholders(tpl);
   return String(tpl||'').replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, function(m,k){
     if(Object.prototype.hasOwnProperty.call(ctx,k)){
       var val=(ctx[k]==null?'':String(ctx[k]));
@@ -14148,6 +14170,68 @@ function spkNomorToNo(html){
    menelusuri DOM sehingga <b> bersarang tetap dihitung bold sekali. */
 function spkBoldPihak(html){
   return String(html==null?'':html).replace(/PIHAK(\s+)(PERTAMA|KEDUA)/g, '<b>PIHAK$1$2</b>');
+}
+/* ===== Miringkan (italic) istilah ASING pada ISI KLAUSUL SPK =====
+   Kaidah PUEBI: kata/istilah bahasa asing yang BELUM diserap ditulis MIRING;
+   kata serapan yang SUDAH baku (mis. "sistem", "aktivitas", "risiko", "standar",
+   "dokumen", "kontrak", "konstruksi", "spesifikasi") ditulis BIASA. Karena itu
+   daftar di bawah HANYA memuat istilah yang masih asing — JANGAN memasukkan kata
+   serapan baku ke sini. Silakan tambah/kurangi sesuai istilah yang lazim di
+   dokumen Anda; frasa (>1 kata) otomatis dicek lebih dulu agar utuh.
+   CATATAN: fungsi ini HANYA dipanggil pada render ISI KLAUSUL SPK (dokumen &
+   pratinjau editor klausul) — tidak menyentuh preamble, kop, lampiran, tanda
+   tangan, maupun menu lain. */
+var SPK_ASING = [
+  /* --- Frasa --- */
+  'term of reference','scope of work','value engineering','bill of quantity',
+  'purchase order','delivery order','quality control','quality assurance',
+  'visual inspection','as built drawing','shop drawing','spare part',
+  'force majeure','cable trench','unit price','man power','on site','site manager',
+  'general arrangement','test report','punch list','joint inspection',
+  /* --- Kata tunggal --- */
+  'online','offline','output','input','software','hardware','password','username',
+  'email','website','browser','server','database','backup','update','upgrade',
+  'download','upload','setting','layout','checklist','review','meeting','deadline',
+  'timeline','feedback','briefing','workshop','training','maintenance','support',
+  'supplier','quotation','testing','commissioning','trial','standby','shutdown',
+  'startup','milestone','deliverable','tools','trench','genset','handover',
+  'overmacht','aanwijzing'
+];
+var SPK_ASING_RE = null;
+/* Bangun (sekali) satu regex gabungan; frasa/kata terpanjang diuji lebih dulu. */
+function spkAsingRe(){
+  if(SPK_ASING_RE) return SPK_ASING_RE;
+  if(!Array.isArray(SPK_ASING) || !SPK_ASING.length){ SPK_ASING_RE=/(?!)/g; return SPK_ASING_RE; }
+  var terms = SPK_ASING.slice().sort(function(a,b){ return b.length-a.length; });
+  var parts = terms.map(function(t){
+    /* antar-kata pada frasa boleh dipisah spasi biasa atau &nbsp; */
+    return String(t).trim().split(/\s+/).map(function(w){
+      return w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    }).join('(?:\\s|&nbsp;)+');
+  });
+  try{ SPK_ASING_RE = new RegExp('\\b(?:'+parts.join('|')+')\\b','gi'); }
+  catch(e){ SPK_ASING_RE = /(?!)/g; }
+  return SPK_ASING_RE;
+}
+/* Bungkus setiap istilah asing dengan <i>…</i> pada ISI KLAUSUL. Hanya menyentuh
+   TEKS di luar tag HTML (atribut/tag dibiarkan), dan melewati teks yang sudah
+   berada di dalam <i> agar tidak ada italic bertumpuk. Nama dibedakan dari
+   spkItalicAsing (formatter narasi) agar keduanya tidak saling menimpa. */
+function spkKlItalicAsing(html){
+  var s = String(html==null?'':html);
+  if(!s) return s;
+  var re = spkAsingRe(); re.lastIndex = 0;
+  var depthI = 0;
+  return s.replace(/<[^>]+>|[^<]+/g, function(chunk){
+    if(chunk.charAt(0)==='<'){
+      var tag = chunk.toLowerCase();
+      if(tag==='<i>' || /^<i[\s>]/.test(tag)) depthI++;
+      else if(/^<\/i\s*>/.test(tag)) depthI = Math.max(0, depthI-1);
+      return chunk;
+    }
+    if(depthI>0) return chunk;                 /* sudah di dalam <i> → jangan dibungkus lagi */
+    return chunk.replace(re, function(m){ return '<i>'+m+'</i>'; });
+  });
 }
 /* Rapikan pola "Label / : / nilai" (tiga paragraf berurutan) menjadi satu baris
    sejajar seperti tampilan Word — dipakai pada blok Nama/Lokasi Pekerjaan dsb. */
@@ -19135,9 +19219,9 @@ function spkDocHtml(data, klausul){
   }
   const clausesHtml = (klausul||[]).map((k,i)=>
     '<div class="spk-clause"><div class="spk-cl-h"><span class="n"></span>'+spkFmtJudul(k.judul)+'</div>'+
-    '<div class="spk-cl">'+spkBoldPihak(spkNomorToNo(spkNumberFix(spkTidyKeyValue(
+    '<div class="spk-cl">'+spkKlItalicAsing(spkBoldPihak(spkNomorToNo(spkNumberFix(spkTidyKeyValue(
         spkPruneKlausul(spkMerge(spkRenumberKlausul(k.isi||'', i+1), ctx), i+1, data)
-      ))))+'</div></div>'
+      )))))+'</div></div>'
   ).join('');
   const isiBody=
     '<div class="spk-bab"><b>SURAT PERINTAH KERJA</b>'+(data.nomor_kontrak?('<span>'+esc(data.nomor_kontrak)+'</span>'):'')+'</div>'+
@@ -20069,15 +20153,21 @@ function spkNumBox(txt, hangCm, jc){
        - kolom teks semua butir SAMA (tidak pernah terdorong nomor 2 digit),
        - nomor 2 digit yang lebih panjang memanjang KE KIRI, bukan menabrak teks,
        - titik akhir nomor sejajar untuk 1 digit maupun 2 digit.
-     HURUF / simbol (a. b. / bullet) -> rata kiri, kotak boleh melebar bila perlu. */
+     HURUF / simbol (a. b. / bullet) -> rata kiri dengan lebar kotak TETAP (= hanging
+     Word), sama seperti cabang ANGKA, supaya awal teks SEMUA butir sejajar walau
+     lebar hurufnya berbeda (mis. "l." sempit vs "m."/"n." lebih lebar). */
   var gap=SPK_NUM_GAP+'cm';                     /* jeda tetap nomor -> teks */
   if(isNum){
     return '<span class="n" style="display:inline-block;width:'+hangCm+'cm;box-sizing:border-box;'+
       'padding-right:'+gap+';text-indent:0;white-space:nowrap;overflow:visible;text-align:right">'+txt+'</span>';
   }
+  /* RATA KIRI (bawaan): kotak LEBAR TETAP = hanging. Nomor rata kiri di dalam kotak;
+     awal teks butir selalu sejajar (di posisi hanging) tanpa terdorong oleh huruf
+     yang lebih lebar. Bila nomor lebih lebar dari kotak, ia meluber ke kanan
+     (overflow:visible) — sama seperti tab hanging-indent di Word. */
   var al=(jc==='right'||jc==='end')?'right':((jc==='center')?'center':'left');
-  return '<span class="n" style="display:inline-block;width:auto;min-width:'+hangCm+'cm;box-sizing:border-box;'+
-    'padding-right:'+gap+';text-indent:0;white-space:nowrap;text-align:'+al+'">'+txt+'</span>';
+  return '<span class="n" style="display:inline-block;width:'+hangCm+'cm;box-sizing:border-box;'+
+    'padding-right:'+gap+';text-indent:0;white-space:nowrap;overflow:visible;text-align:'+al+'">'+txt+'</span>';
 }
 /* Peta styleId -> NAMA gaya (dinormalkan) dari word/styles.xml */
 function spkStyleNameMap(stylesXml){
@@ -20650,7 +20740,7 @@ function spkKlausulView(id){
   // nomor klausul mengikuti posisinya di pustaka -> butir & rujukan ikut menyesuaikan
   const noKl=(records_klausul.findIndex(x=>String(x.id)===String(id))+1)||1;
   let inner='';
-  try{ inner=spkBoldPihak(spkNumberFix(spkTidyKeyValue(spkMerge(spkRenumberKlausul(k.isi||'', noKl), ctx)))); }
+  try{ inner=spkKlItalicAsing(spkBoldPihak(spkNumberFix(spkTidyKeyValue(spkMerge(spkRenumberKlausul(k.isi||'', noKl), ctx))))); }
   catch(e){ inner=String(k.isi||''); }
   let ov=document.getElementById('spk-klausul-view-ov');
   if(!ov){ ov=document.createElement('div'); ov.id='spk-klausul-view-ov'; ov.className='spk-ov'; document.body.appendChild(ov);
