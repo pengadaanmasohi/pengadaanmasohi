@@ -3703,3 +3703,117 @@ table.hps-uraian.spk-lamp-tbl td.c-no{
   .form-card,.field input,.field select,.field textarea,
   .btn,.btn svg,.act,.card-ic,.settings-gear{ transition:none }
 }
+
+/* ============================================================
+   EFEK 3D — BRAND (LOGO + JUDUL) & MENU ATAS
+   Catatan teknis: `.topbar` sendiri memakai position:sticky, jadi TIDAK boleh
+   diberi transform (akan mematahkan sticky-nya). Transform hanya dipasang pada
+   anak-anaknya (logo, judul, tombol menu) — di situ aman.
+   ============================================================ */
+
+/* ---------- Logo: kotak timbul dengan kilau ---------- */
+.topbar-brand .logo{
+  position:relative;
+  border-radius:13px;
+  background:linear-gradient(145deg, rgba(255,255,255,.22), rgba(255,255,255,.04));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.45),      /* highlight tepi atas */
+    inset 0 -1px 0 rgba(0,0,0,.18),           /* bayangan tepi bawah */
+    0 2px 4px rgba(0,0,0,.18),
+    0 6px 14px rgba(0,0,0,.20);
+  transform:translateZ(0);
+  transition:transform .38s cubic-bezier(.34,1.56,.64,1), box-shadow .38s ease;
+}
+/* Kilau diagonal melintas saat disentuh */
+.topbar-brand .logo::after{
+  content:"";
+  position:absolute; inset:0;
+  border-radius:inherit;
+  background:linear-gradient(115deg, transparent 30%, rgba(255,255,255,.42) 50%, transparent 70%);
+  transform:translateX(-130%);
+  transition:transform .7s cubic-bezier(.2,.8,.2,1);
+  pointer-events:none;
+}
+.topbar-brand:hover .logo::after{ transform:translateX(130%) }
+.topbar-brand:hover .logo{
+  transform:perspective(420px) rotateY(-14deg) rotateX(6deg) scale(1.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.5),
+    0 4px 8px rgba(0,0,0,.2),
+    0 12px 26px rgba(0,0,0,.28);
+}
+/* Gambar logo sedikit maju agar terasa melayang di atas kotaknya */
+.topbar-brand .logo .logo-img{
+  transition:transform .38s cubic-bezier(.34,1.56,.64,1), filter .38s ease;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.3));
+}
+.topbar-brand:hover .logo .logo-img{
+  transform:scale(1.06);
+  filter:drop-shadow(0 3px 6px rgba(0,0,0,.4));
+}
+
+/* ---------- Judul: huruf timbul (embossed) ----------
+   Bayangan gelap di bawah + garis terang tipis di atas = huruf terasa menonjol
+   dari latar teal, bukan sekadar ditempel. */
+.brand h1{
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.28),            /* garis terang di puncak huruf */
+    0 -1px 1px rgba(0,0,0,.22),
+    0 2px 3px rgba(0,0,0,.30),
+    0 4px 10px rgba(0,0,0,.22);
+  transition:text-shadow .35s ease, transform .35s cubic-bezier(.34,1.56,.64,1);
+}
+.topbar-brand:hover .brand h1{
+  text-shadow:
+    0 1px 0 rgba(255,255,255,.36),
+    0 -1px 1px rgba(0,0,0,.24),
+    0 3px 5px rgba(0,0,0,.34),
+    0 7px 16px rgba(0,0,0,.28);
+  transform:translateY(-1px);
+}
+.brand span{
+  text-shadow:0 1px 2px rgba(0,0,0,.28);
+  transition:opacity .35s ease;
+}
+.topbar-brand:hover .brand span{ opacity:1 }
+
+/* Beri ruang 3D pada blok brand & jadikan kursor petunjuk interaktif */
+.topbar-brand{ perspective:600px; cursor:default }
+
+/* ---------- Menu atas: tombol timbul ----------
+   `.topnav-link:hover` (baris ~1051) sudah memberi translateY(-2px); di sini
+   relief-nya dilengkapi agar terbaca sebagai tombol fisik. */
+.topnav-link,.topnav-trigger{
+  text-shadow:0 1px 2px rgba(0,0,0,.22);
+}
+.topnav-link:hover,.topnav-trigger:hover{
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.24),
+    0 8px 20px rgba(0,0,0,.22);
+}
+/* Ditekan: turun & bayangan dalam */
+.topnav-link:active,.topnav-trigger:active{
+  box-shadow:inset 0 2px 6px rgba(0,0,0,.3);
+}
+/* Menu aktif: timbul lebih tegas, senada aksen kuning yang sudah ada */
+.topnav-link.active{
+  box-shadow:
+    0 6px 18px rgba(246,180,14,.45),
+    inset 0 1px 0 rgba(255,255,255,.6),
+    inset 0 -2px 0 rgba(150,100,0,.28);
+  text-shadow:0 1px 0 rgba(255,255,255,.45);
+}
+
+/* Item dropdown: relief halus saat disentuh */
+.topnav-item:hover{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7), 0 3px 8px rgba(16,40,50,.14);
+}
+
+/* ---------- Hormati "kurangi animasi" ---------- */
+@media (prefers-reduced-motion:reduce){
+  .topbar-brand:hover .logo,
+  .topbar-brand:hover .logo .logo-img,
+  .topbar-brand:hover .brand h1{ transform:none }
+  .topbar-brand .logo::after{ display:none }
+  .topbar-brand .logo,.topbar-brand .logo .logo-img,.brand h1{ transition:none }
+}
