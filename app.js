@@ -15563,11 +15563,11 @@ function spkDocCss(){
   /* Blok tanda tangan akhir */
   '.spk-sign{margin-top:30px;width:100%;border-collapse:collapse}'+
   '.spk-sign td{width:50%;text-align:center;vertical-align:top;font-size:11pt;padding:4px}'+
-  '.spk-sign .role{font-weight:700}.spk-sign .nm{font-weight:700;text-decoration:underline;margin-top:82px}'+
+  '.spk-sign .role{font-weight:700}.spk-sign .nm{font-weight:700;text-decoration:underline;margin-top:86px}'+
   /* Baris kepala (PIHAK … + nama instansi) dan baris nama/jabatan dipisah menjadi
      dua <tr>. Karena tinggi satu baris tabel berlaku sama untuk KEDUA kolom, blok
      nama & jabatan selalu mulai pada garis yang sama — tidak lagi melorot mengikuti
-     panjang nama instansi masing-masing pihak. Ruang tanda tangan (82px) dijaga oleh
+     panjang nama instansi masing-masing pihak. Ruang tanda tangan (86px) dijaga oleh
      margin-top .nm; padding antar-baris dinolkan agar jaraknya tetap seperti semula. */
   '.spk-sign tr.sg-head td{padding-bottom:0;vertical-align:top}'+
   '.spk-sign tr.sg-body td{padding-top:0;vertical-align:top}'+
