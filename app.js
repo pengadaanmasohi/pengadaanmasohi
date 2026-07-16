@@ -8640,8 +8640,14 @@ function pnwExtraDocCss(){
   '.pnw-doc .fkl-chk thead th{text-align:center;white-space:normal;line-height:1.22;vertical-align:middle}'+
   '.pnw-doc .fkl-chk:not(.pnw-hasil) th.ck,.pnw-doc .fkl-chk:not(.pnw-hasil) td.ck{width:112px}'+
   '.pnw-doc .fkl-chk:not(.pnw-hasil) .pill{min-width:0;padding:3px 8px}'+
-  '.pnw-hasil{margin-top:2px}'+
+  '.pnw-hasil{margin-top:2px;table-layout:fixed}'+
+  '.pnw-doc .pnw-hasil th.no,.pnw-doc .pnw-hasil td.no{width:34px}'+
   '.pnw-doc .pnw-hasil th.ck,.pnw-doc .pnw-hasil td.ck{width:136px}'+
+  /* Kolom Nama Penyedia dipersempit 35% (52% -> 34%); sisa ruangnya dialihkan ke
+     kolom Keterangan (22% -> 40%) agar teks keterangan tidak terpecah sempit. */
+  '.pnw-doc .pnw-hasil th.nm,.pnw-doc .pnw-hasil td.nm{width:34%}'+
+  '.pnw-doc .pnw-hasil th.kt,.pnw-doc .pnw-hasil td.kt{width:40%}'+
+  '.pnw-doc .pnw-hasil td.nm{white-space:normal;word-break:break-word;overflow-wrap:break-word}'+
   '.pnw-doc .pnw-hasil td.kt{white-space:normal}'+
   '.ttd .role2{font-weight:700;color:#16242c;margin-top:1px}';
 }
