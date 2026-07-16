@@ -641,6 +641,7 @@ function playLoginAnim(role, done){
   if(anim){
     anim.classList.remove('fade-out');
     anim.classList.add('show');
+    sfxSession('in');           // arpeggio naik, seiring animasi "Selamat Datang"
     setTimeout(finish, 1300);   // mainkan animasi ± 1,3 detik sebelum masuk aplikasi
   }else{
     finish();
@@ -728,6 +729,30 @@ document.addEventListener('click',function(ev){
   const w=document.getElementById('settings-wrap');
   if(w && w.classList.contains('open') && !w.contains(ev.target)) closeSettingsMenu();
 });
+
+/* Nada klik untuk menu & tombol.
+   Dipasang sebagai SATU listener global (fase capture) alih-alih ditempel pada
+   tiap onclick: menu memakai handler yang berbeda-beda (showView, openDpView,
+   openFklView, ...), dan cara ini otomatis mencakup menu yang ditambah nanti.
+   Fase capture dipakai agar nada tetap berbunyi walau handler lain memanggil
+   stopPropagation() (mis. toggleTopGroup / toggleSettingsMenu).
+
+   DIKECUALIKAN: tombol masuk & keluar. Keduanya sudah punya nada sesi sendiri
+   (arpeggio naik/turun via sfxSession), jadi nada klik akan bertabrakan dengannya.
+   Tombol "Keluar" dikecualikan lewat .settings-item.danger, dan pilihan "Ya" pada
+   modal konfirmasi keluar lewat penanda data-sfx="none" yang dipasang saat modal
+   itu dibuka (lihat openConfirm). */
+document.addEventListener('click',function(ev){
+  if(typeof sfxClick!=='function') return;
+  const el=ev.target && ev.target.closest ? ev.target.closest(
+    '.topnav-link,.topnav-item,.topnav-trigger,.settings-item,.settings-gear,.btn,.login-btn') : null;
+  if(!el) return;
+  if(el.disabled) return;
+  if(el.classList.contains('login-btn')) return;              // masuk -> sfxSession('in')
+  if(el.matches('.settings-item.danger')) return;             // keluar -> sfxSession('out')
+  if(el.dataset && el.dataset.sfx==='none') return;           // "Ya" pada konfirmasi keluar
+  sfxClick();
+}, true);
 document.addEventListener('keydown',function(ev){ if(ev.key==='Escape') closeSettingsMenu(); });
 
 /* Memicu ulang animasi zoom-out pada kartu login (dipakai saat login screen
@@ -761,6 +786,7 @@ function performLogout(){
   if(anim){
     anim.classList.remove('fade-out');
     anim.classList.add('show');
+    sfxSession('out');          // arpeggio turun, seiring animasi keluar
     setTimeout(finish, 1300);   // mainkan animasi ± 1,3 detik sebelum ke layar login
   }else{
     finish();
@@ -770,6 +796,7 @@ function logout(){
   openConfirm({
     icon:'back', title:'Keluar',
     text:'Apakah anda yakin ingin keluar?',
+    sfxNone:true,          // "Ya" langsung disusul nada keluar (sfxSession('out'))
     onYes:performLogout
   });
 }
@@ -1241,12 +1268,17 @@ const ICONS={
   warn:`<svg viewBox="0 0 24 24" fill="none" stroke="#C98A00" stroke-width="2.1"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4M12 17h.01"/></svg>`
 };
 const ICON_BG={save:'#d8f0e3',back:'#fbe0e0',del:'#fbe0e0',warn:'#fdf0d6'};
-function openConfirm({icon,title,text,onYes}){
+/* sfxNone:true -> tombol "Ya" tidak membunyikan nada klik, dipakai oleh
+   konfirmasi Keluar yang sudah punya nada sesi sendiri. Penanda dipasang
+   per-pemakaian & selalu dibersihkan, karena modal ini dipakai bersama
+   (hapus data, dll) yang tetap butuh nada klik normal. */
+function openConfirm({icon,title,text,onYes,sfxNone}){
   document.getElementById('confirm-icon').innerHTML=ICONS[icon];
   document.getElementById('confirm-icon').style.background=ICON_BG[icon];
   document.getElementById('confirm-title').textContent=title;
   document.getElementById('confirm-text').textContent=text;
   const yes=document.getElementById('confirm-yes');
+  if(sfxNone) yes.dataset.sfx='none'; else delete yes.dataset.sfx;
   yes.onclick=()=>{ closeConfirm(); onYes(); };
   document.getElementById('confirm-overlay').classList.add('show');
 }
@@ -3178,6 +3210,45 @@ function sfxPlay(kind){
       _sfxTone(ctx, 1318.51, t0+0.10, 0.20, 0.11);
     }
   }catch(e){ /* audio tidak tersedia: notifikasi visual tetap jalan */ }
+}
+
+/* --- Nada klik menu ---------------------------------------------------------
+   Sangat singkat & pelan: dipicu jauh lebih sering daripada notifikasi, jadi
+   sengaja dibuat nyaris tak terasa agar tidak melelahkan di pemakaian harian. */
+function sfxClick(){
+  if(!sfxEnabled()) return;
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
+    if(!_sfxCtx) _sfxCtx=new AC();
+    const ctx=_sfxCtx;
+    if(ctx.state==='suspended') ctx.resume().catch(()=>{});
+    _sfxTone(ctx, 2000, ctx.currentTime+0.005, 0.035, 0.05);
+  }catch(e){}
+}
+
+/* --- Nada masuk & keluar ----------------------------------------------------
+   Mengiringi animasi "Selamat Datang" (playLoginAnim) dan animasi keluar
+   (performLogout), yang masing-masing berdurasi ± 1,3 detik. Nadanya dibuat
+   lebih panjang & bertingkat daripada nada notifikasi biasa supaya terasa
+   sebagai penanda babak, bukan sekadar umpan balik.
+
+     masuk  -> arpeggio NAIK   C5-E5-G5-C6 (terbuka, menyambut)
+     keluar -> arpeggio TURUN  C6-G5-E5-C5 (menutup, kebalikannya) */
+function sfxSession(kind){
+  if(!sfxEnabled()) return;
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
+    if(!_sfxCtx) _sfxCtx=new AC();
+    const ctx=_sfxCtx;
+    if(ctx.state==='suspended') ctx.resume().catch(()=>{});
+    const t0=ctx.currentTime+0.02;
+    const naik=[523.25, 659.25, 783.99, 1046.50];        // C5 E5 G5 C6
+    const nada=(kind==='out')?naik.slice().reverse():naik;
+    nada.forEach((f,i)=>{
+      const last=(i===nada.length-1);
+      _sfxTone(ctx, f, t0+i*0.13, last?0.42:0.20, 0.10);
+    });
+  }catch(e){}
 }
 
 function toast(msg,kind){
