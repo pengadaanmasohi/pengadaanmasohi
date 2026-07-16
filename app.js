@@ -7117,6 +7117,7 @@ function fklBuildDocHtml(){
       (chkRows||'<tr><td colspan="4" class="empty">Data tidak tersedia</td></tr>')+
     '</tbody></table>'+
 
+    '<div class="fkl-doc-tail">'+
     '<div class="fkl-sec-h"><span class="rn">C</span>Hasil Pemeriksaan</div>'+
     hasilBlock+
 
@@ -7126,6 +7127,7 @@ function fklBuildDocHtml(){
         '<td><div class="role">Yang Menyerahkan,</div><div class="gap"></div><div class="nm">'+fkEsc(info.menyerahkan||'(..........................)')+'</div></td>'+
         '<td><div class="role">Yang Menerima,</div><div class="gap"></div><div class="nm">'+fkEsc(info.menerima||'(..........................)')+'</div></td>'+
       '</tr></tbody></table>'+
+    '</div>'+
     '</div>'+
   '</div>';
 }
@@ -7300,7 +7302,7 @@ function fklPageScript(){
        sehingga utuh() gagal mengenalinya dan tanda tangan bisa berdiri sendiri di
        halaman berikutnya, meninggalkan angka rekapnya. Dikunci lewat KELAS agar
        selalu dipindah utuh — sama seperti penjaga di spkPageScript. */
-    ' if(n.classList && (n.classList.contains("hps-tail")||n.classList.contains("ttd-row")||n.classList.contains("rho-doc-item"))) return true;',
+    ' if(n.classList && (n.classList.contains("hps-tail")||n.classList.contains("ttd-row")||n.classList.contains("rho-doc-item")||n.classList.contains("fkl-doc-tail"))) return true;',
     ' if(utuh(n)) return true;',
     ' return els(n).length===0;',
     '}',
@@ -7440,7 +7442,7 @@ function hpscPageScript(){
     ' var t=n.tagName;',
     ' if(t==="P"||t==="TR"||t==="IMG"||t==="BR"||t==="HR"||t==="LI"||t==="THEAD"||t==="TFOOT"||t==="COLGROUP") return true;',
     ' if(n.namespaceURI && n.namespaceURI!=="http://www.w3.org/1999/xhtml") return true;',
-    ' if(n.classList && (n.classList.contains("hps-tail")||n.classList.contains("ttd-row")||n.classList.contains("rho-doc-item"))) return true;',
+    ' if(n.classList && (n.classList.contains("hps-tail")||n.classList.contains("ttd-row")||n.classList.contains("rho-doc-item")||n.classList.contains("fkl-doc-tail"))) return true;',
     ' if(utuh(n)) return true;',
     ' return els(n).length===0;',
     '}',
