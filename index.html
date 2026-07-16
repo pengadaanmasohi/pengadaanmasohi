@@ -1682,6 +1682,7 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
 
 <div class="login-screen" id="login-screen">
   <div class="login-orbs"><span></span><span></span><span></span><span></span></div>
+  <div class="login-tilt" id="login-tilt">
   <div class="login-card">
 
     <!-- Panel kiri: branding -->
@@ -1750,7 +1751,47 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
       <div class="login-foot">PT PLN (Persero) · UP3 Masohi</div>
     </div>
   </div>
+  </div>
 </div>
+<script>
+/* ==== Efek 3D interaktif kartu login ==== */
+(function(){
+  var scr=document.getElementById('login-screen');
+  var tilt=document.getElementById('login-tilt');
+  if(!scr||!tilt) return;
+  var orbs=scr.querySelector('.login-orbs');
+  var mq=window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)');
+  if(mq&&mq.matches) return;
+  var hover=false, mx=0, my=0, curX=0, curY=0, t=0, running=false;
+  function visible(){ return scr.offsetParent!==null; }
+  function loop(){
+    if(!visible()){ running=false; return; }
+    t+=1/60;
+    var tgX, tgY, lift;
+    if(hover){ tgY=mx*9; tgX=-my*7; lift=-6; }
+    else { tgX=Math.sin(t*0.55)*1.5; tgY=Math.cos(t*0.45)*2.1; lift=Math.sin(t*0.55)*4; }
+    curX+=(tgX-curX)*0.09; curY+=(tgY-curY)*0.09;
+    tilt.style.transform='translateY('+lift.toFixed(2)+'px) rotateX('+curX.toFixed(2)+'deg) rotateY('+curY.toFixed(2)+'deg)';
+    tilt.style.setProperty('--gx',(( curY/9)*50+50).toFixed(1)+'%');
+    tilt.style.setProperty('--gy',((-curX/7)*50+50).toFixed(1)+'%');
+    if(orbs) orbs.style.transform='translate('+(-curY*2.2).toFixed(1)+'px,'+(curX*2.2).toFixed(1)+'px)';
+    requestAnimationFrame(loop);
+  }
+  function start(){ if(!running){ running=true; requestAnimationFrame(loop); } }
+  scr.addEventListener('pointermove',function(e){
+    if(e.pointerType==='touch') return;
+    var r=tilt.getBoundingClientRect();
+    mx=Math.max(-1,Math.min(1,(e.clientX-(r.left+r.width/2))/(r.width/2)));
+    my=Math.max(-1,Math.min(1,(e.clientY-(r.top+r.height/2))/(r.height/2)));
+    if(!hover){ hover=true; tilt.classList.add('is-hot'); }
+    start();
+  });
+  scr.addEventListener('pointerleave',function(){ hover=false; tilt.classList.remove('is-hot'); });
+  setTimeout(start, 900);
+  var card=tilt.querySelector('.login-card');
+  if(card) card.addEventListener('animationend',start);
+})();
+</script>
 
 <div class="route-loader" id="route-loader">
   <div class="rl-box">
