@@ -13577,10 +13577,10 @@ function hpscCoverIndex(dp, tglHps, nomor, have){
   /* Hanya cantumkan bagian yang benar-benar ada dokumennya (tertaut Nama Pekerjaan),
      lalu bernomor ulang otomatis — agar daftar cocok dengan lembar yang tercetak. */
   const secs=[
-    ['Perhitungan HPS','Cover, review & dokumen HPS', !!have.hps],
+    ['Perhitungan HPS','Dokumen HPS', !!have.hps],
     ['Analisa Harga Satuan','Dokumen analisa harga satuan', !!have.ana],
-    ['Jadwal Pengadaan','Cover & tahapan proses pengadaan', !!have.jadwal],
-    ['Referensi Harga','Cover & referensi harga online', !!have.ref]
+    ['Jadwal Pengadaan','Tahapan proses pengadaan', !!have.jadwal],
+    ['Referensi Harga','Lampiran referensi harga', !!have.ref]
   ].filter(d=>d[2]);
   const docHtml = secs.length
     ? secs.map((d,i)=>'<div class="hpsc-doc"><div class="n">'+(i+1)+'</div><div class="tx"><b>'+d[0]+'</b><span>'+d[1]+'</span></div></div>').join('')
