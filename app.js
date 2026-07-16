@@ -7300,7 +7300,7 @@ function fklPageScript(){
        sehingga utuh() gagal mengenalinya dan tanda tangan bisa berdiri sendiri di
        halaman berikutnya, meninggalkan angka rekapnya. Dikunci lewat KELAS agar
        selalu dipindah utuh — sama seperti penjaga di spkPageScript. */
-    ' if(n.classList && (n.classList.contains("hps-tail")||n.classList.contains("ttd-row"))) return true;',
+    ' if(n.classList && (n.classList.contains("hps-tail")||n.classList.contains("ttd-row")||n.classList.contains("rho-doc-item"))) return true;',
     ' if(utuh(n)) return true;',
     ' return els(n).length===0;',
     '}',
@@ -7440,7 +7440,7 @@ function hpscPageScript(){
     ' var t=n.tagName;',
     ' if(t==="P"||t==="TR"||t==="IMG"||t==="BR"||t==="HR"||t==="LI"||t==="THEAD"||t==="TFOOT"||t==="COLGROUP") return true;',
     ' if(n.namespaceURI && n.namespaceURI!=="http://www.w3.org/1999/xhtml") return true;',
-    ' if(n.classList && (n.classList.contains("hps-tail")||n.classList.contains("ttd-row"))) return true;',
+    ' if(n.classList && (n.classList.contains("hps-tail")||n.classList.contains("ttd-row")||n.classList.contains("rho-doc-item"))) return true;',
     ' if(utuh(n)) return true;',
     ' return els(n).length===0;',
     '}',
@@ -9645,7 +9645,9 @@ function rhoBuildDocHtml(){
 }
 function rhoExtraDocCss(){
   return ''+
-  '.rho-doc-item{margin:10px 0 16px;break-inside:avoid;page-break-inside:avoid}'+
+  '.rho-doc-item{margin:10px 0 16px;break-inside:avoid;page-break-inside:avoid;-webkit-column-break-inside:avoid}'+
+  '.rho-doc-item-h{break-after:avoid;page-break-after:avoid}'+
+  'table.rho-doc-tbl{break-inside:avoid;page-break-inside:avoid}'+
   '.rho-doc-item-h{display:flex;align-items:center;gap:8px;font-family:"Plus Jakarta Sans",sans-serif;font-weight:800;font-size:12px;color:#0b3d42;background:#e3f2f3;border:1px solid #bfe0e2;border-radius:6px;padding:6px 10px;margin-bottom:6px;text-transform:uppercase}'+
   '.rho-doc-item-h .rn{flex:0 0 auto;color:#0b3d42;font-family:"Plus Jakarta Sans",sans-serif;font-weight:800;font-size:12px;line-height:1;background:none;border:0;padding:0;margin:0}'+
   '.rho-doc,.rho-doc *{-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
