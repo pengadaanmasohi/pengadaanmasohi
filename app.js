@@ -8630,7 +8630,7 @@ function pnwExtraDocCss(){
      dihapus), sehingga tinggi isi di pratinjau tidak sama dengan hasil cetak. */
   '.pnw-doc + .pnw-doc{margin-top:26px;padding-top:26px;border-top:2px dashed #cbd5d8}'+
   '.pnw-penyedia-block{margin:6px 0 14px}'+
-  '.pnw-penyedia-name{font-family:"Plus Jakarta Sans",sans-serif;font-weight:800;font-size:12px;letter-spacing:.4px;color:#0b3d42;background:#e3f2f3;border:1px solid #bfe0e2;border-radius:6px;padding:6px 10px;margin-bottom:6px;text-transform:uppercase}'+
+  '.pnw-penyedia-name{font-family:"Outfit",sans-serif;font-weight:800;font-size:12px;letter-spacing:.4px;color:#0b3d42;background:#e3f2f3;border:1px solid #bfe0e2;border-radius:6px;padding:6px 10px;margin-bottom:6px;text-transform:uppercase}'+
   '.fkl-chk td.kt,.fkl-chk th.kt{width:22%;text-align:left}'+
   /* Baris judul kategori persyaratan — dibedakan jelas dari isi persyaratan */
   '.fkl-chk tr.cat td{background:#e3f2f3;color:#0b3d42;font-weight:800;font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;padding:7px 12px 7px 14px;border-top:1.5px solid #0b6a73;border-bottom:1px solid #9fc7cb;border-right:none;position:relative;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
@@ -9656,8 +9656,8 @@ function rhoExtraDocCss(){
   '.rho-doc-item{margin:10px 0 16px;break-inside:avoid;page-break-inside:avoid;-webkit-column-break-inside:avoid}'+
   '.rho-doc-item-h{break-after:avoid;page-break-after:avoid}'+
   'table.rho-doc-tbl{break-inside:avoid;page-break-inside:avoid}'+
-  '.rho-doc-item-h{display:flex;align-items:center;gap:8px;font-family:"Plus Jakarta Sans",sans-serif;font-weight:800;font-size:12px;color:#0b3d42;background:#e3f2f3;border:1px solid #bfe0e2;border-radius:6px;padding:6px 10px;margin-bottom:6px;text-transform:uppercase}'+
-  '.rho-doc-item-h .rn{flex:0 0 auto;color:#0b3d42;font-family:"Plus Jakarta Sans",sans-serif;font-weight:800;font-size:12px;line-height:1;background:none;border:0;padding:0;margin:0}'+
+  '.rho-doc-item-h{display:flex;align-items:center;gap:8px;font-family:"Outfit",sans-serif;font-weight:800;font-size:12px;color:#0b3d42;background:#e3f2f3;border:1px solid #bfe0e2;border-radius:6px;padding:6px 10px;margin-bottom:6px;text-transform:uppercase}'+
+  '.rho-doc-item-h .rn{flex:0 0 auto;color:#0b3d42;font-family:"Outfit",sans-serif;font-weight:800;font-size:12px;line-height:1;background:none;border:0;padding:0;margin:0}'+
   '.rho-doc,.rho-doc *{-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   'table.rho-doc-tbl{width:100%;border-collapse:collapse;table-layout:fixed;margin-bottom:4px;border:1px solid #0b6a73}'+
   'table.rho-doc-tbl th,table.rho-doc-tbl td{border:1px solid #cfe0e3;padding:5px 7px;font-size:10px;vertical-align:middle;word-wrap:break-word;overflow-wrap:anywhere}'+
@@ -13236,7 +13236,7 @@ const HPSC_IC = {
 function hpscCss(){
   return ''+
   /* Tinggi persis A4 (297mm) agar footer menempel ke tepi bawah tanpa celah kertas putih */
-  '.hpsc-page{position:relative;width:210mm;height:297mm;min-height:297mm;background:#fff;margin:0 auto 16px;box-shadow:0 10px 30px rgba(20,50,60,.18);page-break-after:always;break-after:page;overflow:hidden;display:flex;flex-direction:column;font-family:Carlito,Calibri,"Plus Jakarta Sans",Arial,sans-serif;color:#16242c}'+
+  '.hpsc-page{position:relative;width:210mm;height:297mm;min-height:297mm;background:#fff;margin:0 auto 16px;box-shadow:0 10px 30px rgba(20,50,60,.18);page-break-after:always;break-after:page;overflow:hidden;display:flex;flex-direction:column;font-family:Carlito,Calibri,"Outfit",Arial,sans-serif;color:#16242c}'+
   '.hpsc-page:last-child{page-break-after:auto}'+
   '.hpsc-head{position:relative;background:linear-gradient(120deg,#0b3d42 0%,#0E7C86 55%,#12a0a0 100%);color:#fff;padding:34px 40px 30px;overflow:hidden}'+
   '.hpsc-head::after{content:"";position:absolute;right:-90px;top:-90px;width:340px;height:340px;border-radius:50%;border:38px solid rgba(255,255,255,.06)}'+
