@@ -2737,7 +2737,7 @@ table.ana-uraian td.c-calc{text-align:right;font-weight:800;color:#0b6a73;white-
 table.ana-res{width:100%;border-collapse:collapse;border-spacing:0;min-width:760px}
 /* Grid penuh 1px #dce6e9 (vertikal + horizontal) — sama seperti tabel Monitoring/Daftar Pekerjaan */
 table.ana-res th,table.ana-res td{border:1px solid #dce6e9}
-table.ana-res thead th{background:#0E7C86;color:#fff;font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:.3px;padding:8px 10px;text-align:center;white-space:normal;word-break:normal;overflow-wrap:break-word;line-height:1.25;vertical-align:middle;border-color:#0b6b74}
+table.ana-res thead th{background:#0E7C86;color:#fff;font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:.3px;padding:8px 10px;text-align:center;white-space:normal;word-break:normal;overflow-wrap:break-word;line-height:1.25;vertical-align:middle;border-color:rgba(255,255,255,.45)}
 table.ana-res thead th.c-ur{text-align:center}
 table.ana-res thead th.c-no{text-align:center;width:46px;min-width:40px;max-width:52px}
 table.ana-res tbody td.c-no{width:46px;min-width:40px;max-width:52px}
