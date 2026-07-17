@@ -3961,9 +3961,9 @@ const FIELDS_TENDER = [
   {key:'bidang_pelaksana', label:'Bidang Pelaksana', type:'select', options:BIDANG_OPTS, table:true, req:true},
   {key:'level_risiko', label:'Level Risiko Pekerjaan', type:'select', options:RISIKO_OPTS, req:true},
   // II. Nota Dinas Pengadaan
-  {key:'no_nd_rendan', label:'No. Nota Dinas Rendan', type:'text', req:true},
+  {key:'no_nd_rendan', label:'No. Nota Dinas Rendan', type:'text'},
   {key:'tgl_nd_rendan', label:'Tgl. Nota Dinas Rendan', type:'date', req:true},
-  {key:'no_nd_laksda', label:'No. Nota Dinas Laksda', type:'text', req:true},
+  {key:'no_nd_laksda', label:'No. Nota Dinas Laksda', type:'text'},
   {key:'tgl_nd_laksda', label:'Tgl. Nota Dinas Laksda', type:'date', req:true},
   // III. Dokumen Pengadaan
   {key:'tgl_terima_dok', label:'Tgl. Diterima Dokumen Pengadaan', type:'date', req:true},
