@@ -350,7 +350,7 @@ th.col-penyedia,td.col-penyedia{width:200px;min-width:200px;max-width:200px;whit
 .stack-line+.stack-line{border-top:1px dashed var(--line);margin-top:2px}
 .stack-no{display:inline-block;min-width:16px;color:var(--teal-dark);font-weight:800;font-size:10px}
 td.cell-center{text-align:center}
-.action-cell{display:flex;gap:6px}
+.action-cell{display:flex;gap:6px;justify-content:center}
 .act{border:none;border-radius:8px;width:30px;height:30px;display:grid;place-items:center;color:#fff;transition:transform .15s,box-shadow .2s}
 .act svg{width:15px;height:15px}
 .act-edit{background:linear-gradient(135deg,var(--yellow),#ffca3a);color:#5a3d00}.act-view{background:linear-gradient(135deg,var(--teal),var(--cyan))}.act-del{background:linear-gradient(135deg,var(--red),#e25151)}
@@ -584,6 +584,11 @@ td.cell-center{text-align:center}
 @media(max-width:640px){ .form-flow>.field.field-wide15{flex:1 1 100% !important} }
 .form-flow>.field input,.form-flow>.field select{width:100%}
 @media(max-width:640px){ .form-flow>.field{flex:1 1 100% !important;width:100% !important} }
+/* Tombol "Tambah Tanggal" sejajar (rata bawah) dengan field Tanggal & Keterangan.
+   .form-flow sudah align-items:flex-end, jadi tombol otomatis sebaris dengan input. */
+.hl-add-btn-field{display:flex;align-items:flex-end}
+.hl-add-btn-field .btn{white-space:nowrap}
+@media(max-width:640px){ .hl-add-btn-field .btn{width:100%;justify-content:center} }
 /* Baris "Informasi Umum" dengan lebar tetap — HANYA di form Input SPBJ/Kontrak Rinci */
 #view-input .grid-umum{display:grid;grid-template-columns:180px 280px 120px 270px;gap:10px 30px}
 #view-input .grid-umum + .form-grid{margin-top:10px}
