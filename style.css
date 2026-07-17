@@ -723,6 +723,9 @@ td.cell-center{text-align:center}
   display:flex;align-items:center}
 .detail-row .dv{font-weight:500;color:var(--ink);padding:10px 16px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:0;word-break:break-word}
 .detail-row .dv .stack-line{width:100%}
+/* Penomoran (1. 2. 3.) pada baris detail disamakan dengan teks nilai di sebelah kanannya
+   (warna, ketebalan, dan ukuran mengikuti .dv). Penomoran di tabel monitoring tidak terpengaruh. */
+.detail-row .dv .stack-no{color:var(--ink);font-weight:500;font-size:inherit}
 .detail-row:nth-of-type(odd) .dv{background:#fbfdfd}
 /* Baris penanda "Penyedia N" pada Tender */
 .detail-row.detail-penyedia{grid-template-columns:1fr}
@@ -3755,6 +3758,12 @@ table.hps-uraian.spk-lamp-tbl td.c-no{
 /* Ikon menu Pengaturan */
 .settings-item:hover svg{ transform:scale(1.12) }
 .settings-item svg{ transition:color .15s ease, transform .22s cubic-bezier(.34,1.56,.64,1) }
+/* Animasi menu "Keluar": teks & panah bergeser ke kanan berulang (isyarat arah keluar) */
+@keyframes lo-slide-right{ 0%{transform:translateX(0)} 55%{transform:translateX(6px)} 100%{transform:translateX(0)} }
+.settings-logout .lo-word{ display:inline-block; animation:lo-slide-right 1.5s ease-in-out infinite }
+.settings-logout svg{ animation:lo-slide-right 1.5s ease-in-out infinite }
+.settings-logout .lo-word{ animation-delay:.07s } /* teks mengikuti panah sesaat */
+/* Ikon panah "Keluar" dikendalikan animasi, jadi hover-scale umum tak berlaku di sini */
 /* Gerigi berputar saat disentuh */
 .settings-gear{ transition:transform .4s cubic-bezier(.34,1.56,.64,1) }
 .settings-gear:hover{ transform:rotate(40deg) }
@@ -3769,6 +3778,7 @@ table.hps-uraian.spk-lamp-tbl td.c-no{
   .btn:hover svg,
   .topnav-link:hover svg,.topnav-item:hover svg,.topnav-trigger:hover svg,
   .settings-item:hover svg,.settings-gear:hover{ transform:none }
+  .settings-logout .lo-word,.settings-logout svg{ animation:none }
   .form-card,.field input,.field select,.field textarea,
   .btn,.btn svg,.act,.card-ic,.settings-gear{ transition:none }
 }
