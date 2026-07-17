@@ -3764,6 +3764,11 @@ table.hps-uraian.spk-lamp-tbl td.c-no{
 .settings-logout svg{ animation:lo-slide-right 1.5s ease-in-out infinite }
 .settings-logout .lo-word{ animation-delay:.07s } /* teks mengikuti panah sesaat */
 /* Ikon panah "Keluar" dikendalikan animasi, jadi hover-scale umum tak berlaku di sini */
+/* Tombol "Keluar" diberi aksen merah TETAP agar mudah dibedakan dari menu lain */
+.settings-item.settings-logout{ background:#fdecec; color:var(--red); box-shadow:inset 0 0 0 1px rgba(211,58,58,.22) }
+.settings-item.settings-logout svg{ color:var(--red) }
+.settings-item.settings-logout:hover{ background:#f7d6d6; color:var(--red-dark); box-shadow:inset 0 0 0 1px rgba(211,58,58,.38) }
+.settings-item.settings-logout:hover svg{ color:var(--red-dark) }
 /* Gerigi berputar saat disentuh */
 .settings-gear{ transition:transform .4s cubic-bezier(.34,1.56,.64,1) }
 .settings-gear:hover{ transform:rotate(40deg) }
