@@ -4769,16 +4769,14 @@ function renderHariLibur(){
     '<div class="form-card">'+
       '<div class="form-section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> Tambah Tanggal Libur</div>'+
       '<div class="hps-hint">Tanggal yang ditambahkan di sini akan dilompati saat perhitungan <b>hari kerja</b> pada Jadwal Pelaksanaan Pengadaan.</div>'+
-      '<div class="form-flow" style="--cols:4">'+
-        '<div class="field"><label>Tanggal</label><input type="date" id="hl-tgl"></div>'+
-        '<div class="field" style="flex:0 1 calc(3 * ((100% - 90px) / 4) + 60px)"><label>Keterangan</label><input type="text" id="hl-ket" placeholder="mis. Hari Kemerdekaan RI" onkeydown="if(event.key===\'Enter\'){event.preventDefault();hlAdd();}"></div>'+
+      '<div class="form-flow hl-add-flow" style="--cols:4">'+
+        '<div class="field" style="flex:0 1 200px"><label>Tanggal</label><input type="date" id="hl-tgl"></div>'+
+        '<div class="field" style="flex:1 1 240px"><label>Keterangan</label><input type="text" id="hl-ket" placeholder="mis. Hari Kemerdekaan RI" onkeydown="if(event.key===\'Enter\'){event.preventDefault();hlAdd();}"></div>'+
+        '<div class="field hl-add-btn-field" style="flex:0 0 auto"><button class="btn btn-teal" onclick="hlAdd()">'+
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Tambah Tanggal'+
+        '</button></div>'+
       '</div>'+
     '</div>'+
-    '<div class="fkl-actions"><div class="fkl-actions-right">'+
-      '<button class="btn btn-teal" onclick="hlAdd()">'+
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Tambah Tanggal'+
-      '</button>'+
-    '</div></div>'+
     '<div class="hl-tpl-bar">'+
       '<div class="hl-tpl-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>'+
       '<div class="hl-tpl-txt"><b>Template Pengisian Hari Libur</b><span>Unduh format Excel, isi data, lalu unggah kembali untuk menambah banyak data sekaligus</span></div>'+
