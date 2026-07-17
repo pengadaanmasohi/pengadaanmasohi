@@ -1127,6 +1127,7 @@ tbody.tbody-reveal>tr:nth-child(10){animation-delay:.29s}
 .user-role-ic.admin{background:linear-gradient(135deg,rgba(246,180,14,.5),rgba(246,180,14,.22))}.user-role-ic.admin svg{color:#ffe08a}
 .user-role-ic.user{background:linear-gradient(135deg,rgba(92,195,255,.5),rgba(92,195,255,.22))}.user-role-ic.user svg{color:#d4efff}
 .user-role-ic.guest{background:linear-gradient(135deg,rgba(255,209,102,.46),rgba(255,209,102,.2))}.user-role-ic.guest svg{color:#ffe9bc}
+.user-role-ic.demo{background:linear-gradient(135deg,rgba(167,139,250,.5),rgba(167,139,250,.22))}.user-role-ic.demo svg{color:#e6ddff}
 .topbar-user .logout-btn{display:inline-flex;align-items:center;gap:7px;background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.06));color:#fff;border:1px solid rgba(255,255,255,.22);padding:8px 15px;border-radius:11px;font-family:'Plus Jakarta Sans';font-size:11.5px;font-weight:700;cursor:pointer;transition:background .18s ease,border-color .18s ease,transform .16s cubic-bezier(.16,1,.3,1),box-shadow .2s ease;box-shadow:inset 0 1px 0 rgba(255,255,255,.2)}
 .topbar-user .logout-btn:hover{background:linear-gradient(135deg,var(--red),#e25151);border-color:transparent;transform:translateY(-2px);box-shadow:0 6px 18px rgba(211,58,58,.4)}
 .topbar-user .logout-btn:active{transform:translateY(0) scale(.98)}
