@@ -4849,12 +4849,13 @@ function viewRecordTender(rid){
     // Bila Kualifikasi = Pascakualifikasi, seksi "Proses Prakualifikasi" tidak ditampilkan
     if(isPrakualifikasiSection(g) && rec.kualifikasi==='Pascakualifikasi') return;
     if(isPenyediaSection(g)){
+      const multi = layers.length > 1;   // label & jumlah penyedia hanya bila >1 penyedia
       let rows='';
       layers.forEach((lay,idx)=>{
-        rows+=`<div class="detail-row detail-penyedia"><span class="dk">Penyedia ${idx+1}</span><span class="dv"></span></div>`;
+        if(multi) rows+=`<div class="detail-row detail-penyedia"><span class="dk">Penyedia ${idx+1}</span><span class="dv"></span></div>`;
         g.keys.forEach(k=>{ const f=FIELDS_TENDER.find(x=>x.key===k); rows+=`<div class="detail-row"><span class="dk">${tenderFieldLabel(f,rec)}</span><span class="dv">${fmt(lay[k],f.type)||'—'}</span></div>`; });
       });
-      html+=detailGroupHTML(`${g.title} — ${layers.length} penyedia`, rows);
+      html+=detailGroupHTML(multi ? `${g.title} — ${layers.length} penyedia` : g.title, rows);
       return;
     }
     let rows='';
