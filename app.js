@@ -195,6 +195,167 @@ if (USE_SUPABASE && window.supabase) {
   });
 }
 
+/* ============================================================================
+   AKUN DUMMY / MODE UJI COBA (SANDBOX)  — ditambahkan untuk pengetesan aman.
+   ---------------------------------------------------------------------------
+   Tujuan: menyediakan satu akun "dummy" dengan AKSES PENUH (seperti admin)
+   namun DIJAMIN TIDAK BISA MENGUBAH DATA yang sudah ada milik admin/user/tamu.
+
+   Cara kerja:
+   - Login akun dummy TIDAK menyentuh server sama sekali (tidak memanggil
+     verify_login). Kredensial dicek murni di sisi klien (lihat doLogin).
+   - Saat peran aktif = 'demo', variabel global `db` ditukar ke `demoDb`,
+     sebuah TIRUAN client Supabase yang seluruhnya bekerja di MEMORI (RAM).
+     demoDb tidak pernah membuka koneksi jaringan untuk operasi apa pun,
+     sehingga MUSTAHIL menulis/menghapus/mengubah baris di database nyata.
+   - Sandbox dimulai KOSONG setiap sesi. Semua tambah/ubah/hapus hanya
+     tersimpan di memori sesi ini; hilang saat logout / refresh / tab ditutup.
+   - Karena sandbox kosong, seluruh penomoran otomatis (mis. Penetapan Nomor)
+     ikut dimulai dari 1 (diperkuat override pnBase/pnBaseFor untuk mode demo).
+   ============================================================================ */
+const realDb = db;                       // client Supabase asli (untuk admin/user/tamu)
+let   demoDb = null;                      // tiruan in-memory untuk akun dummy
+const DEMO_USER = 'dummy';               // username akun dummy
+const DEMO_PASS = 'dummy2026';           // kata sandi akun dummy
+function isDemo(){ return currentRole==='demo'; }
+
+/* Bangun tiruan client Supabase yang bekerja penuh di memori.
+   Mendukung pola rantai yang dipakai aplikasi:
+     .from(t).select(cols).eq().not().order().limit()
+     .from(t).insert(v).select()
+     .from(t).update(v).eq()
+     .from(t).delete().eq() / .delete().not('id','is',null)
+     .from(t).upsert(v,{onConflict})
+   Setiap objek yang dikembalikan bersifat "thenable" (bisa di-await) dan
+   selalu resolve ke bentuk { data, error } seperti Supabase. */
+function makeDemoDb(){
+  const store = Object.create(null);                 // nama_tabel -> array baris (di memori)
+  const tbl = (t)=> (store[t] || (store[t] = []));
+  const genId = ()=> 'demo-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,8);
+  const nowISO = ()=> new Date().toISOString();
+
+  function from(table){
+    const q = { mode:'read', payload:null, opts:null, filters:[], nots:[], order:null, limitN:null };
+    const rows = tbl(table);
+
+    const passEq  = (r)=> q.filters.every(([c,v])=> String(r[c]) === String(v));
+    const passNot = (r)=> q.nots.every(([c,op,v])=> (op==='is' && v===null) ? (r[c]!=null) : true);
+    const matches = (r)=> passEq(r) && passNot(r);
+
+    function run(){
+      try{
+        if(q.mode==='insert'){
+          const arr = Array.isArray(q.payload) ? q.payload : [q.payload];
+          const created = arr.map(x=>{
+            const row = Object.assign({}, x);
+            if(row.id==null) row.id = genId();
+            if(row.created_at==null) row.created_at = nowISO();
+            if(row.updated_at==null) row.updated_at = nowISO();
+            return row;
+          });
+          created.forEach(r=> rows.push(r));
+          return { data: created.map(r=>Object.assign({}, r)), error:null };
+        }
+        if(q.mode==='update'){
+          for(let i=0;i<rows.length;i++){ if(matches(rows[i])) rows[i] = Object.assign({}, rows[i], q.payload); }
+          return { data:null, error:null };
+        }
+        if(q.mode==='upsert'){
+          const arr = Array.isArray(q.payload) ? q.payload : [q.payload];
+          const oc = (q.opts && q.opts.onConflict)
+            ? String(q.opts.onConflict).split(',').map(s=>s.trim())
+            : ['id'];
+          arr.forEach(x=>{
+            const idx = rows.findIndex(r=> oc.every(k=> String(r[k]) === String(x[k])));
+            if(idx>=0) rows[idx] = Object.assign({}, rows[idx], x);
+            else { const row = Object.assign({}, x); if(row.id==null) row.id = genId(); rows.push(row); }
+          });
+          return { data: arr.map(r=>Object.assign({}, r)), error:null };
+        }
+        if(q.mode==='delete'){
+          for(let i=rows.length-1;i>=0;i--){ if(matches(rows[i])) rows.splice(i,1); }
+          return { data:null, error:null };
+        }
+        // mode === 'read'
+        let out = rows.filter(matches);
+        if(q.order){
+          const [c,o] = q.order; const asc = !(o && o.ascending===false);
+          out = out.slice().sort((a,b)=>{
+            let x=a[c], y=b[c]; if(x==null)x=''; if(y==null)y='';
+            if(x<y) return asc?-1:1; if(x>y) return asc?1:-1; return 0;
+          });
+        }
+        if(q.limitN!=null) out = out.slice(0, q.limitN);
+        return { data: out.map(r=>Object.assign({}, r)), error:null };
+      }catch(err){ return { data:null, error:err }; }
+    }
+
+    const api = {
+      select(){ /* kolom diabaikan: kembalikan baris utuh, aman diakses per-nama */ return api; },
+      insert(v){ q.mode='insert'; q.payload=v; return api; },
+      update(v){ q.mode='update'; q.payload=v; return api; },
+      upsert(v,opts){ q.mode='upsert'; q.payload=v; q.opts=opts; return api; },
+      delete(){ q.mode='delete'; return api; },
+      eq(c,v){ q.filters.push([c,v]); return api; },
+      not(c,op,v){ q.nots.push([c,op,v]); return api; },
+      order(c,o){ q.order=[c,o]; return api; },
+      limit(n){ q.limitN=n; return api; },
+      then(res,rej){ return Promise.resolve(run()).then(res,rej); },
+      catch(fn){ return Promise.resolve(run()).catch(fn); },
+      finally(fn){ return Promise.resolve(run()).finally(fn); }
+    };
+    return api;
+  }
+
+  // ---- Tiruan Supabase Storage (unggah berkas & foto) di memori ----
+  // Berkas yang diunggah akun dummy hanya disimpan di memori sesi & di-serve
+  // via blob URL; TIDAK pernah diunggah ke bucket penyimpanan asli.
+  const PLACEHOLDER_IMG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+  const storageMem = Object.create(null);            // bucket -> { path -> {blob,url} }
+  function bucket(name){
+    const b = storageMem[name] || (storageMem[name] = Object.create(null));
+    return {
+      async upload(path, file){
+        let url=null;
+        try{ if(typeof URL!=='undefined' && URL.createObjectURL) url=URL.createObjectURL(file); }catch(e){}
+        b[path] = { blob:file, url };
+        return { data:{ path }, error:null };
+      },
+      async remove(paths){
+        (paths||[]).forEach(p=>{ const o=b[p]; if(o&&o.url){ try{ URL.revokeObjectURL(o.url); }catch(e){} } delete b[p]; });
+        return { data:{}, error:null };
+      },
+      async download(path){
+        const o=b[path];
+        return o ? { data:o.blob, error:null } : { data:null, error:{ message:'Berkas tidak ada di sandbox demo' } };
+      },
+      getPublicUrl(path){
+        const o=b[path];
+        return { data:{ publicUrl: (o && o.url) || PLACEHOLDER_IMG } };
+      },
+      async list(prefix){
+        const pre = prefix ? String(prefix) : '';
+        const names = Object.keys(b)
+          .filter(p=> p.indexOf(pre)===0)
+          .map(p=> ({ name: p.slice(pre.length).replace(/^\/+/,'') }));
+        return { data:names, error:null };
+      }
+    };
+  }
+  const storage = { from: bucket };
+
+  // RPC apa pun (verify_login/change_password) dinetralkan — tidak menyentuh server.
+  const rpc = async ()=> ({ data:null, error:null });
+  return { from, rpc, storage, __isDemo:true };
+}
+
+/* Tukar `db` sesuai peran: demo -> sandbox memori; lainnya -> Supabase asli.
+   Sandbox selalu dibuat baru (kosong) setiap kali masuk sebagai demo. */
+function setDbForRole(role){
+  if(role==='demo'){ demoDb = makeDemoDb(); db = demoDb; }
+  else { db = realDb; }
+}
+
 /* ============ STATE ============ */
 let records = [];
 let editingId = null;
@@ -532,8 +693,10 @@ const ACCT_NODEC = '_(* #,##0_);_(* (#,##0);_(* "-"_);_(@_)';
    tampil sebagai "-". Padding "_(" dan "_)" khas Accounting sengaja TIDAK dipakai:
    spasi semu itu membuat isi sel tidak pernah benar-benar berada di tengah. */
 const ACCT_VOL = '#,##0.00;-#,##0.00;"-";@';
-function isAdmin(){ return currentRole==='admin'; }
-function canInput(){ return currentRole==='admin' || currentRole==='user'; }
+/* Akun dummy (demo) memperoleh AKSES PENUH setara admin di seluruh UI,
+   namun setiap tulis-data hanya mengenai sandbox memori (lihat makeDemoDb). */
+function isAdmin(){ return currentRole==='admin' || currentRole==='demo'; }
+function canInput(){ return currentRole==='admin' || currentRole==='user' || currentRole==='demo'; }
 function requireAdmin(){ if(!isAdmin()){ toast('Hanya admin yang dapat melakukan tindakan ini','warn'); return false; } return true; }
 function requireInput(){ if(!canInput()){ toast('Anda tidak memiliki akses untuk menambah data','warn'); return false; } return true; }
 
@@ -555,6 +718,17 @@ async function doLogin(){
   if(!u || !p){ showLoginError('Username dan kata sandi wajib diisi.'); return; }
   const uname=u.toLowerCase();
   showLoginError('');
+  // === AKUN DUMMY (MODE UJI COBA) ===
+  // Dicek murni di sisi klien; TIDAK menghubungi server sama sekali. Masuk sebagai
+  // peran 'demo' dengan akses penuh, tetapi seluruh datanya berjalan di sandbox
+  // memori sehingga tidak dapat mempengaruhi data admin/user/tamu yang sudah ada.
+  if(uname===DEMO_USER && p===DEMO_PASS){
+    currentUsername = DEMO_USER;
+    ssSet(ROLE_KEY, 'demo'); ssSet(USER_KEY, DEMO_USER);
+    ssSet(LOGIN_TIME_KEY, String(Date.now())); ssSet(LAST_ACTIVE_KEY, String(Date.now()));
+    playLoginAnim('demo', ()=>enterApp('demo'));
+    return;
+  }
   if(!(USE_SUPABASE && db)){ showLoginError('Koneksi Supabase belum siap. Coba lagi sesaat.'); return; }
   // Verifikasi ke Supabase: function verify_login mengembalikan 'admin'/'user' atau NULL.
   // Kata sandi TIDAK pernah diunduh ke browser & tidak ada kredensial di file HTML.
@@ -584,7 +758,7 @@ function doLoginGuest(){
 }
 /* ====== GANTI KATA SANDI (via Supabase) ====== */
 function openChangePass(){
-  if(currentRole==='guest' || !currentUsername){ toast('Fitur ini hanya untuk akun admin/user','warn'); return; }
+  if(currentRole==='guest' || currentRole==='demo' || !currentUsername){ toast('Fitur ini hanya untuk akun admin/user','warn'); return; }
   ['cp-old','cp-new','cp-new2'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   const err=document.getElementById('cp-error'); if(err) err.textContent='';
   const sub=document.getElementById('cp-sub'); if(sub) sub.textContent='Perbarui kata sandi untuk akun "'+currentUsername+'".';
@@ -628,7 +802,7 @@ function playLoginAnim(role, done){
   const loginScreen=document.getElementById('login-screen');
   if(loginScreen) loginScreen.style.display='none';
   // Subteks sesuai peran
-  const subs={admin:'Masuk sebagai Admin',user:'Masuk sebagai User',guest:'Masuk sebagai Tamu'};
+  const subs={admin:'Masuk sebagai Admin',user:'Masuk sebagai User',guest:'Masuk sebagai Tamu',demo:'Masuk sebagai Dummy (Uji Coba)'};
   const sub=document.getElementById('login-anim-sub');
   if(sub) sub.textContent=subs[role]||'';
   const finish=()=>{
@@ -649,6 +823,7 @@ function playLoginAnim(role, done){
 }
 function enterApp(role, view){
   currentRole=role;
+  setDbForRole(role);   // demo -> sandbox memori (kosong); lainnya -> Supabase asli
   if(typeof fkResetCache==='function') fkResetCache();
   applyRole(role);
   document.getElementById('login-screen').style.display='none';
@@ -661,9 +836,11 @@ function enterApp(role, view){
   try{ profilesLoadAll(); }catch(e){ console.error(e); }
 }
 function applyRole(role){
+  // Peran 'demo' memperoleh set menu yang sama persis dengan admin (akses penuh).
+  const navRole = (role==='demo') ? 'admin' : role;
   document.querySelectorAll('.topnav-link[data-role], .topnav-item[data-role], .topnav-sub[data-role], .btn[data-role], .fk-seg-btn[data-role], .mod-seg[data-role]').forEach(l=>{
     const roles=l.getAttribute('data-role').split(' ');
-    const ok=roles.includes(role);
+    const ok=roles.includes(navRole);
     if(l.classList.contains('role-keepspace')){
       // Sembunyikan tanpa mengubah tata letak (mis. Hapus Semua) → tombol Reset tetap di posisinya.
       l.style.display=''; l.style.visibility = ok ? '' : 'hidden';
@@ -678,18 +855,20 @@ function applyRole(role){
     const anyVisible=[...items].some(it=>it.style.display!=='none');
     g.style.display = anyVisible ? '' : 'none';
   });
-  const labels={admin:'Admin',user:'User',guest:'Tamu'};
+  const labels={admin:'Admin',user:'User',guest:'Tamu',demo:'Dummy (Uji Coba)'};
   document.getElementById('user-label').textContent = labels[role]||'—';
   const ROLE_ICONS={
     admin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
     user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>',
-    guest:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>'
+    guest:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>',
+    demo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>'
   };
   const ic=document.getElementById('user-role-ic');
   if(ic){ ic.className='user-role-ic '+(role||''); ic.innerHTML=ROLE_ICONS[role]||''; }
-  // Tombol Ganti Kata Sandi hanya untuk admin/user (punya akun) & saat Supabase aktif
+  // Tombol Ganti Kata Sandi hanya untuk admin/user (punya akun) & saat Supabase aktif.
+  // Akun dummy (demo) tidak punya akun server → sembunyikan.
   const cpBtn=document.getElementById('btn-change-pass');
-  if(cpBtn) cpBtn.style.display = (role!=='guest' && USE_SUPABASE) ? '' : 'none';
+  if(cpBtn) cpBtn.style.display = (role!=='guest' && role!=='demo' && USE_SUPABASE) ? '' : 'none';
   renderTable();
   renderTablePl();
   renderTableTender();
@@ -788,6 +967,7 @@ function performLogout(){
   const finish=()=>{
     ssDel(ROLE_KEY); ssDel(USER_KEY); ssDel(VIEW_KEY); ssDel(DRAFT_KEY); ssDel(LOGIN_TIME_KEY); ssDel(LAST_ACTIVE_KEY);
     currentRole=null; currentUsername=null;
+    db = realDb; demoDb = null;   // buang sandbox demo & kembalikan koneksi Supabase asli
     try{ resetAllFilters(); }catch(e){}
     document.getElementById('topbar-user').style.display='none';
     document.getElementById('login-screen').style.display='flex';
@@ -6365,6 +6545,7 @@ function pnTodayISO(){ const d=new Date(); const m=String(d.getMonth()+1).padSta
 function pnPad4(n){ return String(n).padStart(4,'0'); }
 function pnFormatNo(seq, code, klas, unit, year){ return pnPad4(seq)+'.'+code+'/'+klas+'/'+unit+'/'+year; }
 function pnBase(modul, counter, year){
+  if(isDemo()) return 0;   // Akun dummy: penomoran selalu dimulai dari 1
   const c = pnConfig[modul+'|'+year];
   if(c && c[counter]!=null && !isNaN(c[counter])) return parseInt(c[counter],10);
   return PN_BASE_DEFAULT[counter]!=null ? PN_BASE_DEFAULT[counter] : 0;
@@ -6414,6 +6595,7 @@ function pnUsedSeqs(modul, counter, year){
    - 'k:<key>' Tender -> setiap dokumen Tender mulai dari 1 (base 0).
    Semua dapat di-override manual lewat pnConfig, dan reset per tahun otomatis. */
 function pnBaseFor(modul, counter, year){
+  if(isDemo()) return 0;   // Akun dummy: seluruh jenis nomor dimulai dari 1
   if(counter==='hps'){
     const cPl=pnConfig['pl|'+year], cTn=pnConfig['tender|'+year];
     if(cPl && cPl.hps!=null && !isNaN(cPl.hps)) return parseInt(cPl.hps,10);
@@ -14344,7 +14526,7 @@ resetLoginForm();
   const lastActiveAt=parseInt(ssGet(LAST_ACTIVE_KEY)||'0',10);
   const tooOldSession = loginAt>0 && (now-loginAt) > SESSION_MAX_MS;
   const tooLongIdle = IDLE_LOGOUT_ENABLED && lastActiveAt>0 && (now-lastActiveAt) > IDLE_LIMIT_MS;
-  const hasRole = (role==='admin' || role==='user' || role==='guest');
+  const hasRole = (role==='admin' || role==='user' || role==='guest' || role==='demo');
   if(hasRole && !tooOldSession && !tooLongIdle){
     currentUsername = uname || null;
     // Refresh: kembali ke halaman terakhir (data di halaman itu di-refresh), bukan ke dashboard.
@@ -14355,7 +14537,7 @@ resetLoginForm();
       // Masuk aplikasi dulu (tanpa pindah halaman), lalu pulihkan form dari draft
       // sehingga data yang sedang diketik / diubah TIDAK hilang saat refresh.
       enterApp(role, 'dashboard');
-      const canInput = (role==='admin' || role==='user');
+      const canInput = (role==='admin' || role==='user' || role==='demo');
       if(canInput && draft && draft.kind===view && restoreDraft(draft)){
         // berhasil dipulihkan (termasuk mode Ubah Data)
       }else{
