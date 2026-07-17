@@ -328,6 +328,10 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
               <span id="sfx-ic"></span>
               <span id="sfx-lbl">Bunyi Notifikasi</span>
             </button>
+            <button class="settings-item" id="btn-bersih-kontrak" role="menuitem" onclick="closeSettingsMenu();openBersihKontrak()" style="display:none">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>
+              Bersihkan Daftar Kontrak
+            </button>
             <button class="settings-item danger" role="menuitem" onclick="closeSettingsMenu();logout()">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>
               Keluar
@@ -1520,6 +1524,35 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
     <div class="modal-actions">
       <button class="btn btn-green cf-icon" id="confirm-yes" title="Ya" aria-label="Ya">Ya</button>
       <button class="btn btn-red cf-icon" onclick="closeConfirm()" title="Tidak" aria-label="Tidak">Tidak</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== MODAL BERSIHKAN DAFTAR KONTRAK (khusus admin) ====== -->
+<div class="overlay" id="bersih-overlay">
+  <div class="modal">
+    <div class="modal-icon" style="background:#fbe0e0">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#D33A3A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>
+    </div>
+    <div class="modal-body">
+      <h3>Bersihkan Daftar Kontrak</h3>
+      <p style="margin-bottom:14px">Hapus data monitoring berdasarkan jenis kontrak dan tahun.</p>
+      <div class="bk-field">
+        <label for="bersih-cat">Jenis Kontrak</label>
+        <select id="bersih-cat">
+          <option value="kr">SPBJ / Kontrak Rinci</option>
+          <option value="pl">Pengadaan Langsung</option>
+          <option value="tender">Tender</option>
+        </select>
+      </div>
+      <div class="bk-field">
+        <label for="bersih-year">Tahun</label>
+        <select id="bersih-year"></select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-red" id="bersih-go" onclick="confirmBersihKontrak()">Bersihkan</button>
+      <button class="btn btn-ghost" onclick="closeBersihKontrak()">Batal</button>
     </div>
   </div>
 </div>
