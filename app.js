@@ -4325,6 +4325,24 @@ function isLockedTender(field, vals){
   return rule ? rule(vals) : false;
 }
 
+/* ---- Label dinamis Tender ----
+   Bila Metode Penyampaian = "1 Tahap 1 Sampul", istilah "Sampul Satu" pada
+   BA Pembukaan & BA Evaluasi berubah menjadi "Penawaran"
+   (mis. "No. BA Pembukaan Sampul Satu" -> "No. BA Pembukaan Penawaran"). */
+const TENDER_S1_PENAWARAN_KEYS = ['no_ba_buka_s1','tgl_ba_buka_s1','no_ba_eval_s1','tgl_ba_eval_s1'];
+function tenderFieldLabel(field, vals){
+  let label = field.label;
+  if(field && TENDER_S1_PENAWARAN_KEYS.includes(field.key)
+     && vals && vals.metode_penyampaian === '1 Tahap 1 Sampul'){
+    label = label.replace(/Sampul Satu/gi, 'Penawaran');
+  }
+  return label;
+}
+/* Seksi "Proses Prakualifikasi" — dikenali dari key pk_* (pk_undangan) */
+function isPrakualifikasiSection(g){
+  return !!(g && Array.isArray(g.keys) && g.keys.includes('pk_undangan'));
+}
+
 /* ---- Store Tender (Supabase) ---- */
 const TABLE_TENDER = 'tender';
 const STORE_TENDER = 'monitoring_tender_up3masohi';
@@ -4672,7 +4690,8 @@ function buildFormTender(){
       else if(f.type==='date') ctl=`<input id="${id}" type="date"${onCtrl}>`;
       else ctl=`<input id="${id}" type="text"${ph}${onCtrl}>`;
       const note=f.auto==='sum'?AUTO_NOTE:(f.auto==='ppn'?PPN_NOTE:(f.lock?LOCK_NOTE:''));
-      html+=`<div class="field${pxw.cls}"${pxw.style} id="wrap_${id}"><label>${f.label}${req}${note?' ':''}${note}</label>${ctl}</div>`;
+      const labelText=`<span class="fld-label-text" data-fk="${f.key}">${tenderFieldLabel(f,{})}</span>`;
+      html+=`<div class="field${pxw.cls}"${pxw.style} id="wrap_${id}"><label>${labelText}${req}${note?' ':''}${note}</label>${ctl}</div>`;
     });
     html+=`</div></div>`;
   });
@@ -4694,6 +4713,16 @@ function applyLocksTender(){
     el.disabled=locked;
     wrap.classList.toggle('locked',locked);
     if(locked){ el.value=''; wrap.classList.remove('field-error'); }
+  });
+  refreshTenderDynamicLabels(vals);
+}
+/* Perbarui label BA Sampul Satu -> BA Penawaran mengikuti Metode Penyampaian */
+function refreshTenderDynamicLabels(vals){
+  const cont=document.getElementById('form-tender-fields'); if(!cont) return;
+  TENDER_S1_PENAWARAN_KEYS.forEach(k=>{
+    const f=FIELDS_TENDER.find(x=>x.key===k); if(!f) return;
+    const span=cont.querySelector('.fld-label-text[data-fk="'+k+'"]');
+    if(span) span.textContent=tenderFieldLabel(f,vals);
   });
 }
 
@@ -4817,11 +4846,13 @@ function viewRecordTender(rid){
   const layers=penyediaLayersFromRecord(rec);
   let html='';
   GROUPS_TENDER.forEach(g=>{
+    // Bila Kualifikasi = Pascakualifikasi, seksi "Proses Prakualifikasi" tidak ditampilkan
+    if(isPrakualifikasiSection(g) && rec.kualifikasi==='Pascakualifikasi') return;
     if(isPenyediaSection(g)){
       let rows='';
       layers.forEach((lay,idx)=>{
         rows+=`<div class="detail-row detail-penyedia"><span class="dk">Penyedia ${idx+1}</span><span class="dv"></span></div>`;
-        g.keys.forEach(k=>{ const f=FIELDS_TENDER.find(x=>x.key===k); rows+=`<div class="detail-row"><span class="dk">${f.label}</span><span class="dv">${fmt(lay[k],f.type)||'—'}</span></div>`; });
+        g.keys.forEach(k=>{ const f=FIELDS_TENDER.find(x=>x.key===k); rows+=`<div class="detail-row"><span class="dk">${tenderFieldLabel(f,rec)}</span><span class="dv">${fmt(lay[k],f.type)||'—'}</span></div>`; });
       });
       html+=detailGroupHTML(`${g.title} — ${layers.length} penyedia`, rows);
       return;
@@ -4833,13 +4864,13 @@ function viewRecordTender(rid){
         const list=(Array.isArray(rec[k+'_list'])&&rec[k+'_list'].length)?rec[k+'_list']:((rec[k]!=null&&rec[k]!=='')?[rec[k]]:[]);
         const shown=list.filter(x=>x!=null&&x!=='');
         const dv=shown.length ? (shown.length>1 ? shown.map((v,i)=>`<span class="stack-line"><b class="stack-no">${i+1}.</b> ${v}</span>`).join('') : shown[0]) : '—';
-        rows+=`<div class="detail-row"><span class="dk">${f.label}</span><span class="dv">${dv}</span></div>`;
+        rows+=`<div class="detail-row"><span class="dk">${tenderFieldLabel(f,rec)}</span><span class="dv">${dv}</span></div>`;
       }else if(PENYEDIA_STACK_FIELDS.includes(k)){
         const list=layers.map(l=>l[k]);
         const dv=(list.length>1) ? list.map((v,i)=>`<span class="stack-line"><b class="stack-no">${i+1}.</b> ${(v!=null&&v!=='')?v:'—'}</span>`).join('') : (fmt(list[0],f.type)||'—');
-        rows+=`<div class="detail-row"><span class="dk">${f.label}</span><span class="dv">${dv}</span></div>`;
+        rows+=`<div class="detail-row"><span class="dk">${tenderFieldLabel(f,rec)}</span><span class="dv">${dv}</span></div>`;
       }else{
-        rows+=`<div class="detail-row"><span class="dk">${f.label}</span><span class="dv">${fmt(rec[k],f.type)||'—'}</span></div>`;
+        rows+=`<div class="detail-row"><span class="dk">${tenderFieldLabel(f,rec)}</span><span class="dv">${fmt(rec[k],f.type)||'—'}</span></div>`;
       }
     });
     html+=detailGroupHTML(g.title, rows);
