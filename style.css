@@ -427,9 +427,11 @@ td.cell-center{text-align:center}
 /* Kolom No. Kontrak/SPBJ — menyesuaikan lebar isi data (tampil utuh, tidak terpotong) */
 .table-wrap th.col-kontrak,.table-wrap td.col-kontrak{white-space:nowrap;min-width:150px;width:1%}
 .table-wrap td.col-kontrak.wrap-penyedia{white-space:normal}
-/* Kolom Nilai Pekerjaan — lebar mengikuti nilai terlebar yang ditampilkan (tampil utuh) */
-.table-wrap th.col-nilai,.table-wrap td.col-nilai{white-space:nowrap;width:1%;text-align:right}
-.table-wrap td.col-nilai.wrap-penyedia{white-space:normal;text-align:left}
+/* Kolom Nilai Pekerjaan — lebar MENYUSUT mengikuti nominal terpanjang yang tampil
+   (tanpa lebar minimum tetap; tiap nominal tetap satu baris utuh) */
+.table-wrap th.col-nilai,.table-wrap td.col-nilai{white-space:nowrap;width:1%;min-width:0;text-align:right}
+.table-wrap td.col-nilai.wrap-penyedia{white-space:nowrap;width:1%;min-width:0;text-align:left}
+.table-wrap td.col-nilai.wrap-penyedia .stack-line{white-space:nowrap}
 .table-wrap tbody td:first-child{font-weight:700;color:var(--teal-dark)}
 .table-wrap tbody tr:nth-child(even) td:first-child{background:#f5f9fa}
 .table-wrap tbody tr:hover td:first-child{background:var(--teal-soft)}
