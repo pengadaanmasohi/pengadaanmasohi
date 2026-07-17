@@ -2724,7 +2724,7 @@ table.ana-uraian td.c-calc{text-align:right;font-weight:800;color:#0b6a73;white-
 .ana-res-card{margin-top:16px;border:1px solid #dde9eb;border-radius:14px;overflow:hidden}
 .ana-res-head{display:flex;align-items:center;gap:9px;padding:11px 15px;background:linear-gradient(90deg,#0E7C86,#0b6a73);color:#fff;font-weight:800;font-size:12.5px}
 .ana-res-head svg{width:16px;height:16px}
-.ana-res td.c-mtd,.ana-res th.c-mtd{text-align:center;width:104px;min-width:88px;max-width:112px}
+.ana-res td.c-mtd,.ana-res th.c-mtd{text-align:center;width:116px;min-width:106px;max-width:132px}
 .ana-res th.c-mtd{white-space:normal;line-height:1.2}
 .ana-res td.c-mtd{white-space:normal}
 .ana-res td.c-rok,.ana-res th.c-rok{text-align:center;white-space:nowrap;width:74px;min-width:64px}
@@ -2749,9 +2749,12 @@ table.ana-res tbody td.c-res{font-weight:800;color:#0b3d42;background:#eef7f8}
 /* Lebar kolom: Uraian Pekerjaan menyerap seluruh sisa ruang; kolom lain menyusut
    secukupnya (width:1% + nowrap) sehingga kolom harga tidak melebar berlebihan. */
 table.ana-res th.c-ur,table.ana-res td.c-ur{width:100%}
-table.ana-res th.c-mtd,table.ana-res td.c-mtd,
+table.ana-res td.c-mtd,
 table.ana-res th.c-rok,table.ana-res td.c-rok,
 table.ana-res th.c-inf,table.ana-res td.c-inf{width:1%;white-space:nowrap}
+/* Header kolom "Metode Perhitungan" boleh turun ke dua baris (METODE / PERHITUNGAN)
+   agar tidak terpotong; lebar kolom mengikuti aturan .c-mtd di atas. */
+table.ana-res th.c-mtd{white-space:normal;word-break:normal;overflow-wrap:break-word;line-height:1.2}
 table.ana-res th.c-money,table.ana-res td.c-money{width:1%;min-width:118px;white-space:nowrap}
 .ana-res-hint{padding:10px 15px;font-size:11px;color:#5a6b70;background:#f6fafb;border-top:1px solid #eef4f5;line-height:1.55}
 .ana-res-hint b{color:var(--teal-dark)}
