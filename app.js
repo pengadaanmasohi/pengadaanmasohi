@@ -829,8 +829,8 @@ function logout(){
       terbawa oleh fitur "pulihkan tab" milik browser.
    Ubah nilai di bawah ini sesuai kebutuhan. */
 const IDLE_LOGOUT_ENABLED = true;
-const IDLE_LIMIT_MS   = 15 * 60 * 1000;   // 15 menit tanpa aktivitas → tampilkan peringatan
-const IDLE_WARNING_MS = 60 * 1000;        // 60 detik hitung mundur sebelum logout otomatis
+const IDLE_LIMIT_MS   = 4 * 60 * 1000;    // 4 menit tanpa aktivitas → tampilkan peringatan
+const IDLE_WARNING_MS = 60 * 1000;        // + 60 detik hitung mundur → logout otomatis tepat di menit ke-5
 const SESSION_MAX_MS  = 12 * 60 * 60 * 1000; // sesi maksimal 12 jam sejak login
 
 let _idleTimer = null;
