@@ -757,6 +757,19 @@ document.addEventListener('click',function(ev){
 }, true);
 document.addEventListener('keydown',function(ev){ if(ev.key==='Escape') closeSettingsMenu(); });
 
+/* Efek suara saat KURSOR mengenai gear (hover), mengiringi ikon yang berputar.
+   Delegasi di document memakai 'mouseover' + closest agar tetap berfungsi walau
+   markup gear berubah; jeda di dalam sfxGear() mencegah bunyi bertubi-tubi.
+   Catatan: karena aturan autoplay browser, bunyi hover baru aktif setelah
+   pengguna berinteraksi (klik) pertama kali dengan halaman. */
+document.addEventListener('mouseover',function(ev){
+  const t=ev.target && ev.target.closest ? ev.target.closest('.settings-gear') : null;
+  if(!t) return;
+  // Hanya saat BENAR-BENAR masuk ke area gear (bukan bergerak antar anak elemennya).
+  if(ev.relatedTarget && t.contains(ev.relatedTarget)) return;
+  if(typeof sfxGear==='function') sfxGear();
+});
+
 /* Memicu ulang animasi zoom-out pada kartu login (dipakai saat login screen
    ditampilkan kembali, mis. setelah logout — CSS animation tidak otomatis
    terulang saat elemen hanya di-show kembali). */
@@ -3545,6 +3558,7 @@ function sfxSession(kind){
    menyapu naik lalu turun (kesan roda berputar sesaat) + beberapa "tik" gigi
    roda yang halus. Dibuat pelan agar tidak mengganggu, dan tetap menghormati
    sakelar SFX (sfxEnabled). AudioContext dipakai ulang dari nada lain. */
+let _sfxGearLast=-1;
 function sfxGear(){
   if(!sfxEnabled()) return;
   try{
@@ -3552,6 +3566,11 @@ function sfxGear(){
     if(!_sfxCtx) _sfxCtx=new AC();
     const ctx=_sfxCtx;
     if(ctx.state==='suspended') ctx.resume().catch(()=>{});
+    // Jeda: cegah bunyi menumpuk saat kursor bergerak-gerak di atas gear atau
+    // saat hover langsung disusul klik (hover + buka menu).
+    const nowT=ctx.currentTime;
+    if(_sfxGearLast>=0 && (nowT-_sfxGearLast)<0.28) return;
+    _sfxGearLast=nowT;
     const t0=ctx.currentTime+0.01;
     const dur=0.24;
     // Whir: derau putih tersaring bandpass yang frekuensinya menyapu naik-turun.
