@@ -714,6 +714,7 @@ function toggleSettingsMenu(e){
   if(e) e.stopPropagation();
   const w=document.getElementById('settings-wrap'); if(!w) return;
   const open=w.classList.toggle('open');
+  if(typeof sfxGear==='function') sfxGear();   // efek suara mengiringi putaran gear
   if(open) syncSfxBtn();
   const g=document.getElementById('settings-gear'); if(g) g.setAttribute('aria-expanded', open?'true':'false');
   const m=document.getElementById('settings-menu'); if(m) m.setAttribute('aria-hidden', open?'false':'true');
@@ -750,6 +751,7 @@ document.addEventListener('click',function(ev){
   if(el.disabled) return;
   if(el.classList.contains('login-btn')) return;              // masuk -> sfxSession('in')
   if(el.matches('.settings-item.danger')) return;             // keluar -> sfxSession('out')
+  if(el.classList.contains('settings-gear')) return;          // gear -> sfxGear() sendiri (suara putaran)
   if(el.dataset && el.dataset.sfx==='none') return;           // "Ya" pada konfirmasi keluar
   sfxClick();
 }, true);
@@ -3534,6 +3536,46 @@ function sfxSession(kind){
       const last=(i===nada.length-1);
       _sfxTone(ctx, f, t0+i*0.13, last?0.42:0.20, 0.10);
     });
+  }catch(e){}
+}
+
+/* --- Nada putaran gear ------------------------------------------------------
+   Mengiringi ikon roda gigi (⚙) saat menu Pengaturan dibuka/ditutup dan ikonnya
+   berputar. Bunyinya dirancang "mekanis" singkat: derau tersaring bandpass yang
+   menyapu naik lalu turun (kesan roda berputar sesaat) + beberapa "tik" gigi
+   roda yang halus. Dibuat pelan agar tidak mengganggu, dan tetap menghormati
+   sakelar SFX (sfxEnabled). AudioContext dipakai ulang dari nada lain. */
+function sfxGear(){
+  if(!sfxEnabled()) return;
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
+    if(!_sfxCtx) _sfxCtx=new AC();
+    const ctx=_sfxCtx;
+    if(ctx.state==='suspended') ctx.resume().catch(()=>{});
+    const t0=ctx.currentTime+0.01;
+    const dur=0.24;
+    // Whir: derau putih tersaring bandpass yang frekuensinya menyapu naik-turun.
+    const frames=Math.max(1, Math.floor(ctx.sampleRate*dur));
+    const buf=ctx.createBuffer(1, frames, ctx.sampleRate);
+    const data=buf.getChannelData(0);
+    for(let i=0;i<frames;i++) data[i]=(Math.random()*2-1);
+    const src=ctx.createBufferSource(); src.buffer=buf;
+    const bp=ctx.createBiquadFilter(); bp.type='bandpass'; bp.Q.value=6;
+    bp.frequency.setValueAtTime(650, t0);
+    bp.frequency.linearRampToValueAtTime(1550, t0+dur*0.45);
+    bp.frequency.linearRampToValueAtTime(520, t0+dur);
+    const wg=ctx.createGain();
+    wg.gain.setValueAtTime(0.0001, t0);
+    wg.gain.exponentialRampToValueAtTime(0.05, t0+0.03);
+    wg.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+    src.connect(bp); bp.connect(wg); wg.connect(ctx.destination);
+    src.start(t0); src.stop(t0+dur+0.02);
+    // Ratchet: deretan "tik" pendek seperti gigi roda yang lewat satu per satu.
+    const n=7;
+    for(let i=0;i<n;i++){
+      const tt=t0+0.02+i*(dur*0.85/n);
+      _sfxTone(ctx, 1350+i*55, tt, 0.02, 0.028);
+    }
   }catch(e){}
 }
 
