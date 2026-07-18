@@ -12108,7 +12108,7 @@ function renderHpsView(){
       '<td class="col-no">'+(start+i+1)+'</td>'+
       '<td class="wrap-cell col-nama-freeze">'+fkEsc(nama)+'</td>'+
       '<td style="white-space:nowrap">'+fkEsc(noHps||'—')+'</td>'+
-      '<td class="col-date" style="white-space:nowrap">'+fkEsc(tgl?fmtDate(tgl):'—')+'</td>'+
+      '<td style="text-align:center;white-space:nowrap;padding-left:10px;padding-right:10px">'+fkEsc(tgl?fmtDate(tgl):'—')+'</td>'+
       '<td class="col-num" style="text-align:right">'+hpsRp(sum.jM)+'</td>'+
       '<td class="col-num" style="text-align:right">'+hpsRp(sum.jJ)+'</td>'+
       '<td class="col-num" style="text-align:right;font-weight:700;white-space:nowrap">'+hpsRp(nilai)+'</td>'+
