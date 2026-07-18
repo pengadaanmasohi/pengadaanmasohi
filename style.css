@@ -3265,17 +3265,28 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
 .spk-kldoc-hover{outline:3px dashed #1d9e75;outline-offset:-10px;background:#dff2ea}
 .spk-we-page .spk-cl p.spk-kldoc-empty{color:#9AA7B2;font-style:italic;text-align:left}
 /* Kotak unggah (Drag & Drop) — muncul saat tombol Upload Template ditekan */
-.spk-kldoc-dz{display:none;position:relative;margin-top:11px;padding:22px 16px 18px;text-align:center;cursor:pointer;
-  border:2px dashed #c3ced7;border-radius:11px;background:#f8fafb;transition:border-color .14s,background .14s,box-shadow .14s}
+/* Kotak drag & drop template klausul — dikecilkan ~50% + efek 3D */
+.spk-kldoc-dz{display:none;position:relative;margin-top:11px;padding:11px 16px 10px;text-align:center;cursor:pointer;
+  border:2px dashed #bcd8cd;border-radius:13px;
+  background:linear-gradient(180deg,#f6fbf9,#e8f4ee);
+  box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 -5px 12px rgba(29,158,117,.05) inset,
+             0 12px 22px -10px rgba(20,90,70,.34),0 5px 9px -6px rgba(20,90,70,.22);
+  transition:transform .22s cubic-bezier(.16,1,.3,1),border-color .16s,background .16s,box-shadow .22s ease}
 .spk-kldoc-dz.show{display:block;animation:spkKlDzIn .16s ease-out}
 @keyframes spkKlDzIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
-.spk-kldoc-dz:hover{border-color:#1d9e75;background:#f2fbf7}
-.spk-kldoc-dz.drag{border-color:#1d9e75;background:#eafaf3;box-shadow:inset 0 0 0 3px rgba(29,158,117,.12)}
-.spk-kldoc-dzic{width:30px;height:30px;color:#8fa0ad;transition:color .14s}
+.spk-kldoc-dz:hover{border-color:#1d9e75;background:linear-gradient(180deg,#f4fcf8,#dff2ea);
+  transform:perspective(760px) translateY(-4px) rotateX(6deg) scale(1.008);
+  box-shadow:0 1px 0 rgba(255,255,255,.95) inset,0 -5px 12px rgba(29,158,117,.05) inset,
+             0 24px 40px -14px rgba(20,90,70,.44),0 9px 15px -8px rgba(20,90,70,.26)}
+.spk-kldoc-dz.drag{border-color:#1d9e75;background:linear-gradient(180deg,#d7efe5,#c7e8da);
+  transform:perspective(760px) translateY(2px) scale(.995);
+  box-shadow:0 2px 0 rgba(255,255,255,.6) inset,0 10px 22px -12px rgba(20,90,70,.45) inset,
+             0 4px 9px -7px rgba(20,90,70,.28)}
+.spk-kldoc-dzic{width:24px;height:24px;color:#6f9d8b;filter:drop-shadow(0 5px 7px rgba(20,90,70,.26));transition:color .14s,transform .22s cubic-bezier(.16,1,.3,1)}
 .spk-kldoc-dz:hover .spk-kldoc-dzic,.spk-kldoc-dz.drag .spk-kldoc-dzic{color:#1d9e75}
-.spk-kldoc-dz .t{margin-top:8px;font-size:13.5px;font-weight:700;color:#25303a}
-.spk-kldoc-dz .s{margin-top:3px;font-size:12px;color:#6B7885}
-.spk-kldoc-dz .s2{margin-top:7px;font-size:11px;color:#9AA7B2}
+.spk-kldoc-dz:hover .spk-kldoc-dzic{transform:translateY(-2px)}
+.spk-kldoc-dz.drag .spk-kldoc-dzic{transform:translateY(-4px) scale(1.06)}
+.spk-kldoc-dz .t{margin-top:5px;font-size:12.5px;font-weight:700;color:#25303a;text-shadow:0 1px 0 rgba(255,255,255,.7)}
 .spk-kldoc-dzx{position:absolute;top:7px;right:7px;width:26px;height:26px;border:0;border-radius:7px;background:transparent;
   color:#8fa0ad;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
 .spk-kldoc-dzx svg{width:13px;height:13px}

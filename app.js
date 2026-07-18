@@ -21969,13 +21969,6 @@ function spkKlausulOpenEditor(k){
             '<svg class="spk-kldoc-dzic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+
               '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5M12 3v12"/></svg>'+
             '<div class="t">Drag &amp; Drop berkas .docx ke sini</div>'+
-            '<div class="s">atau klik untuk memilih berkas dari komputer</div>'+
-            '<div class="s2">Hanya berkas Microsoft Word (.docx)</div>'+
-          '</div>'+
-          '<div class="spk-kldoc-note">'+
-            '<b>Cara pakai:</b> unduh template &rarr; ketik isi klausul di Microsoft Word &rarr; unggah kembali berkas .docx tersebut. '+
-            'Template sudah diatur <b>A4 &middot; Portrait &middot; Margin Normal (2,54 cm) &middot; Arial 11</b>. '+
-            'Format Word Anda (penomoran otomatis, indentasi, tabel) akan <b>diikuti apa adanya</b> saat ditampilkan di website.'+
           '</div>'+
         '</div>'+
       '</div>'+
@@ -22032,11 +22025,11 @@ function spkKlDocPreview(){
   var m=document.getElementById('spk-kldoc-meta');
   if(m){
     if(spkKlDoc.fileName){
-      m.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;vertical-align:-2px;color:#12805c"><path d="M20 6 9 17l-5-5"/></svg> Terunggah: <b>'+fkEsc(spkKlDoc.fileName)+'</b> — berkas asli disimpan, unduhan akan sama persis';
+      m.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;vertical-align:-2px;color:#12805c"><path d="M20 6 9 17l-5-5"/></svg> Terunggah: <b>'+fkEsc(spkKlDoc.fileName)+'</b>';
     }else if(spkKlDoc.docx){
-      m.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;vertical-align:-2px;color:#12805c"><path d="M20 6 9 17l-5-5"/></svg> Berkas .docx asli tersimpan — unduhan sama persis dengan saat diunggah. Unggah .docx baru untuk menggantinya.';
+      m.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;vertical-align:-2px;color:#12805c"><path d="M20 6 9 17l-5-5"/></svg> Berkas .docx tersimpan';
     }else{
-      m.innerHTML = spkKlDoc.rec ? 'Isi klausul saat ini dipakai. Unggah .docx untuk menggantinya.' : 'Belum ada berkas .docx diunggah.';
+      m.innerHTML = spkKlDoc.rec ? 'Isi klausul saat ini dipakai.' : '';
     }
   }
 }
