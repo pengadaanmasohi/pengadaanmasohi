@@ -5641,14 +5641,14 @@ function renderJadwalKerja(){
   const selesai= akhirSemua.length ? new Date(Math.max.apply(null, akhirSemua.map(d=>d.getTime()))) : null;
   const totDur = jpDiffDurasi(mulai, selesai);
   const btnBatal = st.profilLoaded
-    ? '<button type="button" class="jp-profil-btn is-cancel" title="Batalkan Profil" onclick="jpProfilCancel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg><span>Batalkan Profil</span></button>'
+    ? '<button type="button" class="jp-profil-btn is-cancel" title="Batalkan Profil" onclick="jpProfilCancel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg><span>Profil</span></button>'
     : '';
   const summaryHtml = ''+
     '<div class="jp-summary">'+
       '<div class="jp-summary-card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg></div><div class="txt"><b>'+(selesai?fkEsc(jpFmtTglPanjang(selesai)):'—')+'</b><span>Rencana Terkontrak</span></div></div>'+
       '<div class="jp-summary-card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></div><div class="txt"><b>'+(totDur?fkEsc(jpFmtDurasi(totDur.hari,totDur.jam,totDur.menit)):'0 Jam')+'</b><span>Durasi Pengadaan</span></div></div>'+
       '<div class="jp-summary-card jp-profil-card">'+
-        '<button type="button" class="jp-profil-btn is-save" title="Simpan Profil" onclick="jpProfilOpenSave()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg><span>Simpan Profil</span></button>'+
+        '<button type="button" class="jp-profil-btn is-save" title="Simpan Profil" onclick="jpProfilOpenSave()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg><span>Profil</span></button>'+
         '<button type="button" class="jp-profil-btn is-load" title="Muat Profil" onclick="jpProfilOpenLoad()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6M9 14h6"/></svg><span>Muat Profil</span></button>'+
         btnBatal+
       '</div>'+
@@ -5796,8 +5796,7 @@ function jpProfilOpenLoad(){
   const items=list.slice().sort((a,b)=>(b.savedAt||0)-(a.savedAt||0)).map(p=>
     '<div class="pnw-profil-item"><div class="pnw-profil-item-info"><div class="pnw-profil-item-name">'+fkEsc(p.name)+'</div>'+
     '<div class="pnw-profil-item-meta">'+(p.count||0)+' tahapan</div></div>'+
-    '<div class="pnw-profil-item-btns"><button type="button" class="btn btn-teal pnw-profil-mini" onclick="jpProfilDoLoad(\''+fkEscJs(p.name)+'\')">Muat</button>'+
-    '<button type="button" class="btn btn-ghost pnw-profil-mini" onclick="jpProfilDoDelete(\''+fkEscJs(p.name)+'\')">Hapus</button>'+profilDownloadBtnHtml('jadwal',p.name)+'</div></div>'
+    '<div class="pnw-profil-item-btns">'+profilActionBtns('jadwal',p.name)+'</div></div>'
   ).join('');
   jpProfilOverlay(
     '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6M9 14h6"/></svg>Muat Profil Jadwal'+profilUploadBtnHtml('jadwal')+'</div>'+
@@ -8983,8 +8982,7 @@ function pnwProfilOpenLoad(){
   const items=list.slice().sort((a,b)=>(b.savedAt||0)-(a.savedAt||0)).map(p=>
     '<div class="pnw-profil-item"><div class="pnw-profil-item-info"><div class="pnw-profil-item-name">'+fkEsc(p.name)+'</div>'+
     '<div class="pnw-profil-item-meta">'+(p.count||0)+' persyaratan</div></div>'+
-    '<div class="pnw-profil-item-btns"><button type="button" class="btn btn-teal pnw-profil-mini" onclick="pnwProfilDoLoad(\''+fkEscJs(p.name)+'\')">Muat</button>'+
-    '<button type="button" class="btn btn-ghost pnw-profil-mini" onclick="pnwProfilDoDelete(\''+fkEscJs(p.name)+'\')">Hapus</button>'+profilDownloadBtnHtml('syarat',p.name)+'</div></div>'
+    '<div class="pnw-profil-item-btns">'+profilActionBtns('syarat',p.name)+'</div></div>'
   ).join('');
   pnwProfilOverlay(
     '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Muat Profil Persyaratan'+profilUploadBtnHtml('syarat')+'</div>'+
@@ -9235,7 +9233,7 @@ function renderPnwForm(){
     html+='<div class="form-card"><div class="form-section-title pnw-syarat-title">'+
         '<span class="pnw-syarat-title-txt">'+FKL_SEC_ICON+'Pengisian Persyaratan</span>'+
         '<span class="pnw-profil-bar">'+
-          '<button type="button" class="btn btn-amber pnw-profil-btn" onclick="pnwProfilOpenSave()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Simpan Profil</button>'+
+          '<button type="button" class="btn btn-amber pnw-profil-btn" title="Simpan Profil" onclick="pnwProfilOpenSave()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Profil</button>'+
           '<button type="button" class="btn btn-teal pnw-profil-btn" onclick="pnwProfilOpenLoad()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Muat Profil</button>'+
           (st.profilLoaded ? '<button type="button" class="btn btn-red pnw-profil-btn" onclick="pnwProfilCancel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Batalkan Profil</button>' : '')+
         '</span>'+
@@ -20676,7 +20674,7 @@ function renderSpkKlausul(){
   // mengembalikan pustaka klausul ke keadaan bawaan (default). Tanpa profil aktif,
   // tombol ini tidak ditampilkan sama sekali.
   const btnBatal = aktifProfil
-    ? '<button type="button" class="jp-profil-btn is-cancel" title="Batalkan profil yang dimuat &amp; kembalikan pustaka klausul ke bawaan" onclick="spkKlProfilCancel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg><span>Batalkan Pilihan</span></button>'
+    ? '<button type="button" class="jp-profil-btn is-cancel" title="Batalkan profil yang dimuat &amp; kembalikan pustaka klausul ke bawaan" onclick="spkKlProfilCancel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg><span>Profil</span></button>'
     : '';
   const tagProfil = aktifProfil
     ? '<span class="spk-klprof-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:13px;height:13px"><path d="M20 6 9 17l-5-5"/></svg>Profil: '+fkEsc(aktifProfil)+'</span>'
@@ -20686,7 +20684,7 @@ function renderSpkKlausul(){
       '<div class="form-section-title" style="justify-content:space-between">'+
         '<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg> Pustaka Klausul SPK '+tagProfil+'</span>'+
         '<span class="spk-klbar">'+
-          '<button type="button" class="jp-profil-btn is-save" onclick="spkKlProfilOpenSave()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg><span>Simpan Profil</span></button>'+
+          '<button type="button" class="jp-profil-btn is-save" title="Simpan Profil" onclick="spkKlProfilOpenSave()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg><span>Profil</span></button>'+
           '<button type="button" class="jp-profil-btn is-load" onclick="spkKlProfilOpenLoad()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6M9 14h6"/></svg><span>Muat Profil</span></button>'+
           btnBatal+
           '<button class="btn btn-green" onclick="spkKlausulNew()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Tambah Klausul</button>'+
@@ -20748,8 +20746,7 @@ function spkKlProfilOpenLoad(){
   const items=list.slice().sort((a,b)=>(b.savedAt||0)-(a.savedAt||0)).map(p=>
     '<div class="pnw-profil-item"><div class="pnw-profil-item-info"><div class="pnw-profil-item-name">'+fkEsc(p.name)+'</div>'+
     '<div class="pnw-profil-item-meta">'+(p.count||(p.items?p.items.length:0))+' klausul</div></div>'+
-    '<div class="pnw-profil-item-btns"><button type="button" class="btn btn-teal pnw-profil-mini" onclick="spkKlProfilDoLoad(\''+fkEscJs(p.name)+'\')">Muat</button>'+
-    '<button type="button" class="btn btn-ghost pnw-profil-mini" onclick="spkKlProfilDoDelete(\''+fkEscJs(p.name)+'\')">Hapus</button>'+profilDownloadBtnHtml('klausul',p.name)+'</div></div>'
+    '<div class="pnw-profil-item-btns">'+profilActionBtns('klausul',p.name)+'</div></div>'
   ).join('');
   spkKlProfilOverlay(
     '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6M9 14h6"/></svg>Muat Profil Klausul'+profilUploadBtnHtml('klausul')+'</div>'+
@@ -20854,10 +20851,10 @@ function spkPyProfilTagHtml(){
 /* Bar tombol Simpan / Muat / (Batalkan) di kanan-atas kartu Informasi Penyedia. */
 function spkPyProfilBarHtml(){
   const btnBatal = spkPyProfil.active
-    ? '<button type="button" class="jp-profil-btn is-cancel" title="Kembalikan data penyedia ke keadaan sebelum profil dimuat" onclick="spkPyProfilCancel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg><span>Batalkan Pilihan</span></button>'
+    ? '<button type="button" class="jp-profil-btn is-cancel" title="Kembalikan data penyedia ke keadaan sebelum profil dimuat" onclick="spkPyProfilCancel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg><span>Profil</span></button>'
     : '';
   return '<span class="spk-klbar">'+
-    '<button type="button" class="jp-profil-btn is-save" onclick="spkPyProfilOpenSave()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg><span>Simpan Profil</span></button>'+
+    '<button type="button" class="jp-profil-btn is-save" title="Simpan Profil" onclick="spkPyProfilOpenSave()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg><span>Profil</span></button>'+
     '<button type="button" class="jp-profil-btn is-load" onclick="spkPyProfilOpenLoad()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6M9 14h6"/></svg><span>Muat Profil</span></button>'+
     btnBatal+
   '</span>';
@@ -20898,8 +20895,7 @@ function spkPyProfilOpenLoad(){
     const sub=fkEsc((p.data&&p.data.nama_perusahaan)||p.name);
     return '<div class="pnw-profil-item"><div class="pnw-profil-item-info"><div class="pnw-profil-item-name">'+fkEsc(p.name)+'</div>'+
       '<div class="pnw-profil-item-meta">'+sub+'</div></div>'+
-      '<div class="pnw-profil-item-btns"><button type="button" class="btn btn-teal pnw-profil-mini" onclick="spkPyProfilDoLoad(\''+fkEscJs(p.name)+'\')">Muat</button>'+
-      '<button type="button" class="btn btn-ghost pnw-profil-mini" onclick="spkPyProfilDoDelete(\''+fkEscJs(p.name)+'\')">Hapus</button>'+profilDownloadBtnHtml('penyedia',p.name)+'</div></div>';
+      '<div class="pnw-profil-item-btns">'+profilActionBtns('penyedia',p.name)+'</div></div>';
   }).join('');
   spkPyProfilOverlay(
     '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6M9 14h6"/></svg>Muat Profil Penyedia'+profilUploadBtnHtml('penyedia')+'</div>'+
@@ -23017,24 +23013,35 @@ try{ if(typeof spkInit==="function") spkInit(); }catch(e){ console.error("spkIni
    langsung DIMUAT otomatis setelah diunggah. Berlaku untuk 4 jenis profil.
    ============================================================================ */
 var PROFIL_REG = {
-  jadwal:   { label:'Jadwal',      doLoad:function(n){ jpProfilDoLoad(n); },    reopen:function(){ jpProfilOpenLoad(); } },
-  syarat:   { label:'Persyaratan', doLoad:function(n){ pnwProfilDoLoad(n); },   reopen:function(){ pnwProfilOpenLoad(); } },
-  klausul:  { label:'Klausul',     doLoad:function(n){ spkKlProfilDoLoad(n); }, reopen:function(){ spkKlProfilOpenLoad(); } },
-  penyedia: { label:'Penyedia',    doLoad:function(n){ spkPyProfilDoLoad(n); }, reopen:function(){ spkPyProfilOpenLoad(); } }
+  jadwal:   { label:'Jadwal',      doLoad:function(n){ jpProfilDoLoad(n); },    doDelete:function(n){ jpProfilDoDelete(n); },    reopen:function(){ jpProfilOpenLoad(); } },
+  syarat:   { label:'Persyaratan', doLoad:function(n){ pnwProfilDoLoad(n); },   doDelete:function(n){ pnwProfilDoDelete(n); },   reopen:function(){ pnwProfilOpenLoad(); } },
+  klausul:  { label:'Klausul',     doLoad:function(n){ spkKlProfilDoLoad(n); }, doDelete:function(n){ spkKlProfilDoDelete(n); }, reopen:function(){ spkKlProfilOpenLoad(); } },
+  penyedia: { label:'Penyedia',    doLoad:function(n){ spkPyProfilDoLoad(n); }, doDelete:function(n){ spkPyProfilDoDelete(n); }, reopen:function(){ spkPyProfilOpenLoad(); } }
 };
 function profilRegLabel(kind){ return (PROFIL_REG[kind] && PROFIL_REG[kind].label) || kind; }
+function profilDoLoad(kind, name){ var r=PROFIL_REG[kind]; if(r&&r.doLoad) try{ r.doLoad(name); }catch(e){ console.error(e); } }
+function profilDoDelete(kind, name){ var r=PROFIL_REG[kind]; if(r&&r.doDelete) try{ r.doDelete(name); }catch(e){ console.error(e); } }
 
-/* Ikon SVG kecil untuk tombol */
-var PROFIL_DL_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>';
-var PROFIL_UP_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>';
+/* Ikon SVG elegan (garis) untuk tombol aksi profil */
+var PROFIL_LOAD_ICON  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H21a2 2 0 0 1 1.94 2.5l-1.55 6A2 2 0 0 1 19.46 20H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/></svg>';
+var PROFIL_TRASH_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6M14 11v6"/></svg>';
+var PROFIL_DL_ICON    = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>';
+var PROFIL_UP_ICON    = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>';
 
-/* Tombol "Unggah Profil" untuk dipasang di kanan atas dialog Muat */
+/* Tombol ikon "Unggah Profil" (kanan atas dialog Muat) */
 function profilUploadBtnHtml(kind){
-  return '<button type="button" class="pnw-profil-upload" title="Unggah profil dari berkas" onclick="profilUploadPrompt(\''+kind+'\')">'+PROFIL_UP_ICON+'<span>Unggah Profil</span></button>';
+  return '<button type="button" class="pnw-profil-upload pf-ic-up" title="Unggah profil dari berkas" aria-label="Unggah Profil" onclick="profilUploadPrompt(\''+kind+'\')">'+PROFIL_UP_ICON+'</button>';
 }
-/* Tombol "Unduh" untuk dipasang setelah tombol Hapus pada tiap item */
+/* Tiga tombol ikon aksi per item: Muat / Hapus / Unduh */
+function profilActionBtns(kind, name){
+  var e=fkEscJs(name);
+  return '<button type="button" class="pf-ic pf-ic-load" title="Muat profil ini" aria-label="Muat" onclick="profilDoLoad(\''+kind+'\',\''+e+'\')">'+PROFIL_LOAD_ICON+'</button>'
+       + '<button type="button" class="pf-ic pf-ic-del" title="Hapus profil ini" aria-label="Hapus" onclick="profilDoDelete(\''+kind+'\',\''+e+'\')">'+PROFIL_TRASH_ICON+'</button>'
+       + '<button type="button" class="pf-ic pf-ic-dl" title="Unduh profil ini ke berkas" aria-label="Unduh" onclick="profilDownloadFile(\''+kind+'\',\''+e+'\')">'+PROFIL_DL_ICON+'</button>';
+}
+/* (kompat lama) */
 function profilDownloadBtnHtml(kind, name){
-  return '<button type="button" class="btn btn-ghost pnw-profil-mini pnw-mini-dl" title="Unduh profil ini ke berkas" onclick="profilDownloadFile(\''+kind+'\',\''+fkEscJs(name)+'\')">'+PROFIL_DL_ICON+'Unduh</button>';
+  return '<button type="button" class="pf-ic pf-ic-dl" title="Unduh profil ini ke berkas" aria-label="Unduh" onclick="profilDownloadFile(\''+kind+'\',\''+fkEscJs(name)+'\')">'+PROFIL_DL_ICON+'</button>';
 }
 
 /* Unduh SATU profil sebagai berkas .json */

@@ -4448,3 +4448,29 @@ table.ac-list thead th{ background:linear-gradient(180deg,#eef6f7,#dfedee); box-
 .pnw-profil-mini.pnw-mini-dl svg{ width:13px; height:13px; }
 .pnw-profil-mini.pnw-mini-dl:hover{ border-color:#0E7C86; color:#0E7C86; }
 @media (max-width:520px){ .pnw-profil-head{ padding-right:120px; } .pnw-profil-upload span{ display:none; } .pnw-profil-upload{ padding:8px; } }
+
+/* ============================================================================
+   Tombol aksi profil sebagai IKON elegan (Muat / Hapus / Unduh / Unggah)
+   ============================================================================ */
+.pnw-profil-head{ padding-right:70px !important; }
+.pnw-profil-upload.pf-ic-up{ top:18px; right:20px; width:46px; height:46px; padding:0; gap:0; border-radius:14px; justify-content:center; }
+.pnw-profil-upload.pf-ic-up svg{ width:20px; height:20px; }
+
+.pnw-profil-item-btns{ gap:8px; }
+.pf-ic{ width:42px; height:42px; flex:none; border-radius:12px; display:inline-flex; align-items:center; justify-content:center;
+  border:1px solid #dbe6e7; background:linear-gradient(180deg,#ffffff,#f1f7f8); color:#3a5257; cursor:pointer;
+  box-shadow:0 3px 8px rgba(9,60,66,.10), inset 0 1px 0 rgba(255,255,255,.85);
+  transition:transform .14s ease, box-shadow .14s ease, background .14s ease, border-color .14s ease, color .14s ease; }
+.pf-ic svg{ width:19px; height:19px; }
+.pf-ic:hover{ transform:translateY(-2px); box-shadow:0 9px 18px rgba(9,60,66,.16); }
+.pf-ic:active{ transform:translateY(0); box-shadow:0 2px 6px rgba(9,60,66,.14); }
+/* Muat = utama (teal terisi) */
+.pf-ic-load{ background:linear-gradient(180deg,#17959f,#0a5e66); border-color:#0a5e66; color:#fff;
+  box-shadow:0 5px 13px rgba(14,124,134,.34), inset 0 1px 0 rgba(255,255,255,.38); }
+.pf-ic-load:hover{ box-shadow:0 10px 20px rgba(14,124,134,.46), inset 0 1px 0 rgba(255,255,255,.38); }
+/* Hapus = merah lembut */
+.pf-ic-del{ color:#c0392b; }
+.pf-ic-del:hover{ background:linear-gradient(180deg,#fff5f4,#fdece9); border-color:#f0c2bd; color:#b0301f; }
+/* Unduh = teal outline */
+.pf-ic-dl{ color:#0a5e66; }
+.pf-ic-dl:hover{ background:linear-gradient(180deg,#edf7f8,#e2f0f1); border-color:#bfe0e2; color:#0E7C86; }
