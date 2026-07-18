@@ -2924,16 +2924,21 @@ function normDate(v){
   if(/^\d+(\.\d+)?$/.test(s)){ const n=Number(s); if(n>=10000 && n<=2958465 && typeof XLSX!=='undefined' && XLSX.SSF){ const d=XLSX.SSF.parse_date_code(n); if(d) return `${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`; } }
   let m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/); if(m)return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
   m=s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/); if(m)return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
-  // Tanggal teks Bahasa Indonesia, mis. "11 Juni 2026" / "2 Jul 2026" / "5 Agustus 2026".
-  // (Excel tidak mengenali nama bulan Indonesia, jadi diterjemahkan sendiri di sini agar
-  //  hasil paste tetap dikonversi otomatis menjadi tanggal saat file di-upload kembali.)
-  m=s.replace(/\s+/g,' ').match(/^(\d{1,2})\s+([A-Za-z]+)\.?\s+(\d{4})$/);
+  // Tanggal teks (mis. "11 Juni 2026", "03 Mei 2026", "11-Jun-26", "2 Jul. 2026").
+  // Excel tak mengenali nama bulan Indonesia; diterjemahkan sendiri di sini agar teks hasil
+  // paste otomatis menjadi tanggal saat di-upload. Pemisah bisa spasi/tanda hubung/titik,
+  // dan tahun boleh 2 atau 4 digit (mis. "26" -> 2026).
+  const bln={jan:1,januari:1,feb:2,pebruari:2,februari:2,mar:3,maret:3,apr:4,april:4,mei:5,
+    jun:6,juni:6,jul:7,juli:7,agu:8,ags:8,agt:8,agustus:8,sep:9,sept:9,september:9,
+    okt:10,oct:10,oktober:10,nov:11,nop:11,november:11,des:12,dec:12,desember:12};
+  const sNorm=s.replace(/[.\-\/]/g,' ').replace(/\s+/g,' ').trim();
+  m=sNorm.match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{2,4})$/);
   if(m){
-    const bln={jan:1,januari:1,feb:2,pebruari:2,februari:2,mar:3,maret:3,apr:4,april:4,mei:5,
-      jun:6,juni:6,jul:7,juli:7,agu:8,ags:8,agt:8,ags:8,agustus:8,sep:9,sept:9,september:9,
-      okt:10,oct:10,oktober:10,nov:11,nop:11,november:11,des:12,dec:12,desember:12};
     const mo=bln[m[2].toLowerCase()];
-    if(mo) return `${m[3]}-${String(mo).padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+    if(mo){
+      let yr=m[3]; if(yr.length<=2){ const yy=parseInt(yr,10); yr=String(yy<70?2000+yy:1900+yy); }
+      return `${yr}-${String(mo).padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+    }
   }
   return s;
 }
