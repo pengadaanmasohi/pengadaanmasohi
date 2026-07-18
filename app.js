@@ -2150,7 +2150,8 @@ function initDashSound(){
     var now=(window.performance&&performance.now)?performance.now():Date.now();
     if(now-_dashSoundT<40) return;                                  /* redam bila terlalu cepat */
     _dashSoundT=now;
-    dashBlip(part.classList.contains('panel') ? 520 : 664);         /* panel grafik & kartu beda nada */
+    /* Efek suara hover dashboard DINONAKTIFKAN atas permintaan pengguna.
+       (dulu: dashBlip(part.classList.contains('panel') ? 520 : 664)) */
   }, {passive:true});
   root.addEventListener('pointerout', function(ev){
     var to=ev.relatedTarget;
