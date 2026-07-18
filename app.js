@@ -22569,19 +22569,19 @@ try{ if(typeof spkInit==="function") spkInit(); }catch(e){ console.error("spkIni
     var e=edit||null;
     var h='';
     h+='<div class="ac-note">Akun di sini <b>diverifikasi di sisi klien</b> (praktis untuk alat internal). '
+      +'Hanya tipe <b>User</b> &amp; <b>Dummy</b> yang dapat dibuat — akun <b>Admin cukup satu</b> (bawaan) dan tidak dibuat dari sini. '
       +'Tipe <b>Dummy</b> selalu berjalan di sandbox tanpa menyentuh database. '
-      +'Untuk akun server sejati, aktifkan RPC <code>create_user</code> di Supabase (lihat catatan di bawah).</div>';
+      +'Untuk akun User server sejati, aktifkan RPC <code>create_user</code> di Supabase (lihat catatan di bawah).</div>';
     h+='<div class="ac-form">';
     h+='<div class="ac-row2">'
       + '<div class="ac-fld"><label>Username</label><input id="ac-c-user" type="text" autocomplete="off" placeholder="mis. operator1" value="'+(e?String(e.username).replace(/"/g,'&quot;'):'')+'"'+(e?' readonly':'')+'></div>'
       + '<div class="ac-fld"><label>Kata Sandi</label><input id="ac-c-pass" type="text" autocomplete="off" placeholder="min. 4 karakter" value="'+(e?String(e.password||'').replace(/"/g,'&quot;'):'')+'"></div>'
       + '</div>';
-    var t=(e&&e.type)||'dummy';
+    var t=(e&&e.type)||'dummy'; if(t==='admin') t='user';   // Admin tunggal (bawaan) — tidak dibuat dari sini
     h+='<div class="ac-row2">'
       + '<div class="ac-fld"><label>Jenis Akun</label><select id="ac-c-type" onchange="acOnType()">'
       +   '<option value="dummy"'+(t==='dummy'?' selected':'')+'>Dummy (sandbox, tanpa database)</option>'
       +   '<option value="user"'+(t==='user'?' selected':'')+'>User</option>'
-      +   '<option value="admin"'+(t==='admin'?' selected':'')+'>Admin</option>'
       + '</select></div>'
       + '<div class="ac-fld"><label>Koneksi Database</label>'
       +   '<label class="ac-toggle"><input id="ac-c-db" type="checkbox" '+((e&&e.database)?'checked':'')+'><span class="ac-toggle-tr"></span><em id="ac-c-db-lbl">'+((e&&e.database)?'Terhubung ke server':'Sandbox (tidak terhubung)')+'</em></label>'
@@ -22591,8 +22591,8 @@ try{ if(typeof spkInit==="function") spkInit(); }catch(e){ console.error("spkIni
     h+='<div class="ac-actions">'
       + (e?'<button class="btn ghost" type="button" onclick="acTab(\'list\')">Batal</button>':'')
       + '<button class="btn btn-teal" type="button" onclick="acCreateAccount('+(e?'true':'false')+')">'+(e?'Simpan Perubahan':'Buat Akun')+'</button></div>';
-    h+='<details class="ac-sql"><summary>Ingin akun ADMIN/USER server sejati? (SQL Supabase)</summary>'
-      +'<p>Jalankan sekali di SQL Editor Supabase, lalu akun tipe Admin/User akan dibuat di server saat tersedia:</p>'
+    h+='<details class="ac-sql"><summary>Ingin akun USER server sejati? (SQL Supabase)</summary>'
+      +'<p>Jalankan sekali di SQL Editor Supabase, lalu akun tipe User akan dibuat di server saat tersedia:</p>'
       +'<pre>create or replace function create_user(\n  p_username text, p_password text, p_role text\n) returns boolean language plpgsql security definer as $$\nbegin\n  insert into app_users(username, pass_hash, role)\n  values (lower(p_username), crypt(p_password, gen_salt(\'bf\')), p_role);\n  return true;\nexception when unique_violation then return false;\nend; $$;</pre>'
       +'<small>Sesuaikan nama tabel/kolom akun Anda. Tanpa RPC ini, akun tetap dibuat sebagai akun lokal.</small></details>';
     h+='</div>';
@@ -22613,6 +22613,7 @@ try{ if(typeof spkInit==="function") spkInit(); }catch(e){ console.error("spkIni
     var u=((document.getElementById('ac-c-user')||{}).value||'').trim();
     var p=((document.getElementById('ac-c-pass')||{}).value||'');
     var type=(document.getElementById('ac-c-type')||{}).value||'dummy';
+    if(type!=='dummy' && type!=='user') type='user';   // hanya User & Dummy; Admin tunggal (bawaan)
     var dbEl=document.getElementById('ac-c-db');
     var database = type==='dummy' ? false : !!(dbEl&&dbEl.checked);
     if(!u){ try{ toast('Username wajib diisi','warn'); }catch(e){} return; }
@@ -22911,8 +22912,17 @@ try{ if(typeof spkInit==="function") spkInit(); }catch(e){ console.error("spkIni
   };
   function stBar(used, quota, cls){
     var pct = quota>0 ? Math.min(100, Math.round(used/quota*1000)/10) : 0;
-    return '<div class="st-bar"><span class="st-bar-fill '+(cls||'')+(pct>=90?' hot':(pct>=70?' warn':''))+'" style="width:'+Math.max(pct,used>0?2:0)+'%"></span></div>'
-         + '<div class="st-bar-cap">'+(pct)+'% dari acuan '+stFmt(quota)+'</div>';
+    var lvl = pct>=90?' hot':(pct>=70?' warn':'');
+    return '<div class="st-gauge">'
+      + '<div class="st-gauge-top"><span class="st-gauge-lbl">'+stFmt(used)+'</span><span class="st-gauge-pct">'+pct+'%</span></div>'
+      + '<div class="st-track big"><span class="st-fill '+(cls||'')+lvl+'" style="width:'+Math.max(pct,used>0?3:0)+'%"></span></div>'
+      + '<div class="st-gauge-cap">dari acuan '+stFmt(quota)+'</div></div>';
+  }
+  function stItem(name, val, sub, pct, cls, extra){
+    return '<div class="st-item"><div class="st-item-row">'
+      + '<span class="st-item-name">'+name+(extra||'')+'</span>'
+      + '<span class="st-item-val">'+val+(sub?' <em>'+sub+'</em>':'')+'</span>'
+      + '</div><div class="st-track"><span class="st-fill '+(cls||'')+'" style="width:'+Math.max(0,Math.min(100,pct))+'%"></span></div></div>';
   }
   function stRender(data){
     var pane=document.getElementById('st-pane'); if(!pane) return;
@@ -22926,43 +22936,57 @@ try{ if(typeof spkInit==="function") spkInit(); }catch(e){ console.error("spkIni
       return;
     }
     var maxRows=0; data.tables.forEach(function(r){ if(typeof r.rows==='number' && r.rows>maxRows) maxRows=r.rows; });
-    var h='';
-    // Ringkasan atas
+    var totalFiles=data.buckets.reduce(function(a,b){return a+(b.files||0);},0);
+    var dbPct = (data.totalBytesDb!=null && ST_DB_QUOTA>0) ? Math.min(100, Math.round(data.totalBytesDb/ST_DB_QUOTA*1000)/10) : null;
+    var stPct = ST_ST_QUOTA>0 ? Math.min(100, Math.round(data.totalBytesSt/ST_ST_QUOTA*1000)/10) : 0;
+    var h='<div class="st-wrap">';
+    // Ringkasan atas (KPI 3D)
     h+='<div class="st-top">';
-    h+='<div class="st-kpi"><span class="st-kpi-l">Total Baris Database</span><span class="st-kpi-v">'+stNum(data.totalRows)+'</span>'
-      + (data.totalBytesDb!=null?'<span class="st-kpi-s">'+stFmt(data.totalBytesDb)+'</span>':'<span class="st-kpi-s">ukuran byte: aktifkan RPC</span>')+'</div>';
-    h+='<div class="st-kpi"><span class="st-kpi-l">Total File Storage</span><span class="st-kpi-v">'+stFmt(data.totalBytesSt)+'</span>'
-      + '<span class="st-kpi-s">'+stNum(data.buckets.reduce(function(a,b){return a+(b.files||0);},0))+' berkas</span></div>';
+    h+='<div class="st-kpi st-kpi-db"><span class="st-kpi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg></span>'
+      + '<span class="st-kpi-txt">'
+      + ( data.totalBytesDb!=null
+          ? '<span class="st-kpi-l">Penyimpanan Database</span>'
+            + '<span class="st-kpi-v">'+stFmt(data.totalBytesDb)+'</span>'
+            + '<span class="st-kpi-mini"><span style="width:'+Math.max(dbPct,data.totalBytesDb>0?2:0)+'%"></span></span>'
+            + '<span class="st-kpi-sub">dari '+stFmt(ST_DB_QUOTA)+' &middot; <b>'+dbPct+'%</b> terpakai &middot; '+stNum(data.totalRows)+' baris</span>'
+          : '<span class="st-kpi-l">Total Baris Database</span>'
+            + '<span class="st-kpi-v">'+stNum(data.totalRows)+'</span>'
+            + '<span class="st-kpi-sub">ukuran byte: aktifkan RPC</span>' )
+      + '</span></div>';
+    h+='<div class="st-kpi st-kpi-st"><span class="st-kpi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></span>'
+      + '<span class="st-kpi-txt"><span class="st-kpi-l">Penyimpanan File Storage</span>'
+      + '<span class="st-kpi-v">'+stFmt(data.totalBytesSt)+'</span>'
+      + '<span class="st-kpi-mini st"><span style="width:'+Math.max(stPct,data.totalBytesSt>0?2:0)+'%"></span></span>'
+      + '<span class="st-kpi-sub">dari '+stFmt(ST_ST_QUOTA)+' &middot; <b>'+stPct+'%</b> terpakai &middot; '+stNum(totalFiles)+' berkas</span>'
+      + '</span></div>';
     h+='</div>';
 
     // Kartu Database
-    h+='<div class="st-card"><div class="st-card-h"><b>Database</b> <span class="st-muted">jumlah baris per tabel</span></div>';
-    if(data.totalBytesDb!=null){ h+='<div class="st-gauge">'+stBar(data.totalBytesDb, ST_DB_QUOTA, 'db')+'</div>'; }
+    h+='<div class="st-card st-card-db"><div class="st-card-h"><span class="st-card-ic db"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg></span><b>Database</b> <span class="st-muted">jumlah baris per tabel</span></div>';
+    if(data.totalBytesDb!=null){ h+=stBar(data.totalBytesDb, ST_DB_QUOTA, 'db'); }
     var curGrp=null;
-    h+='<table class="st-table"><tbody>';
+    h+='<div class="st-list">';
     data.tables.forEach(function(r){
-      if(r.grp!==curGrp){ curGrp=r.grp; h+='<tr class="st-grp"><td colspan="3">'+curGrp+'</td></tr>'; }
+      if(r.grp!==curGrp){ curGrp=r.grp; h+='<div class="st-glabel">'+curGrp+'</div>'; }
       var pct = maxRows>0 && typeof r.rows==='number' ? Math.round(r.rows/maxRows*100) : 0;
-      h+='<tr><td class="st-tname">'+r.l+'<div class="st-mini-bar"><span style="width:'+pct+'%"></span></div></td>'
-        +'<td class="st-trows">'+(typeof r.rows==='number'?stNum(r.rows)+' baris':'<span class="st-na">tak terbaca</span>')+'</td>'
-        +'<td class="st-tbytes">'+(r.bytes!=null?stFmt(r.bytes):'')+'</td></tr>';
+      var val = typeof r.rows==='number' ? stNum(r.rows) : '<span class="st-na">tak terbaca</span>';
+      var sub = typeof r.rows==='number' ? 'baris'+(r.bytes!=null?' · '+stFmt(r.bytes):'') : '';
+      h+=stItem(r.l, val, sub, pct, 'db');
     });
-    h+='</tbody></table></div>';
+    h+='</div></div>';
 
     // Kartu Storage
-    h+='<div class="st-card"><div class="st-card-h"><b>Storage File</b> <span class="st-muted">ukuran per bucket</span></div>';
-    h+='<div class="st-gauge">'+stBar(data.totalBytesSt, ST_ST_QUOTA, 'st')+'</div>';
-    h+='<table class="st-table"><tbody>';
+    h+='<div class="st-card st-card-st"><div class="st-card-h"><span class="st-card-ic st"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></span><b>Storage File</b> <span class="st-muted">ukuran per bucket</span></div>';
+    h+=stBar(data.totalBytesSt, ST_ST_QUOTA, 'st');
+    h+='<div class="st-list">';
     data.buckets.forEach(function(b){
       var pct = data.totalBytesSt>0 ? Math.round((b.bytes||0)/data.totalBytesSt*100) : 0;
-      h+='<tr><td class="st-tname">'+b.l+' <code>'+b.b+'</code>'
+      var extra=' <code>'+b.b+'</code>'
         + (b.missing?' <span class="st-na">bucket tidak ada</span>':'')
-        + (b.capped?' <span class="st-na">*sebagian</span>':'')
-        + '<div class="st-mini-bar st"><span style="width:'+pct+'%"></span></div></td>'
-        +'<td class="st-trows">'+stNum(b.files)+' berkas</td>'
-        +'<td class="st-tbytes">'+stFmt(b.bytes)+'</td></tr>';
+        + (b.capped?' <span class="st-na">*sebagian</span>':'');
+      h+=stItem(b.l, stFmt(b.bytes), stNum(b.files)+' berkas', pct, 'st', extra);
     });
-    h+='</tbody></table></div>';
+    h+='</div></div>';
 
     h+='<details class="ac-sql"><summary>Ingin ukuran byte database yang presisi? (SQL Supabase)</summary>'
       +'<p>Jalankan sekali di SQL Editor Supabase agar kolom ukuran (byte) tabel terisi presisi:</p>'
@@ -22972,6 +22996,7 @@ try{ if(typeof spkInit==="function") spkInit(); }catch(e){ console.error("spkIni
     h+='<div class="st-foot"><span class="st-muted">Terakhir dipindai: '+new Date(data.ts).toLocaleTimeString('id-ID')+'</span>'
       +'<button class="btn btn-teal" id="st-refresh" type="button" onclick="stScan()">Segarkan</button></div>';
 
+    h+='</div>';
     pane.innerHTML=h;
   }
 
