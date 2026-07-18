@@ -4266,10 +4266,12 @@ input.ac-rpw{ padding:8px 10px; border:1px solid #cddcde; border-radius:8px; fon
 .st-fill.hot{ background:linear-gradient(180deg,#e57a76,#d9534f); }
 
 /* Baris item (flex, anti-overflow) */
-.st-list{ display:flex; flex-direction:column; gap:8px; }
-.st-glabel{ align-self:flex-start; font-size:.66rem; font-weight:800; letter-spacing:.5px; text-transform:uppercase; color:#0a5e66;
-  background:linear-gradient(180deg,#e9f5f5,#d6ebeb); border:1px solid #cbe4e4; padding:4px 12px; border-radius:20px;
-  box-shadow:0 3px 6px rgba(9,60,66,.08), inset 0 1px 0 rgba(255,255,255,.75); margin:8px 0 2px; }
+.st-list{ display:flex; flex-direction:column; gap:9px; }
+.st-glabel{ align-self:stretch; font-size:.66rem; font-weight:800; letter-spacing:.5px; text-transform:uppercase; color:#0a5e66;
+  padding:0 2px 9px; margin:26px 0 3px; border-bottom:1px dashed #d3e6e6; display:flex; align-items:center; gap:9px; }
+.st-glabel::before{ content:""; width:9px; height:9px; border-radius:3px; flex:none;
+  background:linear-gradient(145deg,#12909b,#0a5e66); box-shadow:0 2px 5px rgba(14,124,134,.35), inset 0 1px 0 rgba(255,255,255,.4); }
+.st-list .st-glabel:first-child{ margin-top:4px; }
 .st-item{ box-sizing:border-box; background:linear-gradient(180deg,#ffffff,#f3f9f9); border:1px solid #e6eff0; border-radius:12px;
   padding:11px 13px; box-shadow:0 2px 7px rgba(9,60,66,.05), inset 0 1px 0 rgba(255,255,255,.85); transition:transform .15s, box-shadow .15s, border-color .15s; }
 .st-item:hover{ transform:translateY(-1px); box-shadow:0 7px 18px rgba(9,60,66,.11); border-color:#cbe4e4; }
@@ -4329,3 +4331,120 @@ table.ac-matrix tbody tr:hover td.ac-cell.alt{ background:#e0f4f4 !important; }
 /* Kelompok modul (form akun) sedikit terangkat */
 .ac-capgrp{ box-shadow:0 4px 12px rgba(9,60,66,.07), inset 0 1px 0 rgba(255,255,255,.8); transition:transform .15s, box-shadow .15s; }
 .ac-capgrp:hover{ transform:translateY(-1px); box-shadow:0 8px 20px rgba(9,60,66,.12); }
+
+/* ============================================================================
+   Efek 3D — Buat Akun, Daftar Akun, Reset Sandi
+   ============================================================================ */
+/* Kotak info (hint/note) — kartu terangkat + aksen kiri */
+.ac-hint, .ac-note{ position:relative; background:linear-gradient(180deg,#f2fafb,#e8f4f5); border:1px solid #d4e8ea; border-radius:12px;
+  box-shadow:0 6px 16px rgba(9,60,66,.07), inset 0 1px 0 rgba(255,255,255,.8); padding-left:17px; }
+.ac-hint::before, .ac-note::before{ content:""; position:absolute; left:0; top:8px; bottom:8px; width:4px; border-radius:0 4px 4px 0;
+  background:linear-gradient(180deg,#16a9b5,#0a5e66); box-shadow:1px 0 4px rgba(14,124,134,.40); }
+.ac-note code{ box-shadow:inset 0 1px 2px rgba(9,60,66,.12); }
+
+/* Input & select — cekung, fokus menyala */
+.ac-fld input[type=text], .ac-fld select, input.ac-rpw{
+  background:linear-gradient(180deg,#f7fbfb,#ffffff);
+  box-shadow:inset 0 2px 4px rgba(9,60,66,.09), inset 0 -1px 0 rgba(255,255,255,.7); transition:box-shadow .15s, border-color .15s; }
+.ac-fld input[type=text]:focus, .ac-fld select:focus, input.ac-rpw:focus{
+  border-color:#0E7C86; box-shadow:inset 0 2px 4px rgba(9,60,66,.06), 0 0 0 3px rgba(14,124,134,.16), 0 5px 14px rgba(14,124,134,.15); }
+
+/* Grid modul & kartu grup */
+.ac-capgroups{ background:linear-gradient(180deg,#f2f9f9,#ecf4f5); box-shadow:inset 0 1px 3px rgba(9,60,66,.07); }
+.ac-capgrp{ background:linear-gradient(180deg,#ffffff,#f6fbfb); }
+.ac-capgrp-h{ background:linear-gradient(180deg,#eef6f7,#e1eff0); box-shadow:inset 0 1px 0 rgba(255,255,255,.75), 0 1px 0 rgba(9,60,66,.05); }
+.ac-chk input{ width:17px; height:17px; border-radius:5px; }
+
+/* Ringkasan chip 3D */
+.ac-sum-chip{ background:linear-gradient(180deg,#f2f8f8,#e5f0f1); box-shadow:0 4px 10px rgba(9,60,66,.09), inset 0 1px 0 rgba(255,255,255,.8);
+  transition:transform .15s, box-shadow .15s; }
+.ac-sum-chip:hover{ transform:translateY(-1px); box-shadow:0 8px 17px rgba(9,60,66,.13); }
+.ac-sum-chip.user{ background:linear-gradient(180deg,#e7f1ff,#d5e6fb); }
+.ac-sum-chip.dummy{ background:linear-gradient(180deg,#eef4f5,#dfe9eb); }
+
+/* Panel "Sedang Aktif" + baris live */
+.ac-active-wrap{ background:linear-gradient(180deg,#ffffff,#f4faf9); border:1px solid #e3eeee; border-radius:14px; padding:14px 16px 16px;
+  box-shadow:0 9px 22px rgba(9,60,66,.07), inset 0 1px 0 rgba(255,255,255,.9); }
+.ac-live-ic{ box-shadow:0 0 0 3px rgba(47,163,107,.18), 0 2px 5px rgba(31,125,84,.38); }
+.ac-live{ background:linear-gradient(180deg,#ffffff,#f2f9f8); box-shadow:0 4px 11px rgba(9,60,66,.07), inset 0 1px 0 rgba(255,255,255,.9);
+  transition:transform .15s, box-shadow .15s; }
+.ac-live:hover{ transform:translateY(-1px); box-shadow:0 8px 18px rgba(9,60,66,.12); }
+.ac-live.me{ background:linear-gradient(180deg,#eafaf2,#ddf5e9); box-shadow:0 6px 15px rgba(31,125,84,.13), inset 0 1px 0 rgba(255,255,255,.9); }
+.ac-live .ac-pill{ box-shadow:0 2px 5px rgba(9,60,66,.12), inset 0 1px 0 rgba(255,255,255,.55); }
+.ac-live-you{ box-shadow:0 2px 6px rgba(31,125,84,.24), inset 0 1px 0 rgba(255,255,255,.55); }
+.ac-dot{ box-shadow:0 0 0 3px rgba(47,163,107,.18), 0 1px 3px rgba(31,125,84,.4); }
+
+/* Judul seksi dengan penanda 3D (kecuali yang sudah punya titik "Sedang Aktif") */
+.ac-sec-title{ display:flex; align-items:center; gap:10px; }
+.ac-sec-title::before{ content:""; width:7px; height:17px; border-radius:4px; flex:none;
+  background:linear-gradient(180deg,#16a9b5,#0a5e66); box-shadow:0 2px 5px rgba(14,124,134,.35), inset 0 1px 0 rgba(255,255,255,.4); }
+.ac-active-wrap .ac-sec-title::before{ display:none; }
+
+/* Kondisi kosong & tabel daftar akun */
+.ac-empty{ background:linear-gradient(180deg,#fbfdfd,#f3f8f9); border:1px dashed #d7e3e5; border-radius:12px;
+  box-shadow:inset 0 1px 3px rgba(9,60,66,.05); }
+table.ac-list thead th{ background:linear-gradient(180deg,#eef6f7,#dfedee); box-shadow:inset 0 -1px 0 rgba(9,60,66,.06); }
+.ac-pill{ box-shadow:0 2px 5px rgba(9,60,66,.10), inset 0 1px 0 rgba(255,255,255,.55); }
+.ac-mini{ background:linear-gradient(180deg,#ffffff,#f1f6f6); box-shadow:0 2px 6px rgba(9,60,66,.09), inset 0 1px 0 rgba(255,255,255,.8);
+  transition:transform .15s, box-shadow .15s; }
+.ac-mini:hover{ transform:translateY(-1px); box-shadow:0 6px 13px rgba(9,60,66,.15); }
+.ac-mini.danger{ background:linear-gradient(180deg,#fff5f4,#fdeceb); }
+
+/* Blok SQL sedikit terangkat */
+.ac-sql pre{ box-shadow:0 8px 20px rgba(9,40,44,.28), inset 0 1px 0 rgba(255,255,255,.06); }
+
+/* Judul grup matriks: maksimal 2 baris (kolom aksi tunggal dilebarkan) */
+.ac-matrix-grp thead th.ac-grp-th{ font-size:.66rem; line-height:1.16; padding:7px 8px; word-break:normal; hyphens:none; }
+.ac-matrix-grp th.ac-act-access, .ac-matrix-grp td.ac-act-access{ min-width:142px; }
+
+/* ============================================================================
+   Sorot pekerjaan pada tabel Penetapan Nomor — hindari salah salin No. Dokumen
+   Saat kursor menunjuk satu pekerjaan, SELURUH selnya menyala oranye elegan.
+   ============================================================================ */
+#pn-lihat-body tr{ transition:background .12s ease; }
+#pn-lihat-body tr:hover td,
+#pn-lihat-body tr:hover td:first-child,
+#pn-lihat-body tr:hover td.col-nama-freeze,
+#pn-lihat-body tr:hover td.col-no{
+  background:linear-gradient(180deg,#fff5e6,#ffe7c4) !important;
+  color:#5a3d00;
+}
+#pn-lihat-body tr:hover td{ box-shadow:inset 0 -1px 0 rgba(201,118,26,.22); }
+#pn-lihat-body tr:hover td:first-child{ box-shadow:inset 5px 0 0 #e08a1e, inset 0 -1px 0 rgba(201,118,26,.22); }
+#pn-lihat-body tr:hover .pn-nomor-val{ color:#4a3200; font-weight:700; }
+#pn-lihat-body tr:hover .pn-nomor-jenis{ color:#9a5a12; }
+#pn-lihat-body tr:hover .pn-tgl-val{ color:#6b4a10; }
+#pn-lihat-body tr:hover .pn-copy{ border-color:#e6b678; color:#a9670f; background:#fff8ee; }
+#pn-lihat-body tr:hover .pn-copy:hover{ background:#ffedd4; border-color:#d99a3c; }
+
+/* ============================================================================
+   Dialog Profil — 3D + tombol Unggah (kanan atas) & Unduh (per item)
+   ============================================================================ */
+.pnw-profil-modal{ position:relative; max-width:480px;
+  background:linear-gradient(180deg,#ffffff,#f5fafb);
+  box-shadow:0 28px 74px rgba(9,60,66,.42), inset 0 1px 0 rgba(255,255,255,.9); }
+.pnw-profil-head{ padding-right:150px; min-height:36px; }
+.pnw-profil-head svg{ filter:drop-shadow(0 2px 3px rgba(14,124,134,.3)); }
+
+/* Tombol Unggah Profil (kanan atas) */
+.pnw-profil-upload{ position:absolute; top:20px; right:20px; display:inline-flex; align-items:center; gap:7px;
+  padding:8px 13px; font-size:11.5px; font-weight:800; color:#fff; border:0; border-radius:10px; cursor:pointer;
+  background:linear-gradient(180deg,#37b27e,#1c7a51);
+  box-shadow:0 6px 14px rgba(31,125,84,.34), inset 0 1px 0 rgba(255,255,255,.38); transition:transform .15s, box-shadow .15s; }
+.pnw-profil-upload:hover{ transform:translateY(-1px); box-shadow:0 10px 20px rgba(31,125,84,.44), inset 0 1px 0 rgba(255,255,255,.38); }
+.pnw-profil-upload:active{ transform:translateY(0); }
+.pnw-profil-upload svg{ width:15px; height:15px; }
+
+/* Item 3D + izinkan tombol turun ke bawah bila sempit */
+.pnw-profil-item{ flex-wrap:wrap; background:linear-gradient(180deg,#ffffff,#f3f9fa);
+  box-shadow:0 4px 12px rgba(9,60,66,.07), inset 0 1px 0 rgba(255,255,255,.9);
+  transition:transform .15s, box-shadow .15s, border-color .15s; }
+.pnw-profil-item:hover{ transform:translateY(-1px); box-shadow:0 9px 20px rgba(9,60,66,.13); border-color:#cfe6e6; }
+.pnw-profil-item-info{ flex:1 1 150px; min-width:0; }
+.pnw-profil-item-btns{ flex-wrap:wrap; justify-content:flex-end; }
+.pnw-profil-mini{ box-shadow:0 3px 8px rgba(9,60,66,.14), inset 0 1px 0 rgba(255,255,255,.28); }
+.pnw-profil-mini:active{ transform:translateY(1px); }
+.pnw-profil-mini.pnw-mini-dl{ display:inline-flex; align-items:center; gap:5px; color:#0a5e66; }
+.pnw-profil-mini.pnw-mini-dl svg{ width:13px; height:13px; }
+.pnw-profil-mini.pnw-mini-dl:hover{ border-color:#0E7C86; color:#0E7C86; }
+@media (max-width:520px){ .pnw-profil-head{ padding-right:120px; } .pnw-profil-upload span{ display:none; } .pnw-profil-upload{ padding:8px; } }

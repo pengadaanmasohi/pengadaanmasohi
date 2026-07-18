@@ -5797,10 +5797,10 @@ function jpProfilOpenLoad(){
     '<div class="pnw-profil-item"><div class="pnw-profil-item-info"><div class="pnw-profil-item-name">'+fkEsc(p.name)+'</div>'+
     '<div class="pnw-profil-item-meta">'+(p.count||0)+' tahapan</div></div>'+
     '<div class="pnw-profil-item-btns"><button type="button" class="btn btn-teal pnw-profil-mini" onclick="jpProfilDoLoad(\''+fkEscJs(p.name)+'\')">Muat</button>'+
-    '<button type="button" class="btn btn-ghost pnw-profil-mini" onclick="jpProfilDoDelete(\''+fkEscJs(p.name)+'\')">Hapus</button></div></div>'
+    '<button type="button" class="btn btn-ghost pnw-profil-mini" onclick="jpProfilDoDelete(\''+fkEscJs(p.name)+'\')">Hapus</button>'+profilDownloadBtnHtml('jadwal',p.name)+'</div></div>'
   ).join('');
   jpProfilOverlay(
-    '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6M9 14h6"/></svg>Muat Profil Jadwal</div>'+
+    '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6M9 14h6"/></svg>Muat Profil Jadwal'+profilUploadBtnHtml('jadwal')+'</div>'+
     '<div class="pnw-profil-sub">Tanggal dihitung ulang dari <b>Awal tahapan pertama</b> yang sedang terisi, mengikuti sifat yang terekam (hari kerja, Sabtu/Minggu &amp; hari libur dilompati). <b>Isian saat ini akan diganti.</b></div>'+
     '<div class="pnw-profil-list">'+items+'</div>'+
     '<div class="pnw-profil-actions"><button type="button" class="btn btn-ghost" onclick="jpProfilClose()">Tutup</button></div>'
@@ -8984,10 +8984,10 @@ function pnwProfilOpenLoad(){
     '<div class="pnw-profil-item"><div class="pnw-profil-item-info"><div class="pnw-profil-item-name">'+fkEsc(p.name)+'</div>'+
     '<div class="pnw-profil-item-meta">'+(p.count||0)+' persyaratan</div></div>'+
     '<div class="pnw-profil-item-btns"><button type="button" class="btn btn-teal pnw-profil-mini" onclick="pnwProfilDoLoad(\''+fkEscJs(p.name)+'\')">Muat</button>'+
-    '<button type="button" class="btn btn-ghost pnw-profil-mini" onclick="pnwProfilDoDelete(\''+fkEscJs(p.name)+'\')">Hapus</button></div></div>'
+    '<button type="button" class="btn btn-ghost pnw-profil-mini" onclick="pnwProfilDoDelete(\''+fkEscJs(p.name)+'\')">Hapus</button>'+profilDownloadBtnHtml('syarat',p.name)+'</div></div>'
   ).join('');
   pnwProfilOverlay(
-    '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Muat Profil Persyaratan</div>'+
+    '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Muat Profil Persyaratan'+profilUploadBtnHtml('syarat')+'</div>'+
     '<div class="pnw-profil-sub">Pilih profil untuk mengisi uraian persyaratan. <b>Isian saat ini akan diganti.</b></div>'+
     '<div class="pnw-profil-list">'+items+'</div>'+
     '<div class="pnw-profil-actions"><button type="button" class="btn btn-ghost" onclick="pnwProfilClose()">Tutup</button></div>'
@@ -20749,10 +20749,10 @@ function spkKlProfilOpenLoad(){
     '<div class="pnw-profil-item"><div class="pnw-profil-item-info"><div class="pnw-profil-item-name">'+fkEsc(p.name)+'</div>'+
     '<div class="pnw-profil-item-meta">'+(p.count||(p.items?p.items.length:0))+' klausul</div></div>'+
     '<div class="pnw-profil-item-btns"><button type="button" class="btn btn-teal pnw-profil-mini" onclick="spkKlProfilDoLoad(\''+fkEscJs(p.name)+'\')">Muat</button>'+
-    '<button type="button" class="btn btn-ghost pnw-profil-mini" onclick="spkKlProfilDoDelete(\''+fkEscJs(p.name)+'\')">Hapus</button></div></div>'
+    '<button type="button" class="btn btn-ghost pnw-profil-mini" onclick="spkKlProfilDoDelete(\''+fkEscJs(p.name)+'\')">Hapus</button>'+profilDownloadBtnHtml('klausul',p.name)+'</div></div>'
   ).join('');
   spkKlProfilOverlay(
-    '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6M9 14h6"/></svg>Muat Profil Klausul</div>'+
+    '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6M9 14h6"/></svg>Muat Profil Klausul'+profilUploadBtnHtml('klausul')+'</div>'+
     '<div class="pnw-profil-sub">Pustaka klausul saat ini akan <b>diganti</b> oleh isi profil. Keadaan sebelumnya disimpan sementara sehingga dapat dikembalikan lewat <b>Batalkan Pilihan</b>.</div>'+
     '<div class="pnw-profil-list">'+items+'</div>'
   );
@@ -20899,10 +20899,10 @@ function spkPyProfilOpenLoad(){
     return '<div class="pnw-profil-item"><div class="pnw-profil-item-info"><div class="pnw-profil-item-name">'+fkEsc(p.name)+'</div>'+
       '<div class="pnw-profil-item-meta">'+sub+'</div></div>'+
       '<div class="pnw-profil-item-btns"><button type="button" class="btn btn-teal pnw-profil-mini" onclick="spkPyProfilDoLoad(\''+fkEscJs(p.name)+'\')">Muat</button>'+
-      '<button type="button" class="btn btn-ghost pnw-profil-mini" onclick="spkPyProfilDoDelete(\''+fkEscJs(p.name)+'\')">Hapus</button></div></div>';
+      '<button type="button" class="btn btn-ghost pnw-profil-mini" onclick="spkPyProfilDoDelete(\''+fkEscJs(p.name)+'\')">Hapus</button>'+profilDownloadBtnHtml('penyedia',p.name)+'</div></div>';
   }).join('');
   spkPyProfilOverlay(
-    '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6M9 14h6"/></svg>Muat Profil Penyedia</div>'+
+    '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6M9 14h6"/></svg>Muat Profil Penyedia'+profilUploadBtnHtml('penyedia')+'</div>'+
     '<div class="pnw-profil-sub">Data <b>Informasi Penyedia</b> saat ini akan <b>diganti</b> oleh isi profil. Keadaan sebelumnya disimpan sementara sehingga dapat dikembalikan lewat <b>Batalkan Pilihan</b>.</div>'+
     '<div class="pnw-profil-list">'+items+'</div>'
   );
@@ -23009,3 +23009,84 @@ try{ if(typeof spkInit==="function") spkInit(); }catch(e){ console.error("spkIni
 
   window.__ac = { getConfig:acGetConfig, loadConfig:acLoadConfig, saveConfig:acSaveConfig, applyRole:acApplyRole, groups:AC_GROUPS, caps:AC_CAPS };
 })();
+
+/* ============================================================================
+   ===============  UNDUH / UNGGAH PROFIL (backup & muat otomatis)  ===========
+   Menambah tombol "Unggah Profil" (kanan atas dialog Muat) + "Unduh" per profil.
+   Berkas .json yang diunduh dapat diunggah kembali di instalasi mana pun; profil
+   langsung DIMUAT otomatis setelah diunggah. Berlaku untuk 4 jenis profil.
+   ============================================================================ */
+var PROFIL_REG = {
+  jadwal:   { label:'Jadwal',      doLoad:function(n){ jpProfilDoLoad(n); },    reopen:function(){ jpProfilOpenLoad(); } },
+  syarat:   { label:'Persyaratan', doLoad:function(n){ pnwProfilDoLoad(n); },   reopen:function(){ pnwProfilOpenLoad(); } },
+  klausul:  { label:'Klausul',     doLoad:function(n){ spkKlProfilDoLoad(n); }, reopen:function(){ spkKlProfilOpenLoad(); } },
+  penyedia: { label:'Penyedia',    doLoad:function(n){ spkPyProfilDoLoad(n); }, reopen:function(){ spkPyProfilOpenLoad(); } }
+};
+function profilRegLabel(kind){ return (PROFIL_REG[kind] && PROFIL_REG[kind].label) || kind; }
+
+/* Ikon SVG kecil untuk tombol */
+var PROFIL_DL_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>';
+var PROFIL_UP_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>';
+
+/* Tombol "Unggah Profil" untuk dipasang di kanan atas dialog Muat */
+function profilUploadBtnHtml(kind){
+  return '<button type="button" class="pnw-profil-upload" title="Unggah profil dari berkas" onclick="profilUploadPrompt(\''+kind+'\')">'+PROFIL_UP_ICON+'<span>Unggah Profil</span></button>';
+}
+/* Tombol "Unduh" untuk dipasang setelah tombol Hapus pada tiap item */
+function profilDownloadBtnHtml(kind, name){
+  return '<button type="button" class="btn btn-ghost pnw-profil-mini pnw-mini-dl" title="Unduh profil ini ke berkas" onclick="profilDownloadFile(\''+kind+'\',\''+fkEscJs(name)+'\')">'+PROFIL_DL_ICON+'Unduh</button>';
+}
+
+/* Unduh SATU profil sebagai berkas .json */
+function profilDownloadFile(kind, name){
+  try{
+    var arr = profilesGet(kind) || [];
+    var p = arr.find(function(x){ return String(x.name)===String(name); });
+    if(!p){ toast('Profil tidak ditemukan','warn'); return; }
+    var payload = { app:'pengadaan-masohi', type:'profil', kind:kind, version:1, exportedAt:new Date().toISOString(), profile:p };
+    var blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    var safe = String(name).replace(/[^\w\- ]+/g,'').trim().replace(/\s+/g,'_').slice(0,60) || 'profil';
+    a.href=url; a.download='Profil-'+profilRegLabel(kind)+'-'+safe+'.json';
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ try{ URL.revokeObjectURL(url); a.remove(); }catch(e){} }, 600);
+    toast('Profil "'+name+'" diunduh','ok');
+  }catch(e){ console.error('profilDownloadFile:',e); toast('Gagal mengunduh profil','err'); }
+}
+
+/* Unggah berkas profil -> simpan -> MUAT OTOMATIS */
+function profilUploadPrompt(kind){
+  try{
+    var inp=document.createElement('input');
+    inp.type='file'; inp.accept='.json,application/json'; inp.style.display='none';
+    document.body.appendChild(inp);
+    inp.onchange=function(){
+      var file=inp.files&&inp.files[0];
+      if(!file){ try{inp.remove();}catch(e){} return; }
+      var reader=new FileReader();
+      reader.onload=async function(){
+        try{
+          var data=JSON.parse(String(reader.result||''));
+          var prof = (data && typeof data==='object' && data.profile) ? data.profile : data;   // toleran
+          var fkind = (data && data.kind) ? data.kind : kind;
+          if(!prof || typeof prof!=='object'){ toast('Berkas profil tidak valid','err'); return; }
+          if(fkind && fkind!==kind){
+            if(!confirm('Berkas ini profil "'+profilRegLabel(fkind)+'", sedang membuka daftar "'+profilRegLabel(kind)+'". Tetap impor sebagai '+profilRegLabel(kind)+'?')) return;
+          }
+          if(!prof.name || !String(prof.name).trim()){ prof.name=String(file.name||'Impor').replace(/\.json$/i,''); }
+          var exists=(profilesGet(kind)||[]).some(function(x){ return String(x.name).toLowerCase()===String(prof.name).toLowerCase(); });
+          if(exists && !confirm('Profil "'+prof.name+'" sudah ada. Timpa dengan berkas ini?')) return;
+          if(!prof.savedAt) prof.savedAt=Date.now();
+          var ok=await profilesUpsert(kind, prof);
+          toast('Profil "'+prof.name+'" diunggah'+(ok?'':' (lokal)')+' & dimuat','ok');
+          var reg=PROFIL_REG[kind];
+          if(reg && reg.doLoad){ try{ reg.doLoad(prof.name); }catch(e){ console.error('profil auto-load:',e); if(reg.reopen) try{ reg.reopen(); }catch(_){}} }
+        }catch(e){ console.error('profilUpload parse:',e); toast('Berkas bukan JSON profil yang valid','err'); }
+        finally{ try{inp.remove();}catch(e){} }
+      };
+      reader.readAsText(file);
+    };
+    inp.click();
+  }catch(e){ console.error('profilUploadPrompt:',e); toast('Gagal membuka berkas','err'); }
+}
