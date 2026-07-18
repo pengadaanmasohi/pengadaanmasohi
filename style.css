@@ -4028,3 +4028,124 @@ table.hps-uraian.spk-lamp-tbl td.c-no{
     .toast.show{ transform:translateY(0) }
   }
 }
+/* ============================================================
+   ==========  PUSAT KONTROL AKUN & AKSES (fitur baru)  =======
+   ============================================================ */
+/* Penyembunyian berbasis kapabilitas (di-toggle lewat kelas <body>) */
+body.ac-no-input [onclick*="newRecord"],
+body.ac-no-input [onclick*="openFkInput"],
+body.ac-no-input .head-add-btn,
+body.ac-no-input .fk-corner-btn{ display:none !important; }
+body.ac-no-template #io-tpl-kr,
+body.ac-no-template #io-tpl-pl,
+body.ac-no-template #io-tpl-tender,
+body.ac-no-template [onclick*="ownloadTemplate"]{ display:none !important; }
+body.ac-no-bersih #btn-bersih-kontrak{ display:none !important; }
+body.ac-no-gantisandi #btn-change-pass{ display:none !important; }
+
+/* Overlay + panel */
+.ac-ov{ position:fixed; inset:0; z-index:6000; display:none; align-items:flex-start; justify-content:center;
+  background:rgba(12,34,38,.55); backdrop-filter:blur(3px); padding:28px 16px; overflow:auto; }
+.ac-ov.show{ display:flex; animation:acFade .18s ease; }
+@keyframes acFade{ from{opacity:0} to{opacity:1} }
+.ac-panel{ width:min(940px,100%); background:#fff; border-radius:18px; box-shadow:0 24px 70px rgba(9,60,66,.35);
+  overflow:hidden; animation:acPop .22s cubic-bezier(.2,.9,.3,1.2); }
+@keyframes acPop{ from{transform:translateY(14px) scale(.985); opacity:0} to{transform:none; opacity:1} }
+.ac-head{ display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:18px 22px; background:linear-gradient(135deg,#0E7C86,#0a5e66); color:#fff; }
+.ac-head-t{ display:flex; align-items:center; gap:14px; }
+.ac-head-t svg{ width:30px; height:30px; flex:none; opacity:.95; }
+.ac-head-t h3{ margin:0; font-size:1.12rem; font-weight:800; letter-spacing:.2px; }
+.ac-head-t p{ margin:2px 0 0; font-size:.8rem; opacity:.85; }
+.ac-x{ background:rgba(255,255,255,.14); border:0; color:#fff; width:34px; height:34px; border-radius:10px;
+  font-size:1.4rem; line-height:1; cursor:pointer; transition:background .15s; }
+.ac-x:hover{ background:rgba(255,255,255,.28); }
+.ac-tabs{ display:flex; gap:4px; padding:10px 16px 0; background:#f2f7f8; border-bottom:1px solid #dfeaec; }
+.ac-tab{ border:0; background:transparent; padding:10px 16px; font-weight:700; font-size:.86rem; color:#5b7176;
+  cursor:pointer; border-radius:10px 10px 0 0; border-bottom:3px solid transparent; }
+.ac-tab:hover{ color:#0E7C86; }
+.ac-tab.active{ color:#0a5e66; background:#fff; border-bottom-color:#0E7C86; }
+.ac-body{ padding:18px 22px 22px; max-height:66vh; overflow:auto; }
+.ac-hint,.ac-note{ font-size:.82rem; color:#4a6065; background:#eef6f7; border:1px solid #d5e7e9;
+  border-radius:10px; padding:10px 12px; margin-bottom:14px; line-height:1.5; }
+.ac-note code{ background:#dcecee; padding:1px 6px; border-radius:5px; font-size:.78rem; }
+.ac-empty{ text-align:center; color:#78898d; padding:26px; font-size:.9rem; }
+
+/* Matrix */
+.ac-tablewrap{ overflow:auto; border:1px solid #e2edee; border-radius:12px; }
+table.ac-matrix{ border-collapse:collapse; width:100%; font-size:.82rem; }
+table.ac-matrix th,table.ac-matrix td{ padding:9px 8px; text-align:center; border-bottom:1px solid #eef3f4; white-space:nowrap; }
+table.ac-matrix thead th{ background:#0E7C86; color:#fff; font-weight:700; position:sticky; top:0; font-size:.76rem; }
+table.ac-matrix thead th.ac-sticky{ left:0; z-index:3; }
+table.ac-matrix th.ac-sticky,table.ac-matrix td.ac-sticky{ position:sticky; left:0; background:#fff; text-align:left;
+  box-shadow:2px 0 0 #eef3f4; font-weight:700; color:#274046; }
+table.ac-matrix tbody tr:nth-child(even) td{ background:#f7fbfb; }
+table.ac-matrix tbody tr:nth-child(even) td.ac-sticky{ background:#f7fbfb; }
+.ac-dbcol{ background:#fff6ec !important; }
+.ac-role .ac-badge{ display:inline-block; font-size:.64rem; font-weight:800; color:#0a5e66; background:#d6ecee;
+  padding:2px 7px; border-radius:20px; margin-left:6px; vertical-align:middle; }
+
+/* Switch */
+.ac-sw{ position:relative; display:inline-block; width:38px; height:22px; cursor:pointer; }
+.ac-sw input{ opacity:0; width:0; height:0; position:absolute; }
+.ac-sw span{ position:absolute; inset:0; background:#cdd8da; border-radius:20px; transition:.18s; }
+.ac-sw span:before{ content:""; position:absolute; width:16px; height:16px; left:3px; top:3px; background:#fff;
+  border-radius:50%; transition:.18s; box-shadow:0 1px 3px rgba(0,0,0,.25); }
+.ac-sw input:checked + span{ background:#0E7C86; }
+.ac-sw-db input:checked + span,.ac-dbcol .ac-sw input:checked + span{ background:#e08a1e; }
+.ac-sw input:checked + span:before{ transform:translateX(16px); }
+.ac-sw.dis,.ac-sw input:disabled + span{ opacity:.5; cursor:not-allowed; }
+
+/* Form buat akun */
+.ac-form .ac-row2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+.ac-fld{ display:flex; flex-direction:column; gap:6px; margin-bottom:6px; }
+.ac-fld > label{ font-size:.78rem; font-weight:700; color:#3a5257; }
+.ac-fld input[type=text],.ac-fld select{ padding:10px 12px; border:1px solid #cddcde; border-radius:10px; font-size:.9rem; background:#fff; }
+.ac-fld input[readonly]{ background:#f2f5f6; color:#7b8b8f; }
+.ac-toggle{ display:flex; align-items:center; gap:10px; cursor:pointer; padding:8px 0; }
+.ac-toggle input{ opacity:0; width:0; height:0; position:absolute; }
+.ac-toggle-tr{ position:relative; width:44px; height:24px; background:#cdd8da; border-radius:20px; transition:.18s; flex:none; }
+.ac-toggle-tr:before{ content:""; position:absolute; width:18px; height:18px; left:3px; top:3px; background:#fff; border-radius:50%; transition:.18s; box-shadow:0 1px 3px rgba(0,0,0,.25); }
+.ac-toggle input:checked + .ac-toggle-tr{ background:#e08a1e; }
+.ac-toggle input:checked + .ac-toggle-tr:before{ transform:translateX(20px); }
+.ac-toggle em{ font-style:normal; font-size:.82rem; color:#4a6065; font-weight:600; }
+.ac-capgrid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:8px 14px;
+  border:1px solid #e2edee; border-radius:12px; padding:12px; background:#fafcfc; }
+.ac-chk{ display:flex; align-items:center; gap:8px; font-size:.84rem; color:#33484d; cursor:pointer; }
+.ac-chk input{ width:16px; height:16px; accent-color:#0E7C86; }
+.ac-chk.dis{ opacity:.6; cursor:not-allowed; }
+
+.ac-actions{ display:flex; justify-content:flex-end; gap:10px; margin-top:16px; }
+.ac-actions .btn.ghost{ background:#eef3f4; color:#3a5257; border:1px solid #d7e3e5; }
+
+/* Daftar akun */
+table.ac-list{ border-collapse:collapse; width:100%; font-size:.86rem; }
+table.ac-list th,table.ac-list td{ padding:11px 12px; text-align:left; border-bottom:1px solid #eef3f4; }
+table.ac-list thead th{ background:#f2f7f8; color:#3a5257; font-weight:700; font-size:.78rem; }
+.ac-pill{ display:inline-block; font-size:.72rem; font-weight:800; padding:3px 9px; border-radius:20px; }
+.ac-pill.dummy{ background:#e7eef0; color:#4a6065; }
+.ac-pill.user{ background:#dcecff; color:#1c4e80; }
+.ac-pill.admin{ background:#e5e0ff; color:#4b2a8a; }
+.ac-pill.on{ background:#fdecd6; color:#8a5a12; }
+.ac-pill.off{ background:#e7eef0; color:#4a6065; }
+.ac-rowact{ display:flex; gap:6px; }
+.ac-mini{ border:1px solid #cddcde; background:#fff; color:#2f484d; padding:5px 12px; border-radius:8px; font-size:.78rem; font-weight:700; cursor:pointer; }
+.ac-mini:hover{ background:#f0f6f6; }
+.ac-mini.danger{ border-color:#f0c9c6; color:#c0392b; }
+.ac-mini.danger:hover{ background:#fdeeec; }
+
+.ac-sql{ margin-top:18px; border-top:1px dashed #dbe6e7; padding-top:12px; }
+.ac-sql summary{ cursor:pointer; font-weight:700; font-size:.82rem; color:#0a5e66; }
+.ac-sql p{ font-size:.8rem; color:#4a6065; margin:8px 0 6px; }
+.ac-sql pre{ background:#0f2b30; color:#d7f0f2; padding:12px 14px; border-radius:10px; font-size:.74rem;
+  overflow:auto; line-height:1.5; }
+.ac-sql small{ color:#78898d; }
+
+@media (max-width:640px){
+  .ac-form .ac-row2{ grid-template-columns:1fr; }
+  .ac-body{ max-height:72vh; }
+}
+
+/* Reset Sandi (tab baru) */
+.ac-sec-title{ font-size:.9rem; font-weight:800; color:#0a5e66; margin:4px 0 10px; }
+input.ac-rpw{ padding:8px 10px; border:1px solid #cddcde; border-radius:8px; font-size:.85rem; width:170px; max-width:100%; }
