@@ -22115,21 +22115,72 @@ try{ if(typeof spkInit==="function") spkInit(); }catch(e){ console.error("spkIni
 (function(){
   if(window.__AC_INSTALLED__) return; window.__AC_INSTALLED__ = true;
 
-  /* ---- Daftar kapabilitas (modul yang bisa diatur aksesnya) ---- */
-  var AC_CAPS = [
-    {id:'dashboard',      label:'Dashboard',                 views:['dashboard']},
-    {id:'monitoring',     label:'Daftar Monitoring',         views:['list','list-pl','list-tender']},
-    {id:'input',          label:'Tambah / Ubah Data',        views:['input','input-pl','input-tender']},
-    {id:'template',       label:'Download / Upload Template'},
-    {id:'filekontrak',    label:'File Kontrak',              views:['fk-view','fk-input']},
-    {id:'penetapan',      label:'Penetapan Pemenang',        views:['pn-lihat','pn-ambil','pnw-view','form-pembukaan']},
-    {id:'daftarpekerjaan',label:'Daftar Pekerjaan',          views:['dp-view','form-dp']},
-    {id:'harilibur',      label:'Kelengkapan & Hari Libur',  views:['fkl-view','form-kelengkapan','hari-libur']},
-    {id:'hps',            label:'HPS & Analisa Harga',       views:['rho-view','form-rho','analisa-view','form-analisa','jadwal-view','jadwal-kerja','hps-view','form-hps','rekap-hps']},
-    {id:'spk',            label:'Susun Kontrak (SPK)',       views:['spk-view','spk-susun','spk-klausul']},
-    {id:'bersihkontrak',  label:'Bersihkan Daftar Kontrak'},
-    {id:'gantisandi',     label:'Ganti Kata Sandi'}
+  /* ---------------------------------------------------------------------------
+     MODEL IZIN GRANULAR
+     Setiap menu = satu grup. Tiap grup punya beberapa "cap" (kapabilitas) dengan
+     aksi: view (Lihat) / add (Tambah) / edit (Ubah) / del (Hapus) / access (Akses).
+       - views : data-view yang disembunyikan bila cap 'view/access' ditolak.
+       - body  : kelas <body> yang di-toggle bila cap ditolak (menyembunyikan
+                 tombol tambah/ubah/hapus lewat CSS, per-jenis pengadaan).
+       - always: cap yang selalu ON (anti-lockout, mis. Dashboard).
+     Monitoring dipecah rinci per SPBJ/Kontrak Rinci, Pengadaan Langsung, Tender.
+     --------------------------------------------------------------------------- */
+  var AC_GROUPS = [
+    { id:'dashboard', label:'Dashboard', caps:[
+        {id:'dashboard', label:'Lihat', act:'view', always:true}
+    ]},
+    { id:'mon_kr', label:'Monitoring — SPBJ / Kontrak Rinci', caps:[
+        {id:'mon_kr_view', label:'Lihat',  act:'view', views:['list']},
+        {id:'mon_kr_add',  label:'Tambah', act:'add',  body:'ac-no-add-kr'},
+        {id:'mon_kr_edit', label:'Ubah',   act:'edit', body:'ac-no-edit-kr'},
+        {id:'mon_kr_del',  label:'Hapus',  act:'del',  body:'ac-no-del-kr'}
+    ]},
+    { id:'mon_pl', label:'Monitoring — Pengadaan Langsung', caps:[
+        {id:'mon_pl_view', label:'Lihat',  act:'view', views:['list-pl']},
+        {id:'mon_pl_add',  label:'Tambah', act:'add',  body:'ac-no-add-pl'},
+        {id:'mon_pl_edit', label:'Ubah',   act:'edit', body:'ac-no-edit-pl'},
+        {id:'mon_pl_del',  label:'Hapus',  act:'del',  body:'ac-no-del-pl'}
+    ]},
+    { id:'mon_tender', label:'Monitoring — Tender', caps:[
+        {id:'mon_tender_view', label:'Lihat',  act:'view', views:['list-tender']},
+        {id:'mon_tender_add',  label:'Tambah', act:'add',  body:'ac-no-add-tender'},
+        {id:'mon_tender_edit', label:'Ubah',   act:'edit', body:'ac-no-edit-tender'},
+        {id:'mon_tender_del',  label:'Hapus',  act:'del',  body:'ac-no-del-tender'}
+    ]},
+    { id:'template', label:'Download / Upload Template', caps:[
+        {id:'template', label:'Akses', act:'access', body:'ac-no-template'}
+    ]},
+    { id:'filekontrak', label:'File Kontrak', caps:[
+        {id:'fk_view', label:'Lihat / Unduh', act:'view', views:['fk-view']},
+        {id:'fk_edit', label:'Unggah / Ubah', act:'edit', body:'ac-no-fk-edit', views:['fk-input']},
+        {id:'fk_del',  label:'Hapus',         act:'del',  body:'ac-no-fk-del'}
+    ]},
+    { id:'penetapan', label:'Penetapan Pemenang', caps:[
+        {id:'penetapan', label:'Akses', act:'access', views:['pn-lihat','pn-ambil','pnw-view','form-pembukaan']}
+    ]},
+    { id:'daftarpekerjaan', label:'Daftar Pekerjaan', caps:[
+        {id:'daftarpekerjaan', label:'Akses', act:'access', views:['dp-view','form-dp']}
+    ]},
+    { id:'harilibur', label:'Kelengkapan & Hari Libur', caps:[
+        {id:'harilibur', label:'Akses', act:'access', views:['fkl-view','form-kelengkapan','hari-libur']}
+    ]},
+    { id:'hps', label:'HPS & Analisa Harga', caps:[
+        {id:'hps', label:'Akses', act:'access', views:['rho-view','form-rho','analisa-view','form-analisa','jadwal-view','jadwal-kerja','hps-view','form-hps','rekap-hps']}
+    ]},
+    { id:'spk', label:'Susun Kontrak (SPK)', caps:[
+        {id:'spk', label:'Akses', act:'access', views:['spk-view','spk-susun','spk-klausul']}
+    ]},
+    { id:'bersihkontrak', label:'Bersihkan Daftar Kontrak', caps:[
+        {id:'bersihkontrak', label:'Akses', act:'access', body:'ac-no-bersih'}
+    ]},
+    { id:'gantisandi', label:'Ganti Kata Sandi', caps:[
+        {id:'gantisandi', label:'Akses', act:'access', body:'ac-no-gantisandi'}
+    ]}
   ];
+
+  var AC_CAPS = [];
+  AC_GROUPS.forEach(function(g){ g.caps.forEach(function(c){ c.group=g.id; AC_CAPS.push(c); }); });
+
   var AC_ROLES = [
     {key:'admin', label:'Admin', locked:true},
     {key:'user',  label:'User'},
@@ -22140,11 +22191,24 @@ try{ if(typeof spkInit==="function") spkInit(); }catch(e){ console.error("spkIni
 
   var AC_LOCAL_KEY = 'ac_config_v1';
   var AC_ACCT_KEY  = 'mon_ac_acct';
+  var AC_PRES_KIND = '__presence__';
   var acConfig = null;
   var acActiveProfile = null;   // akun kustom yang sedang login (atau null)
 
   function capIds(){ return AC_CAPS.map(function(c){return c.id;}); }
+  function isAlways(id){ for(var i=0;i<AC_CAPS.length;i++){ if(AC_CAPS[i].id===id) return !!AC_CAPS[i].always; } return false; }
   function acAllCaps(v){ var o={}; capIds().forEach(function(id){ o[id]=!!v; }); return o; }
+
+  /* Migrasi izin lama (model non-granular) -> model granular baru. Fail-open. */
+  function acMigrateCaps(caps){
+    if(!caps || typeof caps!=='object') return {};
+    function pull(newId, val){ if(caps[newId]===undefined) caps[newId]=val; }
+    if(caps.monitoring===false){ ['mon_kr_view','mon_pl_view','mon_tender_view'].forEach(function(k){ pull(k,false); }); }
+    if(caps.input===false){ ['mon_kr_add','mon_kr_edit','mon_pl_add','mon_pl_edit','mon_tender_add','mon_tender_edit'].forEach(function(k){ pull(k,false); }); }
+    if(caps.filekontrak===false){ pull('fk_view',false); pull('fk_edit',false); pull('fk_del',false); }
+    return caps;
+  }
+
   function acDefaultConfig(){
     var matrix={};
     ['user','dummy','guest'].forEach(function(r){
@@ -22156,11 +22220,15 @@ try{ if(typeof spkInit==="function") spkInit(); }catch(e){ console.error("spkIni
     var out={ matrix:{}, accounts: Array.isArray(p&&p.accounts)?p.accounts:[] };
     ['user','dummy','guest'].forEach(function(r){
       var src=(p&&p.matrix&&p.matrix[r])||{};
-      out.matrix[r]={ caps:Object.assign(acAllCaps(true), src.caps||{}), database: src.database!==false };
+      var mc=acMigrateCaps(Object.assign({}, src.caps||{}));
+      out.matrix[r]={ caps:Object.assign(acAllCaps(true), mc), database: src.database!==false };
     });
-    out.matrix.dummy.database=false;               // Dummy: selalu TANPA database
-    out.matrix.user.caps.dashboard=true;           // Dashboard selalu boleh (anti-lockout)
+    out.matrix.dummy.database=false;                // Dummy: selalu TANPA database
+    out.matrix.user.caps.dashboard=true;            // Dashboard selalu boleh (anti-lockout)
     out.matrix.guest.caps.dashboard=true;
+    (out.accounts||[]).forEach(function(a){
+      if(a && a.caps){ a.caps=Object.assign(acAllCaps(true), acMigrateCaps(a.caps)); a.caps.dashboard=true; }
+    });
     return out;
   }
   function acLoadLocal(){ try{ var s=localStorage.getItem(AC_LOCAL_KEY); return s?JSON.parse(s):null; }catch(e){ return null; } }
@@ -22211,37 +22279,51 @@ try{ if(typeof spkInit==="function") spkInit(); }catch(e){ console.error("spkIni
     return { caps:c, database:(key==='dummy'?false:(m.database!==false)) };
   }
 
+  /* Peta view input (Tambah/Ubah berbagi satu form) -> cap add & edit-nya. */
+  var AC_INPUT_MAP = {
+    'input':        ['mon_kr_add','mon_kr_edit'],
+    'input-pl':     ['mon_pl_add','mon_pl_edit'],
+    'input-tender': ['mon_tender_add','mon_tender_edit']
+  };
+
   /* ---- Terapkan pembatasan ke UI (dipanggil setelah applyRole) ---- */
   function acApplyRole(role){
-    var b=document.getElementById('btn-akun-kontrol');
-    if(b) b.style.display = acUnrestricted() ? '' : 'none';
+    var b=document.getElementById('btn-akun-kontrol'); if(b) b.style.display = acUnrestricted() ? '' : 'none';
+    var bs=document.getElementById('btn-storage');     if(bs) bs.style.display = acUnrestricted() ? '' : 'none';
 
-    // reset tanda AC sebelumnya (applyRole sudah set display per data-role)
-    document.querySelectorAll('[data-ac-hidden="1"]').forEach(function(el){ el.removeAttribute('data-ac-hidden'); });
+    // Pulihkan elemen yang sebelumnya kami sembunyikan
+    document.querySelectorAll('[data-ac-hidden="1"]').forEach(function(el){
+      el.style.display = el.getAttribute('data-ac-od')||'';
+      el.removeAttribute('data-ac-hidden'); el.removeAttribute('data-ac-od');
+    });
 
+    var unre=acUnrestricted();
     var prof=acEffectiveProfile(role);
     var denied={};
-    if(!acUnrestricted()){
-      AC_CAPS.forEach(function(c){ if(prof.caps[c.id]===false) denied[c.id]=true; });
-    }
-    // sembunyikan item menu (data-view) untuk kapabilitas yang ditolak
-    AC_CAPS.forEach(function(c){
-      if(!denied[c.id] || !c.views) return;
-      c.views.forEach(function(v){
-        document.querySelectorAll('[data-view="'+v+'"]').forEach(function(el){
-          el.style.display='none'; el.setAttribute('data-ac-hidden','1');
-        });
+    if(!unre){ AC_CAPS.forEach(function(c){ if(!c.always && prof.caps[c.id]===false) denied[c.id]=true; }); }
+
+    function hideView(v){
+      document.querySelectorAll('[data-view="'+v+'"]').forEach(function(el){
+        if(!el.hasAttribute('data-ac-od')) el.setAttribute('data-ac-od', el.style.display||'');
+        el.style.display='none'; el.setAttribute('data-ac-hidden','1');
       });
-    });
-    // kapabilitas berbasis CSS (tombol dinamis) → kelas pada <body>
+    }
+    if(!unre){
+      // sembunyikan item menu (data-view) untuk kapabilitas view/access yang ditolak
+      AC_CAPS.forEach(function(c){ if(denied[c.id] && c.views){ c.views.forEach(hideView); } });
+      // view input disembunyikan hanya bila Tambah DAN Ubah sama-sama ditolak
+      Object.keys(AC_INPUT_MAP).forEach(function(v){
+        var pair=AC_INPUT_MAP[v];
+        if(denied[pair[0]] && denied[pair[1]]) hideView(v);
+      });
+    }
+    // kapabilitas berbasis CSS (tombol dinamis) -> kelas pada <body>
     var body=document.body;
-    body.classList.toggle('ac-no-input',    !!denied.input);
-    body.classList.toggle('ac-no-template', !!denied.template);
-    body.classList.toggle('ac-no-bersih',   !!denied.bersihkontrak);
-    body.classList.toggle('ac-no-gantisandi',!!denied.gantisandi);
-    body.classList.toggle('ac-no-filekontrak',!!denied.filekontrak);
-    body.classList.toggle('ac-no-spk',      !!denied.spk);
-    body.classList.toggle('ac-no-hps',      !!denied.hps);
+    AC_CAPS.forEach(function(c){ if(c.body) body.classList.toggle(c.body, !!denied[c.id]); });
+    // kompat kelas lama
+    body.classList.toggle('ac-no-gantisandi', !!denied.gantisandi);
+    body.classList.toggle('ac-no-bersih',     !!denied.bersihkontrak);
+    body.classList.toggle('ac-no-template',   !!denied.template);
   }
   function acApply(){ try{ if(typeof currentRole!=='undefined' && currentRole) applyRole(currentRole); }catch(e){} }
 
@@ -22249,6 +22331,10 @@ try{ if(typeof spkInit==="function") spkInit(); }catch(e){ console.error("spkIni
     if(!name || name==='dashboard') return true;
     if(acUnrestricted()) return true;
     var prof=acEffectiveProfile(typeof currentRole!=='undefined'?currentRole:null);
+    if(AC_INPUT_MAP[name]){
+      var pair=AC_INPUT_MAP[name];
+      return prof.caps[pair[0]]!==false || prof.caps[pair[1]]!==false;
+    }
     for(var i=0;i<AC_CAPS.length;i++){
       var c=AC_CAPS[i];
       if(c.views && c.views.indexOf(name)>=0 && prof.caps[c.id]===false) return false;
@@ -22256,8 +22342,49 @@ try{ if(typeof spkInit==="function") spkInit(); }catch(e){ console.error("spkIni
     return true;
   }
 
+  /* ============================ PRESENCE (sesi aktif) ============================ */
+  function acWho(){
+    try{ if(typeof currentUsername!=='undefined' && currentUsername) return String(currentUsername); }catch(e){}
+    try{ var u=ssGet(USER_KEY); if(u) return String(u); }catch(e){}
+    try{ if(typeof currentRole!=='undefined' && currentRole) return String(currentRole); }catch(e){}
+    return '—';
+  }
+  async function acBeat(){
+    if(!_useSupa()) return;
+    try{
+      var role=(typeof currentRole!=='undefined')?currentRole:''; if(!role) return;
+      var name=String(acWho());
+      await _realDb().from(_tbl()).upsert(
+        {kind:AC_PRES_KIND, name:name, payload:{role:role, username:name, ts:Date.now()}, updated_at:new Date().toISOString()},
+        {onConflict:'kind,name'});
+    }catch(e){}
+  }
+  function acStartBeat(){
+    try{ acBeat(); if(!window.__acBeatIv){ window.__acBeatIv=setInterval(function(){ try{acBeat();}catch(e){} }, 60000); } }catch(e){}
+  }
+  async function acEndBeat(){
+    try{ if(window.__acBeatIv){ clearInterval(window.__acBeatIv); window.__acBeatIv=null; } }catch(e){}
+    if(!_useSupa()) return;
+    try{ await _realDb().from(_tbl()).delete().eq('kind',AC_PRES_KIND).eq('name',String(acWho())); }catch(e){}
+  }
+  async function acLoadPresence(){
+    if(!_useSupa()) return [];
+    try{
+      var res=await _realDb().from(_tbl()).select('name,payload,updated_at').eq('kind',AC_PRES_KIND);
+      if(res && !res.error && res.data){
+        var now=Date.now();
+        return res.data.map(function(r){
+            var p=r.payload; if(typeof p==='string'){ try{p=JSON.parse(p);}catch(e){p={};} }
+            return { name:r.name, role:(p&&p.role)||'', ts:(p&&p.ts)|| (Date.parse(r.updated_at)||0) };
+          })
+          .filter(function(x){ return (now-x.ts) < 5*60*1000; })
+          .sort(function(a,b){ return b.ts-a.ts; });
+      }
+    }catch(e){}
+    return [];
+  }
+
   /* ============================ MONKEY-PATCH ============================ */
-  // Dipasang defensif: hanya jika fungsi aslinya ada.
   if(typeof applyRole==='function'){
     var _origApplyRole=applyRole;
     applyRole=function(role){ _origApplyRole(role); try{ acApplyRole(role); }catch(e){ console.error('acApplyRole:',e); } };
@@ -22289,6 +22416,7 @@ try{ if(typeof spkInit==="function") spkInit(); }catch(e){ console.error("spkIni
         if(acct){ var cfg=acGetConfig(); acActiveProfile=(cfg.accounts||[]).find(function(x){return String(x.username).toLowerCase()===String(acct).toLowerCase();})||null; }
         else acActiveProfile=null;
       }catch(e){ acActiveProfile=null; }
+      try{ acStartBeat(); }catch(e){}
       return _origEnterApp(role,view);
     };
   }
@@ -22319,10 +22447,10 @@ try{ if(typeof spkInit==="function") spkInit(); }catch(e){ console.error("spkIni
   }
   if(typeof logout==='function'){
     var _origLogout=logout;
-    logout=function(){ try{ ssDel(AC_ACCT_KEY); }catch(e){} acActiveProfile=null; return _origLogout(); };
+    logout=function(){ try{ acEndBeat(); }catch(e){} try{ ssDel(AC_ACCT_KEY); }catch(e){} acActiveProfile=null; return _origLogout(); };
   }
 
-  /* ============================ UI PANEL ============================ */
+  /* ============================ UI PANEL AKUN & KONTROL ============================ */
   function acEnsurePanel(){
     if(document.getElementById('ac-ov')) return;
     var ov=document.createElement('div');
@@ -22331,11 +22459,11 @@ try{ if(typeof spkInit==="function") spkInit(); }catch(e){ console.error("spkIni
       '<div class="ac-panel">'
       + '<div class="ac-head">'
       +   '<div class="ac-head-t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>'
-      +     '<div><h3>Pusat Kontrol Akun &amp; Akses</h3><p>Atur siapa boleh mengakses apa, dan buat akun baru.</p></div></div>'
+      +     '<div><h3>Akun &amp; Kontrol</h3><p>Atur siapa boleh mengakses apa, dan buat akun baru.</p></div></div>'
       +   '<button class="ac-x" type="button" onclick="acClosePanel()" aria-label="Tutup">&times;</button>'
       + '</div>'
       + '<div class="ac-tabs">'
-      +   '<button class="ac-tab active" data-tab="matrix" type="button" onclick="acTab(\'matrix\')">Atur Kontrol Akses</button>'
+      +   '<button class="ac-tab active" data-tab="matrix" type="button" onclick="acTab(\'matrix\')">Kontrol Akses</button>'
       +   '<button class="ac-tab" data-tab="create" type="button" onclick="acTab(\'create\')">Buat Akun</button>'
       +   '<button class="ac-tab" data-tab="list" type="button" onclick="acTab(\'list\')">Daftar Akun</button>'
       +   '<button class="ac-tab" data-tab="reset" type="button" onclick="acTab(\'reset\')">Reset Sandi</button>'
@@ -22373,22 +22501,31 @@ try{ if(typeof spkInit==="function") spkInit(); }catch(e){ console.error("spkIni
   function sw(role,cap,on,dis){
     return '<label class="ac-sw'+(dis?' dis':'')+'"><input type="checkbox" data-role="'+role+'" data-cap="'+cap+'" '+(on?'checked':'')+(dis?' disabled':'')+'><span></span></label>';
   }
+
+  /* -------- Matriks kontrol akses: header dua tingkat (grup + aksi) -------- */
   function acRenderMatrix(){
     var cfg=acGetConfig();
-    var caps=AC_CAPS;
-    var h='<div class="ac-hint">Centang = boleh mengakses. Baris <b>Admin</b> selalu penuh. <b>Dummy</b> tidak pernah terhubung ke database (berjalan di sandbox).</div>';
-    h+='<div class="ac-tablewrap"><table class="ac-matrix"><thead><tr><th class="ac-sticky">Peran</th>';
-    caps.forEach(function(c){ h+='<th>'+c.label+'</th>'; });
-    h+='<th class="ac-dbcol">Database</th></tr></thead><tbody>';
+    var h='<div class="ac-hint">Centang = boleh mengakses. Baris <b>Admin</b> selalu penuh. '
+        + '<b>Dummy</b> tidak pernah terhubung ke database (berjalan di sandbox). '
+        + 'Monitoring dirinci per jenis pengadaan dengan aksi <b>Lihat</b>, <b>Tambah</b>, <b>Ubah</b>, <b>Hapus</b>.</div>';
+    h+='<div class="ac-tablewrap"><table class="ac-matrix ac-matrix-grp"><thead>';
+    // baris 1: label grup (span sesuai jumlah aksi)
+    h+='<tr class="ac-grp-row"><th class="ac-sticky" rowspan="2">Peran</th>';
+    AC_GROUPS.forEach(function(g,i){ h+='<th class="ac-grp-th'+(i%2?' alt':'')+'" colspan="'+g.caps.length+'">'+g.label+'</th>'; });
+    h+='<th class="ac-dbcol" rowspan="2">Koneksi<br>Database</th></tr>';
+    // baris 2: aksi
+    h+='<tr class="ac-act-row">';
+    AC_GROUPS.forEach(function(g,i){ g.caps.forEach(function(c){ h+='<th class="ac-act-th ac-act-'+c.act+(i%2?' alt':'')+'">'+c.label+'</th>'; }); });
+    h+='</tr></thead><tbody>';
     AC_ROLES.forEach(function(r){
       var locked=!!r.locked;
       var m = locked ? {caps:acAllCaps(true),database:true} : (cfg.matrix[r.key]||{caps:acAllCaps(true),database:true});
       h+='<tr><td class="ac-sticky ac-role">'+r.label+(locked?' <span class="ac-badge">penuh</span>':'')+'</td>';
-      caps.forEach(function(c){
+      AC_GROUPS.forEach(function(g,i){ g.caps.forEach(function(c){
         var on = locked?true:(m.caps[c.id]!==false);
-        var dis= locked || c.id==='dashboard';
-        h+='<td>'+sw(r.key,c.id,on,dis)+'</td>';
-      });
+        var dis= locked || c.always;
+        h+='<td class="ac-cell ac-act-'+c.act+(i%2?' alt':'')+'">'+sw(r.key,c.id,on,dis)+'</td>';
+      });});
       var dbon = locked?true:(r.key==='dummy'?false:(m.database!==false));
       var dbdis= locked || r.key==='dummy';
       h+='<td class="ac-dbcol">'+sw(r.key,'__db__',dbon,dbdis)+'</td></tr>';
@@ -22413,12 +22550,17 @@ try{ if(typeof spkInit==="function") spkInit(); }catch(e){ console.error("spkIni
     try{ toast(ok?'Kontrol akses tersimpan & tersinkron':'Kontrol akses tersimpan (lokal)','ok'); }catch(e){}
   };
 
+  /* -------- Grid modul (dikelompokkan) untuk form Buat/Ubah Akun -------- */
   function capGrid(prefix, selected){
-    var h='<div class="ac-capgrid">';
-    AC_CAPS.forEach(function(c){
-      var on = selected? (selected[c.id]!==false) : true;
-      var dis = c.id==='dashboard';
-      h+='<label class="ac-chk'+(dis?' dis':'')+'"><input type="checkbox" id="'+prefix+'-'+c.id+'" '+(on?'checked':'')+(dis?' disabled':'')+'><span>'+c.label+'</span></label>';
+    var h='<div class="ac-capgroups">';
+    AC_GROUPS.forEach(function(g){
+      h+='<div class="ac-capgrp"><div class="ac-capgrp-h">'+g.label+'</div><div class="ac-capgrp-body">';
+      g.caps.forEach(function(c){
+        var on = selected? (selected[c.id]!==false) : true;
+        var dis = !!c.always;
+        h+='<label class="ac-chk'+(dis?' dis':'')+'"><input type="checkbox" id="'+prefix+'-'+c.id+'" '+(on?'checked':'')+(dis?' disabled':'')+'><span>'+c.label+'</span></label>';
+      });
+      h+='</div></div>';
     });
     h+='</div>';
     return h;
@@ -22445,7 +22587,7 @@ try{ if(typeof spkInit==="function") spkInit(); }catch(e){ console.error("spkIni
       +   '<label class="ac-toggle"><input id="ac-c-db" type="checkbox" '+((e&&e.database)?'checked':'')+'><span class="ac-toggle-tr"></span><em id="ac-c-db-lbl">'+((e&&e.database)?'Terhubung ke server':'Sandbox (tidak terhubung)')+'</em></label>'
       + '</div>'
       + '</div>';
-    h+='<div class="ac-fld"><label>Modul yang boleh diakses</label>'+capGrid('ac-c', e?e.caps:null)+'</div>';
+    h+='<div class="ac-fld"><label>Modul & aksi yang boleh diakses</label>'+capGrid('ac-c', e?e.caps:null)+'</div>';
     h+='<div class="ac-actions">'
       + (e?'<button class="btn ghost" type="button" onclick="acTab(\'list\')">Batal</button>':'')
       + '<button class="btn btn-teal" type="button" onclick="acCreateAccount('+(e?'true':'false')+')">'+(e?'Simpan Perubahan':'Buat Akun')+'</button></div>';
@@ -22484,32 +22626,42 @@ try{ if(typeof spkInit==="function") spkInit(); }catch(e){ console.error("spkIni
     var idx=cfg.accounts.findIndex(function(x){ return String(x.username).toLowerCase()===u.toLowerCase(); });
     if(idx>=0){ cfg.accounts[idx]=acct; } else { cfg.accounts.push(acct); }
 
-    // Coba buat akun SERVER bila tipe admin/user & RPC tersedia (best-effort, tidak wajib).
     var serverMsg='';
     if(type!=='dummy' && _useSupa()){
       try{
         var res=await _realDb().rpc('create_user',{ p_username:u, p_password:p, p_role:type });
         if(res && !res.error && res.data===true){ serverMsg=' + akun server dibuat'; }
-      }catch(e){ /* RPC tidak ada → akun tetap lokal */ }
+      }catch(e){ /* RPC tidak ada -> akun tetap lokal */ }
     }
     var ok=await acSaveConfig();
     try{ toast((idx>=0?'Akun diperbarui':'Akun dibuat')+(serverMsg||(ok?' & tersinkron':' (lokal)')),'ok'); }catch(e){}
     acTab('list');
   };
 
+  /* -------- Daftar akun + ringkasan + sesi aktif -------- */
   function acRenderList(){
     var cfg=acGetConfig(); var accs=cfg.accounts||[];
-    var h='<div class="ac-hint">Akun kustom yang Anda buat. Login memakai username + kata sandi ini.</div>';
+    var dummies=accs.filter(function(a){return a.type==='dummy';});
+    var users=accs.filter(function(a){return a.type!=='dummy';});
+    var h='';
+    h+='<div class="ac-active-wrap"><div class="ac-sec-title"><span class="ac-live-ic"></span>Sedang Aktif</div>'
+      +'<div id="ac-active" class="ac-active"><div class="ac-muted">Memeriksa sesi aktif…</div></div></div>';
+    h+='<div class="ac-sum">'
+      +'<span class="ac-sum-chip"><b>'+accs.length+'</b> Total akun</span>'
+      +'<span class="ac-sum-chip user"><b>'+users.length+'</b> Admin / User</span>'
+      +'<span class="ac-sum-chip dummy"><b>'+dummies.length+'</b> Dummy</span>'
+      +'</div>';
+    h+='<div class="ac-hint">Akun kustom yang Anda buat. Login memakai username + kata sandi ini.</div>';
     if(!accs.length){ h+='<div class="ac-empty">Belum ada akun kustom. Buka tab <b>Buat Akun</b> untuk menambah.</div>'; }
     else {
-      h+='<div class="ac-tablewrap"><table class="ac-list"><thead><tr><th>Username</th><th>Jenis</th><th>Database</th><th>Akses</th><th></th></tr></thead><tbody>';
+      h+='<div class="ac-tablewrap"><table class="ac-list"><thead><tr><th>Username</th><th>Jenis</th><th>Database</th><th>Izin</th><th></th></tr></thead><tbody>';
       accs.forEach(function(a){
         var nCap=AC_CAPS.filter(function(c){ return (a.caps||{})[c.id]!==false; }).length;
         var typeLbl = a.type==='dummy'?'Dummy':(a.type==='admin'?'Admin':'User');
         h+='<tr><td><b>'+escapeHtml(a.username)+'</b></td>'
           +'<td><span class="ac-pill '+a.type+'">'+typeLbl+'</span></td>'
           +'<td>'+(a.database?'<span class="ac-pill on">Terhubung</span>':'<span class="ac-pill off">Sandbox</span>')+'</td>'
-          +'<td>'+nCap+' / '+AC_CAPS.length+' modul</td>'
+          +'<td>'+nCap+' / '+AC_CAPS.length+' izin</td>'
           +'<td class="ac-rowact">'
           +'<button class="ac-mini" type="button" onclick="acEditAccount(\''+escapeAttr(a.username)+'\')">Ubah</button>'
           +'<button class="ac-mini danger" type="button" onclick="acDeleteAccount(\''+escapeAttr(a.username)+'\')">Hapus</button>'
@@ -22519,6 +22671,31 @@ try{ if(typeof spkInit==="function") spkInit(); }catch(e){ console.error("spkIni
     }
     h+='<div class="ac-actions"><button class="btn btn-teal" type="button" onclick="acTab(\'create\')">+ Buat Akun Baru</button></div>';
     document.getElementById('ac-pane-list').innerHTML=h;
+    acFillActive();
+  }
+  async function acFillActive(){
+    var el=document.getElementById('ac-active'); if(!el) return;
+    if(!_useSupa()){
+      el.innerHTML='<div class="ac-muted">Deteksi sesi antar-perangkat memerlukan koneksi Supabase. Sesi ini: <b>'+escapeHtml(String(acWho()))+'</b>.</div>';
+      return;
+    }
+    var list=await acLoadPresence();
+    if(!el || !document.body.contains(el)) return;
+    if(!list.length){ el.innerHTML='<div class="ac-muted">Tidak ada sesi aktif terdeteksi dalam 5 menit terakhir.</div>'; return; }
+    var me=String(acWho()).toLowerCase();
+    var h='';
+    list.forEach(function(p){
+      var mine=String(p.name).toLowerCase()===me;
+      var roleLbl=p.role==='admin'?'Admin':(p.role==='demo'?'Dummy':(p.role==='guest'?'Tamu':'User'));
+      var pillCls=p.role==='demo'?'dummy':(p.role==='admin'?'admin':(p.role==='guest'?'off':'user'));
+      var mins=Math.max(0,Math.round((Date.now()-p.ts)/60000));
+      h+='<div class="ac-live'+(mine?' me':'')+'"><span class="ac-dot"></span>'
+        +'<b>'+escapeHtml(p.name)+'</b>'
+        +'<span class="ac-pill '+pillCls+'">'+roleLbl+'</span>'
+        +(mine?'<span class="ac-live-you">sesi ini</span>':'')
+        +'<span class="ac-live-t">'+(mins<=1?'baru saja':(mins+' mnt lalu'))+'</span></div>';
+    });
+    el.innerHTML=h;
   }
   window.acEditAccount=function(username){
     var cfg=acGetConfig();
@@ -22535,13 +22712,11 @@ try{ if(typeof spkInit==="function") spkInit(); }catch(e){ console.error("spkIni
     acRenderList();
   };
 
-  /* ---------- Reset Kata Sandi (khusus Admin, untuk akun selain admin) ---------- */
+  /* ---------- Reset Kata Sandi ---------- */
   function acRenderReset(){
     var cfg=acGetConfig();
     var custom=(cfg.accounts||[]).filter(function(a){ return String(a.type)!=='admin'; });
     var h='<div class="ac-hint">Menu ini untuk membantu pengguna yang <b>lupa kata sandi</b>. Admin dapat menetapkan kata sandi baru. Akun <b>Admin tidak dapat direset dari sini</b> demi keamanan.</div>';
-
-    // Bagian A: akun kustom (tersimpan di config → bisa direset langsung)
     h+='<div class="ac-sec-title">Akun Kustom</div>';
     if(!custom.length){
       h+='<div class="ac-empty">Belum ada akun kustom selain admin. Buat dulu di tab <b>Buat Akun</b>.</div>';
@@ -22557,8 +22732,6 @@ try{ if(typeof spkInit==="function") spkInit(); }catch(e){ console.error("spkIni
       });
       h+='</tbody></table></div>';
     }
-
-    // Bagian B: akun server (User) — perlu RPC Supabase
     h+='<div class="ac-sec-title" style="margin-top:20px">Akun Server (User)</div>';
     h+='<div class="ac-note">Akun User bawaan diverifikasi di server. Reset memerlukan fungsi Supabase <code>admin_reset_password</code>. Isi username &amp; kata sandi baru lalu tekan Reset; bila fungsi belum ada, ikuti SQL di bawah.</div>';
     h+='<div class="ac-form"><div class="ac-row2">'
@@ -22568,7 +22741,6 @@ try{ if(typeof spkInit==="function") spkInit(); }catch(e){ console.error("spkIni
     h+='<details class="ac-sql"><summary>SQL fungsi reset (jalankan sekali di Supabase)</summary>'
       +'<pre>create or replace function admin_reset_password(\n  p_username text, p_new text\n) returns boolean language plpgsql security definer as $$\nbegin\n  if lower(p_username) = \'admin\' then\n    return false;              -- akun admin tidak boleh direset di sini\n  end if;\n  update app_users\n     set pass_hash = crypt(p_new, gen_salt(\'bf\'))\n   where lower(username) = lower(p_username);\n  return found;\nend; $$;</pre>'
       +'<small>Sesuaikan nama tabel/kolom (mis. <code>app_users.pass_hash</code>) dengan skema akun Anda.</small></details></div>';
-
     document.getElementById('ac-pane-reset').innerHTML=h;
   }
   window.acResetCustom=async function(idx, username){
@@ -22606,14 +22778,209 @@ try{ if(typeof spkInit==="function") spkInit(); }catch(e){ console.error("spkIni
     }
   };
 
+  /* ============================ PANEL PENYIMPANAN ============================ */
+  var ST_TABLES=[
+    {t:'pekerjaan',              l:'SPBJ / Kontrak Rinci',  grp:'Data Pengadaan'},
+    {t:'pengadaan_langsung',     l:'Pengadaan Langsung',    grp:'Data Pengadaan'},
+    {t:'tender',                 l:'Tender',                grp:'Data Pengadaan'},
+    {t:'file_kontrak',           l:'File Kontrak (metadata)', grp:'Dokumen'},
+    {t:'kelengkapan_dokumen',    l:'Kelengkapan Dokumen',   grp:'Dokumen'},
+    {t:'pembukaan_penawaran',    l:'Pembukaan Penawaran',   grp:'Dokumen'},
+    {t:'penetapan_nomor',        l:'Penetapan Nomor',       grp:'Penetapan'},
+    {t:'penetapan_config',       l:'Konfigurasi Penetapan', grp:'Penetapan'},
+    {t:'referensi_harga_online', l:'Referensi Harga Online',grp:'HPS & Analisa'},
+    {t:'harga_perkiraan_sendiri',l:'HPS',                   grp:'HPS & Analisa'},
+    {t:'analisa_harga_satuan',   l:'Analisa Harga Satuan',  grp:'HPS & Analisa'},
+    {t:'data_pekerjaan',         l:'Daftar Pekerjaan',      grp:'Perencanaan'},
+    {t:'jadwal_pelaksanaan',     l:'Jadwal Pelaksanaan',    grp:'Perencanaan'},
+    {t:'hari_libur',             l:'Hari Libur',            grp:'Perencanaan'},
+    {t:'kontrak_spk',            l:'Kontrak SPK',           grp:'Kontrak'},
+    {t:'klausul_spk',            l:'Klausul SPK',           grp:'Kontrak'},
+    {t:'app_profiles',           l:'Profil & Konfigurasi',  grp:'Sistem'}
+  ];
+  var ST_BUCKETS=[
+    {b:'file-kontrak', l:'File Kontrak (berkas fisik)'},
+    {b:'rho-foto',     l:'Foto Referensi Harga'}
+  ];
+  var ST_DB_QUOTA = 500*1024*1024;   // acuan Free tier Supabase: 0,5 GB database
+  var ST_ST_QUOTA = 1024*1024*1024;  // acuan Free tier Supabase: 1 GB storage
+
+  function stFmt(b){
+    if(b==null || isNaN(b)) return '—';
+    if(b<1024) return b+' B';
+    var u=['KB','MB','GB','TB'], i=-1;
+    do{ b/=1024; i++; }while(b>=1024 && i<u.length-1);
+    return (b>=100?b.toFixed(0):(b>=10?b.toFixed(1):b.toFixed(2)))+' '+u[i];
+  }
+  function stNum(n){ return (n==null||isNaN(n))?'—':Number(n).toLocaleString('id-ID'); }
+
+  async function stCount(t){
+    if(!_useSupa()) return null;
+    try{ var res=await _realDb().from(t).select('*',{count:'exact',head:true}); if(res && !res.error && typeof res.count==='number') return res.count; }catch(e){}
+    return null;
+  }
+  async function stTableSizes(){
+    if(!_useSupa()) return null;
+    try{
+      var res=await _realDb().rpc('table_sizes');
+      if(res && !res.error && Array.isArray(res.data)){
+        var m={};
+        res.data.forEach(function(r){ var n=r.table_name||r.name||r.table; if(n) m[n]=Number(r.total_bytes||r.bytes||r.size||0); });
+        return m;
+      }
+    }catch(e){}
+    return null;
+  }
+  async function stBucketScan(bucket){
+    var total=0, files=0, folders=[''], guard=0, capped=false;
+    if(!_useSupa()) return {bytes:0,files:0,capped:false,missing:true};
+    try{
+      while(folders.length && guard<500){
+        guard++;
+        var prefix=folders.shift(), offset=0;
+        while(true){
+          var res=await _realDb().storage.from(bucket).list(prefix, {limit:100, offset:offset, sortBy:{column:'name',order:'asc'}});
+          if(!res || res.error){ if(guard===1) return {bytes:0,files:0,capped:false,missing:true,err:res&&res.error}; break; }
+          var data=res.data||[]; if(!data.length) break;
+          data.forEach(function(o){
+            var path=prefix?(prefix+'/'+o.name):o.name;
+            var isFolder = (o.id==null) && (o.metadata==null);
+            if(isFolder){ if(folders.length<5000) folders.push(path); }
+            else { files++; total += (o.metadata && (o.metadata.size||o.metadata.contentLength))||0; }
+          });
+          if(data.length<100) break;
+          offset+=100;
+        }
+      }
+      if(guard>=500) capped=true;
+    }catch(e){ return {bytes:total,files:files,capped:capped,err:e}; }
+    return {bytes:total, files:files, capped:capped};
+  }
+
+  function stEnsurePanel(){
+    if(document.getElementById('st-ov')) return;
+    var ov=document.createElement('div');
+    ov.id='st-ov'; ov.className='ac-ov st-ov'; ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true');
+    ov.innerHTML =
+      '<div class="ac-panel st-panel">'
+      + '<div class="ac-head">'
+      +   '<div class="ac-head-t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>'
+      +     '<div><h3>Penyimpanan</h3><p>Pantau pemakaian database &amp; storage file Supabase.</p></div></div>'
+      +   '<button class="ac-x" type="button" onclick="stClose()" aria-label="Tutup">&times;</button>'
+      + '</div>'
+      + '<div class="ac-body"><div class="ac-pane" id="st-pane"></div></div>'
+      + '</div>';
+    document.body.appendChild(ov);
+    ov.addEventListener('mousedown', function(e){ if(e.target===ov) stClose(); });
+  }
+  window.stClose=function(){ var ov=document.getElementById('st-ov'); if(ov) ov.classList.remove('show'); };
+  window.openStoragePanel=async function(){
+    if(!acUnrestricted()){ try{ toast('Hanya Admin yang dapat melihat penyimpanan','warn'); }catch(e){} return; }
+    stEnsurePanel();
+    var ov=document.getElementById('st-ov'); ov.classList.add('show');
+    stRender(null);
+    stScan();
+  };
+  window.stScan=async function(){
+    var btn=document.getElementById('st-refresh'); if(btn){ btn.disabled=true; btn.textContent='Memindai…'; }
+    if(!_useSupa()){
+      stRender({offline:true});
+      if(btn){ btn.disabled=false; btn.textContent='Segarkan'; }
+      return;
+    }
+    var data={ tables:[], buckets:[], totalRows:0, totalBytesDb:null, totalBytesSt:0, ts:Date.now() };
+    try{
+      var sizes=await stTableSizes();
+      var counts=await Promise.all(ST_TABLES.map(function(x){ return stCount(x.t); }));
+      ST_TABLES.forEach(function(x,i){
+        var rows=counts[i];
+        var bytes= sizes ? (sizes[x.t]!=null?sizes[x.t]:null) : null;
+        if(typeof rows==='number') data.totalRows+=rows;
+        if(typeof bytes==='number'){ data.totalBytesDb=(data.totalBytesDb||0)+bytes; }
+        data.tables.push({t:x.t,l:x.l,grp:x.grp,rows:rows,bytes:bytes});
+      });
+      var bkt=await Promise.all(ST_BUCKETS.map(function(x){ return stBucketScan(x.b); }));
+      ST_BUCKETS.forEach(function(x,i){
+        var r=bkt[i]||{};
+        data.buckets.push({b:x.b,l:x.l,bytes:r.bytes||0,files:r.files||0,capped:!!r.capped,missing:!!r.missing});
+        data.totalBytesSt += (r.bytes||0);
+      });
+    }catch(e){ console.error('stScan:',e); }
+    stRender(data);
+    var btn2=document.getElementById('st-refresh'); if(btn2){ btn2.disabled=false; btn2.textContent='Segarkan'; }
+  };
+  function stBar(used, quota, cls){
+    var pct = quota>0 ? Math.min(100, Math.round(used/quota*1000)/10) : 0;
+    return '<div class="st-bar"><span class="st-bar-fill '+(cls||'')+(pct>=90?' hot':(pct>=70?' warn':''))+'" style="width:'+Math.max(pct,used>0?2:0)+'%"></span></div>'
+         + '<div class="st-bar-cap">'+(pct)+'% dari acuan '+stFmt(quota)+'</div>';
+  }
+  function stRender(data){
+    var pane=document.getElementById('st-pane'); if(!pane) return;
+    if(data===null){
+      pane.innerHTML='<div class="st-loading"><div class="st-spin"></div><p>Memindai database &amp; storage…</p></div>';
+      return;
+    }
+    if(data.offline){
+      pane.innerHTML='<div class="ac-note">Panel Penyimpanan memerlukan koneksi <b>Supabase</b> aktif. Saat ini aplikasi berjalan tanpa koneksi database (mode sandbox), sehingga pemakaian tidak dapat dibaca.</div>'
+        +'<div class="ac-actions"><button class="btn btn-teal" id="st-refresh" type="button" onclick="stScan()">Segarkan</button></div>';
+      return;
+    }
+    var maxRows=0; data.tables.forEach(function(r){ if(typeof r.rows==='number' && r.rows>maxRows) maxRows=r.rows; });
+    var h='';
+    // Ringkasan atas
+    h+='<div class="st-top">';
+    h+='<div class="st-kpi"><span class="st-kpi-l">Total Baris Database</span><span class="st-kpi-v">'+stNum(data.totalRows)+'</span>'
+      + (data.totalBytesDb!=null?'<span class="st-kpi-s">'+stFmt(data.totalBytesDb)+'</span>':'<span class="st-kpi-s">ukuran byte: aktifkan RPC</span>')+'</div>';
+    h+='<div class="st-kpi"><span class="st-kpi-l">Total File Storage</span><span class="st-kpi-v">'+stFmt(data.totalBytesSt)+'</span>'
+      + '<span class="st-kpi-s">'+stNum(data.buckets.reduce(function(a,b){return a+(b.files||0);},0))+' berkas</span></div>';
+    h+='</div>';
+
+    // Kartu Database
+    h+='<div class="st-card"><div class="st-card-h"><b>Database</b> <span class="st-muted">jumlah baris per tabel</span></div>';
+    if(data.totalBytesDb!=null){ h+='<div class="st-gauge">'+stBar(data.totalBytesDb, ST_DB_QUOTA, 'db')+'</div>'; }
+    var curGrp=null;
+    h+='<table class="st-table"><tbody>';
+    data.tables.forEach(function(r){
+      if(r.grp!==curGrp){ curGrp=r.grp; h+='<tr class="st-grp"><td colspan="3">'+curGrp+'</td></tr>'; }
+      var pct = maxRows>0 && typeof r.rows==='number' ? Math.round(r.rows/maxRows*100) : 0;
+      h+='<tr><td class="st-tname">'+r.l+'<div class="st-mini-bar"><span style="width:'+pct+'%"></span></div></td>'
+        +'<td class="st-trows">'+(typeof r.rows==='number'?stNum(r.rows)+' baris':'<span class="st-na">tak terbaca</span>')+'</td>'
+        +'<td class="st-tbytes">'+(r.bytes!=null?stFmt(r.bytes):'')+'</td></tr>';
+    });
+    h+='</tbody></table></div>';
+
+    // Kartu Storage
+    h+='<div class="st-card"><div class="st-card-h"><b>Storage File</b> <span class="st-muted">ukuran per bucket</span></div>';
+    h+='<div class="st-gauge">'+stBar(data.totalBytesSt, ST_ST_QUOTA, 'st')+'</div>';
+    h+='<table class="st-table"><tbody>';
+    data.buckets.forEach(function(b){
+      var pct = data.totalBytesSt>0 ? Math.round((b.bytes||0)/data.totalBytesSt*100) : 0;
+      h+='<tr><td class="st-tname">'+b.l+' <code>'+b.b+'</code>'
+        + (b.missing?' <span class="st-na">bucket tidak ada</span>':'')
+        + (b.capped?' <span class="st-na">*sebagian</span>':'')
+        + '<div class="st-mini-bar st"><span style="width:'+pct+'%"></span></div></td>'
+        +'<td class="st-trows">'+stNum(b.files)+' berkas</td>'
+        +'<td class="st-tbytes">'+stFmt(b.bytes)+'</td></tr>';
+    });
+    h+='</tbody></table></div>';
+
+    h+='<details class="ac-sql"><summary>Ingin ukuran byte database yang presisi? (SQL Supabase)</summary>'
+      +'<p>Jalankan sekali di SQL Editor Supabase agar kolom ukuran (byte) tabel terisi presisi:</p>'
+      +'<pre>create or replace function table_sizes()\nreturns table(table_name text, total_bytes bigint)\nlanguage sql security definer as $$\n  select relname::text,\n         pg_total_relation_size(relid) as total_bytes\n  from pg_catalog.pg_statio_user_tables\n  order by total_bytes desc;\n$$;</pre>'
+      +'<small>Tanpa RPC ini, kolom baris tetap tampil; hanya ukuran byte database yang belum presisi.</small></details>';
+
+    h+='<div class="st-foot"><span class="st-muted">Terakhir dipindai: '+new Date(data.ts).toLocaleTimeString('id-ID')+'</span>'
+      +'<button class="btn btn-teal" id="st-refresh" type="button" onclick="stScan()">Segarkan</button></div>';
+
+    pane.innerHTML=h;
+  }
+
   function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(m){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];}); }
   function escapeAttr(s){ return String(s==null?'':s).replace(/['"\\]/g,'\\$&'); }
 
-  /* ---- Muat config awal (async, tidak memblokir) & pasang saat DOM siap ---- */
+  /* ---- Muat config awal & pasang saat DOM siap ---- */
   try{ acLoadConfig(); }catch(e){}
-  // Bila sudah ada sesi aktif saat modul terpasang, segarkan tampilan.
-  try{ if(typeof currentRole!=='undefined' && currentRole){ acApplyRole(currentRole); } }catch(e){}
+  try{ if(typeof currentRole!=='undefined' && currentRole){ acApplyRole(currentRole); acStartBeat(); } }catch(e){}
 
-  // ekspos beberapa util utk debug/manual (opsional)
-  window.__ac = { getConfig:acGetConfig, loadConfig:acLoadConfig, saveConfig:acSaveConfig, applyRole:acApplyRole };
+  window.__ac = { getConfig:acGetConfig, loadConfig:acLoadConfig, saveConfig:acSaveConfig, applyRole:acApplyRole, groups:AC_GROUPS, caps:AC_CAPS };
 })();
