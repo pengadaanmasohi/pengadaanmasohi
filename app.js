@@ -12172,6 +12172,7 @@ async function hpsExportExcelRecord(id){
   const money=ACCT_NODEC;
 
   const wb=new ExcelJS.Workbook();
+  try{ wb.calcProperties.fullCalcOnLoad=true; }catch(e){}   // paksa Excel hitung ulang rumus saat file dibuka
   const ws=wb.addWorksheet('HPS');
   ws.columns=[{width:5},{width:46},{width:8},{width:8},{width:15},{width:15},{width:16},{width:16},{width:17}];
 
@@ -12184,6 +12185,23 @@ async function hpsExportExcelRecord(id){
       if(opt.font) cell.font=opt.font;
       if(opt.align) cell.alignment=opt.align;
       if(opt.money && typeof cell.value==='number') cell.numFmt=money;
+    }
+    return cell;
+  };
+  /* Format angka yang MENYEMBUNYIKAN nilai nol (positif;negatif;nol-kosong;teks),
+     agar sel rumus yang hasilnya 0 tampil kosong — sama seperti tampilan awal. */
+  const MONEY_HIDE0='#,##0;-#,##0;;@';
+  /* Sel berisi RUMUS Excel (bukan angka statis) — dipakai untuk semua bagian yang
+     dihitung otomatis, sehingga ikut berubah bila Vol/Harga Satuan diubah di Excel. */
+  const fCell=(row,col,formula,opt)=>{
+    const cell=ws.getCell(row,col);
+    cell.value={formula:formula};
+    cell.border=bAll;
+    cell.numFmt=(opt&&opt.numFmt)||MONEY_HIDE0;
+    if(opt){
+      if(opt.fill) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:opt.fill}};
+      if(opt.font) cell.font=opt.font;
+      if(opt.align) cell.alignment=opt.align;
     }
     return cell;
   };
@@ -12236,14 +12254,15 @@ async function hpsExportExcelRecord(id){
       setCell(rr,4,jsVolNum(it.vol)||'',{fill:fill,align:{horizontal:'center'}});
       setCell(rr,5,money0(it.hargaMat),{fill:fill,money:true});
       setCell(rr,6,money0(it.hargaJasa),{fill:fill,money:true});
-      setCell(rr,7,hpsItemMat(it)||'',{fill:fill,money:true});
-      setCell(rr,8,hpsItemJasa(it)||'',{fill:fill,money:true});
-      setCell(rr,9,hpsItemTotal(it)||'',{fill:fill,font:grpFont,money:true});
+      fCell(rr,7,`ROUND(D${rr}*E${rr},0)`,{fill:fill});                 // Jumlah Harga Barang = Vol × Harga Satuan Barang
+      fCell(rr,8,`ROUND(D${rr}*F${rr},0)`,{fill:fill});                 // Jumlah Harga Jasa   = Vol × Harga Satuan Jasa
+      fCell(rr,9,`G${rr}+H${rr}`,{fill:fill,font:grpFont});            // Jumlah Total = Barang + Jasa
     }else{
       for(let c=3;c<=9;c++) setCell(rr,c,'',{fill:fill});
     }
     rr++;
   };
+  const firstBody=rr;                 // baris data pertama (untuk rentang SUM rumus rekap)
   jsWalk(st.items,cfg,{
     judul:(no,txt,it)=>{ putGroup(no,txt,it,GRP); },
     sub:(no,txt,it)=>{ putGroup(no,'   '+txt,it,GRP); },
@@ -12255,28 +12274,33 @@ async function hpsExportExcelRecord(id){
       setCell(rr,4,jsVolNum(it.vol)||'',{align:{horizontal:'center',vertical:'middle'}});
       setCell(rr,5,money0(it.hargaMat),{money:true});
       setCell(rr,6,money0(it.hargaJasa),{money:true});
-      setCell(rr,7,hpsItemMat(it)||'',{money:true});
-      setCell(rr,8,hpsItemJasa(it)||'',{money:true});
-      setCell(rr,9,hpsItemTotal(it)||'',{money:true});
+      fCell(rr,7,`ROUND(D${rr}*E${rr},0)`,{});                 // Jumlah Harga Barang = Vol × Harga Satuan Barang
+      fCell(rr,8,`ROUND(D${rr}*F${rr},0)`,{});                 // Jumlah Harga Jasa   = Vol × Harga Satuan Jasa
+      fCell(rr,9,`G${rr}+H${rr}`,{});                          // Jumlah Total = Barang + Jasa
       rr++;
     }
   });
+  const lastBody=rr-1;                // baris data terakhir
 
-  // ---- Rekap + Terbilang ----
+  // ---- Rekap + Terbilang (semua sel angka = RUMUS Excel) ----
   const s=hpsSummary(st);
-  const sumRow=(lbl,mat,jasa,tot,grand)=>{
+  const sumRowF=(lbl,fMat,fJasa,fTot,grand)=>{
     ws.mergeCells('A'+rr+':F'+rr);
     setCell(rr,1,lbl,{fill:grand?GRAND:undefined,font:{bold:true},align:{horizontal:'right',vertical:'middle'}});
     for(let c=2;c<=6;c++) setCell(rr,c,'',{fill:grand?GRAND:undefined});
-    setCell(rr,7,mat||'',{fill:grand?GRAND:undefined,font:{bold:!!grand},money:true});
-    setCell(rr,8,jasa||'',{fill:grand?GRAND:undefined,font:{bold:!!grand},money:true});
-    setCell(rr,9,tot||'',{fill:grand?GRAND:undefined,font:{bold:!!grand},money:true});
+    fCell(rr,7,fMat,{fill:grand?GRAND:undefined,font:{bold:!!grand}});
+    fCell(rr,8,fJasa,{fill:grand?GRAND:undefined,font:{bold:!!grand}});
+    fCell(rr,9,fTot,{fill:grand?GRAND:undefined,font:{bold:!!grand}});
     rr++;
   };
-  sumRow('Jumlah',s.jM,s.jJ,s.jT);
-  sumRow('DPP',s.dppM,s.dppJ,s.dppT);
-  sumRow('PPn 12%',s.ppnM,s.ppnJ,s.ppnT);
-  sumRow('Jumlah Total',s.totM,s.totJ,s.totT,true);
+  const hasBody = lastBody>=firstBody;
+  const gSum = hasBody?`SUM(G${firstBody}:G${lastBody})`:'0';
+  const hSum = hasBody?`SUM(H${firstBody}:H${lastBody})`:'0';
+  const iSum = hasBody?`SUM(I${firstBody}:I${lastBody})`:'0';
+  const rJml=rr;    sumRowF('Jumlah', gSum, hSum, iSum);                                              // Jumlah = total kolom
+  const rDpp=rr;    sumRowF('DPP', `ROUND(G${rJml}*11/12,0)`, `ROUND(H${rJml}*11/12,0)`, `ROUND(I${rJml}*11/12,0)`);   // DPP = Jumlah × 11/12
+  const rPpn=rr;    sumRowF('PPn 12%', `ROUND(G${rDpp}*0.12,0)`, `ROUND(H${rDpp}*0.12,0)`, `ROUND(I${rDpp}*0.12,0)`);  // PPn = DPP × 12%
+                    sumRowF('Jumlah Total', `G${rJml}+G${rPpn}`, `H${rJml}+H${rPpn}`, `I${rJml}+I${rPpn}`, true);      // Jumlah Total = Jumlah + PPn
   ws.mergeCells('A'+rr+':I'+rr);
   setCell(rr,1,'Terbilang : '+hpsTerbilangRupiah(s.totT),{font:{italic:true,bold:true},align:{wrapText:true,vertical:'middle'}});
   for(let c=2;c<=9;c++) setCell(rr,c,'',{});
