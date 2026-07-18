@@ -4484,3 +4484,19 @@ table.ac-list thead th{ background:linear-gradient(180deg,#eef6f7,#dfedee); box-
 .pnw-profil-upload.pf-ic-up svg{ width:19px; height:19px; }
 .pnw-profil-upload.pf-ic-up svg *{ stroke-width:2.4; }
 .pnw-profil-upload.pf-ic-up svg{ filter:drop-shadow(0 1px 2px rgba(0,0,0,.35)); }
+
+/* Tombol Unggah = gaya sama dengan Unduh (putih, ikon teal), hanya beda ikon */
+.pnw-profil-upload.pf-ic-up{
+  top:19px; right:20px; width:38px; height:38px; border-radius:11px; padding:0; gap:0;
+  background:linear-gradient(180deg,#ffffff,#f1f7f8);
+  border:1px solid #dbe6e7; color:#0a5e66;
+  box-shadow:0 3px 8px rgba(9,60,66,.10), inset 0 1px 0 rgba(255,255,255,.85);
+}
+.pnw-profil-upload.pf-ic-up:hover{
+  transform:translateY(-2px);
+  background:linear-gradient(180deg,#edf7f8,#e2f0f1);
+  border-color:#bfe0e2; color:#0E7C86;
+  box-shadow:0 9px 18px rgba(9,60,66,.16);
+}
+.pnw-profil-upload.pf-ic-up svg{ width:18px; height:18px; filter:none; }
+.pnw-profil-upload.pf-ic-up svg *{ stroke-width:2; }
