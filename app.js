@@ -2190,7 +2190,7 @@ function initTopnavFx(){
     brand.__fxReady=true;
     brand.addEventListener('pointerenter', function(ev){
       if(ev.pointerType && ev.pointerType!=='mouse') return;
-      try{ dashSweep(); }catch(e){}
+      /* Efek suara "sapuan cahaya" pada logo DINONAKTIFKAN atas permintaan pengguna. */
     });
   }
   var root=document.getElementById('topnav');
@@ -2202,7 +2202,7 @@ function initTopnavFx(){
     var it=ev.target.closest ? ev.target.closest(TN_SEL) : null;
     if(!it || it===_tnSoundEl) return;
     _tnSoundEl=it;
-    try{ dashBlip(600); }catch(e){}
+    /* Bunyi saat kursor MELEWATI item menu atas DINONAKTIFKAN — hanya klik yang berbunyi. */
   }, {passive:true});
   root.addEventListener('pointerout', function(ev){
     var to=ev.relatedTarget;

@@ -4500,3 +4500,11 @@ table.ac-list thead th{ background:linear-gradient(180deg,#eef6f7,#dfedee); box-
 }
 .pnw-profil-upload.pf-ic-up svg{ width:18px; height:18px; filter:none; }
 .pnw-profil-upload.pf-ic-up svg *{ stroke-width:2; }
+
+/* ============================================================================
+   Logo PLN (brand): hilangkan efek KACA (shine/glass) & gerakan hover
+   ============================================================================ */
+.topbar-brand .logo{ background:transparent !important; box-shadow:none !important; transition:none !important; }
+.topbar-brand .logo::after{ content:none !important; display:none !important; }
+.topbar-brand:hover .logo{ transform:none !important; box-shadow:none !important; }
+.topbar-brand:hover .logo .logo-img{ transform:none !important; filter:drop-shadow(0 1px 2px rgba(0,0,0,.3)) !important; }
