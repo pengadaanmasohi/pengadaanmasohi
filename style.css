@@ -514,7 +514,7 @@ td.cell-center{text-align:center}
 /* ===== Penetapan Nomor / Kelengkapan — Lihat: header rapi & kotak Cari lebih premium ===== */
 #view-pn-lihat .page-head{
   align-items:center;
-  border-bottom:1px solid #e7eff0;padding-bottom:14px;margin-bottom:14px
+  margin-bottom:18px
 }
 /* Kelengkapan — Lihat Data: jarak judul ke tabel disamakan dengan Data Pekerjaan */
 #view-fkl-view .page-head{align-items:center}
@@ -1896,6 +1896,39 @@ tr.hl-weekend td{background:#f5f8fb}
 .fk-actcell{position:relative;transition:background .16s ease}
 .fk-actcell.fk-drop-over{background:rgba(20,166,177,.14);outline:2px dashed var(--teal);outline-offset:-4px;border-radius:10px}
 .fk-actcell.fk-drop-over .fk-act-up{transform:translateY(-2px) scale(1.04);box-shadow:0 8px 22px rgba(16,40,50,.3)}
+/* Popup Unggah File Kontrak — kotak drag & drop / telusuri (efek 3D) */
+.fk-upload-modal{max-width:460px}
+.fk-up-body{padding:26px 24px 30px;perspective:900px}
+.fk-dropzone{
+  position:relative;border:2px dashed var(--teal);border-radius:18px;padding:36px 20px;text-align:center;cursor:pointer;
+  background:linear-gradient(180deg,#f3fbfc,#e2f1f3);
+  transform-style:preserve-3d;transform:translateZ(0);
+  box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 -6px 14px rgba(14,124,134,.06) inset,
+             0 14px 26px -10px rgba(14,90,100,.38),0 6px 10px -6px rgba(14,90,100,.26);
+  transition:transform .22s cubic-bezier(.16,1,.3,1),box-shadow .22s ease,background .18s ease,border-color .18s ease;
+  outline:none
+}
+.fk-dropzone:hover{
+  background:linear-gradient(180deg,#f7fdfd,#dbeff1);
+  transform:translateY(-4px) rotateX(6deg) scale(1.012);
+  box-shadow:0 1px 0 rgba(255,255,255,.95) inset,0 -6px 14px rgba(14,124,134,.06) inset,
+             0 28px 46px -14px rgba(14,90,100,.5),0 10px 16px -8px rgba(14,90,100,.3)
+}
+.fk-dropzone:focus-visible{box-shadow:0 0 0 3px rgba(20,166,177,.4),0 18px 32px -12px rgba(14,90,100,.45)}
+.fk-dropzone.fk-dz-over{
+  background:linear-gradient(180deg,#d2ebee,#c1e3e6);border-color:var(--teal-dark);
+  transform:translateY(2px) rotateX(0) scale(.995);
+  box-shadow:0 2px 0 rgba(255,255,255,.6) inset,0 12px 26px -12px rgba(14,90,100,.5) inset,
+             0 5px 10px -8px rgba(14,90,100,.3)
+}
+.fk-dz-ic{transform:translateZ(30px)}
+.fk-dz-ic svg{width:48px;height:48px;color:var(--teal-dark);filter:drop-shadow(0 8px 10px rgba(14,90,100,.28));transition:transform .22s cubic-bezier(.16,1,.3,1)}
+.fk-dropzone:hover .fk-dz-ic svg{transform:translateY(-3px)}
+.fk-dropzone.fk-dz-over .fk-dz-ic svg{transform:translateY(-6px) scale(1.08)}
+.fk-dz-title{font-weight:800;color:#16242c;margin-top:12px;font-size:15px;text-shadow:0 1px 0 rgba(255,255,255,.7)}
+.fk-dz-sub{color:#3d5560;margin-top:4px;font-size:13px}
+.fk-dz-sub b{color:var(--teal-dark)}
+.fk-dz-hint{color:#6f858e;margin-top:12px;font-size:12px}
 /* Chip nama file terunggah */
 .fk-file-chip{display:inline-flex;align-items:center;gap:7px;max-width:260px;padding:6px 11px;border-radius:9px;background:linear-gradient(180deg,#eef8f9,#e2f2f3);border:1px solid #bfe2e5;color:var(--teal-dark);font-size:11px;font-weight:700}
 .fk-file-chip svg{width:14px;height:14px;flex:0 0 auto;color:var(--teal)}

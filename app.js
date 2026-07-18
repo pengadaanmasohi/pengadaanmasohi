@@ -6096,6 +6096,27 @@ function jadwalDurasiTxt(mulai, selesai){
   var d=Math.round((b.getTime()-a.getTime())/86400000)+1;   // inklusif
   return d>0 ? (d+' hari') : '—';
 }
+/* Durasi Pengadaan lengkap (Hari + Jam + Menit) dari rentang waktu tahapan tersimpan
+   — sama seperti kartu "Durasi Pengadaan" di halaman jadwal (memakai tanggal & jam).
+   Awal = waktu-mulai paling awal; Akhir = waktu-akhir paling akhir.
+   Fallback ke rentang hari kalender bila state/tahapan tak tersedia. */
+function jadwalDurasiFull(r){
+  try{
+    const tah=(r && r.state && Array.isArray(r.state.tahapan)) ? r.state.tahapan : null;
+    if(tah && tah.length){
+      const awals=[], akhirs=[];
+      tah.forEach(t=>{
+        if(t && t.awalTgl){ const d=jpCombine(t.awalTgl, t.awalJam||'00:00'); if(d && !isNaN(d.getTime())) awals.push(d.getTime()); }
+        if(t && t.akhirTgl){ const d=jpCombine(t.akhirTgl, t.akhirJam||'00:00'); if(d && !isNaN(d.getTime())) akhirs.push(d.getTime()); }
+      });
+      if(awals.length && akhirs.length){
+        const dur=jpDiffDurasi(new Date(Math.min.apply(null,awals)), new Date(Math.max.apply(null,akhirs)));
+        if(dur) return jpFmtDurasi(dur.hari, dur.jam, dur.menit);
+      }
+    }
+  }catch(e){}
+  return jadwalDurasiTxt(r && r.tgl_mulai, r && r.tgl_selesai);
+}
 function renderJadwalView(){
   const tb=document.getElementById('jadwal-view-body');
   const pg=document.getElementById('jadwal-view-pagination');
@@ -6114,7 +6135,7 @@ function renderJadwalView(){
     return '<tr>'+
       '<td class="col-no">'+(start+i+1)+'</td>'+
       '<td class="wrap-cell col-nama-freeze">'+fkEsc(r.nama_pekerjaan||'—')+'</td>'+
-      '<td style="text-align:center">'+jadwalDurasiTxt(r.tgl_mulai,r.tgl_selesai)+'</td>'+
+      '<td style="text-align:center">'+jadwalDurasiFull(r)+'</td>'+
       '<td class="col-date">'+fkEsc(r.tgl_mulai?pnwDateLong(r.tgl_mulai):'—')+'</td>'+
       '<td class="col-date">'+fkEsc(r.tgl_selesai?pnwDateLong(r.tgl_selesai):'—')+'</td>'+
       '<td><div class="action-cell" style="justify-content:center">'+
@@ -6621,20 +6642,70 @@ function fkGoToViewPage(p){ fkState.view.page=p; withQuickLoader('Memuat', ()=>{
 
 /* ---- Unggah file ---- */
 let fkUploadCtx=null;
+/* File Kontrak hanya menerima PDF. */
+function fkIsPdf(file){
+  if(!file) return false;
+  const nm=String(file.name||'').toLowerCase();
+  return (file.type==='application/pdf') || nm.endsWith('.pdf');
+}
+/* Klik "Unggah File" -> buka POPUP drag & drop (di dalamnya bisa telusuri file). */
 function fkUpload(modul, recordId, btn){
   if(!requireInput()) return;
-  const inp=document.getElementById('fk-file-input'); if(!inp) return;
-  fkUploadCtx={modul, recordId, btn}; inp.value=''; inp.click();
+  fkUploadCtx={modul, recordId, btn};
+  fkOpenUploadModal();
 }
-async function fkHandleFileSelected(file){
-  const ctx=fkUploadCtx; fkUploadCtx=null;
-  if(!ctx || !file) return;
-  await fkUploadFile(ctx.modul, ctx.recordId, file, ctx.btn);
+function fkOpenUploadModal(){
+  const ov=document.getElementById('fk-upload-overlay'); if(!ov) return;
+  const mx=document.getElementById('fk-dz-max'); if(mx) mx.textContent=FK_MAX_MB;
+  const dz=document.getElementById('fk-dropzone'); if(dz) dz.classList.remove('fk-dz-over');
+  ov.classList.add('show');
+}
+function fkCloseUploadModal(){
+  const ov=document.getElementById('fk-upload-overlay'); if(ov) ov.classList.remove('show');
+  const dz=document.getElementById('fk-dropzone'); if(dz) dz.classList.remove('fk-dz-over');
+}
+/* Klik dropzone -> telusuri berkas (buka pemilih file OS). */
+function fkDzBrowse(){
+  const inp=document.getElementById('fk-file-input'); if(!inp) return;
+  inp.value=''; inp.click();
+}
+function fkDzDragOver(ev){
+  if(!ev.dataTransfer || !Array.from(ev.dataTransfer.types||[]).includes('Files')) return;
+  ev.preventDefault(); ev.stopPropagation();
+  ev.dataTransfer.dropEffect='copy';
+  const dz=document.getElementById('fk-dropzone'); if(dz) dz.classList.add('fk-dz-over');
+}
+function fkDzDragLeave(ev){
+  ev.stopPropagation();
+  const dz=document.getElementById('fk-dropzone');
+  if(dz && (!ev.relatedTarget || !dz.contains(ev.relatedTarget))) dz.classList.remove('fk-dz-over');
+}
+function fkDzDrop(ev){
+  ev.preventDefault(); ev.stopPropagation();
+  const dz=document.getElementById('fk-dropzone'); if(dz) dz.classList.remove('fk-dz-over');
+  const dt=ev.dataTransfer; const file=dt && dt.files && dt.files[0];
+  if(!file){ toast('Tidak ada file yang terdeteksi','warn'); return; }
+  fkSubmitFromModal(file);
+}
+/* Validasi (PDF) lalu tutup popup & mulai unggah. Bila bukan PDF, popup tetap
+   terbuka agar pengguna bisa memilih file lain. */
+function fkSubmitFromModal(file){
+  if(!fkIsPdf(file)){ toast('File harus berformat PDF','warn'); return; }
+  const ctx=fkUploadCtx;
+  fkCloseUploadModal();
+  if(!ctx) return;
+  fkUploadCtx=null;
+  fkUploadFile(ctx.modul, ctx.recordId, file, ctx.btn);
+}
+function fkHandleFileSelected(file){
+  if(!file) return;
+  fkSubmitFromModal(file);
 }
 
 /* Inti proses unggah file kontrak — dipakai baik oleh pemilih file (click)
    maupun drag-and-drop. */
 async function fkUploadFile(modul, recordId, file, btn){
+  if(!fkIsPdf(file)){ toast('File harus berformat PDF','warn'); return; }
   if(file.size > FK_MAX_MB*1048576){ toast(`Ukuran file melebihi batas ${FK_MAX_MB} MB`,'warn'); return; }
   if(btn) btn.classList.add('is-busy');
   pnUploadProgressOpen(file.name);

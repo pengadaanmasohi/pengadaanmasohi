@@ -929,7 +929,7 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
   <section id="view-fk-view" class="view">
     <div class="page-head">
       <div>
-        <h2>File Kontrak — Lihat Kontrak <span class="count-badge" id="fk-view-count">0</span></h2>
+        <h2>Daftar File Kontrak <span class="count-badge" id="fk-view-count">0</span></h2>
       </div>
       <div class="head-right-tools">
         <div class="fk-seg mod-seg" id="fk-view-seg">
@@ -1016,7 +1016,7 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
   <section id="view-pn-lihat" class="view">
     <div class="page-head">
       <div>
-        <h2>Penetapan Nomor <span class="count-badge" id="pn-lihat-count">0</span></h2>
+        <h2>Daftar Nomor Dokumen <span class="count-badge" id="pn-lihat-count">0</span></h2>
       </div>
       <div class="filter-field toolbar-search pn-search-right search-elegant pn-head-search">
         <div class="search-elegant-box">
@@ -1457,9 +1457,9 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
   <input type="file" id="pn-file-input" style="display:none"
     accept="application/pdf,.pdf">
 
-  <!-- Input file tersembunyi untuk unggah File Kontrak -->
+  <!-- Input file tersembunyi untuk unggah File Kontrak (khusus PDF) -->
   <input type="file" id="fk-file-input" style="display:none"
-    accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.zip,.rar">
+    accept="application/pdf,.pdf">
 
   <!-- Input file tersembunyi untuk unggah Template Hari Libur -->
   <input type="file" id="hl-file-input" style="display:none"
@@ -1480,7 +1480,7 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
   <section id="view-spk-view" class="view">
     <div class="page-head">
       <div>
-        <h2>Lihat Kontrak — Surat Perintah Kerja <span class="count-badge" id="spk-view-count">0</span></h2>
+        <h2>Daftar Surat Perintah Kerja <span class="count-badge" id="spk-view-count">0</span></h2>
       </div>
       <!-- Urutan disamakan dengan menu lain: kotak Cari di kiri, tombol aksi di kanan -->
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end">
@@ -1701,6 +1701,29 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
       </div>
     </div>
     <div class="pn-preview-body" id="pn-preview-body"></div>
+  </div>
+</div>
+
+<!-- ====== MODAL UNGGAH FILE KONTRAK (Drag & Drop / Telusuri) ====== -->
+<div class="overlay" id="fk-upload-overlay" onclick="if(event.target===this) fkCloseUploadModal()">
+  <div class="modal fk-upload-modal">
+    <div class="detail-head">
+      <h3>Unggah File Kontrak</h3>
+      <button class="detail-close" onclick="fkCloseUploadModal()">&times;</button>
+    </div>
+    <div class="fk-up-body">
+      <div class="fk-dropzone" id="fk-dropzone" tabindex="0"
+           onclick="fkDzBrowse()"
+           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();fkDzBrowse();}"
+           ondragover="fkDzDragOver(event)" ondragleave="fkDzDragLeave(event)" ondrop="fkDzDrop(event)">
+        <div class="fk-dz-ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v13"/></svg>
+        </div>
+        <div class="fk-dz-title">Seret &amp; letakkan file di sini</div>
+        <div class="fk-dz-sub">atau <b>klik untuk menelusuri</b> file</div>
+        <div class="fk-dz-hint">Hanya file PDF • maks. <span id="fk-dz-max">50</span> MB</div>
+      </div>
+    </div>
   </div>
 </div>
 
