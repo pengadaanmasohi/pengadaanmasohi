@@ -436,7 +436,7 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Download Template
         </button>
-        <button class="btn btn-teal" onclick="document.getElementById('xlsx-upload').click()">
+        <button class="btn btn-teal" onclick="openTplUpload({title:'Unggah Template — Monitoring',accept:'.xlsx,.xls',hint:'Hanya file Excel (.xlsx / .xls)',onFile:function(f){handleUpload({target:{files:[f],value:''}});}})">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           Upload Template
         </button>
@@ -586,7 +586,7 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Download Template
         </button>
-        <button class="btn btn-teal" onclick="document.getElementById('xlsx-upload-pl').click()">
+        <button class="btn btn-teal" onclick="openTplUpload({title:'Unggah Template — Pengadaan Langsung',accept:'.xlsx,.xls',hint:'Hanya file Excel (.xlsx / .xls)',onFile:function(f){handleUploadPl({target:{files:[f],value:''}});}})">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           Upload Template
         </button>
@@ -738,7 +738,7 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Download Template
         </button>
-        <button class="btn btn-teal" onclick="document.getElementById('xlsx-upload-tender').click()">
+        <button class="btn btn-teal" onclick="openTplUpload({title:'Unggah Template — Tender',accept:'.xlsx,.xls',hint:'Hanya file Excel (.xlsx / .xls)',onFile:function(f){handleUploadTender({target:{files:[f],value:''}});}})">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           Upload Template
         </button>
@@ -1701,6 +1701,30 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
       </div>
     </div>
     <div class="pn-preview-body" id="pn-preview-body"></div>
+  </div>
+</div>
+
+<!-- ====== MODAL UNGGAH TEMPLATE (generik: dipakai semua tombol "Upload Template", beda hanya judul & jenis file) ====== -->
+<div class="overlay" id="tpl-up-overlay" onclick="if(event.target===this) tplUpClose()">
+  <div class="modal fk-upload-modal">
+    <div class="detail-head">
+      <h3 id="tpl-up-title">Unggah Template</h3>
+      <button class="detail-close" onclick="tplUpClose()">&times;</button>
+    </div>
+    <div class="fk-up-body">
+      <div class="fk-dropzone" id="tpl-up-dz" tabindex="0"
+           onclick="tplUpBrowse()"
+           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();tplUpBrowse();}"
+           ondragover="tplUpDragOver(event)" ondragleave="tplUpDragLeave(event)" ondrop="tplUpDrop(event)">
+        <div class="fk-dz-ic">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v13"/></svg>
+        </div>
+        <div class="fk-dz-title">Seret &amp; letakkan file di sini</div>
+        <div class="fk-dz-sub">atau <b>klik untuk menelusuri</b> file</div>
+        <div class="fk-dz-hint" id="tpl-up-hint">Hanya file Excel (.xlsx)</div>
+      </div>
+      <input type="file" id="tpl-up-input" style="display:none">
+    </div>
   </div>
 </div>
 

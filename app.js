@@ -5323,7 +5323,7 @@ function renderHariLibur(){
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'+
           ' Download Template'+
         '</button>'+
-        '<button class="btn btn-teal" onclick="document.getElementById(\'hl-file-input\').click()">'+
+        '<button class="btn btn-teal" onclick="openTplUpload({title:\'Unggah Template — Hari Libur\',accept:\'.xlsx,.xls\',hint:\'Hanya file Excel (.xlsx / .xls)\',onFile:function(f){hlHandleUpload({target:{files:[f],value:\'\'}});}})">'+
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>'+
           ' Upload Template'+
         '</button>'+
@@ -6701,6 +6701,55 @@ function fkHandleFileSelected(file){
   if(!file) return;
   fkSubmitFromModal(file);
 }
+
+/* ===== Popup Unggah Template (generik) — tampilan sama dengan Unggah File Kontrak,
+   hanya beda judul pop up & jenis file. Dipakai semua tombol "Upload Template".
+   openTplUpload({title, accept, hint, onFile}) — onFile menerima objek File. ===== */
+let tplUpCtx=null;
+function openTplUpload(opts){
+  tplUpCtx=opts||{};
+  const ov=document.getElementById('tpl-up-overlay'); if(!ov) return;
+  const t=document.getElementById('tpl-up-title'); if(t) t.textContent=tplUpCtx.title||'Unggah Template';
+  const h=document.getElementById('tpl-up-hint'); if(h) h.textContent=tplUpCtx.hint||'';
+  const inp=document.getElementById('tpl-up-input'); if(inp){ inp.accept=tplUpCtx.accept||''; inp.value=''; }
+  const dz=document.getElementById('tpl-up-dz'); if(dz) dz.classList.remove('fk-dz-over');
+  ov.classList.add('show');
+}
+function tplUpClose(){
+  const ov=document.getElementById('tpl-up-overlay'); if(ov) ov.classList.remove('show');
+  const dz=document.getElementById('tpl-up-dz'); if(dz) dz.classList.remove('fk-dz-over');
+}
+function tplUpBrowse(){ const inp=document.getElementById('tpl-up-input'); if(inp){ inp.value=''; inp.click(); } }
+function tplUpDragOver(ev){
+  if(!ev.dataTransfer || !Array.from(ev.dataTransfer.types||[]).includes('Files')) return;
+  ev.preventDefault(); ev.stopPropagation(); ev.dataTransfer.dropEffect='copy';
+  const dz=document.getElementById('tpl-up-dz'); if(dz) dz.classList.add('fk-dz-over');
+}
+function tplUpDragLeave(ev){
+  ev.stopPropagation();
+  const dz=document.getElementById('tpl-up-dz');
+  if(dz && (!ev.relatedTarget || !dz.contains(ev.relatedTarget))) dz.classList.remove('fk-dz-over');
+}
+function tplUpDrop(ev){
+  ev.preventDefault(); ev.stopPropagation();
+  const dz=document.getElementById('tpl-up-dz'); if(dz) dz.classList.remove('fk-dz-over');
+  const f=ev.dataTransfer && ev.dataTransfer.files ? ev.dataTransfer.files[0] : null;
+  tplUpSubmit(f);
+}
+function tplUpExtOk(file){
+  const acc=(tplUpCtx&&tplUpCtx.accept)||''; if(!acc) return true;
+  const nm=String(file.name||'').toLowerCase();
+  const exts=acc.split(',').map(a=>a.trim().toLowerCase()).filter(a=>a && a.indexOf('/')<0);
+  if(!exts.length) return true;
+  return exts.some(a=>nm.endsWith(a.replace(/^\*/,'')));
+}
+function tplUpSubmit(file){
+  if(!file) return;
+  if(!tplUpExtOk(file)){ toast('Jenis berkas tidak sesuai','warn'); return; }
+  const ctx=tplUpCtx; tplUpClose();
+  if(ctx && typeof ctx.onFile==='function') ctx.onFile(file);
+}
+(function(){ const inp=document.getElementById('tpl-up-input'); if(inp) inp.addEventListener('change', e=>{ const f=e.target.files&&e.target.files[0]; tplUpSubmit(f); }); })();
 
 /* Inti proses unggah file kontrak — dipakai baik oleh pemilih file (click)
    maupun drag-and-drop. */
@@ -21941,26 +21990,20 @@ function spkKlausulOpenEditor(k){
     ov.addEventListener('click', function(e){ if(e.target.id==='spk-kldoc-ov') spkKlDocAskClose(); });
   }
   ov.innerHTML=
-    '<div class="spk-ov-modal spk-ov-we" style="height:auto;max-height:92vh">'+
+    '<div class="spk-ov-modal spk-ov-we" style="height:auto;max-height:92vh;width:min(530px,96vw)">'+
       '<div class="spk-ov-head spk-we-head">'+
-        '<span class="spk-ov-title">'+(isEdit?'Ubah Klausul':'Tambah Klausul')+' — Template Word (.docx)</span>'+
+        '<span class="spk-ov-title">Unggah Klausul Kontrak</span>'+
         '<div class="spk-we-wbtns">'+
           '<button type="button" class="spk-we-wbtn close" title="Tutup" onclick="spkKlDocAskClose()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>'+
         '</div>'+
       '</div>'+
       '<div class="spk-ov-body">'+
         '<div class="spk-kldoc-top">'+
-          '<div class="field" style="margin:0"><label>Judul Klausul <span style="font-weight:400;color:#8a99a0">— pilih teks lalu tekan tombol <i>I</i> (atau Ctrl+I) untuk memiringkan</span></label>'+
-            '<div class="spk-kldoc-jwrap">'+
-              '<div id="spk-kldoc-judul" class="spk-kldoc-jinput" contenteditable="true" spellcheck="false" data-ph="mis. HARGA PEKERJAAN" oninput="spkKlDocHead()">'+(isEdit?spkJudulSan(k.judul||''):'')+'</div>'+
-              '<button type="button" class="spk-kldoc-jbtn" title="Miring (Ctrl+I)" onmousedown="return spkWEmd(event)" onclick="spkKlDocItalic()"><i>I</i></button>'+
-            '</div>'+
-          '</div>'+
+          /* Judul klausul otomatis mengikuti judul pada template .docx (tebal & miring ikut terbawa) — disimpan tersembunyi */
+          '<div id="spk-kldoc-judul" class="spk-kldoc-jinput" contenteditable="true" spellcheck="false" style="display:none">'+(isEdit?spkJudulSan(k.judul||''):'')+'</div>'+
           '<div class="spk-kldoc-tools">'+
             '<button type="button" class="btn btn-teal btn-sm" onclick="spkKlDocDownload()">'+
               '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg> Download Template (.docx)</button>'+
-            '<button type="button" class="btn btn-green btn-sm" onclick="spkKlDocBrowse()">'+
-              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5M12 3v12"/></svg> Upload Template (.docx)</button>'+
             '<input type="file" id="spk-kldoc-file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="display:none" onchange="spkKlDocUpload(event)">'+
             '<span class="spk-kldoc-meta" id="spk-kldoc-meta"></span>'+
           '</div>'+
@@ -21968,7 +22011,9 @@ function spkKlausulOpenEditor(k){
           '<div class="spk-kldoc-dz show" id="spk-kldoc-dz" onclick="spkKlDocBrowse()">'+
             '<svg class="spk-kldoc-dzic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+
               '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5M12 3v12"/></svg>'+
-            '<div class="t">Drag &amp; Drop berkas .docx ke sini</div>'+
+            '<div class="t">Seret &amp; letakkan berkas .docx di sini</div>'+
+            '<div class="s">atau <b>klik untuk menelusuri</b> berkas</div>'+
+            '<div class="s2">Hanya berkas Word (.docx)</div>'+
           '</div>'+
         '</div>'+
       '</div>'+
