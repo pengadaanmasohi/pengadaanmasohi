@@ -21119,7 +21119,21 @@ function spkKlausulDelete(id){
     }});
 }
 /* ---- Modal editor klausul ---- */
-function spkKlausulNew(){ spkKlausulOpenEditor(null); }
+/* "+ Klausul" -> langsung tambah klausul baru default (nomor lanjutan otomatis
+   dari posisi, isi teks default), TANPA membuka popup unggah. Template .docx bisa
+   diunggah menyusul lewat tombol Ubah pada klausul tersebut. */
+function spkKlausulNew(){
+  if(typeof requireInput==='function' && !requireInput()) return;
+  try{
+    var maxU=(records_klausul||[]).reduce(function(m,x){ return Math.max(m, Number(x.urutan)||0); },0);
+    var recNew={ id:spkKlUid(), judul:'KLAUSUL', isi:SPK_KL_PLACEHOLDER, urutan:maxU+10, aktif:true };
+    records_klausul.push(recNew);
+    if(spkState && Array.isArray(spkState.sel)) spkState.sel.push(String(recNew.id));   // langsung terpilih
+    spkKlSync();
+  }catch(err){ console.error(err); toast('Gagal menambah klausul: '+errMsg(err),'err'); return; }
+  toast('Klausul baru ditambahkan','ok');
+  renderSpkKlausul();
+}
 function spkKlausulEdit(id){ const k=records_klausul.find(x=>String(x.id)===String(id)); spkKlausulOpenEditor(k||null); }
 /* =====================================================================
    PUSTAKA KLAUSUL — TEMPLATE WORD (.docx)
