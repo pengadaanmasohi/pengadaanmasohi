@@ -12054,7 +12054,7 @@ function hpsViewRows(){
   return rows;
 }
 function hpsEmptyRow(){
-  return '<tr><td colspan="7"><div class="empty">'+
+  return '<tr><td colspan="8"><div class="empty">'+
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/></svg>'+
     '<div>Data tidak tersedia</div></div></td></tr>';
 }
@@ -12101,14 +12101,17 @@ function renderHpsView(){
       ? sum.totT
       : ((r.nilai_total!=null)?r.nilai_total:sum.totT);   // Harga Total HPS (dengan PPN)
     const tgl=hpsTglEfektif(nama, r.tgl_hps||info.tgl_hps);
+    const penHps=(typeof hpscPenetapanHpsDoc==='function')?hpscPenetapanHpsDoc(nama):null;
+    const noHps=(penHps&&penHps.no) || info.nomor || r.nomor || '';   // No. HPS (dari Penetapan Nomor / state)
     const rid=fkEsc(String(r.id));
     return '<tr>'+
       '<td class="col-no">'+(start+i+1)+'</td>'+
       '<td class="wrap-cell col-nama-freeze">'+fkEsc(nama)+'</td>'+
+      '<td style="white-space:nowrap">'+fkEsc(noHps||'—')+'</td>'+
+      '<td class="col-date" style="white-space:nowrap">'+fkEsc(tgl?fmtDate(tgl):'—')+'</td>'+
       '<td class="col-num" style="text-align:right">'+hpsRp(sum.jM)+'</td>'+
       '<td class="col-num" style="text-align:right">'+hpsRp(sum.jJ)+'</td>'+
-      '<td class="col-num" style="text-align:right;font-weight:700">'+hpsRp(nilai)+'</td>'+
-      '<td class="col-date">'+fkEsc(tgl?hpsDateLong(tgl):'—')+'</td>'+
+      '<td class="col-num" style="text-align:right;font-weight:700;white-space:nowrap">'+hpsRp(nilai)+'</td>'+
       '<td><div class="action-cell" style="justify-content:center">'+
         '<button class="act act-edit" title="Ubah" onclick="openHpsInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
         '<button class="act act-view" title="Lihat" onclick="hpsPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
