@@ -5649,7 +5649,7 @@ function renderJadwalKerja(){
       '<div class="jp-summary-card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></div><div class="txt"><b>'+(totDur?fkEsc(jpFmtDurasi(totDur.hari,totDur.jam,totDur.menit)):'0 Jam')+'</b><span>Durasi Pengadaan</span></div></div>'+
       '<div class="jp-summary-card jp-profil-card">'+
         '<button type="button" class="jp-profil-btn is-save" title="Simpan Profil" onclick="jpProfilOpenSave()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg><span>Profil</span></button>'+
-        '<button type="button" class="jp-profil-btn is-load" title="Muat Profil" onclick="jpProfilOpenLoad()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6M9 14h6"/></svg><span>Muat Profil</span></button>'+
+        '<button type="button" class="jp-profil-btn is-load" title="Muat Profil" onclick="jpProfilOpenLoad()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg><span>Profil</span></button>'+
         btnBatal+
       '</div>'+
     '</div>';
@@ -9234,7 +9234,7 @@ function renderPnwForm(){
         '<span class="pnw-syarat-title-txt">'+FKL_SEC_ICON+'Pengisian Persyaratan</span>'+
         '<span class="pnw-profil-bar">'+
           '<button type="button" class="btn btn-amber pnw-profil-btn" title="Simpan Profil" onclick="pnwProfilOpenSave()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Profil</button>'+
-          '<button type="button" class="btn btn-teal pnw-profil-btn" onclick="pnwProfilOpenLoad()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Muat Profil</button>'+
+          '<button type="button" class="btn btn-teal pnw-profil-btn" title="Muat Profil" onclick="pnwProfilOpenLoad()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>Profil</button>'+
           (st.profilLoaded ? '<button type="button" class="btn btn-red pnw-profil-btn" onclick="pnwProfilCancel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Batalkan Profil</button>' : '')+
         '</span>'+
       '</div>'+body+'</div>';
@@ -20685,9 +20685,9 @@ function renderSpkKlausul(){
         '<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg> Pustaka Klausul SPK '+tagProfil+'</span>'+
         '<span class="spk-klbar">'+
           '<button type="button" class="jp-profil-btn is-save" title="Simpan Profil" onclick="spkKlProfilOpenSave()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg><span>Profil</span></button>'+
-          '<button type="button" class="jp-profil-btn is-load" onclick="spkKlProfilOpenLoad()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6M9 14h6"/></svg><span>Muat Profil</span></button>'+
+          '<button type="button" class="jp-profil-btn is-load" title="Muat Profil" onclick="spkKlProfilOpenLoad()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg><span>Profil</span></button>'+
           btnBatal+
-          '<button class="btn btn-green" onclick="spkKlausulNew()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Tambah Klausul</button>'+
+          '<button class="btn btn-green" title="Tambah Klausul" onclick="spkKlausulNew()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Klausul</button>'+
         '</span>'+
       '</div>'+
       '<div class="hps-hint" style="margin:0 0 12px">Pustaka klausul ini <b>milik kontrak yang sedang disusun</b>. Menyunting, menambah, atau menghapus klausul di sini <b>tidak mengubah kontrak lain</b>. Kontrak baru selalu dimulai dari 3 klausul kosong — pakai <b>Muat Profil</b> untuk memanggil set klausul yang sudah jadi.</div>'+
@@ -20855,7 +20855,7 @@ function spkPyProfilBarHtml(){
     : '';
   return '<span class="spk-klbar">'+
     '<button type="button" class="jp-profil-btn is-save" title="Simpan Profil" onclick="spkPyProfilOpenSave()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg><span>Profil</span></button>'+
-    '<button type="button" class="jp-profil-btn is-load" onclick="spkPyProfilOpenLoad()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6M9 14h6"/></svg><span>Muat Profil</span></button>'+
+    '<button type="button" class="jp-profil-btn is-load" title="Muat Profil" onclick="spkPyProfilOpenLoad()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg><span>Profil</span></button>'+
     btnBatal+
   '</span>';
 }
@@ -23023,7 +23023,7 @@ function profilDoLoad(kind, name){ var r=PROFIL_REG[kind]; if(r&&r.doLoad) try{ 
 function profilDoDelete(kind, name){ var r=PROFIL_REG[kind]; if(r&&r.doDelete) try{ r.doDelete(name); }catch(e){ console.error(e); } }
 
 /* Ikon SVG elegan (garis) untuk tombol aksi profil */
-var PROFIL_LOAD_ICON  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H21a2 2 0 0 1 1.94 2.5l-1.55 6A2 2 0 0 1 19.46 20H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/></svg>';
+var PROFIL_LOAD_ICON  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>';
 var PROFIL_TRASH_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6M14 11v6"/></svg>';
 var PROFIL_DL_ICON    = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>';
 var PROFIL_UP_ICON    = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>';

@@ -4474,3 +4474,13 @@ table.ac-list thead th{ background:linear-gradient(180deg,#eef6f7,#dfedee); box-
 /* Unduh = teal outline */
 .pf-ic-dl{ color:#0a5e66; }
 .pf-ic-dl:hover{ background:linear-gradient(180deg,#edf7f8,#e2f0f1); border-color:#bfe0e2; color:#0E7C86; }
+
+/* Penyesuaian: ikon aksi profil lebih kecil + ikon Unggah lebih tegas */
+.pnw-profil-item-btns{ gap:7px; }
+.pf-ic{ width:34px; height:34px; border-radius:10px; }
+.pf-ic svg{ width:16px; height:16px; }
+.pnw-profil-head{ padding-right:60px !important; }
+.pnw-profil-upload.pf-ic-up{ width:40px; height:40px; border-radius:12px; top:18px; right:20px; }
+.pnw-profil-upload.pf-ic-up svg{ width:19px; height:19px; }
+.pnw-profil-upload.pf-ic-up svg *{ stroke-width:2.4; }
+.pnw-profil-upload.pf-ic-up svg{ filter:drop-shadow(0 1px 2px rgba(0,0,0,.35)); }
