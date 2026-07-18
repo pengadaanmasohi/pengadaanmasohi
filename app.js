@@ -1694,7 +1694,7 @@ function viewRecord(rid){
     let rows='';
     g.keys.forEach(k=>{
       const f=FIELDS.find(x=>x.key===k);
-      rows+=`<div class="detail-row"><span class="dk">${f.label}</span><span class="dv">${fmt(rec[k],f.type)||'—'}</span></div>`;
+      rows+=`<div class="detail-row"><span class="dk">${f.label}</span><span class="dv">${fmtMulti(rec[k],f.type)||'—'}</span></div>`;
     });
     html+=detailGroupHTML(g.title, rows);
   });
@@ -1716,6 +1716,16 @@ function fmt(v,type){
   return String(v);
 }
 function rupiah(n){ if(n===''||n==null||isNaN(n))return''; return 'Rp '+Number(n).toLocaleString('id-ID'); }
+/* Tampilan detail: bila nilai teks memuat >1 baris dalam satu sel (Alt+Enter),
+   tampilkan sebagai daftar bernomor (1., 2., ...) — sama seperti Bidang/Sub Bidang.
+   Nilai satu baris atau tipe angka/tanggal tetap diformat normal lewat fmt(). */
+function fmtMulti(v,type){
+  if(v==null||v==='') return '';
+  if(type==='num'||type==='date') return fmt(v,type);
+  const lines=String(v).split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+  if(lines.length<=1) return fmt(v,type);
+  return lines.map((s,i)=>`<span class="stack-line"><b class="stack-no">${i+1}.</b> ${s}</span>`).join('');
+}
 /* ---- Format currency Rupiah pada INPUT (tanpa desimal) ---- */
 /* Ambil angka mentah (integer, tanpa desimal) dari string/Number apa pun; '' bila kosong */
 function parseRupiah(str){
@@ -3650,7 +3660,7 @@ function viewRecordPl(rid){
         const dv=shown.length ? (shown.length>1 ? shown.map((v,i)=>`<span class="stack-line"><b class="stack-no">${i+1}.</b> ${v}</span>`).join('') : shown[0]) : '—';
         rows+=`<div class="detail-row"><span class="dk">${f.label}</span><span class="dv">${dv}</span></div>`;
       }else{
-        rows+=`<div class="detail-row"><span class="dk">${f.label}</span><span class="dv">${fmt(rec[k],f.type)||'—'}</span></div>`;
+        rows+=`<div class="detail-row"><span class="dk">${f.label}</span><span class="dv">${fmtMulti(rec[k],f.type)||'—'}</span></div>`;
       }
     });
     html+=detailGroupHTML(g.title, rows);
@@ -4870,7 +4880,7 @@ function viewRecordTender(rid){
       let rows='';
       layers.forEach((lay,idx)=>{
         if(multi) rows+=`<div class="detail-row detail-penyedia"><span class="dk">Penyedia ${idx+1}</span><span class="dv"></span></div>`;
-        g.keys.forEach(k=>{ const f=FIELDS_TENDER.find(x=>x.key===k); rows+=`<div class="detail-row"><span class="dk">${tenderFieldLabel(f,rec)}</span><span class="dv">${fmt(lay[k],f.type)||'—'}</span></div>`; });
+        g.keys.forEach(k=>{ const f=FIELDS_TENDER.find(x=>x.key===k); rows+=`<div class="detail-row"><span class="dk">${tenderFieldLabel(f,rec)}</span><span class="dv">${fmtMulti(lay[k],f.type)||'—'}</span></div>`; });
       });
       html+=detailGroupHTML(multi ? `${g.title} — ${layers.length} penyedia` : g.title, rows);
       return;
@@ -4888,7 +4898,7 @@ function viewRecordTender(rid){
         const dv=(list.length>1) ? list.map((v,i)=>`<span class="stack-line"><b class="stack-no">${i+1}.</b> ${(v!=null&&v!=='')?v:'—'}</span>`).join('') : (fmt(list[0],f.type)||'—');
         rows+=`<div class="detail-row"><span class="dk">${tenderFieldLabel(f,rec)}</span><span class="dv">${dv}</span></div>`;
       }else{
-        rows+=`<div class="detail-row"><span class="dk">${tenderFieldLabel(f,rec)}</span><span class="dv">${fmt(rec[k],f.type)||'—'}</span></div>`;
+        rows+=`<div class="detail-row"><span class="dk">${tenderFieldLabel(f,rec)}</span><span class="dv">${fmtMulti(rec[k],f.type)||'—'}</span></div>`;
       }
     });
     html+=detailGroupHTML(g.title, rows);
@@ -12086,16 +12096,17 @@ function renderHpsView(){
     // yang bisa basi karena dibekukan saat HPS terakhir disimpan.
     const linkedUmum = !!(info.analisaId && info.analisaJenis==='Umum');
     if(linkedUmum) hpsResyncLockedHarga(stt);
+    const sum=hpsSummary(stt);           // rincian Harga Barang (jM) & Harga Jasa (jJ)
     const nilai = linkedUmum
-      ? hpsSummary(stt).totT
-      : ((r.nilai_total!=null)?r.nilai_total:hpsSummary(stt).totT);
+      ? sum.totT
+      : ((r.nilai_total!=null)?r.nilai_total:sum.totT);   // Harga Total HPS (dengan PPN)
     const tgl=hpsTglEfektif(nama, r.tgl_hps||info.tgl_hps);
     const rid=fkEsc(String(r.id));
     return '<tr>'+
       '<td class="col-no">'+(start+i+1)+'</td>'+
       '<td class="wrap-cell col-nama-freeze">'+fkEsc(nama)+'</td>'+
-      '<td class="fkl-col-lokasi">'+fkEsc(lokasi||'—')+'</td>'+
-      '<td>'+fkEsc(metode||'—')+'</td>'+
+      '<td class="col-num" style="text-align:right">'+hpsRp(sum.jM)+'</td>'+
+      '<td class="col-num" style="text-align:right">'+hpsRp(sum.jJ)+'</td>'+
       '<td class="col-num" style="text-align:right;font-weight:700">'+hpsRp(nilai)+'</td>'+
       '<td class="col-date">'+fkEsc(tgl?hpsDateLong(tgl):'—')+'</td>'+
       '<td><div class="action-cell" style="justify-content:center">'+
