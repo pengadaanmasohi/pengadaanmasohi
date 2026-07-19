@@ -17199,6 +17199,12 @@ function spkDocCss(){
      isi). Selisih ~0,15cm membuat penomoran sub-klausul (mis. "5.1.", "8.1.") mulai
      sedikit masuk ke kanan dari teks judul klausul — bukan sejajar/keluar ke kiri. */
   '.spk-clause .spk-cl{padding-left:0.9cm}'+
+  /* PERJANJIAN/KONTRAK: isi klausul TIDAK menjorok terhadap judul. Judul (PASAL n
+     + nama pasal) sudah rata tengah, sedangkan isi — baik paragraf bernomor
+     ("1.", "a.") maupun teks biasa — dimulai tepat di batas margin kiri kertas
+     dan berakhir di batas margin kanan. Bentuk Surat Perintah Kerja tetap
+     memakai indentasi 0,9 cm seperti semula. */
+  '.spk-doc.spk-pk .spk-clause .spk-cl{padding-left:0}'+
   '.spk-cl p{margin:0 0 6pt;text-align:justify;line-height:'+spkLHCss(1.15)+'}'+
   /* kl0 = paragraf biasa (sejajar teks judul); kldesc = deskripsi menjorok */
   '.spk-cl p.kl0{margin-left:0;text-indent:0}'+
@@ -17429,6 +17435,28 @@ function spkDocCss2(){
   '.spk-toc2 .row .nm i{font-style:italic}'+
   '.spk-toc2 .row .dot{flex:1;border-bottom:1.5px dotted #D6DAE0;transform:translateY(-3px);margin:0 14px}'+
   '.spk-toc2 .row .pg{flex:0 0 auto;font-weight:800;color:#1B3A6B;font-size:15px;min-width:2em;text-align:right;font-variant-numeric:tabular-nums}'+
+  /* ---- Kerapatan Daftar Isi (otomatis, lihat spkTocDensity) ----
+     d1/d2 = satu kolom dengan jarak baris makin rapat; d3 = dua kolom untuk
+     dokumen berpasal banyak (mis. Perjanjian/Kontrak 43 pasal). Judul yang
+     panjang boleh melipat ke baris kedua tanpa mendorong nomor halaman. */
+  '.spk-tocpage .spk-toc2.d1 .row{padding:11px 2px;font-size:13px}'+
+  '.spk-tocpage .spk-toc2.d1 .row .no{width:40px;font-size:15px}'+
+  '.spk-tocpage .spk-toc2.d1 .row .nm{font-size:13px}'+
+  '.spk-tocpage .spk-toc2.d1 .row .pg{font-size:14px}'+
+  '.spk-tocpage .spk-toc2.d2 .row{padding:7px 2px;font-size:12px;line-height:1.25}'+
+  '.spk-tocpage .spk-toc2.d2 .row .no{width:34px;font-size:13px}'+
+  '.spk-tocpage .spk-toc2.d2 .row .nm{font-size:12px}'+
+  '.spk-tocpage .spk-toc2.d2 .row .pg{font-size:12.5px}'+
+  '.spk-tocpage .spk-toc2.d2 .row .dot{margin:0 9px}'+
+  '.spk-tocpage .spk-toc2.d3{column-count:2;column-gap:9mm;margin-top:2px}'+
+  '.spk-tocpage .spk-toc2.d3 .row{display:flex;break-inside:avoid;page-break-inside:avoid;'+
+    'padding:4.5px 1px;font-size:10.5px;line-height:1.22}'+
+  '.spk-tocpage .spk-toc2.d3 .row .no{width:24px;font-size:11px}'+
+  '.spk-tocpage .spk-toc2.d3 .row .nm{flex:1 1 auto;max-width:none;font-size:10.5px}'+
+  '.spk-tocpage .spk-toc2.d3 .row .dot{flex:0 1 18px;min-width:6px;margin:0 5px;transform:translateY(-2px)}'+
+  '.spk-tocpage .spk-toc2.d3 .row .pg{font-size:11px;min-width:1.4em}'+
+  /* Pada dua kolom, baris pertama tiap kolom tetap bergaris atas agar rata */
+  '.spk-tocpage .spk-toc2.d3 .row:first-child{border-top:1px solid #E2E2E2}'+
   /* ---------- KOP & FOOTER BERULANG (halaman isi) ---------- */
   'table.spk-run{width:100%;border-collapse:collapse;border:0;background:transparent}'+
   'table.spk-run > thead > tr > td,table.spk-run > tbody > tr > td,table.spk-run > tfoot > tr > td{padding:0;border:0;background:transparent}'+
@@ -20338,9 +20366,22 @@ function spkCoverHtml(data, ctx, judulBaris){
 }
 
 /* ---------- Daftar Isi ---------- */
+/* Kerapatan baris menyesuaikan JUMLAH klausul supaya seluruh daftar tetap muat
+   dalam satu lembar A4 (tidak melewati margin bawah). Surat Perintah Kerja yang
+   klausulnya sedikit tetap memakai jarak lapang seperti semula; Perjanjian/Kontrak
+   dengan puluhan pasal otomatis dirapatkan, dan di atas 28 pasal daftar dipecah
+   menjadi dua kolom. */
+function spkTocDensity(n){
+  n = Number(n)||0;
+  if(n > 28) return ' d3';
+  if(n > 22) return ' d2';
+  if(n > 16) return ' d1';
+  return '';
+}
 function spkTocHtml(data, klausul){
   const esc=fkEsc;
-  const rows=(klausul||[]).map((k,i)=>{
+  const list=klausul||[];
+  const rows=list.map((k,i)=>{
     const no=(i+1)<10 ? ('0'+(i+1)) : String(i+1);
     return '<div class="row"><span class="no">'+no+'</span>'+
       '<span class="nm">'+spkFmtJudulTitle(k.judul)+'</span>'+
@@ -20354,7 +20395,7 @@ function spkTocHtml(data, klausul){
       '<div class="toc-meta"><b>'+esc(spkDokLabel(data))+'</b><span>'+esc(data.nomor_kontrak||'\u2014')+'</span></div>'+
     '</div>'+
     '<div class="toc-rule"></div>'+
-    '<div class="spk-toc2">'+rows+'</div>'+
+    '<div class="spk-toc2'+spkTocDensity(list.length)+'">'+rows+'</div>'+
   '</section>';
 }
 
