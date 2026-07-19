@@ -17459,9 +17459,10 @@ function spkDocCss2(){
   '.spk-cover.cv-pk .cv-parties .p{border-left:3px solid #1B3A6B}'+
   '.spk-cover.cv-pk .cv-grid .f{border-left:3px solid #1B3A6B}'+
   '.spk-cover.cv-pk .cv-nilai{background:linear-gradient(135deg,#12304F,#1B3A6B);border-left:4px solid #F6B40E}'+
-  /* ---------- Kop nomor kedua pihak (preamble Perjanjian/Kontrak) ---------- */
-  '.spk-pknum{margin:0 0 10px;padding:9px 12px;border:1px solid #E3E9F3;border-left:3px solid #1B3A6B;'+
-    'border-radius:7px;background:#FAFBFE;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  /* ---------- Kop nomor kedua pihak (preamble Perjanjian/Kontrak) ----------
+     Tampil POLOS: tanpa latar, bingkai, sudut membulat, maupun padding —
+     hanya baris "Label : nilai" biasa menyatu dengan badan dokumen. */
+  '.spk-pknum{margin:0 0 10px;padding:0;border:0;border-radius:0;background:none}'+
   '.spk-pknum .r{display:flex;gap:6px;line-height:1.75}'+
   '.spk-pknum .k{flex:0 0 42%;font-weight:700}'+
   '.spk-pknum .s{flex:0 0 8px}'+
