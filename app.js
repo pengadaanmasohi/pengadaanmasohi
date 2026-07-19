@@ -17596,23 +17596,13 @@ function spkDocCss2(){
 
   /* ==========================================================================
      PERJANJIAN/KONTRAK — HALAMAN ISI KLAUSUL
-     Kop berulang ditiadakan (lihat spkRunHeadHtml) dan kaki halaman diringkas:
-       tengah = "N dari M", kanan = kotak paraf PIHAK PERTAMA / PIHAK KEDUA.
-     Seluruh bidang cetak diberi BINGKAI tipis, mengikuti tata letak dokumen
-     perjanjian cetak. Semua aturan di bawah bersyarat pada .spk-doc.spk-pk dan
-     dikecualikan untuk lembar Lampiran, sehingga bentuk Surat Perintah Kerja
-     maupun halaman Sampul/Daftar Isi tidak tersentuh sama sekali.
+     Kop berulang ditiadakan (lihat spkRunHeadHtml) dan seluruh bidang cetak
+     diberi BINGKAI tipis, mengikuti tata letak dokumen perjanjian cetak.
+     Kaki halaman TIDAK diubah — tetap sama dengan Surat Perintah Kerja.
+     Aturan di bawah bersyarat pada .spk-doc.spk-pk dan dikecualikan untuk lembar
+     Lampiran, sehingga bentuk Surat Perintah Kerja maupun halaman Sampul/Daftar
+     Isi tidak tersentuh sama sekali.
      ========================================================================== */
-  '.spk-doc.spk-pk .spk-rft-pk{border-top:0;margin-top:10px;padding-top:6px}'+
-  '.spk-doc.spk-pk .spk-rft-pk .ft-row{align-items:flex-end;font-weight:400}'+
-  '.spk-doc.spk-pk .spk-rft-pk .l,.spk-doc.spk-pk .spk-rft-pk .r{flex:1 1 0}'+
-  '.spk-doc.spk-pk .spk-rft-pk .c{flex:0 0 auto;text-align:center}'+
-  '.spk-doc.spk-pk .spk-rft-pk .ft-pg{font-size:10.5px;font-weight:400;letter-spacing:.02em;color:#201E1D}'+
-  /* Kotak paraf: label kecil di kiri, ruang paraf bergaris di kanannya */
-  '.spk-doc.spk-pk .spk-rft-pk .r{display:flex;flex-direction:column;align-items:flex-end;gap:2px}'+
-  '.spk-doc.spk-pk .spk-rft-pk .pf{display:flex;align-items:flex-end;gap:6px}'+
-  '.spk-doc.spk-pk .spk-rft-pk .pf span{font-size:8.5px;font-weight:400;letter-spacing:.04em;color:#201E1D;white-space:nowrap}'+
-  '.spk-doc.spk-pk .spk-rft-pk .pf i{display:block;width:1.6cm;height:1.05em;border-bottom:1px solid #201E1D}'+
   /* Bingkai bidang cetak — digambar sebagai lapisan terpisah supaya tidak
      mengubah tinggi/padding lembar yang sudah dipakai perhitungan paginator. */
   '.spk-doc.spk-pk .spk-page.spk-sheet:not(.spk-lampsheet){position:relative}'+
@@ -21281,26 +21271,13 @@ function spkRunHeadHtml(data){
     '<div class="r"><b>'+esc(spkDokLabel(data))+'</b><span>'+esc(data.nomor_kontrak||'\u2014')+'</span></div>'+
   '</div>';
 }
-function spkRunFootHtml(data){
+function spkRunFootHtml(){
   /* CSS (spkDocCss2) menata footer lewat .ft-row yang display:flex. Sebelumnya
      .l/.c/.r ditaruh langsung di .spk-rft tanpa .ft-row, sehingga ketiganya
-     menumpuk rata kiri. Nomor halaman (.ft-pg) diisi oleh spkPageScript(). */
-  /* PERJANJIAN/KONTRAK: kaki halaman diringkas menjadi nomor halaman di tengah
-     dan kotak paraf di kanan — mengikuti tata letak dokumen perjanjian cetak.
-     Garis pemisah tebal dan blok "UP3 MASOHI" dihilangkan. Kelas .ft-pg tetap
-     dipertahankan supaya pengisi nomor halaman (nomorFooter) bekerja apa adanya. */
-  if(spkBentukOf(data)==='PK'){
-    return '<div class="spk-rft spk-rft-pk">'+
-      '<div class="ft-row">'+
-        '<div class="l"></div>'+
-        '<div class="c"><div class="ft-pg">&#8203;</div></div>'+
-        '<div class="r">'+
-          '<div class="pf"><span>PIHAK PERTAMA</span><i></i></div>'+
-          '<div class="pf"><span>PIHAK KEDUA</span><i></i></div>'+
-        '</div>'+
-      '</div>'+
-    '</div>';
-  }
+     menumpuk rata kiri. Nomor halaman (.ft-pg) diisi oleh spkPageScript().
+     CATATAN: kaki halaman SAMA untuk Surat Perintah Kerja maupun
+     Perjanjian/Kontrak — yang ditiadakan pada Perjanjian/Kontrak hanyalah KOP
+     berulang (lihat spkRunHeadHtml). */
   return '<div class="spk-rft">'+
     '<div class="ft-row">'+
       '<div class="l">PIHAK PERTAMA <span class="ln"></span></div>'+
@@ -22088,7 +22065,7 @@ function spkDocHtml(data, klausul){
     '<section class="spk-page spk-flow" id="spk-flow">'+
       '<table class="spk-run"><thead><tr><td>'+spkRunHeadHtml(data)+'</td></tr></thead>'+
       '<tbody><tr><td>'+isiBody+'</td></tr></tbody>'+
-      '<tfoot><tr><td>'+spkRunFootHtml(data)+'</td></tr></tfoot></table>'+
+      '<tfoot><tr><td>'+spkRunFootHtml()+'</td></tr></tfoot></table>'+
     '</section>';
   // 4) Cover Lampiran + 5) Isi Lampiran
   const coverLamp=spkCoverHtml(data, ctx, spkLampTitle(data));
@@ -22566,9 +22543,27 @@ var SPK_DX_PK = {
 
 /* Kisi yang berlaku untuk bentuk yang sedang aktif pada form Penyusunan Kontrak.
    Dipakai SELURUH pembangun template .docx, sehingga Surat Perintah Kerja
-   menghasilkan berkas yang sama persis seperti sebelumnya. */
+   menghasilkan berkas yang sama persis seperti sebelumnya.
+
+   CATATAN PENTING — kenapa ada SPK_DX_OVR:
+   spkIsPk() membaca spkState.data.bentuk_kontrak, dan spkBlankState() memberi
+   nilai bawaan 'SPK'. Pustaka Klausul bisa dibuka TANPA ada kontrak yang sedang
+   disusun (state masih kosong), sehingga template Perjanjian/Kontrak terlanjur
+   dibangun memakai kisi SPK — inden tingkat-2 jadi sejajar dengan teks di
+   atasnya, bukan sedikit masuk ke kanan. Karena itu pemilih bentuk pada popup
+   template menyetel SPK_DX_OVR secara eksplisit selama berkas dibangun/dibaca,
+   dan spkIsPk() hanya dipakai sebagai nilai bawaan. */
+var SPK_DX_OVR = null;                   // 'PK' | 'SPK' | null (ikut spkIsPk())
 function spkDX(){
+  if(SPK_DX_OVR==='PK')  return SPK_DX_PK;
+  if(SPK_DX_OVR==='SPK') return SPK_DX;
   return (typeof spkIsPk==='function' && spkIsPk()) ? SPK_DX_PK : SPK_DX;
+}
+/* Jalankan fn() dengan kisi bentuk tertentu, lalu kembalikan seperti semula. */
+function spkWithDX(bentuk, fn){
+  var prev=SPK_DX_OVR;
+  SPK_DX_OVR=(bentuk==='PK'||bentuk==='SPK')?bentuk:null;
+  try{ return fn(); } finally{ SPK_DX_OVR=prev; }
 }
 
 /* ================= ZIP (tulis: metode Store + CRC32) ================= */
@@ -23468,7 +23463,23 @@ function spkWordXmlToKlausul(xmlText, stylesXml, numberingXml){
 }
 
 /* ================= MODAL: UBAH / TAMBAH KLAUSUL (via template Word) ================= */
-var spkKlDoc = { rec:null, isi:'', no:1, fileName:'', dirty:false, docx:'' };
+var spkKlDoc = { rec:null, isi:'', no:1, fileName:'', dirty:false, docx:'', bentuk:'' };
+
+/* Bentuk tata letak yang dipakai popup template. Diambil dari pilihan pengguna
+   bila sudah ada, kalau belum mengikuti bentuk yang sedang aktif. */
+function spkKlDocBentuk(){
+  var el=document.getElementById('spk-kldoc-bentuk');
+  if(el && el.value) return (el.value==='PK')?'PK':'SPK';
+  if(spkKlDoc.bentuk) return spkKlDoc.bentuk;
+  return (typeof spkIsPk==='function' && spkIsPk()) ? 'PK' : 'SPK';
+}
+function spkKlDocPk(){ return spkKlDocBentuk()==='PK'; }
+/* Ganti bentuk -> pratinjau & kop ikut menyesuaikan */
+function spkKlDocBentukUbah(){
+  var el=document.getElementById('spk-kldoc-bentuk');
+  spkKlDoc.bentuk = (el && el.value==='PK') ? 'PK' : 'SPK';
+  try{ spkKlDocHead(); spkKlDocPreview(); }catch(e){}
+}
 
 function spkKlausulOpenEditor(k){
   var isEdit=!!(k && k.id);
@@ -23480,7 +23491,8 @@ function spkKlausulOpenEditor(k){
     noKl=(i>=0)?(i+1):(aktif.length+1);
   }catch(e){}
   spkKlDoc={ rec:isEdit?k:null, isi:isEdit?String(k.isi||''):'', no:noKl, fileName:'', dirty:false,
-             docx:(isEdit && k && k.isi_docx)?String(k.isi_docx):'' };
+             docx:(isEdit && k && k.isi_docx)?String(k.isi_docx):'',
+             bentuk:((typeof spkIsPk==='function' && spkIsPk())?'PK':'SPK') };
 
   var ov=document.getElementById('spk-kldoc-ov');
   if(!ov){
@@ -23504,6 +23516,16 @@ function spkKlausulOpenEditor(k){
             '<button type="button" class="btn btn-teal btn-sm" onclick="spkKlDocDownload()">'+
               '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg> Download Template (.docx)</button>'+
             '<input type="file" id="spk-kldoc-file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="display:none" onchange="spkKlDocUpload(event)">'+
+            /* Pemilih bentuk tata letak template. Nilai bawaan mengikuti bentuk
+               yang sedang aktif, tetapi tetap bisa diubah — sebab Pustaka Klausul
+               boleh dibuka tanpa kontrak yang sedang disusun (state bawaannya
+               'SPK'), dan tanpa pemilih ini template Perjanjian/Kontrak akan
+               terbangun memakai kisi inden SPK. */
+            '<label class="spk-kldoc-bentuk">Tata letak'+
+              '<select id="spk-kldoc-bentuk" onchange="spkKlDocBentukUbah()">'+
+                '<option value="SPK"'+(spkKlDocPk()?'':' selected')+'>Surat Perintah Kerja</option>'+
+                '<option value="PK"'+(spkKlDocPk()?' selected':'')+'>Perjanjian/Kontrak</option>'+
+              '</select></label>'+
             '<span class="spk-kldoc-meta" id="spk-kldoc-meta"></span>'+
           '</div>'+
           /* Kotak Unggah File: telusuri berkas + Drag and drop (selalu tampil) */
@@ -23601,7 +23623,9 @@ function spkKlDocDownload(){
     if(spkKlDoc.docx && !_isDef){
       blob=new Blob([spkB642u8(spkKlDoc.docx)], {type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
     }else{
-      blob=spkDocxTemplateBlob(jd, spkSortDefinisiIf(jd, spkKlDoc.isi), spkKlDoc.no);
+      blob=spkWithDX(spkKlDocBentuk(), function(){
+        return spkDocxTemplateBlob(jd, spkSortDefinisiIf(jd, spkKlDoc.isi), spkKlDoc.no);
+      });
     }
     var a=document.createElement('a'), url=URL.createObjectURL(blob);
     a.href=url; a.download=nm; document.body.appendChild(a); a.click();
@@ -23624,7 +23648,9 @@ async function spkKlDocReadFile(file){
       var dec=new TextDecoder();
       var sty=zip['word/styles.xml'] ? dec.decode(zip['word/styles.xml']) : '';
       var num=zip['word/numbering.xml'] ? dec.decode(zip['word/numbering.xml']) : '';
-      var res=spkWordXmlToKlausul(dec.decode(xml), sty, num);
+      var res=spkWithDX(spkKlDocBentuk(), function(){
+        return spkWordXmlToKlausul(dec.decode(xml), sty, num);
+      });
       if(!res.html) throw new Error('Tidak ada isi klausul yang terbaca pada template.');
       /* Klausul DEFINISI selalu dirapikan ke urutan A-Z begitu selesai dibaca,
          apa pun urutan pada berkas yang diunggah. Judul dari template dipakai
@@ -23732,8 +23758,8 @@ function spkKlausulView(id){
   var _pk=(typeof spkIsPk==='function' && spkIsPk());
   var _kop = k.judul
     ? (_pk
-        ? '<p class="spk-cl-h" style="font-weight:700;text-transform:uppercase;text-align:center;margin:0 0 3pt">'+
-            '<span class="n" style="display:block;text-align:center;margin:0 0 1pt">PASAL '+fkEsc(String(noKl))+'</span>'+
+        ? '<p class="spk-cl-h" style="font-weight:700;text-transform:uppercase;text-align:center;padding-left:0;text-indent:0;margin:0 0 3pt">'+
+            '<span class="n" style="display:block;width:auto;min-width:0;padding-right:0;text-indent:0;text-align:center;white-space:nowrap;margin:0 0 1pt">PASAL '+fkEsc(String(noKl))+'</span>'+
             spkFmtJudul(k.judul)+'</p>'
         : '<p class="spk-cl-h" style="font-weight:700;text-transform:uppercase;margin:0 0 3pt">'+spkFmtJudul(k.judul)+'</p>')
     : '';

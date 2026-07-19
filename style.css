@@ -3233,6 +3233,15 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
 .spk-we-page.spk-pk .spk-cl p.kl2.spk-sl .n{width:.40cm;text-align:left}
 .spk-we-page.spk-pk .spk-cl p.kldesc{margin-left:.66cm;text-indent:0}
 .spk-we-page.spk-pk .spk-cl p .n{width:.46cm}
+/* KOP PASAL bukan kotak nomor butir.
+   Kop klausul ditulis sebagai <p class="spk-cl-h">, sehingga ikut tersapu
+   aturan ".spk-we-page .spk-cl p .n{width:.75cm}" di atas (dan .46cm pada PK).
+   Akibatnya tulisan "PASAL 1" terjepit selebar kotak nomor lalu patah menjadi
+   dua baris di tepi kiri. Di sini kop dikembalikan ke lebar alami dan rata
+   tengah, sesuai tampilan dokumen Perjanjian/Kontrak. */
+.spk-we-page.spk-pk .spk-cl p.spk-cl-h{text-align:center;padding-left:0;text-indent:0}
+.spk-we-page.spk-pk .spk-cl p.spk-cl-h .n{display:block;width:auto;min-width:0;
+  text-align:center;padding-right:0;text-indent:0;margin:0 0 1pt;white-space:nowrap}
 /* Kanvas edit ikut kisi yang sama supaya ketikan langsung tampak seperti hasilnya */
 .spk-we-doc.spk-pk{padding-left:0}
 .spk-we-doc.spk-pk p.kl0{margin-left:0;text-indent:0}
@@ -3245,7 +3254,7 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
 .spk-we-doc.spk-pk .n{width:.46cm}
 /* Kop klausul: PASAL n rata tengah dua baris */
 .spk-we-clhead.spk-pk{padding-left:0;text-indent:0;text-align:center}
-.spk-we-clhead.spk-pk .n{display:block;width:auto;text-align:center;margin:0 0 1pt}
+.spk-we-clhead.spk-pk .n{display:block;width:auto;min-width:0;text-align:center;white-space:nowrap;margin:0 0 1pt}
 .spk-we-clhead.spk-pk .spk-we-clhead-tag{display:block;margin-left:0;text-align:center}
 /* Pastikan SELURUH isi klausul (paragraf, blok pihak, baris label:nilai, daftar,
    dsb.) memakai jarak baris 1,15 di layar — sama seperti pengaturan di Word.
@@ -3296,6 +3305,10 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
 .spk-kldoc-tools{display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin-top:11px}
 .spk-kldoc-tools .btn svg{width:14px;height:14px}
 .spk-kldoc-meta{font-size:12px;color:#6B7885}
+.spk-kldoc-bentuk{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#4a5a67;white-space:nowrap}
+.spk-kldoc-bentuk select{border:1px solid #cdd9de;border-radius:8px;background:#fff;color:#12303f;
+  font:600 12px/1.2 inherit;padding:6px 8px;cursor:pointer}
+.spk-kldoc-bentuk select:focus{outline:none;border-color:#0e7c86;box-shadow:0 0 0 3px rgba(14,124,134,.15)}
 .spk-kldoc-meta b{color:#12805c}
 .spk-kldoc-note{margin-top:11px;background:#f2f7fa;border:1px solid #dbe6ee;border-radius:8px;padding:9px 11px;font-size:12px;color:#4a5a67;line-height:1.6}
 .spk-kldoc-note b{color:#12303f}
