@@ -18037,20 +18037,50 @@ function spkPkIndentStd(html){
   if(s.indexOf('class="n')<0) return s;
   try{
     var box=document.createElement('div'); box.innerHTML=s;
-    var ps=box.querySelectorAll('p'), i, p, tok, W, lvl, prev=1;
-    var STEP=SPK_PK_STEP;
+    var ps=box.querySelectorAll('p');
+    var STEP=SPK_PK_STEP, i, p, tok;
+
+    /* --- Tahap 1: tentukan tingkat & lebar alami tiap butir --- */
+    var item=[], prev=1;
     for(i=0;i<ps.length;i++){
       p=ps[i]; tok=spkPkTok(p); if(!tok) continue;
-      lvl=spkPkLevel(tok, prev);
-      /* butir bernomor/berhuruf menjadi acuan tingkat bagi bullet di bawahnya */
+      var lvl=spkPkLevel(tok, prev);
       if(/^[0-9A-Za-z]/.test(tok)) prev=lvl;
-      /* Lebar kotak = LEBAR ALAMI nomor (tidak dipaksa selebar langkah), supaya
-         jarak nomor -> teks tetap rapat seperti Word. */
-      W=spkPkNumW(p.firstElementChild);
-      p.style.marginLeft=((lvl-1)*STEP+W).toFixed(2)+'cm';
-      p.style.textIndent='-'+W.toFixed(2)+'cm';
-      p.style.paddingLeft='0cm';
+      item.push({p:p, tok:tok, lvl:lvl, w:spkPkNumW(p.firstElementChild)});
     }
+
+    /* --- Tahap 2: kelompokkan menjadi DERET ---
+       Satu deret = butir-butir setingkat yang berurutan di bawah induk yang sama.
+       Begitu muncul butir bertingkat lebih tinggi (mis. kembali ke "2."), deret
+       di tingkat bawahnya ditutup — sehingga daftar a..h di bawah butir 1 dan
+       daftar a..d di bawah butir 2 dihitung terpisah. */
+    var buka={}, deret=[];
+    for(i=0;i<item.length;i++){
+      var it=item[i], L=it.lvl, d;
+      for(d in buka){ if(Number(d)>L) delete buka[d]; }   /* tutup deret yang lebih dalam */
+      if(!buka[L]){ buka[L]=[]; deret.push(buka[L]); }
+      buka[L].push(it);
+    }
+
+    /* --- Tahap 3: satu deret = SATU lebar kotak (yang terlebar) ---
+       Dengan begitu kolom teks seluruh butir dalam deret itu sejajar, apa pun
+       lebar glif penandanya ("f." yang sempit tidak lagi menarik teksnya ke kiri).
+       Jarak nomor -> teks tetap mengikuti lebar alami penanda TERLEBAR di deret,
+       bukan dipaksa selebar satu langkah inden. */
+    for(i=0;i<deret.length;i++){
+      var g=deret[i], W=0, j;
+      for(j=0;j<g.length;j++){ if(g[j].w>W) W=g[j].w; }
+      W=Math.round(W*100)/100;
+      for(j=0;j<g.length;j++){
+        var q=g[j], sp=q.p.firstElementChild;
+        sp.style.width=W.toFixed(2)+'cm';
+        sp.style.minWidth=W.toFixed(2)+'cm';
+        q.p.style.marginLeft=((q.lvl-1)*STEP+W).toFixed(2)+'cm';
+        q.p.style.textIndent='-'+W.toFixed(2)+'cm';
+        q.p.style.paddingLeft='0cm';
+      }
+    }
+
     /* Paragraf narasi lanjutan ikut kisi yang sama */
     var np=box.querySelectorAll('p.klp1, p.kldesc');
     for(i=0;i<np.length;i++) np[i].style.marginLeft=STEP.toFixed(2)+'cm';
@@ -18060,31 +18090,61 @@ function spkPkIndentStd(html){
   }catch(e){ return s; }
 }
 
-/* ---- (3) SUB-POIN TANDA HUBUNG ----
-   Butir yang diawali "-", "–", atau "—" belum dikenali spkNumberFix (daftar
-   simbolnya tidak memuat tanda hubung), sehingga tetap berupa teks biasa dan
-   indennya kacau. Di sini tanda hubung dikotakkan seperti penanda lain supaya
-   ikut masuk kisi inden standar. */
-function spkPkBoxDash(html){
+/* ---- (3) KOTAKKAN SEMUA PENANDA YANG MASIH BERUPA TEKS ----
+   spkNumberFix() hanya mengenali penanda yang menempel PERSIS sesudah
+   `<p class="kl1">` / `<p class="kl2">`. Begitu paragrafnya berkelas lain,
+   membawa atribut tambahan, atau penandanya berada di dalam <b>/<span>,
+   penanda itu tetap teks biasa — akibatnya indennya lolos dari perapian dan
+   memakai margin bawaan Word (inilah yang membuat sebagian daftar terlihat
+   berbeda sendiri). Di sini SEMUA bentuk penanda dikotakkan:
+     1.  10.  2.1.  3.1.1.  1)   a.  b)  i.  IV.   -  –  —  dan simbol bullet
+   Paragraf judul, placeholder, dan baris "Label : nilai" dikecualikan. */
+var SPK_PK_BULLET = '\u25CF\u25CB\u25A0\u25C6\u27A4\u2713\u2726\u2022\u25E6\u2043\u2219\u203B\u2605\u2606\u2666\u2665\u25B8\u25AA\u2794\u21D2\u00BB\u2717\u2691';
+function spkPkBoxMark(html){
   var s=String(html==null?'':html);
   if(s.indexOf('<p')<0) return s;
   try{
     var box=document.createElement('div'); box.innerHTML=s;
     var ps=box.querySelectorAll('p'), i, ubah=false;
+    var reMark=new RegExp(
+      '^([\\s\\u00A0]*)('+
+        '(?:[0-9]+\\.)+'+                     /* 1.  10.  2.1.  3.1.1. */
+        '|[0-9]+\\)'+                          /* 1)                    */
+        '|[A-Za-z][.)]'+                       /* a.  b)  A.            */
+        '|[ivxlcdmIVXLCDM]{2,4}[.)]'+          /* ii.  IV.              */
+        '|[-\\u2013\\u2014]'+                  /* -  –  —               */
+        '|['+SPK_PK_BULLET+']'+
+      ')([\\s\\u00A0]+)'
+    );
     for(i=0;i<ps.length;i++){
       var p=ps[i];
+      /* lewati paragraf yang bukan butir daftar */
+      if(p.getAttribute && p.getAttribute('data-h')==='1') continue;
+      if(p.classList && (p.classList.contains('spk-ph')||p.classList.contains('spk-cl-h')||
+         p.classList.contains('spk-party-h')||p.classList.contains('spk-bab')||
+         p.classList.contains('spk-berdasar')||p.classList.contains('spk-kv'))) continue;
       var fe=p.firstElementChild;
-      if(fe && fe.tagName==='SPAN' && fe.classList && fe.classList.contains('n')) continue;
+      if(fe && fe.tagName==='SPAN' && fe.classList && fe.classList.contains('n')) continue;  /* sudah dikotakkan */
+      /* teks pertama yang berisi HARUS anak langsung <p> agar penanda di dalam
+         <b>/<i> milik kalimat tidak ikut terambil */
       var w=document.createTreeWalker(p, NodeFilter.SHOW_TEXT, null, false), tn, first=null;
       while((tn=w.nextNode())){ if(tn.nodeValue && tn.nodeValue.replace(/[\s\u00A0]/g,'')){ first=tn; break; } }
       if(!first || first.parentNode!==p) continue;
-      var mm=/^([\s\u00A0]*)([-\u2013\u2014])([\s\u00A0]+)/.exec(first.nodeValue);
+      var mm=reMark.exec(first.nodeValue);
       if(!mm) continue;
+      var tok=mm[2];
+      /* lindungi singkatan yang menyerupai angka romawi / huruf berturut */
+      if(/^(CV|CD|MM|DVD|DIV|MMC|LC|DC|ID|IL|IM)[.)]$/i.test(tok)) continue;
       first.nodeValue=first.nodeValue.slice(mm[0].length);
+      var hug=Math.max(0.4, Math.round((spkTextWidthCm(tok)+SPK_NUM_GAP)*100)/100);
+      var multi=/^(?:[0-9]+\.){2,}$/.test(tok);
+      var isNum=/^(?:[0-9]+[.)])+$/.test(tok);
       var span=document.createElement('span');
-      span.className='n';
-      span.setAttribute('style','display:inline-block;box-sizing:border-box;text-indent:0;white-space:nowrap;text-align:left');
-      span.textContent=mm[2];
+      span.className='n'+(multi?' m':'');
+      span.setAttribute('style','width:'+hug.toFixed(2)+'cm;display:inline-block;box-sizing:border-box;'+
+        'padding-right:'+SPK_NUM_GAP+'cm;text-indent:0;white-space:nowrap;overflow:visible;'+
+        'text-align:'+(isNum?'right':'left'));
+      span.textContent=tok;
       p.insertBefore(span, p.firstChild);
       p.classList.add('spk-sl');
       ubah=true;
@@ -18129,7 +18189,9 @@ function spkPkKeepDlist(html, isPk){
 /* Pembungkus: dipakai di titik perakitan dokumen, hanya untuk bentuk PK */
 function spkPkTidy(html, isPk){
   if(!isPk) return html;                 /* SPK: kembalikan apa adanya */
-  return spkPkIndentStd(spkPkBoxDash(spkPkSubNumberFix(html)));
+  /* Urutan penting: kotakkan penanda dulu supaya perbaikan nomor & inden
+     bekerja pada SELURUH butir, termasuk yang lolos dari spkNumberFix. */
+  return spkPkIndentStd(spkPkSubNumberFix(spkPkBoxMark(html)));
 }
 
 function spkNumberFix(html){
