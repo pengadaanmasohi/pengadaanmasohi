@@ -15400,11 +15400,11 @@ function spkPreamblePkTpl(data){
      inline di sini. */
   var dlW=0.6, dlWb=0.6, dlRata=(n>=10)?'right':'left';
   try{
-    var wN=spkTextWidthCm(String(n)+'.');
+    var wN=spkPkTextWidthCm(String(n)+'.');
     if(wN>0) dlW=Math.max(0.6, Math.round((wN+SPK_NUM_GAP)*100)/100);
     /* kolom teks mengikuti nomor 1 DIGIT terlebar ("9."); nomor 2 digit
        menjulur ke kiri, jadi butir 1 digit tetap sejajar dgn daftar lain */
-    var w9=spkTextWidthCm('9.');
+    var w9=spkPkTextWidthCm('9.');
     dlWb=(n>=10 && w9>0) ? Math.max(0.6, Math.round((w9+SPK_NUM_GAP)*100)/100) : dlW;
   }
   catch(e){ if(n>=10){ dlW=0.85; dlWb=0.6; } }
@@ -18008,7 +18008,7 @@ function spkLeadIndentCls(html){
 function spkPkNumW(sp){
   var t=String(sp&&sp.textContent||'').replace(/[\s\u00A0]+/g,'');
   var w=0;
-  try{ w=spkTextWidthCm(t); }catch(e){ w=0; }
+  try{ w=spkPkTextWidthCm(t); }catch(e){ w=0; }
   if(!(w>0)){                                  /* pengukuran gagal: perkiraan kasar */
     var fb=parseFloat(sp && sp.style ? sp.style.width : '');
     if(fb>0) return fb;
@@ -18095,6 +18095,42 @@ var SPK_PK_LEAD = 0.35;                 /* jarak penanda anak dari teks induk (c
    teksnya. Dengan 0,10 cm, lebar kolom huruf jatuh di sekitar 0,5 cm — sama
    seperti tab daftar huruf pada Word. */
 var SPK_PK_GAP_HURUF = 0.10;            /* jeda penanda huruf/bullet -> teks (cm) */
+/* PENGUKUR LEBAR KHUSUS PERJANJIAN/KONTRAK.
+   spkTextWidthCm() mengukur dengan '11pt Arial', padahal isi kontrak dirender
+   dengan Inter 11pt yang angkanya ~8% LEBIH LEBAR. Akibatnya kotak nomor 2 digit
+   ("1.10.") kekecilan: nomornya meluber ke KANAN melewati padding dan memakan
+   jeda ke teks — nomor 2 digit terlihat lebih rapat ke teksnya daripada nomor
+   1 digit, dan titik penutupnya tidak lagi lurus.
+   Di sini diukur dengan tumpukan font dokumen yang sebenarnya, lalu dilebihkan
+   10% sebagai jaminan bila Inter belum termuat di dokumen aplikasi (canvas akan
+   jatuh ke font pengganti yang lebih sempit).
+   Kelebihan lebar TIDAK merusak tampilan: karena nomor dirata-kanankan dan jeda
+   berasal dari padding, kelebihan itu hanya menambah ruang julur di sisi KIRI. */
+var SPK_PK_MEAS_FONT = '11pt "Inter Local","Inter","Segoe UI",Arial,sans-serif';
+var SPK_PK_MEAS_PAD  = 1.10;
+function spkPkTextWidthCm(txt){
+  if(!_spkMeasCanvas){ _spkMeasCanvas=document.createElement('canvas'); }
+  var ctx=_spkMeasCanvas.getContext('2d');
+  ctx.font=SPK_PK_MEAS_FONT;
+  var w=(ctx.measureText(String(txt==null?'':txt)).width)*2.54/96;
+  return w*SPK_PK_MEAS_PAD;
+}
+/* CADANGAN KIRI deret tingkat-1.
+   Nomor 2 digit pada deret rata kanan menjulur ke KIRI dari kolom nomor 1 digit.
+   Di tingkat-1 kolom itu berimpit dengan batas kertas, sedangkan badan lembar
+   hasil paginasi (`.spk-sheet > .sh-bd`) ber-`overflow:hidden` — akibatnya angka
+   puluhan terpotong ("10." terbaca "0."). Karena itu SELURUH deret tingkat-1
+   dimulai sejauh satu lebar angka dari batas kertas, jadi ruang julur itu selalu
+   tersedia. Diterapkan seragam ke semua Pasal supaya nomor 1 digit tetap sejajar,
+   entah Pasal itu memuat nomor 2 digit atau tidak. */
+var SPK_PK_RES_CACHE = null;
+function spkPkReserve(){
+  if(SPK_PK_RES_CACHE!=null) return SPK_PK_RES_CACHE;
+  var w=0; try{ w=spkPkTextWidthCm('0'); }catch(e){ w=0; }
+  if(!(w>0)) w=0.2;
+  SPK_PK_RES_CACHE=Math.round(w*100)/100;
+  return SPK_PK_RES_CACHE;
+}
 
 /* Pecah penanda angka menjadi ruas: "2.1." -> ["2","1"], "10)" -> ["10"].
    Mengembalikan null bila penanda bukan angka. */
@@ -18230,8 +18266,12 @@ function spkPkIndentStd(html){
     for(i=0;i<deret.length;i++){
       var g2=deret[i];
       if(g2.induk) g2.base=g2.induk.base + (g2.induk.Wb||g2.induk.W) + SPK_PK_LEAD;   /* dari KOLOM TEKS induk */
-      else if(g2.lvl===1) g2.base=LEAD;                  /* geseran terhadap pengantar */
+      else if(g2.lvl===1) g2.base=(LEAD>0?LEAD:spkPkReserve());   /* geseran thd pengantar / cadangan julur */
       else g2.base=LEAD + (g2.lvl-1)*SPK_PK_STEP;        /* cadangan: induk tak ketemu */
+      /* Pengaman: apa pun hasil hitungan di atas, ruang julur ke kiri harus muat
+         supaya nomor tidak pernah terpotong tepi lembar. */
+      var julur=g2.W-(g2.Wb||g2.W);
+      if(g2.base<julur) g2.base=julur;
       g2.base=Math.round(g2.base*100)/100;
       for(var m=0;m<g2.items.length;m++){
         var q=g2.items[m], sp=q.p.firstElementChild;
