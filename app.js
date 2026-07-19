@@ -18020,17 +18020,16 @@ function spkPkSubNumberFix(html){
    diawali paragraf pengantar. */
 var SPK_PK_STEP = 0.75;                 /* jarak antar tingkat (cm) */
 
-/* Tingkat sebuah penanda: 1, 2, atau 3. `prev` = tingkat butir bernomor
-   terakhir di atasnya, dipakai untuk penanda bullet/tanda hubung yang
-   tingkatnya selalu satu di bawah butir induknya. */
-function spkPkLevel(tok, prev){
-  if(/^[0-9]+[.)]$/.test(tok)) return 1;                 /* 1.  2.  10. */
-  if(/^(?:[0-9]+\.){2}$/.test(tok)) return 1;            /* 2.1.        */
-  if(/^(?:[0-9]+\.){3,}$/.test(tok)) return 2;           /* 2.1.1.      */
-  if(/^[A-Za-z][.)]$/.test(tok)) return 2;               /* a.  b.  A)  */
-  if(/^[ivxlcdmIVXLCDM]{1,4}[.)]$/.test(tok)) return 2;  /* i. ii. IV.  */
-  /* bullet / tanda hubung -> satu tingkat di bawah butir induknya */
-  return Math.min(3, (prev||1)+1);
+/* Pecah penanda angka menjadi ruas: "2.1." -> ["2","1"], "10)" -> ["10"].
+   Mengembalikan null bila penanda bukan angka. */
+function spkPkSegs(tok){
+  if(!/^(?:[0-9]+\.)+$/.test(tok) && !/^[0-9]+\)$/.test(tok)) return null;
+  var t=String(tok).replace(/\)$/,'.');
+  var a=t.split('.').filter(function(x){ return x!==''; });
+  return a.length ? a : null;
+}
+function spkPkIsHuruf(tok){
+  return /^[A-Za-z][.)]$/.test(tok) || /^[ivxlcdmIVXLCDM]{2,4}[.)]$/.test(tok);
 }
 function spkPkIndentStd(html){
   var s=String(html==null?'':html);
@@ -18040,13 +18039,49 @@ function spkPkIndentStd(html){
     var ps=box.querySelectorAll('p');
     var STEP=SPK_PK_STEP, i, p, tok;
 
-    /* --- Tahap 1: tentukan tingkat & lebar alami tiap butir --- */
-    var item=[], prev=1;
+    /* --- Tahap 1: tentukan tingkat & lebar alami tiap butir ---
+       Tingkat DITURUNKAN DARI SILSILAH NOMOR, bukan dari bentuk penandanya:
+         "2."    -> tidak punya induk                       -> tingkat 1
+         "2.1."  -> induknya "2." yang ada di atas          -> tingkat 2
+         "a."    -> satu tingkat di bawah butir angka terakhir
+         "-"     -> satu tingkat di bawah butir terakhir
+       Bila induk sebuah nomor majemuk TIDAK ada di klausul itu (mis. pasal yang
+       memang langsung memakai "5.1.", "5.2."), nomor itu dianggap tingkat 1
+       sehingga tidak menjorok tanpa alasan. */
+    var item=[], lvlNomor={}, tingkatHuruf=1, terakhir=1;
     for(i=0;i<ps.length;i++){
       p=ps[i]; tok=spkPkTok(p); if(!tok) continue;
-      var lvl=spkPkLevel(tok, prev);
-      if(/^[0-9A-Za-z]/.test(tok)) prev=lvl;
-      item.push({p:p, tok:tok, lvl:lvl, w:spkPkNumW(p.firstElementChild)});
+      var L, segs=spkPkSegs(tok);
+      if(segs){
+        var kunci=segs.join('.')+'.';
+        var indukKunci=segs.slice(0,-1).join('.')+'.';
+        L=(segs.length>1 && lvlNomor[indukKunci]) ? lvlNomor[indukKunci]+1 : 1;
+        lvlNomor[kunci]=L;
+        tingkatHuruf=L+1;                 /* huruf di bawahnya turun satu tingkat */
+        terakhir=L;
+      } else if(spkPkIsHuruf(tok)){
+        L=tingkatHuruf; terakhir=L;
+      } else {
+        L=terakhir+1;                     /* bullet / tanda hubung */
+      }
+      if(L>5) L=5;
+      item.push({p:p, tok:tok, lvl:L, w:spkPkNumW(p.firstElementChild)});
+    }
+
+    /* --- Tahap 1b: titik awal daftar ---
+       Bila klausul DIBUKA oleh paragraf pengantar (bukan butir bernomor), maka
+       seluruh daftarnya menjorok satu langkah terhadap pengantar itu — sama
+       seperti "a." yang menjorok terhadap "1.". Klausul yang langsung dibuka
+       dengan butir bernomor tetap mulai di batas margin.
+       CATATAN: pergeseran ini hanya dipakai SEKALI sebagai titik awal tingkat-1;
+       tingkat-2 dan seterusnya menurun dari situ lewat kisi STEP, jadi sub-butir
+       tidak pernah tergeser dua kali (inilah cacat pergeseran 0,5 cm yang lama). */
+    var LEAD=0;
+    for(i=0;i<ps.length;i++){
+      var t0=(ps[i].textContent||'').replace(/[\s\u00A0]/g,'');
+      if(!t0) continue;                                   /* lewati paragraf kosong */
+      if(!spkPkTok(ps[i])) LEAD=STEP;                      /* pembuka = teks biasa */
+      break;
     }
 
     /* --- Tahap 2: kelompokkan menjadi DERET ---
@@ -18075,7 +18110,7 @@ function spkPkIndentStd(html){
         var q=g[j], sp=q.p.firstElementChild;
         sp.style.width=W.toFixed(2)+'cm';
         sp.style.minWidth=W.toFixed(2)+'cm';
-        q.p.style.marginLeft=((q.lvl-1)*STEP+W).toFixed(2)+'cm';
+        q.p.style.marginLeft=(LEAD+(q.lvl-1)*STEP+W).toFixed(2)+'cm';
         q.p.style.textIndent='-'+W.toFixed(2)+'cm';
         q.p.style.paddingLeft='0cm';
       }
@@ -18083,9 +18118,9 @@ function spkPkIndentStd(html){
 
     /* Paragraf narasi lanjutan ikut kisi yang sama */
     var np=box.querySelectorAll('p.klp1, p.kldesc');
-    for(i=0;i<np.length;i++) np[i].style.marginLeft=STEP.toFixed(2)+'cm';
+    for(i=0;i<np.length;i++) np[i].style.marginLeft=(LEAD+STEP).toFixed(2)+'cm';
     var np2=box.querySelectorAll('p.klp2');
-    for(i=0;i<np2.length;i++) np2[i].style.marginLeft=(STEP*2).toFixed(2)+'cm';
+    for(i=0;i<np2.length;i++) np2[i].style.marginLeft=(LEAD+STEP*2).toFixed(2)+'cm';
     return box.innerHTML;
   }catch(e){ return s; }
 }
