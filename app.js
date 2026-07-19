@@ -15190,7 +15190,7 @@ const SPK_FIELD_GROUPS = [
   { sec:'Informasi Kontrak', fields:[
     {k:'nomor_kontrak', l:'No. Kontrak', lPk:'No. Kontrak PIHAK PERTAMA', t:'text', span:2, def:''},
     {k:'nomor_kontrak_p2', l:'No. Kontrak PIHAK KEDUA', t:'text', span:2, only:'PK', def:''},
-    {k:'tanggal_kontrak', l:'Tgl. Awal Kontrak', lPk:'Tgl. Kontrak PIHAK PERTAMA / Tgl. Awal Kontrak', t:'date', def:''},
+    {k:'tanggal_kontrak', l:'Tgl. Awal Kontrak', t:'date', def:''},
     {k:'auto_terbilang_tgl', l:'Terbilang Tgl. Awal Kontrak', auto:'terbilang_tgl', span:2},
     {k:'auto_tgl_strip', l:'Tgl. Awal Kontrak (-)', auto:'tgl_strip'},
     {k:'tgl_akhir_kontrak', l:'Tgl. Akhir Kontrak', t:'date', auto:'tgl_akhir', def:''},
@@ -15235,9 +15235,9 @@ const SPK_FIELD_GROUPS = [
     {k:'akta_perubahan', l:'Rincian Akta Perubahan', t:'textarea', span:2, hl:true, def:SPK_DEF_AKTA_PERUBAHAN},
   ]},
   { sec:'Pengendali Pekerjaan', fields:[
-    {k:'jabatan_direksi', l:'Jabatan Direksi Pekerjaan', t:'text', span:2, def:''},
-    {k:'jabatan_pengawas', l:'Jabatan Pengawas Pekerjaan', t:'text', span:2, def:''},
-    {k:'jabatan_pengawas_lapangan', l:'Jabatan Pengawas Lapangan', t:'text', span:2, only:'PK', def:''},
+    {k:'jabatan_direksi', l:'Direksi Pekerjaan', t:'text', span:2, def:''},
+    {k:'jabatan_pengawas', l:'Pengawas Pekerjaan', t:'text', span:2, def:''},
+    {k:'jabatan_pengawas_lapangan', l:'Pengawas Lapangan', t:'text', span:2, only:'PK', def:''},
   ]},
   /* [DIHAPUS] Kartu "Uraian Pekerjaan (opsional)" — field Latar Belakang,
      Permasalahan, dan Maksud dan Tujuan beserta tombol "Isi Teks ..." dan kotak
@@ -15825,6 +15825,10 @@ function spkBlankState(){
   const data={};
   SPK_FIELDS_FLAT.forEach(f=>{ data[f.k]= (f.def!=null? f.def : ''); });
   data.bentuk_kontrak='SPK';                 // bawaan: Surat Perintah Kerja
+  /* Selama "Akta Perubahan?" BELUM dipilih "Ya" (termasuk keadaan bawaan / belum
+     dipilih), frasa "beserta akta-akta Perubahannya" beserta spasi sebelumnya
+     TIDAK ditampilkan pada Rincian Akta Pendirian. */
+  data.akta_pendirian = spkAktaPendirianSync(data.akta_pendirian, data.ada_akta_perubahan);
   // SK Pimpinan Unit: default = data terakhir disimpan
   spkApplyLastSk(data);
   // default: semua klausul aktif terpilih
@@ -16633,13 +16637,13 @@ function spkSetAdaAktaPerubahan(v){
   renderSpkSusun();
 }
 /* Selaraskan Rincian Akta Pendirian dengan pilihan "Akta Perubahan?" */
-const SPK_RE_BESERTA = /\s*beserta\s+akta\s*-\s*akta\s+perubahan(?:nya)?\b\.?/i;
 function spkAktaPendirianSync(teks, ada){
+  var re = /\s*beserta\s+akta\s*-\s*akta\s+perubahan(?:nya)?\b\.?/i;
   var t=String(teks==null?'':teks);
   if(String(ada)==='Ya'){
-    if(!SPK_RE_BESERTA.test(t)) t = t.replace(/[.\s]+$/,'') + ' beserta akta-akta Perubahannya';
+    if(!re.test(t)) t = t.replace(/[.\s]+$/,'') + ' beserta akta-akta Perubahannya';
   }else{
-    t = t.replace(SPK_RE_BESERTA,'').replace(/\s+$/,'');   // frasa + spasi sebelumnya dibuang
+    t = t.replace(re,'').replace(/\s+$/,'');   // frasa + spasi sebelumnya dibuang
   }
   return t;
 }
@@ -16671,14 +16675,11 @@ function spkEnsureBentukStyle(){
        berdampingan di sebelah kanan tombol Pilih Pekerjaan. */
     '.spk-bentuk-bar.is-inline{margin:0 0 0 10px;justify-content:flex-end;gap:10px}'+
     /* ---- Efek 3D (timbul) pada penanda & pemilih Bentuk Kontrak ---- */
-    '.spk-bentuk-tag{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:800;letter-spacing:.04em;'+
-      'padding:7px 13px;border-radius:999px;border:1px solid transparent;position:relative;'+
-      'text-shadow:0 1px 0 rgba(255,255,255,.75);transition:transform .16s ease,box-shadow .16s ease}'+
-    '.spk-bentuk-tag.is-spk{background:linear-gradient(180deg,#FFF8E2,#F7E4AE);color:#7A5C00;border-color:#E8C97A;'+
-      'box-shadow:0 3px 0 #DDB85C,0 6px 12px rgba(122,92,0,.22),inset 0 1px 0 rgba(255,255,255,.9)}'+
-    '.spk-bentuk-tag.is-pk{background:linear-gradient(180deg,#EDF3FC,#CFDDF2);color:#12304F;border-color:#A9C0E0;'+
-      'box-shadow:0 3px 0 #93AED4,0 6px 12px rgba(18,48,79,.22),inset 0 1px 0 rgba(255,255,255,.9)}'+
-    '.spk-bentuk-tag:hover{transform:translateY(-1px)}'+
+    /* Penanda datar (tanpa efek timbul) — dipakai pada daftar Lihat Kontrak */
+    '.spk-bentuk-tag{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:700;letter-spacing:.04em;'+
+      'padding:6px 12px;border-radius:999px;border:1px solid transparent}'+
+    '.spk-bentuk-tag.is-spk{background:#FDF3D4;color:#8A6A00;border-color:#F2D68A}'+
+    '.spk-bentuk-tag.is-pk{background:#E8EFFA;color:#1B3A6B;border-color:#C3D2EA}'+
     '.spk-bentuk{display:inline-flex;align-items:center;gap:9px}'+
     '.spk-bentuk > span{font-size:11px;font-weight:800;letter-spacing:.06em;color:#5b6670;text-transform:uppercase}'+
     '.spk-bentuk select{min-width:210px;font-size:12px;padding:9px 12px;border-radius:11px;border:1px solid #c3d1d7;'+
@@ -16699,11 +16700,8 @@ function spkBentukBarHtml(inline){
   var opts=SPK_BENTUK_OPTS.map(function(o){
     return '<option value="'+o.v+'"'+(o.v===cur?' selected':'')+'>'+fkEsc(o.l)+'</option>';
   }).join('');
-  var lbl=(cur==='PK')?'Perjanjian/Kontrak':'Surat Perintah Kerja';
+  /* Penanda (chip) nama bentuk DIHAPUS dari form — cukup dropdown-nya saja. */
   return '<div class="spk-bentuk-bar'+(inline?' is-inline':'')+'">'+
-    '<span class="spk-bentuk-tag '+(cur==='PK'?'is-pk':'is-spk')+'">'+
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>'+
-      fkEsc(lbl)+'</span>'+
     '<label class="spk-bentuk"><span>Bentuk Kontrak</span>'+
       '<select onchange="spkSetBentuk(this.value)">'+opts+'</select>'+
     '</label>'+
