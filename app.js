@@ -18152,6 +18152,20 @@ function spkPkIndentStd(html){
       var g=deret[i], W=0, j;
       for(j=0;j<g.items.length;j++){ if(g.items[j].w>W) W=g.items[j].w; }
       g.W=Math.round(W*100)/100;
+      /* PERATAAN NOMOR PER DERET (aturan Perjanjian/Kontrak):
+           - bila SELURUH penghitung TERAKHIR di deret ini hanya 1 digit
+             (1. 2. 3. / 2.1. .. 2.9. / 2.10.1.) -> RATA KIRI;
+           - begitu ADA penghitung terakhir 2 digit atau lebih
+             (10. 11. / 2.10. / 1.12.) -> RATA KANAN, sehingga titik penutup
+             seluruh nomor lurus pada satu garis dan kolom teksnya sejajar.
+         Yang dinilai HANYA ruas terakhir: "10.1." dianggap 1 digit,
+         "1.10." dianggap 2 digit, "2.10.1." dianggap 1 digit. */
+      var adaDua=false;
+      for(j=0;j<g.items.length;j++){
+        var sgs=spkPkSegs(g.items[j].tok);
+        if(sgs && String(sgs[sgs.length-1]).length>=2){ adaDua=true; break; }
+      }
+      g.rata = adaDua ? 'right' : 'left';
     }
 
     /* --- Tahap 4: posisi tiap deret ---
@@ -18172,12 +18186,11 @@ function spkPkIndentStd(html){
         var q=g2.items[m], sp=q.p.firstElementChild;
         sp.style.width=g2.W.toFixed(2)+'cm';
         sp.style.minWidth=g2.W.toFixed(2)+'cm';
-        /* Penanda ANGKA dirata-kanankan di dalam kotaknya, huruf & bullet rata
-           kiri. Dengan begitu titik penutup seluruh nomor dalam satu deret lurus
-           pada satu garis dan jarak nomor -> teks selalu sama — termasuk saat
-           deret memuat nomor satu digit dan dua digit sekaligus
-           (mis. "2.9." bersama "2.16."). Inilah bentuk rapi yang dimaksud. */
-        sp.style.textAlign = spkPkSegs(q.tok) ? 'right' : 'left';
+        /* Perataan penanda ANGKA mengikuti g2.rata (lihat Tahap 3): deret yang
+           seluruhnya 1 digit -> rata KIRI; deret yang memuat nomor 2 digit
+           (mis. "2.9." bersama "2.16.") -> rata KANAN supaya titik penutupnya
+           lurus. Huruf & bullet selalu rata kiri. */
+        sp.style.textAlign = spkPkSegs(q.tok) ? (g2.rata||'right') : 'left';
         sp.style.boxSizing='border-box';
         sp.style.paddingRight=SPK_NUM_GAP+'cm';   /* jeda tetap ke teks */
         q.p.style.marginLeft=(g2.base+g2.W).toFixed(2)+'cm';
