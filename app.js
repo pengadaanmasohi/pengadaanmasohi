@@ -17623,6 +17623,10 @@ function spkDocCss2(){
           (fh) ikut bertambah dan tinggi badan halaman menyusut sendiri. Dengan
           begitu jumlah baris per halaman tetap terhitung benar. */
   '.spk-doc.spk-pk .spk-sheet:not(.spk-lampsheet) > .sh-ft{padding-top:6mm;margin-bottom:-7mm}'+
+  /* Sisi ATAS diperlakukan cermin dari sisi bawah: badan halaman ditarik naik 7mm
+     sehingga jarak teks ke bingkai = 25,4 - 7 - 14 = 4,4mm, sama dengan jarak
+     kaki halaman ke bingkai. Tinggi badan ditambah di mk() (lihat EXPK). */
+  '.spk-doc.spk-pk .spk-sheet:not(.spk-lampsheet) > .sh-bd{margin-top:-7mm}'+
   '.spk-doc.spk-pk .spk-sheet:not(.spk-lampsheet) .spk-rft{border-top:0;margin-top:0;padding-top:0}'+
   '.spk-doc.spk-pk .spk-sheet:not(.spk-lampsheet) .spk-rft .ft-unit{display:none}'+
   /* ---------- ISI: BAB & tanda tangan ---------- */
@@ -17635,6 +17639,63 @@ function spkDocCss2(){
      Rata tengah, huruf kapital, tebal. Baris penghubung (TENTANG/ANTARA/DENGAN)
      dibuat sedikit lebih kecil supaya nama pekerjaan & nama para pihak yang
      menonjol. Ditutup GARIS GANDA tepat sebelum blok nomor kedua belah pihak. */
+  /* ==========================================================================
+     SAMPUL & DAFTAR ISI — BENTUK PERJANJIAN/KONTRAK
+     Gaya dokumen perjanjian cetak: bingkai, rata tengah, tanpa aksen warna.
+     Semua selektor berdiri sendiri (.spk-coverpk / .toc-pk) sehingga desain
+     Sampul & Daftar Isi Surat Perintah Kerja tidak tersentuh sama sekali.
+     ========================================================================== */
+  /* --- Sampul --- */
+  /* Padding halaman disetel sendiri (bukan 25,4mm bawaan .spk-page, dan bukan
+     12/15mm milik .spk-cover) supaya isi duduk rapi di dalam bingkai:
+       bingkai luar 12mm, bingkai dalam 14,5mm, isi mulai 20mm -> jarak ~5,5mm.
+     Spesifisitas (0,2,0) mengalahkan .spk-page (0,1,0) di dalam @media mana pun. */
+  '.spk-page.spk-coverpk{padding:20mm}'+
+  '.spk-coverpk{font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif;color:#000;'+
+    'position:relative;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  /* Bingkai ganda: garis luar tebal + garis dalam tipis */
+  '.spk-coverpk::before,.spk-coverpk::after{content:"";position:absolute;pointer-events:none;border:solid #000}'+
+  '.spk-coverpk::before{top:12mm;right:12mm;bottom:12mm;left:12mm;border-width:2.5pt}'+
+  '.spk-coverpk::after{top:14.5mm;right:14.5mm;bottom:14.5mm;left:14.5mm;border-width:.75pt}'+
+  '.spk-coverpk .cpk-in{position:relative;z-index:1;padding:4mm 4mm 0}'+
+  '.spk-coverpk .cpk-org{text-align:center;font-size:13pt;font-weight:800;letter-spacing:.02em;'+
+    'text-transform:uppercase;line-height:'+spkLHCss(1.15)+';text-wrap:balance}'+
+  '.spk-coverpk .cpk-adr{text-align:center;font-size:12pt;font-weight:700;margin-top:7mm;'+
+    'line-height:'+spkLHCss(1.15)+';text-wrap:balance}'+
+  '.spk-coverpk .cpk-jd{text-align:center;font-size:13pt;font-weight:800;letter-spacing:.03em;'+
+    'text-transform:uppercase;margin-top:8mm;line-height:'+spkLHCss(1.15)+'}'+
+  '.spk-coverpk .cpk-sb{text-align:center;font-size:12pt;font-weight:800;letter-spacing:.05em;'+
+    'text-transform:uppercase;margin-top:7mm;line-height:'+spkLHCss(1.15)+'}'+
+  '.spk-coverpk .cpk-nm{text-align:center;font-size:12.5pt;font-weight:800;letter-spacing:.01em;'+
+    'text-transform:uppercase;margin-top:7mm;line-height:'+spkLHCss(1.15)+';text-wrap:balance}'+
+  '.spk-coverpk .cpk-rule{margin:9mm 0 7mm;border-top:3px double #000;height:0}'+
+  /* Daftar keterangan: kolom label - titik dua - nilai, sejajar seperti dokumen acuan */
+  '.spk-coverpk .cpk-grid{display:grid;grid-template-columns:max-content max-content 1fr;'+
+    'row-gap:5mm;column-gap:0;font-size:11.5pt;line-height:'+spkLHCss(1.15)+'}'+
+  '.spk-coverpk .cpk-grid .r{display:contents}'+
+  '.spk-coverpk .cpk-grid .k{padding-right:8mm}'+
+  '.spk-coverpk .cpk-grid .s{padding-right:4mm}'+
+  '.spk-coverpk .cpk-grid .v{text-align:justify}'+
+  '.spk-coverpk .cpk-grid .v.kosong{color:#666}'+
+  '.spk-coverpk .cpk-grid .v .x{display:block;margin-top:3mm}'+
+  /* --- Daftar Isi --- */
+  '.spk-tocpage.toc-pk{font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif;color:#000;position:relative}'+
+  '.spk-tocpage.toc-pk::before{content:"";position:absolute;top:15mm;right:15mm;bottom:15mm;left:15mm;'+
+    'border:1pt solid #000;pointer-events:none}'+
+  '.spk-tocpage.toc-pk .tpk-h{position:relative;z-index:1;text-align:center;font-size:13pt;font-weight:800;'+
+    'letter-spacing:.03em;text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:2px;'+
+    'margin:0 0 9mm;line-height:'+spkLHCss(1.15)+'}'+
+  '.spk-tocpage.toc-pk .spk-toc2{position:relative;z-index:1;margin-top:0}'+
+  /* Baris polos: tanpa garis pemisah, hanya titik-titik penuntun */
+  '.spk-tocpage.toc-pk .spk-toc2 .row{border:0;padding:0 0 4.2mm;font-size:11pt;align-items:baseline}'+
+  '.spk-tocpage.toc-pk .spk-toc2 .row:first-child,.spk-tocpage.toc-pk .spk-toc2 .row:last-child{border:0}'+
+  '.spk-tocpage.toc-pk .spk-toc2 .row .no{width:auto;min-width:20mm;font-size:11pt;font-weight:400;'+
+    'color:#000;padding-right:3mm;white-space:nowrap}'+
+  '.spk-tocpage.toc-pk .spk-toc2 .row .nm{font-size:11pt;font-weight:400;color:#000;max-width:74%;'+
+    'text-transform:uppercase}'+
+  '.spk-tocpage.toc-pk .spk-toc2 .row .dot{border-bottom:1px dotted #000;transform:translateY(-3px);margin:0 2mm}'+
+  '.spk-tocpage.toc-pk .spk-toc2 .row .pg{font-size:11pt;font-weight:400;color:#000;min-width:2em}'+
+
   '.spk-judulpk{text-align:center;font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif;'+
     'color:#000;margin:0 0 10pt;padding-bottom:9pt;border-bottom:3px double #000;'+
     '-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
@@ -21187,6 +21248,52 @@ function spkPruneKlausul(html, klNo, data){
 const SPK_ALAMAT_1='Jl. Abdullah Soulissa No 1, Masohi, Kec. Kota Masohi';
 const SPK_ALAMAT_2='Kab Maluku Tengah Prov. Maluku 97513  ·  www.pln.co.id';
 
+/* ---------- Cover khusus PERJANJIAN/KONTRAK ----------
+   Meniru sampul dokumen perjanjian cetak: bingkai, blok judul rata tengah, lalu
+   daftar keterangan "Label : Nilai". Dipakai HANYA untuk bentuk PK; bentuk Surat
+   Perintah Kerja tetap memakai spkCoverHtml() dengan desain modernnya.
+   CATATAN: bingkai ornamen (motif) pada dokumen acuan berasal dari "Page Border
+   Art" Word dan tidak bisa direproduksi setia dengan CSS tanpa berkas gambarnya.
+   Di sini dipakai bingkai GARIS GANDA — bersih, tajam saat dicetak, dan tidak
+   bergantung pada aset luar. */
+function spkCoverPkHtml(data, ctx){
+  const esc=fkEsc;
+  const org  = spkOrgP1(ctx);
+  const alamat = ctx.p1_alamat || SPK_ALAMAT_1;
+  const baris=(k,v,extra)=>{
+    const kosong=!(v && String(v).trim());
+    return '<div class="r">'+
+      '<span class="k">'+esc(k)+'</span><span class="s">:</span>'+
+      '<span class="v'+(kosong?' kosong':'')+'">'+(kosong?'\u2014':esc(v))+
+        (extra?('<span class="x">'+esc(extra)+'</span>'):'')+'</span>'+
+    '</div>';
+  };
+  const terbilang = ctx.nilai_terbilang ? ('('+ctx.nilai_terbilang+')') : '';
+  return ''+
+  '<section class="spk-page spk-coverpk">'+
+    '<div class="cpk-in">'+
+      '<div class="cpk-org">'+esc(org)+'</div>'+
+      '<div class="cpk-adr">'+esc(alamat)+'</div>'+
+      '<div class="cpk-jd">'+esc(spkDokLabel(data))+'</div>'+
+      '<div class="cpk-sb">ANTARA</div>'+
+      '<div class="cpk-nm">'+esc(org)+'</div>'+
+      '<div class="cpk-sb">DENGAN</div>'+
+      '<div class="cpk-nm">'+esc(ctx.p2_nama_hormat||'\u2014')+'</div>'+
+      '<div class="cpk-rule"></div>'+
+      '<div class="cpk-grid">'+
+        baris('Nomor Kontrak',  data.nomor_kontrak)+
+        baris('Tanggal',        ctx.tanggal_kontrak_pjg)+
+        baris('Pekerjaan',      data.nama_pekerjaan)+
+        baris('Lokasi',         data.lokasi_pekerjaan)+
+        baris('Nilai Pekerjaan',ctx.nilai_rp, terbilang)+
+        baris('Pelaksana',      data.pelaksana)+
+        baris('Sumber Dana',    ctx.sumber_dana_no, ctx.sumber_dana_tgl_pjg)+
+        baris('Akhir Pekerjaan',ctx.akhir_pekerjaan_pjg)+
+      '</div>'+
+    '</div>'+
+  '</section>';
+}
+
 /* ---------- Cover (dipakai untuk Cover SPK & Cover Lampiran) ---------- */
 function spkCoverHtml(data, ctx, judulBaris){
   const esc=fkEsc;
@@ -21264,12 +21371,28 @@ function spkTocDensity(n){
 function spkTocHtml(data, klausul){
   const esc=fkEsc;
   const list=klausul||[];
+  const isPk=spkBentukOf(data)==='PK';
+  /* PENTING: pembungkus .spk-toc2 dan <span class="pg"> WAJIB dipertahankan pada
+     kedua varian — nomorToc() di spkPageScript() mengisi nomor halaman lewat
+     querySelectorAll(".spk-toc2 .pg"). Yang berbeda hanya isi kolom nomor dan
+     kulit tampilannya. */
   const rows=list.map((k,i)=>{
-    const no=(i+1)<10 ? ('0'+(i+1)) : String(i+1);
-    return '<div class="row"><span class="no">'+no+'</span>'+
+    const no = isPk ? ('PASAL '+(i+1))
+                    : ((i+1)<10 ? ('0'+(i+1)) : String(i+1));
+    return '<div class="row"><span class="no">'+esc(no)+'</span>'+
       '<span class="nm">'+spkFmtJudulTitle(k.judul)+'</span>'+
-      '<span class="dot"></span><span class="pg">—</span></div>';
+      '<span class="dot"></span><span class="pg">\u2014</span></div>';
   }).join('');
+  /* Perjanjian/Kontrak: daftar isi sesederhana dokumen cetak — judul "DAFTAR ISI"
+     rata tengah bergaris bawah, lalu baris "PASAL n <judul> ....... <hlm>".
+     Tanpa aksen warna, tanpa blok meta nomor kontrak. */
+  if(isPk){
+    return ''+
+    '<section class="spk-page spk-tocpage toc-pk">'+
+      '<h1 class="tpk-h">DAFTAR ISI</h1>'+
+      '<div class="spk-toc2'+spkTocDensity(list.length)+'">'+rows+'</div>'+
+    '</section>';
+  }
   return ''+
   '<section class="spk-page spk-tocpage">'+
     '<div class="toc-accent"></div>'+
@@ -21629,7 +21752,14 @@ function spkPageScript(){
     '   sheets.push(sh);',
     '   var hh=h?h.getBoundingClientRect().height:0;',
     '   var fh=f?f.getBoundingClientRect().height:0;',
-    '   b.style.height=Math.max(80,(PH-hh-fh-6))+"px";',
+    /* PERJANJIAN/KONTRAK: lembar isi merebut ruang di ATAS (margin-top:-7mm pada
+       .sh-bd) dan di BAWAH (margin-bottom:-7mm pada .sh-ft) supaya jarak teks ke
+       bingkai sama di kedua sisi. PH sendiri DIKUNCI 246,2mm (297 - 2 x 25,4),
+       jadi tinggi badan halaman harus ditambah sebanyak ruang yang direbut itu —
+       kalau tidak, tiap lembar menyisakan pita kosong 14mm di atas kaki halaman.
+       Lembar Lampiran DIKECUALIKAN karena CSS-nya juga mengecualikannya. */
+    '   var EXPK=(ISPK && extra.indexOf("spk-lampsheet")<0) ? mm2px(14) : 0;',
+    '   b.style.height=Math.max(80,(PH-hh-fh-6+EXPK))+"px";',
     '   b.style.overflow="hidden";',
     '   body=b;',
     '   for(var i=0;i<stack.length;i++){',
@@ -22045,7 +22175,8 @@ function spkDocHtml(data, klausul){
   const ctx=spkBuildCtx(data);
   const esc=fkEsc;
   // 1) Cover (judul mengikuti Bentuk Kontrak)
-  const cover=spkCoverHtml(data, ctx, spkDokTitle(data));
+  const cover = _isPkDoc ? spkCoverPkHtml(data, ctx)
+                         : spkCoverHtml(data, ctx, spkDokTitle(data));
   // 2) Daftar Isi
   const toc=spkTocHtml(data, klausul);
   // 3) Isi kontrak (kop + footer berulang tiap halaman)
