@@ -6928,6 +6928,7 @@ const PN_DOCS = {
     {key:'T_BAEK',     code:'BAEK',      label:'Evaluasi Dokumen Aplikasi Kualifikasi',              counter:'main'},
     {key:'T_BAEP_S2',  code:'BAEP.S2',   label:'Evaluasi Penawaran Sampul Dua',                      counter:'main'},
     {key:'T_BAPK',     code:'BAPK',      label:'Pembuktian Kualifikasi',                             counter:'main'},
+    {key:'T_BAKN',     code:'BAKN',      label:'Klarifikasi dan Negosiasi',                          counter:'main'},
     {key:'T_BAHP',     code:'BAHP',      label:'Hasil Pengadaan',                                    counter:'main'},
     {key:'T_UCP',      code:'UCP',       label:'Usulan Calon Pemenang',                              counter:'main'},
     {key:'T_CDA',      code:'CDA',       label:'Contract Discussion Agreement',                      counter:'main'},
@@ -6941,7 +6942,7 @@ const PN_JENIS = {
   T_HPS:'Harga Perkiraan Sendiri', T_BAP:'Pemberian Penjelasan', T_BAPP:'Pembukaan Penawaran',
   T_BAPP_S1:'Pembukaan Penawaran Sampul Satu', T_BAEP:'Evaluasi Penawaran', T_BAEP_S1:'Evaluasi Penawaran Sampul Satu',
   T_BAEK:'Evaluasi Dokumen Aplikasi Kualifikasi', T_BAEP_S2:'Evaluasi Penawaran Sampul Dua', T_BAPK:'Pembuktian Kualifikasi',
-  T_BAHP:'Hasil Pengadaan', T_UCP:'Usulan Calon Pemenang', T_CDA:'Contract Discussion Agreement',
+  T_BAKN:'Klarifikasi & Negosiasi', T_BAHP:'Hasil Pengadaan', T_UCP:'Usulan Calon Pemenang', T_CDA:'Contract Discussion Agreement',
   T_BAEK_PRA:'Evaluasi Dokumen Aplikasi Kualifikasi (Prakualifikasi)', T_BAPK_PRA:'Pembuktian Kualifikasi (Prakualifikasi)'
 };
 /* Nomor terakhir terpakai (base) default -> nomor berikut = base + 1.
@@ -16242,6 +16243,21 @@ const SPK_PN_MAP = [
   {no:'no_bae',  tgl:'tgl_bae',  keys:['BAE','T_BAEP','T_BAEP_S1','T_BAEP_S2']},
   {no:'no_bakn', tgl:'tgl_bakn', keys:['BAKN']}
 ];
+/* Pemetaan untuk PERJANJIAN/KONTRAK (tender): dokumen Sampul 1 & Sampul 2
+   dipisah, ditambah Penjelasan, Hasil Pengadaan & Usulan Calon Pemenang.
+   Field yang belum punya padanan di Penetapan Nomor (BA Pembukaan Penawaran
+   Sampul 2, Penetapan Penyedia, SPPBJ) tetap diisi manual. */
+const SPK_PN_MAP_PK = [
+  {no:'no_bapj',  tgl:'tgl_bapj',  keys:['T_BAP','BAP']},
+  {no:'no_bapp',  tgl:'tgl_bapp',  keys:['T_BAPP_S1','T_BAPP','BAPP']},
+  {no:'no_bae',   tgl:'tgl_bae',   keys:['T_BAEP_S1','T_BAEP','BAE']},
+  {no:'no_bae2',  tgl:'tgl_bae2',  keys:['T_BAEP_S2']},
+  {no:'no_bakn',  tgl:'tgl_bakn',  keys:['T_BAKN','BAKN']},
+  {no:'no_bahp',  tgl:'tgl_bahp',  keys:['T_BAHP']},
+  {no:'no_ucp',   tgl:'tgl_ucp',   keys:['T_UCP']}
+];
+/* Pemetaan aktif mengikuti Bentuk Kontrak yang sedang dipilih */
+function spkPnMap(){ return (spkBentuk()==='PK') ? SPK_PN_MAP_PK : SPK_PN_MAP; }
 function spkPnDocs(nama){
   const key=String(nama||'').trim().toLowerCase();
   if(!key) return [];
@@ -16256,7 +16272,7 @@ function spkApplyPenetapan(nama){
   const d=spkState.data;
   const docs=spkPnDocs(nama);
   const lock=[];
-  SPK_PN_MAP.forEach(m=>{
+  spkPnMap().forEach(m=>{
     let doc=null;
     for(let i=0;i<m.keys.length && !doc;i++) doc=docs.find(x=>String(x.key)===m.keys[i])||null;
     if(!doc) return;
@@ -16712,6 +16728,15 @@ function spkSetBentuk(v){
   var nv=(String(v||'').toUpperCase()==='PK')?'PK':'SPK';
   if(spkState.data.bentuk_kontrak===nv) return;
   spkState.data.bentuk_kontrak=nv;
+  /* Pemetaan Penetapan Nomor berbeda antar bentuk — bila sebuah Data Pekerjaan
+     tertaut, isian & kunci dihitung ulang agar sesuai bentuk yang baru. */
+  try{
+    var _d=spkState.data;
+    if(_d.__dpNama){
+      (_d.__pnLock||[]).forEach(function(k){ _d[k]=''; });
+      spkApplyPenetapan(_d.__dpNama);
+    }
+  }catch(e){ console.error(e); }
   renderSpkSusun();
   toast('Bentuk kontrak: '+(nv==='PK'?'Perjanjian/Kontrak':'Surat Perintah Kerja'),'ok');
 }
