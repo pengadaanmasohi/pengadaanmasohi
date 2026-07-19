@@ -17540,7 +17540,7 @@ function spkDocCss2(){
      dibuat ..." = 18pt, dibagi rata: 9pt di atas garis (padding-bottom) dan
      9pt di bawahnya (margin-bottom), sehingga garis berada tepat di tengah
      jarak itu. Paragraf .kl0 sesudahnya bermargin-atas 0, jadi tidak ada
-     margin yang runtuh (collapse) dan jaraknya benar-benar 12pt. */
+     margin yang runtuh (collapse) dan jaraknya benar-benar 18pt. */
   '.spk-pkhead{border-bottom:1px solid #201E1D;padding-bottom:9pt;margin:0 0 9pt}'+
   '.spk-pknum{display:table;margin:0 auto;padding:0;border:0;border-radius:0;background:none}'+
   '.spk-pknum .r{display:table-row;line-height:1.75}'+
