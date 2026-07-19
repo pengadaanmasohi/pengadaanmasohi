@@ -22174,7 +22174,6 @@ function spkDocHtml(data, klausul){
   data=data||{};
   const ctx=spkBuildCtx(data);
   const esc=fkEsc;
-  const _isPkDoc = spkBentukOf(data)==='PK';
   // 1) Cover (judul mengikuti Bentuk Kontrak)
   const cover = _isPkDoc ? spkCoverPkHtml(data, ctx)
                          : spkCoverHtml(data, ctx, spkDokTitle(data));
@@ -22182,6 +22181,7 @@ function spkDocHtml(data, klausul){
   const toc=spkTocHtml(data, klausul);
   // 3) Isi kontrak (kop + footer berulang tiap halaman)
   const _tpl = (spkBentukOf(data)==='PK') ? spkPreamblePkTpl(data) : SPK_PREAMBLE_TPL;
+  const _isPkDoc = spkBentukOf(data)==='PK';
   let preamble = spkNomorToNo(spkNumberFix(spkTidyKeyValue(spkMerge(_tpl, ctx))));
   /* PK: butir daftar "Berdasarkan" (mis. "24. Berita Acara Klarifikasi dan
      Negosiasi") diikat menjadi satu blok utuh dengan baris No./Tanggal miliknya,
