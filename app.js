@@ -15320,10 +15320,16 @@ const SPK_PK_DASAR_DOK = [
 function spkPreamblePkTpl(data){
   data=data||{};
   var esc=fkEsc, out='', n=0, i;
-  /* --- kop nomor kedua belah pihak --- */
-  out += '<div class="spk-pknum">'+
-           '<div class="r"><span class="k">Nomor PIHAK PERTAMA</span><span class="s">:</span><span class="v">{{nomor_kontrak}}</span></div>'+
-           '<div class="r"><span class="k">Nomor PIHAK KEDUA</span><span class="s">:</span><span class="v">{{nomor_kontrak_p2}}</span></div>'+
+  /* --- kop nomor kedua belah pihak ---
+     Dibungkus .spk-pkhead yang bergaris bawah selebar bidang cetak, sebagai
+     pembatas terhadap kalimat pembuka di bawahnya. Kelas spk-keep membuat
+     paginator memperlakukan blok ini beserta garisnya sebagai satu kesatuan
+     (lihat atom() di spkPageScript) sehingga garis tak pernah terpisah. */
+  out += '<div class="spk-pkhead spk-keep">'+
+           '<div class="spk-pknum">'+
+             '<div class="r"><span class="k">Nomor PIHAK PERTAMA</span><span class="s">:</span><span class="v">{{nomor_kontrak}}</span></div>'+
+             '<div class="r"><span class="k">Nomor PIHAK KEDUA</span><span class="s">:</span><span class="v">{{nomor_kontrak_p2}}</span></div>'+
+           '</div>'+
          '</div>';
   /* --- kalimat pembuka --- */
   out += '<p class="kl0">Perjanjian ini dibuat dan ditandatangani di PT PLN (Persero) {{p1_nama_singkat}} yang berlokasi di {{p1_alamat}} pada hari <b>{{hari_ttd}}, tanggal {{tgl_kontrak_terbilang}} ({{tgl_kontrak_num}})</b>, oleh dan antara :</p>';
@@ -17513,7 +17519,9 @@ function spkDocCss2(){
        - titik dua kedua baris tetap lurus satu sama lain;
        - seluruh blok berdiri di TENGAH lebar margin (margin:auto), sementara
          isinya sendiri tetap rata kiri. */
-  '.spk-pknum{display:table;margin:0 auto 10px;padding:0;border:0;border-radius:0;background:none}'+
+  /* Garis pembatas antara blok nomor kedua pihak dan kalimat pembuka. */
+  '.spk-pkhead{border-bottom:1px solid #201E1D;padding-bottom:7pt;margin:0 0 10pt}'+
+  '.spk-pknum{display:table;margin:0 auto;padding:0;border:0;border-radius:0;background:none}'+
   '.spk-pknum .r{display:table-row;line-height:1.75}'+
   '.spk-pknum .k{display:table-cell;font-weight:700;white-space:nowrap;padding-right:0.45cm}'+
   '.spk-pknum .s{display:table-cell;padding-right:0.2cm}'+
@@ -17527,6 +17535,18 @@ function spkDocCss2(){
   '.spk-tocpage .toc-meta span{display:block;font-size:8.5px;font-weight:700;letter-spacing:.14em;color:#1B3A6B}'+
   '.spk-tocpage .toc-accent{width:56px;border-top:4px solid #F6B40E;margin-bottom:14px}'+
   '.spk-tocpage .toc-rule{border-top:2px solid #201E1D;margin:16px 0 6px}'+
+  /* ---- Kotak pembungkus + dua kolom bergaris tegak ----
+     .toc-box  : bingkai kotak mengelilingi SELURUH data daftar isi.
+     .toc-2k   : dua kolom; column-rule menjadi garis pemisah tegak yang
+                 tingginya otomatis berhenti di baris data terbawah.
+     Baris dijaga tidak terbelah antar-kolom (break-inside:avoid). */
+  '.spk-tocpage .toc-box{border:1.5px solid #201E1D;padding:6mm 6mm 5mm;margin-top:10px}'+
+  '.spk-tocpage .spk-toc2.toc-2k{margin-top:0;column-count:2;column-gap:9mm;'+
+    'column-rule:1px solid #201E1D;column-fill:balance}'+
+  '.spk-tocpage .spk-toc2.toc-2k .row{break-inside:avoid;page-break-inside:avoid}'+
+  '.spk-tocpage .spk-toc2.toc-2k .row:first-child{border-top:0}'+
+  '.spk-tocpage .spk-toc2.toc-2k .row .nm{flex:1 1 auto;max-width:none}'+
+  '.spk-tocpage .spk-toc2.toc-2k .row .dot{flex:0 1 auto;min-width:8px;margin:0 6px}'+
   '.spk-toc2{margin-top:4px}'+
   '.spk-toc2 .row:last-child{border-bottom:1px solid #E2E2E2}'+
   '.spk-toc2 .row{display:flex;align-items:baseline;gap:0;padding:17px 2px;border-top:1px solid #E2E2E2;border-bottom:0;font-size:14px}'+
@@ -17776,6 +17796,15 @@ function spkDocCss2(){
   '.spk-sheet > .sh-hd{flex:0 0 auto}'+
   '.spk-sheet > .sh-bd{flex:1 1 auto;overflow:hidden}'+
   '.spk-sheet > .sh-ft{flex:0 0 auto;margin-top:auto}'+
+  /* ---- KOP NAIK & KAKI TURUN MENDEKATI TEPI KERTAS ----
+     Bidang teks lembar isi bermargin 25,4mm. Kop ditarik NAIK dan kaki didorong
+     TURUN sejauh SPK_TEPI (13,4mm) sehingga keduanya berhenti 12mm dari tepi
+     kertas — masih menyisakan celah, dan simetris atas-bawah. Ruang 2 x 13,4mm
+     yang terbebas dikembalikan ke tinggi badan halaman lewat EXPK di mk(),
+     supaya jumlah baris per halaman tetap terhitung benar. Lembar Lampiran
+     dikecualikan karena bidang cetaknya memang sudah bermargin 12mm. */
+  '.spk-sheet:not(.spk-lampsheet) > .sh-hd{margin-top:-13.4mm}'+
+  '.spk-sheet:not(.spk-lampsheet) > .sh-ft{margin-bottom:-13.4mm}'+
   /* ---- JUDUL KLAUSUL DI AWAL LEMBAR ----
      Blok pertama pada setiap lembar TIDAK boleh membawa "spasi sebelum" (judul klausul
      bawaannya 12 pt) karena akan mendorongnya turun dari margin atas. Sama seperti Word
@@ -21335,18 +21364,23 @@ function spkCoverHtml(data, ctx, judulBaris){
 }
 
 /* ---------- Daftar Isi ---------- */
-/* Daftar isi TIDAK lagi dimampatkan agar muat satu lembar. Bila barisnya lebih
-   banyak daripada yang termuat sehalaman, daftar otomatis DIPECAH menjadi
-   beberapa lembar oleh pecahToc() di spkPageScript(). Fungsi kerapatan lama
-   dipertahankan (mengembalikan '') supaya pemanggilan & CSS lama tidak rusak. */
+/* Kerapatan baris tidak lagi ditentukan lewat kelas d1/d2/d3. Daftar isi kini
+   selalu SATU halaman: disusun dua kolom di dalam kotak, dan bila barisnya
+   terlalu banyak, muatkanToc() di spkPageScript() memperkecil baris sampai
+   muat. Fungsi kerapatan lama dipertahankan (mengembalikan '') supaya
+   pemanggilan & CSS lama tidak rusak. */
 function spkTocDensity(n){ return ''; }
 function spkTocHtml(data, klausul){
   const esc=fkEsc;
   const list=klausul||[];
   /* PENTING: pembungkus .spk-toc2 dan <span class="pg"> WAJIB dipertahankan —
      nomorToc() di spkPageScript() mengisi nomor halaman lewat
-     querySelectorAll(".spk-toc2 .pg"), dan pecahToc() memecah daftar ini
-     menjadi beberapa lembar bila tidak muat satu halaman.
+     querySelectorAll(".spk-toc2 .pg").
+     TATA LETAK: seluruh baris dibungkus .toc-box (bingkai kotak) dan disusun
+     DUA KOLOM (.toc-2k) yang dipisah garis tegak (column-rule). Karena kedua
+     kolom diseimbangkan, tinggi garis tegak berhenti tepat di baris data
+     terbawah. Daftar isi SELALU satu halaman: bila barisnya banyak,
+     muatkanToc() di spkPageScript() memperkecil baris sampai muat.
      Rancangan SAMA untuk Surat Perintah Kerja & Perjanjian/Kontrak; yang
      berbeda hanya nama dokumen pada blok keterangan di kanan judul. */
   const rows=list.map((k,i)=>{
@@ -21363,7 +21397,7 @@ function spkTocHtml(data, klausul){
       '<div class="toc-meta"><b>'+esc(spkDokLabel(data))+'</b><span>'+esc(data.nomor_kontrak||'\u2014')+'</span></div>'+
     '</div>'+
     '<div class="toc-rule"></div>'+
-    '<div class="spk-toc2">'+rows+'</div>'+
+    '<div class="toc-box"><div class="spk-toc2 toc-2k">'+rows+'</div></div>'+
   '</section>';
 }
 
@@ -21711,11 +21745,12 @@ function spkPageScript(){
     '   sheets.push(sh);',
     '   var hh=h?h.getBoundingClientRect().height:0;',
     '   var fh=f?f.getBoundingClientRect().height:0;',
-    /* Tinggi badan lembar dihitung apa adanya: PH dikurangi tinggi kop & kaki.
-       Penambah EXPK dahulu dipakai untuk mengganti ruang yang direbut margin
-       negatif pada lembar Perjanjian/Kontrak; margin itu sudah dihapus, jadi
-       EXPK selalu 0 dan kedua bentuk dokumen dihitung dengan cara yang sama. */
-    '   var EXPK=0;',
+    /* Tinggi badan lembar = PH dikurangi tinggi kop & kaki, DITAMBAH ruang yang
+       direbut oleh margin negatif .sh-hd/.sh-ft (2 x 13,4mm = 26,8mm; lihat CSS
+       "KOP NAIK & KAKI TURUN"). Tanpa penambah ini setiap lembar akan menyisakan
+       pita kosong setinggi 26,8mm di atas kaki halaman. Lembar Lampiran memakai
+       perhitungan apa adanya karena margin negatif itu tidak berlaku padanya. */
+    '   var EXPK=(extra.indexOf("spk-lampsheet")<0) ? mm2px(26.8) : 0;',
     '   b.style.height=Math.max(80,(PH-hh-fh-6+EXPK))+"px";',
     '   b.style.overflow="hidden";',
     '   body=b;',
@@ -22034,59 +22069,48 @@ function spkPageScript(){
     '   if(seen[u]) cl[i].classList.add("spk-cont"); else { cl[i].classList.remove("spk-cont"); seen[u]=1; }',
     ' }',
     '}',
-    /* ==== DAFTAR ISI BERHALAMAN BANYAK ====
-       Lembar Daftar Isi berukuran tetap (A4, overflow tersembunyi), sehingga
-       baris yang melewati batas bawah dahulu hilang begitu saja. Fungsi ini
-       mengukur tinggi nyata tiap baris lalu memindahkan baris yang tidak muat
-       ke lembar Daftar Isi BARU — sebanyak yang diperlukan. Lembar lanjutan
-       memakai kepala yang sama, judulnya diberi keterangan "(Lanjutan)".
-       Dijalankan SEBELUM nomorToc() karena urutan .pg dibaca lintas lembar. */
+    /* ==== DAFTAR ISI SELALU SATU HALAMAN ====
+       Daftar isi disusun dua kolom di dalam kotak. Bila jumlah pasal membuat
+       kotak melewati batas bawah lembar, seluruh baris DIPERKECIL bertahap
+       (tinggi padding, ukuran huruf, lebar kolom nomor) sampai muat — bukan
+       dipecah ke halaman lain. Skala mulai 1 dan turun 0,04 tiap langkah,
+       dibatasi 0,42 supaya masih terbaca. Nilai dasar diambil dari CSS
+       .spk-toc2 (baris: padding 17px/2px & 14px; .no lebar 44px; .pg 15px). */
     'function tocLimit(sec){',
     ' var cs=window.getComputedStyle(sec);',
     ' var pt=parseFloat(cs.paddingTop)||0, pb=parseFloat(cs.paddingBottom)||0;',
     ' return sec.clientHeight - pt - pb;',
     '}',
-    'function tocMuat(sec, list, lim){',
+    'function tocMuat(sec, kotak, lim){',
     ' var cs=window.getComputedStyle(sec);',
     ' var atas=sec.getBoundingClientRect().top + (parseFloat(cs.paddingTop)||0);',
-    ' return (list.getBoundingClientRect().bottom - atas) <= lim + 1;',
+    ' return (kotak.getBoundingClientRect().bottom - atas) <= lim + 1;',
     '}',
-    'function tocLembarBaru(sec, list){',
-    ' var baru=sec.cloneNode(false);',
-    ' var anak=els(sec);',
-    ' for(var i=0;i<anak.length;i++){',
-    '   if(anak[i]===list){ var kl=list.cloneNode(false); baru.appendChild(kl); }',
-    '   else baru.appendChild(anak[i].cloneNode(true));',
+    'function tocSkala(baris, f){',
+    ' for(var i=0;i<baris.length;i++){',
+    '   var r=baris[i];',
+    '   r.style.padding=(17*f).toFixed(2)+"px 2px";',
+    '   r.style.fontSize=(14*f).toFixed(2)+"px";',
+    '   r.style.lineHeight="1.3";',
+    '   var no=r.querySelector(".no"); if(no){ no.style.width=(44*f).toFixed(2)+"px"; no.style.fontSize=(14*f).toFixed(2)+"px"; }',
+    '   var nm=r.querySelector(".nm"); if(nm){ nm.style.fontSize=(14*f).toFixed(2)+"px"; }',
+    '   var pg=r.querySelector(".pg"); if(pg){ pg.style.fontSize=(15*f).toFixed(2)+"px"; }',
+    '   var dt=r.querySelector(".dot"); if(dt){ dt.style.margin="0 "+(9*f).toFixed(2)+"px"; }',
     ' }',
-    ' var h=baru.querySelector("h1");',
-    ' if(h && (h.textContent||"").indexOf("Lanjutan")<0) h.textContent=h.textContent+" (Lanjutan)";',
-    ' if(sec.nextSibling) sec.parentNode.insertBefore(baru, sec.nextSibling);',
-    ' else sec.parentNode.appendChild(baru);',
-    ' return baru;',
     '}',
-    'function pecahTocSatu(sec){',
-    ' var list=sec.querySelector(".spk-toc2"); if(!list) return;',
-    ' var baris=els(list); if(baris.length<2) return;',
+    'function muatkanTocSatu(sec){',
+    ' var kotak=sec.querySelector(".toc-box"); if(!kotak) return;',
+    ' var list=kotak.querySelector(".spk-toc2"); if(!list) return;',
+    ' var baris=els(list); if(!baris.length) return;',
     ' var lim=tocLimit(sec); if(!lim || lim<80) return;',
-    ' if(tocMuat(sec, list, lim)) return;',
-    ' for(var i=0;i<baris.length;i++) list.removeChild(baris[i]);',
-    ' var sekarang=sec, isi=list, adaIsi=0, jaga=0;',
-    ' for(var k=0;k<baris.length;k++){',
-    '   isi.appendChild(baris[k]);',
-    '   if(adaIsi && !tocMuat(sekarang, isi, lim)){',
-    '     isi.removeChild(baris[k]);',
-    '     sekarang=tocLembarBaru(sekarang, isi);',
-    '     isi=sekarang.querySelector(".spk-toc2");',
-    '     lim=tocLimit(sekarang);',
-    '     isi.appendChild(baris[k]);',
-    '     adaIsi=1;',
-    '     if(jaga++>400) return;',
-    '   }else{ adaIsi=1; }',
+    ' var f=1, jaga=0;',
+    ' while(!tocMuat(sec, kotak, lim) && f>0.42 && jaga++<40){',
+    '   f-=0.04; tocSkala(baris, f);',
     ' }',
     '}',
-    'function pecahToc(){',
+    'function muatkanToc(){',
     ' var hal=document.querySelectorAll(".spk-doc > .spk-page.spk-tocpage");',
-    ' for(var i=0;i<hal.length;i++) pecahTocSatu(hal[i]);',
+    ' for(var i=0;i<hal.length;i++) muatkanTocSatu(hal[i]);',
     '}',
     /* nomor halaman Daftar Isi = nomor lembar ISI KONTRAK (SPK) tempat klausul
        dimulai. Lembar Lampiran TIDAK dihitung, agar konsisten dengan footer. */
@@ -22149,7 +22173,7 @@ function spkPageScript(){
     '   var UID={n:0};',
     '   var list=document.querySelectorAll(".spk-doc > .spk-page.spk-flow");',
     '   for(var i=0;i<list.length;i++) build(list[i], hasCls(list[i],"spk-lampsheet")?PHL:PH, UID);',
-    '   pecahToc();',
+    '   muatkanToc();',
     '   tandaiLanjutan();',
     '   rapikanAtasLembar();',
     '   nomorToc();',
