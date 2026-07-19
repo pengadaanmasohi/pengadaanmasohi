@@ -15297,8 +15297,11 @@ const SPK_PK_DASAR_TETAP = [
 ];
 /* Dokumen proses pengadaan — pasangan (label, key nomor, key tanggal).
    Butir yang nomor & tanggalnya kosong tidak dicetak. */
+/* nl = label baris nomor. Mengikuti dokumen acuan: umumnya "No. Dokumen",
+   kecuali Sumber Anggaran yang memakai "No. SKKO/SKKI". Bila nl dikosongkan,
+   dipakai "No. Dokumen". */
 const SPK_PK_DASAR_DOK = [
- {l:'Sumber Anggaran',                              no:'no_anggaran',   tg:'tgl_anggaran'},
+ {l:'Sumber Anggaran',                              no:'no_anggaran',   tg:'tgl_anggaran', nl:'No. SKKO/SKKI'},
  {l:'Dokumen Rencana Kerja dan Syarat-syarat (RKS)', no:'no_rks',       tg:'tgl_rks'},
  {l:'__EPROC__',                                    no:'no_eproc',      tg:''},
  {l:'Berita Acara Penjelasan',                      no:'no_bapj',       tg:'tgl_bapj'},
@@ -15360,7 +15363,7 @@ function spkPreamblePkTpl(data){
     var vNo=String(data[it.no]==null?'':data[it.no]).trim();
     var vTg=it.tg?String(data[it.tg]==null?'':data[it.tg]).trim():'';
     if(!vNo && !vTg) continue;                       // butir tanpa data dilewati
-    dokItems.push({ t:it.l, nl:'No.', np:(vNo?'{{'+it.no+'}}':''),
+    dokItems.push({ t:it.l, nl:(it.nl||'No. Dokumen'), np:(vNo?'{{'+it.no+'}}':''),
                     tp:(vTg?'{{'+it.tg+'}}':'') });
   }
   /* Lebar kolom label = label terpanjang + jeda 0,3 cm (jatuh ke 2,3 cm bila
@@ -17319,6 +17322,13 @@ function spkDocCss(){
      bagi paginator agar blok ini pindah halaman secara utuh. */
   '.spk-cl .spk-keep{margin:0;padding:0;border:0;background:none;break-inside:avoid;page-break-inside:avoid}'+
   '.spk-cl .spk-kv.spk-dkv{margin:0 0 4pt 1.2cm}'+
+  /* PERJANJIAN/KONTRAK: daftar "Berdasarkan" memakai inden standar yang sama
+     dengan butir klausul — penanda menjorok 0,35 cm dari teks paragraf
+     pengantarnya, bukan 0,5 cm dengan kotak nomor selebar 0,7 cm. Baris
+     No./Tanggal di bawahnya menggantung tepat di kolom teks butirnya. */
+  '.spk-doc.spk-pk .spk-cl p.spk-dlist{margin:0 0 4pt 0.35cm;padding-left:0.6cm;text-indent:-0.6cm}'+
+  '.spk-doc.spk-pk .spk-cl p.spk-dlist .n{width:0.6cm}'+
+  '.spk-doc.spk-pk .spk-cl .spk-kv.spk-dkv{margin:0 0 4pt 0.95cm}'+
   '.spk-cl .spk-kv.spk-dkv .k{flex:0 0 3.6cm;max-width:3.6cm}'+
   '.spk-cl .spk-kv.spk-dkv .s{flex:0 0 auto;width:0.6em}'+
   '.spk-cl .spk-kv.spk-dkv .v{flex:1 1 auto;text-align:left;overflow-wrap:anywhere;word-break:break-word}'+
@@ -17472,13 +17482,18 @@ function spkDocCss2(){
   '.spk-cover.cv-pk .cv-grid .f{border-left:3px solid #1B3A6B}'+
   '.spk-cover.cv-pk .cv-nilai{background:linear-gradient(135deg,#12304F,#1B3A6B);border-left:4px solid #F6B40E}'+
   /* ---------- Kop nomor kedua pihak (preamble Perjanjian/Kontrak) ----------
-     Tampil POLOS: tanpa latar, bingkai, sudut membulat, maupun padding —
-     hanya baris "Label : nilai" biasa menyatu dengan badan dokumen. */
-  '.spk-pknum{margin:0 0 10px;padding:0;border:0;border-radius:0;background:none}'+
-  '.spk-pknum .r{display:flex;gap:6px;line-height:1.75}'+
-  '.spk-pknum .k{flex:0 0 42%;font-weight:700}'+
-  '.spk-pknum .s{flex:0 0 8px}'+
-  '.spk-pknum .v{flex:1 1 auto;font-weight:700}'+
+     Tampil POLOS: tanpa latar, bingkai, sudut membulat, maupun padding.
+     Tata letak memakai table agar:
+       - lebar kolom label MENEMPEL pada teks terpanjangnya, sehingga titik dua
+         tidak melayang jauh (dulu kolom label dipatok 42% lebar halaman);
+       - titik dua kedua baris tetap lurus satu sama lain;
+       - seluruh blok berdiri di TENGAH lebar margin (margin:auto), sementara
+         isinya sendiri tetap rata kiri. */
+  '.spk-pknum{display:table;margin:0 auto 10px;padding:0;border:0;border-radius:0;background:none}'+
+  '.spk-pknum .r{display:table-row;line-height:1.75}'+
+  '.spk-pknum .k{display:table-cell;font-weight:700;white-space:nowrap;padding-right:0.45cm}'+
+  '.spk-pknum .s{display:table-cell;padding-right:0.2cm}'+
+  '.spk-pknum .v{display:table-cell;font-weight:700;white-space:nowrap}'+
   /* ---------- DAFTAR ISI ---------- */
   '.spk-tocpage{font-family:'+G+';color:#201E1D}'+
   '.spk-tocpage .toc-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px}'+
@@ -17973,30 +17988,43 @@ function spkPkTok(p){
   return String(fe.textContent||'').replace(/[\s\u00A0]+/g,'');
 }
 
-/* ---- (1) NOMOR SUB-BUTIR MENGIKUTI INDUKNYA, BUKAN NOMOR PASAL ----
-   Di dalam satu klausul, sub-butir dari butir "2." harus bernomor "2.1.",
-   "2.2." — bukan "9.1." (nomor Pasal). Template lama sering menulis nomor
-   pasal sebagai awalan; di sini awalannya ditulis ulang mengikuti butir
-   tingkat-1 terakhir yang berada DI ATASNYA.
-   Aman: bila di dalam klausul belum ada butir tingkat-1 (mis. pasal yang
-   memang langsung memakai penomoran X.1), nomor TIDAK diubah. */
+/* ---- (1) SUSUN ULANG NOMOR MAJEMUK DARI SILSILAHNYA ----
+   Nomor majemuk ("2.1.") disusun ULANG SEPENUHNYA dari kedudukan butirnya,
+   bukan disalin dari sumber. Dua cacat sekaligus tertangani:
+     - awalannya sering memakai nomor Pasal ("9.1." padahal induknya butir "2.")
+     - angka terakhirnya berlanjut dari induk sebelumnya ("2.10." padahal butir
+       di bawah "2." baru yang pertama, seharusnya "2.1.")
+   Cara kerjanya: jalur penomoran (path) diikuti sepanjang klausul. Begitu muncul
+   butir tingkat-1 baru, hitungan anaknya otomatis mulai dari 1 lagi.
+   Huruf a./b. dan bullet tidak mengubah jalur, sehingga penomoran majemuk tetap
+   berlanjut benar meski diselingi daftar huruf.
+   Pengaman: bila induk sebuah nomor majemuk TIDAK ada di klausul itu (mis. pasal
+   yang memang langsung memakai "5.1.", "5.2."), jalur diambil dari nomor aslinya
+   sehingga awalannya tidak diubah. */
 function spkPkSubNumberFix(html){
   var s=String(html==null?'':html);
   if(s.indexOf('class="n')<0) return s;
   try{
     var box=document.createElement('div'); box.innerHTML=s;
-    var ps=box.querySelectorAll('p'), i, indukSekarang=null, ubah=false;
+    var ps=box.querySelectorAll('p'), i, jalur=[], ubah=false;
     for(i=0;i<ps.length;i++){
       var p=ps[i], tok=spkPkTok(p);
       if(!tok) continue;
-      var st=/^([0-9]+)\.$/.exec(tok);                 /* butir tingkat-1: "2." */
-      if(st){ indukSekarang=st[1]; continue; }
-      var mt=/^([0-9]+)\.([0-9]+(?:\.[0-9]+)*\.)$/.exec(tok);   /* "9.1." / "9.1.1." */
-      if(!mt) continue;                                /* huruf a./b., romawi, bullet -> dilewati */
-      if(indukSekarang===null) continue;               /* tak ada induk -> biarkan apa adanya */
-      if(mt[1]===indukSekarang) continue;              /* sudah benar */
-      p.firstElementChild.textContent=indukSekarang+'.'+mt[2];
-      ubah=true;
+      var segs=spkPkSegs(tok);
+      if(!segs) continue;                       /* huruf / bullet: jalur tak berubah */
+      var d=segs.length;
+      if(d===1){                                /* butir tingkat-1: dipakai apa adanya */
+        jalur=[parseInt(segs[0],10)];
+        continue;
+      }
+      if(jalur.length < d-1){                   /* induk tak ada -> hormati nomor asli */
+        jalur=segs.map(Number);
+        continue;
+      }
+      var idx=(jalur.length>=d) ? jalur[d-1]+1 : 1;   /* lanjut, atau mulai dari 1 */
+      jalur=jalur.slice(0,d-1); jalur.push(idx);
+      var baru=jalur.join('.')+'.';
+      if(baru!==tok){ p.firstElementChild.textContent=baru; ubah=true; }
     }
     return ubah ? box.innerHTML : s;
   }catch(e){ return s; }
@@ -21142,7 +21170,7 @@ function spkPageScript(){
        Diperlakukan sebagai SATU blok utuh: bila tak cukup ruang, seluruhnya turun
        bersama ke halaman berikutnya — tanda tangan tidak pernah berdiri sendiri. */
     ' if(hasCls(n,"hps-tail")) return true;',
-    ' if(hasCls(n,"spk-keep")) return true;',
+    ' if(hasCls(n,"spk-keep")||hasCls(n,"spk-pknum")) return true;',
     ' if(hasCls(n,"spk-cl-h")||hasCls(n,"spk-kv")||hasCls(n,"spk-kvgrp")||hasCls(n,"spk-party")||hasCls(n,"spk-bab")||hasCls(n,"spk-sign")||hasCls(n,"spk-sign-eyebrow")||hasCls(n,"spk-lampsign")) return true;',
     ' return els(n).length===0;',
     '}',
