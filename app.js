@@ -17519,8 +17519,13 @@ function spkDocCss2(){
        - titik dua kedua baris tetap lurus satu sama lain;
        - seluruh blok berdiri di TENGAH lebar margin (margin:auto), sementara
          isinya sendiri tetap rata kiri. */
-  /* Garis pembatas antara blok nomor kedua pihak dan kalimat pembuka. */
-  '.spk-pkhead{border-bottom:1px solid #201E1D;padding-bottom:7pt;margin:0 0 10pt}'+
+  /* Garis pembatas antara blok nomor kedua pihak dan kalimat pembuka.
+     JARAK TOTAL dari baris "Nomor PIHAK KEDUA" ke kalimat "Perjanjian ini
+     dibuat ..." = 12pt, dibagi rata: 6pt di atas garis (padding-bottom) dan
+     6pt di bawahnya (margin-bottom), sehingga garis berada tepat di tengah
+     jarak itu. Paragraf .kl0 sesudahnya bermargin-atas 0, jadi tidak ada
+     margin yang runtuh (collapse) dan jaraknya benar-benar 12pt. */
+  '.spk-pkhead{border-bottom:1px solid #201E1D;padding-bottom:6pt;margin:0 0 6pt}'+
   '.spk-pknum{display:table;margin:0 auto;padding:0;border:0;border-radius:0;background:none}'+
   '.spk-pknum .r{display:table-row;line-height:1.75}'+
   '.spk-pknum .k{display:table-cell;font-weight:700;white-space:nowrap;padding-right:0.45cm}'+
@@ -17540,13 +17545,24 @@ function spkDocCss2(){
      .toc-2k   : dua kolom; column-rule menjadi garis pemisah tegak yang
                  tingginya otomatis berhenti di baris data terbawah.
      Baris dijaga tidak terbelah antar-kolom (break-inside:avoid). */
-  '.spk-tocpage .toc-box{border:1.5px solid #201E1D;padding:6mm 6mm 5mm;margin-top:10px}'+
+  /* Bingkai luar & garis tegak sengaja SAMAR: tipis (0,8px) dan abu-abu muda
+     (#D6DAE0, warna yang sama dengan titik-titik penuntun), supaya membingkai
+     tanpa mencuri perhatian dari judul pasal. */
+  '.spk-tocpage .toc-box{border:0.8px solid #D6DAE0;padding:6mm 6mm 5mm;margin-top:10px}'+
   '.spk-tocpage .spk-toc2.toc-2k{margin-top:0;column-count:2;column-gap:9mm;'+
-    'column-rule:1px solid #201E1D;column-fill:balance}'+
+    'column-rule:0.8px solid #D6DAE0;column-fill:balance}'+
   '.spk-tocpage .spk-toc2.toc-2k .row{break-inside:avoid;page-break-inside:avoid}'+
   '.spk-tocpage .spk-toc2.toc-2k .row:first-child{border-top:0}'+
   '.spk-tocpage .spk-toc2.toc-2k .row .nm{flex:1 1 auto;max-width:none}'+
   '.spk-tocpage .spk-toc2.toc-2k .row .dot{flex:0 1 auto;min-width:8px;margin:0 6px}'+
+  /* Huruf sedikit DIPERBESAR dan jarak antar-baris DIRAPATKAN: padding baris
+     17px -> 11px, huruf 14px -> 15px (nomor halaman 15px -> 16px). Nilai dasar
+     ini HARUS sama dengan yang dipakai tocSkala() di spkPageScript, karena
+     fungsi itu mengalikannya dengan faktor pengecilan bila daftar tak muat. */
+  '.spk-tocpage .spk-toc2.toc-2k .row{padding:11px 2px;font-size:15px;line-height:1.3}'+
+  '.spk-tocpage .spk-toc2.toc-2k .row .no{font-size:15px}'+
+  '.spk-tocpage .spk-toc2.toc-2k .row .nm{font-size:15px}'+
+  '.spk-tocpage .spk-toc2.toc-2k .row .pg{font-size:16px}'+
   '.spk-toc2{margin-top:4px}'+
   '.spk-toc2 .row:last-child{border-bottom:1px solid #E2E2E2}'+
   '.spk-toc2 .row{display:flex;align-items:baseline;gap:0;padding:17px 2px;border-top:1px solid #E2E2E2;border-bottom:0;font-size:14px}'+
@@ -22075,7 +22091,7 @@ function spkPageScript(){
        (tinggi padding, ukuran huruf, lebar kolom nomor) sampai muat — bukan
        dipecah ke halaman lain. Skala mulai 1 dan turun 0,04 tiap langkah,
        dibatasi 0,42 supaya masih terbaca. Nilai dasar diambil dari CSS
-       .spk-toc2 (baris: padding 17px/2px & 14px; .no lebar 44px; .pg 15px). */
+       .toc-2k (baris: padding 11px/2px & 15px; .no lebar 44px; .pg 16px). */
     'function tocLimit(sec){',
     ' var cs=window.getComputedStyle(sec);',
     ' var pt=parseFloat(cs.paddingTop)||0, pb=parseFloat(cs.paddingBottom)||0;',
@@ -22089,12 +22105,12 @@ function spkPageScript(){
     'function tocSkala(baris, f){',
     ' for(var i=0;i<baris.length;i++){',
     '   var r=baris[i];',
-    '   r.style.padding=(17*f).toFixed(2)+"px 2px";',
-    '   r.style.fontSize=(14*f).toFixed(2)+"px";',
+    '   r.style.padding=(11*f).toFixed(2)+"px 2px";',
+    '   r.style.fontSize=(15*f).toFixed(2)+"px";',
     '   r.style.lineHeight="1.3";',
-    '   var no=r.querySelector(".no"); if(no){ no.style.width=(44*f).toFixed(2)+"px"; no.style.fontSize=(14*f).toFixed(2)+"px"; }',
-    '   var nm=r.querySelector(".nm"); if(nm){ nm.style.fontSize=(14*f).toFixed(2)+"px"; }',
-    '   var pg=r.querySelector(".pg"); if(pg){ pg.style.fontSize=(15*f).toFixed(2)+"px"; }',
+    '   var no=r.querySelector(".no"); if(no){ no.style.width=(44*f).toFixed(2)+"px"; no.style.fontSize=(15*f).toFixed(2)+"px"; }',
+    '   var nm=r.querySelector(".nm"); if(nm){ nm.style.fontSize=(15*f).toFixed(2)+"px"; }',
+    '   var pg=r.querySelector(".pg"); if(pg){ pg.style.fontSize=(16*f).toFixed(2)+"px"; }',
     '   var dt=r.querySelector(".dot"); if(dt){ dt.style.margin="0 "+(9*f).toFixed(2)+"px"; }',
     ' }',
     '}',
