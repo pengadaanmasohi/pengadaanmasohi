@@ -18041,12 +18041,34 @@ function spkPkSubNumberFix(html){
   if(s.indexOf('class="n')<0) return s;
   try{
     var box=document.createElement('div'); box.innerHTML=s;
-    var ps=box.querySelectorAll('p'), i, jalur=[], ubah=false, refMap={};
+    var ps=box.querySelectorAll('p'), i, jalur=[], ubah=false, refMap={}, numTerakhir=false;
     for(i=0;i<ps.length;i++){
       var p=ps[i], tok=spkPkTok(p);
       if(!tok) continue;
       var segs=spkPkSegs(tok);
-      if(!segs) continue;                       /* huruf / bullet: jalur tak berubah */
+      if(!segs){
+        /* PENANDA HURUF YANG SEBENARNYA LANJUTAN DERET ANGKA.
+           Sebagian klausul warisan menyelipkan butir berpenanda huruf (mis. "g.")
+           tepat setelah butir bernomor (mis. "3.6.") padahal butir itu SETINGKAT
+           dengannya, bukan sub-daftar — hasilnya penomoran tampak terputus.
+           Penanda seperti itu dijadikan lanjutan deret angka: "3.6." -> "3.7.".
+           PENGAMAN agar sub-daftar huruf yang SAH tidak ikut diubah:
+             - hanya bila butir bernomor tepat sebelumnya ADA (numTerakhir),
+             - penandanya BUKAN pembuka daftar (a. A. i. I.) — pembuka berarti
+               memang sub-daftar baru di bawah butir itu,
+             - begitu satu penanda pembuka ditemui, seluruh sisa daftar hurufnya
+               dibiarkan (numTerakhir=false), jadi b. c. d. di bawahnya aman. */
+        if(spkPkIsHuruf(tok) && numTerakhir && jalur.length && !/^[aAiI][.)]$/.test(tok)){
+          var jl=jalur.slice(); jl[jl.length-1]=jl[jl.length-1]+1;
+          var barH=jl.join('.')+'.';
+          jalur=jl;
+          p.firstElementChild.textContent=barH; ubah=true;
+          continue;                             /* tetap dianggap butir bernomor */
+        }
+        numTerakhir=false;                      /* huruf / bullet: jalur tak berubah */
+        continue;
+      }
+      numTerakhir=true;
       var d=segs.length;
       if(d===1){                                /* butir tingkat-1: dipakai apa adanya */
         jalur=[parseInt(segs[0],10)];
@@ -21587,6 +21609,50 @@ function spkPageScript(){
     '   ht.tail.style.textIndent="0"; ht.tail.style.marginTop="0";',
     '   t.appendChild(ht.head); return ht.tail;',
     ' }',
+    /* ==== JUDUL BUTIR/AYAT YANG MENGGANTUNG DI DASAR HALAMAN ====
+       Baris seperti "3. Sanksi-Sanksi" adalah JUDUL sebuah butir/ayat; isinya ada di
+       paragraf berikutnya. Bila isi itu tidak muat lagi di halaman ini dan juga tidak
+       bisa dipecah (kendali orphan), judulnya tertinggal SENDIRIAN di dasar halaman
+       sementara isinya pindah ke halaman berikutnya. Di sini judul itu ikut diboyong
+       supaya judul & isinya selalu berada di halaman yang sama.
+       Syarat agar tidak salah boyong: paragraf terakhir di halaman ini harus
+         - diawali nomor ("3.", "3)"),
+         - TIDAK diakhiri tanda kalimat . ; ,  -> kalimat isi bukan judul,
+         - pendek & hanya satu baris,
+         - bukan satu-satunya isi halaman (kalau ditarik, halaman jadi kosong).
+       Berlaku hanya untuk Perjanjian/Kontrak (ISPK); paginasi Surat Perintah Kerja
+       tidak diubah. */
+    ' function _numHead(c){',
+    '   if(!c || c.nodeType!==1 || c.tagName!=="P") return false;',
+    '   if(hasCls(c,"spk-cl-h")||hasCls(c,"spk-bab")||hasCls(c,"spk-party-h")||hasCls(c,"spk-ph")||hasCls(c,"spk-kv")||hasCls(c,"spk-sign-eyebrow")) return false;',
+    '   var tx=(c.textContent||"").replace(/[\\s\\u00A0]+/g," ").replace(/^ /,"").replace(/ $/,"");',
+    '   if(!/^\\d+(?:\\.\\d+)*[.)]/.test(tx)) return false;',
+    '   if(/[.;,][\\s\\u00A0]*$/.test(tx)) return false;',
+    '   if(tx.length>90) return false;',
+    '   return _nLines(c)<=1;',
+    ' }',
+    ' function tarikJudulMenggantung(node){',
+    '   if(!ISPK) return null;',
+    '   if(node && node.nodeType===1 && (hasCls(node,"spk-clause")||hasCls(node,"spk-cl-h")||hasCls(node,"spk-bab"))) return null;',
+    /* Judul bertingkat bisa MENUMPUK di dasar halaman (mis. "2." lalu "2.1."),
+       jadi ditarik berturut-turut, maksimal 3 tingkat. */
+    '   var out=[], g=0;',
+    '   while(g++<3){',
+    '     var kk=els(tgt());',
+    '     if(kk.length<2) break;',
+    '     var c=kk[kk.length-1];',
+    '     if(!_numHead(c)) break;',
+    '     c.parentNode.removeChild(c); out.unshift(c);',
+    '   }',
+    '   return out.length ? out : null;',
+    ' }',
+    /* Buka lembar baru SEKALIGUS memboyong judul yang menggantung. Dipakai di
+       SEMUA titik yang memulai halaman baru karena isi tak muat. */
+    ' function mkTarik(node){',
+    '   var _j=tarikJudulMenggantung(node);',
+    '   mk();',
+    '   if(_j) for(var _i=0;_i<_j.length;_i++) tgt().appendChild(_j[_i]);',
+    ' }',
     ' function put(node){',
     /* Penanda halaman baru: blok ber-class "spk-forcepage" (paragraf "Maka dengan ini
        PIHAK PERTAMA menugaskan...") memulai lembar baru HANYA bila bagian pembuka
@@ -21635,12 +21701,12 @@ function spkPageScript(){
        halaman. Bila sisa ruang < MINSUBHEAD DAN sudah ada isian klausul di atasnya pada
        halaman ini (els(tgt())>0, jadi bukan judul klausul yang bakal ikut terdorong),
        mulai halaman baru dulu supaya sub-judul + isiannya tampil utuh & rapi. */
-    '   if(node.nodeType===1 && node.tagName==="P" && isSubHead(node) && !kosong() && els(tgt()).length>0 && remain()<MINSUBHEAD){ mk(); }',
+    '   if(node.nodeType===1 && node.tagName==="P" && isSubHead(node) && !kosong() && els(tgt()).length>0 && remain()<MINSUBHEAD){ mkTarik(node); }',
     /* KEEP-WITH-NEXT "Berdasarkan :" : judul daftar dasar (nomor-nomor berita acara)
        tak boleh terdampar sendirian di baris paling bawah halaman. Bila sisa ruang
        di bawah < MINSUBHEAD (tak cukup untuk judul + butir pertamanya), mulai halaman
        baru dulu -> "Berdasarkan :" menjadi teks awal di halaman berikutnya. */
-    '   if(node.nodeType===1 && node.tagName==="P" && hasCls(node,"spk-berdasar") && !kosong() && remain()<MINSUBHEAD){ mk(); }',
+    '   if(node.nodeType===1 && node.tagName==="P" && hasCls(node,"spk-berdasar") && !kosong() && remain()<MINSUBHEAD){ mkTarik(node); }',
     /* KEEP-TOGETHER BLOK "Label : nilai" (.spk-kvgrp — mis. Nama Rekening / Nomor
        Rekening / Bank pada pasal Tata Cara Pembayaran): blok ini tidak boleh
        terbelah. Bila sisa ruang di halaman ini tak cukup memuat SELURUH barisnya,
@@ -21678,7 +21744,7 @@ function spkPageScript(){
     '     var sl=node.cloneNode(false);',
     '     sl.setAttribute("data-spksh", uid);',
     '     t.appendChild(sl);',
-    '     if(over() && !kosong()){ t.removeChild(sl); mk(); put(node); return; }',
+    '     if(over() && !kosong()){ t.removeChild(sl); mkTarik(node); put(node); return; }',
     '     if(sl.tagName==="TABLE"){',
     '       var cg=node.querySelector("colgroup"); if(cg) sl.appendChild(cg.cloneNode(true));',
     '     }',
@@ -21703,7 +21769,7 @@ function spkPageScript(){
     '     try{ var _tail=splitParaToFit(node, t); if(_tail){ mk(); put(_tail); return; } }catch(_e){}',
     '   }',
     '   if(kosong()){ t.appendChild(node); return; }',   /* blok lebih tinggi dari 1 halaman */
-    '   mk();',
+    '   mkTarik(node);',
     '   tgt().appendChild(node);',
     ' }',
     ' mk();',
