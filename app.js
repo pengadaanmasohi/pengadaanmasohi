@@ -17596,39 +17596,13 @@ function spkDocCss2(){
 
   /* ==========================================================================
      PERJANJIAN/KONTRAK — HALAMAN ISI KLAUSUL
-     Kop berulang ditiadakan (lihat spkRunHeadHtml) dan seluruh bidang cetak
-     diberi BINGKAI tipis, mengikuti tata letak dokumen perjanjian cetak.
-     Kaki halaman TIDAK diubah — tetap sama dengan Surat Perintah Kerja.
-     Aturan di bawah bersyarat pada .spk-doc.spk-pk dan dikecualikan untuk lembar
-     Lampiran, sehingga bentuk Surat Perintah Kerja maupun halaman Sampul/Daftar
-     Isi tidak tersentuh sama sekali.
+     Sejak penyeragaman, halaman isi Perjanjian/Kontrak memakai kop, kaki, dan
+     bidang cetak yang PERSIS SAMA dengan Surat Perintah Kerja. Aturan khusus
+     yang dahulu ada di sini — bingkai tipis mengelilingi bidang cetak, kaki
+     tanpa garis & tanpa tulisan "UP3 MASOHI", serta tarikan margin -7mm di
+     atas/bawah — SUDAH DIHAPUS. Gaya penomoran & indentasi klausul PK (di
+     bagian atas berkas ini) tidak tersentuh.
      ========================================================================== */
-  /* Bingkai bidang cetak — digambar sebagai lapisan terpisah supaya tidak
-     mengubah tinggi/padding lembar yang sudah dipakai perhitungan paginator. */
-  '.spk-doc.spk-pk .spk-page.spk-sheet:not(.spk-lampsheet){position:relative}'+
-  '.spk-doc.spk-pk .spk-page.spk-sheet:not(.spk-lampsheet)::after{content:"";position:absolute;'+
-    'top:14mm;right:14mm;bottom:14mm;left:14mm;border:1px solid #201E1D;pointer-events:none;z-index:0}'+
-  '.spk-doc.spk-pk .spk-page.spk-sheet:not(.spk-lampsheet) > *{position:relative;z-index:1}'+
-  /* ---------- KAKI HALAMAN PERJANJIAN/KONTRAK ----------
-     Susunan isinya TETAP sama dengan Surat Perintah Kerja (spkRunFootHtml tidak
-     diubah); yang berbeda hanya tampilannya, dan hanya pada bentuk PK:
-       1) garis hitam pemisah dihapus (border-top:0),
-       2) tulisan "UP3 MASOHI" disembunyikan,
-       3) kaki diturunkan sedikit lewat margin bawah NEGATIF sehingga menyisakan
-          jarak kecil terhadap bingkai luar halaman:
-            dasar bidang teks 25,4mm - turun 7mm = 18,4mm dari tepi kertas,
-            sedangkan bingkai berada di 14mm  ->  sisa jarak ~4,4mm,
-       4) jarak teks ke kaki diberi lewat padding-ATAS pada .sh-ft — bukan
-          padding-bawah pada .sh-bd — supaya tinggi kaki yang diukur paginator
-          (fh) ikut bertambah dan tinggi badan halaman menyusut sendiri. Dengan
-          begitu jumlah baris per halaman tetap terhitung benar. */
-  '.spk-doc.spk-pk .spk-sheet:not(.spk-lampsheet) > .sh-ft{padding-top:6mm;margin-bottom:-7mm}'+
-  /* Sisi ATAS diperlakukan cermin dari sisi bawah: badan halaman ditarik naik 7mm
-     sehingga jarak teks ke bingkai = 25,4 - 7 - 14 = 4,4mm, sama dengan jarak
-     kaki halaman ke bingkai. Tinggi badan ditambah di mk() (lihat EXPK). */
-  '.spk-doc.spk-pk .spk-sheet:not(.spk-lampsheet) > .sh-bd{margin-top:-7mm}'+
-  '.spk-doc.spk-pk .spk-sheet:not(.spk-lampsheet) .spk-rft{border-top:0;margin-top:0;padding-top:0}'+
-  '.spk-doc.spk-pk .spk-sheet:not(.spk-lampsheet) .spk-rft .ft-unit{display:none}'+
   /* ---------- ISI: BAB & tanda tangan ---------- */
   /* Jarak dari blok judul (SURAT PERINTAH KERJA + nomor kontrak) ke teks pertama
      "Pada hari ini ..." = 12pt. */
@@ -21305,19 +21279,25 @@ function spkCoverHtml(data, ctx, judulBaris){
       '<div class="fv'+(kosong?' kosong':'')+(cls?' '+cls:'')+'">'+(kosong?'—':esc(v))+'</div></div>';
   };
   const judulHtml = String(judulBaris||'').split(' ').map(w=>'<span>'+esc(w)+'</span>').join(' ');
-  /* ---- Varian cover per Bentuk Kontrak ----
+  /* ---- SATU rancangan sampul untuk kedua Bentuk Kontrak ----
+     Dahulu Perjanjian/Kontrak dibedakan (aksen navy, garis ganda, label PIHAK
+     PERTAMA/KEDUA). Sekarang keduanya PERSIS SAMA; yang berbeda hanya JUDUL
+     dokumen (baris jenis di kanan atas & judul besar) dan baris kecil metode
+     pengadaan yang selalu mengambil nilai Metode Pengadaan dari data.
+     Catatan riwayat rancangan lama: */
+  /* ---- (lama) Varian cover per Bentuk Kontrak ----
      Susunan & tata letak SENGAJA dibuat mirip agar terlihat satu keluarga dokumen,
      namun dibedakan dengan jelas:
        Surat Perintah Kerja : aksen EMAS, chip emas, garis tunggal, label DARI/KEPADA
        Perjanjian/Kontrak   : aksen NAVY (+ garis emas kedua), chip navy, garis ganda,
                               label PIHAK PERTAMA/PIHAK KEDUA */
   const isPk = spkBentukOf(data)==='PK';
-  const kind = isPk ? 'PERJANJIAN/KONTRAK' : 'SURAT PERINTAH KERJA';
-  const lbl1 = isPk ? 'PIHAK PERTAMA' : 'DARI';
-  const lbl2 = isPk ? 'PIHAK KEDUA'   : 'KEPADA';
+  const kind = spkDokLabel(data);   /* PERJANJIAN/KONTRAK atau SURAT PERINTAH KERJA */
+  const lbl1 = 'DARI';
+  const lbl2 = 'KEPADA';
   const no2  = (isPk && data.nomor_kontrak_p2) ? '<div class="ps">No. '+esc(data.nomor_kontrak_p2)+'</div>' : '';
   return ''+
-  '<section class="spk-page spk-cover'+(isPk?' cv-pk':' cv-spk')+'">'+
+  '<section class="spk-page spk-cover cv-spk">'+
     '<div class="cv-top">'+
       '<div class="cv-brand">'+logo+
         '<div class="cv-org"><span>PT PLN (PERSERO)</span><b>UP3 Masohi</b></div>'+
@@ -21326,7 +21306,6 @@ function spkCoverHtml(data, ctx, judulBaris){
     '</div>'+
     '<div class="cv-rule"></div>'+
     '<div class="cv-accent"></div>'+
-    (isPk?'<div class="cv-accent2"></div>':'')+
     '<div class="cv-eyebrow">'+esc(spkMetodeLabel(data))+'</div>'+
     '<h1 class="cv-title">'+judulHtml+'</h1>'+
     '<div class="cv-rule2"></div>'+
@@ -21336,7 +21315,7 @@ function spkCoverHtml(data, ctx, judulBaris){
     '</div>'+
     '<div class="cv-spacer"></div>'+
     '<div class="cv-grid">'+
-      fld(isPk?'NOMOR PIHAK PERTAMA':'NOMOR KONTRAK', data.nomor_kontrak)+
+      fld('NOMOR KONTRAK', data.nomor_kontrak)+
       fld('TANGGAL KONTRAK', ctx.tanggal_kontrak_pjg)+
       fld('PEKERJAAN', data.nama_pekerjaan)+
       fld('LOKASI', data.lokasi_pekerjaan)+
@@ -21356,43 +21335,26 @@ function spkCoverHtml(data, ctx, judulBaris){
 }
 
 /* ---------- Daftar Isi ---------- */
-/* Kerapatan baris menyesuaikan JUMLAH klausul supaya seluruh daftar tetap muat
-   dalam satu lembar A4 (tidak melewati margin bawah). Surat Perintah Kerja yang
-   klausulnya sedikit tetap memakai jarak lapang seperti semula; Perjanjian/Kontrak
-   dengan puluhan pasal otomatis dirapatkan, dan di atas 28 pasal daftar dipecah
-   menjadi dua kolom. */
-function spkTocDensity(n){
-  n = Number(n)||0;
-  if(n > 28) return ' d3';
-  if(n > 22) return ' d2';
-  if(n > 16) return ' d1';
-  return '';
-}
+/* Daftar isi TIDAK lagi dimampatkan agar muat satu lembar. Bila barisnya lebih
+   banyak daripada yang termuat sehalaman, daftar otomatis DIPECAH menjadi
+   beberapa lembar oleh pecahToc() di spkPageScript(). Fungsi kerapatan lama
+   dipertahankan (mengembalikan '') supaya pemanggilan & CSS lama tidak rusak. */
+function spkTocDensity(n){ return ''; }
 function spkTocHtml(data, klausul){
   const esc=fkEsc;
   const list=klausul||[];
-  const isPk=spkBentukOf(data)==='PK';
-  /* PENTING: pembungkus .spk-toc2 dan <span class="pg"> WAJIB dipertahankan pada
-     kedua varian — nomorToc() di spkPageScript() mengisi nomor halaman lewat
-     querySelectorAll(".spk-toc2 .pg"). Yang berbeda hanya isi kolom nomor dan
-     kulit tampilannya. */
+  /* PENTING: pembungkus .spk-toc2 dan <span class="pg"> WAJIB dipertahankan —
+     nomorToc() di spkPageScript() mengisi nomor halaman lewat
+     querySelectorAll(".spk-toc2 .pg"), dan pecahToc() memecah daftar ini
+     menjadi beberapa lembar bila tidak muat satu halaman.
+     Rancangan SAMA untuk Surat Perintah Kerja & Perjanjian/Kontrak; yang
+     berbeda hanya nama dokumen pada blok keterangan di kanan judul. */
   const rows=list.map((k,i)=>{
-    const no = isPk ? ('PASAL '+(i+1))
-                    : ((i+1)<10 ? ('0'+(i+1)) : String(i+1));
+    const no=((i+1)<10 ? ('0'+(i+1)) : String(i+1));
     return '<div class="row"><span class="no">'+esc(no)+'</span>'+
       '<span class="nm">'+spkFmtJudulTitle(k.judul)+'</span>'+
       '<span class="dot"></span><span class="pg">\u2014</span></div>';
   }).join('');
-  /* Perjanjian/Kontrak: daftar isi sesederhana dokumen cetak — judul "DAFTAR ISI"
-     rata tengah bergaris bawah, lalu baris "PASAL n <judul> ....... <hlm>".
-     Tanpa aksen warna, tanpa blok meta nomor kontrak. */
-  if(isPk){
-    return ''+
-    '<section class="spk-page spk-tocpage toc-pk">'+
-      '<h1 class="tpk-h">DAFTAR ISI</h1>'+
-      '<div class="spk-toc2'+spkTocDensity(list.length)+'">'+rows+'</div>'+
-    '</section>';
-  }
   return ''+
   '<section class="spk-page spk-tocpage">'+
     '<div class="toc-accent"></div>'+
@@ -21401,20 +21363,17 @@ function spkTocHtml(data, klausul){
       '<div class="toc-meta"><b>'+esc(spkDokLabel(data))+'</b><span>'+esc(data.nomor_kontrak||'\u2014')+'</span></div>'+
     '</div>'+
     '<div class="toc-rule"></div>'+
-    '<div class="spk-toc2'+spkTocDensity(list.length)+'">'+rows+'</div>'+
+    '<div class="spk-toc2">'+rows+'</div>'+
   '</section>';
 }
 
 /* ---------- Kop & footer berulang pada halaman isi ---------- */
-/* PERJANJIAN/KONTRAK: halaman isi klausul TIDAK memakai kop berulang.
-   Dokumen perjanjian bisa mencapai puluhan halaman; kop bergambar di setiap
-   lembar hanya memakan tinggi bidang cetak tanpa menambah informasi, sebab
-   identitas & nomor sudah tercantum pada Sampul dan Daftar Isi.
-   Dengan kop dikosongkan, mk() pada paginator tidak membuat <div class="sh-hd">
-   sama sekali, sehingga seluruh tinggi itu jatuh ke badan halaman.
-   Bentuk Surat Perintah Kerja tetap memakai kop seperti semula. */
+/* Kop DAN kaki halaman kini SAMA untuk Surat Perintah Kerja maupun
+   Perjanjian/Kontrak. Dahulu Perjanjian/Kontrak sengaja tanpa kop berulang
+   (dan halaman isinya berbingkai); atas permintaan, perlakuan khusus itu
+   dihapus sehingga kedua bentuk dokumen tampil identik — hanya nama dokumen
+   pada kop yang berbeda. */
 function spkRunHeadHtml(data){
-  if(spkBentukOf(data)==='PK') return '';
   const esc=fkEsc;
   const logo = SPK_LOGO_SRC? '<img src="'+SPK_LOGO_SRC+'" alt="PLN">' : '';
   return '<div class="spk-rhd">'+
@@ -21752,13 +21711,11 @@ function spkPageScript(){
     '   sheets.push(sh);',
     '   var hh=h?h.getBoundingClientRect().height:0;',
     '   var fh=f?f.getBoundingClientRect().height:0;',
-    /* PERJANJIAN/KONTRAK: lembar isi merebut ruang di ATAS (margin-top:-7mm pada
-       .sh-bd) dan di BAWAH (margin-bottom:-7mm pada .sh-ft) supaya jarak teks ke
-       bingkai sama di kedua sisi. PH sendiri DIKUNCI 246,2mm (297 - 2 x 25,4),
-       jadi tinggi badan halaman harus ditambah sebanyak ruang yang direbut itu —
-       kalau tidak, tiap lembar menyisakan pita kosong 14mm di atas kaki halaman.
-       Lembar Lampiran DIKECUALIKAN karena CSS-nya juga mengecualikannya. */
-    '   var EXPK=(ISPK && extra.indexOf("spk-lampsheet")<0) ? mm2px(14) : 0;',
+    /* Tinggi badan lembar dihitung apa adanya: PH dikurangi tinggi kop & kaki.
+       Penambah EXPK dahulu dipakai untuk mengganti ruang yang direbut margin
+       negatif pada lembar Perjanjian/Kontrak; margin itu sudah dihapus, jadi
+       EXPK selalu 0 dan kedua bentuk dokumen dihitung dengan cara yang sama. */
+    '   var EXPK=0;',
     '   b.style.height=Math.max(80,(PH-hh-fh-6+EXPK))+"px";',
     '   b.style.overflow="hidden";',
     '   body=b;',
@@ -22077,6 +22034,60 @@ function spkPageScript(){
     '   if(seen[u]) cl[i].classList.add("spk-cont"); else { cl[i].classList.remove("spk-cont"); seen[u]=1; }',
     ' }',
     '}',
+    /* ==== DAFTAR ISI BERHALAMAN BANYAK ====
+       Lembar Daftar Isi berukuran tetap (A4, overflow tersembunyi), sehingga
+       baris yang melewati batas bawah dahulu hilang begitu saja. Fungsi ini
+       mengukur tinggi nyata tiap baris lalu memindahkan baris yang tidak muat
+       ke lembar Daftar Isi BARU — sebanyak yang diperlukan. Lembar lanjutan
+       memakai kepala yang sama, judulnya diberi keterangan "(Lanjutan)".
+       Dijalankan SEBELUM nomorToc() karena urutan .pg dibaca lintas lembar. */
+    'function tocLimit(sec){',
+    ' var cs=window.getComputedStyle(sec);',
+    ' var pt=parseFloat(cs.paddingTop)||0, pb=parseFloat(cs.paddingBottom)||0;',
+    ' return sec.clientHeight - pt - pb;',
+    '}',
+    'function tocMuat(sec, list, lim){',
+    ' var cs=window.getComputedStyle(sec);',
+    ' var atas=sec.getBoundingClientRect().top + (parseFloat(cs.paddingTop)||0);',
+    ' return (list.getBoundingClientRect().bottom - atas) <= lim + 1;',
+    '}',
+    'function tocLembarBaru(sec, list){',
+    ' var baru=sec.cloneNode(false);',
+    ' var anak=els(sec);',
+    ' for(var i=0;i<anak.length;i++){',
+    '   if(anak[i]===list){ var kl=list.cloneNode(false); baru.appendChild(kl); }',
+    '   else baru.appendChild(anak[i].cloneNode(true));',
+    ' }',
+    ' var h=baru.querySelector("h1");',
+    ' if(h && (h.textContent||"").indexOf("Lanjutan")<0) h.textContent=h.textContent+" (Lanjutan)";',
+    ' if(sec.nextSibling) sec.parentNode.insertBefore(baru, sec.nextSibling);',
+    ' else sec.parentNode.appendChild(baru);',
+    ' return baru;',
+    '}',
+    'function pecahTocSatu(sec){',
+    ' var list=sec.querySelector(".spk-toc2"); if(!list) return;',
+    ' var baris=els(list); if(baris.length<2) return;',
+    ' var lim=tocLimit(sec); if(!lim || lim<80) return;',
+    ' if(tocMuat(sec, list, lim)) return;',
+    ' for(var i=0;i<baris.length;i++) list.removeChild(baris[i]);',
+    ' var sekarang=sec, isi=list, adaIsi=0, jaga=0;',
+    ' for(var k=0;k<baris.length;k++){',
+    '   isi.appendChild(baris[k]);',
+    '   if(adaIsi && !tocMuat(sekarang, isi, lim)){',
+    '     isi.removeChild(baris[k]);',
+    '     sekarang=tocLembarBaru(sekarang, isi);',
+    '     isi=sekarang.querySelector(".spk-toc2");',
+    '     lim=tocLimit(sekarang);',
+    '     isi.appendChild(baris[k]);',
+    '     adaIsi=1;',
+    '     if(jaga++>400) return;',
+    '   }else{ adaIsi=1; }',
+    ' }',
+    '}',
+    'function pecahToc(){',
+    ' var hal=document.querySelectorAll(".spk-doc > .spk-page.spk-tocpage");',
+    ' for(var i=0;i<hal.length;i++) pecahTocSatu(hal[i]);',
+    '}',
     /* nomor halaman Daftar Isi = nomor lembar ISI KONTRAK (SPK) tempat klausul
        dimulai. Lembar Lampiran TIDAK dihitung, agar konsisten dengan footer. */
     'function nomorToc(){',
@@ -22138,6 +22149,7 @@ function spkPageScript(){
     '   var UID={n:0};',
     '   var list=document.querySelectorAll(".spk-doc > .spk-page.spk-flow");',
     '   for(var i=0;i<list.length;i++) build(list[i], hasCls(list[i],"spk-lampsheet")?PHL:PH, UID);',
+    '   pecahToc();',
     '   tandaiLanjutan();',
     '   rapikanAtasLembar();',
     '   nomorToc();',
@@ -22177,9 +22189,10 @@ function spkDocHtml(data, klausul){
   /* Penanda bentuk dokumen — HARUS dideklarasikan sebelum dipakai (dahulu
      dideklarasikan di bawah, sehingga pratinjau gagal karena TDZ). */
   const _isPkDoc = spkBentukOf(data)==='PK';
-  // 1) Cover (judul mengikuti Bentuk Kontrak)
-  const cover = _isPkDoc ? spkCoverPkHtml(data, ctx)
-                         : spkCoverHtml(data, ctx, spkDokTitle(data));
+  /* 1) Sampul — SATU rancangan untuk kedua bentuk dokumen. Perjanjian/Kontrak
+     dahulu memakai sampul tersendiri (spkCoverPkHtml); kini disamakan dengan
+     Surat Perintah Kerja, yang berbeda hanya judulnya. */
+  const cover = spkCoverHtml(data, ctx, spkDokTitle(data));
   // 2) Daftar Isi
   const toc=spkTocHtml(data, klausul);
   // 3) Isi kontrak (kop + footer berulang tiap halaman)
@@ -22216,34 +22229,15 @@ function spkDocHtml(data, klausul){
      yang memuat nomor yang sama — kalau ditulis dua kali jadi kembar. Bentuk
      Surat Perintah Kerja tidak punya blok itu, jadi nomornya tetap ditampilkan. */
   const _babNo = (!_isPkDoc && data.nomor_kontrak) ? ('<span>'+esc(data.nomor_kontrak)+'</span>') : '';
-  /* ---------- KOP HALAMAN PERTAMA ----------
-     Surat Perintah Kerja : judul dokumen + nomor (seperti semula).
-     Perjanjian/Kontrak   : blok judul lengkap gaya perjanjian —
-         PERJANJIAN/KONTRAK
-         TENTANG
-         <nama pekerjaan>
-         ANTARA
-         PT PLN (Persero) <unit>
-         DENGAN
-         <nama penyedia>
-     lalu garis ganda tepat di atas blok "Nomor PIHAK PERTAMA / PIHAK KEDUA".
-     Blok ini TIDAK menggantikan halaman Sampul: Sampul adalah lembar muka,
-     sedangkan blok ini adalah pembuka badan perjanjian sebagaimana lazimnya
-     dokumen kontrak. Seluruhnya huruf kapital lewat CSS (text-transform),
-     jadi nilai aslinya tetap tersimpan apa adanya. */
-  const _kopPk =
-    '<div class="spk-judulpk">'+
-      '<div class="jd">'+esc(spkDokLabel(data))+'</div>'+
-      '<div class="sb">TENTANG</div>'+
-      '<div class="nm">'+esc(data.nama_pekerjaan||'\u2014')+'</div>'+
-      '<div class="sb">ANTARA</div>'+
-      '<div class="nm">'+esc(spkOrgP1(ctx))+'</div>'+
-      '<div class="sb">DENGAN</div>'+
-      '<div class="nm">'+esc(ctx.p2_nama_hormat||'\u2014')+'</div>'+
-    '</div>';
+  /* ---------- JUDUL DI HALAMAN PERTAMA ISI ----------
+     Sama untuk kedua bentuk: satu baris judul dokumen bergaris bawah
+     (.spk-bab). Blok kop Perjanjian/Kontrak yang lama (judul berlapis
+     TENTANG/ANTARA/DENGAN + garis ganda pemisah) DIHAPUS atas permintaan;
+     informasi itu sudah termuat pada Sampul. Nomor hanya ditulis pada Surat
+     Perintah Kerja (lihat _babNo) karena pada Perjanjian/Kontrak nomor kedua
+     pihak sudah tercantum tepat di bawahnya. */
   const isiBody=
-    (_isPkDoc ? _kopPk
-              : '<div class="spk-bab"><b>'+esc(spkDokLabel(data))+'</b>'+_babNo+'</div>')+
+    '<div class="spk-bab"><b>'+esc(spkDokLabel(data))+'</b>'+_babNo+'</div>'+
     '<div class="spk-cl">'+preambleAtas+'</div>'+
     (preambleMenugaskan ? '<div class="spk-cl spk-forcepage">'+preambleMenugaskan+'</div>' : '')+
     clausesHtml+
