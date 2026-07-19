@@ -17205,6 +17205,11 @@ function spkDocCss(){
      dan berakhir di batas margin kanan. Bentuk Surat Perintah Kerja tetap
      memakai indentasi 0,9 cm seperti semula. */
   '.spk-doc.spk-pk .spk-clause .spk-cl{padding-left:0}'+
+  /* Butir bernomor yang BERADA DI BAWAH paragraf pengantar menjorok 0,5 cm dari
+     teks pengantar. Dipakai padding-left (bukan margin-left) agar tidak bentrok
+     dengan hanging indent per paragraf yang dipasang spkNumberFix(); seluruh blok
+     butir bergeser ke kanan, sedangkan baris sambungannya tetap sejajar. */
+  '.spk-doc.spk-pk .spk-cl.spk-inlead p.kl1,.spk-doc.spk-pk .spk-cl.spk-inlead p.kl2{padding-left:0.5cm}'+
   '.spk-cl p{margin:0 0 6pt;text-align:justify;line-height:'+spkLHCss(1.15)+'}'+
   /* kl0 = paragraf biasa (sejajar teks judul); kldesc = deskripsi menjorok */
   '.spk-cl p.kl0{margin-left:0;text-indent:0}'+
@@ -17239,6 +17244,18 @@ function spkDocCss(){
   '.spk-cl .spk-kv .k{flex:0 0 34%;max-width:34%}'+
   '.spk-cl .spk-kv .s{flex:0 0 auto;width:1.2em}'+
   '.spk-cl .spk-kv .v{flex:1;text-align:justify}'+
+  /* Grup baris "Label : nilai" (lihat spkKvGroup). Memakai grid 3 kolom:
+       kolom-1 = max-content -> selebar LABEL TERPANJANG saja,
+       kolom-2 = tanda ":",  kolom-3 = nilai.
+     Dengan begitu ":" berhenti persis di kanan label terpanjang + jeda kecil,
+     tidak lagi terpaku pada 34% lebar. Blok dimasukkan sedikit ke kanan (1 cm)
+     terhadap teks butir di atasnya. */
+  '.spk-cl .spk-kvgrp{display:grid;grid-template-columns:max-content max-content 1fr;'+
+    'row-gap:3pt;margin:0 0 6pt 1cm}'+
+  '.spk-cl .spk-kvgrp .spk-kv{display:contents}'+
+  '.spk-cl .spk-kvgrp .spk-kv .k{flex:none;max-width:none;padding-right:0.5cm}'+
+  '.spk-cl .spk-kvgrp .spk-kv .s{flex:none;width:auto;padding-right:0.3cm}'+
+  '.spk-cl .spk-kvgrp .spk-kv .v{flex:none;text-align:left}'+
   /* Blok PIHAK pada pembuka: label (I./II.) menggantung, deskripsi sejajar di bawah label */
   '.spk-cl .spk-party{margin:0 0 9pt}'+
   '.spk-cl .spk-party-h{font-weight:700;line-height:'+spkLHCss(1.15)+';padding-left:0.75cm;text-indent:-0.75cm;margin:0}'+
@@ -17448,13 +17465,13 @@ function spkDocCss2(){
   '.spk-tocpage .spk-toc2.d2 .row .nm{font-size:12px}'+
   '.spk-tocpage .spk-toc2.d2 .row .pg{font-size:12.5px}'+
   '.spk-tocpage .spk-toc2.d2 .row .dot{margin:0 9px}'+
-  '.spk-tocpage .spk-toc2.d3{column-count:2;column-gap:9mm;margin-top:2px}'+
+  '.spk-tocpage .spk-toc2.d3{column-count:2;column-gap:10mm;column-rule:1px solid #D6DAE0;margin-top:2px}'+
   '.spk-tocpage .spk-toc2.d3 .row{display:flex;break-inside:avoid;page-break-inside:avoid;'+
-    'padding:4.5px 1px;font-size:10.5px;line-height:1.22}'+
-  '.spk-tocpage .spk-toc2.d3 .row .no{width:24px;font-size:11px}'+
-  '.spk-tocpage .spk-toc2.d3 .row .nm{flex:1 1 auto;max-width:none;font-size:10.5px}'+
-  '.spk-tocpage .spk-toc2.d3 .row .dot{flex:0 1 18px;min-width:6px;margin:0 5px;transform:translateY(-2px)}'+
-  '.spk-tocpage .spk-toc2.d3 .row .pg{font-size:11px;min-width:1.4em}'+
+    'padding:6.5px 1px;font-size:12px;line-height:1.25}'+
+  '.spk-tocpage .spk-toc2.d3 .row .no{width:28px;font-size:13px}'+
+  '.spk-tocpage .spk-toc2.d3 .row .nm{flex:1 1 auto;max-width:none;font-size:12px}'+
+  '.spk-tocpage .spk-toc2.d3 .row .dot{flex:0 1 20px;min-width:6px;margin:0 6px;transform:translateY(-2px)}'+
+  '.spk-tocpage .spk-toc2.d3 .row .pg{font-size:12.5px;min-width:1.4em}'+
   /* Pada dua kolom, baris pertama tiap kolom tetap bergaris atas agar rata */
   '.spk-tocpage .spk-toc2.d3 .row:first-child{border-top:1px solid #E2E2E2}'+
   /* ---------- KOP & FOOTER BERULANG (halaman isi) ---------- */
@@ -17787,6 +17804,31 @@ function spkBoxLeadNumDom(html){
     }
     return changed ? box.innerHTML : s;
   }catch(e){ return s; }
+}
+/* Klausul yang DIMULAI dengan paragraf pengantar (kl0) dan kemudian memuat butir
+   bernomor (kl1/kl2) ditandai .spk-inlead, sehingga butir-butirnya menjorok sedikit
+   terhadap teks pengantar di atasnya. Klausul yang langsung dibuka dengan butir
+   bernomor tidak ditandai -> penomorannya tetap rata batas margin kiri. */
+/* Baris-baris "Label : nilai" (.spk-kv) yang BERURUTAN dibungkus menjadi satu
+   grup .spk-kvgrp. Gunanya dua: (1) grup diperlakukan sebagai blok utuh oleh
+   pemecah halaman sehingga tidak pernah terbelah di antara barisnya; (2) lebar
+   kolom label memakai grid max-content, sehingga tanda ":" berhenti tepat di
+   sebelah kanan label TERPANJANG — bukan pada persentase tetap.
+   Pembungkusnya dilewati saat konversi ke Word (spkHtmlToWordParas menyaring
+   pembungkus yang berisi div/p), jadi keluarannya tetap tabel 3 kolom. */
+function spkKvGroup(html){
+  var one = '<div class="spk-kv(?:\\s[^"]*)?"[^>]*>[\\s\\S]*?<\\/div>';
+  var re  = new RegExp('(?:' + one + '\\s*)+', 'g');
+  return String(html||'').replace(re, function(m){
+    return '<div class="spk-kvgrp">' + m + '</div>';
+  });
+}
+function spkLeadIndentCls(html){
+  var s = String(html||'');
+  var m = s.match(/<p[^>]*\bclass="([^"]*)"/);
+  if(!m) return '';
+  if(!/\bkl0\b/.test(m[1])) return '';                  // pembuka bukan paragraf biasa
+  return /<p[^>]*\bclass="[^"]*\bkl[12]\b/.test(s) ? ' spk-inlead' : '';
 }
 function spkNumberFix(html){
   /* Normalisasi: bila label nomor di AWAL paragraf kl1/kl2 langsung menempel ke teks
@@ -20674,7 +20716,7 @@ function spkPageScript(){
        Diperlakukan sebagai SATU blok utuh: bila tak cukup ruang, seluruhnya turun
        bersama ke halaman berikutnya — tanda tangan tidak pernah berdiri sendiri. */
     ' if(hasCls(n,"hps-tail")) return true;',
-    ' if(hasCls(n,"spk-cl-h")||hasCls(n,"spk-kv")||hasCls(n,"spk-party")||hasCls(n,"spk-bab")||hasCls(n,"spk-sign")||hasCls(n,"spk-sign-eyebrow")||hasCls(n,"spk-lampsign")) return true;',
+    ' if(hasCls(n,"spk-cl-h")||hasCls(n,"spk-kv")||hasCls(n,"spk-kvgrp")||hasCls(n,"spk-party")||hasCls(n,"spk-bab")||hasCls(n,"spk-sign")||hasCls(n,"spk-sign-eyebrow")||hasCls(n,"spk-lampsign")) return true;',
     ' return els(n).length===0;',
     '}',
     /* Sub-judul = paragraf dengan penomoran BERTINGKAT di awal (mis. "1.1", "1.3",
@@ -20902,6 +20944,23 @@ function spkPageScript(){
        di bawah < MINSUBHEAD (tak cukup untuk judul + butir pertamanya), mulai halaman
        baru dulu -> "Berdasarkan :" menjadi teks awal di halaman berikutnya. */
     '   if(node.nodeType===1 && node.tagName==="P" && hasCls(node,"spk-berdasar") && !kosong() && remain()<MINSUBHEAD){ mk(); }',
+    /* KEEP-TOGETHER BLOK "Label : nilai" (.spk-kvgrp — mis. Nama Rekening / Nomor
+       Rekening / Bank pada pasal Tata Cara Pembayaran): blok ini tidak boleh
+       terbelah. Bila sisa ruang di halaman ini tak cukup memuat SELURUH barisnya,
+       blok digeser utuh ke halaman berikutnya, dan kalimat pengantar tepat di
+       atasnya (yang diakhiri ":") ikut diboyong supaya tidak tertinggal sendirian
+       di dasar halaman sebelumnya. */
+    '   if(node.nodeType===1 && hasCls(node,"spk-kvgrp") && !kosong()){',
+    '     var _kt=tgt(); _kt.appendChild(node); var _kfit=!over(); _kt.removeChild(node);',
+    '     if(!_kfit){',
+    '       var _lead=null, _kk2=els(tgt());',
+    '       if(_kk2.length){ var _cnd=_kk2[_kk2.length-1];',
+    '         if(_cnd.tagName==="P" && /[:\\uFF1A][\\s\\u00A0]*$/.test(_cnd.textContent||"")) _lead=_cnd; }',
+    '       if(_lead) _lead.parentNode.removeChild(_lead);',
+    '       mk();',
+    '       if(_lead) tgt().appendChild(_lead);',
+    '     }',
+    '   }',
     '   var t=tgt();',
     '   t.appendChild(node);',
     '   if(!over()) return;',
@@ -21091,12 +21150,17 @@ function spkDocHtml(data, klausul){
     const _p = preamble.lastIndexOf('<p', _iM);
     if(_p > -1){ preambleAtas = preamble.slice(0,_p); preambleMenugaskan = preamble.slice(_p); }
   }
-  const clausesHtml = (klausul||[]).map((k,i)=>
-    '<div class="spk-clause"><div class="spk-cl-h"><span class="n"></span>'+spkFmtJudul(k.judul)+'</div>'+
-    '<div class="spk-cl">'+spkKlItalicAsing(spkBoldPihak(spkNomorToNo(spkNumberFix(spkTidyKeyValue(
+  /* Bila sebuah klausul diawali PARAGRAF PENGANTAR (kl0) lalu disusul butir
+     bernomor, butir-butir itu diberi indentasi kecil terhadap teks pengantar di
+     atasnya — sesuai kelaziman dokumen Perjanjian/Kontrak. Klausul yang langsung
+     dimulai dengan butir bernomor (mis. Pasal 1 DEFINISI) tetap rata margin. */
+  const clausesHtml = (klausul||[]).map((k,i)=>{
+    const inner = spkKvGroup(spkKlItalicAsing(spkBoldPihak(spkNomorToNo(spkNumberFix(spkTidyKeyValue(
         spkPruneKlausul(spkMerge(spkRenumberKlausul(k.isi||'', i+1), ctx), i+1, data)
-      )))))+'</div></div>'
-  ).join('');
+      ))))));
+    return '<div class="spk-clause"><div class="spk-cl-h"><span class="n"></span>'+spkFmtJudul(k.judul)+'</div>'+
+      '<div class="spk-cl'+spkLeadIndentCls(inner)+'">'+inner+'</div></div>';
+  }).join('');
   const isiBody=
     '<div class="spk-bab"><b>'+esc(spkDokLabel(data))+'</b>'+(data.nomor_kontrak?('<span>'+esc(data.nomor_kontrak)+'</span>'):'')+'</div>'+
     '<div class="spk-cl">'+preambleAtas+'</div>'+
