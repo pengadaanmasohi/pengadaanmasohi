@@ -17593,6 +17593,32 @@ function spkDocCss2(){
   '.spk-rft .ft-row .ft-unit{margin-bottom:10px}'+
   '.spk-rft .ft-pg{font-size:11px;font-weight:800;color:#201E1D;letter-spacing:.02em}'+
   '.spk-rft .l,.spk-rft .r{white-space:nowrap}'+
+
+  /* ==========================================================================
+     PERJANJIAN/KONTRAK — HALAMAN ISI KLAUSUL
+     Kop berulang ditiadakan (lihat spkRunHeadHtml) dan kaki halaman diringkas:
+       tengah = "N dari M", kanan = kotak paraf PIHAK PERTAMA / PIHAK KEDUA.
+     Seluruh bidang cetak diberi BINGKAI tipis, mengikuti tata letak dokumen
+     perjanjian cetak. Semua aturan di bawah bersyarat pada .spk-doc.spk-pk dan
+     dikecualikan untuk lembar Lampiran, sehingga bentuk Surat Perintah Kerja
+     maupun halaman Sampul/Daftar Isi tidak tersentuh sama sekali.
+     ========================================================================== */
+  '.spk-doc.spk-pk .spk-rft-pk{border-top:0;margin-top:10px;padding-top:6px}'+
+  '.spk-doc.spk-pk .spk-rft-pk .ft-row{align-items:flex-end;font-weight:400}'+
+  '.spk-doc.spk-pk .spk-rft-pk .l,.spk-doc.spk-pk .spk-rft-pk .r{flex:1 1 0}'+
+  '.spk-doc.spk-pk .spk-rft-pk .c{flex:0 0 auto;text-align:center}'+
+  '.spk-doc.spk-pk .spk-rft-pk .ft-pg{font-size:10.5px;font-weight:400;letter-spacing:.02em;color:#201E1D}'+
+  /* Kotak paraf: label kecil di kiri, ruang paraf bergaris di kanannya */
+  '.spk-doc.spk-pk .spk-rft-pk .r{display:flex;flex-direction:column;align-items:flex-end;gap:2px}'+
+  '.spk-doc.spk-pk .spk-rft-pk .pf{display:flex;align-items:flex-end;gap:6px}'+
+  '.spk-doc.spk-pk .spk-rft-pk .pf span{font-size:8.5px;font-weight:400;letter-spacing:.04em;color:#201E1D;white-space:nowrap}'+
+  '.spk-doc.spk-pk .spk-rft-pk .pf i{display:block;width:1.6cm;height:1.05em;border-bottom:1px solid #201E1D}'+
+  /* Bingkai bidang cetak — digambar sebagai lapisan terpisah supaya tidak
+     mengubah tinggi/padding lembar yang sudah dipakai perhitungan paginator. */
+  '.spk-doc.spk-pk .spk-page.spk-sheet:not(.spk-lampsheet){position:relative}'+
+  '.spk-doc.spk-pk .spk-page.spk-sheet:not(.spk-lampsheet)::after{content:"";position:absolute;'+
+    'top:14mm;right:14mm;bottom:14mm;left:14mm;border:1px solid #201E1D;pointer-events:none;z-index:0}'+
+  '.spk-doc.spk-pk .spk-page.spk-sheet:not(.spk-lampsheet) > *{position:relative;z-index:1}'+
   /* ---------- ISI: BAB & tanda tangan ---------- */
   /* Jarak dari blok judul (SURAT PERINTAH KERJA + nomor kontrak) ke teks pertama
      "Pada hari ini ..." = 12pt. */
@@ -17827,15 +17853,18 @@ function spkNumUniform(html){
       W=Math.round(W*100)/100;
       for(i=0;i<g.items.length;i++){
         var it=g.items[i];
-        /* Perataan PER-BUTIR mengikuti Microsoft Word:
-             - penghitung terakhir 2 digit (…10., …11.) -> RATA KANAN (mengisi kotak,
-               titik di tepi kanan kotak, tidak menabrak teks);
-             - penghitung terakhir 1 digit (…7., …8., …9.) -> RATA KIRI (tetap menempel
-               di margin, tidak ikut menjorok).
-           Karena lebar kotak seragam (= nomor terlebar + jeda), awal TEKS semua butir
-           tetap sejajar apa pun perataannya. */
+        /* Perataan PER-BUTIR.
+             SPK (tidak berubah) mengikuti Microsoft Word:
+               - penghitung terakhir 2 digit (…10., …11.) -> RATA KANAN,
+               - penghitung terakhir 1 digit (…7., …8., …9.) -> RATA KIRI.
+             PERJANJIAN/KONTRAK: SELALU rata kanan, berapa pun digitnya, supaya
+             titik penutup semua nomor lurus dan jarak titik -> teks tetap sama
+             (lihat acuan penomoran rata kanan pada dokumen perjanjian PLN).
+           Karena lebar kotak seragam (= nomor terlebar + jeda), awal TEKS semua
+           butir tetap sejajar apa pun perataannya. */
         var mmw=/([0-9]+)[.)]$/.exec(it.tok||'');
-        var itAl=(mmw && mmw[1].length>=2) ? 'right' : 'left';
+        var _pkRata=(typeof spkIsPk==='function' && spkIsPk());
+        var itAl=(mmw && (_pkRata || mmw[1].length>=2)) ? 'right' : 'left';
         it.n.style.width=W.toFixed(2)+'cm';
         it.n.style.minWidth=W.toFixed(2)+'cm';
         it.n.style.paddingRight=SPK_NUM_GAP+'cm';        /* jeda tetap nomor->teks */
@@ -18254,19 +18283,21 @@ function spkPkIndentStd(html){
       if(!adaAngka) W = Math.max(0.4, W - (SPK_NUM_GAP - SPK_PK_GAP_HURUF));
       g.W=Math.round(W*100)/100;
       /* PERATAAN NOMOR PER DERET (aturan Perjanjian/Kontrak):
-           - bila SELURUH penghitung TERAKHIR di deret ini hanya 1 digit
-             (1. 2. 3. / 2.1. .. 2.9. / 2.10.1.) -> RATA KIRI;
-           - begitu ADA penghitung terakhir 2 digit atau lebih
-             (10. 11. / 2.10. / 1.12.) -> RATA KANAN, sehingga titik penutup
-             seluruh nomor lurus pada satu garis dan kolom teksnya sejajar.
-         Yang dinilai HANYA ruas terakhir: "10.1." dianggap 1 digit,
-         "1.10." dianggap 2 digit, "2.10.1." dianggap 1 digit. */
+         SELURUH deret angka dirata-KANANkan, tanpa kecuali. Dulu deret yang
+         seluruhnya 1 digit dirata-kirikan — akibatnya titik "9." tidak lurus
+         dengan titik "10." dan jaraknya ke teks lebih jauh. Dengan rata kanan
+         menyeluruh:
+           - titik penutup SEMUA nomor (1 & 2 digit) lurus pada satu garis,
+           - jarak titik -> teks TETAP (= padding kanan kotak) untuk semua butir,
+           - nomor 2 digit memanjang ke KIRI, tidak pernah menggeser kolom teks.
+         adaDua kini hanya dipakai untuk mencatat apakah deret memuat 2 digit
+         (dipakai perhitungan lebar dasar g.Wb di bawah). */
       var adaDua=false;
       for(j=0;j<g.items.length;j++){
         var sgs=spkPkSegs(g.items[j].tok);
         if(sgs && String(sgs[sgs.length-1]).length>=2){ adaDua=true; break; }
       }
-      g.rata = adaDua ? 'right' : 'left';
+      g.rata = 'right';
       /* LEBAR DASAR (g.Wb) = lebar kotak yang dipakai untuk MENENTUKAN KOLOM TEKS,
          diambil dari nomor 1 DIGIT terlebar di deret ini. Kotaknya sendiri tetap
          selebar g.W (nomor terlebar), tetapi kelebihannya MENJULUR KE KIRI.
@@ -18447,6 +18478,66 @@ function spkPkKeepDlist(html, isPk){
   }catch(e){ return s; }
 }
 
+/* ---- (4b) IKAT LABEL "PIHAK PERTAMA/KEDUA" DENGAN ISIANNYA ----
+   Pada klausul alamat/korespondensi, label berdiri sendiri di satu baris lalu
+   diikuti baris-baris isiannya (nama unit, alamat, telepon, dsb.):
+
+       PIHAK PERTAMA
+       PT PLN (Persero) Unit Pelaksana Pelayanan Pelanggan Masohi
+       Jl. Abdullah Soulissa No 1, Masohi, ... 97513
+
+   Tanpa pengikat, paginator boleh memenggal di antara baris-baris itu sehingga
+   label tertinggal sendirian di kaki halaman (atau isiannya pindah halaman).
+   Di sini label + seluruh isiannya dibungkus satu <div class="spk-keep">, yang
+   oleh paginator diperlakukan sebagai blok UTUH: bila tidak muat, seluruhnya
+   turun ke halaman berikutnya.
+
+   Yang dianggap "isian" hanyalah paragraf biasa yang mengikuti label secara
+   berurutan. Pengumpulan BERHENTI begitu bertemu: butir bernomor, label PIHAK
+   berikutnya, judul/kop klausul, atau paragraf kosong — jadi blok tidak pernah
+   menelan sisa klausul. Dibatasi SPK_PK_KEEP_MAX baris sebagai pengaman.
+   Hanya berlaku untuk bentuk Perjanjian/Kontrak. */
+var SPK_PK_KEEP_MAX = 8;                 /* batas aman jumlah baris isian per label */
+var SPK_PK_LBL_PIHAK = /^pihak\s+(pertama|kedua)\s*[:.]?$/i;
+function spkPkIsLblPihak(el){
+  if(!el || el.nodeType!==1) return false;
+  var t=String(el.textContent||'').replace(/[\s\u00A0]+/g,' ').trim();
+  return SPK_PK_LBL_PIHAK.test(t);
+}
+function spkPkKeepPihak(html, isPk){
+  if(!isPk) return html;
+  var s=String(html==null?'':html);
+  if(!/pihak\s+(pertama|kedua)/i.test(s)) return s;
+  try{
+    var box=document.createElement('div'); box.innerHTML=s;
+    var kids=[], k=box.firstChild;
+    while(k){ if(k.nodeType===1) kids.push(k); k=k.nextSibling; }
+    var i=0, ubah=false;
+    while(i<kids.length){
+      if(!spkPkIsLblPihak(kids[i])){ i++; continue; }
+      var grup=[kids[i]], j=i+1;
+      while(j<kids.length && grup.length<=SPK_PK_KEEP_MAX){
+        var el=kids[j];
+        if(el.tagName!=='P' && el.tagName!=='DIV') break;
+        if(spkPkIsLblPihak(el)) break;                       /* label berikutnya */
+        if(typeof spkPkTok==='function' && spkPkTok(el)) break;   /* butir bernomor */
+        if(el.classList && (el.classList.contains('spk-cl-h')||
+                            el.classList.contains('spk-bab')||
+                            el.classList.contains('spk-keep'))) break;
+        if(!String(el.textContent||'').replace(/[\s\u00A0]/g,'')) break;  /* baris kosong */
+        grup.push(el); j++;
+      }
+      if(grup.length<2){ i++; continue; }                    /* label tanpa isian */
+      var wrap=document.createElement('div');
+      wrap.className='spk-keep';
+      box.insertBefore(wrap, grup[0]);
+      for(var g=0; g<grup.length; g++) wrap.appendChild(grup[g]);
+      ubah=true; i=j;
+    }
+    return ubah ? box.innerHTML : s;
+  }catch(e){ return s; }
+}
+
 /* ---- (5) SERAGAMKAN KATA RUJUKAN: "poin" -> "butir" ----
    Pada Perjanjian/Kontrak satuan terkecil disebut BUTIR. Sebagian klausul warisan
    menulis rujukan dengan kata "poin" (mis. "ayat 1 poin 37.2") sehingga dalam satu
@@ -18481,8 +18572,13 @@ function spkPkPoinToButir(html){
 function spkPkTidy(html, isPk){
   if(!isPk) return html;                 /* SPK: kembalikan apa adanya */
   /* Urutan penting: kotakkan penanda dulu supaya perbaikan nomor & inden
-     bekerja pada SELURUH butir, termasuk yang lolos dari spkNumberFix. */
-  return spkPkPoinToButir(spkPkIndentStd(spkPkSubNumberFix(spkPkBoxMark(html))));
+     bekerja pada SELURUH butir, termasuk yang lolos dari spkNumberFix.
+     spkPkKeepPihak() dijalankan TERAKHIR: pembungkus <div class="spk-keep">
+     mengubah susunan simpul, jadi ia dipasang sesudah seluruh perhitungan
+     inden & penomoran selesai agar tidak mengganggu penelusuran saudara-simpul. */
+  return spkPkKeepPihak(
+           spkPkPoinToButir(spkPkIndentStd(spkPkSubNumberFix(spkPkBoxMark(html)))),
+           isPk);
 }
 
 function spkNumberFix(html){
@@ -18768,9 +18864,12 @@ function spkWEOpen(opts){
       '<div class="spk-ov-body">'+
         titleFieldHtml+
         spkWEToolbarHtml()+
-        '<div class="spk-we-pagearea"><div class="spk-we-page">'+
+        '<div class="spk-we-pagearea"><div class="spk-we-page'+
+          ((typeof spkIsPk==='function' && spkIsPk()) ? ' spk-pk' : '')+'">'+
           (opts.head ? '<div class="spk-we-clhead" id="spk-we-clhead"></div>' : '')+
-          '<div class="spk-we-doc" id="spk-we-doc" contenteditable="true" spellcheck="true" data-ph="'+fkEsc(opts.placeholder||'Mulai ketik di sini...')+'"></div>'+
+          '<div class="spk-we-doc'+
+            ((typeof spkIsPk==='function' && spkIsPk()) ? ' spk-pk' : '')+
+            '" id="spk-we-doc" contenteditable="true" spellcheck="true" data-ph="'+fkEsc(opts.placeholder||'Mulai ketik di sini...')+'"></div>'+
         '</div></div>'+
       '</div>'+
       '<div class="spk-we-foot">'+
@@ -18823,9 +18922,19 @@ function spkWEHeadRender(){
   var ti=document.getElementById('spk-we-titleinput');
   var judul = ti ? String(ti.value||'').trim() : String(h.judul||'').trim();
   var no = (h.no!=null && h.no!=='') ? String(h.no) : 'N';
-  el.innerHTML='<span class="n">'+fkEsc(no)+'.</span>'+
-    (judul ? fkEsc(judul) : '<span class="ph">JUDUL KLAUSUL</span>')+
-    '<span class="spk-we-clhead-tag">(pratinjau — isi klausul di bawah ini sejajar dengan huruf sesudah nomor)</span>';
+  var pk = (typeof spkIsPk==='function' && spkIsPk());
+  el.className = 'spk-we-clhead' + (pk ? ' spk-pk' : '');
+  if(pk){
+    /* Perjanjian/Kontrak: "PASAL n" di baris pertama, nama pasal di bawahnya,
+       keduanya rata tengah — sama seperti tampilan Lihat. */
+    el.innerHTML='<span class="n">PASAL '+fkEsc(no)+'</span>'+
+      (judul ? fkEsc(judul) : '<span class="ph">NAMA PASAL</span>')+
+      '<span class="spk-we-clhead-tag">(pratinjau — isi klausul di bawah ini mulai di batas margin kiri)</span>';
+  }else{
+    el.innerHTML='<span class="n">'+fkEsc(no)+'.</span>'+
+      (judul ? fkEsc(judul) : '<span class="ph">JUDUL KLAUSUL</span>')+
+      '<span class="spk-we-clhead-tag">(pratinjau — isi klausul di bawah ini sejajar dengan huruf sesudah nomor)</span>';
+  }
   if(ti && !ti.__hdBound){
     ti.__hdBound=true;
     ti.addEventListener('input', spkWEHeadRender);
@@ -21156,7 +21265,15 @@ function spkTocHtml(data, klausul){
 }
 
 /* ---------- Kop & footer berulang pada halaman isi ---------- */
+/* PERJANJIAN/KONTRAK: halaman isi klausul TIDAK memakai kop berulang.
+   Dokumen perjanjian bisa mencapai puluhan halaman; kop bergambar di setiap
+   lembar hanya memakan tinggi bidang cetak tanpa menambah informasi, sebab
+   identitas & nomor sudah tercantum pada Sampul dan Daftar Isi.
+   Dengan kop dikosongkan, mk() pada paginator tidak membuat <div class="sh-hd">
+   sama sekali, sehingga seluruh tinggi itu jatuh ke badan halaman.
+   Bentuk Surat Perintah Kerja tetap memakai kop seperti semula. */
 function spkRunHeadHtml(data){
+  if(spkBentukOf(data)==='PK') return '';
   const esc=fkEsc;
   const logo = SPK_LOGO_SRC? '<img src="'+SPK_LOGO_SRC+'" alt="PLN">' : '';
   return '<div class="spk-rhd">'+
@@ -21164,10 +21281,26 @@ function spkRunHeadHtml(data){
     '<div class="r"><b>'+esc(spkDokLabel(data))+'</b><span>'+esc(data.nomor_kontrak||'\u2014')+'</span></div>'+
   '</div>';
 }
-function spkRunFootHtml(){
+function spkRunFootHtml(data){
   /* CSS (spkDocCss2) menata footer lewat .ft-row yang display:flex. Sebelumnya
      .l/.c/.r ditaruh langsung di .spk-rft tanpa .ft-row, sehingga ketiganya
      menumpuk rata kiri. Nomor halaman (.ft-pg) diisi oleh spkPageScript(). */
+  /* PERJANJIAN/KONTRAK: kaki halaman diringkas menjadi nomor halaman di tengah
+     dan kotak paraf di kanan — mengikuti tata letak dokumen perjanjian cetak.
+     Garis pemisah tebal dan blok "UP3 MASOHI" dihilangkan. Kelas .ft-pg tetap
+     dipertahankan supaya pengisi nomor halaman (nomorFooter) bekerja apa adanya. */
+  if(spkBentukOf(data)==='PK'){
+    return '<div class="spk-rft spk-rft-pk">'+
+      '<div class="ft-row">'+
+        '<div class="l"></div>'+
+        '<div class="c"><div class="ft-pg">&#8203;</div></div>'+
+        '<div class="r">'+
+          '<div class="pf"><span>PIHAK PERTAMA</span><i></i></div>'+
+          '<div class="pf"><span>PIHAK KEDUA</span><i></i></div>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }
   return '<div class="spk-rft">'+
     '<div class="ft-row">'+
       '<div class="l">PIHAK PERTAMA <span class="ln"></span></div>'+
@@ -21955,7 +22088,7 @@ function spkDocHtml(data, klausul){
     '<section class="spk-page spk-flow" id="spk-flow">'+
       '<table class="spk-run"><thead><tr><td>'+spkRunHeadHtml(data)+'</td></tr></thead>'+
       '<tbody><tr><td>'+isiBody+'</td></tr></tbody>'+
-      '<tfoot><tr><td>'+spkRunFootHtml()+'</td></tr></tfoot></table>'+
+      '<tfoot><tr><td>'+spkRunFootHtml(data)+'</td></tr></tfoot></table>'+
     '</section>';
   // 4) Cover Lampiran + 5) Isi Lampiran
   const coverLamp=spkCoverHtml(data, ctx, spkLampTitle(data));
@@ -22391,8 +22524,52 @@ var SPK_DX = {
   IND_JUDUL:368,               // 0,65 cm  (jarak nomor -> teks pada JUDUL klausul;
                                //           pas untuk nomor 2 digit, mis. "15.")
   IND2:850,                    // 1,50 cm
-  IND3:1276                    // 2,25 cm
+  IND3:1276,                   // 2,25 cm
+  /* --- nama seragam yang dipakai pembangun gaya (nilai SPK, TIDAK BERUBAH) --- */
+  BASE:425,                    // dasar isi klausul
+  P_FIRST:425,                 // inden baris pertama paragraf narasi
+  L1:850,  L1_HANG:425,        // butir tingkat-1
+  L2:1276, L2_HANG:425,        // butir tingkat-2
+  DESC:850,                    // paragraf deskripsi
+  JUDUL_HANG:368,              // gantungan nomor pada judul klausul
+  PUSAT:false                  // judul rata KIRI satu baris ("1. DEFINISI")
 };
+
+/* =====================================================================
+   KISI INDENTASI KHUSUS BENTUK PERJANJIAN/KONTRAK
+   Salinan tata letak "Lihat klausul — Perjanjian/Kontrak". Acuan di layar
+   (spkPkIndentStd) menghitung kolomnya secara terukur:
+     dasar isi klausul    : 0 cm  (mulai tepat di batas margin kiri kertas)
+     cadangan julur kiri  : ~0,20 cm  (spkPkReserve = lebar satu angka)
+     kotak nomor "1."     : ~0,46 cm  (lebar nomor + SPK_NUM_GAP 0,18)
+     kolom teks tingkat-1 : 0,20 + 0,46          = 0,66 cm
+     penanda "a."         : kolom teks induk + SPK_PK_LEAD 0,35 = 1,01 cm
+     kotak huruf "a."     : ~0,40 cm  (lebar penanda + SPK_PK_GAP_HURUF 0,10)
+     kolom teks tingkat-2 : 1,01 + 0,40          = 1,41 cm
+   Word tidak dapat mengukur ulang saat dokumen dibuka, jadi angka terukur itu
+   DIBEKUKAN menjadi kisi tetap di bawah. Selisihnya terhadap layar < 0,03 cm.
+   Bentuk Surat Perintah Kerja tetap memakai SPK_DX di atas — tidak tersentuh.
+   ===================================================================== */
+var SPK_DX_PK = {
+  A4_W:11906, A4_H:16838,
+  MARGIN:1440,
+  IND:0, IND_JUDUL:0, IND2:374, IND3:799,
+  BASE:0,                      // 0 cm    — isi klausul mulai di batas margin kiri
+  P_FIRST:425,                 // 0,75 cm — inden baris pertama paragraf narasi
+  L1:374,  L1_HANG:261,        // 0,66 cm / 0,46 cm — butir "1." / "1.1."
+  L2:799,  L2_HANG:227,        // 1,41 cm / 0,40 cm — butir "a." / "b."
+  DESC:374,                    // 0,66 cm — sejajar kolom teks tingkat-1
+  GAP:102,                     // 0,18 cm — jeda TETAP titik nomor -> teks (SPK_NUM_GAP)
+  JUDUL_HANG:0,
+  PUSAT:true                   // judul rata TENGAH dua baris ("PASAL 1" + nama pasal)
+};
+
+/* Kisi yang berlaku untuk bentuk yang sedang aktif pada form Penyusunan Kontrak.
+   Dipakai SELURUH pembangun template .docx, sehingga Surat Perintah Kerja
+   menghasilkan berkas yang sama persis seperti sebelumnya. */
+function spkDX(){
+  return (typeof spkIsPk==='function' && spkIsPk()) ? SPK_DX_PK : SPK_DX;
+}
 
 /* ================= ZIP (tulis: metode Store + CRC32) ================= */
 var SPK_ZIPDATE = ((2020-1980)<<9) | (1<<5) | 1;   // tanggal DOS yang sah (1 Jan 2020)
@@ -22489,10 +22666,37 @@ function spkStyXml(id, name, ind, extraP, extraR){
   '</w:style>';
 }
 function spkStylesXml(){
-  var D=SPK_DX;
-  var tab1='<w:tabs><w:tab w:val="left" w:pos="'+D.IND2+'"/></w:tabs>';
-  var tab2='<w:tabs><w:tab w:val="left" w:pos="'+D.IND3+'"/></w:tabs>';
-  var tabH='<w:tabs><w:tab w:val="left" w:pos="'+D.IND_JUDUL+'"/></w:tabs>';
+  var D=spkDX();
+  var tab1='<w:tabs><w:tab w:val="left" w:pos="'+D.L1+'"/></w:tabs>';
+  var tab2='<w:tabs><w:tab w:val="left" w:pos="'+D.L2+'"/></w:tabs>';
+  var tabH='<w:tabs><w:tab w:val="left" w:pos="'+D.JUDUL_HANG+'"/></w:tabs>';
+  /* PERJANJIAN/KONTRAK — NOMOR BUTIR RATA KANAN.
+     Word tidak bisa merata-kanankan nomor yang diketik manual lewat inden saja,
+     jadi dipakai dua tab stop:
+       tab KANAN di (kolom teks - jeda) -> titik penutup semua nomor lurus,
+       tab KIRI  di kolom teks          -> awal teks semua butir sejajar.
+     Isi barisnya menjadi: TAB + "1." + TAB + teks (lihat spkHtmlToWordParas).
+     Hasilnya sama seperti tampilan layar: "9." dan "10." titiknya satu garis,
+     jarak titik -> teks tetap, nomor 2 digit memanjang ke KIRI. */
+  if(D.PUSAT){
+    tab1='<w:tabs><w:tab w:val="right" w:pos="'+(D.L1-D.GAP)+'"/>'+
+         '<w:tab w:val="left" w:pos="'+D.L1+'"/></w:tabs>';
+  }
+  /* --- Gaya judul klausul ---
+     SPK : satu baris rata KIRI, nomor menggantung  -> persis seperti semula.
+     PK  : dua baris rata TENGAH — "PASAL n" (gaya Klausul Pasal, bernomor
+           otomatis) lalu nama pasal (gaya Klausul Judul) di bawahnya. */
+  var judulSty = D.PUSAT
+    ? spkStyXml('KlausulPasal','Klausul Pasal','<w:ind w:left="0" w:firstLine="0"/>',
+        '<w:spacing w:before="240" w:after="0" w:line="276" w:lineRule="auto"/><w:jc w:val="center"/>',
+        '<w:b/><w:caps/>')+
+      spkStyXml('KlausulJudul','Klausul Judul','<w:ind w:left="0" w:firstLine="0"/>',
+        '<w:spacing w:before="0" w:after="120" w:line="276" w:lineRule="auto"/><w:jc w:val="center"/>',
+        '<w:b/><w:caps/>')
+    : spkStyXml('KlausulJudul','Klausul Judul',
+        '<w:ind w:left="'+D.JUDUL_HANG+'" w:hanging="'+D.JUDUL_HANG+'"/>',
+        tabH+'<w:spacing w:before="240" w:after="60" w:line="276" w:lineRule="auto"/><w:jc w:val="left"/>',
+        '<w:b/><w:caps/>');
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
   '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'+
     '<w:docDefaults><w:rPrDefault><w:rPr>'+
@@ -22503,29 +22707,32 @@ function spkStylesXml(){
       '<w:spacing w:after="120" w:line="276" w:lineRule="auto"/><w:jc w:val="both"/>'+
     '</w:pPr></w:pPrDefault></w:docDefaults>'+
     '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>'+
-    /* Judul klausul: nomor di margin, teks judul pada 0,75 cm (hanging) */
-    spkStyXml('KlausulJudul','Klausul Judul',
-      '<w:ind w:left="'+SPK_DX.IND_JUDUL+'" w:hanging="'+SPK_DX.IND_JUDUL+'"/>',
-      tabH+'<w:spacing w:before="240" w:after="60" w:line="276" w:lineRule="auto"/><w:jc w:val="left"/>',
-      '<w:b/><w:caps/>')+
-    /* Isi klausul: sejajar dengan huruf sesudah nomor (0,75 cm) */
-    spkStyXml('KlausulIsi','Klausul Isi','<w:ind w:left="'+SPK_DX.IND+'"/>','','')+
-    spkStyXml('KlausulParagraf','Klausul Paragraf','<w:ind w:left="'+SPK_DX.IND+'" w:firstLine="'+SPK_DX.IND+'"/>','','')+
-    spkStyXml('KlausulButir1','Klausul Butir 1','<w:ind w:left="'+SPK_DX.IND2+'" w:hanging="'+SPK_DX.IND+'"/>',tab1,'')+
-    spkStyXml('KlausulButir2','Klausul Butir 2','<w:ind w:left="'+SPK_DX.IND3+'" w:hanging="'+SPK_DX.IND+'"/>',tab2,'')+
-    spkStyXml('KlausulDeskripsi','Klausul Deskripsi','<w:ind w:left="'+SPK_DX.IND2+'"/>','','')+
-    spkStyXml('KlausulParagraf1','Klausul Paragraf 1','<w:ind w:left="'+SPK_DX.IND2+'" w:firstLine="'+SPK_DX.IND+'"/>','','')+
-    spkStyXml('KlausulParagraf2','Klausul Paragraf 2','<w:ind w:left="'+SPK_DX.IND3+'" w:firstLine="'+SPK_DX.IND+'"/>','','')+
+    judulSty+
+    /* Isi klausul: SPK menjorok 0,75 cm; PK mulai tepat di batas margin kiri */
+    spkStyXml('KlausulIsi','Klausul Isi','<w:ind w:left="'+D.BASE+'"/>','','')+
+    spkStyXml('KlausulParagraf','Klausul Paragraf','<w:ind w:left="'+D.BASE+'" w:firstLine="'+D.P_FIRST+'"/>','','')+
+    spkStyXml('KlausulButir1','Klausul Butir 1','<w:ind w:left="'+D.L1+'" w:hanging="'+D.L1_HANG+'"/>',tab1,'')+
+    spkStyXml('KlausulButir2','Klausul Butir 2','<w:ind w:left="'+D.L2+'" w:hanging="'+D.L2_HANG+'"/>',tab2,'')+
+    spkStyXml('KlausulDeskripsi','Klausul Deskripsi','<w:ind w:left="'+D.DESC+'"/>','','')+
+    spkStyXml('KlausulParagraf1','Klausul Paragraf 1','<w:ind w:left="'+D.L1+'" w:firstLine="'+D.P_FIRST+'"/>','','')+
+    spkStyXml('KlausulParagraf2','Klausul Paragraf 2','<w:ind w:left="'+D.L2+'" w:firstLine="'+D.P_FIRST+'"/>','','')+
     spkStyXml('PetunjukTemplate','Petunjuk Template','<w:ind w:left="0"/>',
       '<w:spacing w:after="60" w:line="240" w:lineRule="auto"/><w:jc w:val="left"/>',
       '<w:i/><w:color w:val="808080"/><w:sz w:val="18"/><w:szCs w:val="18"/>')+
   '</w:styles>';
 }
-/* Penomoran OTOMATIS Word untuk Judul Klausul (bukan angka yang diketik manual).
-   numId 1 -> daftar bernomor desimal "1." dengan hanging indent 0,75 cm.
+/* Penomoran OTOMATIS Word untuk baris judul klausul (bukan angka yang diketik).
+   SPK : daftar desimal "1." dengan hanging indent 0,65 cm  -> seperti semula.
+   PK  : teks tingkat "PASAL 1" tanpa tab pengekor (w:suff nothing) supaya
+         nomornya benar-benar berada di tengah baris.
    w:start disetel ke nomor klausul agar angkanya sesuai posisinya di pustaka. */
 function spkNumberingXml(startNo){
-  var D=SPK_DX, st=Math.max(1, parseInt(startNo,10)||1);
+  var D=spkDX(), st=Math.max(1, parseInt(startNo,10)||1);
+  var lvl = D.PUSAT
+    ? '<w:lvlText w:val="PASAL %1"/><w:lvlJc w:val="left"/><w:suff w:val="nothing"/>'+
+      '<w:pPr><w:ind w:left="0" w:firstLine="0"/></w:pPr>'
+    : '<w:lvlText w:val="%1."/><w:lvlJc w:val="left"/>'+
+      '<w:pPr><w:ind w:left="'+D.JUDUL_HANG+'" w:hanging="'+D.JUDUL_HANG+'"/></w:pPr>';
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
   '<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'+
     '<w:abstractNum w:abstractNumId="0">'+
@@ -22533,9 +22740,7 @@ function spkNumberingXml(startNo){
       '<w:lvl w:ilvl="0">'+
         '<w:start w:val="'+st+'"/>'+
         '<w:numFmt w:val="decimal"/>'+
-        '<w:lvlText w:val="%1."/>'+
-        '<w:lvlJc w:val="left"/>'+
-        '<w:pPr><w:ind w:left="'+D.IND_JUDUL+'" w:hanging="'+D.IND_JUDUL+'"/></w:pPr>'+
+        lvl+
       '</w:lvl>'+
     '</w:abstractNum>'+
     '<w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num>'+
@@ -22570,9 +22775,9 @@ function spkCssLen(v, unit){
 function spkPPrFromCss(el){
   var st=el && el.style ? el.style : null;
   if(!st) return '';
-  var hasInd=false, left=SPK_WX_BASE, hang=0, first=0;
+  var hasInd=false, base=spkWxBase(), left=base, hang=0, first=0;
   var ml=spkCssLen(st.marginLeft,'cm');
-  if(ml!=null){ left=SPK_WX_BASE+spkCmTw(ml); hasInd=true; }
+  if(ml!=null){ left=base+spkCmTw(ml); hasInd=true; }
   var ti=spkCssLen(st.textIndent,'cm');
   if(ti!=null){ hasInd=true; if(ti<0) hang=spkCmTw(-ti); else if(ti>0) first=spkCmTw(ti); }
   var ind='';
@@ -22600,9 +22805,18 @@ function spkPPrFromCss(el){
   var jc='', ta=String(st.textAlign||'').trim();
   var jm={justify:'both',center:'center',right:'right',left:'left'};
   if(jm[ta]) jc='<w:jc w:val="'+jm[ta]+'"/>';
-  /* Tab stop tepat pada posisi teks (setelah nomor) agar jarak nomor->teks sama */
+  /* Tab stop tepat pada posisi teks (setelah nomor) agar jarak nomor->teks sama.
+     PERJANJIAN/KONTRAK: ditambah tab KANAN di (kolom teks - jeda) supaya nomor
+     yang diketik manual ikut rata kanan — titik penutupnya lurus untuk 1 maupun
+     2 digit, persis seperti tampilan di layar. */
   var tabs='';
-  if(hang>0) tabs='<w:tabs><w:tab w:val="left" w:pos="'+Math.max(0,left)+'"/></w:tabs>';
+  if(hang>0){
+    var _D=spkDX();
+    tabs = _D.PUSAT
+      ? '<w:tabs><w:tab w:val="right" w:pos="'+Math.max(0,left-_D.GAP)+'"/>'+
+        '<w:tab w:val="left" w:pos="'+Math.max(0,left)+'"/></w:tabs>'
+      : '<w:tabs><w:tab w:val="left" w:pos="'+Math.max(0,left)+'"/></w:tabs>';
+  }
   return tabs+ind+sp+jc;
 }
 /* Kumpulkan "run" (potongan teks + format) dari sebuah node HTML */
@@ -22646,7 +22860,7 @@ function spkKvTableXml(rows){
     ['top','left','bottom','right','insideH','insideV'].map(function(s){
       return '<w:'+s+' w:val="none" w:sz="0" w:space="0" w:color="auto"/>'; }).join('')+
     '</w:tblBorders>';
-  var pr='<w:tblPr><w:tblW w:w="0" w:type="auto"/><w:tblInd w:w="'+SPK_DX.IND+'" w:type="dxa"/>'+borders+
+  var pr='<w:tblPr><w:tblW w:w="0" w:type="auto"/><w:tblInd w:w="'+spkWxBase()+'" w:type="dxa"/>'+borders+
     '<w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="0" w:type="dxa"/>'+
     '<w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr>';
   var grid='<w:tblGrid><w:gridCol w:w="'+W1+'"/><w:gridCol w:w="'+W2+'"/><w:gridCol w:w="'+W3+'"/></w:tblGrid>';
@@ -22693,6 +22907,14 @@ function spkHtmlToWordParas(html){
         runs.splice(0,1,{t:m[1],f:f0},{t:'\t',f:f0},{t:rest,f:f0});
       }
     }
+    /* PERJANJIAN/KONTRAK: nomor ANGKA dirata-kanankan lewat tab stop kanan.
+       Caranya menyisipkan satu TAB SEBELUM nomor, sehingga urutan barisnya
+       menjadi  TAB -> nomor (berhenti rata kanan) -> TAB -> teks.
+       Penanda HURUF (a. b.) tetap rata kiri seperti semula, jadi tidak disentuh. */
+    if(spkDX().PUSAT && cls==='kl1' && runs.length && runs[0].t!=='\t' &&
+       /^(?:(?:[0-9]+\.)+|[0-9]+\))$/.test(String(runs[0].t||'').trim())){
+      runs.unshift({t:'\t', f:runs[0].f});
+    }
     var rx='';
     for(j=0;j<runs.length;j++){ if(runs[j].t!=='') rx+=spkRunXml(runs[j].t, runs[j].f); }
     /* Format (indent, jarak baris, jarak paragraf, perataan) diambil dari style inline
@@ -22704,19 +22926,27 @@ function spkHtmlToWordParas(html){
 }
 /* Berkas template .docx siap unduh */
 function spkDocxTemplateBlob(judul, isiHtml, noKl){
-  var enc=new TextEncoder(), D=SPK_DX;
+  var enc=new TextEncoder(), D=spkDX(), PK=!!D.PUSAT;
   var guide=function(t){ return spkPXml('PetunjukTemplate', spkRunXml(t,{})); };
+  var numPr='<w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr>';
+  var judulRuns = spkJudulPlain(judul) ? spkRunsFromHtml(spkJudulSan(judul))
+                                       : spkRunXml(PK?'NAMA PASAL':'JUDUL KLAUSUL',{});
+  /* SPK : SATU baris — nomor otomatis + judul, rata kiri (seperti semula).
+     PK  : DUA baris rata tengah — "PASAL n" (bernomor otomatis, tanpa teks)
+           lalu nama pasal di bawahnya, persis seperti tampilan Lihat. */
+  var judulXml = PK
+    ? spkPXml2('KlausulPasal', numPr, '') + spkPXml('KlausulJudul', judulRuns)
+    : spkPXml2('KlausulJudul', numPr, judulRuns);
   var body =
     guide('PETUNJUK (baris abu-abu ini otomatis DIABAIKAN saat diunggah — boleh dibiarkan):')+
     guide('1) Ketik isi klausul HANYA di bawah baris judul. Halaman sudah diatur A4, Portrait, margin Normal 2,54 cm, huruf Inter 11.')+
     guide('2) Gunakan Style Word: "Klausul Isi" (teks biasa), "Klausul Butir 1" (nomor 1.1.), "Klausul Butir 2" (huruf a.), "Klausul Paragraf" (paragraf menjorok).')+
     guide('3) Penomoran butir boleh memakai penomoran otomatis Word ATAU diketik manual (mis. 1.1. / a.) lalu TAB — keduanya terbaca sama persis.')+
-    guide('4) Nomor judul klausul memakai penomoran otomatis Word (bukan angka yang diketik) — cukup ubah teks judulnya saja.')+
+    (PK
+      ? guide('4) Baris "PASAL n" memakai penomoran otomatis Word dan rata tengah — jangan diketik ulang; cukup ubah NAMA PASAL pada baris di bawahnya.')
+      : guide('4) Nomor judul klausul memakai penomoran otomatis Word (bukan angka yang diketik) — cukup ubah teks judulnya saja.'))+
     guide('5) Placeholder seperti {{nama_pekerjaan}}, {{nilai_rp}}, {{jangka_waktu_hari}} tetap boleh dipakai.')+
-    /* Baris judul: memakai PENOMORAN OTOMATIS Word (numId 1) — nomornya bukan teks
-       biasa, sehingga tetap berurutan bila klausul ditambah/dipindah. */
-    spkPXml2('KlausulJudul', '<w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr>',
-      (spkJudulPlain(judul) ? spkRunsFromHtml(spkJudulSan(judul)) : spkRunXml('JUDUL KLAUSUL',{})) );
+    judulXml;
   var isi=spkHtmlToWordParas(isiHtml);
   body += isi || spkPXml('KlausulIsi','');
   /* Word mensyaratkan paragraf setelah tabel: jika isi berakhir dengan tabel,
@@ -22764,11 +22994,20 @@ function spkWOn(el, name){                      // <w:b/> aktif? (w:val="0"/"fal
   var v=n.getAttributeNS(SPK_W_NS,'val');
   return !(v==='0'||v==='false');
 }
+/* Ambang penentu tingkat butir. Diturunkan dari kisi bentuk aktif supaya
+   nilai 700/1100 (kisi SPK) tidak salah membaca kisi PK yang lebih rapat:
+     SPK -> tingkat-1 850, tingkat-2 1276  => ambang ~1063 / dasar 425
+     PK  -> tingkat-1 374, tingkat-2  799  => ambang ~586  / dasar 0    */
 function spkIndClass(left, hang, first){
   left=+left||0; hang=+hang||0; first=+first||0;
-  if(hang>0) return (left>=1100) ? 'kl2' : 'kl1';
-  if(first>0) return (left>=1100) ? 'klp2' : (left>=700 ? 'klp1' : 'klp');
-  return (left>=700) ? 'kldesc' : 'kl0';
+  var D=spkDX(), lv1=700, lv2=1100;                  // ambang SPK — TIDAK BERUBAH
+  if(D.PUSAT){                                       // kisi PK yang lebih rapat
+    lv2=Math.round((D.L1+D.L2)/2);                   // ~586
+    lv1=Math.round((D.BASE+D.L1)/2);                 // ~187
+  }
+  if(hang>0) return (left>=lv2) ? 'kl2' : 'kl1';
+  if(first>0) return (left>=lv2) ? 'klp2' : (left>=lv1 ? 'klp1' : 'klp');
+  return (left>=lv1) ? 'kldesc' : 'kl0';
 }
 /* ===== FORMAT WORD APA ADANYA (WYSIWYG) =====
    Indentasi, jarak antar baris (line spacing), jarak antar paragraf
@@ -22776,7 +23015,11 @@ function spkIndClass(left, hang, first){
    dibaca LANGSUNG dari berkas .docx (docDefaults -> rantai gaya basedOn ->
    definisi penomoran -> pengaturan langsung paragraf, persis urutan Word),
    lalu dibawa sebagai style inline agar tampilan web = tampilan Word. */
-var SPK_WX_BASE = 425;                                   // dasar klausul 0,75 cm (twips)
+/* Dasar klausul dalam twips. SPK = 425 (0,75 cm) seperti semula; PK = 0 karena
+   isi klausul Perjanjian/Kontrak mulai tepat di batas margin kiri. Dipakai DUA
+   ARAH (tulis: spkPPrFromCss, baca: spkParaCss) sehingga bolak-balik tetap pas. */
+var SPK_WX_BASE = 425;                                   // dasar klausul SPK (twips)
+function spkWxBase(){ var D=spkDX(); return (D && D.BASE!=null) ? D.BASE : SPK_WX_BASE; }
 function spkTwCm(tw){ return Math.round((+tw||0)/566.929*100)/100; }
 function spkTwPt(tw){ return Math.round((+tw||0)/20*10)/10; }
 /* Baca <w:pPr> -> {ind:{left,hanging,firstLine}, sp:{before,after,line,lineRule}, jc} */
@@ -22863,7 +23106,7 @@ function spkParaCss(eff, noInd){
   var css='';
   if(!noInd){
     var left=+eff.ind.left||0, hang=+eff.ind.hanging||0, first=+eff.ind.firstLine||0;
-    css+='margin-left:'+spkTwCm(left-SPK_WX_BASE)+'cm;';
+    css+='margin-left:'+spkTwCm(left-spkWxBase())+'cm;';
     if(hang>0) css+='text-indent:-'+spkTwCm(hang)+'cm;';
     else if(first>0) css+='text-indent:'+spkTwCm(first)+'cm;';
     else css+='text-indent:0;';
@@ -23129,6 +23372,10 @@ function spkWordXmlToKlausul(xmlText, stylesXml, numberingXml){
     if(b.t==='tbl'){ html+=spkWTblToHtml(b.el); continue; } // tabel -> baris spk-kv sejajar
     var key=b.key;
     if(key.indexOf('petunjuk')===0) continue;               // baris petunjuk -> abaikan
+    /* Baris "PASAL n" pada template Perjanjian/Kontrak hanyalah penomoran
+       otomatis Word tanpa teks. Nomor pasal dibangun ulang oleh aplikasi dari
+       urutan klausul, jadi baris ini tidak ikut menjadi isi. */
+    if(key==='klausulpasal') continue;
     var t=spkWpText(b.p);
     if(key==='klausuljudul'){                               // baris judul klausul
       if(!judul){
@@ -23184,22 +23431,22 @@ function spkWordXmlToKlausul(xmlText, stylesXml, numberingXml){
     }else{
       /* nomor yang DIKETIK manual (mis. "2.1." lalu TAB/spasi) di paragraf
          yang punya hanging indent -> perlakukan sama seperti nomor otomatis */
-      var mm=/^((?:<(?:b|i|u)>)*)((?:\d+\.)+|\d+\)|[A-Za-z][.)])[\t\u00a0 ]+/.exec(out);
+      var mm=/^((?:<(?:b|i|u)>)*)[\t ]*((?:\d+\.)+|\d+\)|[A-Za-z][.)])[\t\u00a0 ]+/.exec(out);
       if(mm && hangCm>=0.2 && !/^(CV|CD|MM|DVD|DIV|MMC|LC|DC|ID|IL|IM)[.)]$/i.test(mm[2])){
         if(cls!=='kl1' && cls!=='kl2') cls=((+eff.ind.left||0)>=1100)?'kl2':'kl1';
         out=mm[1]+spkNumBox(mm[2], hangCm, (lvlDef2&&lvlDef2.jc)||'left')+out.slice(mm[0].length);
         wrapped=true;
       }else{
         if(cls==='kl0'||cls==='kldesc'){                    // deteksi nomor yang diketik manual
-          if(/^(?:\d+\.)+[\s\u00a0]/.test(t.plain)) cls='kl1';
-          else if(/^[A-Za-z][.)][\s\u00a0]/.test(t.plain)) cls='kl2';
+          if(/^[\t ]*(?:\d+\.)+[\s\u00a0]/.test(t.plain)) cls='kl1';
+          else if(/^[\t ]*[A-Za-z][.)][\s\u00a0]/.test(t.plain)) cls='kl2';
           if(cls==='kl1'||cls==='kl2') plainNumFallback=true;
         }
         /* Huruf masuk (spasi di awal) tanpa first-line indent dari Word ->
            jadikan indentasi baris pertama 0,75 cm yang seragam. */
         var lead=out.match(/^([ \u00a0]+)/);
         if(lead && !(eff.ind.hanging>0)){
-          if(!(eff.ind.firstLine>0)) eff.ind.firstLine=SPK_WX_BASE;
+          if(!(eff.ind.firstLine>0)) eff.ind.firstLine=spkDX().P_FIRST;
           out=out.slice(lead[1].length);
           if(cls==='kldesc'||cls==='kl0') cls='klp';
         }
@@ -23482,14 +23729,22 @@ function spkKlausulView(id){
   let ov=document.getElementById('spk-klausul-view-ov');
   if(!ov){ ov=document.createElement('div'); ov.id='spk-klausul-view-ov'; ov.className='spk-ov'; document.body.appendChild(ov);
     ov.addEventListener('click', e=>{ if(e.target.id==='spk-klausul-view-ov') spkKlausulViewClose(); }); }
+  var _pk=(typeof spkIsPk==='function' && spkIsPk());
+  var _kop = k.judul
+    ? (_pk
+        ? '<p class="spk-cl-h" style="font-weight:700;text-transform:uppercase;text-align:center;margin:0 0 3pt">'+
+            '<span class="n" style="display:block;text-align:center;margin:0 0 1pt">PASAL '+fkEsc(String(noKl))+'</span>'+
+            spkFmtJudul(k.judul)+'</p>'
+        : '<p class="spk-cl-h" style="font-weight:700;text-transform:uppercase;margin:0 0 3pt">'+spkFmtJudul(k.judul)+'</p>')
+    : '';
   ov.innerHTML=
     '<div class="spk-ov-modal spk-ov-we">'+
       '<div class="spk-ov-head"><span class="spk-ov-title">Lihat Klausul — '+spkJudulPlain(k.judul)+'</span>'+
         '<div style="display:flex;gap:8px"><button class="btn btn-teal btn-sm" onclick="spkKlausulViewToEdit(\''+fkEscJs(String(k.id))+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Ubah</button>'+
         '<button class="btn btn-ghost btn-sm" onclick="spkKlausulViewClose()">Tutup</button></div></div>'+
       '<div class="spk-ov-body">'+
-        '<div class="spk-we-pagearea"><div class="spk-we-page">'+
-          '<div class="spk-cl">'+(k.judul?'<p class="spk-cl-h" style="font-weight:700;text-transform:uppercase;margin:0 0 3pt">'+spkFmtJudul(k.judul)+'</p>':'')+inner+'</div>'+
+        '<div class="spk-we-pagearea"><div class="spk-we-page'+(_pk?' spk-pk':'')+'">'+
+          '<div class="spk-cl">'+_kop+inner+'</div>'+
         '</div></div>'+
       '</div>'+
     '</div>';

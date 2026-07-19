@@ -3209,6 +3209,44 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
 .spk-we-page .spk-cl p .n{display:inline-block;width:.75cm;text-indent:0;text-align:left}
 .spk-we-page .spk-cl i{font-style:italic}
 .spk-we-page .spk-cl b{font-weight:700}
+
+/* ==========================================================================
+   PRATINJAU HALAMAN A4 — BENTUK PERJANJIAN/KONTRAK SAJA (.spk-pk)
+   Menyalin kisi tata letak "Lihat klausul — Perjanjian/Kontrak":
+     isi klausul  : mulai TEPAT di batas margin kiri (bukan menjorok 0,75 cm)
+     tingkat-1    : kotak nomor 0,46 cm, kolom teks 0,66 cm
+     tingkat-2    : kotak huruf 0,40 cm, kolom teks 1,41 cm
+     judul        : "PASAL n" rata tengah di baris pertama, nama pasal di bawah
+   Tanpa kelas .spk-pk, seluruh aturan lama (bentuk Surat Perintah Kerja)
+   tetap berlaku apa adanya.
+   ========================================================================== */
+.spk-we-page.spk-pk .spk-cl{padding-left:0}
+.spk-we-page.spk-pk .spk-cl p.kl0{margin-left:0;text-indent:0}
+.spk-we-page.spk-pk .spk-cl p.klp{margin-left:0;text-indent:.75cm}
+.spk-we-page.spk-pk .spk-cl p.klp1{margin-left:.66cm;text-indent:.75cm}
+.spk-we-page.spk-pk .spk-cl p.klp2{margin-left:1.41cm;text-indent:.75cm}
+.spk-we-page.spk-pk .spk-cl p.kl1{margin-left:.66cm;text-indent:-.46cm}
+.spk-we-page.spk-pk .spk-cl p.kl2{margin-left:1.41cm;text-indent:-.40cm}
+.spk-we-page.spk-pk .spk-cl p.kl1.spk-sl{margin-left:.66cm;text-indent:-.46cm;padding-left:0}
+.spk-we-page.spk-pk .spk-cl p.kl2.spk-sl{margin-left:1.41cm;text-indent:-.40cm;padding-left:0}
+.spk-we-page.spk-pk .spk-cl p.kl1.spk-sl .n{width:.46cm;text-align:left}
+.spk-we-page.spk-pk .spk-cl p.kl2.spk-sl .n{width:.40cm;text-align:left}
+.spk-we-page.spk-pk .spk-cl p.kldesc{margin-left:.66cm;text-indent:0}
+.spk-we-page.spk-pk .spk-cl p .n{width:.46cm}
+/* Kanvas edit ikut kisi yang sama supaya ketikan langsung tampak seperti hasilnya */
+.spk-we-doc.spk-pk{padding-left:0}
+.spk-we-doc.spk-pk p.kl0{margin-left:0;text-indent:0}
+.spk-we-doc.spk-pk p.klp{margin-left:0;text-indent:.75cm}
+.spk-we-doc.spk-pk p.klp1{margin-left:.66cm;text-indent:.75cm}
+.spk-we-doc.spk-pk p.klp2{margin-left:1.41cm;text-indent:.75cm}
+.spk-we-doc.spk-pk p.kl1{margin-left:.66cm;text-indent:-.46cm}
+.spk-we-doc.spk-pk p.kl2{margin-left:1.41cm;text-indent:-.40cm}
+.spk-we-doc.spk-pk p.kldesc{margin-left:.66cm;text-indent:0}
+.spk-we-doc.spk-pk .n{width:.46cm}
+/* Kop klausul: PASAL n rata tengah dua baris */
+.spk-we-clhead.spk-pk{padding-left:0;text-indent:0;text-align:center}
+.spk-we-clhead.spk-pk .n{display:block;width:auto;text-align:center;margin:0 0 1pt}
+.spk-we-clhead.spk-pk .spk-we-clhead-tag{display:block;margin-left:0;text-align:center}
 /* Pastikan SELURUH isi klausul (paragraf, blok pihak, baris label:nilai, daftar,
    dsb.) memakai jarak baris 1,15 di layar — sama seperti pengaturan di Word.
    Catch-all agar tidak ada elemen yang jatuh ke line-height default (~1). */
