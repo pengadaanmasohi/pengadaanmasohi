@@ -17609,12 +17609,40 @@ function spkDocCss2(){
   '.spk-doc.spk-pk .spk-page.spk-sheet:not(.spk-lampsheet)::after{content:"";position:absolute;'+
     'top:14mm;right:14mm;bottom:14mm;left:14mm;border:1px solid #201E1D;pointer-events:none;z-index:0}'+
   '.spk-doc.spk-pk .spk-page.spk-sheet:not(.spk-lampsheet) > *{position:relative;z-index:1}'+
+  /* ---------- KAKI HALAMAN PERJANJIAN/KONTRAK ----------
+     Susunan isinya TETAP sama dengan Surat Perintah Kerja (spkRunFootHtml tidak
+     diubah); yang berbeda hanya tampilannya, dan hanya pada bentuk PK:
+       1) garis hitam pemisah dihapus (border-top:0),
+       2) tulisan "UP3 MASOHI" disembunyikan,
+       3) kaki diturunkan sedikit lewat margin bawah NEGATIF sehingga menyisakan
+          jarak kecil terhadap bingkai luar halaman:
+            dasar bidang teks 25,4mm - turun 7mm = 18,4mm dari tepi kertas,
+            sedangkan bingkai berada di 14mm  ->  sisa jarak ~4,4mm,
+       4) jarak teks ke kaki diberi lewat padding-ATAS pada .sh-ft — bukan
+          padding-bawah pada .sh-bd — supaya tinggi kaki yang diukur paginator
+          (fh) ikut bertambah dan tinggi badan halaman menyusut sendiri. Dengan
+          begitu jumlah baris per halaman tetap terhitung benar. */
+  '.spk-doc.spk-pk .spk-sheet:not(.spk-lampsheet) > .sh-ft{padding-top:6mm;margin-bottom:-7mm}'+
+  '.spk-doc.spk-pk .spk-sheet:not(.spk-lampsheet) .spk-rft{border-top:0;margin-top:0;padding-top:0}'+
+  '.spk-doc.spk-pk .spk-sheet:not(.spk-lampsheet) .spk-rft .ft-unit{display:none}'+
   /* ---------- ISI: BAB & tanda tangan ---------- */
   /* Jarak dari blok judul (SURAT PERINTAH KERJA + nomor kontrak) ke teks pertama
      "Pada hari ini ..." = 12pt. */
   /* Judul "SURAT PERINTAH KERJA" + Nomor Kontrak (halaman 1 isi kontrak):
      WARNA HITAM, jenis huruf mengikuti ISI KONTRAK (Inter/Arial 11pt),
      dan garis pembatas antara judul dengan nomor kontrak juga HITAM. */
+  /* ---------- KOP HALAMAN PERTAMA PERJANJIAN/KONTRAK ----------
+     Rata tengah, huruf kapital, tebal. Baris penghubung (TENTANG/ANTARA/DENGAN)
+     dibuat sedikit lebih kecil supaya nama pekerjaan & nama para pihak yang
+     menonjol. Ditutup GARIS GANDA tepat sebelum blok nomor kedua belah pihak. */
+  '.spk-judulpk{text-align:center;font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif;'+
+    'color:#000;margin:0 0 10pt;padding-bottom:9pt;border-bottom:3px double #000;'+
+    '-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  '.spk-judulpk .jd{font-size:12pt;font-weight:800;letter-spacing:.05em;text-transform:uppercase;line-height:'+spkLHCss(1.15)+'}'+
+  '.spk-judulpk .sb{font-size:11pt;font-weight:700;letter-spacing:.06em;text-transform:uppercase;'+
+    'line-height:'+spkLHCss(1.15)+';margin-top:9pt}'+
+  '.spk-judulpk .nm{font-size:11.5pt;font-weight:800;letter-spacing:.03em;text-transform:uppercase;'+
+    'line-height:'+spkLHCss(1.15)+';margin-top:9pt;text-wrap:balance}'+
   '.spk-bab{text-align:center;font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif;margin:0 0 12pt}'+
   '.spk-bab b{display:block;font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif;font-size:12pt;font-weight:800;color:#000;text-decoration:underline;text-decoration-color:#000;text-decoration-thickness:2px;text-underline-offset:5px;letter-spacing:.05em;text-transform:uppercase;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   '.spk-bab span{display:block;font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif;font-size:11pt;font-weight:700;color:#000;letter-spacing:.06em;margin-top:7px}'+
@@ -22055,8 +22083,34 @@ function spkDocHtml(data, klausul){
      yang memuat nomor yang sama — kalau ditulis dua kali jadi kembar. Bentuk
      Surat Perintah Kerja tidak punya blok itu, jadi nomornya tetap ditampilkan. */
   const _babNo = (!_isPkDoc && data.nomor_kontrak) ? ('<span>'+esc(data.nomor_kontrak)+'</span>') : '';
+  /* ---------- KOP HALAMAN PERTAMA ----------
+     Surat Perintah Kerja : judul dokumen + nomor (seperti semula).
+     Perjanjian/Kontrak   : blok judul lengkap gaya perjanjian —
+         PERJANJIAN/KONTRAK
+         TENTANG
+         <nama pekerjaan>
+         ANTARA
+         PT PLN (Persero) <unit>
+         DENGAN
+         <nama penyedia>
+     lalu garis ganda tepat di atas blok "Nomor PIHAK PERTAMA / PIHAK KEDUA".
+     Blok ini TIDAK menggantikan halaman Sampul: Sampul adalah lembar muka,
+     sedangkan blok ini adalah pembuka badan perjanjian sebagaimana lazimnya
+     dokumen kontrak. Seluruhnya huruf kapital lewat CSS (text-transform),
+     jadi nilai aslinya tetap tersimpan apa adanya. */
+  const _kopPk =
+    '<div class="spk-judulpk">'+
+      '<div class="jd">'+esc(spkDokLabel(data))+'</div>'+
+      '<div class="sb">TENTANG</div>'+
+      '<div class="nm">'+esc(data.nama_pekerjaan||'\u2014')+'</div>'+
+      '<div class="sb">ANTARA</div>'+
+      '<div class="nm">'+esc(spkOrgP1(ctx))+'</div>'+
+      '<div class="sb">DENGAN</div>'+
+      '<div class="nm">'+esc(ctx.p2_nama_hormat||'\u2014')+'</div>'+
+    '</div>';
   const isiBody=
-    '<div class="spk-bab"><b>'+esc(spkDokLabel(data))+'</b>'+_babNo+'</div>'+
+    (_isPkDoc ? _kopPk
+              : '<div class="spk-bab"><b>'+esc(spkDokLabel(data))+'</b>'+_babNo+'</div>')+
     '<div class="spk-cl">'+preambleAtas+'</div>'+
     (preambleMenugaskan ? '<div class="spk-cl spk-forcepage">'+preambleMenugaskan+'</div>' : '')+
     clausesHtml+
