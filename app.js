@@ -15391,6 +15391,30 @@ function spkPreamblePkTpl(data){
   }
   /* --- kalimat penutup pembuka (memulai halaman baru) --- */
   out += '<p class="kl0 spk-menugaskan">Bahwa berdasarkan hal-hal tersebut di atas, para pihak sepakat untuk mengadakan Perjanjian <b>{{nama_pekerjaan}}</b> dengan ketentuan-ketentuan sebagaimana tersebut dalam Pasal&ndash;pasal sebagai berikut :</p>';
+  /* --- kotak nomor daftar "Berdasarkan" ---
+     Daftar ini satu deret menerus (1..N), jadi aturan penomorannya sama dengan
+     butir klausul: bila nomor terakhir sudah 2 digit (10., 11., … ) deret
+     dirata-KANANkan dan lebar kotaknya dihitung dari nomor TERLEBAR supaya
+     "10." tidak menempel/menabrak teksnya; bila seluruhnya 1 digit -> rata KIRI.
+     Lebar bawaan CSS (0,6 cm) hanya cukup untuk 1 digit, karena itu ditimpa
+     inline di sini. */
+  var dlW=0.6, dlWb=0.6, dlRata=(n>=10)?'right':'left';
+  try{
+    var wN=spkTextWidthCm(String(n)+'.');
+    if(wN>0) dlW=Math.max(0.6, Math.round((wN+SPK_NUM_GAP)*100)/100);
+    /* kolom teks mengikuti nomor 1 DIGIT terlebar ("9."); nomor 2 digit
+       menjulur ke kiri, jadi butir 1 digit tetap sejajar dgn daftar lain */
+    var w9=spkTextWidthCm('9.');
+    dlWb=(n>=10 && w9>0) ? Math.max(0.6, Math.round((w9+SPK_NUM_GAP)*100)/100) : dlW;
+  }
+  catch(e){ if(n>=10){ dlW=0.85; dlWb=0.6; } }
+  if(!(dlW>0)) dlW=0.6;
+  if(!(dlWb>0) || dlWb>dlW) dlWb=dlW;
+  out = out.replace(/<p class="spk-dlist"><span class="n">/g,
+    '<p class="spk-dlist" style="padding-left:'+dlWb.toFixed(2)+'cm;text-indent:-'+dlW.toFixed(2)+'cm">'+
+    '<span class="n" style="width:'+dlW.toFixed(2)+'cm;min-width:'+dlW.toFixed(2)+'cm;'+
+    'display:inline-block;box-sizing:border-box;padding-right:'+SPK_NUM_GAP+'cm;text-indent:0;'+
+    'white-space:nowrap;overflow:visible;text-align:'+dlRata+'">');
   return out;
 }
 
@@ -18064,6 +18088,13 @@ var SPK_PK_STEP = 0.75;                 /* cadangan bila induk tak diketahui (cm
    entah nomornya "1." yang sempit atau "2.1." yang lebar.
    Dipakai juga sebagai geseran daftar yang berada di bawah paragraf pengantar. */
 var SPK_PK_LEAD = 0.35;                 /* jarak penanda anak dari teks induk (cm) */
+/* Jeda penanda -> teks untuk daftar HURUF / bullet (a. b. i. - ●).
+   Lebih rapat daripada jeda daftar ANGKA (SPK_NUM_GAP) karena kolomnya dipatok
+   selebar penanda TERLEBAR di deret: pada huruf, "m." jauh lebih lebar daripada
+   "i.", sehingga jeda 0,18 cm membuat huruf yang sempit terlihat jauh dari
+   teksnya. Dengan 0,10 cm, lebar kolom huruf jatuh di sekitar 0,5 cm — sama
+   seperti tab daftar huruf pada Word. */
+var SPK_PK_GAP_HURUF = 0.10;            /* jeda penanda huruf/bullet -> teks (cm) */
 
 /* Pecah penanda angka menjadi ruas: "2.1." -> ["2","1"], "10)" -> ["10"].
    Mengembalikan null bila penanda bukan angka. */
@@ -18151,6 +18182,13 @@ function spkPkIndentStd(html){
     for(i=0;i<deret.length;i++){
       var g=deret[i], W=0, j;
       for(j=0;j<g.items.length;j++){ if(g.items[j].w>W) W=g.items[j].w; }
+      /* Deret HURUF/bullet memakai jeda yang lebih rapat: lebar kotak dihitung
+         ulang = lebar penanda terlebar + SPK_PK_GAP_HURUF (spkPkNumW sudah
+         menambahkan SPK_NUM_GAP, jadi selisihnya dikurangkan). */
+      var adaAngka=false;
+      for(j=0;j<g.items.length;j++){ if(spkPkSegs(g.items[j].tok)){ adaAngka=true; break; } }
+      g.gap = adaAngka ? SPK_NUM_GAP : SPK_PK_GAP_HURUF;
+      if(!adaAngka) W = Math.max(0.4, W - (SPK_NUM_GAP - SPK_PK_GAP_HURUF));
       g.W=Math.round(W*100)/100;
       /* PERATAAN NOMOR PER DERET (aturan Perjanjian/Kontrak):
            - bila SELURUH penghitung TERAKHIR di deret ini hanya 1 digit
@@ -18166,6 +18204,19 @@ function spkPkIndentStd(html){
         if(sgs && String(sgs[sgs.length-1]).length>=2){ adaDua=true; break; }
       }
       g.rata = adaDua ? 'right' : 'left';
+      /* LEBAR DASAR (g.Wb) = lebar kotak yang dipakai untuk MENENTUKAN KOLOM TEKS,
+         diambil dari nomor 1 DIGIT terlebar di deret ini. Kotaknya sendiri tetap
+         selebar g.W (nomor terlebar), tetapi kelebihannya MENJULUR KE KIRI.
+         Akibatnya: nomor 1 digit & kolom teks berhenti di tempat yang sama
+         entah deret ini memuat nomor 2 digit atau tidak — sehingga penomoran
+         antar-Pasal tetap sejajar, dan hanya nomor 2 digit yang keluar ke kiri
+         (persis seperti penomoran rata kanan di Word). */
+      var Wb=0;
+      for(j=0;j<g.items.length;j++){
+        var sg1=spkPkSegs(g.items[j].tok);
+        if(sg1 && String(sg1[sg1.length-1]).length<=1 && g.items[j].w>Wb) Wb=g.items[j].w;
+      }
+      g.Wb = (Wb>0 && Wb<g.W) ? Math.round(Wb*100)/100 : g.W;
     }
 
     /* --- Tahap 4: posisi tiap deret ---
@@ -18178,7 +18229,7 @@ function spkPkIndentStd(html){
        terhitung lebih dulu. */
     for(i=0;i<deret.length;i++){
       var g2=deret[i];
-      if(g2.induk) g2.base=g2.induk.base + g2.induk.W + SPK_PK_LEAD;
+      if(g2.induk) g2.base=g2.induk.base + (g2.induk.Wb||g2.induk.W) + SPK_PK_LEAD;   /* dari KOLOM TEKS induk */
       else if(g2.lvl===1) g2.base=LEAD;                  /* geseran terhadap pengantar */
       else g2.base=LEAD + (g2.lvl-1)*SPK_PK_STEP;        /* cadangan: induk tak ketemu */
       g2.base=Math.round(g2.base*100)/100;
@@ -18192,8 +18243,10 @@ function spkPkIndentStd(html){
            lurus. Huruf & bullet selalu rata kiri. */
         sp.style.textAlign = spkPkSegs(q.tok) ? (g2.rata||'right') : 'left';
         sp.style.boxSizing='border-box';
-        sp.style.paddingRight=SPK_NUM_GAP+'cm';   /* jeda tetap ke teks */
-        q.p.style.marginLeft=(g2.base+g2.W).toFixed(2)+'cm';
+        sp.style.paddingRight=(g2.gap||SPK_NUM_GAP)+'cm';   /* jeda ke teks (huruf lebih rapat) */
+        /* Kolom teks dipatok g2.Wb; gantungan tetap g2.W, jadi selisihnya
+           (nomor 2 digit) menjulur KE KIRI dari kolom nomor 1 digit. */
+        q.p.style.marginLeft=(g2.base+(g2.Wb||g2.W)).toFixed(2)+'cm';
         q.p.style.textIndent='-'+g2.W.toFixed(2)+'cm';
         q.p.style.paddingLeft='0cm';
       }
