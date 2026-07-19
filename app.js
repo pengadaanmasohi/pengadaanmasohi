@@ -17289,17 +17289,20 @@ function spkDocCss(){
   /* "Berdasarkan :" rata margin kiri (sejajar "Pada hari ini"), jarak 12 pt dari blok pihak */
   '.spk-cl p.spk-berdasar{margin-top:12pt;margin-left:0;padding-left:0}'+
   /* Daftar "Berdasarkan": nomor tunggal (1. a. I.) dengan jarak tab ~0,7 cm,
-     baris sambungan sejajar teks di atasnya (mengikuti penggaris Word) */
-  '.spk-cl p.spk-dlist{margin:0 0 4pt;padding-left:0.7cm;text-indent:-0.7cm;text-align:justify;line-height:'+spkLHCss(1.15)+'}'+
+     baris sambungan sejajar teks di atasnya (mengikuti penggaris Word).
+     Seluruh daftar digeser 0,5 cm ke kanan terhadap kalimat pengantar di atasnya
+     ("…berpedoman pada :"), sama seperti butir bernomor di dalam klausul. */
+  '.spk-cl p.spk-dlist{margin:0 0 4pt 0.5cm;padding-left:0.7cm;text-indent:-0.7cm;text-align:justify;line-height:'+spkLHCss(1.15)+'}'+
   '.spk-cl p.spk-dlist .n{display:inline-block;width:0.7cm;text-indent:0}'+
   /* Nomor/kode referensi panjang di daftar "Berdasarkan" boleh dipotong di titik
      mana pun agar mengisi baris justify secara rapat — sisa nomor turun ke baris
      berikutnya, sehingga tidak timbul celah spasi lebar di tengah baris. */
   '.spk-cl p.spk-dlist .refn{word-break:break-all}'+
   /* Rincian "Label : nilai" di bawah sebuah butir daftar "Berdasarkan"
-     (mis. No. Eproc / Tanggal pada butir Pengumuman Pengadaan). Menjorok 0,7 cm
-     agar sejajar dengan teks butir di atasnya, bukan dengan nomornya. */
-  '.spk-cl .spk-kv.spk-dkv{margin:0 0 4pt 0.7cm}'+
+     (No. Eproc / No. / Tanggal). Menjorok 1,2 cm = 0,5 cm pergeseran daftar
+     + 0,7 cm lebar kotak nomor, sehingga sejajar dengan TEKS butir di atasnya,
+     bukan dengan nomornya. */
+  '.spk-cl .spk-kv.spk-dkv{margin:0 0 4pt 1.2cm}'+
   '.spk-cl .spk-kv.spk-dkv .k{flex:0 0 3.6cm;max-width:3.6cm}'+
   '.spk-cl .spk-kv.spk-dkv .s{flex:0 0 auto;width:0.6em}'+
   '.spk-cl .spk-kv.spk-dkv .v{flex:1 1 auto;text-align:left;overflow-wrap:anywhere;word-break:break-word}'+
@@ -17848,6 +17851,75 @@ function spkBoxLeadNumDom(html){
    sebelah kanan label TERPANJANG — bukan pada persentase tetap.
    Pembungkusnya dilewati saat konversi ke Word (spkHtmlToWordParas menyaring
    pembungkus yang berisi div/p), jadi keluarannya tetap tabel 3 kolom. */
+/* =========================================================================
+   URUTAN ABJAD PADA KLAUSUL "DEFINISI"
+   Butir definisi selalu ditampilkan & diunduh dalam urutan A-Z menurut istilah
+   yang didefinisikan (teks setelah nomor butir). Template yang diunggah dalam
+   urutan acak otomatis dirapikan, lalu dinomori ulang 1..N.
+   ========================================================================= */
+function spkIsDefinisiJudul(judul){
+  return /^definisi\b/i.test(spkJudulPlain(judul).replace(/^pasal\s*\d+\s*/i,''));
+}
+/* Istilah yang dipakai sebagai kunci urut: teks butir setelah token nomor,
+   dibersihkan dari tanda baca pembuka. */
+function spkDefKey(el){
+  var t=String(el.textContent||'').replace(/\s+/g,' ').trim();
+  t=t.replace(/^(?:\d+\.)+\s*/,'').replace(/^[^0-9A-Za-z\u00C0-\u024F]+/,'');
+  return t.toLowerCase();
+}
+/* Tulis ulang nomor di awal sebuah butir kl1 menjadi `no`. Menangani dua bentuk:
+   nomor masih teks biasa ("1. Adendum…") maupun sudah dikotakkan spkNumberFix
+   (<span class="n">1.</span>). */
+function spkDefSetNo(el, no){
+  var first=el.firstElementChild;
+  if(first && first.classList && first.classList.contains('n') && /^\d+\.$/.test(String(first.textContent||'').trim())){
+    first.textContent=no+'.'; return;
+  }
+  var w=document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null, false), n;
+  while((n=w.nextNode())){
+    var v=n.nodeValue||'';
+    if(/^\s*\d+\.\s*/.test(v)){ n.nodeValue=v.replace(/^\s*\d+\.\s*/, no+'. '); return; }
+    if(v.replace(/\s/g,'')) return;                 /* teks lain lebih dulu -> tak ada nomor */
+  }
+}
+function spkSortDefinisi(html){
+  var src=String(html||'');
+  if(!src) return src;
+  var box=document.createElement('div');
+  box.innerHTML=src;
+  var kids=[], k=box.firstChild;
+  while(k){ if(k.nodeType===1) kids.push(k); k=k.nextSibling; }
+  var isItem=function(el){
+    return el.tagName==='P' && el.classList && el.classList.contains('kl1') &&
+           /^\s*(?:\d+\.)+\s*\S/.test(String(el.textContent||''));
+  };
+  /* Ambil DERET TERPANJANG butir bernomor yang berurutan — bagian lain
+     (paragraf pengantar, catatan penutup) tidak ikut diacak posisinya. */
+  var bs=-1, bl=0, i=0;
+  while(i<kids.length){
+    if(!isItem(kids[i])){ i++; continue; }
+    var s=i; while(i<kids.length && isItem(kids[i])) i++;
+    if((i-s)>bl){ bl=i-s; bs=s; }
+  }
+  if(bs<0 || bl<2) return src;
+  var run=kids.slice(bs, bs+bl);
+  var order=run.map(function(el, ix){ return {el:el, key:spkDefKey(el), ix:ix}; });
+  order.sort(function(a,b){
+    var c=a.key.localeCompare(b.key, 'id', {sensitivity:'base', numeric:true});
+    return c!==0 ? c : (a.ix-b.ix);                 /* kunci sama -> urutan asal dipertahankan */
+  });
+  var anchor=run[bl-1].nextSibling;
+  for(i=0;i<order.length;i++){
+    spkDefSetNo(order[i].el, i+1);
+    box.insertBefore(order[i].el, anchor);
+  }
+  return box.innerHTML;
+}
+/* Urutkan HANYA bila klausulnya memang klausul DEFINISI */
+function spkSortDefinisiIf(judul, html){
+  try{ return spkIsDefinisiJudul(judul) ? spkSortDefinisi(html) : html; }
+  catch(e){ console.error(e); return html; }
+}
 function spkKvGroup(html){
   var one = '<div class="spk-kv(?:\\s[^"]*)?"[^>]*>[\\s\\S]*?<\\/div>';
   var re  = new RegExp('(?:' + one + '\\s*)+', 'g');
@@ -21188,7 +21260,7 @@ function spkDocHtml(data, klausul){
      dimulai dengan butir bernomor (mis. Pasal 1 DEFINISI) tetap rata margin. */
   const clausesHtml = (klausul||[]).map((k,i)=>{
     const inner = spkKvGroup(spkKlItalicAsing(spkBoldPihak(spkNomorToNo(spkNumberFix(spkTidyKeyValue(
-        spkPruneKlausul(spkMerge(spkRenumberKlausul(k.isi||'', i+1), ctx), i+1, data)
+        spkPruneKlausul(spkMerge(spkRenumberKlausul(spkSortDefinisiIf(k.judul, k.isi||''), i+1), ctx), i+1, data)
       ))))));
     return '<div class="spk-clause"><div class="spk-cl-h"><span class="n"></span>'+spkFmtJudul(k.judul)+'</div>'+
       '<div class="spk-cl'+spkLeadIndentCls(inner)+'">'+inner+'</div></div>';
@@ -22595,11 +22667,14 @@ function spkKlDocDownload(){
     var blob;
     /* Bila ada berkas .docx ASLI (dari unggahan / tersimpan di record), kembalikan
        apa adanya agar penomoran & jarak spasi baris SAMA PERSIS dengan saat diunggah.
-       Hanya bila belum pernah ada unggahan, template dibangun ulang dari isi HTML. */
-    if(spkKlDoc.docx){
+       Hanya bila belum pernah ada unggahan, template dibangun ulang dari isi HTML.
+       PENGECUALIAN: klausul DEFINISI selalu dibangun ulang dari isi HTML yang sudah
+       diurutkan A-Z, sehingga template yang diunduh ikut tersusun menurut abjad. */
+    var _isDef = spkIsDefinisiJudul(jd);
+    if(spkKlDoc.docx && !_isDef){
       blob=new Blob([spkB642u8(spkKlDoc.docx)], {type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
     }else{
-      blob=spkDocxTemplateBlob(jd, spkKlDoc.isi, spkKlDoc.no);
+      blob=spkDocxTemplateBlob(jd, spkSortDefinisiIf(jd, spkKlDoc.isi), spkKlDoc.no);
     }
     var a=document.createElement('a'), url=URL.createObjectURL(blob);
     a.href=url; a.download=nm; document.body.appendChild(a); a.click();
@@ -22624,6 +22699,11 @@ async function spkKlDocReadFile(file){
       var num=zip['word/numbering.xml'] ? dec.decode(zip['word/numbering.xml']) : '';
       var res=spkWordXmlToKlausul(dec.decode(xml), sty, num);
       if(!res.html) throw new Error('Tidak ada isi klausul yang terbaca pada template.');
+      /* Klausul DEFINISI selalu dirapikan ke urutan A-Z begitu selesai dibaca,
+         apa pun urutan pada berkas yang diunggah. Judul dari template dipakai
+         bila ada; bila tidak, judul yang sedang aktif di form. */
+      var _jdUp = res.judul || spkKlDocJudul();
+      res.html = spkSortDefinisiIf(_jdUp, res.html);
       spkKlDoc.isi=res.html; spkKlDoc.fileName=file.name; spkKlDoc.dirty=true;
       /* Simpan BYTE ASLI berkas .docx (base64). Saat template diunduh kembali,
          berkas asli inilah yang dikembalikan apa adanya sehingga penomoran,
