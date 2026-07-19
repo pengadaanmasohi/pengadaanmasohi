@@ -15341,11 +15341,15 @@ function spkPreamblePkTpl(data){
     var it=SPK_PK_DASAR_DOK[i];
     if(it.l==='__EPROC__'){                          // Pengumuman melalui portal e-Procurement
       var aw=String(data.pengumuman_awal||'').trim(), ak=String(data.pengumuman_akhir||'').trim();
-      if(!aw && !ak && !String(data.no_eproc||'').trim()) continue;
+      var vEp=String(data.no_eproc||'').trim();
+      if(!aw && !ak && !vEp) continue;
       n++;
-      out += '<p class="spk-dlist"><span class="n">'+n+'.</span>Pengumuman Pengadaan melalui Portal e-Procurement'+
-             (String(data.no_eproc||'').trim()?' Nomor: {{no_eproc}}':'')+
-             ((aw||ak)?' tanggal {{dasar_undangan_tgl}}':'')+'.</p>';
+      /* Butir ini ditulis dua tingkat seperti dokumen aslinya: baris judul, lalu
+         rincian "Label : nilai" menjorok sejajar teks judul (0,7 cm).
+         Urutan rincian: No. Eproc di atas, Tanggal di bawahnya. */
+      out += '<p class="spk-dlist"><span class="n">'+n+'.</span>Pengumuman Pengadaan Melalui Portal EPROC</p>';
+      if(vEp) out += '<div class="spk-kv spk-dkv"><span class="k">No. Eproc</span><span class="s">:</span><span class="v">{{no_eproc}}</span></div>';
+      if(aw||ak) out += '<div class="spk-kv spk-dkv"><span class="k">Tanggal</span><span class="s">:</span><span class="v">{{dasar_undangan_tgl}}</span></div>';
       continue;
     }
     var vNo=String(data[it.no]==null?'':data[it.no]).trim();
@@ -17244,6 +17248,13 @@ function spkDocCss(){
      mana pun agar mengisi baris justify secara rapat — sisa nomor turun ke baris
      berikutnya, sehingga tidak timbul celah spasi lebar di tengah baris. */
   '.spk-cl p.spk-dlist .refn{word-break:break-all}'+
+  /* Rincian "Label : nilai" di bawah sebuah butir daftar "Berdasarkan"
+     (mis. No. Eproc / Tanggal pada butir Pengumuman Pengadaan). Menjorok 0,7 cm
+     agar sejajar dengan teks butir di atasnya, bukan dengan nomornya. */
+  '.spk-cl .spk-kv.spk-dkv{margin:0 0 4pt 0.7cm}'+
+  '.spk-cl .spk-kv.spk-dkv .k{flex:0 0 3.6cm;max-width:3.6cm}'+
+  '.spk-cl .spk-kv.spk-dkv .s{flex:0 0 auto;width:0.6em}'+
+  '.spk-cl .spk-kv.spk-dkv .v{flex:1 1 auto;text-align:left}'+
   /* Kalimat penutup pembuka ("Maka dengan ini ... menugaskan ...") selalu dimulai
      pada halaman baru (halaman ke-2 isi), terpisah dari blok identitas PARA PIHAK
      dan daftar "Berdasarkan" pada halaman pertama. */
