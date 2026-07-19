@@ -17126,12 +17126,28 @@ function spkLHInit(){
 function spkCekFontDok(){
   try{
     if(!document.fonts || !document.fonts.check) return;
-    if(!document.fonts.check('11pt "Inter Local"')){
-      console.warn('[SPK] Font "Inter Local" tidak aktif. Blok <style id="spk-inter-face"> '+
-        'di index.html mungkin terhapus/rusak. Jarak baris tetap benar (K dikunci 1,21), '+
-        'tetapi bentuk & lebar huruf akan berbeda dari draft.');
-      return;
-    }
+    /* PENTING: sebuah @font-face baru AKTIF setelah ada yang memakainya. Di
+       halaman aplikasi ini tidak ada elemen yang memakai "Inter Local" (font itu
+       dipakai di dalam iframe dokumen), sehingga document.fonts.check() selalu
+       mengembalikan false dan memicu peringatan palsu. Karena itu font DIMINTA
+       dulu lewat document.fonts.load(), baru diperiksa. Bila blok @font-face-nya
+       memang hilang/rusak, load() gagal dan check() tetap false -> peringatan
+       muncul sebagaimana mestinya. */
+    var periksa=function(){
+      if(!document.fonts.check('11pt "Inter Local"')){
+        console.warn('[SPK] Font "Inter Local" tidak aktif. Blok <style id="spk-inter-face"> '+
+          'di index.html mungkin terhapus/rusak. Jarak baris tetap benar (K dikunci 1,21), '+
+          'tetapi bentuk & lebar huruf akan berbeda dari draft.');
+        return;
+      }
+      spkCekFontK();
+    };
+    if(document.fonts.load) document.fonts.load('11pt "Inter Local"').then(periksa, periksa);
+    else periksa();
+  }catch(e){}
+}
+function spkCekFontK(){
+  try{
     var k = spkFontK(SPK_DOC_FONT,'11pt');
     if(k && Math.abs(k - SPK_LH_K) > 0.02){
       console.warn('[SPK] K terukur ('+k+') menyimpang dari K Inter resmi ('+SPK_LH_K+'). '+
@@ -17813,14 +17829,17 @@ function spkDocCss2(){
   '.spk-sheet > .sh-bd{flex:1 1 auto;overflow:hidden}'+
   '.spk-sheet > .sh-ft{flex:0 0 auto;margin-top:auto}'+
   /* ---- KOP NAIK & KAKI TURUN MENDEKATI TEPI KERTAS ----
-     Bidang teks lembar isi bermargin 25,4mm. Kop ditarik NAIK dan kaki didorong
-     TURUN sejauh SPK_TEPI (13,4mm) sehingga keduanya berhenti 12mm dari tepi
-     kertas — masih menyisakan celah, dan simetris atas-bawah. Ruang 2 x 13,4mm
-     yang terbebas dikembalikan ke tinggi badan halaman lewat EXPK di mk(),
-     supaya jumlah baris per halaman tetap terhitung benar. Lembar Lampiran
-     dikecualikan karena bidang cetaknya memang sudah bermargin 12mm. */
-  '.spk-sheet:not(.spk-lampsheet) > .sh-hd{margin-top:-13.4mm}'+
-  '.spk-sheet:not(.spk-lampsheet) > .sh-ft{margin-bottom:-13.4mm}'+
+     HANYA berlaku pada bentuk PERJANJIAN/KONTRAK (.spk-doc.spk-pk). Bentuk
+     Surat Perintah Kerja TIDAK tersentuh: kop & kakinya tetap pada bidang teks
+     bermargin 25,4mm seperti semula.
+     Pada Perjanjian/Kontrak kop ditarik NAIK dan kaki didorong TURUN sejauh
+     13,4mm sehingga keduanya berhenti 12mm dari tepi kertas — masih menyisakan
+     celah, dan simetris atas-bawah. Ruang 2 x 13,4mm yang terbebas dikembalikan
+     ke tinggi badan halaman lewat EXPK di mk(), supaya jumlah baris per halaman
+     tetap terhitung benar. Lembar Lampiran dikecualikan karena bidang cetaknya
+     memang sudah bermargin 12mm. */
+  '.spk-doc.spk-pk .spk-sheet:not(.spk-lampsheet) > .sh-hd{margin-top:-13.4mm}'+
+  '.spk-doc.spk-pk .spk-sheet:not(.spk-lampsheet) > .sh-ft{margin-bottom:-13.4mm}'+
   /* ---- JUDUL KLAUSUL DI AWAL LEMBAR ----
      Blok pertama pada setiap lembar TIDAK boleh membawa "spasi sebelum" (judul klausul
      bawaannya 12 pt) karena akan mendorongnya turun dari margin atas. Sama seperti Word
@@ -21380,40 +21399,55 @@ function spkCoverHtml(data, ctx, judulBaris){
 }
 
 /* ---------- Daftar Isi ---------- */
-/* Kerapatan baris tidak lagi ditentukan lewat kelas d1/d2/d3. Daftar isi kini
-   selalu SATU halaman: disusun dua kolom di dalam kotak, dan bila barisnya
-   terlalu banyak, muatkanToc() di spkPageScript() memperkecil baris sampai
-   muat. Fungsi kerapatan lama dipertahankan (mengembalikan '') supaya
-   pemanggilan & CSS lama tidak rusak. */
-function spkTocDensity(n){ return ''; }
+/* SURAT PERINTAH KERJA: tampilan daftar isi SEPERTI SEMULA — kerapatan baris
+   menyesuaikan jumlah klausul supaya muat satu lembar (di atas 28 pasal dipecah
+   dua kolom lewat kelas d3).
+   PERJANJIAN/KONTRAK: memakai rancangan kotak dua kolom (lihat spkTocHtml) dan
+   TIDAK memakai kelas kerapatan ini; agar tetap satu halaman, barisnya
+   diperkecil oleh muatkanToc() di spkPageScript. */
+function spkTocDensity(n){
+  n = Number(n)||0;
+  if(n > 28) return ' d3';
+  if(n > 22) return ' d2';
+  if(n > 16) return ' d1';
+  return '';
+}
 function spkTocHtml(data, klausul){
   const esc=fkEsc;
   const list=klausul||[];
-  /* PENTING: pembungkus .spk-toc2 dan <span class="pg"> WAJIB dipertahankan —
-     nomorToc() di spkPageScript() mengisi nomor halaman lewat
-     querySelectorAll(".spk-toc2 .pg").
-     TATA LETAK: seluruh baris dibungkus .toc-box (bingkai kotak) dan disusun
-     DUA KOLOM (.toc-2k) yang dipisah garis tegak (column-rule). Karena kedua
-     kolom diseimbangkan, tinggi garis tegak berhenti tepat di baris data
-     terbawah. Daftar isi SELALU satu halaman: bila barisnya banyak,
-     muatkanToc() di spkPageScript() memperkecil baris sampai muat.
-     Rancangan SAMA untuk Surat Perintah Kerja & Perjanjian/Kontrak; yang
-     berbeda hanya nama dokumen pada blok keterangan di kanan judul. */
+  const isPk=spkBentukOf(data)==='PK';
+  /* PENTING: pembungkus .spk-toc2 dan <span class="pg"> WAJIB dipertahankan pada
+     KEDUA varian — nomorToc() di spkPageScript() mengisi nomor halaman lewat
+     querySelectorAll(".spk-toc2 .pg"). */
   const rows=list.map((k,i)=>{
     const no=((i+1)<10 ? ('0'+(i+1)) : String(i+1));
     return '<div class="row"><span class="no">'+esc(no)+'</span>'+
       '<span class="nm">'+spkFmtJudulTitle(k.judul)+'</span>'+
       '<span class="dot"></span><span class="pg">\u2014</span></div>';
   }).join('');
-  return ''+
-  '<section class="spk-page spk-tocpage">'+
+  const kepala=
     '<div class="toc-accent"></div>'+
     '<div class="toc-head">'+
       '<h1>Daftar Isi</h1>'+
       '<div class="toc-meta"><b>'+esc(spkDokLabel(data))+'</b><span>'+esc(data.nomor_kontrak||'\u2014')+'</span></div>'+
     '</div>'+
-    '<div class="toc-rule"></div>'+
-    '<div class="toc-box"><div class="spk-toc2 toc-2k">'+rows+'</div></div>'+
+    '<div class="toc-rule"></div>';
+  /* PERJANJIAN/KONTRAK: seluruh baris dibungkus .toc-box (bingkai kotak) dan
+     disusun DUA KOLOM (.toc-2k) yang dipisah garis tegak (column-rule). Karena
+     kedua kolom diseimbangkan, tinggi garis tegak berhenti tepat di baris data
+     terbawah. Daftar isi selalu satu halaman: bila barisnya banyak,
+     muatkanToc() di spkPageScript memperkecil baris sampai muat. */
+  if(isPk){
+    return ''+
+    '<section class="spk-page spk-tocpage">'+kepala+
+      '<div class="toc-box"><div class="spk-toc2 toc-2k">'+rows+'</div></div>'+
+    '</section>';
+  }
+  /* SURAT PERINTAH KERJA: PERSIS seperti semula — satu kolom, tanpa kotak,
+     kerapatan baris diatur kelas d1/d2/d3 dari spkTocDensity. */
+  return ''+
+  '<section class="spk-page spk-tocpage">'+kepala+
+    '<div class="spk-toc2'+spkTocDensity(list.length)+'">'+rows+'</div>'+
   '</section>';
 }
 
@@ -21761,12 +21795,13 @@ function spkPageScript(){
     '   sheets.push(sh);',
     '   var hh=h?h.getBoundingClientRect().height:0;',
     '   var fh=f?f.getBoundingClientRect().height:0;',
-    /* Tinggi badan lembar = PH dikurangi tinggi kop & kaki, DITAMBAH ruang yang
-       direbut oleh margin negatif .sh-hd/.sh-ft (2 x 13,4mm = 26,8mm; lihat CSS
-       "KOP NAIK & KAKI TURUN"). Tanpa penambah ini setiap lembar akan menyisakan
-       pita kosong setinggi 26,8mm di atas kaki halaman. Lembar Lampiran memakai
-       perhitungan apa adanya karena margin negatif itu tidak berlaku padanya. */
-    '   var EXPK=(extra.indexOf("spk-lampsheet")<0) ? mm2px(26.8) : 0;',
+    /* Tinggi badan lembar = PH dikurangi tinggi kop & kaki. Pada PERJANJIAN/
+       KONTRAK ditambah ruang yang direbut margin negatif .sh-hd/.sh-ft
+       (2 x 13,4mm = 26,8mm; lihat CSS "KOP NAIK & KAKI TURUN"); tanpa penambah
+       ini tiap lembar menyisakan pita kosong setinggi 26,8mm di atas kaki
+       halaman. Surat Perintah Kerja dan lembar Lampiran memakai perhitungan apa
+       adanya karena margin negatif itu tidak berlaku padanya. */
+    '   var EXPK=(ISPK && extra.indexOf("spk-lampsheet")<0) ? mm2px(26.8) : 0;',
     '   b.style.height=Math.max(80,(PH-hh-fh-6+EXPK))+"px";',
     '   b.style.overflow="hidden";',
     '   body=b;',
