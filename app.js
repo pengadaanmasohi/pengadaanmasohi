@@ -17541,7 +17541,13 @@ function spkDocCss2(){
      9pt di bawahnya (margin-bottom), sehingga garis berada tepat di tengah
      jarak itu. Paragraf .kl0 sesudahnya bermargin-atas 0, jadi tidak ada
      margin yang runtuh (collapse) dan jaraknya benar-benar 18pt. */
-  '.spk-pkhead{border-bottom:1px solid #201E1D;padding-bottom:9pt;margin:0 0 9pt}'+
+  /* PENTING — kekhususan (specificity) selektor:
+     `.spk-cl .spk-keep{margin:0;padding:0;border:0}` di spkDocCss() bernilai
+     dua-kelas, sedangkan `.spk-pkhead` hanya satu kelas — jadi aturan itu
+     MENANG dan sempat menghapus garis serta jaraknya, berapa pun urutannya.
+     Karena blok ini memang ber-class `spk-keep` (penanda bagi paginator),
+     selektornya ditulis tiga-kelas agar pasti menang. */
+  '.spk-cl .spk-pkhead.spk-keep{border-bottom:1px solid #201E1D;padding-bottom:9pt;margin:0 0 9pt}'+
   '.spk-pknum{display:table;margin:0 auto;padding:0;border:0;border-radius:0;background:none}'+
   '.spk-pknum .r{display:table-row;line-height:1.75}'+
   '.spk-pknum .k{display:table-cell;font-weight:700;white-space:nowrap;padding-right:0.45cm}'+
