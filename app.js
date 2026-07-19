@@ -18003,15 +18003,22 @@ function spkPkSubNumberFix(html){
 }
 
 /* ---- (2) INDEN STANDAR ----
-   Satu KISI tetap seperti Word: tiap tingkat menjorok satu langkah (0,75 cm)
-   ke kanan dari BARIS PENOMORAN induknya.
-     tingkat-1  "1."      penanda di 0      -> teksnya mulai di 0,75 cm
-     tingkat-2  "a."      penanda di 0,75   -> teksnya mulai di 1,50 cm
-     tingkat-3  "-"       penanda di 1,50   -> teksnya mulai di 2,25 cm
-   Karena lebar kotak nomor dipatok = langkah, teks tingkat-1 dan penanda
-   tingkat-2 jatuh di kolom yang SAMA. Nomor yang lebih lebar dari langkah
-   (mis. "2.10.") memakai lebarnya sendiri supaya tidak menabrak teks. */
-var SPK_PK_STEP = 0.75;                 /* langkah inden standar (cm) */
+   Dua hal DIPISAH, dan inilah kuncinya:
+
+   (a) Jarak NOMOR -> TEKS mengikuti lebar nomor itu sendiri (hug: lebar nomor
+       + jeda kecil). Nomor 1 digit tetap rapat dengan teksnya — TIDAK dipaksa
+       selebar satu langkah inden.
+   (b) Titik MULAI tiap tingkat memakai kisi tetap 0,75 cm:
+         tingkat-1  "1."  penanda mulai di 0
+         tingkat-2  "a."  penanda mulai di 0,75 cm
+         tingkat-3  "-"   penanda mulai di 1,50 cm
+
+   Hasilnya: teks tingkat-1 berhenti di ~0,43 cm sedangkan penanda "a." mulai
+   di 0,75 cm — jadi "a." sedikit masuk ke kanan dari teks di atasnya, persis
+   seperti acuan. Yang diperbaiki di sini hanya butir yang tingkatnya salah
+   (mis. sub-poin tanda hubung) dan pergeseran ekstra 0,5 cm pada klausul yang
+   diawali paragraf pengantar. */
+var SPK_PK_STEP = 0.75;                 /* jarak antar tingkat (cm) */
 
 /* Tingkat sebuah penanda: 1, 2, atau 3. `prev` = tingkat butir bernomor
    terakhir di atasnya, dipakai untuk penanda bullet/tanda hubung yang
@@ -18037,11 +18044,9 @@ function spkPkIndentStd(html){
       lvl=spkPkLevel(tok, prev);
       /* butir bernomor/berhuruf menjadi acuan tingkat bagi bullet di bawahnya */
       if(/^[0-9A-Za-z]/.test(tok)) prev=lvl;
-      /* Lebar kotak = langkah; hanya dilebarkan bila nomornya memang lebih panjang. */
-      W=Math.max(STEP, spkPkNumW(p.firstElementChild));
-      W=Math.round(W*100)/100;
-      p.firstElementChild.style.width=W.toFixed(2)+'cm';
-      p.firstElementChild.style.minWidth=W.toFixed(2)+'cm';
+      /* Lebar kotak = LEBAR ALAMI nomor (tidak dipaksa selebar langkah), supaya
+         jarak nomor -> teks tetap rapat seperti Word. */
+      W=spkPkNumW(p.firstElementChild);
       p.style.marginLeft=((lvl-1)*STEP+W).toFixed(2)+'cm';
       p.style.textIndent='-'+W.toFixed(2)+'cm';
       p.style.paddingLeft='0cm';
