@@ -17234,7 +17234,11 @@ function spkDocCss(){
      teks pengantar. Dipakai padding-left (bukan margin-left) agar tidak bentrok
      dengan hanging indent per paragraf yang dipasang spkNumberFix(); seluruh blok
      butir bergeser ke kanan, sedangkan baris sambungannya tetap sejajar. */
-  '.spk-doc.spk-pk .spk-cl.spk-inlead p.kl1,.spk-doc.spk-pk .spk-cl.spk-inlead p.kl2{padding-left:0.5cm}'+
+  /* PERJANJIAN/KONTRAK: butir bernomor TIDAK lagi digeser 0,5 cm terhadap teks
+     pengantar. Seluruh butir memakai INDEN STANDAR (lihat spkPkIndentStd):
+     tingkat-1 mulai di batas margin, tingkat-2 (a./b.) mulai tepat di kolom TEKS
+     tingkat-1. Bentuk Surat Perintah Kerja tidak terpengaruh. */
+  '.spk-doc.spk-pk .spk-cl.spk-inlead p.kl1,.spk-doc.spk-pk .spk-cl.spk-inlead p.kl2{padding-left:0}'+
   '.spk-cl p{margin:0 0 6pt;text-align:justify;line-height:'+spkLHCss(1.15)+'}'+
   /* kl0 = paragraf biasa (sejajar teks judul); kldesc = deskripsi menjorok */
   '.spk-cl p.kl0{margin-left:0;text-indent:0}'+
@@ -17934,6 +17938,106 @@ function spkLeadIndentCls(html){
   if(!/\bkl0\b/.test(m[1])) return '';                  // pembuka bukan paragraf biasa
   return /<p[^>]*\bclass="[^"]*\bkl[12]\b/.test(s) ? ' spk-inlead' : '';
 }
+/* =========================================================================
+   PERAPIAN KHUSUS BENTUK PERJANJIAN/KONTRAK (PK)
+   Kedua fungsi di bawah HANYA dipanggil bila bentuk dokumen = PK.
+   Bentuk Surat Perintah Kerja (SPK) sama sekali tidak melewati fungsi ini.
+   Dijalankan SESUDAH spkNumberFix(), jadi setiap nomor sudah berupa
+   <span class="n">…</span> di awal paragraf.
+   ========================================================================= */
+
+/* Lebar kotak nomor (cm) dari sebuah <span class="n"> */
+function spkPkNumW(sp){
+  var w=parseFloat(sp && sp.style ? sp.style.width : '');
+  if(w>0) return w;
+  var t=String(sp&&sp.textContent||'');
+  return Math.max(0.4, Math.round((spkTextWidthCm(t)+SPK_NUM_GAP)*100)/100);
+}
+/* Token nomor sebuah paragraf ('' bila paragraf tidak bernomor) */
+function spkPkTok(p){
+  var fe=p.firstElementChild;
+  if(!fe || fe.tagName!=='SPAN' || !fe.classList || !fe.classList.contains('n')) return '';
+  return String(fe.textContent||'').replace(/[\s\u00A0]+/g,'');
+}
+
+/* ---- (1) NOMOR SUB-BUTIR MENGIKUTI INDUKNYA, BUKAN NOMOR PASAL ----
+   Di dalam satu klausul, sub-butir dari butir "2." harus bernomor "2.1.",
+   "2.2." — bukan "9.1." (nomor Pasal). Template lama sering menulis nomor
+   pasal sebagai awalan; di sini awalannya ditulis ulang mengikuti butir
+   tingkat-1 terakhir yang berada DI ATASNYA.
+   Aman: bila di dalam klausul belum ada butir tingkat-1 (mis. pasal yang
+   memang langsung memakai penomoran X.1), nomor TIDAK diubah. */
+function spkPkSubNumberFix(html){
+  var s=String(html==null?'':html);
+  if(s.indexOf('class="n')<0) return s;
+  try{
+    var box=document.createElement('div'); box.innerHTML=s;
+    var ps=box.querySelectorAll('p'), i, indukSekarang=null, ubah=false;
+    for(i=0;i<ps.length;i++){
+      var p=ps[i], tok=spkPkTok(p);
+      if(!tok) continue;
+      var st=/^([0-9]+)\.$/.exec(tok);                 /* butir tingkat-1: "2." */
+      if(st){ indukSekarang=st[1]; continue; }
+      var mt=/^([0-9]+)\.([0-9]+(?:\.[0-9]+)*\.)$/.exec(tok);   /* "9.1." / "9.1.1." */
+      if(!mt) continue;                                /* huruf a./b., romawi, bullet -> dilewati */
+      if(indukSekarang===null) continue;               /* tak ada induk -> biarkan apa adanya */
+      if(mt[1]===indukSekarang) continue;              /* sudah benar */
+      p.firstElementChild.textContent=indukSekarang+'.'+mt[2];
+      ubah=true;
+    }
+    return ubah ? box.innerHTML : s;
+  }catch(e){ return s; }
+}
+
+/* ---- (2) INDEN STANDAR ----
+   Acuan (sesuai contoh yang diminta): penanda butir tingkat-1 mulai tepat di
+   BATAS MARGIN kiri, dan penanda tingkat-2 (a. b. c.) mulai tepat di kolom
+   TEKS tingkat-1 — sehingga huruf "a" sejajar dengan teks sesudah "1.".
+   Langkah inden = lebar kotak nomor tingkat-1 yang sesungguhnya dipakai di
+   klausul itu (bukan angka tetap 0,75 cm), jadi tidak pernah meleset.
+   Nomor majemuk ("2.1.") diperlakukan sebagai tingkat-1; huruf & bullet
+   sebagai tingkat-2; "2.1.1." mengambil tingkat-2 bila ada induk majemuknya. */
+function spkPkIndentStd(html){
+  var s=String(html==null?'':html);
+  if(s.indexOf('class="n')<0) return s;
+  try{
+    var box=document.createElement('div'); box.innerHTML=s;
+    var ps=box.querySelectorAll('p'), i, p, tok, w;
+    /* langkah inden = kotak nomor tingkat-1 TERLEBAR pada klausul ini */
+    var step=0;
+    for(i=0;i<ps.length;i++){
+      p=ps[i]; tok=spkPkTok(p); if(!tok) continue;
+      if(!/^[0-9]+\.$/.test(tok) && !/^(?:[0-9]+\.){2,}$/.test(tok)) continue;
+      w=spkPkNumW(p.firstElementChild); if(w>step) step=w;
+    }
+    if(!(step>0)) step=0.75;
+    step=Math.round(step*100)/100;
+
+    for(i=0;i<ps.length;i++){
+      p=ps[i]; tok=spkPkTok(p); if(!tok) continue;
+      w=spkPkNumW(p.firstElementChild);
+      /* tingkat-1: nomor angka tunggal ("2.") maupun majemuk ("2.1.")
+         tingkat-2: huruf (a. b.), romawi, bullet, dan angka 3 tingkat ("2.1.1.") */
+      var lvl1 = /^[0-9]+\.$/.test(tok) || /^(?:[0-9]+\.){2}$/.test(tok);
+      var base = lvl1 ? 0 : step;
+      p.style.marginLeft=(base+w).toFixed(2)+'cm';
+      p.style.textIndent='-'+w.toFixed(2)+'cm';
+      p.style.paddingLeft='0cm';
+    }
+    /* Paragraf narasi yang menempel di bawah butir ikut memakai langkah yang sama */
+    var np=box.querySelectorAll('p.klp1, p.kldesc');
+    for(i=0;i<np.length;i++) np[i].style.marginLeft=step.toFixed(2)+'cm';
+    var np2=box.querySelectorAll('p.klp2');
+    for(i=0;i<np2.length;i++) np2[i].style.marginLeft=(step*2).toFixed(2)+'cm';
+    return box.innerHTML;
+  }catch(e){ return s; }
+}
+/* Pembungkus: dipakai di titik perakitan dokumen, hanya untuk bentuk PK */
+function spkPkTidy(html, isPk){
+  if(!isPk) return html;                 /* SPK: kembalikan apa adanya */
+  return spkPkIndentStd(spkPkSubNumberFix(html));
+}
+
 function spkNumberFix(html){
   /* Normalisasi: bila label nomor di AWAL paragraf kl1/kl2 langsung menempel ke teks
      tanpa spasi (mis. "10.10.Petugas" atau "11.1.2.Peristiwa"), sisipkan satu nbsp
@@ -20805,6 +20909,10 @@ function spkPageScript(){
   var js=[
     '(function(){',
     'var DONE=false, TRY=0;',
+    /* ISPK = dokumen berbentuk Perjanjian/Kontrak. Perilaku keep-together
+       tambahan di bawah hanya berlaku bila ISPK true; Surat Perintah Kerja
+       memakai perilaku lama tanpa perubahan. */
+    'var ISPK=!!document.querySelector(".spk-doc.spk-pk");',
     'function mm2px(mm){var d=document.createElement("div");',
     ' d.style.cssText="position:absolute;visibility:hidden;left:-9999px;height:"+mm+"mm";',
     ' document.body.appendChild(d);var h=d.getBoundingClientRect().height;',
@@ -21057,12 +21165,23 @@ function spkPageScript(){
     '   if(node.nodeType===1 && hasCls(node,"spk-kvgrp") && !kosong()){',
     '     var _kt=tgt(); _kt.appendChild(node); var _kfit=!over(); _kt.removeChild(node);',
     '     if(!_kfit){',
-    '       var _lead=null, _kk2=els(tgt());',
-    '       if(_kk2.length){ var _cnd=_kk2[_kk2.length-1];',
-    '         if(_cnd.tagName==="P" && /[:\\uFF1A][\\s\\u00A0]*$/.test(_cnd.textContent||"")) _lead=_cnd; }',
-    '       if(_lead) _lead.parentNode.removeChild(_lead);',
+    /* Kumpulkan baris pengantar tepat di atas blok: kalimat berakhiran ":" DAN —
+       khusus PK — JUDUL DOKUMEN bernomor (mis. "24. Berita Acara Klarifikasi dan
+       Negosiasi") yang menaungi baris No./Tanggal. Semuanya ikut dipindah utuh
+       ke lembar berikutnya supaya judul tidak tertinggal sendirian. */
+    '       var _leads=[], _kk2=els(tgt()), _guard=0;',
+    '       while(_kk2.length && _guard++<3){',
+    '         var _cnd=_kk2[_kk2.length-1];',
+    '         if(_cnd.tagName!=="P") break;',
+    '         var _tx=(_cnd.textContent||"");',
+    '         var _colon=/[:\\uFF1A][\\s\\u00A0]*$/.test(_tx);',
+    '         var _judul=ISPK && (hasCls(_cnd,"spk-sl")||hasCls(_cnd,"kl1")||hasCls(_cnd,"kl2")) && !/[.;,][\\s\\u00A0]*$/.test(_tx);',
+    '         if(!_colon && !_judul) break;',
+    '         _cnd.parentNode.removeChild(_cnd); _leads.unshift(_cnd);',
+    '         _kk2=els(tgt());',
+    '       }',
     '       mk();',
-    '       if(_lead) tgt().appendChild(_lead);',
+    '       for(var _li=0;_li<_leads.length;_li++) tgt().appendChild(_leads[_li]);',
     '     }',
     '   }',
     '   var t=tgt();',
@@ -21258,10 +21377,11 @@ function spkDocHtml(data, klausul){
      bernomor, butir-butir itu diberi indentasi kecil terhadap teks pengantar di
      atasnya — sesuai kelaziman dokumen Perjanjian/Kontrak. Klausul yang langsung
      dimulai dengan butir bernomor (mis. Pasal 1 DEFINISI) tetap rata margin. */
+  const _isPkDoc = spkBentukOf(data)==='PK';
   const clausesHtml = (klausul||[]).map((k,i)=>{
-    const inner = spkKvGroup(spkKlItalicAsing(spkBoldPihak(spkNomorToNo(spkNumberFix(spkTidyKeyValue(
+    const inner = spkPkTidy(spkKvGroup(spkKlItalicAsing(spkBoldPihak(spkNomorToNo(spkNumberFix(spkTidyKeyValue(
         spkPruneKlausul(spkMerge(spkRenumberKlausul(spkSortDefinisiIf(k.judul, k.isi||''), i+1), ctx), i+1, data)
-      ))))));
+      )))))), _isPkDoc);
     return '<div class="spk-clause"><div class="spk-cl-h"><span class="n"></span>'+spkFmtJudul(k.judul)+'</div>'+
       '<div class="spk-cl'+spkLeadIndentCls(inner)+'">'+inner+'</div></div>';
   }).join('');
