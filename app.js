@@ -15113,6 +15113,35 @@ const SPK_DEF_AKTA_PERUBAHAN = 'akta Notaris No. (no. akta...) tanggal (tgl. akt
 /* Field SK Pimpinan Unit — dipakai untuk fitur "default = data terakhir disimpan" */
 const SPK_SK_KEYS = ['nama_pengguna','jabatan_pengguna','no_sk','tgl_sk','nama_unit','singkatan_unit','lokasi_unit'];
 
+/* =========================================================================
+   BENTUK KONTRAK — Surat Perintah Kerja (SPK) vs Perjanjian/Kontrak (PK)
+   Satu tampilan Penyusunan Kontrak dipakai untuk dua bentuk dokumen.
+   Pilihan tersimpan pada data.bentuk_kontrak ('SPK' | 'PK').
+   Field ber-atribut only:'PK' hanya tampil pada Perjanjian/Kontrak,
+   only:'SPK' hanya pada Surat Perintah Kerja; tanpa atribut = keduanya.
+   Label alternatif memakai lPk (label saat Perjanjian/Kontrak).
+   ========================================================================= */
+const SPK_BENTUK_OPTS = [
+  {v:'SPK', l:'Surat Perintah Kerja'},
+  {v:'PK',  l:'Perjanjian/Kontrak'}
+];
+/* Bentuk dari sebuah objek data (dipakai saat membangun dokumen) */
+function spkBentukOf(data){ return (String((data&&data.bentuk_kontrak)||'').toUpperCase()==='PK') ? 'PK' : 'SPK'; }
+/* Bentuk yang sedang aktif pada form Penyusunan Kontrak */
+function spkBentuk(){ return spkBentukOf(spkState&&spkState.data); }
+function spkIsPk(){ return spkBentuk()==='PK'; }
+/* Nama dokumen — dipakai pada judul cover, daftar isi, kop berulang & bab isi */
+function spkDokLabel(data){ return spkBentukOf(data)==='PK' ? 'PERJANJIAN/KONTRAK' : 'SURAT PERINTAH KERJA'; }
+function spkDokTitle(data){ return spkBentukOf(data)==='PK' ? 'Perjanjian/Kontrak' : 'Surat Perintah Kerja'; }
+function spkLampTitle(data){ return spkBentukOf(data)==='PK' ? 'Lampiran Perjanjian/Kontrak' : 'Lampiran Surat Perintah Kerja'; }
+/* Baris kecil di atas judul cover = METODE PENGADAAN (mis. PENGADAAN LANGSUNG,
+   TENDER, PENUNJUKAN LANGSUNG). Bila kosong dipakai bawaan sesuai bentuk. */
+function spkMetodeLabel(data){
+  var m=String((data&&data.metode_pengadaan)||'').trim();
+  if(!m) m = (spkBentukOf(data)==='PK') ? 'Tender' : 'Pengadaan Langsung';
+  return m.toUpperCase();
+}
+
 const SPK_FIELD_GROUPS = [
   { sec:'Informasi Pengadaan', fields:[
     {k:'nama_pekerjaan', l:'Nama Pekerjaan', t:'text', span:2, dpLock:true, def:''},
@@ -15126,19 +15155,36 @@ const SPK_FIELD_GROUPS = [
     {k:'no_anggaran', l:'No. Anggaran', t:'text', span:2, dpLock:true, def:''},
     {k:'tgl_anggaran', l:'Tgl. Anggaran', t:'date', dpLock:true, def:''},
     {k:'metode_pengadaan', l:'Metode Pengadaan', t:'text', dpLock:true, def:''},
+    {k:'no_rks', l:'No. RKS', t:'text', span:2, only:'PK', def:''},
+    {k:'tgl_rks', l:'Tgl. RKS', t:'date', only:'PK', def:''},
     {k:'no_eproc', l:'No. Eproc', t:'text', span:2, def:''},
     {k:'pengumuman_awal', l:'Tgl. Pengumuman (awal)', t:'date', def:''},
     {k:'pengumuman_akhir', l:'Tgl. Pengumuman (akhir)', t:'date', def:''},
-    {k:'no_bapp', l:'No. BA Pembukaan Penawaran', t:'text', span:2, def:''},
-    {k:'tgl_bapp', l:'Tgl. BA Pembukaan Penawaran', t:'date', def:''},
-    {k:'no_bae', l:'No. BA Evaluasi Penawaran', t:'text', span:2, def:''},
-    {k:'tgl_bae', l:'Tgl. BA Evaluasi Penawaran', t:'date', def:''},
+    {k:'no_bapj', l:'No. BA Penjelasan', t:'text', span:2, only:'PK', def:''},
+    {k:'tgl_bapj', l:'Tgl. BA Penjelasan', t:'date', only:'PK', def:''},
+    {k:'no_bapp', l:'No. BA Pembukaan Penawaran', lPk:'No. BA Pembukaan Penawaran Sampul 1', t:'text', span:2, def:''},
+    {k:'tgl_bapp', l:'Tgl. BA Pembukaan Penawaran', lPk:'Tgl. BA Pembukaan Penawaran Sampul 1', t:'date', def:''},
+    {k:'no_bae', l:'No. BA Evaluasi Penawaran', lPk:'No. BA Evaluasi Penawaran Sampul 1', t:'text', span:2, def:''},
+    {k:'tgl_bae', l:'Tgl. BA Evaluasi Penawaran', lPk:'Tgl. BA Evaluasi Penawaran Sampul 1', t:'date', def:''},
+    {k:'no_bapp2', l:'No. BA Pembukaan Penawaran Sampul 2', t:'text', span:2, only:'PK', def:''},
+    {k:'tgl_bapp2', l:'Tgl. BA Pembukaan Penawaran Sampul 2', t:'date', only:'PK', def:''},
+    {k:'no_bae2', l:'No. BA Evaluasi Penawaran Sampul 2', t:'text', span:2, only:'PK', def:''},
+    {k:'tgl_bae2', l:'Tgl. BA Evaluasi Penawaran Sampul 2', t:'date', only:'PK', def:''},
     {k:'no_bakn', l:'No. BA Klarifikasi dan Negosiasi', t:'text', span:2, def:''},
     {k:'tgl_bakn', l:'Tgl. BA Klarifikasi dan Negosiasi', t:'date', def:''},
+    {k:'no_bahp', l:'No. BA Hasil Pengadaan', t:'text', span:2, only:'PK', def:''},
+    {k:'tgl_bahp', l:'Tgl. BA Hasil Pengadaan', t:'date', only:'PK', def:''},
+    {k:'no_ucp', l:'No. Usulan Calon Pemenang', t:'text', span:2, only:'PK', def:''},
+    {k:'tgl_ucp', l:'Tgl. Usulan Calon Pemenang', t:'date', only:'PK', def:''},
+    {k:'no_penetapan', l:'No. Penetapan Penyedia Barang/Jasa', t:'text', span:2, only:'PK', def:''},
+    {k:'tgl_penetapan', l:'Tgl. Penetapan Penyedia Barang/Jasa', t:'date', only:'PK', def:''},
+    {k:'no_sppbj', l:'No. SPPBJ', t:'text', span:2, only:'PK', def:''},
+    {k:'tgl_sppbj', l:'Tgl. SPPBJ', t:'date', only:'PK', def:''},
   ]},
   { sec:'Informasi Kontrak', fields:[
-    {k:'nomor_kontrak', l:'No. Kontrak', t:'text', span:2, def:''},
-    {k:'tanggal_kontrak', l:'Tgl. Awal Kontrak', t:'date', def:''},
+    {k:'nomor_kontrak', l:'No. Kontrak', lPk:'No. Kontrak PIHAK PERTAMA', t:'text', span:2, def:''},
+    {k:'nomor_kontrak_p2', l:'No. Kontrak PIHAK KEDUA', t:'text', span:2, only:'PK', def:''},
+    {k:'tanggal_kontrak', l:'Tgl. Awal Kontrak', lPk:'Tgl. Kontrak PIHAK PERTAMA / Tgl. Awal Kontrak', t:'date', def:''},
     {k:'auto_terbilang_tgl', l:'Terbilang Tgl. Awal Kontrak', auto:'terbilang_tgl', span:2},
     {k:'auto_tgl_strip', l:'Tgl. Awal Kontrak (-)', auto:'tgl_strip'},
     {k:'tgl_akhir_kontrak', l:'Tgl. Akhir Kontrak', t:'date', auto:'tgl_akhir', def:''},
@@ -15147,7 +15193,7 @@ const SPK_FIELD_GROUPS = [
     {k:'jangka_waktu', l:'Jangka Waktu Pelaksanaan (hari)', t:'number', def:''},
     {k:'auto_terbilang_jangka', l:'Terbilang Jangka Waktu Pelaksanaan', auto:'terbilang_jangka', span:2},
   ]},
-  { sec:'SK Pimpinan Unit', fields:[
+  { sec:'SK Pimpinan Unit', secPk:'Informasi PLN Unit', fields:[
     {k:'perubahan', l:'Perubahan?', t:'select', opts:['Ya','Tidak'], def:''},
     {k:'nama_pengguna', l:'Nama Pengguna', t:'text', span:2, lockedBy:'perubahan', def:''},
     {k:'jabatan_pengguna', l:'Jabatan', t:'text', lockedBy:'perubahan', def:''},
@@ -15156,6 +15202,9 @@ const SPK_FIELD_GROUPS = [
     {k:'nama_unit', l:'Nama Unit', t:'text', span:2, lockedBy:'perubahan', def:'', ph:'cth. Unit Pelaksana Pelayanan Pelanggan Masohi'},
     {k:'singkatan_unit', l:'Singkatan Unit', t:'text', lockedBy:'perubahan', def:'', ph:'cth. UP3 Masohi'},
     {k:'lokasi_unit', l:'Lokasi Unit', t:'text', span:2, lockedBy:'perubahan', def:''},
+    {k:'telp_unit', l:'Telepon Unit', t:'text', only:'PK', def:''},
+    {k:'fax_unit', l:'Fax Unit', t:'text', only:'PK', def:''},
+    {k:'email_unit', l:'Email Unit', t:'text', span:2, only:'PK', def:''},
   ]},
   { sec:'Informasi Penyedia', fields:[
     {k:'nama_perusahaan', l:'Nama Perusahaan', t:'text', span:2, def:''},
@@ -15172,6 +15221,9 @@ const SPK_FIELD_GROUPS = [
        Perubahannya" ditulis pada Akta Pendirian. Selain Ya: Rincian Akta Perubahan
        terkunci dalam keadaan default (tidak tampil di pratinjau/cetak) & frasa
        "beserta akta-akta Perubahannya" pada Akta Pendirian dihapus. */
+    {k:'telp_penyedia', l:'Telepon Penyedia', t:'text', only:'PK', def:''},
+    {k:'fax_penyedia', l:'Fax Penyedia', t:'text', only:'PK', def:''},
+    {k:'email_penyedia', l:'Email Penyedia', t:'text', span:2, only:'PK', def:''},
     {k:'ada_akta_perubahan', l:'Akta Perubahan?', t:'select', opts:['Ya','Tidak'], def:''},
     {k:'akta_pendirian', l:'Rincian Akta Pendirian', t:'textarea', span:2, hl:true, def:SPK_DEF_AKTA_PENDIRIAN},
     {k:'akta_perubahan', l:'Rincian Akta Perubahan', t:'textarea', span:2, hl:true, def:SPK_DEF_AKTA_PERUBAHAN},
@@ -15179,6 +15231,7 @@ const SPK_FIELD_GROUPS = [
   { sec:'Pengendali Pekerjaan', fields:[
     {k:'jabatan_direksi', l:'Jabatan Direksi Pekerjaan', t:'text', span:2, def:''},
     {k:'jabatan_pengawas', l:'Jabatan Pengawas Pekerjaan', t:'text', span:2, def:''},
+    {k:'jabatan_pengawas_lapangan', l:'Jabatan Pengawas Lapangan', t:'text', span:2, only:'PK', def:''},
   ]},
   /* [DIHAPUS] Kartu "Uraian Pekerjaan (opsional)" — field Latar Belakang,
      Permasalahan, dan Maksud dan Tujuan beserta tombol "Isi Teks ..." dan kotak
@@ -15210,6 +15263,97 @@ const SPK_PREAMBLE_TPL =
  '<p class="spk-dlist"><span class="n">4.</span>Berita Acara Evaluasi Penawaran Nomor: {{dasar_bae_no}} tanggal {{dasar_bae_tgl_pjg}};</p>'+
  '<p class="spk-dlist"><span class="n">5.</span>Berita Acara Klarifikasi dan Negosiasi Nomor: {{dasar_bakn_no}} tanggal {{dasar_bakn_tgl_pjg}}.</p>'+
  '<p class="kl0 spk-menugaskan">Maka dengan ini <b>PIHAK PERTAMA</b> menugaskan kepada <b>PIHAK KEDUA</b> untuk melaksanakan pekerjaan sebagaimana tersebut dalam ketentuan sebagai berikut :</p>';
+
+/* ---------- Preamble PERJANJIAN/KONTRAK (bentuk tender) ----------
+   Susunan mengikuti dokumen Perjanjian/Kontrak PLN:
+     - kop nomor PIHAK PERTAMA & PIHAK KEDUA
+     - kalimat pembuka (tempat & tanggal penandatanganan)
+     - profil PIHAK PERTAMA & PIHAK KEDUA (sama dengan SPK)
+     - "berpedoman pada" : dasar peraturan (tetap) + dokumen proses pengadaan
+       (dinamis — butir yang datanya kosong otomatis dilewati & nomor dirapatkan)
+     - kalimat penutup pembuka (memulai halaman baru, class spk-menugaskan) */
+const SPK_PK_DASAR_TETAP = [
+ 'Undang-Undang No. 30 Tahun 2009 tanggal 23 September 2009 tentang Ketenagalistrikan.',
+ 'Peraturan Direksi PT PLN (Persero) No. 0018.P/DIR/2023 tanggal 07 Juli 2023 tentang Kebijakan Strategis Pengadaan Barang/Jasa PT PLN (Persero).',
+ 'Peraturan Direksi PT PLN (Persero) No. 0012.E/DIR/2023 tanggal 07 Juli 2023 tentang Standar Prosedur Pengadaan Barang/Jasa Lainnya.',
+ 'Peraturan Direksi PT PLN (Persero) No. 0254.P/DIR/2016 tentang (SPLN U1.006: 2015) Sistem manajemen Keselamatan Kontraktor (Contractor Safety Management System/CSMS) PT PLN (Persero).',
+ 'Peraturan Pelaksana PT PLN (Persero) No. 0033.E/DIR/2024 tanggal 31 Oktober 2024 tentang Standar Prosedur Pengelolaan Penyedia Barang/Jasa.',
+ 'Edaran Direksi PT PLN (Persero) No. 0001.E/DIR/2021 tanggal 02 Maret 2021 tentang Petunjuk Pelaksanaan Penggunaan Aplikasi e-Procurement PLN Dalam Pengadaan Barang/Jasa PT PLN (Persero).',
+ 'Peraturan Direksi PT PLN (Persero) No. 0121.P/DIR/2019 tentang Kebijakan Anti Fraud di PT PLN (Persero).',
+ 'Peraturan Direksi PT PLN (Persero) No. 0122.P/DIR/2019 tanggal 19 Agustus 2019 tentang Pengelolaan Konflik Kepentingan di Lingkungan PT PLN (Persero).',
+ 'Peraturan Direksi PT PLN (Persero) No. 004.P/DIR/2021 tanggal 19 Februari 2021 tentang Pedoman Jaminan di Lingkungan PT PLN (Persero).',
+ 'Peraturan Direksi PT PLN (Persero) No. 0002.P/DIR/2022 tanggal 20 Januari 2022 tentang Kebijakan Strategis Pedoman Penggunaan Produk Dalam Negeri di Lingkungan PT PLN (Persero).',
+ 'Edaran Direksi PT PLN (Persero) No. 0031.E/DIR/2022 tanggal 04 November 2022 tentang Standar Prosedur Pelaksanaan Penggunaan Produk Dalam Negeri di Lingkungan PT PLN (Persero).',
+ 'Edaran Direksi PT PLN (Persero) No. 0113/KEU.00.01/DIRKEU/2019 tanggal 08 Januari 2019 tentang Daftar Penerbit Jaminan Terseleksi.',
+ 'Peraturan Direksi PT PLN (Persero) No. 0048.P/DIR/2020 tanggal 01 Juli 2020 tentang Tata Kelola Anti Penyuapan di Lingkungan PT PLN (Persero).',
+ 'Edaran Direksi PT PLN (Persero) No. 0013.E/DIR/2020 tanggal 03 Juli 2020 tentang Pedoman Pelaksanaan Integrity Due Diligence di Lingkungan PT PLN (Persero).'
+];
+/* Dokumen proses pengadaan — pasangan (label, key nomor, key tanggal).
+   Butir yang nomor & tanggalnya kosong tidak dicetak. */
+const SPK_PK_DASAR_DOK = [
+ {l:'Sumber Anggaran',                              no:'no_anggaran',   tg:'tgl_anggaran'},
+ {l:'Dokumen Rencana Kerja dan Syarat-syarat (RKS)', no:'no_rks',       tg:'tgl_rks'},
+ {l:'__EPROC__',                                    no:'no_eproc',      tg:''},
+ {l:'Berita Acara Penjelasan',                      no:'no_bapj',       tg:'tgl_bapj'},
+ {l:'Berita Acara Pembukaan Penawaran Sampul Satu', no:'no_bapp',       tg:'tgl_bapp'},
+ {l:'Berita Acara Evaluasi Penawaran Sampul Satu',  no:'no_bae',        tg:'tgl_bae'},
+ {l:'Surat Penawaran Harga <b>PIHAK KEDUA</b>',     no:'no_penawaran_penyedia', tg:'tgl_penawaran'},
+ {l:'Berita Acara Pembukaan Penawaran Sampul Dua',  no:'no_bapp2',      tg:'tgl_bapp2'},
+ {l:'Berita Acara Evaluasi Penawaran Sampul Dua',   no:'no_bae2',       tg:'tgl_bae2'},
+ {l:'Berita Acara Klarifikasi dan Negosiasi',       no:'no_bakn',       tg:'tgl_bakn'},
+ {l:'Berita Acara Hasil Pengadaan',                 no:'no_bahp',       tg:'tgl_bahp'},
+ {l:'Nota Dinas Usulan Calon Pemenang',             no:'no_ucp',        tg:'tgl_ucp'},
+ {l:'Surat Penetapan Penyedia Barang/Jasa',         no:'no_penetapan',  tg:'tgl_penetapan'},
+ {l:'Surat Penunjukan Penyedia Barang/Jasa (SPPBJ)',no:'no_sppbj',      tg:'tgl_sppbj'}
+];
+/* Susun template preamble Perjanjian/Kontrak sesuai data yang terisi */
+function spkPreamblePkTpl(data){
+  data=data||{};
+  var esc=fkEsc, out='', n=0, i;
+  /* --- kop nomor kedua belah pihak --- */
+  out += '<div class="spk-pknum">'+
+           '<div class="r"><span class="k">Nomor PIHAK PERTAMA</span><span class="s">:</span><span class="v">{{nomor_kontrak}}</span></div>'+
+           '<div class="r"><span class="k">Nomor PIHAK KEDUA</span><span class="s">:</span><span class="v">{{nomor_kontrak_p2}}</span></div>'+
+         '</div>';
+  /* --- kalimat pembuka --- */
+  out += '<p class="kl0">Perjanjian ini dibuat dan ditandatangani di PT PLN (Persero) {{p1_nama_singkat}} yang berlokasi di {{p1_alamat}} pada hari <b>{{hari_ttd}}, tanggal {{tgl_kontrak_terbilang}} ({{tgl_kontrak_num}})</b>, oleh dan antara :</p>';
+  /* --- para pihak (sama dengan SPK) --- */
+  out += '<div class="spk-party"><div class="spk-party-h"><span class="n">I.</span>PT PLN (PERSERO):</div>'+
+         '<p class="spk-party-d">{{p1_akta}} Dalam hal ini diwakili oleh <b>{{p1_wakil}}</b> selaku {{p1_jabatan}} berdasarkan Keputusan Direksi PT PLN (Persero) Nomor: {{p1_sk}} tanggal {{p1_sk_tgl}}. Bertindak untuk dan atas nama PT PLN (Persero) {{p1_nama_singkat}} yang berkedudukan di {{p1_alamat}}, selanjutnya dalam Perjanjian ini disebut sebagai (<b>&ldquo;PIHAK PERTAMA&rdquo;</b>);</p></div>';
+  out += '<div class="spk-party"><div class="spk-party-h"><span class="n">II.</span>{{p2_nama}}:</div>'+
+         '<p class="spk-party-d">{{p2_akta}} Dalam hal ini diwakili oleh <b>{{p2_wakil}}</b> selaku {{p2_jabatan}}{{p2_akta_jabatan}}. Bertindak untuk dan atas nama {{p2_nama_hormat}} yang berkedudukan di {{p2_alamat}}, selanjutnya dalam Perjanjian ini disebut sebagai (<b>&ldquo;PIHAK KEDUA&rdquo;</b>).</p></div>';
+  out += '<p class="kl0">Selanjutnya masing-masing disebut pihak dan secara bersama-sama disebut para pihak, terlebih dahulu menerangkan hal-hal sebagai berikut:</p>';
+  out += '<p class="kl0 spk-berdasar"><b>PIHAK PERTAMA</b> telah melaksanakan proses <b>{{nama_pekerjaan}}</b>. Bahwa proses pengadaan tersebut berpedoman pada :</p>';
+  /* --- dasar peraturan (tetap) --- */
+  for(i=0;i<SPK_PK_DASAR_TETAP.length;i++){
+    n++;
+    out += '<p class="spk-dlist"><span class="n">'+n+'.</span>'+esc(SPK_PK_DASAR_TETAP[i])+'</p>';
+  }
+  /* --- dokumen proses pengadaan (dinamis) --- */
+  for(i=0;i<SPK_PK_DASAR_DOK.length;i++){
+    var it=SPK_PK_DASAR_DOK[i];
+    if(it.l==='__EPROC__'){                          // Pengumuman melalui portal e-Procurement
+      var aw=String(data.pengumuman_awal||'').trim(), ak=String(data.pengumuman_akhir||'').trim();
+      if(!aw && !ak && !String(data.no_eproc||'').trim()) continue;
+      n++;
+      out += '<p class="spk-dlist"><span class="n">'+n+'.</span>Pengumuman Pengadaan melalui Portal e-Procurement'+
+             (String(data.no_eproc||'').trim()?' Nomor: {{no_eproc}}':'')+
+             ((aw||ak)?' tanggal {{dasar_undangan_tgl}}':'')+'.</p>';
+      continue;
+    }
+    var vNo=String(data[it.no]==null?'':data[it.no]).trim();
+    var vTg=it.tg?String(data[it.tg]==null?'':data[it.tg]).trim():'';
+    if(!vNo && !vTg) continue;                       // butir tanpa data dilewati
+    n++;
+    var isi = it.l;
+    if(vNo) isi += ' Nomor: {{'+it.no+'}}';
+    if(vTg) isi += (vNo?' tanggal ':' tanggal ')+'{{'+it.tg+'}}';
+    out += '<p class="spk-dlist"><span class="n">'+n+'.</span>'+isi+'</p>';
+  }
+  /* --- kalimat penutup pembuka (memulai halaman baru) --- */
+  out += '<p class="kl0 spk-menugaskan">Bahwa berdasarkan hal-hal tersebut di atas, para pihak sepakat untuk mengadakan Perjanjian <b>{{nama_pekerjaan}}</b> dengan ketentuan-ketentuan sebagaimana tersebut dalam Pasal&ndash;pasal sebagai berikut :</p>';
+  return out;
+}
 
 /* ---------- Util angka & tanggal ---------- */
 function spkNum(v){ const n=Number(String(v==null?'':v).replace(/[^0-9.-]/g,'')); return isFinite(n)?n:0; }
@@ -15278,6 +15422,15 @@ function spkBuildCtx(data){
   ctx.dasar_bae_tgl_pjg = spkDateLong(d.tgl_bae);
   ctx.dasar_bakn_no = d.no_bakn || '';
   ctx.dasar_bakn_tgl_pjg = spkDateLong(d.tgl_bakn);
+
+  // ---- Bentuk dokumen (Surat Perintah Kerja / Perjanjian/Kontrak) ----
+  ctx.bentuk_kontrak = spkBentukOf(d);
+  ctx.dok_label = spkDokLabel(d);      // huruf besar — kop & bab isi
+  ctx.dok_title = spkDokTitle(d);      // huruf judul — cover & daftar isi
+  ctx.metode_label = spkMetodeLabel(d);
+  // ---- Kontak PLN Unit & Penyedia (Perjanjian/Kontrak) ----
+  ctx.p1_telp = d.telp_unit || ''; ctx.p1_fax = d.fax_unit || ''; ctx.p1_email = d.email_unit || '';
+  ctx.p2_telp = d.telp_penyedia || ''; ctx.p2_fax = d.fax_penyedia || ''; ctx.p2_email = d.email_penyedia || '';
 
   // ---- PIHAK PERTAMA (dari bidang SK Pimpinan Unit) ----
   ctx.p1_wakil = String(d.nama_pengguna||'').toUpperCase();   // selalu UPPERCASE di dokumen
@@ -15665,6 +15818,7 @@ function spkApplyLastSk(data){
 function spkBlankState(){
   const data={};
   SPK_FIELDS_FLAT.forEach(f=>{ data[f.k]= (f.def!=null? f.def : ''); });
+  data.bentuk_kontrak='SPK';                 // bawaan: Surat Perintah Kerja
   // SK Pimpinan Unit: default = data terakhir disimpan
   spkApplyLastSk(data);
   // default: semua klausul aktif terpilih
@@ -15677,6 +15831,8 @@ function spkRecordToState(rec){
   // Kompatibilitas kontrak lama (tanpa field "Akta Perubahan?"): simpulkan pilihannya
   // dari isi Rincian Akta Perubahan — sudah diisi (bukan default) -> "Ya", selain itu
   // "Tidak" — agar tampilan form & pratinjau tetap konsisten.
+  // Kontrak lama (sebelum fitur Bentuk Kontrak) selalu Surat Perintah Kerja
+  if(!data.bentuk_kontrak) data.bentuk_kontrak='SPK';
   if(!data.ada_akta_perubahan){
     const _apr=String(data.akta_perubahan||'').trim();
     data.ada_akta_perubahan = (_apr!=='' && _apr!==String(SPK_DEF_AKTA_PERUBAHAN).trim()) ? 'Ya' : 'Tidak';
@@ -16218,7 +16374,9 @@ const SPK_LOCK_OVL = '<span class="lock-overlay"><svg viewBox="0 0 24 24" fill="
    layar (tidak berubah); daftar lengkap nama field & kodenya ada di berkas Excel
    "Daftar Field & Chip Code Mail Merge SPK". */
 function spkLbl(f){
-  return fkEsc(f.l);
+  /* Sebagian field memakai nama berbeda pada Perjanjian/Kontrak (mis. "No. Kontrak"
+     menjadi "No. Kontrak PIHAK PERTAMA"). Nama alternatif ditulis pada f.lPk. */
+  return fkEsc((spkIsPk() && f.lPk) ? f.lPk : f.l);
 }
 function spkCopyCode(k){
   const t='{{'+k+'}}';
@@ -16476,13 +16634,62 @@ function spkSelAll(on){
   spkState.sel = on ? records_klausul.filter(k=>k.aktif!==false).map(k=>String(k.id)) : [];
   renderSpkSusun();
 }
+/* ===== Pemilih BENTUK KONTRAK (pojok kanan atas Penyusunan Kontrak) =====
+   Satu tampilan dipakai untuk dua bentuk dokumen. Mengganti pilihan hanya
+   mengubah field yang tampil, judul bagian, serta susunan cover/preamble —
+   isian yang sudah diketik TIDAK dihapus. */
+function spkEnsureBentukStyle(){
+  if(document.getElementById('spk-bentuk-style')) return;
+  var css=
+    '.spk-bentuk-bar{display:flex;align-items:center;justify-content:flex-end;gap:12px;flex-wrap:wrap;margin:0 0 12px}'+
+    '.spk-bentuk-tag{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:700;letter-spacing:.04em;'+
+      'padding:6px 12px;border-radius:999px;border:1px solid transparent}'+
+    '.spk-bentuk-tag.is-spk{background:#FDF3D4;color:#8A6A00;border-color:#F2D68A}'+
+    '.spk-bentuk-tag.is-pk{background:#E8EFFA;color:#1B3A6B;border-color:#C3D2EA}'+
+    '.spk-bentuk{display:inline-flex;align-items:center;gap:9px}'+
+    '.spk-bentuk > span{font-size:11px;font-weight:700;letter-spacing:.06em;color:#5b6670;text-transform:uppercase}'+
+    '.spk-bentuk select{min-width:210px;font-size:12px;padding:9px 12px;border-radius:11px;border:1px solid #cdd9de;'+
+      'background:linear-gradient(180deg,#ffffff,#fafdfe);color:#12242b;font-weight:600;cursor:pointer}'+
+    '.spk-bentuk select:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,124,134,.16)}';
+  var st=document.createElement('style'); st.id='spk-bentuk-style'; st.textContent=css;
+  (document.head||document.documentElement).appendChild(st);
+}
+function spkBentukBarHtml(){
+  spkEnsureBentukStyle();
+  var cur=spkBentuk();
+  var opts=SPK_BENTUK_OPTS.map(function(o){
+    return '<option value="'+o.v+'"'+(o.v===cur?' selected':'')+'>'+fkEsc(o.l)+'</option>';
+  }).join('');
+  var lbl=(cur==='PK')?'Perjanjian/Kontrak':'Surat Perintah Kerja';
+  return '<div class="spk-bentuk-bar">'+
+    '<span class="spk-bentuk-tag '+(cur==='PK'?'is-pk':'is-spk')+'">'+
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>'+
+      fkEsc(lbl)+'</span>'+
+    '<label class="spk-bentuk"><span>Bentuk Kontrak</span>'+
+      '<select onchange="spkSetBentuk(this.value)">'+opts+'</select>'+
+    '</label>'+
+  '</div>';
+}
+function spkSetBentuk(v){
+  if(!spkState) spkState=spkBlankState();
+  var nv=(String(v||'').toUpperCase()==='PK')?'PK':'SPK';
+  if(spkState.data.bentuk_kontrak===nv) return;
+  spkState.data.bentuk_kontrak=nv;
+  renderSpkSusun();
+  toast('Bentuk kontrak: '+(nv==='PK'?'Perjanjian/Kontrak':'Surat Perintah Kerja'),'ok');
+}
+/* Field yang ditampilkan sesuai Bentuk Kontrak yang dipilih */
+function spkFieldVisible(f){
+  if(!f || !f.only) return true;
+  return String(f.only).toUpperCase()===spkBentuk();
+}
 function renderSpkSusun(){
   const cont=document.getElementById('spk-susun-content'); if(!cont) return;
   if(!spkState) spkState=spkBlankState();
   // Bagian 1: form mail merge
   const groupsHtml = SPK_FIELD_GROUPS.map((g,gi)=>{
     const cols = 4;
-    const fieldsHtml = g.fields.map(f=>{
+    const fieldsHtml = g.fields.filter(spkFieldVisible).map(f=>{
       // paksa Rincian Akta Pendirian & Perubahan mulai baris baru bersama (2 field 1 baris)
       const brk = (f.k==='akta_pendirian') ? '<div style="flex:0 0 100%;height:0;margin:0;padding:0"></div>' : '';
       return brk + spkFieldInput(f);
@@ -16492,12 +16699,15 @@ function renderSpkSusun(){
     const pickBtn = (gi===0) ? dpPickBtnHtml('spk') : '';
     const secIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M4 4h16v16H4z" opacity="0"/><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>';
     // Kartu "Informasi Penyedia" mendapat bar Profil (Simpan / Muat / Batalkan) di kanan-atas.
+    /* Judul bagian dapat berbeda pada Perjanjian/Kontrak (mis. "SK Pimpinan Unit"
+       menjadi "Informasi PLN Unit") lewat properti secPk. */
+    const secNama = (spkIsPk() && g.secPk) ? g.secPk : g.sec;
     const titleHtml = (g.sec==='Informasi Penyedia')
       ? '<div class="form-section-title" style="justify-content:space-between">'+
-          '<span>'+secIcon+' '+fkEsc(g.sec)+spkPyProfilTagHtml()+'</span>'+
+          '<span>'+secIcon+' '+fkEsc(secNama)+spkPyProfilTagHtml()+'</span>'+
           spkPyProfilBarHtml()+
         '</div>'
-      : '<div class="form-section-title">'+secIcon+' '+fkEsc(g.sec)+pickBtn+'</div>';
+      : '<div class="form-section-title">'+secIcon+' '+fkEsc(secNama)+pickBtn+'</div>';
     return '<div class="form-card">'+
       titleHtml+
       '<div class="form-flow" style="--cols:'+cols+'">'+fieldsHtml+'</div>'+
@@ -16518,6 +16728,7 @@ function renderSpkSusun(){
   // Penanda langkah (stepper) — empat langkah: 1) Data Mail Merge, 2) Ubah Klausul Kontrak, 3) Pilih Klausul, 4) Lampiran
   const stp=(no,label)=> '<button type="button" class="spk-stp'+(spkStep===no?' active':(spkStep>no?' done':''))+'" onclick="spkGoStep('+no+')"><span class="spk-stp-no">'+(spkStep>no?'&#10003;':no)+'</span> '+label+'</button>';
   const stepper =
+    spkBentukBarHtml()+
     '<div class="spk-stepper">'+
       stp(1,'Data Kontrak')+
       '<div class="spk-stp-line"></div>'+
@@ -16658,6 +16869,13 @@ function spkEmptyRow(){
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>'+
     '<div>Belum ada kontrak tersimpan</div></div></td></tr>';
 }
+/* Penanda kecil bentuk dokumen pada daftar Lihat Kontrak */
+function spkBentukChip(rec){
+  spkEnsureBentukStyle();
+  var b=spkBentukOf(rec&&rec.data);
+  return '<span class="spk-bentuk-tag '+(b==='PK'?'is-pk':'is-spk')+'" style="margin-left:8px;padding:3px 9px;font-size:10px">'+
+    (b==='PK'?'Perjanjian/Kontrak':'SPK')+'</span>';
+}
 function renderSpkView(){
   const tb=document.getElementById('spk-view-body'); const pg=document.getElementById('spk-view-pagination'); const cEl=document.getElementById('spk-view-count');
   if(!tb) return;
@@ -16673,7 +16891,7 @@ function renderSpkView(){
     const nklausul = Array.isArray(r.klausul)? r.klausul.length : 0;
     return '<tr>'+
       '<td class="col-no">'+(start+i+1)+'</td>'+
-      '<td class="wrap-cell">'+fkEsc(r.nomor_kontrak||'—')+'</td>'+
+      '<td class="wrap-cell">'+fkEsc(r.nomor_kontrak||'—')+spkBentukChip(r)+'</td>'+
       '<td class="wrap-cell col-nama-freeze">'+fkEsc(r.nama_pekerjaan||'—')+'</td>'+
       '<td class="col-date">'+fkEsc(r.tanggal?spkDateLong(r.tanggal):'—')+'</td>'+
       '<td style="text-align:right;white-space:nowrap">'+fkEsc(r.nilai!=null?spkRupiah(r.nilai):'—')+'</td>'+
@@ -16893,6 +17111,19 @@ function spkDocCss(){
      "4.1." dan "4.2." berbeda lebar dan titiknya tidak sejajar. tnum menyamakan
      lebar semua digit — persis seperti penomoran di Word. */
   '.spk-clause .n,.spk-cl-h .n,.spk-cl .n{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1,"lnum" 1}'+
+  /* ---------- POSISI JUDUL KLAUSUL MENGIKUTI BENTUK KONTRAK ----------
+     Surat Perintah Kerja : nomor & judul RATA KIRI dalam satu baris
+                            (mis. "1. DEFINISI") — perilaku bawaan di atas.
+     Perjanjian/Kontrak   : RATA TENGAH dua baris seperti dokumen perjanjian
+                            PLN — "PASAL 1" di baris pertama, judul di bawahnya.
+     Untuk memakai penomoran biasa ("1.") pada Perjanjian/Kontrak, cukup ubah
+     content di bawah menjadi: counter(spkcl) "." */
+  '.spk-doc.spk-pk .spk-cl-h{text-align:center;padding-left:0;text-indent:0}'+
+  '.spk-doc.spk-pk .spk-cl-h .n{display:block;width:auto;text-align:center;padding-right:0;'+
+    'text-indent:0;margin:0 0 1pt}'+
+  '.spk-doc.spk-pk .spk-cl-h .n::before{content:"PASAL " counter(spkcl)}'+
+  /* Nomor 2 digit tak perlu perlakuan rata kanan saat judul di tengah */
+  '.spk-doc.spk-pk .spk-cl-h .n.r{text-align:center;padding-right:0}'+
   '.spk-cl{margin:0;font-size:11pt;color:#000;line-height:'+spkLHCss(1.15)+'}'+
   /* Isi klausul menjorok SEDIKIT LEBIH KANAN dari teks judul (0,75cm judul -> 0,90cm
      isi). Selisih ~0,15cm membuat penomoran sub-klausul (mis. "5.1.", "8.1.") mulai
@@ -17076,6 +17307,33 @@ function spkDocCss2(){
      aksen emas & teks terang, kontras kuat terhadap kartu data di atasnya. */
   '.spk-cover .cv-nilai{background:linear-gradient(135deg,#1B3A6B,#274E86);border-left:4px solid #F6B40E;border-radius:10px;padding:16px 18px;margin-top:10px;border-top:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   '.spk-cover .cv-foot{margin-top:14px;font-size:11px;color:#8F8E8E;line-height:1.7}'+
+  /* ---------- VARIAN COVER: Surat Perintah Kerja vs Perjanjian/Kontrak ----------
+     Kedua cover memakai kerangka yang sama; pembedanya warna aksen, bentuk garis,
+     dan chip jenis dokumen di pojok kanan atas. */
+  '.spk-cover .cv-top{position:relative}'+
+  '.spk-cover .cv-kind{align-self:flex-start;font-size:9px;font-weight:800;letter-spacing:.18em;'+
+    'padding:7px 12px;border-radius:999px;white-space:nowrap;'+
+    '-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  /* SPK — aksen emas */
+  '.spk-cover.cv-spk .cv-kind{background:#FDF3D4;color:#8A6A00;border:1px solid #F2D68A}'+
+  /* PK — aksen navy + garis emas kedua + garis ganda di bawah judul */
+  '.spk-cover.cv-pk .cv-kind{background:#1B3A6B;color:#fff;border:1px solid #1B3A6B}'+
+  '.spk-cover.cv-pk .cv-accent{width:120px;border-top:4px solid #1B3A6B}'+
+  '.spk-cover.cv-pk .cv-accent2{width:56px;border-top:4px solid #F6B40E;margin-top:5px}'+
+  '.spk-cover.cv-pk .cv-eyebrow{color:#8A6A00}'+
+  '.spk-cover.cv-pk .cv-title{color:#12304F}'+
+  '.spk-cover.cv-pk .cv-title span:last-child{color:#12304F}'+
+  '.spk-cover.cv-pk .cv-rule2{border-top:3px double #1B3A6B}'+
+  '.spk-cover.cv-pk .cv-parties .p{border-left:3px solid #1B3A6B}'+
+  '.spk-cover.cv-pk .cv-grid .f{border-left:3px solid #1B3A6B}'+
+  '.spk-cover.cv-pk .cv-nilai{background:linear-gradient(135deg,#12304F,#1B3A6B);border-left:4px solid #F6B40E}'+
+  /* ---------- Kop nomor kedua pihak (preamble Perjanjian/Kontrak) ---------- */
+  '.spk-pknum{margin:0 0 10px;padding:9px 12px;border:1px solid #E3E9F3;border-left:3px solid #1B3A6B;'+
+    'border-radius:7px;background:#FAFBFE;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  '.spk-pknum .r{display:flex;gap:6px;line-height:1.75}'+
+  '.spk-pknum .k{flex:0 0 42%;font-weight:700}'+
+  '.spk-pknum .s{flex:0 0 8px}'+
+  '.spk-pknum .v{flex:1 1 auto;font-weight:700}'+
   /* ---------- DAFTAR ISI ---------- */
   '.spk-tocpage{font-family:'+G+';color:#201E1D}'+
   '.spk-tocpage .toc-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px}'+
@@ -19952,25 +20210,38 @@ function spkCoverHtml(data, ctx, judulBaris){
       '<div class="fv'+(kosong?' kosong':'')+(cls?' '+cls:'')+'">'+(kosong?'—':esc(v))+'</div></div>';
   };
   const judulHtml = String(judulBaris||'').split(' ').map(w=>'<span>'+esc(w)+'</span>').join(' ');
+  /* ---- Varian cover per Bentuk Kontrak ----
+     Susunan & tata letak SENGAJA dibuat mirip agar terlihat satu keluarga dokumen,
+     namun dibedakan dengan jelas:
+       Surat Perintah Kerja : aksen EMAS, chip emas, garis tunggal, label DARI/KEPADA
+       Perjanjian/Kontrak   : aksen NAVY (+ garis emas kedua), chip navy, garis ganda,
+                              label PIHAK PERTAMA/PIHAK KEDUA */
+  const isPk = spkBentukOf(data)==='PK';
+  const kind = isPk ? 'PERJANJIAN/KONTRAK' : 'SURAT PERINTAH KERJA';
+  const lbl1 = isPk ? 'PIHAK PERTAMA' : 'DARI';
+  const lbl2 = isPk ? 'PIHAK KEDUA'   : 'KEPADA';
+  const no2  = (isPk && data.nomor_kontrak_p2) ? '<div class="ps">No. '+esc(data.nomor_kontrak_p2)+'</div>' : '';
   return ''+
-  '<section class="spk-page spk-cover">'+
+  '<section class="spk-page spk-cover'+(isPk?' cv-pk':' cv-spk')+'">'+
     '<div class="cv-top">'+
       '<div class="cv-brand">'+logo+
         '<div class="cv-org"><span>PT PLN (PERSERO)</span><b>UP3 Masohi</b></div>'+
       '</div>'+
+      '<div class="cv-kind">'+esc(kind)+'</div>'+
     '</div>'+
     '<div class="cv-rule"></div>'+
     '<div class="cv-accent"></div>'+
-    '<div class="cv-eyebrow">PENGADAAN LANGSUNG</div>'+
+    (isPk?'<div class="cv-accent2"></div>':'')+
+    '<div class="cv-eyebrow">'+esc(spkMetodeLabel(data))+'</div>'+
     '<h1 class="cv-title">'+judulHtml+'</h1>'+
     '<div class="cv-rule2"></div>'+
     '<div class="cv-parties">'+
-      '<div class="p"><div class="pl">DARI</div><div class="pn">PT PLN (Persero)</div><div class="ps">'+esc(unit)+'</div></div>'+
-      '<div class="p"><div class="pl">KEPADA</div><div class="pn">'+esc(ctx.p2_nama_hormat||'—')+'</div></div>'+
+      '<div class="p"><div class="pl">'+lbl1+'</div><div class="pn">PT PLN (Persero)</div><div class="ps">'+esc(unit)+'</div></div>'+
+      '<div class="p"><div class="pl">'+lbl2+'</div><div class="pn">'+esc(ctx.p2_nama_hormat||'—')+'</div>'+no2+'</div>'+
     '</div>'+
     '<div class="cv-spacer"></div>'+
     '<div class="cv-grid">'+
-      fld('NOMOR KONTRAK', data.nomor_kontrak)+
+      fld(isPk?'NOMOR PIHAK PERTAMA':'NOMOR KONTRAK', data.nomor_kontrak)+
       fld('TANGGAL KONTRAK', ctx.tanggal_kontrak_pjg)+
       fld('PEKERJAAN', data.nama_pekerjaan)+
       fld('LOKASI', data.lokasi_pekerjaan)+
@@ -20003,7 +20274,7 @@ function spkTocHtml(data, klausul){
     '<div class="toc-accent"></div>'+
     '<div class="toc-head">'+
       '<h1>Daftar Isi</h1>'+
-      '<div class="toc-meta"><b>SURAT PERINTAH KERJA</b><span>'+esc(data.nomor_kontrak||'\u2014')+'</span></div>'+
+      '<div class="toc-meta"><b>'+esc(spkDokLabel(data))+'</b><span>'+esc(data.nomor_kontrak||'\u2014')+'</span></div>'+
     '</div>'+
     '<div class="toc-rule"></div>'+
     '<div class="spk-toc2">'+rows+'</div>'+
@@ -20016,7 +20287,7 @@ function spkRunHeadHtml(data){
   const logo = SPK_LOGO_SRC? '<img src="'+SPK_LOGO_SRC+'" alt="PLN">' : '';
   return '<div class="spk-rhd">'+
     '<div class="l">'+logo+'<div class="o"><span>PT PLN (PERSERO)</span><b>UP3 Masohi</b></div></div>'+
-    '<div class="r"><b>SURAT PERINTAH KERJA</b><span>'+esc(data.nomor_kontrak||'\u2014')+'</span></div>'+
+    '<div class="r"><b>'+esc(spkDokLabel(data))+'</b><span>'+esc(data.nomor_kontrak||'\u2014')+'</span></div>'+
   '</div>';
 }
 function spkRunFootHtml(){
@@ -20204,7 +20475,7 @@ function spkLampiranDocInner(data){
     html = hpsBuildDocHtml();
   }catch(e){ console.error(e); html='<div class="fkl-doc"><p>Lampiran belum dapat ditampilkan.</p></div>'; }
   finally{ hpsPreviewState = sv; }
-  html = html.replace('HARGA PERKIRAAN SENDIRI (HPS)', 'LAMPIRAN SURAT PERINTAH KERJA');
+  html = html.replace('HARGA PERKIRAAN SENDIRI (HPS)', 'LAMPIRAN '+spkDokLabel(data));
   html = html.replace(/<div class="fkl-doc-docno">[\s\S]*?<\/div>/,
     '<div class="fkl-doc-docno">'+fkEsc(data.nomor_kontrak||'\u2014')+'</div>');
   html = html.replace('>Rencana Anggaran Biaya<', '>Nilai Pekerjaan<');
@@ -20684,12 +20955,13 @@ function spkDocHtml(data, klausul){
   data=data||{};
   const ctx=spkBuildCtx(data);
   const esc=fkEsc;
-  // 1) Cover SPK
-  const cover=spkCoverHtml(data, ctx, 'Surat Perintah Kerja');
+  // 1) Cover (judul mengikuti Bentuk Kontrak)
+  const cover=spkCoverHtml(data, ctx, spkDokTitle(data));
   // 2) Daftar Isi
   const toc=spkTocHtml(data, klausul);
   // 3) Isi kontrak (kop + footer berulang tiap halaman)
-  let preamble = spkNomorToNo(spkNumberFix(spkTidyKeyValue(spkMerge(SPK_PREAMBLE_TPL, ctx))));
+  const _tpl = (spkBentukOf(data)==='PK') ? spkPreamblePkTpl(data) : SPK_PREAMBLE_TPL;
+  let preamble = spkNomorToNo(spkNumberFix(spkTidyKeyValue(spkMerge(_tpl, ctx))));
   /* Paragraf "Maka dengan ini PIHAK PERTAMA menugaskan..." harus MEMULAI halaman
      baru. CSS break-before:page tidak berpengaruh karena halaman isi dipecah oleh
      paginator JS (spkPageScript), bukan oleh mesin cetak. Karena itu paragraf ini
@@ -20708,7 +20980,7 @@ function spkDocHtml(data, klausul){
       )))))+'</div></div>'
   ).join('');
   const isiBody=
-    '<div class="spk-bab"><b>SURAT PERINTAH KERJA</b>'+(data.nomor_kontrak?('<span>'+esc(data.nomor_kontrak)+'</span>'):'')+'</div>'+
+    '<div class="spk-bab"><b>'+esc(spkDokLabel(data))+'</b>'+(data.nomor_kontrak?('<span>'+esc(data.nomor_kontrak)+'</span>'):'')+'</div>'+
     '<div class="spk-cl">'+preambleAtas+'</div>'+
     (preambleMenugaskan ? '<div class="spk-cl spk-forcepage">'+preambleMenugaskan+'</div>' : '')+
     clausesHtml+
@@ -20720,7 +20992,7 @@ function spkDocHtml(data, klausul){
       '<tfoot><tr><td>'+spkRunFootHtml()+'</td></tr></tfoot></table>'+
     '</section>';
   // 4) Cover Lampiran + 5) Isi Lampiran
-  const coverLamp=spkCoverHtml(data, ctx, 'Lampiran SPK');
+  const coverLamp=spkCoverHtml(data, ctx, spkLampTitle(data));
   const lampiran='<section class="spk-page spk-flow spk-lampsheet">'+spkLampiranDocInner(data)+'</section>';
 
   return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><title>&#8203;</title>'+
@@ -20731,7 +21003,7 @@ function spkDocHtml(data, klausul){
     (typeof fklDocBaseCss==='function'?fklDocBaseCss():'')+
     (typeof hpsExtraDocCss==='function'?hpsExtraDocCss():'')+
     spkDocCss()+spkDocCss2()+
-    '</style></head><body><div class="spk-doc">'+
+    '</style></head><body><div class="spk-doc'+(spkBentukOf(data)==='PK'?' spk-pk':' spk-spk')+'">'+
       /* Auto-italic istilah asing diterapkan pada SELURUH konten dokumen Susun
          Kontrak (cover, daftar isi, kop/footer, preamble, klausul, tanda tangan,
          cover & isi lampiran) — bukan hanya isi klausul. Hanya menyentuh TEKS
@@ -20755,7 +21027,7 @@ function spkOpenPreview(data, klausul){
   const _mdl=ov.querySelector('.pn-preview-modal'); if(_mdl) _mdl.classList.remove('is-max');
   if(typeof pnPreviewResetMaxBtn==='function') pnPreviewResetMaxBtn();
   const titleEl=document.getElementById('pn-preview-title');
-  if(titleEl) titleEl.textContent='Pratinjau — SPK: '+((data&&data.nomor_kontrak)||(data&&data.nama_pekerjaan)||'');
+  if(titleEl) titleEl.textContent='Pratinjau — '+spkDokTitle(data)+': '+((data&&data.nomor_kontrak)||(data&&data.nama_pekerjaan)||'');
   const body=document.getElementById('pn-preview-body');
   if(body){
     body.classList.add('fkl-preview-body');
