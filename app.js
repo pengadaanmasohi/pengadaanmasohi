@@ -15321,10 +15321,10 @@ function spkPreamblePkTpl(data){
   data=data||{};
   var esc=fkEsc, out='', n=0, i;
   /* --- kop nomor kedua belah pihak ---
-     Dibungkus .spk-pkhead yang bergaris bawah selebar bidang cetak, sebagai
-     pembatas terhadap kalimat pembuka di bawahnya. Kelas spk-keep membuat
-     paginator memperlakukan blok ini beserta garisnya sebagai satu kesatuan
-     (lihat atom() di spkPageScript) sehingga garis tak pernah terpisah. */
+     Dibungkus .spk-pkhead yang memberi jarak 18pt ke kalimat pembuka di
+     bawahnya (tanpa garis pembatas). Kelas spk-keep membuat paginator
+     memperlakukan blok ini sebagai satu kesatuan (lihat atom() di
+     spkPageScript) sehingga kedua baris nomor tak pernah terpisah halaman. */
   out += '<div class="spk-pkhead spk-keep">'+
            '<div class="spk-pknum">'+
              '<div class="r"><span class="k">Nomor PIHAK PERTAMA</span><span class="s">:</span><span class="v">{{nomor_kontrak}}</span></div>'+
@@ -17541,13 +17541,15 @@ function spkDocCss2(){
      9pt di bawahnya (margin-bottom), sehingga garis berada tepat di tengah
      jarak itu. Paragraf .kl0 sesudahnya bermargin-atas 0, jadi tidak ada
      margin yang runtuh (collapse) dan jaraknya benar-benar 18pt. */
-  /* PENTING — kekhususan (specificity) selektor:
-     `.spk-cl .spk-keep{margin:0;padding:0;border:0}` di spkDocCss() bernilai
-     dua-kelas, sedangkan `.spk-pkhead` hanya satu kelas — jadi aturan itu
-     MENANG dan sempat menghapus garis serta jaraknya, berapa pun urutannya.
-     Karena blok ini memang ber-class `spk-keep` (penanda bagi paginator),
-     selektornya ditulis tiga-kelas agar pasti menang. */
-  '.spk-cl .spk-pkhead.spk-keep{border-bottom:1px solid #201E1D;padding-bottom:9pt;margin:0 0 9pt}'+
+  /* Jarak dari baris "Nomor PIHAK KEDUA" ke kalimat "Perjanjian ini dibuat ..."
+     = 18pt. Garis pembatas SUDAH DIHAPUS atas permintaan; yang tersisa hanya
+     jaraknya. Aman dari margin collapse karena `.spk-cl p` bermargin-atas 0.
+     PENTING — kekhususan (specificity) selektor: `.spk-cl .spk-keep{margin:0;
+     padding:0;border:0}` di spkDocCss() bernilai dua-kelas dan MENGALAHKAN
+     `.spk-pkhead` yang satu kelas, berapa pun urutannya. Karena blok ini memang
+     ber-class `spk-keep` (penanda bagi paginator), selektornya ditulis tiga
+     kelas agar pasti menang. */
+  '.spk-cl .spk-pkhead.spk-keep{margin:0 0 18pt}'+
   '.spk-pknum{display:table;margin:0 auto;padding:0;border:0;border-radius:0;background:none}'+
   '.spk-pknum .r{display:table-row;line-height:1.75}'+
   '.spk-pknum .k{display:table-cell;font-weight:700;white-space:nowrap;padding-right:0.45cm}'+
