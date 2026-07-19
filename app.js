@@ -15330,36 +15330,61 @@ function spkPreamblePkTpl(data){
   out += '<div class="spk-party"><div class="spk-party-h"><span class="n">II.</span>{{p2_nama}}:</div>'+
          '<p class="spk-party-d">{{p2_akta}} Dalam hal ini diwakili oleh <b>{{p2_wakil}}</b> selaku {{p2_jabatan}}{{p2_akta_jabatan}}. Bertindak untuk dan atas nama {{p2_nama_hormat}} yang berkedudukan di {{p2_alamat}}, selanjutnya dalam Perjanjian ini disebut sebagai (<b>&ldquo;PIHAK KEDUA&rdquo;</b>).</p></div>';
   out += '<p class="kl0">Selanjutnya masing-masing disebut pihak dan secara bersama-sama disebut para pihak, terlebih dahulu menerangkan hal-hal sebagai berikut:</p>';
-  out += '<p class="kl0 spk-berdasar"><b>PIHAK PERTAMA</b> telah melaksanakan proses <b>{{nama_pekerjaan}}</b>. Bahwa proses pengadaan tersebut berpedoman pada :</p>';
+  /* "…melaksanakan proses Pengadaan <nama pekerjaan>". Bila nama pekerjaan sudah
+     diawali kata "Pengadaan", kata itu tidak ditambahkan lagi agar tidak terbaca
+     "Pengadaan Pengadaan …". */
+  var _pgd = /^\s*pengadaan\b/i.test(String(data.nama_pekerjaan||'')) ? '' : 'Pengadaan ';
+  out += '<p class="kl0 spk-berdasar"><b>PIHAK PERTAMA</b> telah melaksanakan proses <b>'+_pgd+'{{nama_pekerjaan}}</b>. Bahwa proses pengadaan tersebut berpedoman pada :</p>';
   /* --- dasar peraturan (tetap) --- */
   for(i=0;i<SPK_PK_DASAR_TETAP.length;i++){
     n++;
     out += '<p class="spk-dlist"><span class="n">'+n+'.</span>'+esc(SPK_PK_DASAR_TETAP[i])+'</p>';
   }
-  /* --- dokumen proses pengadaan (dinamis) --- */
+  /* --- dokumen proses pengadaan (dinamis) ---
+     Semua butir ditulis dengan bentuk yang SAMA: baris judul, lalu rincian
+     "No. … : …" dan "Tanggal : …" di bawahnya. Lebar kolom label dihitung dari
+     label TERPANJANG yang benar-benar dipakai, sehingga seluruh tanda ":" pada
+     daftar ini sejajar pada satu garis. */
+  var dokItems=[];
   for(i=0;i<SPK_PK_DASAR_DOK.length;i++){
     var it=SPK_PK_DASAR_DOK[i];
     if(it.l==='__EPROC__'){                          // Pengumuman melalui portal e-Procurement
       var aw=String(data.pengumuman_awal||'').trim(), ak=String(data.pengumuman_akhir||'').trim();
       var vEp=String(data.no_eproc||'').trim();
       if(!aw && !ak && !vEp) continue;
-      n++;
-      /* Butir ini ditulis dua tingkat seperti dokumen aslinya: baris judul, lalu
-         rincian "Label : nilai" menjorok sejajar teks judul (0,7 cm).
-         Urutan rincian: No. Eproc di atas, Tanggal di bawahnya. */
-      out += '<p class="spk-dlist"><span class="n">'+n+'.</span>Pengumuman Pengadaan Melalui Portal EPROC</p>';
-      if(vEp) out += '<div class="spk-kv spk-dkv"><span class="k">No. Eproc</span><span class="s">:</span><span class="v">{{no_eproc}}</span></div>';
-      if(aw||ak) out += '<div class="spk-kv spk-dkv"><span class="k">Tanggal</span><span class="s">:</span><span class="v">{{dasar_undangan_tgl}}</span></div>';
+      dokItems.push({ t:'Pengumuman Pengadaan Melalui Portal EPROC',
+                      nl:'No. Eproc', np:(vEp?'{{no_eproc}}':''),
+                      tp:((aw||ak)?'{{dasar_undangan_tgl}}':'') });
       continue;
     }
     var vNo=String(data[it.no]==null?'':data[it.no]).trim();
     var vTg=it.tg?String(data[it.tg]==null?'':data[it.tg]).trim():'';
     if(!vNo && !vTg) continue;                       // butir tanpa data dilewati
+    dokItems.push({ t:it.l, nl:'No.', np:(vNo?'{{'+it.no+'}}':''),
+                    tp:(vTg?'{{'+it.tg+'}}':'') });
+  }
+  /* Lebar kolom label = label terpanjang + jeda 0,3 cm (jatuh ke 2,3 cm bila
+     pengukuran tak tersedia, mis. saat dijalankan di luar peramban). */
+  var kw=2.3;
+  try{
+    var maxw=0;
+    for(i=0;i<dokItems.length;i++){
+      if(dokItems[i].np) maxw=Math.max(maxw, spkTextWidthCm(dokItems[i].nl));
+      if(dokItems[i].tp) maxw=Math.max(maxw, spkTextWidthCm('Tanggal'));
+    }
+    if(maxw>0) kw=Math.round((maxw+0.3)*100)/100;
+  }catch(e){}
+  var kSty=' style="flex:0 0 '+kw+'cm;max-width:'+kw+'cm"';
+  var kvRow=function(label, ph){
+    return '<div class="spk-kv spk-dkv"><span class="k"'+kSty+'>'+esc(label)+'</span>'+
+           '<span class="s">:</span><span class="v">'+ph+'</span></div>';
+  };
+  for(i=0;i<dokItems.length;i++){
+    var d0=dokItems[i];
     n++;
-    var isi = it.l;
-    if(vNo) isi += ' Nomor: {{'+it.no+'}}';
-    if(vTg) isi += (vNo?' tanggal ':' tanggal ')+'{{'+it.tg+'}}';
-    out += '<p class="spk-dlist"><span class="n">'+n+'.</span>'+isi+'</p>';
+    out += '<p class="spk-dlist"><span class="n">'+n+'.</span>'+d0.t+'</p>';
+    if(d0.np) out += kvRow(d0.nl, d0.np);
+    if(d0.tp) out += kvRow('Tanggal', d0.tp);
   }
   /* --- kalimat penutup pembuka (memulai halaman baru) --- */
   out += '<p class="kl0 spk-menugaskan">Bahwa berdasarkan hal-hal tersebut di atas, para pihak sepakat untuk mengadakan Perjanjian <b>{{nama_pekerjaan}}</b> dengan ketentuan-ketentuan sebagaimana tersebut dalam Pasal&ndash;pasal sebagai berikut :</p>';
@@ -17277,7 +17302,7 @@ function spkDocCss(){
   '.spk-cl .spk-kv.spk-dkv{margin:0 0 4pt 0.7cm}'+
   '.spk-cl .spk-kv.spk-dkv .k{flex:0 0 3.6cm;max-width:3.6cm}'+
   '.spk-cl .spk-kv.spk-dkv .s{flex:0 0 auto;width:0.6em}'+
-  '.spk-cl .spk-kv.spk-dkv .v{flex:1 1 auto;text-align:left}'+
+  '.spk-cl .spk-kv.spk-dkv .v{flex:1 1 auto;text-align:left;overflow-wrap:anywhere;word-break:break-word}'+
   /* Kalimat penutup pembuka ("Maka dengan ini ... menugaskan ...") selalu dimulai
      pada halaman baru (halaman ke-2 isi), terpisah dari blok identitas PARA PIHAK
      dan daftar "Berdasarkan" pada halaman pertama. */
@@ -17447,7 +17472,9 @@ function spkDocCss2(){
   '.spk-toc2 .row:last-child{border-bottom:1px solid #E2E2E2}'+
   '.spk-toc2 .row{display:flex;align-items:baseline;gap:0;padding:17px 2px;border-top:1px solid #E2E2E2;border-bottom:0;font-size:14px}'+
   '.spk-toc2 .row:first-child{border-top:0}'+
-  '.spk-toc2 .row .no{flex:0 0 auto;width:44px;font-weight:800;color:#1B3A6B;font-size:17px;font-variant-numeric:tabular-nums}'+
+  /* Nomor pasal memakai huruf & warna yang SAMA dengan judul di sebelahnya —
+     pembeda cukup dari ketebalannya saja, sehingga daftar terlihat lebih tenang. */
+  '.spk-toc2 .row .no{flex:0 0 auto;width:44px;font-weight:700;color:#201E1D;font-size:14px;font-variant-numeric:tabular-nums}'+
   '.spk-toc2 .row .nm{flex:0 0 auto;font-weight:600;color:#201E1D;font-size:14px;max-width:70%}'+
   '.spk-toc2 .row .nm i{font-style:italic}'+
   '.spk-toc2 .row .dot{flex:1;border-bottom:1.5px dotted #D6DAE0;transform:translateY(-3px);margin:0 14px}'+
@@ -17465,10 +17492,15 @@ function spkDocCss2(){
   '.spk-tocpage .spk-toc2.d2 .row .nm{font-size:12px}'+
   '.spk-tocpage .spk-toc2.d2 .row .pg{font-size:12.5px}'+
   '.spk-tocpage .spk-toc2.d2 .row .dot{margin:0 9px}'+
-  '.spk-tocpage .spk-toc2.d3{column-count:2;column-gap:10mm;column-rule:1px solid #D6DAE0;margin-top:2px}'+
+  /* Dua kolom dengan garis pemisah vertikal yang membentang PENUH sampai dekat
+     margin bawah — bukan hanya setinggi baris terakhir — sehingga daftar terbaca
+     sebagai dua panel yang disengaja. 218mm = tinggi bidang cetak A4 (246,2mm)
+     dikurangi blok judul "Daftar Isi" (±26mm). */
+  '.spk-tocpage .spk-toc2.d3{column-count:2;column-gap:10mm;column-rule:1px solid #D6DAE0;'+
+    'column-fill:balance;min-height:218mm;margin-top:2px}'+
+  '.spk-tocpage .spk-toc2.d3 .row .no{width:26px;font-size:12px;font-weight:700;color:#201E1D}'+
   '.spk-tocpage .spk-toc2.d3 .row{display:flex;break-inside:avoid;page-break-inside:avoid;'+
     'padding:6.5px 1px;font-size:12px;line-height:1.25}'+
-  '.spk-tocpage .spk-toc2.d3 .row .no{width:28px;font-size:13px}'+
   '.spk-tocpage .spk-toc2.d3 .row .nm{flex:1 1 auto;max-width:none;font-size:12px}'+
   '.spk-tocpage .spk-toc2.d3 .row .dot{flex:0 1 20px;min-width:6px;margin:0 6px;transform:translateY(-2px)}'+
   '.spk-tocpage .spk-toc2.d3 .row .pg{font-size:12.5px;min-width:1.4em}'+
