@@ -17521,11 +17521,11 @@ function spkDocCss2(){
          isinya sendiri tetap rata kiri. */
   /* Garis pembatas antara blok nomor kedua pihak dan kalimat pembuka.
      JARAK TOTAL dari baris "Nomor PIHAK KEDUA" ke kalimat "Perjanjian ini
-     dibuat ..." = 12pt, dibagi rata: 6pt di atas garis (padding-bottom) dan
-     6pt di bawahnya (margin-bottom), sehingga garis berada tepat di tengah
+     dibuat ..." = 18pt, dibagi rata: 9pt di atas garis (padding-bottom) dan
+     9pt di bawahnya (margin-bottom), sehingga garis berada tepat di tengah
      jarak itu. Paragraf .kl0 sesudahnya bermargin-atas 0, jadi tidak ada
      margin yang runtuh (collapse) dan jaraknya benar-benar 12pt. */
-  '.spk-pkhead{border-bottom:1px solid #201E1D;padding-bottom:6pt;margin:0 0 6pt}'+
+  '.spk-pkhead{border-bottom:1px solid #201E1D;padding-bottom:9pt;margin:0 0 9pt}'+
   '.spk-pknum{display:table;margin:0 auto;padding:0;border:0;border-radius:0;background:none}'+
   '.spk-pknum .r{display:table-row;line-height:1.75}'+
   '.spk-pknum .k{display:table-cell;font-weight:700;white-space:nowrap;padding-right:0.45cm}'+
