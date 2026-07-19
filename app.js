@@ -17327,7 +17327,7 @@ function spkDocCss(){
      pengantarnya, bukan 0,5 cm dengan kotak nomor selebar 0,7 cm. Baris
      No./Tanggal di bawahnya menggantung tepat di kolom teks butirnya. */
   '.spk-doc.spk-pk .spk-cl p.spk-dlist{margin:0 0 4pt 0.35cm;padding-left:0.6cm;text-indent:-0.6cm}'+
-  '.spk-doc.spk-pk .spk-cl p.spk-dlist .n{width:0.6cm}'+
+  '.spk-doc.spk-pk .spk-cl p.spk-dlist .n{width:0.6cm;text-align:right;box-sizing:border-box;padding-right:0.18cm}'+
   '.spk-doc.spk-pk .spk-cl .spk-kv.spk-dkv{margin:0 0 4pt 0.95cm}'+
   '.spk-cl .spk-kv.spk-dkv .k{flex:0 0 3.6cm;max-width:3.6cm}'+
   '.spk-cl .spk-kv.spk-dkv .s{flex:0 0 auto;width:0.6em}'+
@@ -17974,12 +17974,23 @@ function spkLeadIndentCls(html){
    <span class="n">…</span> di awal paragraf.
    ========================================================================= */
 
-/* Lebar kotak nomor (cm) dari sebuah <span class="n"> */
+/* Lebar kotak nomor (cm), DIHITUNG ULANG dari teks penandanya sendiri.
+   Lebar bawaan pada style TIDAK dipakai: spkNumUniform menyeragamkan lebar
+   berdasarkan AWALAN nomor di seluruh klausul, sehingga kotak deret "1.1."–
+   "1.9." ikut dilebarkan demi nomor dua digit seperti "2.16." yang berada jauh
+   di bawahnya. Akibatnya jarak nomor ke teks tampak jauh padahal penomorannya
+   hanya satu digit. Penyeragaman yang benar dilakukan per DERET di
+   spkPkIndentStd, bukan per awalan. */
 function spkPkNumW(sp){
-  var w=parseFloat(sp && sp.style ? sp.style.width : '');
-  if(w>0) return w;
-  var t=String(sp&&sp.textContent||'');
-  return Math.max(0.4, Math.round((spkTextWidthCm(t)+SPK_NUM_GAP)*100)/100);
+  var t=String(sp&&sp.textContent||'').replace(/[\s\u00A0]+/g,'');
+  var w=0;
+  try{ w=spkTextWidthCm(t); }catch(e){ w=0; }
+  if(!(w>0)){                                  /* pengukuran gagal: perkiraan kasar */
+    var fb=parseFloat(sp && sp.style ? sp.style.width : '');
+    if(fb>0) return fb;
+    w=t.length*0.16;
+  }
+  return Math.max(0.4, Math.round((w+SPK_NUM_GAP)*100)/100);
 }
 /* Token nomor sebuah paragraf ('' bila paragraf tidak bernomor) */
 function spkPkTok(p){
@@ -18161,6 +18172,14 @@ function spkPkIndentStd(html){
         var q=g2.items[m], sp=q.p.firstElementChild;
         sp.style.width=g2.W.toFixed(2)+'cm';
         sp.style.minWidth=g2.W.toFixed(2)+'cm';
+        /* Penanda ANGKA dirata-kanankan di dalam kotaknya, huruf & bullet rata
+           kiri. Dengan begitu titik penutup seluruh nomor dalam satu deret lurus
+           pada satu garis dan jarak nomor -> teks selalu sama — termasuk saat
+           deret memuat nomor satu digit dan dua digit sekaligus
+           (mis. "2.9." bersama "2.16."). Inilah bentuk rapi yang dimaksud. */
+        sp.style.textAlign = spkPkSegs(q.tok) ? 'right' : 'left';
+        sp.style.boxSizing='border-box';
+        sp.style.paddingRight=SPK_NUM_GAP+'cm';   /* jeda tetap ke teks */
         q.p.style.marginLeft=(g2.base+g2.W).toFixed(2)+'cm';
         q.p.style.textIndent='-'+g2.W.toFixed(2)+'cm';
         q.p.style.paddingLeft='0cm';
@@ -21632,8 +21651,13 @@ function spkDocHtml(data, klausul){
     return '<div class="spk-clause"><div class="spk-cl-h"><span class="n"></span>'+spkFmtJudul(k.judul)+'</div>'+
       '<div class="spk-cl'+spkLeadIndentCls(inner)+'">'+inner+'</div></div>';
   }).join('');
+  /* Judul dokumen. Pada Perjanjian/Kontrak nomornya TIDAK ditulis lagi di sini,
+     karena tepat di bawahnya sudah ada blok "Nomor PIHAK PERTAMA / PIHAK KEDUA"
+     yang memuat nomor yang sama — kalau ditulis dua kali jadi kembar. Bentuk
+     Surat Perintah Kerja tidak punya blok itu, jadi nomornya tetap ditampilkan. */
+  const _babNo = (!_isPkDoc && data.nomor_kontrak) ? ('<span>'+esc(data.nomor_kontrak)+'</span>') : '';
   const isiBody=
-    '<div class="spk-bab"><b>'+esc(spkDokLabel(data))+'</b>'+(data.nomor_kontrak?('<span>'+esc(data.nomor_kontrak)+'</span>'):'')+'</div>'+
+    '<div class="spk-bab"><b>'+esc(spkDokLabel(data))+'</b>'+_babNo+'</div>'+
     '<div class="spk-cl">'+preambleAtas+'</div>'+
     (preambleMenugaskan ? '<div class="spk-cl spk-forcepage">'+preambleMenugaskan+'</div>' : '')+
     clausesHtml+
