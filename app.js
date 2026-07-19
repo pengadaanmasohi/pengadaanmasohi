@@ -15121,6 +15121,8 @@ const SPK_SK_KEYS = ['nama_pengguna','jabatan_pengguna','no_sk','tgl_sk','nama_u
    only:'SPK' hanya pada Surat Perintah Kerja; tanpa atribut = keduanya.
    Label alternatif memakai lPk (label saat Perjanjian/Kontrak).
    ========================================================================= */
+/* Pilihan Metode Pengadaan untuk Perjanjian/Kontrak (tender) */
+const SPK_METODE_PK_OPTS = ['Tender Terbatas','Tender Terbuka','Seleksi Umum','Seleksi Terbatas','Penunjukan Langsung','Tender Cepat'];
 const SPK_BENTUK_OPTS = [
   {v:'SPK', l:'Surat Perintah Kerja'},
   {v:'PK',  l:'Perjanjian/Kontrak'}
@@ -15154,7 +15156,11 @@ const SPK_FIELD_GROUPS = [
     {k:'jenis_anggaran', l:'Jenis Anggaran', t:'text', dpLock:true, def:''},
     {k:'no_anggaran', l:'No. Anggaran', t:'text', span:2, dpLock:true, def:''},
     {k:'tgl_anggaran', l:'Tgl. Anggaran', t:'date', dpLock:true, def:''},
-    {k:'metode_pengadaan', l:'Metode Pengadaan', t:'text', dpLock:true, def:''},
+    /* Metode Pengadaan: Surat Perintah Kerja memakai isian teks (umumnya terisi
+       otomatis "Pengadaan Langsung" dari Data Pekerjaan); Perjanjian/Kontrak
+       memakai dropdown metode tender — opsi sama dengan Monitoring Tender. */
+    {k:'metode_pengadaan', l:'Metode Pengadaan', t:'text', dpLock:true, only:'SPK', def:''},
+    {k:'metode_pengadaan', l:'Metode Pengadaan', t:'select', opts:SPK_METODE_PK_OPTS, dpLock:true, only:'PK', def:''},
     {k:'no_rks', l:'No. RKS', t:'text', span:2, only:'PK', def:''},
     {k:'tgl_rks', l:'Tgl. RKS', t:'date', only:'PK', def:''},
     {k:'no_eproc', l:'No. Eproc', t:'text', span:2, def:''},
@@ -15837,6 +15843,9 @@ function spkRecordToState(rec){
     const _apr=String(data.akta_perubahan||'').trim();
     data.ada_akta_perubahan = (_apr!=='' && _apr!==String(SPK_DEF_AKTA_PERUBAHAN).trim()) ? 'Ya' : 'Tidak';
   }
+  // Selaraskan frasa "beserta akta-akta Perubahannya" saat kontrak lama dibuka
+  if(typeof spkAktaPendirianSync==='function')
+    data.akta_pendirian = spkAktaPendirianSync(data.akta_pendirian, data.ada_akta_perubahan);
   let sel;
   if(rec && Array.isArray(rec.klausul) && rec.klausul.length){ sel=rec.klausul.map(k=>String(k.id)); }
   else sel=base.sel;
@@ -16615,8 +16624,24 @@ function spkSetAdaAktaPerubahan(v){
   if(!spkState) return;
   spkState.data.ada_akta_perubahan=v;
   if(String(v)!=='Ya') spkState.data.akta_perubahan = SPK_DEF_AKTA_PERUBAHAN;
+  /* Frasa "beserta akta-akta Perubahannya" pada Rincian Akta Pendirian mengikuti
+     pilihan ini — ikut hilang/muncul di ISIAN FORM, bukan hanya di pratinjau.
+     Tanpa akta perubahan: frasa beserta spasi sebelumnya dibuang sehingga teks
+     berakhir pada tanggal SK Kemenkumham. */
+  spkState.data.akta_pendirian = spkAktaPendirianSync(spkState.data.akta_pendirian, v);
   spkRefreshAuto();
   renderSpkSusun();
+}
+/* Selaraskan Rincian Akta Pendirian dengan pilihan "Akta Perubahan?" */
+const SPK_RE_BESERTA = /\s*beserta\s+akta\s*-\s*akta\s+perubahan(?:nya)?\b\.?/i;
+function spkAktaPendirianSync(teks, ada){
+  var t=String(teks==null?'':teks);
+  if(String(ada)==='Ya'){
+    if(!SPK_RE_BESERTA.test(t)) t = t.replace(/[.\s]+$/,'') + ' beserta akta-akta Perubahannya';
+  }else{
+    t = t.replace(SPK_RE_BESERTA,'').replace(/\s+$/,'');   // frasa + spasi sebelumnya dibuang
+  }
+  return t;
 }
 function spkSetRupiah(k,el){
   const digits=String(el.value).replace(/[^0-9]/g,'');
@@ -16642,26 +16667,40 @@ function spkEnsureBentukStyle(){
   if(document.getElementById('spk-bentuk-style')) return;
   var css=
     '.spk-bentuk-bar{display:flex;align-items:center;justify-content:flex-end;gap:12px;flex-wrap:wrap;margin:0 0 12px}'+
-    '.spk-bentuk-tag{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:700;letter-spacing:.04em;'+
-      'padding:6px 12px;border-radius:999px;border:1px solid transparent}'+
-    '.spk-bentuk-tag.is-spk{background:#FDF3D4;color:#8A6A00;border-color:#F2D68A}'+
-    '.spk-bentuk-tag.is-pk{background:#E8EFFA;color:#1B3A6B;border-color:#C3D2EA}'+
+    /* Varian SEJAJAR: dipakai di dalam judul kartu "Informasi Pengadaan",
+       berdampingan di sebelah kanan tombol Pilih Pekerjaan. */
+    '.spk-bentuk-bar.is-inline{margin:0 0 0 10px;justify-content:flex-end;gap:10px}'+
+    /* ---- Efek 3D (timbul) pada penanda & pemilih Bentuk Kontrak ---- */
+    '.spk-bentuk-tag{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:800;letter-spacing:.04em;'+
+      'padding:7px 13px;border-radius:999px;border:1px solid transparent;position:relative;'+
+      'text-shadow:0 1px 0 rgba(255,255,255,.75);transition:transform .16s ease,box-shadow .16s ease}'+
+    '.spk-bentuk-tag.is-spk{background:linear-gradient(180deg,#FFF8E2,#F7E4AE);color:#7A5C00;border-color:#E8C97A;'+
+      'box-shadow:0 3px 0 #DDB85C,0 6px 12px rgba(122,92,0,.22),inset 0 1px 0 rgba(255,255,255,.9)}'+
+    '.spk-bentuk-tag.is-pk{background:linear-gradient(180deg,#EDF3FC,#CFDDF2);color:#12304F;border-color:#A9C0E0;'+
+      'box-shadow:0 3px 0 #93AED4,0 6px 12px rgba(18,48,79,.22),inset 0 1px 0 rgba(255,255,255,.9)}'+
+    '.spk-bentuk-tag:hover{transform:translateY(-1px)}'+
     '.spk-bentuk{display:inline-flex;align-items:center;gap:9px}'+
-    '.spk-bentuk > span{font-size:11px;font-weight:700;letter-spacing:.06em;color:#5b6670;text-transform:uppercase}'+
-    '.spk-bentuk select{min-width:210px;font-size:12px;padding:9px 12px;border-radius:11px;border:1px solid #cdd9de;'+
-      'background:linear-gradient(180deg,#ffffff,#fafdfe);color:#12242b;font-weight:600;cursor:pointer}'+
-    '.spk-bentuk select:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,124,134,.16)}';
+    '.spk-bentuk > span{font-size:11px;font-weight:800;letter-spacing:.06em;color:#5b6670;text-transform:uppercase}'+
+    '.spk-bentuk select{min-width:210px;font-size:12px;padding:9px 12px;border-radius:11px;border:1px solid #c3d1d7;'+
+      'background:linear-gradient(180deg,#ffffff,#eef4f6);color:#12242b;font-weight:700;cursor:pointer;'+
+      'box-shadow:0 3px 0 #cbd8dd,0 6px 14px rgba(16,40,50,.16),inset 0 1px 0 rgba(255,255,255,.95);'+
+      'transition:transform .16s ease,box-shadow .16s ease}'+
+    '.spk-bentuk select:hover{transform:translateY(-1px);box-shadow:0 4px 0 #cbd8dd,0 9px 18px rgba(16,40,50,.18),inset 0 1px 0 rgba(255,255,255,.95)}'+
+    '.spk-bentuk select:active{transform:translateY(2px);box-shadow:0 1px 0 #cbd8dd,0 2px 6px rgba(16,40,50,.16),inset 0 1px 0 rgba(255,255,255,.95)}'+
+    '.spk-bentuk select:focus{outline:none;border-color:var(--teal);box-shadow:0 3px 0 #cbd8dd,0 0 0 3px rgba(14,124,134,.18)}'+
+    '@media (max-width:760px){.spk-bentuk-bar.is-inline{margin:8px 0 0;flex:1 1 100%}.spk-bentuk select{min-width:0;flex:1 1 auto}}';
   var st=document.createElement('style'); st.id='spk-bentuk-style'; st.textContent=css;
   (document.head||document.documentElement).appendChild(st);
 }
-function spkBentukBarHtml(){
+/* inline=true -> dipakai di dalam judul kartu, sejajar tombol Pilih Pekerjaan */
+function spkBentukBarHtml(inline){
   spkEnsureBentukStyle();
   var cur=spkBentuk();
   var opts=SPK_BENTUK_OPTS.map(function(o){
     return '<option value="'+o.v+'"'+(o.v===cur?' selected':'')+'>'+fkEsc(o.l)+'</option>';
   }).join('');
   var lbl=(cur==='PK')?'Perjanjian/Kontrak':'Surat Perintah Kerja';
-  return '<div class="spk-bentuk-bar">'+
+  return '<div class="spk-bentuk-bar'+(inline?' is-inline':'')+'">'+
     '<span class="spk-bentuk-tag '+(cur==='PK'?'is-pk':'is-spk')+'">'+
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>'+
       fkEsc(lbl)+'</span>'+
@@ -16696,7 +16735,9 @@ function renderSpkSusun(){
     }).join('');
     // Tombol "Pilih Pekerjaan" (pojok kanan atas kartu pertama) — sama seperti pada
     // menu Harga Perkiraan Sendiri. Mengisi field mail merge & Lampiran dari HPS.
-    const pickBtn = (gi===0) ? dpPickBtnHtml('spk') : '';
+    /* Kartu pertama: tombol Pilih Pekerjaan, lalu pemilih Bentuk Kontrak
+       tepat di sebelah kanannya (sejajar dalam satu baris judul kartu). */
+    const pickBtn = (gi===0) ? (dpPickBtnHtml('spk')+spkBentukBarHtml(true)) : '';
     const secIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M4 4h16v16H4z" opacity="0"/><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>';
     // Kartu "Informasi Penyedia" mendapat bar Profil (Simpan / Muat / Batalkan) di kanan-atas.
     /* Judul bagian dapat berbeda pada Perjanjian/Kontrak (mis. "SK Pimpinan Unit"
@@ -16727,8 +16768,10 @@ function renderSpkSusun(){
 
   // Penanda langkah (stepper) — empat langkah: 1) Data Mail Merge, 2) Ubah Klausul Kontrak, 3) Pilih Klausul, 4) Lampiran
   const stp=(no,label)=> '<button type="button" class="spk-stp'+(spkStep===no?' active':(spkStep>no?' done':''))+'" onclick="spkGoStep('+no+')"><span class="spk-stp-no">'+(spkStep>no?'&#10003;':no)+'</span> '+label+'</button>';
+  /* Pada Langkah 1 pemilih Bentuk Kontrak menyatu dengan judul kartu pertama;
+     pada langkah lain (tanpa kartu tsb) tetap tampil sebagai bar di kanan atas. */
   const stepper =
-    spkBentukBarHtml()+
+    (spkStep===1 ? '' : spkBentukBarHtml())+
     '<div class="spk-stepper">'+
       stp(1,'Data Kontrak')+
       '<div class="spk-stp-line"></div>'+
