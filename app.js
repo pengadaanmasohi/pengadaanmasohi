@@ -18041,7 +18041,7 @@ function spkPkSubNumberFix(html){
   if(s.indexOf('class="n')<0) return s;
   try{
     var box=document.createElement('div'); box.innerHTML=s;
-    var ps=box.querySelectorAll('p'), i, jalur=[], ubah=false;
+    var ps=box.querySelectorAll('p'), i, jalur=[], ubah=false, refMap={};
     for(i=0;i<ps.length;i++){
       var p=ps[i], tok=spkPkTok(p);
       if(!tok) continue;
@@ -18059,8 +18059,13 @@ function spkPkSubNumberFix(html){
       var idx=(jalur.length>=d) ? jalur[d-1]+1 : 1;   /* lanjut, atau mulai dari 1 */
       jalur=jalur.slice(0,d-1); jalur.push(idx);
       var baru=jalur.join('.')+'.';
-      if(baru!==tok){ p.firstElementChild.textContent=baru; ubah=true; }
+      if(baru!==tok){
+        refMap[tok.replace(/\.$/,'')]=baru.replace(/\.$/,'');
+        p.firstElementChild.textContent=baru; ubah=true;
+      }
     }
+    /* rujukan di dalam kalimat mengikuti nomor butir yang baru */
+    try{ if(spkRefRemap(box, refMap)) ubah=true; }catch(e){}
     return ubah ? box.innerHTML : s;
   }catch(e){ return s; }
 }
@@ -18420,12 +18425,42 @@ function spkPkKeepDlist(html, isPk){
   }catch(e){ return s; }
 }
 
+/* ---- (5) SERAGAMKAN KATA RUJUKAN: "poin" -> "butir" ----
+   Pada Perjanjian/Kontrak satuan terkecil disebut BUTIR. Sebagian klausul warisan
+   menulis rujukan dengan kata "poin" (mis. "ayat 1 poin 37.2") sehingga dalam satu
+   kalimat bisa muncul dua istilah untuk hal yang sama ("ayat 1 butir 37.1 … ayat 1
+   poin 37.2"). Di sini kata itu diseragamkan menjadi "butir".
+   Penggantian HANYA dilakukan bila kata tersebut benar-benar dipakai sebagai kata
+   rujukan, yaitu langsung diikuti nomor ("poin 37.2", "poin 3"). Pemakaian biasa
+   di dalam kalimat ("poin penting", "titik poin") tidak tersentuh. Bekerja pada
+   simpul teks, bukan HTML mentah, jadi tidak mungkin mengubah nama kelas/atribut.
+   Huruf besar di awal kata dipertahankan: "Poin 2" -> "Butir 2". */
+function spkPkPoinToButir(html){
+  var s=String(html==null?'':html);
+  if(!/poin|point/i.test(s)) return s;
+  try{
+    var box=document.createElement('div'); box.innerHTML=s;
+    var reI=/\b(poin|point)([\s\u00A0]+)(?=\d)/gi;
+    var w=document.createTreeWalker(box, NodeFilter.SHOW_TEXT, null, false), n, nodes=[];
+    while((n=w.nextNode())) nodes.push(n);
+    var ubah=false;
+    nodes.forEach(function(nd){
+      var v=nd.nodeValue; if(!v) return;
+      var out=v.replace(reI, function(m, kata, sp){
+        var besar=/^[A-Z]/.test(kata);
+        return (besar?'Butir':'butir')+sp;
+      });
+      if(out!==v){ nd.nodeValue=out; ubah=true; }
+    });
+    return ubah ? box.innerHTML : s;
+  }catch(e){ return s; }
+}
 /* Pembungkus: dipakai di titik perakitan dokumen, hanya untuk bentuk PK */
 function spkPkTidy(html, isPk){
   if(!isPk) return html;                 /* SPK: kembalikan apa adanya */
   /* Urutan penting: kotakkan penanda dulu supaya perbaikan nomor & inden
      bekerja pada SELURUH butir, termasuk yang lolos dari spkNumberFix. */
-  return spkPkIndentStd(spkPkSubNumberFix(spkPkBoxMark(html)));
+  return spkPkPoinToButir(spkPkIndentStd(spkPkSubNumberFix(spkPkBoxMark(html))));
 }
 
 function spkNumberFix(html){
@@ -20805,6 +20840,59 @@ function spkNarasiHtml(v){
   return /<p[\s>]/i.test(s) ? s : spkFormatNarasi(s);
 }
 /* Tulis ulang nomor di awal paragraf (mis. "1.4." -> "1.1.") */
+/* =========================================================================
+   RUJUKAN SILANG ANTAR-BUTIR DALAM SATU PASAL
+   Nomor butir disusun ulang otomatis (butir contoh dibuang di spkPruneKlausul,
+   nomor majemuk disusun dari silsilah di spkPkSubNumberFix). Yang TIDAK ikut
+   berubah dulu adalah angka yang DITULIS DI DALAM KALIMAT, mis. "sebagaimana
+   diatur pada butir 2.8 Pasal ini" — begitu butir 2.5 dihapus, butir 2.8 menjadi
+   2.7 sedangkan kalimatnya tetap menyebut 2.8 (menunjuk butir yang salah).
+   Di sini rujukan itu ikut ditulis ulang memakai peta lama->baru yang dibuat
+   oleh fungsi yang menomori ulang. Seluruh penggantian dilakukan SEKALI JALAN
+   dari peta, jadi pergeseran berantai (2.8->2.7 sementara 2.7->2.6) tidak saling
+   menimpa.
+   Cakupan sengaja DIBATASI pada rujukan di dalam Pasal yang sama (sesuai
+   pemakaian nyata) dan HANYA angka yang didahului kata rujukan (butir / angka /
+   ayat / poin / sub-butir). Pembatasan kata rujukan ini penting supaya angka
+   lain di dalam kalimat — nilai rupiah, tanggal, nomor surat — tidak pernah
+   tersentuh. Rangkaian rujukan ikut tertangani: "butir 2.8, 2.9 dan 2.10".
+   Rujukan ke butir yang DIHAPUS tidak diubah (tidak ada nomor penggantinya);
+   angkanya dibiarkan apa adanya agar terlihat saat diperiksa.
+   ========================================================================= */
+var SPK_REF_KATA = '(?:butir|sub-?butir|angka|ayat|poin|point)';
+/* Token nomor majemuk di AWAL sebuah blok, tanpa titik penutup: "2.8." -> "2.8" */
+function spkTokOf(el){
+  var t=String((el&&el.textContent)||'').replace(/[\s\u00A0]+/g,' ').trim();
+  var m=/^(\d{1,2}(?:\.\d{1,2})+)\.?/.exec(t);
+  return m ? m[1] : '';
+}
+function spkRefRemap(root, map){
+  if(!root || !map) return false;
+  var ada=false, kk; for(kk in map){ ada=true; break; }
+  if(!ada) return false;
+  var NUM='\\d{1,2}(?:\\.\\d{1,2})+\\.?';
+  var SAMB='(?:,|dan\\/atau|dan|serta|s\\.?d\\.?|sampai dengan)';
+  var re=new RegExp('('+SPK_REF_KATA+')([\\s\\u00A0]+)((?:'+NUM+')(?:[\\s\\u00A0]*'+SAMB+'[\\s\\u00A0]*'+NUM+')*)','gi');
+  var reNum=new RegExp(NUM,'g');
+  var w=document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false), n, nodes=[];
+  while((n=w.nextNode())) nodes.push(n);
+  var ubah=false;
+  nodes.forEach(function(nd){
+    /* kotak nomor butir (<span class="n">) bukan rujukan — sudah ditangani sendiri */
+    var q=nd.parentNode;
+    while(q && q!==root){ if(q.classList && q.classList.contains('n')) return; q=q.parentNode; }
+    var v=nd.nodeValue;
+    if(!v || v.indexOf('.')<0) return;
+    var out=v.replace(re, function(m, kata, sp, daftar){
+      return kata+sp+daftar.replace(reNum, function(t){
+        var titik=/\.$/.test(t), key=t.replace(/\.$/,'');
+        return map[key] ? (map[key]+(titik?'.':'')) : t;
+      });
+    });
+    if(out!==v){ nd.nodeValue=out; ubah=true; }
+  });
+  return ubah;
+}
 function spkSetTok(el, tok){
   var w=document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null, false), n, v;
   while((n=w.nextNode())){
@@ -20914,22 +21002,28 @@ function spkPruneKlausul(html, klNo, data){
   });
 
   /* --- 4) Susun ulang & nomori ulang otomatis --- */
-  var out=document.createElement('div'), i=0;
+  var out=document.createElement('div'), i=0, refMap={};
   pre.forEach(function(e){ if(!spkIsPhBlock(e)) out.appendChild(e); });
   items.forEach(function(it){
     if(it.drop) return;
     i++;
+    var tokLama=spkTokOf(it.head), tokBaru=klNo+'.'+i;
+    if(tokLama && tokLama!==tokBaru) refMap[tokLama]=tokBaru;
     spkSetTok(it.head, klNo+'.'+i+'.');
     out.appendChild(it.head);
     var j=0;
     it.kids.forEach(function(k){
       if(k.t==='blk'){ out.appendChild(k.el); return; }
       j++;
+      var sLama=spkTokOf(k.s.head), sBaru=klNo+'.'+i+'.'+j;
+      if(sLama && sLama!==sBaru) refMap[sLama]=sBaru;
       spkSetTok(k.s.head, klNo+'.'+i+'.'+j+'.');
       out.appendChild(k.s.head);
       k.s.body.forEach(function(e){ out.appendChild(e); });
     });
   });
+  /* rujukan di dalam kalimat mengikuti penomoran baru */
+  try{ spkRefRemap(out, refMap); }catch(e){}
   return out.innerHTML;
 }
 /* =========================================================================
