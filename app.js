@@ -15629,6 +15629,14 @@ var SPK_ASING = [
   /* --- Tambahan kata tunggal asing --- */
   'invoice','schedule','subcontractor','warranty','retention','defect',
   'housekeeping','mockup','rework','punchlist','staging','breakdown',
+  /* --- Tata kelola, kepatuhan & anti-penyuapan (lazim pada klausul Definisi,
+     Integritas, dan Anti Penyuapan dokumen Perjanjian/Kontrak) --- */
+  'integrity due diligence','due diligence','good corporate governance',
+  'code of conduct','conflict of interest','anti bribery','anti-bribery',
+  'know your customer','risk assessment','business partner','third party',
+  'whistle blowing system','whistle blowing','whistleblowing','whistleblower',
+  'compliance','bribery','fraud','screening','stakeholder','red flag',
+  'management system','top management','awareness','commitment',
   /* --- Istilah asing yang lazim pada Nama Pekerjaan (dimiringkan hanya saat Nama
      Pekerjaan tertulis di dalam isi klausul; "and" disertakan agar frasa asing
      tampil miring utuh, mis. "Equipment Safety and Healthy") --- */
@@ -17306,6 +17314,10 @@ function spkDocCss(){
      (No. Eproc / No. / Tanggal). Menjorok 1,2 cm = 0,5 cm pergeseran daftar
      + 0,7 cm lebar kotak nomor, sehingga sejajar dengan TEKS butir di atasnya,
      bukan dengan nomornya. */
+  /* Pembungkus "jangan dipecah" (PK): butir daftar Berdasarkan + baris
+     No./Tanggal miliknya. Tanpa gaya visual sama sekali — hanya penanda
+     bagi paginator agar blok ini pindah halaman secara utuh. */
+  '.spk-cl .spk-keep{margin:0;padding:0;border:0;background:none;break-inside:avoid;page-break-inside:avoid}'+
   '.spk-cl .spk-kv.spk-dkv{margin:0 0 4pt 1.2cm}'+
   '.spk-cl .spk-kv.spk-dkv .k{flex:0 0 3.6cm;max-width:3.6cm}'+
   '.spk-cl .spk-kv.spk-dkv .s{flex:0 0 auto;width:0.6em}'+
@@ -17991,52 +18003,128 @@ function spkPkSubNumberFix(html){
 }
 
 /* ---- (2) INDEN STANDAR ----
-   Acuan (sesuai contoh yang diminta): penanda butir tingkat-1 mulai tepat di
-   BATAS MARGIN kiri, dan penanda tingkat-2 (a. b. c.) mulai tepat di kolom
-   TEKS tingkat-1 — sehingga huruf "a" sejajar dengan teks sesudah "1.".
-   Langkah inden = lebar kotak nomor tingkat-1 yang sesungguhnya dipakai di
-   klausul itu (bukan angka tetap 0,75 cm), jadi tidak pernah meleset.
-   Nomor majemuk ("2.1.") diperlakukan sebagai tingkat-1; huruf & bullet
-   sebagai tingkat-2; "2.1.1." mengambil tingkat-2 bila ada induk majemuknya. */
+   Satu KISI tetap seperti Word: tiap tingkat menjorok satu langkah (0,75 cm)
+   ke kanan dari BARIS PENOMORAN induknya.
+     tingkat-1  "1."      penanda di 0      -> teksnya mulai di 0,75 cm
+     tingkat-2  "a."      penanda di 0,75   -> teksnya mulai di 1,50 cm
+     tingkat-3  "-"       penanda di 1,50   -> teksnya mulai di 2,25 cm
+   Karena lebar kotak nomor dipatok = langkah, teks tingkat-1 dan penanda
+   tingkat-2 jatuh di kolom yang SAMA. Nomor yang lebih lebar dari langkah
+   (mis. "2.10.") memakai lebarnya sendiri supaya tidak menabrak teks. */
+var SPK_PK_STEP = 0.75;                 /* langkah inden standar (cm) */
+
+/* Tingkat sebuah penanda: 1, 2, atau 3. `prev` = tingkat butir bernomor
+   terakhir di atasnya, dipakai untuk penanda bullet/tanda hubung yang
+   tingkatnya selalu satu di bawah butir induknya. */
+function spkPkLevel(tok, prev){
+  if(/^[0-9]+[.)]$/.test(tok)) return 1;                 /* 1.  2.  10. */
+  if(/^(?:[0-9]+\.){2}$/.test(tok)) return 1;            /* 2.1.        */
+  if(/^(?:[0-9]+\.){3,}$/.test(tok)) return 2;           /* 2.1.1.      */
+  if(/^[A-Za-z][.)]$/.test(tok)) return 2;               /* a.  b.  A)  */
+  if(/^[ivxlcdmIVXLCDM]{1,4}[.)]$/.test(tok)) return 2;  /* i. ii. IV.  */
+  /* bullet / tanda hubung -> satu tingkat di bawah butir induknya */
+  return Math.min(3, (prev||1)+1);
+}
 function spkPkIndentStd(html){
   var s=String(html==null?'':html);
   if(s.indexOf('class="n')<0) return s;
   try{
     var box=document.createElement('div'); box.innerHTML=s;
-    var ps=box.querySelectorAll('p'), i, p, tok, w;
-    /* langkah inden = kotak nomor tingkat-1 TERLEBAR pada klausul ini */
-    var step=0;
+    var ps=box.querySelectorAll('p'), i, p, tok, W, lvl, prev=1;
+    var STEP=SPK_PK_STEP;
     for(i=0;i<ps.length;i++){
       p=ps[i]; tok=spkPkTok(p); if(!tok) continue;
-      if(!/^[0-9]+\.$/.test(tok) && !/^(?:[0-9]+\.){2,}$/.test(tok)) continue;
-      w=spkPkNumW(p.firstElementChild); if(w>step) step=w;
-    }
-    if(!(step>0)) step=0.75;
-    step=Math.round(step*100)/100;
-
-    for(i=0;i<ps.length;i++){
-      p=ps[i]; tok=spkPkTok(p); if(!tok) continue;
-      w=spkPkNumW(p.firstElementChild);
-      /* tingkat-1: nomor angka tunggal ("2.") maupun majemuk ("2.1.")
-         tingkat-2: huruf (a. b.), romawi, bullet, dan angka 3 tingkat ("2.1.1.") */
-      var lvl1 = /^[0-9]+\.$/.test(tok) || /^(?:[0-9]+\.){2}$/.test(tok);
-      var base = lvl1 ? 0 : step;
-      p.style.marginLeft=(base+w).toFixed(2)+'cm';
-      p.style.textIndent='-'+w.toFixed(2)+'cm';
+      lvl=spkPkLevel(tok, prev);
+      /* butir bernomor/berhuruf menjadi acuan tingkat bagi bullet di bawahnya */
+      if(/^[0-9A-Za-z]/.test(tok)) prev=lvl;
+      /* Lebar kotak = langkah; hanya dilebarkan bila nomornya memang lebih panjang. */
+      W=Math.max(STEP, spkPkNumW(p.firstElementChild));
+      W=Math.round(W*100)/100;
+      p.firstElementChild.style.width=W.toFixed(2)+'cm';
+      p.firstElementChild.style.minWidth=W.toFixed(2)+'cm';
+      p.style.marginLeft=((lvl-1)*STEP+W).toFixed(2)+'cm';
+      p.style.textIndent='-'+W.toFixed(2)+'cm';
       p.style.paddingLeft='0cm';
     }
-    /* Paragraf narasi yang menempel di bawah butir ikut memakai langkah yang sama */
+    /* Paragraf narasi lanjutan ikut kisi yang sama */
     var np=box.querySelectorAll('p.klp1, p.kldesc');
-    for(i=0;i<np.length;i++) np[i].style.marginLeft=step.toFixed(2)+'cm';
+    for(i=0;i<np.length;i++) np[i].style.marginLeft=STEP.toFixed(2)+'cm';
     var np2=box.querySelectorAll('p.klp2');
-    for(i=0;i<np2.length;i++) np2[i].style.marginLeft=(step*2).toFixed(2)+'cm';
+    for(i=0;i<np2.length;i++) np2[i].style.marginLeft=(STEP*2).toFixed(2)+'cm';
     return box.innerHTML;
   }catch(e){ return s; }
 }
+
+/* ---- (3) SUB-POIN TANDA HUBUNG ----
+   Butir yang diawali "-", "–", atau "—" belum dikenali spkNumberFix (daftar
+   simbolnya tidak memuat tanda hubung), sehingga tetap berupa teks biasa dan
+   indennya kacau. Di sini tanda hubung dikotakkan seperti penanda lain supaya
+   ikut masuk kisi inden standar. */
+function spkPkBoxDash(html){
+  var s=String(html==null?'':html);
+  if(s.indexOf('<p')<0) return s;
+  try{
+    var box=document.createElement('div'); box.innerHTML=s;
+    var ps=box.querySelectorAll('p'), i, ubah=false;
+    for(i=0;i<ps.length;i++){
+      var p=ps[i];
+      var fe=p.firstElementChild;
+      if(fe && fe.tagName==='SPAN' && fe.classList && fe.classList.contains('n')) continue;
+      var w=document.createTreeWalker(p, NodeFilter.SHOW_TEXT, null, false), tn, first=null;
+      while((tn=w.nextNode())){ if(tn.nodeValue && tn.nodeValue.replace(/[\s\u00A0]/g,'')){ first=tn; break; } }
+      if(!first || first.parentNode!==p) continue;
+      var mm=/^([\s\u00A0]*)([-\u2013\u2014])([\s\u00A0]+)/.exec(first.nodeValue);
+      if(!mm) continue;
+      first.nodeValue=first.nodeValue.slice(mm[0].length);
+      var span=document.createElement('span');
+      span.className='n';
+      span.setAttribute('style','display:inline-block;box-sizing:border-box;text-indent:0;white-space:nowrap;text-align:left');
+      span.textContent=mm[2];
+      p.insertBefore(span, p.firstChild);
+      p.classList.add('spk-sl');
+      ubah=true;
+    }
+    return ubah ? box.innerHTML : s;
+  }catch(e){ return s; }
+}
+
+/* ---- (4) IKAT BUTIR DAFTAR "BERDASARKAN" DENGAN No./Tanggal-NYA ----
+   Butir seperti "24. Berita Acara Klarifikasi dan Negosiasi" diikuti baris
+   "No. : …" & "Tanggal : …" (.spk-kv.spk-dkv). Ketiganya dibungkus satu
+   <div class="spk-keep"> yang oleh paginator diperlakukan sebagai blok utuh,
+   jadi bila tidak muat, SELURUHNYA turun ke halaman berikutnya. */
+function spkPkKeepDlist(html, isPk){
+  if(!isPk) return html;
+  var s=String(html==null?'':html);
+  if(s.indexOf('spk-dkv')<0) return s;
+  try{
+    var box=document.createElement('div'); box.innerHTML=s;
+    var kids=[], k=box.firstChild;
+    while(k){ if(k.nodeType===1) kids.push(k); k=k.nextSibling; }
+    var i=0, ubah=false;
+    while(i<kids.length){
+      var el=kids[i];
+      var isBtr = el.tagName==='P' && el.classList && el.classList.contains('spk-dlist');
+      if(!isBtr){ i++; continue; }
+      var j=i+1, grup=[el];
+      while(j<kids.length && kids[j].classList && kids[j].classList.contains('spk-dkv')){
+        grup.push(kids[j]); j++;
+      }
+      if(grup.length<2){ i=j>i?j:i+1; continue; }      /* butir tanpa No./Tanggal -> biarkan */
+      var wrap=document.createElement('div');
+      wrap.className='spk-keep';
+      box.insertBefore(wrap, el);
+      for(var g=0; g<grup.length; g++) wrap.appendChild(grup[g]);
+      ubah=true; i=j;
+    }
+    return ubah ? box.innerHTML : s;
+  }catch(e){ return s; }
+}
+
 /* Pembungkus: dipakai di titik perakitan dokumen, hanya untuk bentuk PK */
 function spkPkTidy(html, isPk){
   if(!isPk) return html;                 /* SPK: kembalikan apa adanya */
-  return spkPkIndentStd(spkPkSubNumberFix(html));
+  return spkPkIndentStd(spkPkBoxDash(spkPkSubNumberFix(html)));
 }
 
 function spkNumberFix(html){
@@ -20929,6 +21017,7 @@ function spkPageScript(){
        Diperlakukan sebagai SATU blok utuh: bila tak cukup ruang, seluruhnya turun
        bersama ke halaman berikutnya — tanda tangan tidak pernah berdiri sendiri. */
     ' if(hasCls(n,"hps-tail")) return true;',
+    ' if(hasCls(n,"spk-keep")) return true;',
     ' if(hasCls(n,"spk-cl-h")||hasCls(n,"spk-kv")||hasCls(n,"spk-kvgrp")||hasCls(n,"spk-party")||hasCls(n,"spk-bab")||hasCls(n,"spk-sign")||hasCls(n,"spk-sign-eyebrow")||hasCls(n,"spk-lampsign")) return true;',
     ' return els(n).length===0;',
     '}',
@@ -21362,7 +21451,12 @@ function spkDocHtml(data, klausul){
   const toc=spkTocHtml(data, klausul);
   // 3) Isi kontrak (kop + footer berulang tiap halaman)
   const _tpl = (spkBentukOf(data)==='PK') ? spkPreamblePkTpl(data) : SPK_PREAMBLE_TPL;
+  const _isPkDoc = spkBentukOf(data)==='PK';
   let preamble = spkNomorToNo(spkNumberFix(spkTidyKeyValue(spkMerge(_tpl, ctx))));
+  /* PK: butir daftar "Berdasarkan" (mis. "24. Berita Acara Klarifikasi dan
+     Negosiasi") diikat menjadi satu blok utuh dengan baris No./Tanggal miliknya,
+     sehingga judul tidak pernah tertinggal sendirian di dasar halaman. */
+  preamble = spkPkKeepDlist(preamble, _isPkDoc);
   /* Paragraf "Maka dengan ini PIHAK PERTAMA menugaskan..." harus MEMULAI halaman
      baru. CSS break-before:page tidak berpengaruh karena halaman isi dipecah oleh
      paginator JS (spkPageScript), bukan oleh mesin cetak. Karena itu paragraf ini
@@ -21378,7 +21472,6 @@ function spkDocHtml(data, klausul){
      bernomor, butir-butir itu diberi indentasi kecil terhadap teks pengantar di
      atasnya — sesuai kelaziman dokumen Perjanjian/Kontrak. Klausul yang langsung
      dimulai dengan butir bernomor (mis. Pasal 1 DEFINISI) tetap rata margin. */
-  const _isPkDoc = spkBentukOf(data)==='PK';
   const clausesHtml = (klausul||[]).map((k,i)=>{
     const inner = spkPkTidy(spkKvGroup(spkKlItalicAsing(spkBoldPihak(spkNomorToNo(spkNumberFix(spkTidyKeyValue(
         spkPruneKlausul(spkMerge(spkRenumberKlausul(spkSortDefinisiIf(k.judul, k.isi||''), i+1), ctx), i+1, data)
