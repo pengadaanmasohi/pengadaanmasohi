@@ -24781,6 +24781,33 @@ try{ if(typeof spkInit==="function") spkInit(); }catch(e){ console.error("spkIni
     }catch(e){}
     return null;
   }
+  /* Ukuran DATABASE total (setara metrik Supabase) via RPC db_size() */
+  async function stDbSize(){
+    if(!_useSupa()) return null;
+    try{
+      var res=await _realDb().rpc('db_size');
+      if(res && !res.error && res.data!=null){
+        var d=res.data; if(Array.isArray(d)) d = d[0] && (d[0].db_size!=null?d[0].db_size:d[0]);
+        var n=Number(d);
+        if(!isNaN(n) && n>0) return n;
+      }
+    }catch(e){}
+    return null;
+  }
+  /* Ukuran STORAGE per bucket langsung dari katalog storage.objects via RPC storage_size() */
+  async function stStorageSizes(){
+    if(!_useSupa()) return null;
+    try{
+      var res=await _realDb().rpc('storage_size');
+      if(res && !res.error && Array.isArray(res.data)){
+        return res.data.map(function(r){
+          return { b: String(r.bucket_id||r.bucket||''), bytes: Number(r.bytes||0)||0, files: Number(r.files||0)||0 };
+        }).filter(function(r){ return r.b; });
+      }
+    }catch(e){}
+    return null;
+  }
+
   async function stBucketScan(bucket){
     var total=0, files=0, folders=[''], guard=0, capped=false;
     if(!_useSupa()) return {bytes:0,files:0,capped:false,missing:true};
@@ -24838,23 +24865,45 @@ try{ if(typeof spkInit==="function") spkInit(); }catch(e){ console.error("spkIni
       if(btn){ btn.disabled=false; btn.textContent='Segarkan'; }
       return;
     }
-    var data={ tables:[], buckets:[], totalRows:0, totalBytesDb:null, totalBytesSt:0, ts:Date.now() };
+    var data={ tables:[], buckets:[], totalRows:0, totalBytesDb:null, totalBytesTbl:null, totalBytesSt:0,
+               dbExact:false, stExact:false, ts:Date.now() };
     try{
+      /* --- DATABASE --- */
       var sizes=await stTableSizes();
       var counts=await Promise.all(ST_TABLES.map(function(x){ return stCount(x.t); }));
       ST_TABLES.forEach(function(x,i){
         var rows=counts[i];
         var bytes= sizes ? (sizes[x.t]!=null?sizes[x.t]:null) : null;
         if(typeof rows==='number') data.totalRows+=rows;
-        if(typeof bytes==='number'){ data.totalBytesDb=(data.totalBytesDb||0)+bytes; }
+        if(typeof bytes==='number'){ data.totalBytesTbl=(data.totalBytesTbl||0)+bytes; }
         data.tables.push({t:x.t,l:x.l,grp:x.grp,rows:rows,bytes:bytes});
       });
-      var bkt=await Promise.all(ST_BUCKETS.map(function(x){ return stBucketScan(x.b); }));
-      ST_BUCKETS.forEach(function(x,i){
-        var r=bkt[i]||{};
-        data.buckets.push({b:x.b,l:x.l,bytes:r.bytes||0,files:r.files||0,capped:!!r.capped,missing:!!r.missing});
-        data.totalBytesSt += (r.bytes||0);
-      });
+      var dbTotal=await stDbSize();
+      if(dbTotal!=null){ data.totalBytesDb=dbTotal; data.dbExact=true; }
+      else { data.totalBytesDb=data.totalBytesTbl; data.dbExact=false; }
+
+      /* --- STORAGE: utamakan RPC storage_size(), fallback ke pemindaian list() --- */
+      var known={}; ST_BUCKETS.forEach(function(x){ known[x.b]=x.l; });
+      var srows=await stStorageSizes();
+      if(srows){
+        data.stExact=true;
+        var seen={};
+        srows.forEach(function(r){
+          seen[r.b]=true;
+          data.buckets.push({b:r.b, l:known[r.b]||r.b, bytes:r.bytes, files:r.files, capped:false, missing:false});
+          data.totalBytesSt += r.bytes;
+        });
+        ST_BUCKETS.forEach(function(x){
+          if(!seen[x.b]) data.buckets.push({b:x.b, l:x.l, bytes:0, files:0, capped:false, missing:false});
+        });
+      } else {
+        var bkt=await Promise.all(ST_BUCKETS.map(function(x){ return stBucketScan(x.b); }));
+        ST_BUCKETS.forEach(function(x,i){
+          var r=bkt[i]||{};
+          data.buckets.push({b:x.b,l:x.l,bytes:r.bytes||0,files:r.files||0,capped:!!r.capped,missing:!!r.missing});
+          data.totalBytesSt += (r.bytes||0);
+        });
+      }
     }catch(e){ console.error('stScan:',e); }
     stRender(data);
     var btn2=document.getElementById('st-refresh'); if(btn2){ btn2.disabled=false; btn2.textContent='Segarkan'; }
@@ -24897,7 +24946,8 @@ try{ if(typeof spkInit==="function") spkInit(); }catch(e){ console.error("spkIni
           ? '<span class="st-kpi-l">Penyimpanan Database</span>'
             + '<span class="st-kpi-v">'+stFmt(data.totalBytesDb)+'</span>'
             + '<span class="st-kpi-mini"><span style="width:'+Math.max(dbPct,data.totalBytesDb>0?2:0)+'%"></span></span>'
-            + '<span class="st-kpi-sub">dari '+stFmt(ST_DB_QUOTA)+' &middot; <b>'+dbPct+'%</b> terpakai &middot; '+stNum(data.totalRows)+' baris</span>'
+            + '<span class="st-kpi-sub">dari '+stFmt(ST_DB_QUOTA)+' &middot; <b>'+dbPct+'%</b> terpakai &middot; '+stNum(data.totalRows)+' baris'
+              + ' &middot; '+(data.dbExact?'total database':'<i>estimasi tabel</i>')+'</span>'
           : '<span class="st-kpi-l">Total Baris Database</span>'
             + '<span class="st-kpi-v">'+stNum(data.totalRows)+'</span>'
             + '<span class="st-kpi-sub">ukuran byte: aktifkan RPC</span>' )
@@ -24906,13 +24956,22 @@ try{ if(typeof spkInit==="function") spkInit(); }catch(e){ console.error("spkIni
       + '<span class="st-kpi-txt"><span class="st-kpi-l">Penyimpanan File Storage</span>'
       + '<span class="st-kpi-v">'+stFmt(data.totalBytesSt)+'</span>'
       + '<span class="st-kpi-mini st"><span style="width:'+Math.max(stPct,data.totalBytesSt>0?2:0)+'%"></span></span>'
-      + '<span class="st-kpi-sub">dari '+stFmt(ST_ST_QUOTA)+' &middot; <b>'+stPct+'%</b> terpakai &middot; '+stNum(totalFiles)+' berkas</span>'
+      + '<span class="st-kpi-sub">dari '+stFmt(ST_ST_QUOTA)+' &middot; <b>'+stPct+'%</b> terpakai &middot; '+stNum(totalFiles)+' berkas'
+      + ' &middot; '+(data.stExact?'katalog storage':'<i>pemindaian berkas</i>')+'</span>'
       + '</span></div>';
     h+='</div>';
 
     // Kartu Database
     h+='<div class="st-card st-card-db"><div class="st-card-h"><span class="st-card-ic db"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg></span><b>Database</b> <span class="st-muted">jumlah baris per tabel</span></div>';
     if(data.totalBytesDb!=null){ h+=stBar(data.totalBytesDb, ST_DB_QUOTA, 'db'); }
+    if(data.dbExact){
+      var lain = (data.totalBytesTbl!=null) ? Math.max(0, data.totalBytesDb - data.totalBytesTbl) : null;
+      h+='<div class="st-hint">Angka di atas adalah <b>ukuran seluruh database</b> (sama dengan <i>Database Size</i> di dashboard Supabase): sudah termasuk indeks, skema <code>auth</code>/<code>storage</code>/<code>realtime</code>, dan katalog sistem.'
+       + (lain!=null?' Tabel aplikasi di bawah: <b>'+stFmt(data.totalBytesTbl)+'</b>; sisanya '+stFmt(lain)+' berupa indeks &amp; komponen sistem.':'')
+       + '</div>';
+    } else {
+      h+='<div class="st-hint">RPC <code>db_size()</code> belum tersedia \u2014 angka ini baru penjumlahan tabel aplikasi, jadi akan lebih kecil dari <i>Database Size</i> di dashboard Supabase.</div>';
+    }
     var curGrp=null;
     h+='<div class="st-list">';
     data.tables.forEach(function(r){
@@ -24927,6 +24986,11 @@ try{ if(typeof spkInit==="function") spkInit(); }catch(e){ console.error("spkIni
     // Kartu Storage
     h+='<div class="st-card st-card-st"><div class="st-card-h"><span class="st-card-ic st"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></span><b>Storage File</b> <span class="st-muted">ukuran per bucket</span></div>';
     h+=stBar(data.totalBytesSt, ST_ST_QUOTA, 'st');
+    h+='<div class="st-hint">'
+      + (data.stExact
+          ? 'Dihitung langsung dari katalog <code>storage.objects</code> (mencakup semua bucket).'
+          : 'RPC <code>storage_size()</code> belum tersedia \u2014 angka ini hasil pemindaian <code>list()</code> dan hanya mencakup bucket yang terdaftar.')
+      + ' Catatan: halaman <i>Usage</i> Supabase <b>tidak real-time</b> (disegarkan berkala &amp; sebagian berupa rata-rata siklus tagihan), jadi wajar bila angkanya tertinggal dari panel ini.</div>';
     h+='<div class="st-list">';
     data.buckets.forEach(function(b){
       var pct = data.totalBytesSt>0 ? Math.round((b.bytes||0)/data.totalBytesSt*100) : 0;
@@ -24937,10 +25001,10 @@ try{ if(typeof spkInit==="function") spkInit(); }catch(e){ console.error("spkIni
     });
     h+='</div></div>';
 
-    h+='<details class="ac-sql"><summary>Ingin ukuran byte database yang presisi? (SQL Supabase)</summary>'
-      +'<p>Jalankan sekali di SQL Editor Supabase agar kolom ukuran (byte) tabel terisi presisi:</p>'
-      +'<pre>create or replace function table_sizes()\nreturns table(table_name text, total_bytes bigint)\nlanguage sql security definer as $$\n  select relname::text,\n         pg_total_relation_size(relid) as total_bytes\n  from pg_catalog.pg_statio_user_tables\n  order by total_bytes desc;\n$$;</pre>'
-      +'<small>Tanpa RPC ini, kolom baris tetap tampil; hanya ukuran byte database yang belum presisi.</small></details>';
+    h+='<details class="ac-sql"><summary>Agar angka sama persis dengan dashboard Supabase (SQL)</summary>'
+      +'<p>Jalankan sekali di SQL Editor Supabase:</p>'
+      +'<pre>-- 1) ukuran seluruh database\ncreate or replace function public.db_size()\nreturns bigint language sql security definer as $$\n  select pg_database_size(current_database());\n$$;\n\n-- 2) ukuran storage per bucket\ncreate or replace function public.storage_size()\nreturns table(bucket_id text, bytes bigint, files bigint)\nlanguage sql security definer as $$\n  select bucket_id,\n         coalesce(sum((metadata-&gt;&gt;\'size\')::bigint),0)::bigint,\n         count(*)::bigint\n  from storage.objects\n  group by bucket_id;\n$$;\n\n-- 3) rincian per tabel aplikasi\ncreate or replace function public.table_sizes()\nreturns table(table_name text, total_bytes bigint)\nlanguage sql security definer as $$\n  select relname::text,\n         pg_total_relation_size(relid) as total_bytes\n  from pg_catalog.pg_statio_user_tables\n  order by total_bytes desc;\n$$;\n\ngrant execute on function public.db_size, public.storage_size, public.table_sizes to authenticated, anon;</pre>'
+      +'<small>Tanpa ketiga RPC ini panel tetap berjalan, hanya angkanya jadi perkiraan.</small></details>';
 
     h+='<div class="st-foot"><span class="st-muted">Terakhir dipindai: '+new Date(data.ts).toLocaleTimeString('id-ID')+'</span>'
       +'<button class="btn btn-teal" id="st-refresh" type="button" onclick="stScan()">Segarkan</button></div>';
