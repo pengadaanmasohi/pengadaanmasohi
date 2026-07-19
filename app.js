@@ -18018,7 +18018,13 @@ function spkPkSubNumberFix(html){
    seperti acuan. Yang diperbaiki di sini hanya butir yang tingkatnya salah
    (mis. sub-poin tanda hubung) dan pergeseran ekstra 0,5 cm pada klausul yang
    diawali paragraf pengantar. */
-var SPK_PK_STEP = 0.75;                 /* jarak antar tingkat (cm) */
+var SPK_PK_STEP = 0.75;                 /* cadangan bila induk tak diketahui (cm) */
+/* Jarak "sedikit masuk": seberapa jauh penanda ANAK melewati kolom TEKS induknya.
+   Inilah satu-satunya angka tata letak di seluruh perapian ini. Semua posisi lain
+   diturunkan darinya, sehingga hubungan induk-anak selalu terlihat sama —
+   entah nomornya "1." yang sempit atau "2.1." yang lebar.
+   Dipakai juga sebagai geseran daftar yang berada di bawah paragraf pengantar. */
+var SPK_PK_LEAD = 0.35;                 /* jarak penanda anak dari teks induk (cm) */
 
 /* Pecah penanda angka menjadi ruas: "2.1." -> ["2","1"], "10)" -> ["10"].
    Mengembalikan null bila penanda bukan angka. */
@@ -18070,57 +18076,74 @@ function spkPkIndentStd(html){
 
     /* --- Tahap 1b: titik awal daftar ---
        Bila klausul DIBUKA oleh paragraf pengantar (bukan butir bernomor), maka
-       seluruh daftarnya menjorok satu langkah terhadap pengantar itu — sama
-       seperti "a." yang menjorok terhadap "1.". Klausul yang langsung dibuka
-       dengan butir bernomor tetap mulai di batas margin.
-       CATATAN: pergeseran ini hanya dipakai SEKALI sebagai titik awal tingkat-1;
-       tingkat-2 dan seterusnya menurun dari situ lewat kisi STEP, jadi sub-butir
-       tidak pernah tergeser dua kali (inilah cacat pergeseran 0,5 cm yang lama). */
+       daftarnya menjorok LEAD terhadap pengantar itu — perlakuannya sama seperti
+       "a." yang menjorok terhadap teks "1.". Klausul yang langsung dibuka dengan
+       butir bernomor tetap mulai di batas margin.
+       CATATAN: geseran ini dipakai SEKALI saja sebagai titik awal tingkat-1;
+       tingkat berikutnya diturunkan dari kolom teks induknya, jadi sub-butir
+       tidak pernah tergeser dua kali (inilah cacat geseran 0,5 cm yang lama). */
     var LEAD=0;
     for(i=0;i<ps.length;i++){
       var t0=(ps[i].textContent||'').replace(/[\s\u00A0]/g,'');
       if(!t0) continue;                                   /* lewati paragraf kosong */
-      if(!spkPkTok(ps[i])) LEAD=STEP;                      /* pembuka = teks biasa */
+      if(!spkPkTok(ps[i])) LEAD=SPK_PK_LEAD;               /* pembuka = teks biasa */
       break;
     }
 
     /* --- Tahap 2: kelompokkan menjadi DERET ---
        Satu deret = butir-butir setingkat yang berurutan di bawah induk yang sama.
-       Begitu muncul butir bertingkat lebih tinggi (mis. kembali ke "2."), deret
-       di tingkat bawahnya ditutup — sehingga daftar a..h di bawah butir 1 dan
-       daftar a..d di bawah butir 2 dihitung terpisah. */
+       Tiap deret mencatat DERET INDUKNYA, karena posisinya nanti dihitung dari
+       kolom teks induk itu — bukan dari kisi tetap. */
     var buka={}, deret=[];
     for(i=0;i<item.length;i++){
       var it=item[i], L=it.lvl, d;
       for(d in buka){ if(Number(d)>L) delete buka[d]; }   /* tutup deret yang lebih dalam */
-      if(!buka[L]){ buka[L]=[]; deret.push(buka[L]); }
-      buka[L].push(it);
+      if(!buka[L]){
+        buka[L]={lvl:L, items:[], induk:(buka[L-1]||null), W:0, base:0};
+        deret.push(buka[L]);
+      }
+      buka[L].items.push(it);
     }
 
-    /* --- Tahap 3: satu deret = SATU lebar kotak (yang terlebar) ---
-       Dengan begitu kolom teks seluruh butir dalam deret itu sejajar, apa pun
-       lebar glif penandanya ("f." yang sempit tidak lagi menarik teksnya ke kiri).
-       Jarak nomor -> teks tetap mengikuti lebar alami penanda TERLEBAR di deret,
-       bukan dipaksa selebar satu langkah inden. */
+    /* --- Tahap 3: lebar kotak per deret ---
+       Satu deret = SATU lebar kotak (yang terlebar), supaya kolom teks seluruh
+       butir dalam deret itu sejajar — "f." yang glifnya sempit tidak lagi
+       menarik teksnya ke kiri. */
     for(i=0;i<deret.length;i++){
       var g=deret[i], W=0, j;
-      for(j=0;j<g.length;j++){ if(g[j].w>W) W=g[j].w; }
-      W=Math.round(W*100)/100;
-      for(j=0;j<g.length;j++){
-        var q=g[j], sp=q.p.firstElementChild;
-        sp.style.width=W.toFixed(2)+'cm';
-        sp.style.minWidth=W.toFixed(2)+'cm';
-        q.p.style.marginLeft=(LEAD+(q.lvl-1)*STEP+W).toFixed(2)+'cm';
-        q.p.style.textIndent='-'+W.toFixed(2)+'cm';
+      for(j=0;j<g.items.length;j++){ if(g.items[j].w>W) W=g.items[j].w; }
+      g.W=Math.round(W*100)/100;
+    }
+
+    /* --- Tahap 4: posisi tiap deret ---
+       Penanda anak diletakkan LEAD di sebelah kanan kolom TEKS induknya:
+           base(anak) = base(induk) + lebar kotak induk + LEAD
+       Dengan cara ini "sedikit masuk ke kanan" selalu terlihat sama, berapa pun
+       lebar nomornya. Kisi tetap yang lama gagal justru di sini: saat kotak
+       nomor induk melebar (mis. karena ada "2.1."), jarak itu menyusut sampai
+       tampak sejajar. Deret ditelusuri berurutan sehingga induk selalu sudah
+       terhitung lebih dulu. */
+    for(i=0;i<deret.length;i++){
+      var g2=deret[i];
+      if(g2.induk) g2.base=g2.induk.base + g2.induk.W + SPK_PK_LEAD;
+      else if(g2.lvl===1) g2.base=LEAD;                  /* geseran terhadap pengantar */
+      else g2.base=LEAD + (g2.lvl-1)*SPK_PK_STEP;        /* cadangan: induk tak ketemu */
+      g2.base=Math.round(g2.base*100)/100;
+      for(var m=0;m<g2.items.length;m++){
+        var q=g2.items[m], sp=q.p.firstElementChild;
+        sp.style.width=g2.W.toFixed(2)+'cm';
+        sp.style.minWidth=g2.W.toFixed(2)+'cm';
+        q.p.style.marginLeft=(g2.base+g2.W).toFixed(2)+'cm';
+        q.p.style.textIndent='-'+g2.W.toFixed(2)+'cm';
         q.p.style.paddingLeft='0cm';
       }
     }
 
     /* Paragraf narasi lanjutan ikut kisi yang sama */
     var np=box.querySelectorAll('p.klp1, p.kldesc');
-    for(i=0;i<np.length;i++) np[i].style.marginLeft=(LEAD+STEP).toFixed(2)+'cm';
+    for(i=0;i<np.length;i++) np[i].style.marginLeft=(LEAD+SPK_PK_STEP).toFixed(2)+'cm';
     var np2=box.querySelectorAll('p.klp2');
-    for(i=0;i<np2.length;i++) np2[i].style.marginLeft=(LEAD+STEP*2).toFixed(2)+'cm';
+    for(i=0;i<np2.length;i++) np2[i].style.marginLeft=(LEAD+SPK_PK_STEP*2).toFixed(2)+'cm';
     return box.innerHTML;
   }catch(e){ return s; }
 }
