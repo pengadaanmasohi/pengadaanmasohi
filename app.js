@@ -18082,7 +18082,7 @@ function spkPkIndentStd(html){
   try{
     var box=document.createElement('div'); box.innerHTML=s;
     var ps=box.querySelectorAll('p');
-    var STEP=SPK_PK_STEP, i, p, tok;
+    var i, p, tok;
 
     /* --- Tahap 1: tentukan tingkat & lebar alami tiap butir ---
        Tingkat DITURUNKAN DARI SILSILAH NOMOR, bukan dari bentuk penandanya:
@@ -18186,11 +18186,34 @@ function spkPkIndentStd(html){
       }
     }
 
-    /* Paragraf narasi lanjutan ikut kisi yang sama */
-    var np=box.querySelectorAll('p.klp1, p.kldesc');
-    for(i=0;i<np.length;i++) np[i].style.marginLeft=(LEAD+SPK_PK_STEP).toFixed(2)+'cm';
-    var np2=box.querySelectorAll('p.klp2');
-    for(i=0;i<np2.length;i++) np2[i].style.marginLeft=(LEAD+SPK_PK_STEP*2).toFixed(2)+'cm';
+    /* --- Tahap 5: PARAGRAF LANJUTAN ---
+       Paragraf tanpa penanda yang muncul SESUDAH sebuah butir adalah lanjutan
+       penjelasan butir itu, jadi harus menggantung di kolom TEKS butir tersebut
+       — bukan kembali ke batas margin. Sebelumnya hanya paragraf berkelas
+       khusus (klp1/klp2/kldesc) yang ditangani, sehingga paragraf berkelas polos
+       hasil paste Word terlihat lepas dari butirnya.
+       Inden baris pertama bawaan Word juga dinolkan supaya baris pertamanya
+       tidak menjorok sendiri.
+       Paragraf yang berada SEBELUM butir pertama (pengantar klausul) tidak
+       disentuh — ia memang milik klausul, bukan milik butir. */
+    var kolomTeks=null;                       /* kolom teks butir terakhir (cm) */
+    var semua=box.querySelectorAll('p'), z;
+    for(z=0;z<semua.length;z++){
+      var pz=semua[z];
+      if(spkPkTok(pz)){                       /* butir bernomor: catat kolom teksnya */
+        var ml=parseFloat(pz.style.marginLeft);
+        if(ml>0 || ml===0) kolomTeks=ml;
+        continue;
+      }
+      if(kolomTeks===null) continue;          /* masih di paragraf pengantar */
+      if(pz.getAttribute && pz.getAttribute('data-h')==='1') continue;
+      if(pz.classList && (pz.classList.contains('spk-cl-h')||pz.classList.contains('spk-party-h')||
+         pz.classList.contains('spk-bab')||pz.classList.contains('spk-kv'))) continue;
+      if(!(pz.textContent||'').replace(/[\s\u00A0]/g,'')) continue;   /* paragraf kosong */
+      pz.style.marginLeft=kolomTeks.toFixed(2)+'cm';
+      pz.style.textIndent='0cm';
+      pz.style.paddingLeft='0cm';
+    }
     return box.innerHTML;
   }catch(e){ return s; }
 }
