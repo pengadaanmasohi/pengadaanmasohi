@@ -16698,13 +16698,12 @@ function spkEnsureBentukStyle(){
     '.spk-bentuk-tag.is-pk{background:#E8EFFA;color:#1B3A6B;border-color:#C3D2EA}'+
     '.spk-bentuk{display:inline-flex;align-items:center;gap:9px}'+
     '.spk-bentuk > span{font-size:11px;font-weight:800;letter-spacing:.06em;color:#5b6670;text-transform:uppercase}'+
+    /* Tampilan DATAR: tanpa gradien, tanpa bayangan timbul, tanpa gerak saat ditekan. */
     '.spk-bentuk select{min-width:210px;font-size:12px;padding:9px 12px;border-radius:11px;border:1px solid #c3d1d7;'+
-      'background:linear-gradient(180deg,#ffffff,#eef4f6);color:#12242b;font-weight:700;cursor:pointer;'+
-      'box-shadow:0 3px 0 #cbd8dd,0 6px 14px rgba(16,40,50,.16),inset 0 1px 0 rgba(255,255,255,.95);'+
-      'transition:transform .16s ease,box-shadow .16s ease}'+
-    '.spk-bentuk select:hover{transform:translateY(-1px);box-shadow:0 4px 0 #cbd8dd,0 9px 18px rgba(16,40,50,.18),inset 0 1px 0 rgba(255,255,255,.95)}'+
-    '.spk-bentuk select:active{transform:translateY(2px);box-shadow:0 1px 0 #cbd8dd,0 2px 6px rgba(16,40,50,.16),inset 0 1px 0 rgba(255,255,255,.95)}'+
-    '.spk-bentuk select:focus{outline:none;border-color:var(--teal);box-shadow:0 3px 0 #cbd8dd,0 0 0 3px rgba(14,124,134,.18)}'+
+      'background:#ffffff;color:#12242b;font-weight:700;cursor:pointer;box-shadow:none;transition:border-color .16s ease}'+
+    '.spk-bentuk select:hover{border-color:#a9bcc4;box-shadow:none;transform:none}'+
+    '.spk-bentuk select:active{box-shadow:none;transform:none}'+
+    '.spk-bentuk select:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,124,134,.18)}'+
     '@media (max-width:760px){.spk-bentuk-bar.is-inline{margin:8px 0 0;flex:1 1 100%}.spk-bentuk select{min-width:0;flex:1 1 auto}}';
   var st=document.createElement('style'); st.id='spk-bentuk-style'; st.textContent=css;
   (document.head||document.documentElement).appendChild(st);
@@ -16716,10 +16715,11 @@ function spkBentukBarHtml(inline){
   var opts=SPK_BENTUK_OPTS.map(function(o){
     return '<option value="'+o.v+'"'+(o.v===cur?' selected':'')+'>'+fkEsc(o.l)+'</option>';
   }).join('');
-  /* Penanda (chip) nama bentuk DIHAPUS dari form — cukup dropdown-nya saja. */
+  /* Penanda (chip) nama bentuk DIHAPUS dari form — cukup dropdown-nya saja.
+     Label teks "Bentuk Kontrak" juga dihapus; pilihan sudah jelas dari isi dropdown. */
   return '<div class="spk-bentuk-bar'+(inline?' is-inline':'')+'">'+
-    '<label class="spk-bentuk"><span>Bentuk Kontrak</span>'+
-      '<select onchange="spkSetBentuk(this.value)">'+opts+'</select>'+
+    '<label class="spk-bentuk">'+
+      '<select aria-label="Bentuk Kontrak" title="Bentuk Kontrak" onchange="spkSetBentuk(this.value)">'+opts+'</select>'+
     '</label>'+
   '</div>';
 }
