@@ -3300,6 +3300,16 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
 .spk-we-doc .spk-kv .k{flex:0 0 34%;max-width:34%}
 .spk-we-doc .spk-kv .s{flex:0 0 auto;width:1.2em}
 .spk-we-doc .spk-kv .v{flex:1;text-align:justify}
+/* Grup baris "Label : nilai" (dibentuk spkKvGroup). Sebelumnya aturan ini HANYA
+   ada di CSS dokumen, sehingga pratinjau memakai label lebar 34% tanpa indentasi
+   sedangkan hasil cetak memakai grid ber-indentasi — dua tampilan yang berbeda
+   untuk isi yang sama. Disamakan di sini.
+   Indentasi 0,75 cm = sejajar dengan teks judul butir di atasnya. */
+.spk-cl .spk-kvgrp,.spk-we-doc .spk-kvgrp{display:grid;grid-template-columns:max-content max-content 1fr;row-gap:3pt;margin:0 0 6pt .75cm}
+.spk-cl .spk-kvgrp .spk-kv,.spk-we-doc .spk-kvgrp .spk-kv{display:contents}
+.spk-cl .spk-kvgrp .spk-kv .k,.spk-we-doc .spk-kvgrp .spk-kv .k{flex:none;max-width:none;padding-right:.5cm}
+.spk-cl .spk-kvgrp .spk-kv .s,.spk-we-doc .spk-kvgrp .spk-kv .s{flex:none;width:auto;padding-right:.3cm}
+.spk-cl .spk-kvgrp .spk-kv .v,.spk-we-doc .spk-kvgrp .spk-kv .v{flex:none;text-align:justify}
 /* ---- Pustaka Klausul: template Word (.docx) — pengganti editor teks ---- */
 .spk-kldoc-top{padding:13px 16px 14px;background:#fff;border-bottom:1px solid #e5eaee}
 .spk-kldoc-tools{display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin-top:11px}

@@ -17646,11 +17646,11 @@ function spkDocCss(){
      tidak lagi terpaku pada 34% lebar. Blok dimasukkan sedikit ke kanan (1 cm)
      terhadap teks butir di atasnya. */
   '.spk-cl .spk-kvgrp{display:grid;grid-template-columns:max-content max-content 1fr;'+
-    'row-gap:3pt;margin:0 0 6pt 1cm}'+
+    'row-gap:3pt;margin:0 0 6pt 0.75cm}'+
   '.spk-cl .spk-kvgrp .spk-kv{display:contents}'+
   '.spk-cl .spk-kvgrp .spk-kv .k{flex:none;max-width:none;padding-right:0.5cm}'+
   '.spk-cl .spk-kvgrp .spk-kv .s{flex:none;width:auto;padding-right:0.3cm}'+
-  '.spk-cl .spk-kvgrp .spk-kv .v{flex:none;text-align:left}'+
+  '.spk-cl .spk-kvgrp .spk-kv .v{flex:none;text-align:justify}'+
   /* Blok PIHAK pada pembuka: label (I./II.) menggantung, deskripsi sejajar di bawah label */
   '.spk-cl .spk-party{margin:0 0 9pt}'+
   '.spk-cl .spk-party-h{font-weight:700;line-height:'+spkLHCss(1.15)+';padding-left:0.75cm;text-indent:-0.75cm;margin:0}'+
