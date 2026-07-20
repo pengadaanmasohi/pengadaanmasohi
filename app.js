@@ -1613,11 +1613,12 @@ function askSave(){
     toast('Data gagal disimpan, lengkapi data terlebih dahulu','warn');
     return;
   }
-  if(rec.no_spbj){
-    const key=dupKey(rec.no_spbj);
-    if(records.some(r=>r.id!==editingId && dupKey(r.no_spbj)===key)){
-      toast('Data sudah ada','err'); return;
-    }
+  /* Duplikat: cukup Nama Pekerjaan ATAU No. SPBJ yang sama dengan data lain. */
+  {
+    const bentrok=spkDupCek(rec, records,
+      {nomor:'no_spbj', labelNomor:'No. SPBJ', nama:['nama_pekerjaan_kr','nama_pekerjaan_khs']},
+      editingId);
+    if(bentrok){ toast('Tidak bisa menambahkan 1 data : Duplikat\nSudah ada data dengan '+bentrok.by+' yang sama.','err'); return; }
   }
   openConfirm({
     icon:'save', title:'Simpan Data',
@@ -2573,24 +2574,83 @@ function dupKeyImport(v){
   if(!s) return '';
   return SPK_DUP_KOSONG.includes(s) ? '' : s;
 }
-/* KUNCI DUPLIKAT: NAMA PEKERJAAN + NOMOR KONTRAK/SPBJ.
-   Sebuah baris dianggap duplikat hanya bila KEDUANYA sama persis dengan baris
-   lain (di berkas yang sama maupun dengan data tersimpan). Nomor boleh kosong —
-   penampung seperti "-" / "n/a" / "tbd" ikut dianggap kosong lewat
-   dupKeyImport() — sehingga pekerjaan yang belum berkontrak tetap terlindungi
-   dari unggahan ganda karena masih dibandingkan lewat nama pekerjaannya.
-   Perbandingan mengabaikan huruf besar/kecil dan kelebihan spasi.
-     opt.nomor : nama kolom nomor (no_kontrak / no_spbj)
-     opt.nama  : daftar kolom nama pekerjaan, dipakai yang pertama terisi
-   Mengembalikan {key, by} — `by` menyebut dasar pembandingnya untuk pesan. */
+/* =====================================================================
+   KUNCI DUPLIKAT: NAMA PEKERJAAN **ATAU** NOMOR KONTRAK/SPBJ
+   Sebelumnya kuncinya digabung (nama + '|' + nomor), sehingga sebuah baris
+   baru dianggap duplikat hanya bila KEDUANYA sama persis. Akibatnya data
+   dengan nama pekerjaan yang sama tetapi nomor kontraknya diketik sedikit
+   berbeda (atau sebaliknya) masih lolos dan menjadi data ganda.
+   Kini keduanya menjadi kunci yang BERDIRI SENDIRI: cukup SALAH SATU sama
+   dengan data tersimpan atau dengan baris lain di berkas yang sama, baris
+   itu ditolak.
+   Nilai penampung ("-", "n/a", "tbd", "belum", ...) tetap dianggap kosong
+   lewat dupKeyImport(), jadi puluhan baris yang belum berkontrak tidak saling
+   dianggap duplikat hanya karena kolom nomornya sama-sama diisi "-".
+     opt.nomor      : nama kolom nomor (no_kontrak / no_spbj)
+     opt.labelNomor : label kolom nomor untuk pesan
+     opt.nama       : daftar kolom nama pekerjaan, dipakai yang pertama terisi
+   ===================================================================== */
+function spkDupNama(rec, opt){
+  for(const k of (opt.nama||[])){ const v=dupKeyImport(rec[k]); if(v) return v; }
+  return '';
+}
+function spkDupKeys(rec, opt){
+  const out=[];
+  const nama=spkDupNama(rec, opt);
+  const nomor=dupKeyImport(rec[opt.nomor]);
+  if(nama)  out.push({ k:'nama|'+nama,  by:'Nama Pekerjaan' });
+  if(nomor) out.push({ k:'no|'+nomor,   by:(opt.labelNomor||'No. Kontrak') });
+  return out;                              /* kosong -> tak ada dasar banding */
+}
+/* Kompatibilitas: pemakaian lama spkDupKey(rec,opt).key masih berjalan. */
 function spkDupKey(rec, opt){
-  let nama='';
-  for(const k of opt.nama){ const v=dupKeyImport(rec[k]); if(v){ nama=v; break; } }
-  const nomor = dupKeyImport(rec[opt.nomor]);
-  if(!nama && !nomor) return {key:'', by:''};      // tak ada dasar pembanding → diloloskan
-  const lbl = opt.labelNomor || 'No. Kontrak';
-  return { key: nama+'|'+nomor,
-           by: (nama && nomor) ? ('Nama Pekerjaan + '+lbl) : (nama ? 'Nama Pekerjaan' : lbl) };
+  const ks=spkDupKeys(rec, opt);
+  return { key: ks.map(x=>x.k).join('||'),
+           by:  ks.map(x=>x.by).join(' / ') };
+}
+/* ---------------------------------------------------------------------
+   Saring satu batch hasil unggahan template terhadap:
+     a) seluruh data yang sudah tersimpan, dan
+     b) baris-baris sebelumnya di berkas yang sama.
+   Mengembalikan { toAdd, dupRows } — dupRows menyebut baris Excel, dasar
+   pembandingnya, dan asal bentrokannya untuk ditampilkan di notifikasi.
+   --------------------------------------------------------------------- */
+function spkDupSaring(batch, existing, opt){
+  const exist=new Map();
+  (existing||[]).forEach(function(r){
+    spkDupKeys(r,opt).forEach(function(x){ if(!exist.has(x.k)) exist.set(x.k,'data tersimpan'); });
+  });
+  const seen=new Map(), toAdd=[], dupRows=[];
+  (batch||[]).forEach(function(rec){
+    const keys=spkDupKeys(rec,opt);
+    let hit=null;
+    for(const x of keys){
+      if(exist.has(x.k)){ hit={by:x.by, asal:exist.get(x.k)}; break; }
+      if(seen.has(x.k)){  hit={by:x.by, asal:'baris '+seen.get(x.k)}; break; }
+    }
+    if(hit){
+      const noTxt=String(rec[opt.nomor]||'').trim();
+      let nmTxt=''; for(const k of (opt.nama||[])){ if(String(rec[k]||'').trim()){ nmTxt=String(rec[k]).trim(); break; } }
+      dupRows.push({ row:rec.__xlRow, by:hit.by, asal:hit.asal,
+                     no:(noTxt||nmTxt||'-') });
+      return;
+    }
+    keys.forEach(function(x){ seen.set(x.k, rec.__xlRow); });
+    toAdd.push(rec);
+  });
+  return { toAdd:toAdd, dupRows:dupRows };
+}
+/* Pemeriksaan duplikat untuk SIMPAN MANUAL (satu record vs daftar tersimpan).
+   Mengembalikan keterangan bentrokan, atau null bila aman. */
+function spkDupCek(rec, daftar, opt, selfId){
+  const keys=spkDupKeys(rec,opt);
+  if(!keys.length) return null;
+  for(const r of (daftar||[])){
+    if(selfId!=null && String(r.id)===String(selfId)) continue;
+    const lain=spkDupKeys(r,opt).map(function(x){ return x.k; });
+    for(const x of keys){ if(lain.indexOf(x.k)>=0) return { by:x.by }; }
+  }
+  return null;
 }
 /* Pesan "baris dilewati karena duplikat" — menyebut baris Excel & nomornya,
    supaya tidak lagi hanya berupa jumlah tanpa keterangan. */
@@ -2600,8 +2660,8 @@ function spkDupMsg(dupRows, labelNomor){
     return 'baris '+d.row+' ('+(d.no||'-')+')'+asal;
   });
   const dasar = [...new Set(dupRows.map(d=>d.by).filter(Boolean))].join(' / ') || (labelNomor||'No. Kontrak');
-  let msg = 'Terdapat '+dupRows.length+' data duplikat\n'
-          + 'Tidak ditambahkan — dinilai dari '+dasar+'. '+show.join(' ; ');
+  let msg = 'Tidak bisa menambahkan '+dupRows.length+' data : Duplikat\n'
+          + 'Dinilai dari '+dasar+' — '+show.join(' ; ');
   if(dupRows.length>6) msg += ' ; +'+(dupRows.length-6)+' baris lain';
   return msg+'.';
 }
@@ -2998,23 +3058,13 @@ function handleUpload(ev){
         batch.push(rec);
       }
       if(batch.length===0){ toast('Tidak ada baris data untuk diimpor','warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
-      // Saring duplikat berdasarkan No. SPBJ / Kontrak Rinci (vs data yang ada & sesama batch)
+      // Saring duplikat: Nama Pekerjaan ATAU No. SPBJ yang sama dengan data
+      // tersimpan maupun dengan baris lain di berkas yang sama.
       const DUPOPT_KR={nomor:'no_spbj', labelNomor:'No. SPBJ', nama:['nama_pekerjaan_kr','nama_pekerjaan_khs']};
-      const existKeys=new Set(records.map(r=>spkDupKey(r,DUPOPT_KR).key).filter(Boolean));
-      const seen=new Map(); const toAdd=[]; const dupRows=[];
-      batch.forEach(rec=>{
-        const dk=spkDupKey(rec,DUPOPT_KR), key=dk.key;
-        if(key && (existKeys.has(key)||seen.has(key))){
-          dupRows.push({row:rec.__xlRow, by:dk.by,
-                        no: rec.no_spbj || rec.nama_pekerjaan_kr || rec.nama_pekerjaan_khs,
-                        asal: seen.has(key)?('baris '+seen.get(key)):'data tersimpan'});
-          return;
-        }
-        if(key) seen.set(key, rec.__xlRow);
-        toAdd.push(rec);
-      });
+      const _sar=spkDupSaring(batch, records, DUPOPT_KR);
+      const toAdd=_sar.toAdd, dupRows=_sar.dupRows;
       const dupCount=dupRows.length;
-      if(dupCount) console.warn('[SPK] Upload SPBJ/Kontrak Rinci — baris dilewati (No. SPBJ duplikat):', dupRows);
+      if(dupCount) console.warn('[SPK] Upload SPBJ/Kontrak Rinci — baris dilewati (duplikat Nama Pekerjaan / No. SPBJ):', dupRows);
       if(toAdd.length){
         try{ await Store.bulkCreate(toAdd); }
         catch(err){ console.error(err); toast('Gagal mengimpor: '+errMsg(err),'warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
@@ -3376,9 +3426,11 @@ function askSavePl(){
     toast('Data gagal disimpan, lengkapi data terlebih dahulu','warn');
     return;
   }
-  if(rec.no_kontrak){
-    const key=dupKey(rec.no_kontrak);
-    if(records_pl.some(r=>r.id!==editingIdPl && dupKey(r.no_kontrak)===key)){ toast('Data sudah ada','err'); return; }
+  /* Duplikat: cukup Nama Pekerjaan ATAU No. Kontrak yang sama dengan data lain. */
+  {
+    const bentrok=spkDupCek(rec, records_pl,
+      {nomor:'no_kontrak', labelNomor:'No. Kontrak', nama:['nama_pekerjaan']}, editingIdPl);
+    if(bentrok){ toast('Tidak bisa menambahkan 1 data : Duplikat\nSudah ada data dengan '+bentrok.by+' yang sama.','err'); return; }
   }
   openConfirm({icon:'save',title:'Simpan Data',text:'Apakah anda yakin ingin menyimpan data pekerjaan?',onYes:doSavePl});
 }
@@ -4032,20 +4084,10 @@ function handleUploadPl(ev){
       }
       if(batch.length===0){ toast('Tidak ada baris data untuk diimpor','warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
       const DUPOPT_K={nomor:'no_kontrak', labelNomor:'No. Kontrak', nama:['nama_pekerjaan']};
-      const existKeys=new Set(records_pl.map(r=>spkDupKey(r,DUPOPT_K).key).filter(Boolean));
-      const seen=new Map(); const toAdd=[]; const dupRows=[];
-      batch.forEach(rec=>{
-        const dk=spkDupKey(rec,DUPOPT_K), key=dk.key;
-        if(key && (existKeys.has(key)||seen.has(key))){
-          dupRows.push({row:rec.__xlRow, by:dk.by, no: rec.no_kontrak || rec.nama_pekerjaan,
-                        asal: seen.has(key)?('baris '+seen.get(key)):'data tersimpan'});
-          return;
-        }
-        if(key) seen.set(key, rec.__xlRow);
-        toAdd.push(rec);
-      });
+      const _sar=spkDupSaring(batch, records_pl, DUPOPT_K);
+      const toAdd=_sar.toAdd, dupRows=_sar.dupRows;
       const dupCount=dupRows.length;
-      if(dupCount) console.warn('[SPK] Upload Pengadaan Langsung — baris dilewati (No. Kontrak duplikat):', dupRows);
+      if(dupCount) console.warn('[SPK] Upload Pengadaan Langsung — baris dilewati (duplikat Nama Pekerjaan / No. Kontrak):', dupRows);
       if(toAdd.length){
         try{ await Store_PL.bulkCreate(toAdd); }
         catch(err){ console.error(err); toast('Gagal mengimpor: '+errMsg(err),'warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
@@ -4947,9 +4989,11 @@ function askSaveTender(){
     toast('Data gagal disimpan, lengkapi data terlebih dahulu','warn');
     return;
   }
-  if(rec.no_kontrak){
-    const key=dupKey(rec.no_kontrak);
-    if(records_tender.some(r=>r.id!==editingIdTender && dupKey(r.no_kontrak)===key)){ toast('Data sudah ada','err'); return; }
+  /* Duplikat: cukup Nama Pekerjaan ATAU No. Kontrak yang sama dengan data lain. */
+  {
+    const bentrok=spkDupCek(rec, records_tender,
+      {nomor:'no_kontrak', labelNomor:'No. Kontrak', nama:['nama_pekerjaan']}, editingIdTender);
+    if(bentrok){ toast('Tidak bisa menambahkan 1 data : Duplikat\nSudah ada data dengan '+bentrok.by+' yang sama.','err'); return; }
   }
   openConfirm({icon:'save',title:'Simpan Data',text:'Apakah anda yakin ingin menyimpan data pekerjaan Tender?',onYes:doSaveTender});
 }
@@ -5327,20 +5371,10 @@ function handleUploadTender(ev){
       }
       if(batch.length===0){ toast('Tidak ada baris data untuk diimpor','warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
       const DUPOPT_K={nomor:'no_kontrak', labelNomor:'No. Kontrak', nama:['nama_pekerjaan']};
-      const existKeys=new Set(records_tender.map(r=>spkDupKey(r,DUPOPT_K).key).filter(Boolean));
-      const seen=new Map(); const toAdd=[]; const dupRows=[];
-      batch.forEach(rec=>{
-        const dk=spkDupKey(rec,DUPOPT_K), key=dk.key;
-        if(key && (existKeys.has(key)||seen.has(key))){
-          dupRows.push({row:rec.__xlRow, by:dk.by, no: rec.no_kontrak || rec.nama_pekerjaan,
-                        asal: seen.has(key)?('baris '+seen.get(key)):'data tersimpan'});
-          return;
-        }
-        if(key) seen.set(key, rec.__xlRow);
-        toAdd.push(rec);
-      });
+      const _sar=spkDupSaring(batch, records_tender, DUPOPT_K);
+      const toAdd=_sar.toAdd, dupRows=_sar.dupRows;
       const dupCount=dupRows.length;
-      if(dupCount) console.warn('[SPK] Upload Tender — baris dilewati (No. Kontrak duplikat):', dupRows);
+      if(dupCount) console.warn('[SPK] Upload Tender — baris dilewati (duplikat Nama Pekerjaan / No. Kontrak):', dupRows);
       if(toAdd.length){
         try{ await Store_TENDER.bulkCreate(toAdd); }
         catch(err){ console.error(err); toast('Gagal mengimpor: '+errMsg(err),'warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
