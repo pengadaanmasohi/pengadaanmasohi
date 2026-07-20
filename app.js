@@ -2573,6 +2573,25 @@ function dupKeyImport(v){
   if(!s) return '';
   return SPK_DUP_KOSONG.includes(s) ? '' : s;
 }
+/* KUNCI DUPLIKAT: NAMA PEKERJAAN + NOMOR KONTRAK/SPBJ.
+   Sebuah baris dianggap duplikat hanya bila KEDUANYA sama persis dengan baris
+   lain (di berkas yang sama maupun dengan data tersimpan). Nomor boleh kosong —
+   penampung seperti "-" / "n/a" / "tbd" ikut dianggap kosong lewat
+   dupKeyImport() — sehingga pekerjaan yang belum berkontrak tetap terlindungi
+   dari unggahan ganda karena masih dibandingkan lewat nama pekerjaannya.
+   Perbandingan mengabaikan huruf besar/kecil dan kelebihan spasi.
+     opt.nomor : nama kolom nomor (no_kontrak / no_spbj)
+     opt.nama  : daftar kolom nama pekerjaan, dipakai yang pertama terisi
+   Mengembalikan {key, by} — `by` menyebut dasar pembandingnya untuk pesan. */
+function spkDupKey(rec, opt){
+  let nama='';
+  for(const k of opt.nama){ const v=dupKeyImport(rec[k]); if(v){ nama=v; break; } }
+  const nomor = dupKeyImport(rec[opt.nomor]);
+  if(!nama && !nomor) return {key:'', by:''};      // tak ada dasar pembanding → diloloskan
+  const lbl = opt.labelNomor || 'No. Kontrak';
+  return { key: nama+'|'+nomor,
+           by: (nama && nomor) ? ('Nama Pekerjaan + '+lbl) : (nama ? 'Nama Pekerjaan' : lbl) };
+}
 /* Pesan "baris dilewati karena duplikat" — menyebut baris Excel & nomornya,
    supaya tidak lagi hanya berupa jumlah tanpa keterangan. */
 function spkDupMsg(dupRows, labelNomor){
@@ -2580,7 +2599,9 @@ function spkDupMsg(dupRows, labelNomor){
     const asal = d.asal ? (' = ' + d.asal) : '';
     return 'baris '+d.row+' ('+(d.no||'-')+')'+asal;
   });
-  let msg = 'Sebagian data ('+dupRows.length+') gagal ditambahkan : duplikat '+(labelNomor||'No. Kontrak')+'\n'+show.join(' ; ');
+  const dasar = [...new Set(dupRows.map(d=>d.by).filter(Boolean))].join(' / ') || (labelNomor||'No. Kontrak');
+  let msg = 'Terdapat '+dupRows.length+' data duplikat\n'
+          + 'Tidak ditambahkan — dinilai dari '+dasar+'. '+show.join(' ; ');
   if(dupRows.length>6) msg += ' ; +'+(dupRows.length-6)+' baris lain';
   return msg+'.';
 }
@@ -2920,7 +2941,7 @@ function ioTplBrowse(cat){
 }
 function ioTplDispatch(cat, file){
   if(!file) return;
-  if(!/\.(xlsx|xls)$/i.test(file.name||'')){ toast('Berkas harus berformat Excel (.xlsx / .xls)','warn'); return; }
+  if(!/\.(xlsx|xls)$/i.test(file.name||'')){ toast('Berkas harus berformat Excel (.xlsx / .xls)','warn', TOAST_MS_UPLOAD); return; }
   const ev={ target:{ files:[file], value:'' } };   // tiruan event agar handler lama tetap dipakai
   if(cat==='kr') handleUpload(ev);
   else if(cat==='pl') handleUploadPl(ev);
@@ -2949,11 +2970,11 @@ function handleUpload(ev){
       const sheetName = wb.SheetNames.includes('Data') ? 'Data' : wb.SheetNames[0];
       const ws=wb.Sheets[sheetName];
       const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-      if(rows.length<2){ toast('File kosong / tidak ada data','warn'); ev.target.value=''; return; }
+      if(rows.length<2){ toast('File kosong / tidak ada data','warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
       const head=rows[0].map(h=>String(h).trim());
       const map={};
       head.forEach((h,i)=>{ const f=FIELDS.find(x=>x.label.toLowerCase()===h.toLowerCase()); if(f)map[f.key]=i; });
-      if(Object.keys(map).length===0){ toast('Header tidak dikenali. Gunakan template resmi.','warn'); ev.target.value=''; return; }
+      if(Object.keys(map).length===0){ toast('Header tidak dikenali. Gunakan template resmi.','warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
       const batch=[];
       for(let r=1;r<rows.length;r++){
         const row=rows[r]; if(!row || row.every(c=>String(c).trim()===''))continue;
@@ -2968,22 +2989,25 @@ function handleUpload(ev){
         if(fmtBad){
           const xlRow=r+1;
           console.warn('[SPK] Upload SPBJ — Format Tidak Sesuai di baris '+xlRow+':', fmtBadCells);
-          toast(spkFmtBadMsg(fmtBadCells, xlRow),'err');
+          toast(spkFmtBadMsg(fmtBadCells, xlRow),'err', TOAST_MS_UPLOAD);
           ev.target.value=''; return;
         }
-        if(!String(rec.tahun||'').trim()){ const xlRow=r+1; console.warn('[SPK] Upload SPBJ/Kontrak Rinci — kolom Tahun kosong di baris '+xlRow); toast(spkMissingMsg(['tahun'], map, FIELDS, xlRow),'warn'); ev.target.value=''; return; }
-        { const miss=validateRequiredKr(rec); if(miss.length){ const xlRow=r+1; console.warn('[SPK] Upload SPBJ — kolom wajib kosong di baris '+xlRow+':', miss); toast(spkMissingMsg(miss, map, FIELDS, xlRow),'warn'); ev.target.value=''; return; } }
+        if(!String(rec.tahun||'').trim()){ const xlRow=r+1; console.warn('[SPK] Upload SPBJ/Kontrak Rinci — kolom Tahun kosong di baris '+xlRow); toast(spkMissingMsg(['tahun'], map, FIELDS, xlRow),'warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
+        { const miss=validateRequiredKr(rec); if(miss.length){ const xlRow=r+1; console.warn('[SPK] Upload SPBJ — kolom wajib kosong di baris '+xlRow+':', miss); toast(spkMissingMsg(miss, map, FIELDS, xlRow),'warn', TOAST_MS_UPLOAD); ev.target.value=''; return; } }
         rec.__xlRow = r+1;   // nomor baris di Excel, dipakai pesan duplikat
         batch.push(rec);
       }
-      if(batch.length===0){ toast('Tidak ada baris data untuk diimpor','warn'); ev.target.value=''; return; }
+      if(batch.length===0){ toast('Tidak ada baris data untuk diimpor','warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
       // Saring duplikat berdasarkan No. SPBJ / Kontrak Rinci (vs data yang ada & sesama batch)
-      const existKeys=new Set(records.map(r=>dupKeyImport(r.no_spbj)).filter(Boolean));
+      const DUPOPT_KR={nomor:'no_spbj', labelNomor:'No. SPBJ', nama:['nama_pekerjaan_kr','nama_pekerjaan_khs']};
+      const existKeys=new Set(records.map(r=>spkDupKey(r,DUPOPT_KR).key).filter(Boolean));
       const seen=new Map(); const toAdd=[]; const dupRows=[];
       batch.forEach(rec=>{
-        const key=dupKeyImport(rec.no_spbj);
+        const dk=spkDupKey(rec,DUPOPT_KR), key=dk.key;
         if(key && (existKeys.has(key)||seen.has(key))){
-          dupRows.push({row:rec.__xlRow, no:rec.no_spbj, asal: seen.has(key)?('baris '+seen.get(key)):'data tersimpan'});
+          dupRows.push({row:rec.__xlRow, by:dk.by,
+                        no: rec.no_spbj || rec.nama_pekerjaan_kr || rec.nama_pekerjaan_khs,
+                        asal: seen.has(key)?('baris '+seen.get(key)):'data tersimpan'});
           return;
         }
         if(key) seen.set(key, rec.__xlRow);
@@ -2993,15 +3017,15 @@ function handleUpload(ev){
       if(dupCount) console.warn('[SPK] Upload SPBJ/Kontrak Rinci — baris dilewati (No. SPBJ duplikat):', dupRows);
       if(toAdd.length){
         try{ await Store.bulkCreate(toAdd); }
-        catch(err){ console.error(err); toast('Gagal mengimpor: '+errMsg(err),'warn'); ev.target.value=''; return; }
+        catch(err){ console.error(err); toast('Gagal mengimpor: '+errMsg(err),'warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
         await refreshData();
       }
-      if(dupCount>0) toast(spkDupMsg(dupRows, 'No. SPBJ'),'err');
+      if(dupCount>0) toast(spkDupMsg(dupRows, 'No. SPBJ'),'err', TOAST_MS_UPLOAD);
       else toast('Data berhasil ditambahkan','ok');
       // Data berhasil ditambahkan lewat template → langsung tampilkan loading &
       // kembali ke Daftar Monitoring (showView sudah memunculkan animasi "Memuat").
       if(toAdd.length){ ev.target.value=''; showView('list','Memuat daftar'); return; }
-    }catch(err){ console.error(err); toast('Gagal membaca file Excel','warn'); }
+    }catch(err){ console.error(err); toast('Gagal membaca file Excel','warn', TOAST_MS_UPLOAD); }
     ev.target.value='';
   };
   reader.readAsArrayBuffer(file);
@@ -3973,11 +3997,11 @@ function handleUploadPl(ev){
       const sheetName=wb.SheetNames.includes('Data') ? 'Data' : wb.SheetNames[0];
       const ws=wb.Sheets[sheetName];
       const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-      if(rows.length<2){ toast('File kosong / tidak ada data','warn'); ev.target.value=''; return; }
+      if(rows.length<2){ toast('File kosong / tidak ada data','warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
       const head=rows[0].map(h=>String(h).trim());
       const map={};
       head.forEach((h,i)=>{ const f=FIELDS_PL.find(x=>x.label.toLowerCase()===h.toLowerCase()); if(f)map[f.key]=i; });
-      if(Object.keys(map).length===0){ toast('Header tidak dikenali. Gunakan template Pengadaan Langsung.','warn'); ev.target.value=''; return; }
+      if(Object.keys(map).length===0){ toast('Header tidak dikenali. Gunakan template Pengadaan Langsung.','warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
       const batch=[];
       for(let r=1;r<rows.length;r++){
         const row=rows[r]; if(!row || row.every(c=>String(c).trim()===''))continue;
@@ -3992,7 +4016,7 @@ function handleUploadPl(ev){
         if(fmtBad){
           const xlRow=r+1;
           console.warn('[SPK] Upload Pengadaan Langsung — Format Tidak Sesuai di baris '+xlRow+':', fmtBadCells);
-          toast(spkFmtBadMsg(fmtBadCells, xlRow),'err');
+          toast(spkFmtBadMsg(fmtBadCells, xlRow),'err', TOAST_MS_UPLOAD);
           ev.target.value=''; return;
         }
         // #12: pastikan Harga Total (Tanpa PPN) = Harga Barang + Harga Jasa
@@ -4001,18 +4025,20 @@ function handleUploadPl(ev){
         FIELDS_PL.forEach(f=>{ if(f.auto==='ppn'){ const base=Number(rec[f.key.replace(/_total_dengan_ppn$/,'_total_tanpa_ppn')])||0; rec[f.key]=base>0?ppnFromBase(base):''; } });
         // Field multi-nilai independen: pecah baris (Alt+Enter dalam satu sel) menjadi daftar
         INDEP_MULTI_KEYS_PL.forEach(k=>{ const raw=String(rec[k]!=null?rec[k]:''); const list=raw.split(/\r?\n/).map(s=>s.trim()).filter(Boolean); rec[k+'_list']=list; rec[k]=list[0]||''; });
-        if(!String(rec.tahun||'').trim()){ const xlRow=r+1; console.warn('[SPK] Upload Pengadaan Langsung — kolom Tahun kosong di baris '+xlRow); toast(spkMissingMsg(['tahun'], map, FIELDS_PL, xlRow),'warn'); ev.target.value=''; return; }
-        { const miss=missingRequiredPl(rec); if(miss.length){ const xlRow=r+1; console.warn('[SPK] Upload Pengadaan Langsung — kolom wajib kosong di baris '+xlRow+':', miss); toast(spkMissingMsg(miss, map, FIELDS_PL, xlRow),'warn'); ev.target.value=''; return; } }
+        if(!String(rec.tahun||'').trim()){ const xlRow=r+1; console.warn('[SPK] Upload Pengadaan Langsung — kolom Tahun kosong di baris '+xlRow); toast(spkMissingMsg(['tahun'], map, FIELDS_PL, xlRow),'warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
+        { const miss=missingRequiredPl(rec); if(miss.length){ const xlRow=r+1; console.warn('[SPK] Upload Pengadaan Langsung — kolom wajib kosong di baris '+xlRow+':', miss); toast(spkMissingMsg(miss, map, FIELDS_PL, xlRow),'warn', TOAST_MS_UPLOAD); ev.target.value=''; return; } }
         rec.__xlRow = r+1;   // nomor baris di Excel, dipakai pesan duplikat
         batch.push(rec);
       }
-      if(batch.length===0){ toast('Tidak ada baris data untuk diimpor','warn'); ev.target.value=''; return; }
-      const existKeys=new Set(records_pl.map(r=>dupKeyImport(r.no_kontrak)).filter(Boolean));
+      if(batch.length===0){ toast('Tidak ada baris data untuk diimpor','warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
+      const DUPOPT_K={nomor:'no_kontrak', labelNomor:'No. Kontrak', nama:['nama_pekerjaan']};
+      const existKeys=new Set(records_pl.map(r=>spkDupKey(r,DUPOPT_K).key).filter(Boolean));
       const seen=new Map(); const toAdd=[]; const dupRows=[];
       batch.forEach(rec=>{
-        const key=dupKeyImport(rec.no_kontrak);
+        const dk=spkDupKey(rec,DUPOPT_K), key=dk.key;
         if(key && (existKeys.has(key)||seen.has(key))){
-          dupRows.push({row:rec.__xlRow, no:rec.no_kontrak, nama:rec.nama_pekerjaan, asal: seen.has(key)?('baris '+seen.get(key)):'data tersimpan'});
+          dupRows.push({row:rec.__xlRow, by:dk.by, no: rec.no_kontrak || rec.nama_pekerjaan,
+                        asal: seen.has(key)?('baris '+seen.get(key)):'data tersimpan'});
           return;
         }
         if(key) seen.set(key, rec.__xlRow);
@@ -4022,15 +4048,15 @@ function handleUploadPl(ev){
       if(dupCount) console.warn('[SPK] Upload Pengadaan Langsung — baris dilewati (No. Kontrak duplikat):', dupRows);
       if(toAdd.length){
         try{ await Store_PL.bulkCreate(toAdd); }
-        catch(err){ console.error(err); toast('Gagal mengimpor: '+errMsg(err),'warn'); ev.target.value=''; return; }
+        catch(err){ console.error(err); toast('Gagal mengimpor: '+errMsg(err),'warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
         await refreshDataPl();
       }
-      if(dupCount>0) toast(spkDupMsg(dupRows, 'No. Kontrak'),'err');
+      if(dupCount>0) toast(spkDupMsg(dupRows, 'No. Kontrak'),'err', TOAST_MS_UPLOAD);
       else toast('Data berhasil ditambahkan','ok');
       // Data berhasil ditambahkan lewat template → langsung tampilkan loading &
       // kembali ke Daftar Monitoring Pengadaan Langsung.
       if(toAdd.length){ ev.target.value=''; showView('list-pl','Memuat daftar'); return; }
-    }catch(err){ console.error(err); toast('Gagal membaca file Excel','warn'); }
+    }catch(err){ console.error(err); toast('Gagal membaca file Excel','warn', TOAST_MS_UPLOAD); }
     ev.target.value='';
   };
   reader.readAsArrayBuffer(file);
@@ -4038,6 +4064,11 @@ function handleUploadPl(ev){
 
 /* ============ TOAST ============ */
 let toastT;
+/* Durasi tampil notifikasi (ms). Peringatan gagal unggah template dibuat lebih
+   lama karena isinya perlu dibaca: nomor baris, nama kolom, atau daftar baris
+   duplikat. toast(msg, kind, dur) menerima durasi khusus per pemanggilan. */
+const TOAST_MS_DEFAULT = 2800;
+const TOAST_MS_UPLOAD  = 5000;
 /* ============================================================
    BUNYI NOTIFIKASI (Web Audio API — tanpa file audio eksternal)
    Nada dibangkitkan langsung oleh browser, jadi tidak ada aset yang perlu
@@ -4180,7 +4211,7 @@ function sfxGear(){
   }catch(e){}
 }
 
-function toast(msg,kind){
+function toast(msg,kind,dur){
   const t=document.getElementById('toast');
   const k = kind==='warn' ? 'warn' : (kind==='err'||kind==='fail') ? 'err' : 'ok';
   sfxPlay(k);
@@ -4193,7 +4224,8 @@ function toast(msg,kind){
   t.classList.add('toast-'+k);
   t.innerHTML=ic+'<span>'+msg+'</span>';
   t.classList.add('show'); clearTimeout(toastT);
-  toastT=setTimeout(()=>t.classList.remove('show'),2800);
+  const ms = (typeof dur==='number' && dur>0) ? dur : TOAST_MS_DEFAULT;
+  toastT=setTimeout(()=>t.classList.remove('show'),ms);
 }
 
 
@@ -5229,11 +5261,11 @@ function handleUploadTender(ev){
       const sheetName=wb.SheetNames.includes('Data') ? 'Data' : wb.SheetNames[0];
       const ws=wb.Sheets[sheetName];
       const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-      if(rows.length<2){ toast('File kosong / tidak ada data','warn'); ev.target.value=''; return; }
+      if(rows.length<2){ toast('File kosong / tidak ada data','warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
       const head=rows[0].map(h=>String(h).trim());
       const map={};
       head.forEach((h,i)=>{ const f=FIELDS_TENDER.find(x=>x.label.toLowerCase()===h.toLowerCase()); if(f)map[f.key]=i; });
-      if(Object.keys(map).length===0){ toast('Header tidak dikenali. Gunakan template Tender.','warn'); ev.target.value=''; return; }
+      if(Object.keys(map).length===0){ toast('Header tidak dikenali. Gunakan template Tender.','warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
       const PNW_SET=new Set(PENYEDIA_KEYS);
       const batch=[];
       for(let r=1;r<rows.length;r++){
@@ -5265,7 +5297,7 @@ function handleUploadTender(ev){
         if(fmtBad){
           const xlRow=r+1;
           console.warn('[SPK] Upload Tender — Format Tidak Sesuai di baris '+xlRow+':', fmtBadCells);
-          toast(spkFmtBadMsg(fmtBadCells, xlRow),'err');
+          toast(spkFmtBadMsg(fmtBadCells, xlRow),'err', TOAST_MS_UPLOAD);
           ev.target.value=''; return;
         }
         const layers=[];
@@ -5288,18 +5320,20 @@ function handleUploadTender(ev){
         ['hpe','rab','hps'].forEach(p=>{ if(FIELDS_TENDER.some(f=>f.key===p+'_total_dengan_ppn'&&f.auto==='ppn')){ const base=Number(rec[p+'_total_tanpa_ppn'])||0; rec[p+'_total_dengan_ppn']=base>0?ppnFromBase(base):''; } });
         layers.forEach(lay=>{ ['tawar','kontrak'].forEach(p=>{ const b=Number(lay[p+'_harga_barang'])||0, j=Number(lay[p+'_harga_jasa'])||0; if(lay[p+'_total_tanpa_ppn']!==undefined) lay[p+'_total_tanpa_ppn']=(b+j)>0?(b+j):''; if(lay[p+'_total_dengan_ppn']!==undefined){ const base=Number(lay[p+'_total_tanpa_ppn'])||0; lay[p+'_total_dengan_ppn']=base>0?ppnFromBase(base):''; } }); });
         PENYEDIA_KEYS.forEach(k=>{ rec[k]=layers[0]&&layers[0][k]!=null?layers[0][k]:''; });
-        if(!String(rec.tahun||'').trim()){ const xlRow=r+1; console.warn('[SPK] Upload Tender — kolom Tahun kosong di baris '+xlRow); toast(spkMissingMsg(['tahun'], map, FIELDS_TENDER, xlRow),'warn'); ev.target.value=''; return; }
-        { const miss=missingRequiredTender(rec); if(miss.length){ const xlRow=r+1; console.warn('[SPK] Upload Tender — kolom wajib kosong di baris '+xlRow+':', miss); toast(spkMissingMsg(miss, map, FIELDS_TENDER, xlRow),'warn'); ev.target.value=''; return; } }
+        if(!String(rec.tahun||'').trim()){ const xlRow=r+1; console.warn('[SPK] Upload Tender — kolom Tahun kosong di baris '+xlRow); toast(spkMissingMsg(['tahun'], map, FIELDS_TENDER, xlRow),'warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
+        { const miss=missingRequiredTender(rec); if(miss.length){ const xlRow=r+1; console.warn('[SPK] Upload Tender — kolom wajib kosong di baris '+xlRow+':', miss); toast(spkMissingMsg(miss, map, FIELDS_TENDER, xlRow),'warn', TOAST_MS_UPLOAD); ev.target.value=''; return; } }
         rec.__xlRow = r+1;   // nomor baris di Excel, dipakai pesan duplikat
         batch.push(rec);
       }
-      if(batch.length===0){ toast('Tidak ada baris data untuk diimpor','warn'); ev.target.value=''; return; }
-      const existKeys=new Set(records_tender.map(r=>dupKeyImport(r.no_kontrak)).filter(Boolean));
+      if(batch.length===0){ toast('Tidak ada baris data untuk diimpor','warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
+      const DUPOPT_K={nomor:'no_kontrak', labelNomor:'No. Kontrak', nama:['nama_pekerjaan']};
+      const existKeys=new Set(records_tender.map(r=>spkDupKey(r,DUPOPT_K).key).filter(Boolean));
       const seen=new Map(); const toAdd=[]; const dupRows=[];
       batch.forEach(rec=>{
-        const key=dupKeyImport(rec.no_kontrak);
+        const dk=spkDupKey(rec,DUPOPT_K), key=dk.key;
         if(key && (existKeys.has(key)||seen.has(key))){
-          dupRows.push({row:rec.__xlRow, no:rec.no_kontrak, nama:rec.nama_pekerjaan, asal: seen.has(key)?('baris '+seen.get(key)):'data tersimpan'});
+          dupRows.push({row:rec.__xlRow, by:dk.by, no: rec.no_kontrak || rec.nama_pekerjaan,
+                        asal: seen.has(key)?('baris '+seen.get(key)):'data tersimpan'});
           return;
         }
         if(key) seen.set(key, rec.__xlRow);
@@ -5309,15 +5343,15 @@ function handleUploadTender(ev){
       if(dupCount) console.warn('[SPK] Upload Tender — baris dilewati (No. Kontrak duplikat):', dupRows);
       if(toAdd.length){
         try{ await Store_TENDER.bulkCreate(toAdd); }
-        catch(err){ console.error(err); toast('Gagal mengimpor: '+errMsg(err),'warn'); ev.target.value=''; return; }
+        catch(err){ console.error(err); toast('Gagal mengimpor: '+errMsg(err),'warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
         await refreshDataTender();
       }
-      if(dupCount>0) toast(spkDupMsg(dupRows, 'No. Kontrak'),'err');
+      if(dupCount>0) toast(spkDupMsg(dupRows, 'No. Kontrak'),'err', TOAST_MS_UPLOAD);
       else toast('Data berhasil ditambahkan','ok');
       // Data berhasil ditambahkan lewat template → langsung tampilkan loading &
       // kembali ke Daftar Monitoring Tender.
       if(toAdd.length){ ev.target.value=''; showView('list-tender','Memuat daftar'); return; }
-    }catch(err){ console.error(err); toast('Gagal membaca file Excel','warn'); }
+    }catch(err){ console.error(err); toast('Gagal membaca file Excel','warn', TOAST_MS_UPLOAD); }
     ev.target.value='';
   };
   reader.readAsArrayBuffer(file);
@@ -5504,16 +5538,16 @@ function hlHandleUpload(ev){
       const sheetName=wb.SheetNames.includes('Data')?'Data':wb.SheetNames[0];
       const ws=wb.Sheets[sheetName];
       const sheetRows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-      if(sheetRows.length<2){ toast('File kosong / tidak ada data','warn'); ev.target.value=''; return; }
+      if(sheetRows.length<2){ toast('File kosong / tidak ada data','warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
       const batch=[];
       for(let r=1;r<sheetRows.length;r++){
         const row=sheetRows[r]; if(!row || row.every(c=>String(c).trim()==='')) continue;
         const tglRaw=row[0], ketRaw=row[1];
-        if(!isValidDateCell(tglRaw) || String(tglRaw).trim()===''){ toast('Data gagal diperbarui : format tanggal tidak sesuai','err'); ev.target.value=''; return; }
+        if(!isValidDateCell(tglRaw) || String(tglRaw).trim()===''){ toast('Data gagal diperbarui : format tanggal tidak sesuai','err', TOAST_MS_UPLOAD); ev.target.value=''; return; }
         const iso=normDate(tglRaw);
         batch.push({tgl:iso, keterangan:String(ketRaw||'').trim()});
       }
-      if(batch.length===0){ toast('Tidak ada baris data untuk diimpor','warn'); ev.target.value=''; return; }
+      if(batch.length===0){ toast('Tidak ada baris data untuk diimpor','warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
       const existKeys=new Set((hariLibur||[]).map(r=>String(r.tgl)));
       const seen=new Set(); const toAdd=[]; let dupCount=0;
       batch.forEach(rec=>{
@@ -5526,12 +5560,12 @@ function hlHandleUpload(ev){
             for(const rec of toAdd){ await StoreHariLibur.create(rec.tgl, rec.keterangan); }
             await refreshHariLibur();
           });
-        }catch(err){ console.error(err); toast('Gagal mengimpor: '+errMsg(err),'warn'); ev.target.value=''; return; }
+        }catch(err){ console.error(err); toast('Gagal mengimpor: '+errMsg(err),'warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
       }
       if(dupCount>0) toast('Sebagian data ('+dupCount+') gagal ditambahkan : duplikat','err');
       else toast('Data berhasil ditambahkan','ok');
       renderHariLibur();
-    }catch(err){ console.error(err); toast('Gagal membaca file Excel','warn'); }
+    }catch(err){ console.error(err); toast('Gagal membaca file Excel','warn', TOAST_MS_UPLOAD); }
     ev.target.value='';
   };
   reader.readAsArrayBuffer(file);
@@ -9276,7 +9310,7 @@ function pnwXlsUpload(){
 function pnwXlsRead(file){
   if(!file) return;
   if(typeof XLSX==='undefined'){ toast('Pustaka Excel belum termuat. Muat ulang halaman.','warn'); return; }
-  if(!/\.(xlsx|xls)$/i.test(file.name||'')){ toast('Berkas harus berformat Excel (.xlsx / .xls)','warn'); return; }
+  if(!/\.(xlsx|xls)$/i.test(file.name||'')){ toast('Berkas harus berformat Excel (.xlsx / .xls)','warn', TOAST_MS_UPLOAD); return; }
   var rd=new FileReader();
   rd.onload=function(e){
     try{
@@ -9323,7 +9357,7 @@ function pnwXlsRead(file){
         nKat++; nRow+=list.length;
       });
 
-      if(!nKat){ toast('Tidak ada kategori yang dikenali di berkas ini','warn'); return; }
+      if(!nKat){ toast('Tidak ada kategori yang dikenali di berkas ini','warn', TOAST_MS_UPLOAD); return; }
       Object.keys(hasil).forEach(function(sk){
         st.pilih[sk]=st.pilih[sk]||{};
         st.syarat[sk]=st.syarat[sk]||{};
@@ -9339,7 +9373,7 @@ function pnwXlsRead(file){
       var msg=nKat+' kategori & '+nRow+' persyaratan dimuat';
       if(dilewati.length) msg+=' (sheet dilewati: '+dilewati.slice(0,3).join(', ')+(dilewati.length>3?'…':'')+')';
       toast(msg,'ok');
-    }catch(err){ console.error('pnwXlsRead:',err); try{ toast('Gagal membaca berkas: '+errMsg(err),'warn'); }catch(e){} }
+    }catch(err){ console.error('pnwXlsRead:',err); try{ toast('Gagal membaca berkas: '+errMsg(err),'warn', TOAST_MS_UPLOAD); }catch(e){} }
   };
   rd.onerror=function(){ try{ toast('Gagal membaca berkas','warn'); }catch(e){} };
   rd.readAsArrayBuffer(file);
@@ -13950,7 +13984,7 @@ function anaHandleUpload(ev){
       const sheetName=wb.SheetNames.includes('Data')?'Data':wb.SheetNames[0];
       const ws=wb.Sheets[sheetName];
       const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-      if(rows.length<2){ toast('File kosong / tidak ada data','warn'); ev.target.value=''; return; }
+      if(rows.length<2){ toast('File kosong / tidak ada data','warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
       const head=rows[0].map(h=>String(h==null?'':h).trim().toLowerCase());
 
       // --- Klasifikasi kolom ---
@@ -13983,7 +14017,7 @@ function anaHandleUpload(ev){
         if(cVol<0 && (h==='vol'||h.indexOf('volume')>=0)){ cVol=ci; return; }
         if(cSat<0 && (h==='sat'||h==='sat.'||h.indexOf('satuan')>=0)){ cSat=ci; return; }
       });
-      if(cJud<0&&cSub<0&&cUr<0&&hargaCols.length===0){ toast('Header tidak dikenali. Gunakan template resmi.','warn'); ev.target.value=''; return; }
+      if(cJud<0&&cSub<0&&cUr<0&&hargaCols.length===0){ toast('Header tidak dikenali. Gunakan template resmi.','warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
 
       // Tambah jumlah referensi bila file memuat lebih banyak (maks 20)
       let maxRef=st.jumlahRef-1; hargaCols.forEach(hc=>{ if(hc.ref>maxRef) maxRef=hc.ref; });
@@ -14002,7 +14036,7 @@ function anaHandleUpload(ev){
         else idx=dataRows.length;
         dataRows.push({idx,row});
       }
-      if(!dataRows.length){ toast('Tidak ada baris data untuk diimpor','warn'); ev.target.value=''; return; }
+      if(!dataRows.length){ toast('Tidak ada baris data untuk diimpor','warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
 
       // Tambah jumlah uraian bila baris melebihi grid (maks 150)
       let maxIdx=0; dataRows.forEach(d=>{ if(d.idx>maxIdx) maxIdx=d.idx; });
@@ -14039,7 +14073,7 @@ function anaHandleUpload(ev){
       let msg=filled+' uraian diperbarui'+(nRefTouched?(' untuk '+nRefTouched+' referensi'):'');
       if(skipped>0) msg+=' — '+skipped+' baris dilewati (di luar jangkauan)';
       toast(msg,'ok');
-    }catch(err){ console.error(err); toast('Gagal membaca file Excel','warn'); }
+    }catch(err){ console.error(err); toast('Gagal membaca file Excel','warn', TOAST_MS_UPLOAD); }
     ev.target.value='';
   };
   reader.readAsArrayBuffer(file);
@@ -16537,7 +16571,7 @@ function spkLampHandleUpload(ev){
       const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
       const sheetName=wb.SheetNames.includes('Data')?'Data':wb.SheetNames[0];
       const sheetRows=XLSX.utils.sheet_to_json(wb.Sheets[sheetName],{header:1,defval:''});
-      if(sheetRows.length<2){ toast('File kosong / tidak ada data','warn'); ev.target.value=''; return; }
+      if(sheetRows.length<2){ toast('File kosong / tidak ada data','warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
       const items=[];
       for(let r=1;r<sheetRows.length;r++){
         const row=sheetRows[r]||[];
@@ -16552,13 +16586,13 @@ function spkLampHandleUpload(ev){
           hargaJasa:(String(row[6]).trim()==='')?'':spkHargaParse(row[6])
         }));
       }
-      if(!items.length){ toast('Tidak ada baris data untuk diimpor','warn'); ev.target.value=''; return; }
+      if(!items.length){ toast('Tidak ada baris data untuk diimpor','warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
       if(items.length>150){ toast('Maksimal 150 baris lampiran','warn'); ev.target.value=''; return; }
       const L=spkLamp();
       L.items=items; L.jumlahItem=items.length;
       renderSpkSusun();
       toast(items.length+' baris lampiran berhasil dimuat','ok');
-    }catch(err){ console.error(err); toast('Gagal membaca file Excel','warn'); }
+    }catch(err){ console.error(err); toast('Gagal membaca file Excel','warn', TOAST_MS_UPLOAD); }
     ev.target.value='';
   };
   reader.readAsArrayBuffer(file);
