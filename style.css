@@ -358,6 +358,9 @@ td.cell-center{text-align:center}
 .pill{display:inline-block;padding:4px 11px;border-radius:20px;font-size:9.5px;font-weight:700;letter-spacing:.2px}
 .pill-prog{background:#fff3d6;color:#9a6b00;box-shadow:inset 0 0 0 1px rgba(154,107,0,.18)}
 .pill-kontrak{background:#d8f0e3;color:#157a44;box-shadow:inset 0 0 0 1px rgba(21,122,68,.18)}
+/* Tandatangan Kontrak: biru + teks 2 baris (dipecah <br> di tahapanPill) */
+.pill-ttd{background:#ffe4cc;color:#b3560c;box-shadow:inset 0 0 0 1px rgba(179,86,12,.22)}
+.pill.pill-ttd{white-space:normal;text-align:center;line-height:1.25;padding-top:3px;padding-bottom:3px}
 .pill-batal{background:#fbe0e0;color:#b22a2a;box-shadow:inset 0 0 0 1px rgba(178,42,42,.18)}
 /* Freeze horizontal (pane) : kolom "No." + "Nama Pekerjaan" dibekukan di kiri,
    sehingga tetap terlihat saat tabel digulir ke kanan. */
@@ -1344,6 +1347,7 @@ td{padding:2px 4px}
 .pill{padding:5px 12px;border-radius:20px;font-weight:800;letter-spacing:.3px;font-size:9.5px}
 .pill-prog{background:linear-gradient(135deg,#fff4d8,#ffe9b0);color:#946400}
 .pill-kontrak{background:linear-gradient(135deg,#d7f2e3,#c3ead4);color:#137a44}
+.pill-ttd{background:linear-gradient(135deg,#ffe7d3,#ffd6b5);color:#ad5309}
 .pill-batal{background:linear-gradient(135deg,#fbe0e0,#f6cccc);color:#b22a2a}
 
 /* Badge jumlah & count: sedikit lebih menonjol */
@@ -1736,6 +1740,7 @@ tbody tr:hover{background:#e9f6f7}
 .pill{padding:5px 12px;border-radius:20px;font-size:9.5px;box-shadow:none}
 .pill-prog{background:linear-gradient(180deg,#fff6e0,#ffeec6);color:#8a5f00;box-shadow:inset 0 0 0 1px rgba(154,107,0,.2)}
 .pill-kontrak{background:linear-gradient(180deg,#e0f5ea,#d1efe0);color:#127a43;box-shadow:inset 0 0 0 1px rgba(21,122,68,.2)}
+.pill-ttd{background:linear-gradient(180deg,#ffeade,#ffdcc2);color:#ad5309;box-shadow:inset 0 0 0 1px rgba(179,86,12,.24)}
 .pill-batal{background:linear-gradient(180deg,#fce4e4,#f9d9d9);color:#b02626;box-shadow:inset 0 0 0 1px rgba(178,42,42,.2)}
 /* Tombol aksi baris */
 .act{border-radius:9px}
@@ -1891,6 +1896,15 @@ tr.hl-weekend td{background:#f5f8fb}
 #view-fk-input .table-wrap td.fk-col-bidang,
 #view-fk-view .table-wrap th.fk-col-bidang,
 #view-fk-view .table-wrap td.fk-col-bidang{width:200px;min-width:200px;max-width:200px;white-space:normal;word-break:break-word;overflow-wrap:break-word;line-height:1.3}
+/* Kolom Penyedia — mengikuti perlakuan Bidang Pelaksana (boleh turun baris) */
+.fk-col-penyedia{width:220px;min-width:220px;max-width:220px;text-align:center;white-space:normal;word-break:break-word;overflow-wrap:break-word;line-height:1.3}
+#view-fk-input .table-wrap th.fk-col-penyedia,
+#view-fk-input .table-wrap td.fk-col-penyedia,
+#view-fk-view .table-wrap th.fk-col-penyedia,
+#view-fk-view .table-wrap td.fk-col-penyedia{width:220px;min-width:220px;max-width:220px;white-space:normal;word-break:break-word;overflow-wrap:break-word;line-height:1.3}
+/* Tender: beberapa penyedia ditumpuk seperti kolom No. Kontrak */
+.table-wrap td.fk-col-penyedia.wrap-penyedia{text-align:left}
+.table-wrap td.fk-col-penyedia .stack-line{white-space:normal}
 /* Nama Pekerjaan pada File Kontrak dilebarkan +60px (tanpa mengubah tabel Monitoring) */
 #view-fk-input .table-wrap th.col-nama-freeze,#view-fk-input .table-wrap td.col-nama-freeze,
 #view-fk-view .table-wrap th.col-nama-freeze,#view-fk-view .table-wrap td.col-nama-freeze{min-width:300px;max-width:360px}

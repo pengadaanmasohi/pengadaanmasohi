@@ -3836,7 +3836,12 @@ function viewRecordPl(rid){
 /* ---- Pills status PL ---- */
 function tahapanPill(s){
   if(!s) return '—';
-  const cls = (s==='Terkontrak'||s==='Tandatangan Kontrak') ? 'pill-kontrak'
+  /* "Tandatangan Kontrak" berwarna sendiri (biru) & sengaja dipecah 2 baris
+     lewat <br>: sel tabel ber-white-space:nowrap sehingga pemenggalan otomatis
+     tidak jalan; .pill-ttd di style.css mengembalikan white-space:normal. */
+  if(s==='Tandatangan Kontrak')
+    return '<span class="pill pill-ttd">Tandatangan<br>Kontrak</span>';
+  const cls = (s==='Terkontrak') ? 'pill-kontrak'
             : (s==='Gagal/Batal') ? 'pill-batal' : 'pill-prog';
   return `<span class="pill ${cls}">${s}</span>`;
 }
@@ -6454,6 +6459,7 @@ const FK_MODULES = {
     year: r=> contractYear(r),
     nilai: r=> rupiah(r.nilai_kontrak_kr)||'—',
     penyedia: r=> r.nama_penyedia || '',
+    penyediaCell: r=> fkEsc(r.nama_penyedia||'') || '—',
     noKontrakRaw: r=> r.no_spbj || ''
   },
   pl: {
@@ -6469,6 +6475,7 @@ const FK_MODULES = {
     year: r=> yearOf(r, r.tgl_awal_kontrak),
     nilai: r=> rupiah(r.kontrak_total_dengan_ppn)||'—',
     penyedia: r=> r.perusahaan || '',
+    penyediaCell: r=> fkEsc(r.perusahaan||'') || '—',
     noKontrakRaw: r=> r.no_kontrak || ''
   },
   tender: {
@@ -6492,6 +6499,7 @@ const FK_MODULES = {
       const L = Array.isArray(r.penyedia_layers) ? r.penyedia_layers : [];
       return [base, ...L.map(x=>(x&&x.perusahaan)||'')].filter(Boolean).join(' ');
     },
+    penyediaCell: r=> stackPenyediaHtml(r,'perusahaan'),
     noKontrakRaw: r=>{
       const base = r.no_kontrak || '';
       const L = Array.isArray(r.penyedia_layers) ? r.penyedia_layers : [];
@@ -6745,7 +6753,7 @@ async function renderFkView(){
 
 function fkEmptyRow(mode){
   const msg = 'Data tidak tersedia';
-  return `<tr><td colspan="6"><div class="empty">
+  return `<tr><td colspan="7"><div class="empty">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
     <div>${msg}</div>
   </div></td></tr>`;
@@ -6766,6 +6774,7 @@ function fkRenderRows(mode, modul, cfg, rows, meta, tb, pg){
     const rid=String(r.id);
     const nama=cfg.nama(r)||'—';
     const bidang=cfg.bidang(r)||'—';
+    const penyedia=(cfg.penyediaCell ? cfg.penyediaCell(r) : fkEsc(cfg.penyedia(r)||'')) || '—';
     const noKontrak=cfg.noKontrak(r)||'—';
     const tgl=fmtDate(cfg.tgl(r))||'—';
     const f=meta[rid];
@@ -6779,6 +6788,7 @@ function fkRenderRows(mode, modul, cfg, rows, meta, tb, pg){
       <td class="${kontrakCls}">${noKontrak}</td>
       <td class="cell-center col-date">${tgl}</td>
       <td class="fk-col-bidang wrap-cell">${fkEsc(bidang)}</td>
+      <td class="fk-col-penyedia wrap-cell${stacked?' wrap-penyedia':''}">${penyedia}</td>
       <td class="fk-actcell"${dropAttrs}><div class="fk-actions">${aksi}</div></td>
     </tr>`;
   }).join('');
