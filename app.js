@@ -2635,6 +2635,28 @@ async function spkFinishTemplate(wsD, COLS, OPSI, isStackFn, ROWS){
       });
     }catch(e){ console.warn('[SPK] conditional format gagal utk '+k+':',e); }
   });
+  // 1c) TAHUN WAJIB: sel Tahun disorot MERAH bila barisnya sudah diisi tetapi
+  //     kolom Tahun dibiarkan kosong. Aturan ini keras — saat diunggah, satu
+  //     baris tanpa Tahun membatalkan SELURUH berkas. Sorotan ini agar
+  //     ketahuan sejak di Excel, bukan setelah ditolak aplikasi.
+  const thC = colOf['tahun'];
+  if(thC){
+    const LT = spkColLetterTpl(thC);
+    const LAST = spkColLetterTpl(COLS.length);
+    const redEdge2={style:'thin',color:{argb:'FF9C0006'}};
+    try{
+      wsD.addConditionalFormatting({
+        ref:`${LT}2:${LT}${lastRow}`,
+        rules:[{
+          type:'expression', priority:cfPrio++,
+          formulae:[`AND(COUNTA($A2:$${LAST}2)>0,${LT}2="")`],
+          style:{ fill:{type:'pattern',pattern:'solid',bgColor:{argb:'FFFFC7CE'}},
+                  font:{color:{argb:'FF9C0006'},bold:true},
+                  border:{top:redEdge2,left:redEdge2,bottom:redEdge2,right:redEdge2} }
+        }]
+      });
+    }catch(e){ console.warn('[SPK] conditional format Tahun gagal:',e); }
+  }
   // 2) Kolom Total → rumus otomatis + terkunci
   COLS.forEach((f)=>{
     const tC=colOf[f.key]; if(!tC) return;
