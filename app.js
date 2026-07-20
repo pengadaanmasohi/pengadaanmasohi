@@ -112,7 +112,7 @@ const FIELDS_PL = [
   // IX. Perjanjian/Kontrak
   {key:'no_kontrak', label:'No. Kontrak', type:'text', table:true},
   {key:'tgl_awal_kontrak', label:'Tgl. Awal Kontrak', type:'date', table:true},
-  {key:'tgl_akhir_kontrak', label:'Tgl. Akhir Kontrak', type:'date'},
+  {key:'tgl_akhir_kontrak', label:'Tgl. Akhir Kontrak', type:'date', auto:'akhirkontrak'},
   {key:'kontrak_harga_barang', label:'Kontrak — Harga Barang', type:'num'},
   {key:'kontrak_harga_jasa', label:'Kontrak — Harga Jasa', type:'num'},
   {key:'kontrak_total_tanpa_ppn', label:'Kontrak — Harga Total (Tanpa PPN)', type:'num', auto:'sum'},
@@ -140,7 +140,7 @@ const FIELDS_PL = [
   {key:'csms_jenis_dokumen', label:'Jenis Dokumen (CSMS)', type:'select', options:['Sertifikat','Berita Acara']},
   {key:'csms_level_risiko', label:'Level Risiko (CSMS)', type:'select', options:RISIKO_OPTS},
   {key:'csms_tgl_terbit', label:'Tgl. Terbit (CSMS)', type:'date'},
-  {key:'csms_tgl_berakhir', label:'Tgl. Berakhir (CSMS)', type:'date'},
+  {key:'csms_tgl_berakhir', label:'Tgl. Berakhir (CSMS)', type:'date', auto:'csms3thn'},
   // XIV. Data Lain-Lain
   {key:'norm_eproc', label:'Norm. Sistem Eproc', type:'text', ph:'cth. JASA-20160222-135'},
   {key:'nama_material_jasa', label:'Nama Material/Jasa', type:'text', ph:'cth. Komunikasi'},
@@ -2629,6 +2629,35 @@ async function spkFinishTemplate(wsD, COLS, OPSI, isStackFn, ROWS){
         cell.numFmt=ACCT_NODEC; cell.alignment={vertical:'middle',horizontal:'right'};
         cell.protection={locked:true}; cell.fill=LOCK_FILL;
       }
+    } else if(f.auto==='akhirkontrak'){
+      /* Tgl. Akhir Kontrak = Tgl. Awal Kontrak + Negosiasi Jangka Waktu Pelaksanaan.
+         Kolom negosiasi berupa teks bebas ("60", "60 hari kalender"), jadi angkanya
+         diambil dari KATA PERTAMA sel tersebut. Bila kata pertama bukan angka,
+         hasilnya dikosongkan (tidak memunculkan galat #VALUE!). */
+      const aC=colOf['tgl_awal_kontrak'], nC=colOf['negosiasi_pelaksanaan'];
+      for(let r=2;r<=lastRow;r++){
+        const cell=wsD.getCell(r,tC);
+        if(!stacked && aC && nC){
+          const LA=spkColLetterTpl(aC), LN=spkColLetterTpl(nC);
+          cell.value={formula:`IF(OR(${LA}${r}="",${LN}${r}=""),"",IFERROR(${LA}${r}+VALUE(TRIM(LEFT(SUBSTITUTE(TRIM(${LN}${r}&"")," ",REPT(" ",100)),100))),""))`};
+        } else { cell.value=null; }
+        cell.numFmt='dd/mm/yyyy'; cell.alignment={vertical:'middle'};
+        cell.protection={locked:true}; cell.fill=LOCK_FILL;
+      }
+    } else if(f.auto==='csms3thn'){
+      /* Tgl. Berakhir (CSMS) = Tgl. Terbit (CSMS) + 3 tahun kalender.
+         EDATE(...,36) mempertahankan tanggal yang sama tiga tahun berikutnya dan
+         menangani 29 Februari dengan benar (jatuh ke 28 Februari). */
+      const tgC=colOf['csms_tgl_terbit'];
+      for(let r=2;r<=lastRow;r++){
+        const cell=wsD.getCell(r,tC);
+        if(!stacked && tgC){
+          const LT=spkColLetterTpl(tgC);
+          cell.value={formula:`IF(${LT}${r}="","",EDATE(${LT}${r},36))`};
+        } else { cell.value=null; }
+        cell.numFmt='dd/mm/yyyy'; cell.alignment={vertical:'middle'};
+        cell.protection={locked:true}; cell.fill=LOCK_FILL;
+      }
     } else if(f.auto==='ppn'){
       const p=f.key.replace(/_total_dengan_ppn$/,'');
       const tt=colOf[p+'_total_tanpa_ppn'];
@@ -3833,14 +3862,16 @@ async function downloadTemplatePl(){
    ['Kendala & Tindak Lanjut','Diisi hanya bila Tahapan/Proses = Gagal/Batal'],
    ['Harga Total (Tanpa PPN)','Terisi otomatis = Harga Barang + Harga Jasa (jangan diedit manual)'],
    ['Jenis Dokumen (CSMS)','Pilih: Sertifikat / Berita Acara'],
-   ['Negosiasi Jangka Waktu Pelaksanaan','Isi jangka waktu yang disepakati (hari)'],
+   ['Negosiasi Jangka Waktu Pelaksanaan','Isi jangka waktu yang disepakati dalam HARI. Boleh "60" atau "60 hari kalender" \u2014 angka diambil dari kata pertama.'],
+   ['Tgl. Akhir Kontrak','Terisi otomatis = Tgl. Awal Kontrak + Negosiasi Jangka Waktu Pelaksanaan (sel abu-abu, jangan diedit manual).'],
+   ['Tgl. Berakhir (CSMS)','Terisi otomatis = Tgl. Terbit (CSMS) + 3 tahun kalender (sel abu-abu, jangan diedit manual).'],
    ['Manajemen Kontrak','Pilih: Sudah / Belum'],
    ['Format Tanggal','Kolom tanggal berformat dd/mm/yyyy (mis. 31/01/2025).'],
    ['Nilai/Harga','Kolom nilai berformat Rupiah. Ketik angka saja (mis. 100000000).'],
    ['','Isi data mulai baris ke-2. Jangan menghapus sheet "Opsi".'],
   ].forEach(r=>wsG.addRow(r));
   wsG.getCell('A1').font={bold:true,size:14,color:{argb:'FF0E7C86'}};
-  for(let r=3;r<=14;r++){ wsG.getCell(`A${r}`).font={bold:true,color:{argb:'FF095E66'}}; }
+  for(let r=3;r<=16;r++){ wsG.getCell(`A${r}`).font={bold:true,color:{argb:'FF095E66'}}; }
 
   // Rapikan: rumus+kunci Total, sorot dropdown, proteksi sheet
   await spkFinishTemplate(wsD, COLS, OPSI, null, ROWS);
