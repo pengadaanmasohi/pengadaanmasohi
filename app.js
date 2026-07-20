@@ -702,6 +702,21 @@ function canInput(){ return currentRole==='admin' || currentRole==='user' || cur
 function requireAdmin(){ if(!isAdmin()){ toast('Hanya admin yang dapat melakukan tindakan ini','warn'); return false; } return true; }
 function requireInput(){ if(!canInput()){ toast('Anda tidak memiliki akses untuk menambah data','warn'); return false; } return true; }
 
+/* Hak ubah File Kontrak per-modul (unggah / hapus file):
+   - admin & demo : kontrol penuh di semua modul (kr / pl / tender)
+   - user         : kontrol penuh HANYA di SPBJ / Kontrak Rinci (kr);
+                    di Pengadaan Langsung & Tender hanya boleh melihat
+   - lainnya (tamu): tidak boleh mengubah */
+function fkCanModify(modul){
+  if(currentRole==='admin' || currentRole==='demo') return true;
+  if(currentRole==='user') return modul==='kr';
+  return false;
+}
+function fkRequireModify(modul){
+  if(!fkCanModify(modul)){ toast('Anda hanya dapat melihat file kontrak pada bagian ini','warn'); return false; }
+  return true;
+}
+
 /* #12: Login satu halaman — username + kata sandi. Dua akun: Admin & User.
    Peran ditentukan otomatis dari kombinasi username + kata sandi yang cocok. */
 function resetLoginForm(){
@@ -6803,6 +6818,11 @@ async function renderFkView(){
   const cfg=FK_MODULES[modul];
   const thNok=document.getElementById('fk-view-th-nok'); if(thNok) thNok.textContent=cfg.noKontrakLabel;
   fkSetSearchPlaceholder('view', cfg);
+  // Tombol "Tambah Data" hanya untuk yang berhak mengubah modul ini —
+  // untuk user di Pengadaan Langsung & Tender tombol dihilangkan sepenuhnya
+  // (user hanya boleh melihat pada kedua bagian tersebut).
+  const tbhBtn=document.getElementById('fk-view-tambah');
+  if(tbhBtn) tbhBtn.style.display = fkCanModify(modul) ? '' : 'none';
   const tb=document.getElementById('fk-view-body');
   const pg=document.getElementById('fk-view-pagination');
   const cEl=document.getElementById('fk-view-count');
@@ -6843,7 +6863,7 @@ function fkRenderRows(mode, modul, cfg, rows, meta, tb, pg){
     const tgl=fmtDate(cfg.tgl(r))||'—';
     const f=meta[rid];
     const aksi = (mode==='input') ? fkInputActionHtml(modul, rid, f) : fkViewActionHtml(modul, rid, f);
-    const dropAttrs = (mode==='input' && canInput())
+    const dropAttrs = (mode==='input' && fkCanModify(modul))
       ? ` ondragover="fkRowDragOver(event,this)" ondragleave="fkRowDragLeave(event,this)" ondrop="fkRowDrop(event,'${modul}','${rid}',this)"`
       : '';
     return `<tr>
@@ -6862,7 +6882,7 @@ function fkRenderRows(mode, modul, cfg, rows, meta, tb, pg){
 /* Aksi kolom Input Data: hanya "Unggah File" (daftar ini hanya kontrak yang BELUM diunggah) */
 function fkInputActionHtml(modul, rid, f){
   const upIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v13"/></svg>';
-  return canInput()
+  return fkCanModify(modul)
     ? `<button class="fk-act fk-act-up" onclick="fkUpload('${modul}','${rid}',this)">${upIcon}Unggah File</button>`
     : `<span class="fk-none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>Menunggu unggah</span>`;
 }
@@ -6872,7 +6892,7 @@ function fkViewActionHtml(modul, rid, f){
     return `<span class="fk-none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>Data tidak tersedia</span>`;
   }
   const view=`<button class="fk-act fk-act-view fk-act-icon" title="Lihat" aria-label="Lihat" onclick="fkPreview('${modul}','${rid}',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>`;
-  const del=canInput()?`<button class="fk-act fk-act-del fk-act-icon" title="Hapus" aria-label="Hapus" onclick="fkDelete('${modul}','${rid}',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>`:'';
+  const del=fkCanModify(modul)?`<button class="fk-act fk-act-del fk-act-icon" title="Hapus" aria-label="Hapus" onclick="fkDelete('${modul}','${rid}',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>`:'';
   return view+del;
 }
 
@@ -6906,6 +6926,7 @@ function fkIsPdf(file){
 /* Klik "Unggah File" -> buka POPUP drag & drop (di dalamnya bisa telusuri file). */
 function fkUpload(modul, recordId, btn){
   if(!requireInput()) return;
+  if(!fkRequireModify(modul)) return;
   fkUploadCtx={modul, recordId, btn};
   fkOpenUploadModal();
 }
@@ -7053,6 +7074,7 @@ function fkRowDrop(ev, modul, recordId, el){
   ev.preventDefault(); ev.stopPropagation();
   el.classList.remove('fk-drop-over');
   if(!requireInput()) return;
+  if(!fkRequireModify(modul)) return;
   const dt=ev.dataTransfer;
   const file=dt && dt.files && dt.files[0];
   if(!file){ toast('Tidak ada file yang terdeteksi pada saat drop','warn'); return; }
@@ -7113,6 +7135,7 @@ async function fkPreview(modul, recordId, btn){
 /* ---- Hapus file ---- */
 function fkDelete(modul, recordId, btn){
   if(!requireInput()) return;
+  if(!fkRequireModify(modul)) return;
   openConfirm({
     icon:'del', title:'Hapus File', text:'Hapus file kontrak ini? Kontrak akan dikembalikan ke Input Kontrak untuk diunggah kembali.',
     onYes:async()=>{
