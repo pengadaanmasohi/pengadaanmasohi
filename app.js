@@ -2562,6 +2562,28 @@ function spkFmtBadMsg(cells, xlRow){
 }
 /* Susun pesan "kolom wajib yang belum diisi" beserta sel-nya.
    keys: array key field wajib yang kosong ; map: key->indeks kolom ; fields: definisi field. */
+/* Kunci duplikat KHUSUS IMPOR.
+   Berbeda dari dupKey(): nilai penampung seperti "-", "—", "n/a", "belum",
+   "tbd" DIANGGAP KOSONG, sehingga banyak baris yang belum punya nomor kontrak
+   tidak saling dianggap duplikat lalu terbuang diam-diam. dupKey() sendiri
+   sengaja tidak diubah karena juga dipakai pemeriksaan simpan manual. */
+const SPK_DUP_KOSONG = ['-','--','---','n/a','na','n.a','tbd','tba','belum','belum ada','nihil','none','null','.',',','_'];
+function dupKeyImport(v){
+  const s = String(v==null?'':v).replace(/[\u2010-\u2015]/g,'-').trim().toLowerCase().replace(/\s+/g,' ');
+  if(!s) return '';
+  return SPK_DUP_KOSONG.includes(s) ? '' : s;
+}
+/* Pesan "baris dilewati karena duplikat" — menyebut baris Excel & nomornya,
+   supaya tidak lagi hanya berupa jumlah tanpa keterangan. */
+function spkDupMsg(dupRows, labelNomor){
+  const show = dupRows.slice(0,6).map(d=>{
+    const asal = d.asal ? (' = ' + d.asal) : '';
+    return 'baris '+d.row+' ('+(d.no||'-')+')'+asal;
+  });
+  let msg = 'Sebagian data ('+dupRows.length+') gagal ditambahkan : duplikat '+(labelNomor||'No. Kontrak')+'\n'+show.join(' ; ');
+  if(dupRows.length>6) msg += ' ; +'+(dupRows.length-6)+' baris lain';
+  return msg+'.';
+}
 function spkMissingMsg(keys, map, fields, xlRow){
   const byKey={}; (fields||[]).forEach(f=>{ byKey[f.key]=f; });
   const show=keys.slice(0,8).map(k=>{
@@ -2927,24 +2949,30 @@ function handleUpload(ev){
           ev.target.value=''; return;
         }
         { const miss=validateRequiredKr(rec); if(miss.length){ const xlRow=r+1; console.warn('[SPK] Upload SPBJ — kolom wajib kosong di baris '+xlRow+':', miss); toast(spkMissingMsg(miss, map, FIELDS, xlRow),'warn'); ev.target.value=''; return; } }
+        rec.__xlRow = r+1;   // nomor baris di Excel, dipakai pesan duplikat
         batch.push(rec);
       }
       if(batch.length===0){ toast('Tidak ada baris data untuk diimpor','warn'); ev.target.value=''; return; }
       // Saring duplikat berdasarkan No. SPBJ / Kontrak Rinci (vs data yang ada & sesama batch)
-      const existKeys=new Set(records.map(r=>dupKey(r.no_spbj)).filter(Boolean));
-      const seen=new Set(); const toAdd=[]; let dupCount=0;
+      const existKeys=new Set(records.map(r=>dupKeyImport(r.no_spbj)).filter(Boolean));
+      const seen=new Map(); const toAdd=[]; const dupRows=[];
       batch.forEach(rec=>{
-        const key=dupKey(rec.no_spbj);
-        if(key && (existKeys.has(key)||seen.has(key))){ dupCount++; return; }
-        if(key) seen.add(key);
+        const key=dupKeyImport(rec.no_spbj);
+        if(key && (existKeys.has(key)||seen.has(key))){
+          dupRows.push({row:rec.__xlRow, no:rec.no_spbj, asal: seen.has(key)?('baris '+seen.get(key)):'data tersimpan'});
+          return;
+        }
+        if(key) seen.set(key, rec.__xlRow);
         toAdd.push(rec);
       });
+      const dupCount=dupRows.length;
+      if(dupCount) console.warn('[SPK] Upload SPBJ/Kontrak Rinci — baris dilewati (No. SPBJ duplikat):', dupRows);
       if(toAdd.length){
         try{ await Store.bulkCreate(toAdd); }
         catch(err){ console.error(err); toast('Gagal mengimpor: '+errMsg(err),'warn'); ev.target.value=''; return; }
         await refreshData();
       }
-      if(dupCount>0) toast('Sebagian data ('+dupCount+') gagal ditambahkan : duplikat','err');
+      if(dupCount>0) toast(spkDupMsg(dupRows, 'No. SPBJ'),'err');
       else toast('Data berhasil ditambahkan','ok');
       // Data berhasil ditambahkan lewat template → langsung tampilkan loading &
       // kembali ke Daftar Monitoring (showView sudah memunculkan animasi "Memuat").
@@ -3948,23 +3976,29 @@ function handleUploadPl(ev){
         // Field multi-nilai independen: pecah baris (Alt+Enter dalam satu sel) menjadi daftar
         INDEP_MULTI_KEYS_PL.forEach(k=>{ const raw=String(rec[k]!=null?rec[k]:''); const list=raw.split(/\r?\n/).map(s=>s.trim()).filter(Boolean); rec[k+'_list']=list; rec[k]=list[0]||''; });
         { const miss=missingRequiredPl(rec); if(miss.length){ const xlRow=r+1; console.warn('[SPK] Upload Pengadaan Langsung — kolom wajib kosong di baris '+xlRow+':', miss); toast(spkMissingMsg(miss, map, FIELDS_PL, xlRow),'warn'); ev.target.value=''; return; } }
+        rec.__xlRow = r+1;   // nomor baris di Excel, dipakai pesan duplikat
         batch.push(rec);
       }
       if(batch.length===0){ toast('Tidak ada baris data untuk diimpor','warn'); ev.target.value=''; return; }
-      const existKeys=new Set(records_pl.map(r=>dupKey(r.no_kontrak)).filter(Boolean));
-      const seen=new Set(); const toAdd=[]; let dupCount=0;
+      const existKeys=new Set(records_pl.map(r=>dupKeyImport(r.no_kontrak)).filter(Boolean));
+      const seen=new Map(); const toAdd=[]; const dupRows=[];
       batch.forEach(rec=>{
-        const key=dupKey(rec.no_kontrak);
-        if(key && (existKeys.has(key)||seen.has(key))){ dupCount++; return; }
-        if(key) seen.add(key);
+        const key=dupKeyImport(rec.no_kontrak);
+        if(key && (existKeys.has(key)||seen.has(key))){
+          dupRows.push({row:rec.__xlRow, no:rec.no_kontrak, nama:rec.nama_pekerjaan, asal: seen.has(key)?('baris '+seen.get(key)):'data tersimpan'});
+          return;
+        }
+        if(key) seen.set(key, rec.__xlRow);
         toAdd.push(rec);
       });
+      const dupCount=dupRows.length;
+      if(dupCount) console.warn('[SPK] Upload Pengadaan Langsung — baris dilewati (No. Kontrak duplikat):', dupRows);
       if(toAdd.length){
         try{ await Store_PL.bulkCreate(toAdd); }
         catch(err){ console.error(err); toast('Gagal mengimpor: '+errMsg(err),'warn'); ev.target.value=''; return; }
         await refreshDataPl();
       }
-      if(dupCount>0) toast('Sebagian data ('+dupCount+') gagal ditambahkan : duplikat','err');
+      if(dupCount>0) toast(spkDupMsg(dupRows, 'No. Kontrak'),'err');
       else toast('Data berhasil ditambahkan','ok');
       // Data berhasil ditambahkan lewat template → langsung tampilkan loading &
       // kembali ke Daftar Monitoring Pengadaan Langsung.
@@ -5226,23 +5260,29 @@ function handleUploadTender(ev){
         layers.forEach(lay=>{ ['tawar','kontrak'].forEach(p=>{ const b=Number(lay[p+'_harga_barang'])||0, j=Number(lay[p+'_harga_jasa'])||0; if(lay[p+'_total_tanpa_ppn']!==undefined) lay[p+'_total_tanpa_ppn']=(b+j)>0?(b+j):''; if(lay[p+'_total_dengan_ppn']!==undefined){ const base=Number(lay[p+'_total_tanpa_ppn'])||0; lay[p+'_total_dengan_ppn']=base>0?ppnFromBase(base):''; } }); });
         PENYEDIA_KEYS.forEach(k=>{ rec[k]=layers[0]&&layers[0][k]!=null?layers[0][k]:''; });
         { const miss=missingRequiredTender(rec); if(miss.length){ const xlRow=r+1; console.warn('[SPK] Upload Tender — kolom wajib kosong di baris '+xlRow+':', miss); toast(spkMissingMsg(miss, map, FIELDS_TENDER, xlRow),'warn'); ev.target.value=''; return; } }
+        rec.__xlRow = r+1;   // nomor baris di Excel, dipakai pesan duplikat
         batch.push(rec);
       }
       if(batch.length===0){ toast('Tidak ada baris data untuk diimpor','warn'); ev.target.value=''; return; }
-      const existKeys=new Set(records_tender.map(r=>dupKey(r.no_kontrak)).filter(Boolean));
-      const seen=new Set(); const toAdd=[]; let dupCount=0;
+      const existKeys=new Set(records_tender.map(r=>dupKeyImport(r.no_kontrak)).filter(Boolean));
+      const seen=new Map(); const toAdd=[]; const dupRows=[];
       batch.forEach(rec=>{
-        const key=dupKey(rec.no_kontrak);
-        if(key && (existKeys.has(key)||seen.has(key))){ dupCount++; return; }
-        if(key) seen.add(key);
+        const key=dupKeyImport(rec.no_kontrak);
+        if(key && (existKeys.has(key)||seen.has(key))){
+          dupRows.push({row:rec.__xlRow, no:rec.no_kontrak, nama:rec.nama_pekerjaan, asal: seen.has(key)?('baris '+seen.get(key)):'data tersimpan'});
+          return;
+        }
+        if(key) seen.set(key, rec.__xlRow);
         toAdd.push(rec);
       });
+      const dupCount=dupRows.length;
+      if(dupCount) console.warn('[SPK] Upload Tender — baris dilewati (No. Kontrak duplikat):', dupRows);
       if(toAdd.length){
         try{ await Store_TENDER.bulkCreate(toAdd); }
         catch(err){ console.error(err); toast('Gagal mengimpor: '+errMsg(err),'warn'); ev.target.value=''; return; }
         await refreshDataTender();
       }
-      if(dupCount>0) toast('Sebagian data ('+dupCount+') gagal ditambahkan : duplikat','err');
+      if(dupCount>0) toast(spkDupMsg(dupRows, 'No. Kontrak'),'err');
       else toast('Data berhasil ditambahkan','ok');
       // Data berhasil ditambahkan lewat template → langsung tampilkan loading &
       // kembali ke Daftar Monitoring Tender.
