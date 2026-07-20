@@ -2790,6 +2790,7 @@ async function downloadTemplate(){
   const wsG = wb.addWorksheet('Petunjuk');
   wsG.columns=[{width:26},{width:82}];
   [['PETUNJUK PENGISIAN',''],['',''],
+   ['Tahun','WAJIB diisi pada setiap baris. Bila ada satu baris saja yang kosong, seluruh berkas ditolak.'],
    ['Jenis Anggaran','Pilih dari dropdown: Operasi / Investasi'],
    ['Bidang Pelaksana','Pilih dari dropdown (7 bidang)'],
    ['Status','Pilih dari dropdown: On Progress / Selesai'],
@@ -2799,7 +2800,7 @@ async function downloadTemplate(){
   ].forEach(r=>wsG.addRow(r));
   const gTitle = wsG.getCell('A1');
   gTitle.font = {bold:true,size:14,color:{argb:'FF0E7C86'}};
-  for(let r=3;r<=8;r++){ wsG.getCell(`A${r}`).font={bold:true,color:{argb:'FF095E66'}}; }
+  for(let r=3;r<=9;r++){ wsG.getCell(`A${r}`).font={bold:true,color:{argb:'FF095E66'}}; }
 
   // Rapikan: sorot dropdown, kunci & proteksi (modul SPBJ tidak punya kolom Total)
   await spkFinishTemplate(wsD, COLS, OPSI, null, ROWS);
@@ -2948,6 +2949,7 @@ function handleUpload(ev){
           toast(spkFmtBadMsg(fmtBadCells, xlRow),'err');
           ev.target.value=''; return;
         }
+        if(!String(rec.tahun||'').trim()){ const xlRow=r+1; console.warn('[SPK] Upload SPBJ/Kontrak Rinci — kolom Tahun kosong di baris '+xlRow); toast(spkMissingMsg(['tahun'], map, FIELDS, xlRow),'warn'); ev.target.value=''; return; }
         { const miss=validateRequiredKr(rec); if(miss.length){ const xlRow=r+1; console.warn('[SPK] Upload SPBJ — kolom wajib kosong di baris '+xlRow+':', miss); toast(spkMissingMsg(miss, map, FIELDS, xlRow),'warn'); ev.target.value=''; return; } }
         rec.__xlRow = r+1;   // nomor baris di Excel, dipakai pesan duplikat
         batch.push(rec);
@@ -3880,6 +3882,8 @@ async function downloadTemplatePl(){
   const wsG=wb.addWorksheet('Petunjuk');
   wsG.columns=[{width:30},{width:80}];
   [['PETUNJUK PENGISIAN — PENGADAAN LANGSUNG',''],['',''],
+   ['Tahun','WAJIB diisi pada setiap baris. Bila ada satu baris saja yang kosong, seluruh berkas ditolak.'],
+   ['No. Kontrak','Tidak boleh kembar — baris dengan nomor yang sama ditolak. Boleh dikosongkan bila kontrak belum terbit (tanda "-" juga dianggap kosong).'],
    ['Bidang Pelaksana','Pilih dari dropdown (7 bidang)'],
    ['Level Risiko / Level Risiko (CSMS)','Pilih dari dropdown: Tidak Ada s/d Ekstrem'],
    ['Jenis Anggaran','Pilih: Operasi / Investasi'],
@@ -3899,7 +3903,7 @@ async function downloadTemplatePl(){
    ['','Isi data mulai baris ke-2. Jangan menghapus sheet "Opsi".'],
   ].forEach(r=>wsG.addRow(r));
   wsG.getCell('A1').font={bold:true,size:14,color:{argb:'FF0E7C86'}};
-  for(let r=3;r<=16;r++){ wsG.getCell(`A${r}`).font={bold:true,color:{argb:'FF095E66'}}; }
+  for(let r=3;r<=18;r++){ wsG.getCell(`A${r}`).font={bold:true,color:{argb:'FF095E66'}}; }
 
   // Rapikan: rumus+kunci Total, sorot dropdown, proteksi sheet
   await spkFinishTemplate(wsD, COLS, OPSI, null, ROWS);
@@ -3975,6 +3979,7 @@ function handleUploadPl(ev){
         FIELDS_PL.forEach(f=>{ if(f.auto==='ppn'){ const base=Number(rec[f.key.replace(/_total_dengan_ppn$/,'_total_tanpa_ppn')])||0; rec[f.key]=base>0?ppnFromBase(base):''; } });
         // Field multi-nilai independen: pecah baris (Alt+Enter dalam satu sel) menjadi daftar
         INDEP_MULTI_KEYS_PL.forEach(k=>{ const raw=String(rec[k]!=null?rec[k]:''); const list=raw.split(/\r?\n/).map(s=>s.trim()).filter(Boolean); rec[k+'_list']=list; rec[k]=list[0]||''; });
+        if(!String(rec.tahun||'').trim()){ const xlRow=r+1; console.warn('[SPK] Upload Pengadaan Langsung — kolom Tahun kosong di baris '+xlRow); toast(spkMissingMsg(['tahun'], map, FIELDS_PL, xlRow),'warn'); ev.target.value=''; return; }
         { const miss=missingRequiredPl(rec); if(miss.length){ const xlRow=r+1; console.warn('[SPK] Upload Pengadaan Langsung — kolom wajib kosong di baris '+xlRow+':', miss); toast(spkMissingMsg(miss, map, FIELDS_PL, xlRow),'warn'); ev.target.value=''; return; } }
         rec.__xlRow = r+1;   // nomor baris di Excel, dipakai pesan duplikat
         batch.push(rec);
@@ -5122,6 +5127,8 @@ async function downloadTemplateTender(){
   wsG.columns=[{width:34},{width:84}];
   [['PETUNJUK PENGISIAN — TENDER',''],['',''],
    ['Bidang Pelaksana','Pilih dari dropdown (7 bidang)'],
+   ['Tahun','WAJIB diisi pada setiap baris. Bila ada satu baris saja yang kosong, seluruh berkas ditolak.'],
+   ['No. Kontrak','Tidak boleh kembar — baris dengan nomor yang sama ditolak. Boleh dikosongkan bila kontrak belum terbit (tanda "-" juga dianggap kosong).'],
    ['Level Risiko / Level Risiko (CSMS)','Pilih dari dropdown: Tidak Ada s/d Ekstrem'],
    ['Addendum RKS','Pilih: Ada / Tidak Ada. Bila selain "Ada", No./Tgl. Addendum RKS dikosongkan.'],
    ['Metode Pengadaan','Tender Terbatas / Tender Terbuka / Seleksi Umum / Seleksi Terbatas / Penunjukan Langsung / Tender Cepat'],
@@ -5140,7 +5147,7 @@ async function downloadTemplateTender(){
    ['','Isi data mulai baris ke-2. Jangan menghapus sheet "Opsi".'],
   ].forEach(r=>wsG.addRow(r));
   wsG.getCell('A1').font={bold:true,size:14,color:{argb:'FF0E7C86'}};
-  for(let r=3;r<=17;r++){ wsG.getCell(`A${r}`).font={bold:true,color:{argb:'FF095E66'}}; }
+  for(let r=3;r<=19;r++){ wsG.getCell(`A${r}`).font={bold:true,color:{argb:'FF095E66'}}; }
 
   // Rapikan: rumus+kunci Total (HPE/RAB/HPS), sorot dropdown, proteksi sheet.
   // Total per-penyedia (Penawaran/Kontrak) dikunci-kosong; dihitung app saat impor.
@@ -5259,6 +5266,7 @@ function handleUploadTender(ev){
         ['hpe','rab','hps'].forEach(p=>{ if(FIELDS_TENDER.some(f=>f.key===p+'_total_dengan_ppn'&&f.auto==='ppn')){ const base=Number(rec[p+'_total_tanpa_ppn'])||0; rec[p+'_total_dengan_ppn']=base>0?ppnFromBase(base):''; } });
         layers.forEach(lay=>{ ['tawar','kontrak'].forEach(p=>{ const b=Number(lay[p+'_harga_barang'])||0, j=Number(lay[p+'_harga_jasa'])||0; if(lay[p+'_total_tanpa_ppn']!==undefined) lay[p+'_total_tanpa_ppn']=(b+j)>0?(b+j):''; if(lay[p+'_total_dengan_ppn']!==undefined){ const base=Number(lay[p+'_total_tanpa_ppn'])||0; lay[p+'_total_dengan_ppn']=base>0?ppnFromBase(base):''; } }); });
         PENYEDIA_KEYS.forEach(k=>{ rec[k]=layers[0]&&layers[0][k]!=null?layers[0][k]:''; });
+        if(!String(rec.tahun||'').trim()){ const xlRow=r+1; console.warn('[SPK] Upload Tender — kolom Tahun kosong di baris '+xlRow); toast(spkMissingMsg(['tahun'], map, FIELDS_TENDER, xlRow),'warn'); ev.target.value=''; return; }
         { const miss=missingRequiredTender(rec); if(miss.length){ const xlRow=r+1; console.warn('[SPK] Upload Tender — kolom wajib kosong di baris '+xlRow+':', miss); toast(spkMissingMsg(miss, map, FIELDS_TENDER, xlRow),'warn'); ev.target.value=''; return; } }
         rec.__xlRow = r+1;   // nomor baris di Excel, dipakai pesan duplikat
         batch.push(rec);
