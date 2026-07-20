@@ -9072,6 +9072,178 @@ function pnwSyaratAdd(sk,kat){ const st=pnwState; st.syarat[sk]=st.syarat[sk]||{
 function pnwSyaratDel(sk,kat,i){ const st=pnwState; const arr=st.syarat[sk][kat]||[]; if(arr.length<=1){ toast('Minimal satu baris persyaratan','warn'); return; } arr.splice(i,1); pnwSaveState(); renderPnwForm(); }
 function pnwOnSyaratInput(el){ const st=pnwState; const sk=el.dataset.sk, kat=el.dataset.kat, i=+el.dataset.i; st.syarat[sk]=st.syarat[sk]||{}; st.syarat[sk][kat]=st.syarat[sk][kat]||[]; st.syarat[sk][kat][i]=el.value; pnwSaveState(); }
 
+/* ================= TEMPLATE EXCEL PERSYARATAN (Unduh / Unggah) =================
+   Satu sheet per kategori (per sampul bila metode 2 sampul). Tiap sheet memuat
+   metadata Sampul & Kategori pada baris 1-2 (dipakai saat membaca ulang), lalu
+   tabel "No | Uraian Persyaratan" mulai baris 5. Jumlah baris bebas — pembacaan
+   berjalan sampai baris terakhir yang terisi, jadi 100+ persyaratan pun terbaca.
+   Kategori "Penawaran Harga" ikut dicetak sebagai rujukan, tetapi diabaikan saat
+   unggah karena isinya terkunci. */
+const PNW_XLS_MIN_ROWS = 3;      // baris uraian kosong bawaan tiap sheet
+function pnwXlsSheetName(twoSampul, sk, kat){
+  var nm = (twoSampul ? (sk==='s2'?'S2 - ':'S1 - ') : '') + kat;
+  return nm.replace(/[\[\]\*\?\/\\:]/g,'-').slice(0,31);
+}
+function pnwXlsNorm(v){ return String(v==null?'':v).toLowerCase().replace(/[^a-z0-9]+/g,''); }
+function pnwXlsFindKategori(v){
+  var n=pnwXlsNorm(v); if(!n) return null;
+  for(var i=0;i<PNW_KATEGORI.length;i++){ if(pnwXlsNorm(PNW_KATEGORI[i])===n) return PNW_KATEGORI[i]; }
+  return null;
+}
+async function pnwXlsTemplate(){
+  try{
+    if(typeof ExcelJS==='undefined'){ toast('Pustaka Excel belum termuat. Muat ulang halaman.','warn'); return; }
+    pnwEnsureSyarat();
+    var st=pnwState, two=pnwIsTwoSampul(st);
+    var wb=new ExcelJS.Workbook();
+    wb.creator='Monitoring Pengadaan UP3 Masohi';
+    var sheets=0;
+    pnwSampulList(st).forEach(function(sk){
+      pnwSelectedKategori(st,sk).forEach(function(kat){
+        var locked = (kat==='Penawaran Harga');
+        var arr=(st.syarat[sk]&&st.syarat[sk][kat])?st.syarat[sk][kat].slice():[];
+        while(arr.length < PNW_XLS_MIN_ROWS) arr.push('');
+        var ws=wb.addWorksheet(pnwXlsSheetName(two,sk,kat));
+        ws.columns=[{width:6},{width:110}];
+        ws.getCell('A1').value='Sampul';   ws.getCell('B1').value=pnwSampulLabel(sk);
+        ws.getCell('A2').value='Kategori'; ws.getCell('B2').value=kat;
+        ['A1','A2'].forEach(function(a){ ws.getCell(a).font={bold:true,color:{argb:'FF095E66'}}; });
+        ['B1','B2'].forEach(function(a){ ws.getCell(a).font={bold:true}; });
+        ws.getCell('A4').value='No'; ws.getCell('B4').value='Uraian Persyaratan';
+        ['A4','B4'].forEach(function(a){
+          var c=ws.getCell(a);
+          c.font={bold:true,color:{argb:'FFFFFFFF'}};
+          c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0E7C86'}};
+          c.alignment={vertical:'middle',horizontal:a==='A4'?'center':'left'};
+        });
+        var border={top:{style:'thin',color:{argb:'FFBFD6D8'}},left:{style:'thin',color:{argb:'FFBFD6D8'}},
+                    bottom:{style:'thin',color:{argb:'FFBFD6D8'}},right:{style:'thin',color:{argb:'FFBFD6D8'}}};
+        arr.forEach(function(v,i){
+          var r=5+i;
+          ws.getCell(r,1).value=i+1;
+          ws.getCell(r,2).value=String(v==null?'':v);
+          ws.getCell(r,1).alignment={horizontal:'center',vertical:'middle'};
+          ws.getCell(r,2).alignment={vertical:'middle',wrapText:true};
+          ws.getCell(r,2).numFmt='@';
+          ws.getCell(r,1).border=border; ws.getCell(r,2).border=border;
+          if(i%2===1){ [1,2].forEach(function(c){ ws.getCell(r,c).fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F7F8'}}; }); }
+        });
+        if(locked){
+          ws.getCell('D1').value='Kategori terkunci — perubahan pada sheet ini diabaikan saat diunggah.';
+          ws.getCell('D1').font={italic:true,color:{argb:'FFB35A00'}};
+        }
+        ws.views=[{state:'frozen',ySplit:4}];
+        sheets++;
+      });
+    });
+    if(!sheets){ toast('Belum ada kategori dipilih. Kembali ke langkah Pilihan Kategori.','warn'); return; }
+    var wsG=wb.addWorksheet('Petunjuk');
+    wsG.columns=[{width:24},{width:96}];
+    [['PETUNJUK PENGISIAN',''],['',''],
+     ['Satu sheet = satu kategori','Nama sheet & sel B2 menandai kategorinya. Jangan ubah baris 1-2.'],
+     ['Menambah persyaratan','Ketik saja pada baris berikutnya di kolom B. Jumlah baris bebas (100+ boleh).'],
+     ['Menghapus persyaratan','Kosongkan sel di kolom B. Baris kosong otomatis diabaikan.'],
+     ['Kolom No','Boleh dibiarkan — penomoran ditata ulang oleh aplikasi.'],
+     ['Penawaran Harga','Terkunci di aplikasi. Sheet-nya hanya rujukan dan diabaikan saat unggah.'],
+     ['Sheet baru','Sheet tambahan diabaikan kecuali sel B2 berisi nama kategori yang dikenal.']
+    ].forEach(function(r){ wsG.addRow(r); });
+    wsG.getCell('A1').font={bold:true,size:14,color:{argb:'FF0E7C86'}};
+    for(var r=3;r<=8;r++) wsG.getCell('A'+r).font={bold:true,color:{argb:'FF095E66'}};
+
+    var buf=await wb.xlsx.writeBuffer();
+    var blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a'); a.href=url;
+    a.download='Template_Persyaratan_Pembukaan_Penawaran.xlsx';
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    toast('Template persyaratan diunduh ('+sheets+' kategori)','ok');
+  }catch(err){ console.error('pnwXlsTemplate:',err); try{ toast('Gagal membuat template: '+errMsg(err),'warn'); }catch(e){} }
+}
+function pnwXlsUpload(){
+  var run=function(f){ pnwXlsRead(f); };
+  try{
+    if(typeof openTplUpload==='function'){
+      openTplUpload({ title:'Unggah Template — Persyaratan Penawaran', accept:'.xlsx,.xls',
+                      hint:'Hanya file Excel (.xlsx / .xls)', onFile:run });
+      return;
+    }
+  }catch(e){}
+  var inp=document.createElement('input'); inp.type='file'; inp.accept='.xlsx,.xls';
+  inp.onchange=function(){ if(inp.files&&inp.files[0]) run(inp.files[0]); };
+  inp.click();
+}
+function pnwXlsRead(file){
+  if(!file) return;
+  if(typeof XLSX==='undefined'){ toast('Pustaka Excel belum termuat. Muat ulang halaman.','warn'); return; }
+  if(!/\.(xlsx|xls)$/i.test(file.name||'')){ toast('Berkas harus berformat Excel (.xlsx / .xls)','warn'); return; }
+  var rd=new FileReader();
+  rd.onload=function(e){
+    try{
+      var wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+      var st=pnwState, two=pnwIsTwoSampul(st);
+      var hasil={}, nKat=0, nRow=0, dilewati=[];
+      wb.SheetNames.forEach(function(name){
+        var ws=wb.Sheets[name]; if(!ws) return;
+        var rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+        if(!rows.length) return;
+        var cell=function(r,c){ return (rows[r]&&rows[r][c]!=null)?String(rows[r][c]).trim():''; };
+
+        /* kategori: utamakan metadata B2, lalu nama sheet */
+        var kat=null;
+        if(pnwXlsNorm(cell(1,0))==='kategori') kat=pnwXlsFindKategori(cell(1,1));
+        if(!kat) kat=pnwXlsFindKategori(String(name).replace(/^s[12]\s*-\s*/i,''));
+        if(!kat){ if(pnwXlsNorm(name)!=='petunjuk') dilewati.push(name); return; }
+        if(kat==='Penawaran Harga') return;   // terkunci
+
+        /* sampul: metadata B1, lalu awalan nama sheet */
+        var sk='s1';
+        if(two){
+          var sv=pnwXlsNorm(cell(0,0))==='sampul' ? pnwXlsNorm(cell(0,1)) : '';
+          if(sv.indexOf('dua')>=0 || sv==='s2' || /^s2\s*-/i.test(name)) sk='s2';
+        }
+        if(two && sk==='s1' && kat==='Penawaran Harga') return;
+
+        /* cari baris header "Uraian", lalu baca seluruh baris di bawahnya */
+        var hdr=-1, colU=1;
+        for(var r=0;r<Math.min(rows.length,30);r++){
+          for(var c=0;c<(rows[r]||[]).length;c++){
+            if(pnwXlsNorm(rows[r][c]).indexOf('uraian')===0){ hdr=r; colU=c; break; }
+          }
+          if(hdr>=0) break;
+        }
+        if(hdr<0){ hdr=3; colU=1; }
+        var list=[];
+        for(var r2=hdr+1;r2<rows.length;r2++){
+          var v=(rows[r2]&&rows[r2][colU]!=null)?String(rows[r2][colU]).trim():'';
+          if(v) list.push(v);
+        }
+        if(!list.length) return;
+        hasil[sk]=hasil[sk]||{}; hasil[sk][kat]=list;
+        nKat++; nRow+=list.length;
+      });
+
+      if(!nKat){ toast('Tidak ada kategori yang dikenali di berkas ini','warn'); return; }
+      Object.keys(hasil).forEach(function(sk){
+        st.pilih[sk]=st.pilih[sk]||{};
+        st.syarat[sk]=st.syarat[sk]||{};
+        Object.keys(hasil[sk]).forEach(function(kat){
+          st.pilih[sk][kat]=true;
+          st.syarat[sk][kat]=hasil[sk][kat];
+        });
+      });
+      pnwEnforceHargaRule(st);
+      pnwEnsureSyarat();
+      pnwSaveState();
+      try{ renderPnwForm(); }catch(e){}
+      var msg=nKat+' kategori & '+nRow+' persyaratan dimuat';
+      if(dilewati.length) msg+=' (sheet dilewati: '+dilewati.slice(0,3).join(', ')+(dilewati.length>3?'…':'')+')';
+      toast(msg,'ok');
+    }catch(err){ console.error('pnwXlsRead:',err); try{ toast('Gagal membaca berkas: '+errMsg(err),'warn'); }catch(e){} }
+  };
+  rd.onerror=function(){ try{ toast('Gagal membaca berkas','warn'); }catch(e){} };
+  rd.readAsArrayBuffer(file);
+}
+
 /* ================= PROFIL PERSYARATAN (Simpan / Muat) =================
    Menyimpan daftar kategori + uraian persyaratan agar tidak perlu diketik ulang
    untuk pengadaan dengan persyaratan yang sama. Disimpan di localStorage browser
@@ -9367,6 +9539,8 @@ function renderPnwForm(){
         '<span class="pnw-profil-bar">'+
           '<button type="button" class="btn btn-amber pnw-profil-btn" title="Simpan Profil" onclick="pnwProfilOpenSave()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Profil</button>'+
           '<button type="button" class="btn btn-teal pnw-profil-btn" title="Muat Profil" onclick="pnwProfilOpenLoad()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>Profil</button>'+
+          '<button type="button" class="btn btn-green pnw-profil-btn" title="Unduh template Excel persyaratan" onclick="pnwXlsTemplate()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>Template</button>'+
+          '<button type="button" class="btn btn-light pnw-profil-btn" title="Unggah template Excel persyaratan" onclick="pnwXlsUpload()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 8l5-5 5 5"/><path d="M12 3v12"/></svg>Unggah</button>'+
           (st.profilLoaded ? '<button type="button" class="btn btn-red pnw-profil-btn" onclick="pnwProfilCancel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Batalkan Profil</button>' : '')+
         '</span>'+
       '</div>'+body+'</div>';
