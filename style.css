@@ -424,6 +424,23 @@ td.cell-center{text-align:center}
 .table-wrap th.col-date,.table-wrap td.col-date{min-width:118px!important;width:118px!important;max-width:124px!important;padding-left:4px;padding-right:4px}
 .table-wrap th.col-date{white-space:normal;line-height:1.28;text-align:center;vertical-align:middle}
 .table-wrap td.col-date{white-space:nowrap;text-align:center}
+/* ---------------------------------------------------------------------
+   Daftar Surat Perintah Kerja: kolom TANGGAL & NILAI selebar isi
+   terpanjangnya, bukan lebar tetap. Caranya width:1% + white-space:nowrap —
+   pada tabel table-layout:auto, kolom yang diminta selebar 1% akan menyusut
+   sampai sesempit isinya yang tidak boleh terpotong, dan sisa ruang jatuh ke
+   kolom Nama Pekerjaan yang memang paling butuh tempat.
+   Aturan .col-date umum di atas memakai !important, jadi penimpaannya di sini
+   juga harus !important. Ruang lingkupnya dibatasi #view-spk-view supaya
+   tabel Monitoring lain tetap memakai lebar tanggal yang seragam. */
+#view-spk-view .table-wrap th.col-date,
+#view-spk-view .table-wrap td.col-date{
+  width:1%!important;min-width:0!important;max-width:none!important;
+  white-space:nowrap!important;padding-left:16px;padding-right:16px}
+#view-spk-view .table-wrap th.col-nilai,
+#view-spk-view .table-wrap td.col-nilai{
+  width:1%;min-width:0;white-space:nowrap;text-align:right;
+  padding-left:16px;padding-right:16px}
 /* Kolom No. Kontrak/SPBJ — menyesuaikan lebar isi data (tampil utuh, tidak terpotong) */
 .table-wrap th.col-kontrak,.table-wrap td.col-kontrak{white-space:nowrap;min-width:150px;width:1%}
 .table-wrap td.col-kontrak.wrap-penyedia{white-space:normal}

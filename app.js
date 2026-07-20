@@ -17385,8 +17385,10 @@ function renderSpkView(){
       '<td class="col-no">'+(start+i+1)+'</td>'+
       '<td class="wrap-cell">'+fkEsc(r.nomor_kontrak||'—')+spkBentukChip(r)+'</td>'+
       '<td class="wrap-cell col-nama-freeze">'+fkEsc(r.nama_pekerjaan||'—')+'</td>'+
-      '<td class="col-date">'+fkEsc(r.tanggal?spkDateLong(r.tanggal):'—')+'</td>'+
-      '<td style="text-align:right;white-space:nowrap">'+fkEsc(r.nilai!=null?spkRupiah(r.nilai):'—')+'</td>'+
+      /* Tanggal ringkas dd/mm/yyyy (fmtDate) — spkDateLong() tetap dipakai di
+         dalam dokumen SPK/Perjanjian yang memang menuntut format panjang. */
+      '<td class="col-date">'+fkEsc(r.tanggal?fmtDate(r.tanggal):'—')+'</td>'+
+      '<td class="col-nilai">'+fkEsc(r.nilai!=null?spkRupiah(r.nilai):'—')+'</td>'+
       '<td><div class="action-cell" style="justify-content:center">'+
         '<button class="act act-edit" title="Ubah" onclick="spkEditRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
         '<button class="act act-view" title="Lihat" onclick="spkPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
