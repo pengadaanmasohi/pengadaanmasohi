@@ -738,7 +738,13 @@ td.cell-center{text-align:center}
 .toast.toast-warn{background:linear-gradient(135deg,#c4870a,#e0a413);box-shadow:0 12px 30px rgba(214,150,10,.4)}
 .toast.toast-err{background:linear-gradient(135deg,#c62f2f,#e04b4b);box-shadow:0 12px 30px rgba(211,58,58,.42)}
 .toast.show{transform:translateX(-50%) translateY(0)}
-.toast svg{width:18px;height:18px}
+.toast svg{width:18px;height:18px;flex:0 0 auto}
+/* Pesan lebih dari satu baris (mis. hasil unggah template): tiap kalimat
+   turun ke barisnya sendiri, ikon disejajarkan dengan baris PERTAMA dan
+   antar baris diberi sedikit jarak agar mudah dibaca. */
+.toast.toast-multi{align-items:flex-start}
+.toast.toast-multi svg{margin-top:1px}
+.toast.toast-multi span{line-height:1.55}
 
 @media(max-width:980px){
   .cards{grid-template-columns:repeat(2,1fr)}

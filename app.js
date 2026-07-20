@@ -4269,7 +4269,16 @@ function toast(msg,kind,dur){
     : '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
   t.classList.remove('toast-ok','toast-warn','toast-err');
   t.classList.add('toast-'+k);
-  t.innerHTML=ic+'<span>'+msg+'</span>';
+  /* Pesan bisa terdiri dari beberapa BARIS (dipisah "\n"), mis. hasil unggah
+     template: "2 Data pekerjaan berhasil ditambahkan" lalu "3 Data pekerjaan
+     tidak berhasil ditambahkan : data sudah ada". Karena isinya dipasang lewat
+     innerHTML, "\n" mentah hanya menjadi spasi biasa sehingga kedua kalimat
+     menyambung jadi satu baris — di sini diterjemahkan menjadi <br>.
+     Kelas .multi dipakai agar ikon tetap sejajar baris pertama, bukan melayang
+     di tengah blok teks. */
+  const baris = String(msg==null?'':msg).split(/\r?\n/);
+  t.classList.toggle('toast-multi', baris.length>1);
+  t.innerHTML=ic+'<span>'+baris.join('<br>')+'</span>';
   t.classList.add('show'); clearTimeout(toastT);
   const ms = (typeof dur==='number' && dur>0) ? dur : TOAST_MS_DEFAULT;
   toastT=setTimeout(()=>t.classList.remove('show'),ms);
