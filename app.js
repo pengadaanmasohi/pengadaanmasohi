@@ -2927,6 +2927,100 @@ async function downloadTemplate(){
   }catch(err){ console.error(err); toast('Gagal membuat template: '+errMsg(err),'warn'); }
 }
 
+/* ============ RAPIKAN TAMPILAN SHEET HASIL EXPORT ============
+   Dipakai oleh export Monitoring (SPBJ), Pengadaan Langsung, dan Tender.
+   Mengatur: lebar kolom presisi (dari isi data), wrap text, tinggi baris
+   otomatis, border, header berwarna, zebra, freeze header + autofilter,
+   dan perataan (teks kiri, tanggal tengah, angka kanan).
+   - ws      : worksheet ExcelJS (baris 1 = header, baris 2..n = data)
+   - cols    : array field terurut { key, label, type }
+   - dataRows: jumlah baris data (tidak termasuk header)
+   - opts    : { headerFill(f,ci)->argb, topAlign(f,ci)->bool } (opsional) */
+function autoLayoutSheet(ws, cols, dataRows, opts){
+  opts = opts || {};
+  const MIN_W = 12;         // lebar minimum kolom (karakter)
+  const MAX_W = 45;         // lebar maksimum sebelum teks di-wrap
+  const MAX_W_NUM = 20;     // batas kolom angka
+  const MAX_W_DATE = 14;    // batas kolom tanggal
+  const HEADER_H = 34;      // tinggi baris header
+  const LINE_H = 15;        // perkiraan tinggi 1 baris teks (pt)
+  const MAX_LINES = 6;      // batas jumlah baris wrap per sel
+
+  const thin = {style:'thin', color:{argb:'FFBFCAD0'}};
+  const allBorder = {top:thin,left:thin,bottom:thin,right:thin};
+
+  // 1) Tentukan lebar tiap kolom dari teks terpanjang (header + isi data)
+  const widths = cols.map((f,ci)=>{
+    let max = String(f.label||'').length;
+    for(let r=2;r<=dataRows+1;r++){
+      const v = ws.getCell(r,ci+1).value;
+      if(v==null) continue;
+      const s = (typeof v==='object' && v.formula!==undefined) ? '' : String(v);
+      // untuk teks multi-baris (Alt+Enter) ukur baris terpanjang; multi-kata per potongan
+      const parts = s.split(/\r?\n/);
+      let longest = 0;
+      parts.forEach(p=>{ p.split(/\s+/).forEach(w=>{ if(w.length>longest) longest=w.length; }); if(p.length>longest && p.length<=MAX_W) longest=p.length; });
+      const len = Math.max(Math.min(s.length, MAX_W), longest);
+      if(len>max) max = len;
+    }
+    let cap = MAX_W;
+    if(f.type==='num') cap = MAX_W_NUM;
+    else if(f.type==='date') cap = MAX_W_DATE;
+    return Math.min(Math.max(max+2, MIN_W), cap);
+  });
+  ws.columns = widths.map(w=>({width:w}));
+
+  // 2) Header
+  const headRow = ws.getRow(1); headRow.height = HEADER_H;
+  for(let c=1;c<=cols.length;c++){
+    const cell = ws.getCell(1,c);
+    const fill = (opts.headerFill && opts.headerFill(cols[c-1], c-1)) || 'FF0E7C86';
+    cell.fill = {type:'pattern',pattern:'solid',fgColor:{argb:fill}};
+    cell.font = {bold:true,color:{argb:'FFFFFFFF'},size:11};
+    cell.alignment = {wrapText:true,vertical:'middle',horizontal:'center'};
+    cell.border = allBorder;
+  }
+
+  // 3) Data: border, wrap, format, zebra, perataan, dan tinggi baris otomatis
+  for(let r=2;r<=dataRows+1;r++){
+    let maxLines = 1;
+    for(let c=1;c<=cols.length;c++){
+      const f = cols[c-1];
+      const cell = ws.getCell(r,c);
+      cell.border = allBorder;
+      const top = opts.topAlign && opts.topAlign(f, c-1);
+      let horizontal = 'left';                 // teks default rata kiri
+      if(f.type==='num'){
+        if(typeof cell.value==='number') cell.numFmt = ACCT_NODEC;
+        horizontal = 'right';                   // angka rata kanan
+      } else if(f.type==='date'){
+        cell.numFmt = '@'; horizontal = 'center';
+      } else if(isForceTextKey(f.key)){
+        cell.numFmt = '@';
+      }
+      cell.alignment = {vertical: top?'top':'middle', horizontal, wrapText:true};
+      if(r%2===1) cell.fill = {type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F7F8'}};
+
+      // hitung perkiraan jumlah baris wrap pada sel ini
+      const v = cell.value;
+      if(v!=null && !(typeof v==='object')){
+        const s = String(v);
+        // baris nyata (Alt+Enter) + wrap otomatis per baris
+        const explicit = s.split(/\r?\n/);
+        let lines = 0;
+        explicit.forEach(p=>{ lines += Math.max(1, Math.ceil(p.length / Math.max(1, widths[c-1]-1))); });
+        lines = Math.min(MAX_LINES, Math.max(1, lines));
+        if(lines>maxLines) maxLines = lines;
+      }
+    }
+    ws.getRow(r).height = Math.min(LINE_H*MAX_LINES, LINE_H*maxLines + 4);
+  }
+
+  // 4) Freeze header + autofilter agar mudah ditelusuri
+  ws.views = [{state:'frozen', ySplit:1}];
+  ws.autoFilter = {from:{row:1,column:1}, to:{row:1,column:cols.length}};
+}
+
 /* ============ EXPORT EXCEL (data, format seperti template) ============ */
 async function exportExcel(){
   if(!window.ExcelJS){ toast('Library Excel belum termuat, coba lagi','warn'); return; }
@@ -2949,32 +3043,8 @@ async function exportExcel(){
       return v;
     }));
   });
-  ws.columns = COLS.map(f=>({width:Math.max(16,f.label.length+2)}));
-
-  const thin = {style:'thin', color:{argb:'FFBFCAD0'}};
-  const allBorder = {top:thin,left:thin,bottom:thin,right:thin};
-
-  // Judul tabel berwarna
-  const headRow = ws.getRow(1); headRow.height = 32;
-  for(let c=1;c<=COLS.length;c++){
-    const cell = ws.getCell(1,c);
-    cell.fill = {type:'pattern',pattern:'solid',fgColor:{argb:'FF0E7C86'}};
-    cell.font = {bold:true,color:{argb:'FFFFFFFF'},size:11};
-    cell.alignment = {wrapText:true,vertical:'middle',horizontal:'center'};
-    cell.border = allBorder;
-  }
-  // Border + zebra + format angka pada data
-  for(let r=2;r<=rows.length+1;r++){
-    for(let c=1;c<=COLS.length;c++){
-      const cell = ws.getCell(r,c);
-      cell.border = allBorder;
-      cell.alignment = {vertical:'middle'};
-      if(COLS[c-1].type==='num' && typeof cell.value==='number') cell.numFmt = ACCT_NODEC;
-      if(COLS[c-1].type==='date') cell.numFmt='@';
-      if(isForceTextKey(COLS[c-1].key)) cell.numFmt='@';
-      if(r%2===1) cell.fill = {type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F7F8'}};
-    }
-  }
+  // Rapikan tampilan: lebar kolom presisi, wrap text, tinggi baris otomatis
+  autoLayoutSheet(ws, COLS, rows.length);
 
   try{
     const buf = await wb.xlsx.writeBuffer();
@@ -4035,12 +4105,9 @@ async function exportExcelPl(){
   const ws=wb.addWorksheet('Daftar Pengadaan Langsung');
   ws.addRow(COLS.map(f=>f.label));
   rows.forEach((r,ri)=>{ ws.addRow(COLS.map(f=>{ if(isIndepKeyPl(f.key)) return indepCellValuePl(r,f.key); let v=r[f.key]; if(f.auto==='sum'){ const p=f.key.replace(/_total_tanpa_ppn$/,''); const b=Number(r[p+'_harga_barang'])||0, j=Number(r[p+'_harga_jasa'])||0; const t=b+j; return t>0?t:''; } if(f.auto==='ppn'){ const p=f.key.replace(/_total_dengan_ppn$/,''); const b=Number(r[p+'_harga_barang'])||0, j=Number(r[p+'_harga_jasa'])||0; const t=b+j; return t>0?ppnFromBase(t):''; } if(v===''||v==null) return ''; if(f.type==='num') return Number(v); if(f.type==='date') return fmtDate(v); return v; })); });
-  ws.columns=COLS.map(f=>({width:Math.max(16,f.label.length+2)}));
-  const thin={style:'thin',color:{argb:'FFBFCAD0'}};
-  const allBorder={top:thin,left:thin,bottom:thin,right:thin};
-  const headRow=ws.getRow(1); headRow.height=32;
-  for(let c=1;c<=COLS.length;c++){ const cell=ws.getCell(1,c); cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0E7C86'}}; cell.font={bold:true,color:{argb:'FFFFFFFF'},size:11}; cell.alignment={wrapText:true,vertical:'middle',horizontal:'center'}; cell.border=allBorder; }
-  for(let r=2;r<=rows.length+1;r++){ for(let c=1;c<=COLS.length;c++){ const cell=ws.getCell(r,c); const pp=isIndepKeyPl(COLS[c-1].key); cell.border=allBorder; cell.alignment=pp?{wrapText:true,vertical:'top'}:{vertical:'middle'}; if(COLS[c-1].type==='num' && typeof cell.value==='number') cell.numFmt=ACCT_NODEC; if(COLS[c-1].type==='date') cell.numFmt='@'; if(isForceTextKey(COLS[c-1].key)) cell.numFmt='@'; if(r%2===1) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F7F8'}}; } }
+  autoLayoutSheet(ws, COLS, rows.length, {
+    topAlign: (f)=> isIndepKeyPl(f.key)
+  });
   try{
     const buf=await wb.xlsx.writeBuffer();
     const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
@@ -5299,12 +5366,10 @@ async function exportExcelTender(){
     let v=r[f.key]; if(v===''||v==null) return ''; if(f.type==='num') return Number(v); if(f.type==='date') return fmtDate(v); return v;
   }));
   });
-  ws.columns=COLS.map(f=>({width:Math.max(16,f.label.length+2)}));
-  const thin={style:'thin',color:{argb:'FFBFCAD0'}};
-  const allBorder={top:thin,left:thin,bottom:thin,right:thin};
-  const headRow=ws.getRow(1); headRow.height=34;
-  for(let c=1;c<=COLS.length;c++){ const cell=ws.getCell(1,c); const fld=COLS[c-1]; const pp=isStackKey(fld.key); cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:pp?'FF0E9E8E':'FF0E7C86'}}; cell.font={bold:true,color:{argb:'FFFFFFFF'},size:11}; cell.alignment={wrapText:true,vertical:'middle',horizontal:'center'}; cell.border=allBorder; }
-  for(let r=2;r<=rows.length+1;r++){ for(let c=1;c<=COLS.length;c++){ const cell=ws.getCell(r,c); const fld=COLS[c-1]; const pp=isStackKey(fld.key); cell.border=allBorder; cell.alignment=pp?{wrapText:true,vertical:'top'}:{vertical:'middle'}; if(fld.type==='num' && typeof cell.value==='number') cell.numFmt=ACCT_NODEC; if(fld.type==='date') cell.numFmt='@'; if(isForceTextKey(fld.key)) cell.numFmt='@'; if(r%2===1) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F7F8'}}; } }
+  autoLayoutSheet(ws, COLS, rows.length, {
+    headerFill: (f)=> isStackKey(f.key) ? 'FF0E9E8E' : 'FF0E7C86',
+    topAlign:   (f)=> isStackKey(f.key)
+  });
   try{
     const buf=await wb.xlsx.writeBuffer();
     const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
@@ -6753,7 +6818,7 @@ async function renderFkView(){
 
 function fkEmptyRow(mode){
   const msg = 'Data tidak tersedia';
-  return `<tr><td colspan="7"><div class="empty">
+  return `<tr><td colspan="6"><div class="empty">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
     <div>${msg}</div>
   </div></td></tr>`;
@@ -6768,13 +6833,12 @@ function fkRenderRows(mode, modul, cfg, rows, meta, tb, pg){
   const start=(st.page-1)*PAGE_SIZE;
   const pageRows=rows.slice(start,start+PAGE_SIZE);
   const stacked=!!cfg.stacked;
-  const kontrakCls = stacked ? 'wrap-penyedia col-kontrak' : 'col-kontrak cell-center';
+  const kontrakCls = stacked ? 'wrap-penyedia col-kontrak' : 'col-kontrak';
 
   tb.innerHTML=pageRows.map((r,i)=>{
     const rid=String(r.id);
     const nama=cfg.nama(r)||'—';
     const bidang=cfg.bidang(r)||'—';
-    const penyedia=(cfg.penyediaCell ? cfg.penyediaCell(r) : fkEsc(cfg.penyedia(r)||'')) || '—';
     const noKontrak=cfg.noKontrak(r)||'—';
     const tgl=fmtDate(cfg.tgl(r))||'—';
     const f=meta[rid];
@@ -6788,7 +6852,6 @@ function fkRenderRows(mode, modul, cfg, rows, meta, tb, pg){
       <td class="${kontrakCls}">${noKontrak}</td>
       <td class="cell-center col-date">${tgl}</td>
       <td class="fk-col-bidang wrap-cell">${fkEsc(bidang)}</td>
-      <td class="fk-col-penyedia wrap-cell${stacked?' wrap-penyedia':''}">${penyedia}</td>
       <td class="fk-actcell"${dropAttrs}><div class="fk-actions">${aksi}</div></td>
     </tr>`;
   }).join('');
