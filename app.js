@@ -17643,10 +17643,11 @@ function spkDocCss(){
        kolom-1 = max-content -> selebar LABEL TERPANJANG saja,
        kolom-2 = tanda ":",  kolom-3 = nilai.
      Dengan begitu ":" berhenti persis di kanan label terpanjang + jeda kecil,
-     tidak lagi terpaku pada 34% lebar. Blok dimasukkan sedikit ke kanan (1 cm)
-     terhadap teks butir di atasnya. */
+     tidak lagi terpaku pada 34% lebar. TANPA indentasi tambahan: badan klausul
+     sudah menjorok sendiri, sehingga label sejajar dengan teks judul butir di
+     atasnya (mis. "Pekerjaan" tepat di bawah "URAIAN PEKERJAAN"). */
   '.spk-cl .spk-kvgrp{display:grid;grid-template-columns:max-content max-content 1fr;'+
-    'row-gap:3pt;margin:0 0 6pt 0.75cm}'+
+    'row-gap:3pt;margin:0 0 6pt 0}'+
   '.spk-cl .spk-kvgrp .spk-kv{display:contents}'+
   '.spk-cl .spk-kvgrp .spk-kv .k{flex:none;max-width:none;padding-right:0.5cm}'+
   '.spk-cl .spk-kvgrp .spk-kv .s{flex:none;width:auto;padding-right:0.3cm}'+

@@ -3304,8 +3304,9 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
    ada di CSS dokumen, sehingga pratinjau memakai label lebar 34% tanpa indentasi
    sedangkan hasil cetak memakai grid ber-indentasi — dua tampilan yang berbeda
    untuk isi yang sama. Disamakan di sini.
-   Indentasi 0,75 cm = sejajar dengan teks judul butir di atasnya. */
-.spk-cl .spk-kvgrp,.spk-we-doc .spk-kvgrp{display:grid;grid-template-columns:max-content max-content 1fr;row-gap:3pt;margin:0 0 6pt .75cm}
+   Tanpa indentasi tambahan: badan klausul sudah menjorok sendiri, sehingga
+   label sejajar dengan teks judul butir di atasnya. */
+.spk-cl .spk-kvgrp,.spk-we-doc .spk-kvgrp{display:grid;grid-template-columns:max-content max-content 1fr;row-gap:3pt;margin:0 0 6pt 0}
 .spk-cl .spk-kvgrp .spk-kv,.spk-we-doc .spk-kvgrp .spk-kv{display:contents}
 .spk-cl .spk-kvgrp .spk-kv .k,.spk-we-doc .spk-kvgrp .spk-kv .k{flex:none;max-width:none;padding-right:.5cm}
 .spk-cl .spk-kvgrp .spk-kv .s,.spk-we-doc .spk-kvgrp .spk-kv .s{flex:none;width:auto;padding-right:.3cm}
