@@ -7095,7 +7095,7 @@ const PN_DOCS = {
     {key:'HPS',  code:'HPS',     label:'Harga Perkiraan Sendiri (HPS)',          counter:'hps'},
     {key:'BAP',  code:'BAP.PL',  label:'Berita Acara Penjelasan',                counter:'bap', optional:true},
     {key:'BAPP', code:'BAPP.PL', label:'Berita Acara Pembukaan Penawaran',       counter:'main'},
-    {key:'BAE',  code:'BAE.PL',  label:'Berita Acara Evaluasi Penawaran',        counter:'main'},
+    {key:'BAE',  code:'BAEP.PL', label:'Berita Acara Evaluasi Penawaran',        counter:'main'},
     {key:'BAKN', code:'BAKN.PL', label:'Berita Acara Klarifikasi dan Negosiasi', counter:'main'}
   ],
   /* Tender: dipilih via checklist. HPS berbagi urutan dengan HPS Pengadaan Langsung
