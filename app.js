@@ -2652,18 +2652,25 @@ function spkDupCek(rec, daftar, opt, selfId){
   }
   return null;
 }
-/* Pesan "baris dilewati karena duplikat" — menyebut baris Excel & nomornya,
-   supaya tidak lagi hanya berupa jumlah tanpa keterangan. */
-function spkDupMsg(dupRows, labelNomor){
-  const show = dupRows.slice(0,6).map(d=>{
-    const asal = d.asal ? (' = ' + d.asal) : '';
-    return 'baris '+d.row+' ('+(d.no||'-')+')'+asal;
-  });
-  const dasar = [...new Set(dupRows.map(d=>d.by).filter(Boolean))].join(' / ') || (labelNomor||'No. Kontrak');
-  let msg = 'Tidak bisa menambahkan '+dupRows.length+' data : Duplikat\n'
-          + 'Dinilai dari '+dasar+' — '+show.join(' ; ');
-  if(dupRows.length>6) msg += ' ; +'+(dupRows.length-6)+' baris lain';
-  return msg+'.';
+/* =====================================================================
+   NOTIFIKASI HASIL UNGGAH TEMPLATE — RINGKAS DUA BARIS
+     <n> Data pekerjaan berhasil ditambahkan
+     <m> Data pekerjaan tidak berhasil ditambahkan : data sudah ada
+   Baris yang tidak bentrok TETAP masuk; hanya baris duplikat yang dilewati.
+   Rincian baris Excel mana saja yang dilewati tidak lagi ditulis di layar —
+   tetap tercatat di console (console.warn) untuk penelusuran bila perlu.
+   ===================================================================== */
+function spkImporMsg(okCount, dupCount){
+  const baris=[];
+  if(okCount>0)  baris.push(okCount+" Data pekerjaan berhasil ditambahkan");
+  if(dupCount>0) baris.push(dupCount+" Data pekerjaan tidak berhasil ditambahkan : data sudah ada");
+  return baris.join("\n");
+}
+/* Nada notifikasi: hijau bila semua masuk, kuning bila sebagian, merah bila
+   tidak ada satu pun yang bisa ditambahkan. */
+function spkImporTone(okCount, dupCount){
+  if(okCount>0 && dupCount>0) return "warn";
+  return okCount>0 ? "ok" : "err";
 }
 function spkMissingMsg(keys, map, fields, xlRow){
   const byKey={}; (fields||[]).forEach(f=>{ byKey[f.key]=f; });
@@ -3070,8 +3077,7 @@ function handleUpload(ev){
         catch(err){ console.error(err); toast('Gagal mengimpor: '+errMsg(err),'warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
         await refreshData();
       }
-      if(dupCount>0) toast(spkDupMsg(dupRows, 'No. SPBJ'),'err', TOAST_MS_UPLOAD);
-      else toast('Data berhasil ditambahkan','ok');
+      toast(spkImporMsg(toAdd.length, dupCount), spkImporTone(toAdd.length, dupCount), TOAST_MS_UPLOAD);
       // Data berhasil ditambahkan lewat template → langsung tampilkan loading &
       // kembali ke Daftar Monitoring (showView sudah memunculkan animasi "Memuat").
       if(toAdd.length){ ev.target.value=''; showView('list','Memuat daftar'); return; }
@@ -4093,8 +4099,7 @@ function handleUploadPl(ev){
         catch(err){ console.error(err); toast('Gagal mengimpor: '+errMsg(err),'warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
         await refreshDataPl();
       }
-      if(dupCount>0) toast(spkDupMsg(dupRows, 'No. Kontrak'),'err', TOAST_MS_UPLOAD);
-      else toast('Data berhasil ditambahkan','ok');
+      toast(spkImporMsg(toAdd.length, dupCount), spkImporTone(toAdd.length, dupCount), TOAST_MS_UPLOAD);
       // Data berhasil ditambahkan lewat template → langsung tampilkan loading &
       // kembali ke Daftar Monitoring Pengadaan Langsung.
       if(toAdd.length){ ev.target.value=''; showView('list-pl','Memuat daftar'); return; }
@@ -5380,8 +5385,7 @@ function handleUploadTender(ev){
         catch(err){ console.error(err); toast('Gagal mengimpor: '+errMsg(err),'warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
         await refreshDataTender();
       }
-      if(dupCount>0) toast(spkDupMsg(dupRows, 'No. Kontrak'),'err', TOAST_MS_UPLOAD);
-      else toast('Data berhasil ditambahkan','ok');
+      toast(spkImporMsg(toAdd.length, dupCount), spkImporTone(toAdd.length, dupCount), TOAST_MS_UPLOAD);
       // Data berhasil ditambahkan lewat template → langsung tampilkan loading &
       // kembali ke Daftar Monitoring Tender.
       if(toAdd.length){ ev.target.value=''; showView('list-tender','Memuat daftar'); return; }
