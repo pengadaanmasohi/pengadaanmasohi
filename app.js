@@ -1320,6 +1320,7 @@ function showView(name, loaderMsg, noLoader){
           if(l.dataset.view==='hps-view' && (name==='hps-view'||name==='form-hps')) on=true; // Perhitungan HPS induk tetap aktif
           if(l.dataset.view==='pn-lihat' && (name==='pn-lihat'||name==='pn-ambil')) on=true; // Penetapan (menu tunggal) tetap aktif saat Ambil Nomor
           if(l.dataset.view==='jadwal-view' && (name==='jadwal-view'||name==='jadwal-kerja'||name==='hari-libur')) on=true; // Jadwal (menu tunggal) tetap aktif saat Tentukan Jadwal / Hari Libur
+          if(l.dataset.view==='track-view' && (name==='track-view'||name==='track-kelola')) on=true; // Tracking Pengadaan induk tetap aktif saat Kelola Tracking
           if(l.dataset.view==='spk-view' && (name==='spk-view'||name==='spk-susun'||name==='spk-klausul')) on=true; // Susun Kontrak (menu induk) tetap aktif saat Penyusunan Kontrak / Ubah Klausul
           l.classList.toggle('active', on);
         });
@@ -1334,6 +1335,7 @@ function showView(name, loaderMsg, noLoader){
           if(name==='form-analisa') has = has || [...grp.querySelectorAll('.topnav-item')].some(it=>it.dataset.view==='analisa-view');
           if(name==='form-hps') has = has || [...grp.querySelectorAll('.topnav-item')].some(it=>it.dataset.view==='hps-view');
           if(name==='jadwal-kerja'||name==='hari-libur') has = has || [...grp.querySelectorAll('.topnav-item')].some(it=>it.dataset.view==='jadwal-view'); // Jadwal (menu tunggal): grup induk tetap terbuka saat Tentukan Jadwal / Hari Libur
+          if(name==='track-kelola') has = has || [...grp.querySelectorAll('.topnav-item')].some(it=>it.dataset.view==='track-view'); // Tracking: grup Monitoring tetap terbuka saat Kelola Tracking
           // Grup Monitoring mencakup Input Pekerjaan (input/-pl/-tender) & Daftar Pekerjaan (list/-pl/-tender)
           if(grp.dataset.group==='monitor' && monitorAll.includes(name)) has=true;
           grp.classList.toggle('has-active', has);
@@ -1369,6 +1371,8 @@ function showView(name, loaderMsg, noLoader){
         if(name==='spk-klausul' && typeof renderSpkKlausul==='function') renderSpkKlausul();
         if(name==='hari-libur') renderHariLibur();
         if(name==='rekap-hps') renderRekapHps();
+        if(name==='track-view') renderTrackView();
+        if(name==='track-kelola') renderTrackKelola();
         if(typeof fkSegSyncAll==='function') fkSegSyncAll(false);   // reposisi pil segmented setelah halaman baru terlihat
     }catch(err){ console.error('showView error:', err); }
     if(!noLoader){ const wait=Math.max(0, 460-(Date.now()-t0)); setTimeout(hideLoader, wait); }
@@ -1391,7 +1395,8 @@ function rerenderActiveView(){
       'dp-view':'renderDpView','form-hps':'renderHpsForm','hps-view':'renderHpsView','form-analisa':'renderAnalisaForm',
       'analisa-view':'renderAnalisaView','jadwal-kerja':'renderJadwalKerja','jadwal-view':'renderJadwalView',
       'spk-susun':'renderSpkSusun','spk-view':'renderSpkView','spk-klausul':'renderSpkKlausul',
-      'hari-libur':'renderHariLibur','rekap-hps':'renderRekapHps'
+      'hari-libur':'renderHariLibur','rekap-hps':'renderRekapHps',
+      'track-view':'renderTrackView','track-kelola':'renderTrackKelola'
     };
     var fn=R[name];
     if(fn && typeof window[fn]==='function') window[fn]();
@@ -25674,4 +25679,447 @@ function profilUploadPrompt(kind){
     };
     inp.click();
   }catch(e){ console.error('profilUploadPrompt:',e); toast('Gagal membuka berkas','err'); }
+}
+
+
+/* =========================================================================
+   TRACKING PENGADAAN (submenu Monitoring)
+   -------------------------------------------------------------------------
+   Timeline tahapan per pekerjaan ala pelacakan kiriman:
+     Dokumen Pengadaan Diterima -> Penyusunan Dokumen HPS ->
+     (tahapan sesuai Jadwal Pelaksanaan Pengadaan) -> Terkontrak / Selesai
+   dengan cabang Gagal/Batal (keterangan manual) yang dapat diulang.
+
+   Status badge OTOMATIS dari posisi tracking:
+     - tahap sebelum Terkontrak/Selesai  -> "Dalam Proses"  (biru)
+     - ditandai gagal                    -> "Gagal/Batal"   (merah)
+     - tahap Terkontrak/Selesai tercapai -> "Terkontrak"    (hijau)
+
+   Penyimpanan: tabel Supabase `tracking_pengadaan`
+     (id uuid, nama_pekerjaan text, status text, info jsonb, created_at)
+   Bila Supabase tidak tersedia, otomatis memakai localStorage.
+   Keterangan tahapan jadwal juga disalin balik ke kolom `ket` pada
+   jadwal_pelaksanaan (best-effort) agar tetap satu sumber kebenaran.
+   ========================================================================= */
+const TRK_TABLE='tracking_pengadaan';
+const TRK_LS_KEY='trk_records_v1';
+let records_track=[];
+let trkUseLocal=false;
+let trkSel='';        // nama pekerjaan terpilih
+let trkDraft=null;    // salinan info yang sedang diedit admin
+
+function trkSupaReady(){ return !!(USE_SUPABASE && db); }
+function trkLocalLoad(){ try{ const r=localStorage.getItem(TRK_LS_KEY); records_track=r?JSON.parse(r):[]; }catch(e){ records_track=[]; } }
+function trkLocalSave(){ try{ localStorage.setItem(TRK_LS_KEY, JSON.stringify(records_track)); }catch(e){} }
+function trkUid(){ try{ if(window.crypto&&crypto.randomUUID) return 'loc_'+crypto.randomUUID(); }catch(e){} return 'loc_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,10); }
+
+const StoreTrack={
+  async list(){
+    if(!trkSupaReady()) throw new Error('Koneksi Supabase tidak tersedia');
+    const {data,error}=await db.from(TRK_TABLE).select('*').order('created_at',{ascending:false});
+    if(error) throw error; return data||[];
+  },
+  async create(rec){
+    if(!trkSupaReady()) throw new Error('Koneksi Supabase tidak tersedia');
+    const {data,error}=await db.from(TRK_TABLE).insert(rec).select();
+    if(error) throw error; return data&&data[0];
+  },
+  async update(rid, rec){
+    if(!trkSupaReady()) throw new Error('Koneksi Supabase tidak tersedia');
+    const {error}=await db.from(TRK_TABLE).update(rec).eq('id',rid);
+    if(error) throw error;
+  }
+};
+async function refreshDataTrack(){
+  try{ records_track=await StoreTrack.list(); trkUseLocal=false; }
+  catch(err){ console.warn('Tracking: memakai penyimpanan lokal.', err&&err.message); trkLocalLoad(); trkUseLocal=true; }
+}
+
+/* ---------- Util ---------- */
+function trkEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+const TRK_BLN=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+function trkTgl(iso){
+  if(!iso) return '';
+  const p=String(iso).split('-'); if(p.length<3) return iso;
+  return Number(p[2])+' '+(TRK_BLN[Number(p[1])-1]||p[1])+' '+p[0];
+}
+function trkNamaKey(s){ return String(s||'').trim().toLowerCase().replace(/\s+/g,' '); }
+function trkTodayISO(){ const d=new Date(); const z=n=>String(n).padStart(2,'0'); return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate()); }
+
+/* Daftar nama pekerjaan: dari Data Pekerjaan (hanya nama), fallback nama jadwal */
+function trkDpNames(){
+  const out=[]; const seen={};
+  (records_dp||[]).forEach(r=>{
+    const s=(r&&r.state&&r.state.info)?r.state.info:{};
+    const nm=String(s.nama!=null&&s.nama!==''?s.nama:(r.nama||'')).trim();
+    if(nm && !seen[trkNamaKey(nm)]){ seen[trkNamaKey(nm)]=1; out.push(nm); }
+  });
+  (records_jadwal||[]).forEach(r=>{
+    const nm=String((r.state&&r.state.namaPekerjaan)||r.nama_pekerjaan||'').trim();
+    if(nm && !seen[trkNamaKey(nm)]){ seen[trkNamaKey(nm)]=1; out.push(nm); }
+  });
+  return out.sort((a,b)=>a.localeCompare(b,'id'));
+}
+function trkFindJadwal(nama){
+  const k=trkNamaKey(nama);
+  return (records_jadwal||[]).find(r=>trkNamaKey((r.state&&r.state.namaPekerjaan)||r.nama_pekerjaan)===k)||null;
+}
+function trkFindDp(nama){
+  const k=trkNamaKey(nama);
+  return (records_dp||[]).find(r=>{
+    const s=(r&&r.state&&r.state.info)?r.state.info:{};
+    return trkNamaKey(s.nama!=null&&s.nama!==''?s.nama:r.nama)===k;
+  })||null;
+}
+function trkFindMon(nama){
+  const k=trkNamaKey(nama);
+  let r=(typeof records!=='undefined'?records:[]).find(x=>trkNamaKey(x.nama_pekerjaan)===k);
+  if(r) return {rec:r, jenis:'SPBJ / Kontrak Rinci'};
+  r=(records_pl||[]).find(x=>trkNamaKey(x.nama_pekerjaan)===k);
+  if(r) return {rec:r, jenis:'Pengadaan Langsung'};
+  r=(records_tender||[]).find(x=>trkNamaKey(x.nama_pekerjaan)===k);
+  if(r) return {rec:r, jenis:'Tender'};
+  return null;
+}
+
+/* ---------- Model info tracking ---------- */
+function trkBlankInfo(){
+  return { ket:{}, aktif:'dok', penyedia:[], gagal:{aktif:false, tanggal:'', ket:''}, riwayat:[] };
+}
+function trkNormInfo(o){
+  o=(o&&typeof o==='object')?o:{};
+  const g=(o.gagal&&typeof o.gagal==='object')?o.gagal:{};
+  return {
+    ket:(o.ket&&typeof o.ket==='object')?o.ket:{},
+    aktif:o.aktif||'dok',
+    penyedia:Array.isArray(o.penyedia)?o.penyedia.slice():[],
+    gagal:{aktif:!!g.aktif, tanggal:g.tanggal||'', ket:g.ket||''},
+    riwayat:Array.isArray(o.riwayat)?o.riwayat.slice():[]
+  };
+}
+function trkGetRec(nama){ const k=trkNamaKey(nama); return (records_track||[]).find(r=>trkNamaKey(r.nama_pekerjaan)===k)||null; }
+function trkGetInfo(nama){ const r=trkGetRec(nama); return trkNormInfo(r?r.info:null); }
+
+/* Kerangka tahapan lengkap satu pekerjaan */
+function trkBuildSteps(nama){
+  const steps=[
+    {key:'dok', nama:'Dokumen Pengadaan Diterima', tetap:true},
+    {key:'hps', nama:'Penyusunan Dokumen HPS',     tetap:true}
+  ];
+  const jd=trkFindJadwal(nama);
+  if(jd && typeof jpRecordToState==='function'){
+    const st=jpRecordToState(jd);
+    (st.tahapan||[]).forEach((t,i)=>{
+      steps.push({key:'j'+i, jIdx:i, nama:t.nama||('Tahapan '+(i+1)),
+        awalTgl:t.awalTgl, awalJam:t.awalJam, akhirTgl:t.akhirTgl, akhirJam:t.akhirJam, ketJadwal:t.ket||''});
+    });
+  }else{
+    steps.push({key:'j0', jIdx:0, nama:'Proses Pengadaan', tanpaJadwal:true});
+  }
+  steps.push({key:'fin', nama:'Terkontrak / Selesai', tetap:true});
+  return {steps:steps, jadwal:jd};
+}
+function trkStepKet(step, info){
+  if(info.ket && info.ket[step.key]!=null && info.ket[step.key]!=='') return info.ket[step.key];
+  return step.ketJadwal||'';
+}
+function trkStepTglTxt(step){
+  if(step.awalTgl && step.akhirTgl){
+    if(step.awalTgl===step.akhirTgl) return trkTgl(step.awalTgl)+(step.awalJam?(', '+step.awalJam+'\u2013'+(step.akhirJam||'')):'');
+    return trkTgl(step.awalTgl)+' \u2013 '+trkTgl(step.akhirTgl);
+  }
+  if(step.awalTgl) return trkTgl(step.awalTgl);
+  return '';
+}
+function trkUndanganKey(steps){
+  const s=steps.find(x=>x.jIdx!=null && /undangan/i.test(x.nama));
+  if(s) return s.key;
+  const j=steps.find(x=>x.jIdx!=null);
+  return j?j.key:null;
+}
+/* Status otomatis dari posisi tracking */
+function trkStatus(info){
+  if(info.gagal && info.gagal.aktif) return {kode:'gagal',   label:'Gagal/Batal',  cls:'trk-pill-gagal'};
+  if(info.aktif==='fin')             return {kode:'kontrak', label:'Terkontrak',   cls:'trk-pill-kontrak'};
+  return                                    {kode:'proses',  label:'Dalam Proses', cls:'trk-pill-proses'};
+}
+function trkStepIndex(steps,key){ const i=steps.findIndex(s=>s.key===key); return i<0?0:i; }
+function trkStepNama(steps,key){ const s=steps.find(x=>x.key===key); return s?s.nama:key; }
+
+/* ---------- Halaman PENGGUNA ---------- */
+function openTrackView(){
+  showView('track-view');
+  const jobs=[];
+  if(typeof refreshDataDp==='function') jobs.push(refreshDataDp());
+  if(typeof refreshDataJadwal==='function') jobs.push(refreshDataJadwal());
+  jobs.push(refreshDataTrack());
+  Promise.all(jobs).then(()=>{ const v=document.querySelector('.view.active'); if(v&&v.id==='view-track-view') renderTrackView(); });
+}
+function trkFillPick(id){
+  const el=document.getElementById(id); if(!el) return;
+  const cur=trkSel;
+  let h='<option value="">\u2014 pilih pekerjaan \u2014</option>';
+  trkDpNames().forEach(nm=>{ h+='<option value="'+trkEsc(nm)+'"'+(trkNamaKey(nm)===trkNamaKey(cur)?' selected':'')+'>'+trkEsc(nm)+'</option>'; });
+  el.innerHTML=h;
+}
+function trkPick(v){ trkSel=v||''; renderTrackUser(); }
+function renderTrackView(){
+  trkFillPick('trk-pick');
+  renderTrackUser();
+}
+function trkHeadHtml(nama, info){
+  const st=trkStatus(info);
+  const mon=trkFindMon(nama);
+  const meta=[];
+  if(mon){ meta.push(mon.jenis); if(mon.rec.bidang_pelaksana) meta.push(mon.rec.bidang_pelaksana); }
+  else{
+    const dp=trkFindDp(nama);
+    if(dp){ const s=(dp.state&&dp.state.info)||{}; if(s.metode) meta.push(s.metode); if(s.bidang_pelaksana) meta.push(s.bidang_pelaksana); }
+  }
+  return '<div class="trk-head">'
+    +'<div><p class="trk-head-nama">'+trkEsc(nama)+'</p>'
+    +(meta.length?'<p class="trk-head-meta">'+trkEsc(meta.join(' \u00b7 '))+'</p>':'')
+    +'</div><span class="trk-pill '+st.cls+'">'+st.label+'</span></div>';
+}
+function trkItemHtml(o){
+  /* o: {st:'done|now|wait|fail|redo', nama, sub, ket, chips:[], last} */
+  const ic={done:'<path d="M20 6 9 17l-5-5"/>', now:'<path d="M6 4l14 8-14 8Z"/>', fail:'<path d="M18 6 6 18M6 6l12 12"/>', redo:'<path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/>'}[o.st]||'';
+  let h='<div class="trk-item trk-'+o.st+'">'
+    +'<div class="trk-railcol"><span class="trk-dot">'+(ic?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">'+ic+'</svg>':'')+'</span>'
+    +(o.last?'':'<span class="trk-rail"></span>')+'</div>'
+    +'<div class="trk-body">'
+    +'<p class="trk-nm">'+trkEsc(o.nama)+'</p>'
+    +(o.sub?'<p class="trk-sub">'+trkEsc(o.sub)+'</p>':'');
+  if(o.chips && o.chips.length){
+    h+='<div class="trk-chips"><span class="trk-chip trk-chip-count">'+o.chips.length+' penyedia diundang</span>';
+    o.chips.forEach(c=>{ h+='<span class="trk-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-4h6v4"/></svg>'+trkEsc(c)+'</span>'; });
+    h+='</div>';
+  }
+  if(o.ket!==undefined){
+    h+='<div class="trk-ket'+(o.ket?'':' trk-ket-empty')+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.6 8.6 0 0 1-3.3-.7L3 21l1.8-5.7A8.4 8.4 0 1 1 21 11.5Z"/></svg><span>'+(o.ket?trkEsc(o.ket):'Belum ada keterangan pada tahap ini.')+'</span></div>';
+  }
+  return h+'</div></div>';
+}
+function renderTrackUser(){
+  const box=document.getElementById('trk-user'); if(!box) return;
+  if(!trkSel){
+    box.innerHTML='<div class="trk-card trk-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M12 19h4.5a3.5 3.5 0 0 0 0-7h-9a3.5 3.5 0 0 1 0-7H12"/></svg>'
+      +'<p>Pilih pekerjaan di atas untuk melihat tracking pengadaannya.</p></div>';
+    return;
+  }
+  const {steps}=trkBuildSteps(trkSel);
+  const info=trkGetInfo(trkSel);
+  const stat=trkStatus(info);
+  const aktifIdx=trkStepIndex(steps, info.aktif);
+  const undKey=trkUndanganKey(steps);
+  const items=[];
+  steps.forEach((s,i)=>{
+    /* sisipkan riwayat gagal + pengadaan ulang tepat sebelum tahap tujuan pengulangan */
+    (info.riwayat||[]).forEach(r=>{
+      if(r.ulangDari===s.key){
+        items.push({st:'fail', nama:'Pengadaan Gagal/Batal'+(r.tanggal?(' \u00b7 '+trkTgl(r.tanggal)):''), ket:r.ket||''});
+        items.push({st:'redo', nama:'Pengadaan ulang dimulai', sub:'Mengulang dari: '+trkStepNama(steps,r.ulangDari)});
+      }
+    });
+    let st;
+    if(info.gagal.aktif) st = i<aktifIdx ? 'done' : (i===aktifIdx?'done':'wait');
+    else if(info.aktif==='fin') st='done';
+    else st = i<aktifIdx?'done':(i===aktifIdx?'now':'wait');
+    const o={st:st, nama:s.nama, sub:(st==='now'?'Sedang berjalan':(st==='done'?'Selesai':'Menunggu')), ket:trkStepKet(s,info)};
+    const tgl=trkStepTglTxt(s);
+    if(tgl) o.sub+=' \u00b7 '+tgl;
+    if(s.tanpaJadwal) o.sub+=' \u00b7 jadwal belum ditentukan';
+    if(s.key===undKey && info.penyedia.length) o.chips=info.penyedia;
+    if(s.key==='fin' && st!=='done'){ o.sub='Menunggu \u00b7 tahap penutup'; }
+    items.push(o);
+  });
+  if(info.gagal.aktif){
+    items.push({st:'fail', nama:'Pengadaan Gagal/Batal'+(info.gagal.tanggal?(' \u00b7 '+trkTgl(info.gagal.tanggal)):''), ket:info.gagal.ket||''});
+  }
+  items.forEach((o,i)=>{ o.last=(i===items.length-1); });
+  let h='<div class="trk-card">'+trkHeadHtml(trkSel, info)+'<div class="trk-timeline">';
+  items.forEach(o=>{ h+=trkItemHtml(o); });
+  h+='</div>';
+  if(trkUseLocal) h+='<p class="trk-localnote">Data tracking tersimpan lokal di perangkat ini (Supabase tidak tersedia).</p>';
+  h+='</div>';
+  box.innerHTML=h;
+}
+
+/* ---------- Halaman ADMIN (Kelola Tracking) ---------- */
+function openTrackKelola(){
+  showView('track-kelola');
+  const jobs=[];
+  if(typeof refreshDataDp==='function') jobs.push(refreshDataDp());
+  if(typeof refreshDataJadwal==='function') jobs.push(refreshDataJadwal());
+  jobs.push(refreshDataTrack());
+  Promise.all(jobs).then(()=>{ const v=document.querySelector('.view.active'); if(v&&v.id==='view-track-kelola') renderTrackKelola(); });
+}
+function trkAdmPick(v){ trkSel=v||''; trkDraft=null; renderTrackKelola(); }
+function trkDraftEnsure(){ if(!trkDraft) trkDraft=trkGetInfo(trkSel); return trkDraft; }
+function trkSetKet(key,val){ trkDraftEnsure().ket[key]=val; }
+function trkSetAktif(key){ trkDraftEnsure().aktif=key; trkAdmPill(); }
+function trkAdmPill(){
+  const el=document.getElementById('trk-adm-pill'); if(!el) return;
+  const st=trkStatus(trkDraftEnsure());
+  el.className='trk-pill '+st.cls; el.textContent=st.label;
+}
+function trkGagalToggle(on){
+  const d=trkDraftEnsure();
+  d.gagal.aktif=!!on;
+  if(on && !d.gagal.tanggal) d.gagal.tanggal=trkTodayISO();
+  renderTrackKelola(true);
+}
+function trkGagalField(k,v){ trkDraftEnsure().gagal[k]=v; }
+function trkPvAdd(){
+  const inp=document.getElementById('trk-pv-new'); if(!inp) return;
+  const v=String(inp.value||'').trim(); if(!v) return;
+  const d=trkDraftEnsure();
+  if(d.penyedia.some(p=>trkNamaKey(p)===trkNamaKey(v))){ toast('Penyedia sudah ada di daftar','warn'); return; }
+  d.penyedia.push(v); inp.value='';
+  trkPvRender();
+}
+function trkPvDel(i){ trkDraftEnsure().penyedia.splice(i,1); trkPvRender(); }
+function trkPvRender(){
+  const wrap=document.getElementById('trk-pv-wrap'); if(!wrap) return;
+  const d=trkDraftEnsure();
+  let h='<span class="trk-chip trk-chip-count">'+d.penyedia.length+' penyedia</span>';
+  d.penyedia.forEach((p,i)=>{
+    h+='<span class="trk-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-4h6v4"/></svg>'+trkEsc(p)
+      +'<button type="button" class="trk-chip-x" title="Hapus" onclick="trkPvDel('+i+')">&times;</button></span>';
+  });
+  wrap.innerHTML=h;
+}
+function trkMulaiUlang(){
+  const d=trkDraftEnsure();
+  if(!d.gagal.aktif){ toast('Tandai Gagal/Batal terlebih dahulu','warn'); return; }
+  const sel=document.getElementById('trk-ulang-dari');
+  const dari=sel?sel.value:'';
+  if(!dari){ toast('Pilih tahap awal pengulangan','warn'); return; }
+  d.riwayat.push({tanggal:d.gagal.tanggal||trkTodayISO(), ket:d.gagal.ket||'', ulangDari:dari});
+  d.gagal={aktif:false, tanggal:'', ket:''};
+  d.aktif=dari;
+  toast('Pengadaan ulang dimulai dari: '+trkStepNama(trkBuildSteps(trkSel).steps,dari),'ok');
+  renderTrackKelola(true);
+}
+async function trkSave(){
+  if(!trkSel){ toast('Pilih pekerjaan terlebih dahulu','warn'); return; }
+  const d=trkDraftEnsure();
+  const {steps,jadwal}=trkBuildSteps(trkSel);
+  const status=trkStatus(d).label;
+  const payload={ nama_pekerjaan:trkSel, status:status, info:d };
+  const ada=trkGetRec(trkSel);
+  try{
+    if(trkUseLocal) throw new Error('mode lokal');
+    if(ada && !String(ada.id).startsWith('loc_')) await StoreTrack.update(ada.id, payload);
+    else{ const created=await StoreTrack.create(payload); if(created){ records_track.unshift(created); } }
+    if(ada && !String(ada.id).startsWith('loc_')) Object.assign(ada, payload);
+    toast('Tracking tersimpan','ok');
+  }catch(err){
+    /* fallback lokal agar pekerjaan admin tidak hilang */
+    trkUseLocal=true;
+    if(ada){ Object.assign(ada, payload); }
+    else records_track.unshift(Object.assign({id:trkUid(), created_at:new Date().toISOString()}, payload));
+    trkLocalSave();
+    toast('Tersimpan lokal (Supabase tidak tersedia)','warn');
+  }
+  /* salin keterangan tahap jadwal balik ke jadwal_pelaksanaan (best-effort) */
+  try{
+    if(jadwal && typeof jpRecordToState==='function' && typeof StoreJadwal!=='undefined'){
+      const st=jpRecordToState(jadwal);
+      let ubah=false;
+      steps.forEach(s=>{
+        if(s.jIdx!=null && st.tahapan[s.jIdx] && d.ket[s.key]!=null && d.ket[s.key]!==st.tahapan[s.jIdx].ket){
+          st.tahapan[s.jIdx].ket=d.ket[s.key]; ubah=true;
+        }
+      });
+      if(ubah && !String(jadwal.id).startsWith('loc_')){
+        const ns=Object.assign({}, jadwal.state&&typeof jadwal.state==='object'?jadwal.state:{}, st);
+        await StoreJadwal.update(jadwal.id,{state:ns});
+        jadwal.state=ns;
+      }
+    }
+  }catch(e){ console.warn('Sinkron keterangan ke jadwal dilewati:', e&&e.message); }
+  renderTrackKelola(true);
+}
+function trkAdmRow(s, info, undKey){
+  const no=s.__no;
+  const aktif=(info.aktif===s.key);
+  const tgl=trkStepTglTxt(s);
+  const src=s.tetap?(s.key==='dok'?'tahap tetap \u00b7 titik awal':(s.key==='hps'?'tahap tetap':'tahap penutup \u00b7 badge hijau otomatis')):(s.tanpaJadwal?'jadwal belum ditentukan':'dari jadwal');
+  let h='<div class="trk-arow'+(aktif?' trk-arow-on':'')+'">'
+    +'<div class="trk-arow-top"><p class="trk-arow-t">'+no+' \u00b7 '+trkEsc(s.nama)
+    +' <span class="trk-arow-src">'+trkEsc(tgl?tgl+' \u00b7 '+src:src)+'</span></p>'
+    +'<label class="trk-radio"><input type="radio" name="trk-aktif" value="'+s.key+'"'+(aktif?' checked':'')+' onchange="trkSetAktif(\''+s.key+'\')"><span>Berjalan</span></label></div>'
+    +'<input class="trk-in" placeholder="Tulis keterangan tahap ini\u2026" value="'+trkEsc(trkStepKet(s,info))+'" oninput="trkSetKet(\''+s.key+'\',this.value)">';
+  if(s.key===undKey){
+    h+='<p class="trk-alab">Penyedia yang diundang</p>'
+      +'<div class="trk-chips" id="trk-pv-wrap"></div>'
+      +'<div class="trk-pv-add"><input id="trk-pv-new" class="trk-in" placeholder="Nama penyedia baru" onkeydown="if(event.key===\'Enter\'){event.preventDefault();trkPvAdd();}">'
+      +'<button type="button" class="trk-btn trk-btn-teal" onclick="trkPvAdd()">+ Tambah</button></div>';
+  }
+  return h+'</div>';
+}
+function renderTrackKelola(keep){
+  const box=document.getElementById('trk-admin'); if(!box) return;
+  if(!keep) trkDraft=null;
+  let h='<div class="trk-card">'
+    +'<div class="trk-adm-grid"><div>'
+    +'<label class="trk-label" for="trk-adm-pick">Pekerjaan (dari Data Pekerjaan)</label>'
+    +'<select id="trk-adm-pick" class="trk-select" onchange="trkAdmPick(this.value)"></select>'
+    +'</div><div class="trk-adm-stat"><label class="trk-label">Status pengadaan (otomatis)</label>'
+    +'<span id="trk-adm-pill" class="trk-pill trk-pill-proses">Dalam Proses</span></div></div>';
+  if(!trkSel){
+    h+='<p class="trk-hint">Pilih pekerjaan untuk memuat tahapannya. Nama & tanggal tahap diambil otomatis dari Jadwal Pelaksanaan Pengadaan \u2014 admin hanya mengisi keterangan, penyedia, tahap berjalan, dan panel gagal/batal.</p></div>';
+    box.innerHTML=h;
+    trkFillPick('trk-adm-pick');
+    return;
+  }
+  const d=trkDraftEnsure();
+  const {steps,jadwal}=trkBuildSteps(trkSel);
+  steps.forEach((s,i)=>{ s.__no=i+1; });
+  const undKey=trkUndanganKey(steps);
+  const nJ=steps.filter(s=>s.jIdx!=null).length;
+  h+='<p class="trk-hint">'+(jadwal
+      ?('Jadwal terhubung: <b>'+nJ+' tahapan termuat otomatis</b> \u2014 nama & tanggal tahap tidak perlu diketik ulang.')
+      :'Pekerjaan ini belum memiliki jadwal di <b>Jadwal Pelaksanaan Pengadaan</b>; tahapan jadwal diwakili satu langkah umum sampai jadwalnya dibuat.')
+    +'</p></div>';
+
+  h+='<div class="trk-card"><p class="trk-card-t">Keterangan per tahapan <span class="trk-card-s">\u2014 pilih satu tahap sebagai \u201csedang berjalan\u201d</span></p>';
+  steps.forEach(s=>{ h+=trkAdmRow(s,d,undKey); });
+  h+='</div>';
+
+  const gOn=d.gagal.aktif;
+  h+='<div class="trk-card trk-gcard'+(gOn?' trk-gcard-on':'')+'">'
+    +'<div class="trk-gtop"><p class="trk-card-t trk-gt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg> Panel Gagal/Batal</p>'
+    +'<label class="trk-radio"><input type="checkbox" '+(gOn?'checked':'')+' onchange="trkGagalToggle(this.checked)"><span>Tandai pengadaan ini Gagal/Batal</span></label></div>'
+    +'<div class="trk-adm-grid">'
+    +'<div><label class="trk-alab">Keterangan gagal (ditulis sendiri)</label>'
+    +'<input class="trk-in" '+(gOn?'':'disabled ')+'placeholder="Contoh: hanya 1 penawaran masuk dan harga di atas HPS\u2026" value="'+trkEsc(d.gagal.ket)+'" oninput="trkGagalField(\'ket\',this.value)"></div>'
+    +'<div><label class="trk-alab">Tanggal gagal/batal</label>'
+    +'<input type="date" class="trk-in" '+(gOn?'':'disabled ')+'value="'+trkEsc(d.gagal.tanggal)+'" onchange="trkGagalField(\'tanggal\',this.value)"></div>'
+    +'</div>';
+  if(gOn){
+    h+='<div class="trk-ulang"><label class="trk-alab">Mengulang dari tahap</label>'
+      +'<div class="trk-pv-add"><select id="trk-ulang-dari" class="trk-select">';
+    steps.forEach(s=>{ if(s.key!=='fin') h+='<option value="'+s.key+'">'+trkEsc(s.__no+' \u00b7 '+s.nama)+'</option>'; });
+    h+='</select><button type="button" class="trk-btn trk-btn-amber" onclick="trkMulaiUlang()">\u21bb Mulai Pengadaan Ulang</button></div>'
+      +'<p class="trk-hint">Riwayat gagal akan diarsipkan & tetap tampil di timeline pengguna, lalu tahapan berjalan lagi dari tahap yang dipilih.</p></div>';
+  }
+  if(d.riwayat.length){
+    h+='<p class="trk-alab" style="margin-top:12px">Riwayat gagal sebelumnya</p>';
+    d.riwayat.forEach((r,i)=>{
+      h+='<p class="trk-hist">\u2716 '+trkEsc(trkTgl(r.tanggal)||'-')+' \u2014 '+trkEsc(r.ket||'(tanpa keterangan)')+' \u00b7 diulang dari '+trkEsc(trkStepNama(steps,r.ulangDari))+'</p>';
+    });
+  }
+  h+='</div>';
+
+  h+='<div class="trk-actions">'
+    +'<button type="button" class="trk-btn trk-btn-ghost" onclick="showView(\'track-view\')">Lihat sebagai Pengguna</button>'
+    +'<button type="button" class="trk-btn trk-btn-teal" onclick="trkSave()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> Simpan Tracking</button>'
+    +'</div>';
+
+  box.innerHTML=h;
+  trkFillPick('trk-adm-pick');
+  trkPvRender();
+  trkAdmPill();
 }

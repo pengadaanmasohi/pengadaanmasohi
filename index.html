@@ -200,10 +200,25 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
         <!-- Tidak ada lagi submenu setelah Monitoring: klik Monitoring langsung membuka
              Daftar Pekerjaan. Input Pekerjaan kini diakses lewat tombol "Input Data"
              di dalam halaman daftar. -->
-        <button class="topnav-link" data-view="list" onclick="showView('list')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/></svg>
-          Monitoring
-        </button>
+        <div class="topnav-group" data-group="monitor">
+          <button class="topnav-trigger" type="button" onclick="toggleTopGroup(event,'monitor')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/></svg>
+            Monitoring
+            <svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="topnav-dropdown">
+            <!-- Daftar Pengadaan: tabel monitoring yang lama (SPBJ/PL/Tender) -->
+            <button class="topnav-item" data-view="list" onclick="showView('list')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></svg>
+              Daftar Pengadaan
+            </button>
+            <!-- Tracking Pengadaan: timeline tahapan ala pelacakan kiriman -->
+            <button class="topnav-item" data-view="track-view" onclick="openTrackView()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M12 19h4.5a3.5 3.5 0 0 0 0-7h-9a3.5 3.5 0 0 1 0-7H12"/></svg>
+              Tracking Pengadaan
+            </button>
+          </div>
+        </div>
 
         <!-- ===== Form ===== -->
         <div class="topnav-group" data-group="form">
@@ -1431,6 +1446,46 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
   </section>
 
   <!-- ============ REKAP HPS — LIHAT REKAP ============ -->
+  <!-- ============ TRACKING PENGADAAN — TAMPILAN PENGGUNA ============ -->
+  <section id="view-track-view" class="view">
+    <div class="page-head">
+      <div>
+        <h2>Tracking Pengadaan</h2>
+      </div>
+      <button class="btn btn-teal head-add-btn" data-role="admin" onclick="openTrackKelola()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        Kelola Tracking
+      </button>
+    </div>
+    <div class="trk-scene">
+      <div class="trk-toolbar">
+        <div class="trk-pickbox">
+          <label class="trk-label" for="trk-pick">Pilih Pekerjaan <span class="trk-label-sub">(terhubung ke Data Pekerjaan)</span></label>
+          <select id="trk-pick" class="trk-select" onchange="trkPick(this.value)">
+            <option value="">— pilih pekerjaan —</option>
+          </select>
+        </div>
+      </div>
+      <div id="trk-user"></div>
+    </div>
+  </section>
+
+  <!-- ============ TRACKING PENGADAAN — KELOLA (ADMIN) ============ -->
+  <section id="view-track-kelola" class="view">
+    <div class="page-head">
+      <div>
+        <h2>Kelola Tracking <span class="trk-admin-badge">Admin</span></h2>
+      </div>
+      <button class="btn btn-teal head-add-btn" onclick="showView('track-view')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+        Lihat sebagai Pengguna
+      </button>
+    </div>
+    <div class="trk-scene">
+      <div id="trk-admin"></div>
+    </div>
+  </section>
+
   <section id="view-rekap-hps" class="view">
     <div class="page-head">
       <div>
