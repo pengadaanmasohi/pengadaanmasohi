@@ -25875,6 +25875,15 @@ function trkStepDone(s, info){
   }
   return Date.now() >= d.getTime();
 }
+/* Penyelesaian BERANTAI: tahap ke-i dianggap selesai hanya bila tahap itu
+   selesai DAN semua tahap sebelumnya selesai. Mencegah tahapan jadwal
+   "melompati" tahap manual yang belum selesai (mis. HPS belum disahkan
+   padahal tanggal Pendaftaran sudah berjalan). */
+function trkDoneChain(steps, info){
+  const out=[]; let ok=true;
+  steps.forEach(s=>{ ok = ok && trkStepDone(s, info); out.push(ok); });
+  return out;
+}
 function trkRealTxt(info,key){
   const t=(info.tgl&&info.tgl[key])?info.tgl[key]:''; if(!t) return '';
   const j=(info.jam&&info.jam[key])?info.jam[key]:'';
@@ -25971,19 +25980,22 @@ function renderTrackUser(){
   const ttdKey=trkTtdKey(steps);
   /* posisi efektif: tahap pertama yang belum selesai (tanda admin ATAU otomatis lewat tanggal) */
   const finOk = trkStatus(info).kode==='kontrak';
+  const chain=trkDoneChain(steps, info);
   let trkFirstOpen=-1;
-  steps.forEach((s,i)=>{ if(trkFirstOpen<0 && !trkStepDone(s,info)) trkFirstOpen=i; });
+  steps.forEach((s,i)=>{ if(trkFirstOpen<0 && !chain[i]) trkFirstOpen=i; });
   if(trkFirstOpen<0) trkFirstOpen=steps.length-1;
+  /* ada tahapan jadwal yang tanggalnya sudah berjalan/terlewati? (deteksi keterlambatan) */
+  const adaJadwalLewat = steps.some(x=>x.jIdx!=null && trkStepAutoDone(x));
   const items=[];
   steps.forEach((s,i)=>{
     /* sisipkan riwayat gagal + pengadaan ulang tepat sebelum tahap tujuan pengulangan */
     (info.riwayat||[]).forEach(r=>{
       if(r.ulangDari===s.key){
         items.push({st:'fail', nama:'Pengadaan Gagal/Batal'+(r.tanggal?(' \u00b7 '+trkTgl(r.tanggal)):''), ket:r.ket||''});
-        items.push({st:'redo', nama:'Pengadaan ulang dimulai', sub:'Mengulang dari: '+trkStepNama(steps,r.ulangDari)});
+        items.push({st:'redo', nama:'Pengadaan ulang dimulai', sub:'Mengulang dari: '+trkStepNama(steps,r.ulangDari)+((r.jadwalLama&&r.jadwalLama.length)?' \u00b7 jadwal siklus sebelumnya diarsipkan':'')});
       }
     });
-    const dn = trkStepDone(s,info) || finOk;
+    const dn = chain[i] || finOk;
     let st;
     if(info.gagal.aktif) st = dn ? 'done' : 'wait';
     else st = dn ? 'done' : (i===trkFirstOpen ? 'now' : 'wait');
@@ -25995,6 +26007,8 @@ function renderTrackUser(){
     else                 sub='Menunggu'+(real?(' \u00b7 selesai otomatis '+real):(jdw?(' \u00b7 jadwal '+jdw):''));
     const o={st:st, nama:s.nama, sub:sub, ket:trkStepKet(s,info)};
     if(s.tanpaJadwal) o.sub+=' \u00b7 jadwal belum ditentukan';
+    if(st==='now' && s.jIdx==null && s.key!=='fin' && adaJadwalLewat) o.sub+=' \u00b7 terlambat dari jadwal';
+    if(st==='wait' && s.jIdx!=null && trkStepAutoDone(s)) o.sub='Menunggu tahap sebelumnya selesai'+(jdw?(' \u00b7 jadwal '+jdw+' terlewati'):'');
     if(s.key===undKey && info.penyedia.length) o.chips=info.penyedia;
     if(s.key==='fin' && st==='done'){ o.sub='Terkontrak'+(real?(' \u00b7 ditandatangani '+real):''); }
     else if(s.key==='fin' && st==='now'){ o.sub=real?('Menunggu tanggal Penandatanganan Kontrak/SPK: '+trkTgl(real)):'Menunggu tanggal Penandatanganan Kontrak/SPK ditentukan'; }
@@ -26065,7 +26079,11 @@ function trkMulaiUlang(){
   const sel=document.getElementById('trk-ulang-dari');
   const dari=sel?sel.value:'';
   if(!dari){ toast('Pilih tahap awal pengulangan','warn'); return; }
-  d.riwayat.push({tanggal:d.gagal.tanggal||trkTodayISO(), ket:d.gagal.ket||'', ulangDari:dari});
+  /* arsipkan tanggal-tanggal jadwal siklus lama agar riwayat tetap utuh
+     walau admin menyusun jadwal baru dengan nama pekerjaan yang sama */
+  const bs=trkBuildSteps(trkSel);
+  const jadwalLama=bs.steps.filter(s=>s.jIdx!=null && !s.tanpaJadwal).map(s=>({nama:s.nama, awalTgl:s.awalTgl||'', akhirTgl:s.akhirTgl||''}));
+  d.riwayat.push({tanggal:d.gagal.tanggal||trkTodayISO(), ket:d.gagal.ket||'', ulangDari:dari, jadwalLama:jadwalLama});
   d.gagal={aktif:false, tanggal:'', ket:''};
   /* kosongkan tanggal manual mulai dari titik pengulangan agar siklus baru
      tidak langsung dianggap selesai oleh tanggal siklus lama */
@@ -26076,6 +26094,24 @@ function trkMulaiUlang(){
   toast('Pengadaan ulang dimulai dari: '+trkStepNama(trkBuildSteps(trkSel).steps,dari),'ok');
   toast('Perbarui tanggal tahapan di Jadwal Pelaksanaan Pengadaan untuk siklus ulang','warn',5200);
   renderTrackKelola(true);
+}
+/* Buka halaman Tentukan Jadwal untuk menyusun jadwal siklus ulang;
+   nama pekerjaan otomatis terisi sama agar tracking langsung tersambung
+   (tracking selalu memakai jadwal TERBARU dengan nama pekerjaan sama). */
+function trkSusunJadwalUlang(){
+  const nama=trkSel; if(!nama){ toast('Pilih pekerjaan terlebih dahulu','warn'); return; }
+  if(typeof openJadwalKerja!=='function'){ toast('Halaman Tentukan Jadwal tidak tersedia','warn'); return; }
+  openJadwalKerja();
+  let n=0; const t=setInterval(function(){
+    n++;
+    if(typeof jpState!=='undefined' && jpState){
+      jpState.namaPekerjaan=nama;
+      if(typeof renderJadwalKerja==='function') renderJadwalKerja();
+      clearInterval(t);
+      toast('Susun jadwal siklus ulang untuk: '+nama,'ok');
+    }
+    if(n>40) clearInterval(t);
+  },150);
 }
 async function trkSave(){
   if(!trkSel){ toast('Pilih pekerjaan terlebih dahulu','warn'); return; }
@@ -26180,11 +26216,12 @@ function renderTrackKelola(keep){
   const d=trkDraftEnsure();
   const {steps,jadwal}=trkBuildSteps(trkSel);
   steps.forEach((s,i)=>{ s.__no=i+1; });
+  const admChain=trkDoneChain(steps, d);
   let admOpen=-1;
-  steps.forEach((s,i)=>{ if(admOpen<0 && !trkStepDone(s,d)) admOpen=i; });
+  steps.forEach((s,i)=>{ if(admOpen<0 && !admChain[i]) admOpen=i; });
   if(admOpen<0) admOpen=steps.length-1;
   const admFin = trkStatus(d).kode==='kontrak';
-  steps.forEach((s,i)=>{ s.__st = (trkStepDone(s,d)||admFin) ? 'done' : (i===admOpen ? 'now' : 'wait'); });
+  steps.forEach((s,i)=>{ s.__st = (admChain[i]||admFin) ? 'done' : (i===admOpen ? 'now' : 'wait'); });
   const undKey=trkUndanganKey(steps);
   const ttdKey=trkTtdKey(steps);
   const nJ=steps.filter(s=>s.jIdx!=null).length;
@@ -26208,13 +26245,13 @@ function renderTrackKelola(keep){
     +'<div><label class="trk-alab">Tanggal gagal/batal</label>'
     +'<input type="date" class="trk-in" '+(gOn?'':'disabled ')+'value="'+trkEsc(d.gagal.tanggal)+'" onchange="trkGagalField(\'tanggal\',this.value)"></div>'
     +'</div>';
-  if(gOn){
-    h+='<div class="trk-ulang"><label class="trk-alab">Mengulang dari tahap</label>'
-      +'<div class="trk-pv-add"><select id="trk-ulang-dari" class="trk-select">';
-    steps.forEach(s=>{ if(s.key!=='fin') h+='<option value="'+s.key+'">'+trkEsc(s.__no+' \u00b7 '+s.nama)+'</option>'; });
-    h+='</select><button type="button" class="trk-btn trk-btn-amber" onclick="trkMulaiUlang()">\u21bb Mulai Pengadaan Ulang</button></div>'
-      +'<p class="trk-hint">Riwayat gagal akan diarsipkan & tetap tampil di timeline pengguna, lalu tahapan berjalan lagi dari tahap yang dipilih.</p></div>';
-  }
+  h+='<div class="trk-ulang"><label class="trk-alab">Mengulang dari tahap</label>'
+    +'<div class="trk-pv-add"><select id="trk-ulang-dari" class="trk-select"'+(gOn?'':' disabled')+'>';
+  steps.forEach(s=>{ if(s.key!=='fin') h+='<option value="'+s.key+'">'+trkEsc(s.__no+' \u00b7 '+s.nama)+'</option>'; });
+  h+='</select><button type="button" class="trk-btn trk-btn-amber" '+(gOn?'':'disabled ')+'onclick="trkMulaiUlang()">\u21bb Mulai Pengadaan Ulang</button>'
+    +'<button type="button" class="trk-btn trk-btn-ghost" onclick="trkSusunJadwalUlang()">+ Susun Jadwal Ulang</button></div>'
+    +'<p class="trk-hint">Saat pengadaan ulang: riwayat gagal <b>diarsipkan</b> (termasuk salinan jadwal siklus lama) dan tetap tampil di timeline pengguna, lalu tahapan berjalan lagi dari tahap yang dipilih. '
+    +'Untuk tanggal siklus baru, susun <b>jadwal baru dengan nama pekerjaan yang sama</b> di Tentukan Jadwal (cepat lewat <b>Muat Profil</b> + Titik Mulai baru) \u2014 tracking otomatis memakai <b>jadwal terbaru</b>; jadwal lama tetap tersimpan di Lihat Jadwal.</p></div>';
   if(d.riwayat.length){
     h+='<p class="trk-alab" style="margin-top:12px">Riwayat gagal sebelumnya</p>';
     d.riwayat.forEach((r,i)=>{
