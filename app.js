@@ -23151,21 +23151,48 @@ function spkPageScript(){
        utuh/atom yang tinggi sehingga dipindah seluruhnya), dan di sinilah
        kasus judul yatim seperti itu tertangkap. */
     ' var MINKEEP=mm2px(14);',   /* ambang isi penyerta: ~3 baris (16mm) lolos; <=2 baris (11mm) diboyong */
+    /* PERBAIKAN 21 Jul 2026 (laporan "judul klausul terpisah" terulang):
+       versi sebelumnya hanya memeriksa cangkang TERDALAM (tgt()), padahal judul
+       klausul berada di cangkang induk .spk-clause — sehingga judul tidak pernah
+       ditemukan & tidak ikut diboyong. Kini judul dicari di SELURUH badan
+       halaman, dan tinggi isi di bawahnya diukur dari usedBottom(). Isi kecil
+       (<3 baris) yang telanjur tampil di bawah judul ikut diangkut. Berlaku
+       untuk KEDUA bentuk (SPK & Perjanjian/Kontrak). */
     ' function tarikJudulKlausul(node){',
     '   if(node && node.nodeType===1 && (hasCls(node,"spk-clause")||hasCls(node,"spk-cl-h")||hasCls(node,"spk-bab"))) return null;',
-    '   var kk=els(tgt()); if(!kk.length) return null;',
-    '   var hi=-1;',
-    '   for(var i=kk.length-1;i>=0;i--){ if(hasCls(kk[i],"spk-cl-h")){ hi=i; break; } }',
-    '   if(hi<0) return null;',
-    '   var hAfter=0;',
-    '   for(var j=hi+1;j<kk.length;j++) hAfter+=kk[j].getBoundingClientRect().height;',
-    '   if(hAfter>=MINKEEP) return null;',
+    '   var hs=body.querySelectorAll(".spk-cl-h"); if(!hs.length) return null;',
+    '   var h=hs[hs.length-1];',
+    '   var bt=body.getBoundingClientRect().top;',
+    '   var hr=h.getBoundingClientRect();',
     /* Judul yang sudah duduk di puncak halaman tidak diboyong — memindahkannya
        tidak memperbaiki apa pun dan berisiko menghasilkan halaman kosong. */
-    '   if((kk[hi].getBoundingClientRect().top - body.getBoundingClientRect().top) < mm2px(8)) return null;',
-    '   var out=[];',
-    '   for(var m=kk.length-1;m>=hi;m--){ kk[m].parentNode.removeChild(kk[m]); out.unshift(kk[m]); }',
-    '   return out;',
+    '   if((hr.top-bt) < mm2px(8)) return null;',
+    '   var hAfter=usedBottom()-(hr.bottom-bt);',
+    '   if(hAfter>=MINKEEP) return null;',
+    /* Kumpulkan ISI (bukan cangkang ber-data-spksh) yang sudah tampil di bawah
+       judul; urutan dokumen querySelectorAll menjamin induk terkumpul sebelum
+       anaknya, jadi anak yang induknya sudah terangkut dilewati. */
+    '   var tail=[], all=body.querySelectorAll("p,div"), i;',
+    '   for(i=0;i<all.length;i++){',
+    '     var e=all[i];',
+    '     if(e===h || e.contains(h)) continue;',
+    '     if(e.getAttribute && e.getAttribute("data-spksh")) continue;',
+    '     if(e.getBoundingClientRect().top < hr.bottom-1) continue;',
+    '     if(e.parentNode && tail.indexOf(e.parentNode)>=0) continue;',
+    '     tail.push(e);',
+    '   }',
+    '   if(h.parentNode) h.parentNode.removeChild(h);',
+    '   for(i=0;i<tail.length;i++){ if(tail[i].parentNode) tail[i].parentNode.removeChild(tail[i]); }',
+    '   return {h:h, tail:tail};',
+    ' }',
+    /* Pasang hasil boyongan pada halaman BARU: judul masuk ke AWAL cangkang
+       klausul terluar (agar tetap berstruktur .spk-clause > .spk-cl-h + .spk-cl),
+       isi kecil yang ikut terangkut masuk ke cangkang terdalam. */
+    ' function pasangTarikKlausul(_k){',
+    '   if(!_k) return;',
+    '   var _root=stack.length?stack[0].el:tgt();',
+    '   _root.insertBefore(_k.h, _root.firstChild);',
+    '   for(var _q=0;_q<_k.tail.length;_q++) tgt().appendChild(_k.tail[_q]);',
     ' }',
     /* Buka lembar baru SEKALIGUS memboyong judul yang menggantung. Dipakai di
        SEMUA titik yang memulai halaman baru karena isi tak muat. */
@@ -23173,7 +23200,7 @@ function spkPageScript(){
     '   var _j=tarikJudulMenggantung(node);',
     '   var _k=tarikJudulKlausul(node);',
     '   mk();',
-    '   if(_k) for(var _q=0;_q<_k.length;_q++) tgt().appendChild(_k[_q]);',
+    '   pasangTarikKlausul(_k);',
     '   if(_j) for(var _i=0;_i<_j.length;_i++) tgt().appendChild(_j[_i]);',
     ' }',
     ' function put(node){',
@@ -23257,7 +23284,7 @@ function spkPageScript(){
     /* Judul klausul di atas blok kv juga tak boleh tertinggal yatim (< 3 baris isi) */
     '       var _kj=tarikJudulKlausul(node);',
     '       mk();',
-    '       if(_kj) for(var _kq=0;_kq<_kj.length;_kq++) tgt().appendChild(_kj[_kq]);',
+    '       pasangTarikKlausul(_kj);',
     '       for(var _li=0;_li<_leads.length;_li++) tgt().appendChild(_leads[_li]);',
     '     }',
     '   }',
