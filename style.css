@@ -4705,15 +4705,15 @@ table.ac-list thead th{ background:linear-gradient(180deg,#eef6f7,#dfedee); box-
 /* =========================================================================
    TRACKING PENGADAAN — gaya elegan 3D (khusus halaman Tracking, prefix trk-)
    ========================================================================= */
-.trk-scene{background:linear-gradient(160deg,#eef7f5 0%,#e3efec 55%,#dcebe8 100%);border-radius:18px;padding:22px;box-shadow:inset 0 1px 0 rgba(255,255,255,.8),0 1px 2px rgba(13,74,66,.06)}
+.trk-scene{background:linear-gradient(160deg,#f8f9f9 0%,#f3f5f5 55%,#eef1f1 100%);border-radius:18px;padding:22px;box-shadow:inset 0 1px 0 rgba(255,255,255,.8),0 1px 2px rgba(40,50,48,.05)}
 .trk-scene *{box-sizing:border-box}
 .trk-toolbar{margin-bottom:16px}
 .trk-pickbox{max-width:560px}
-.trk-label{display:block;font-size:12.5px;color:#4d6a64;margin:0 0 6px;font-weight:600}
-.trk-label-sub{font-weight:400;color:#7d968f}
-.trk-select{width:100%;height:42px;border:1px solid #d3e4e0;border-radius:12px;background:linear-gradient(180deg,#ffffff,#f3faf8);color:#0f3d37;font-size:14px;padding:0 12px;box-shadow:0 4px 10px rgba(13,74,66,.10),inset 0 1px 0 #fff;outline:none;appearance:auto;cursor:pointer}
-.trk-select:focus{border-color:#18b394;box-shadow:0 0 0 3px rgba(24,179,148,.18),0 4px 10px rgba(13,74,66,.10)}
-.trk-card{background:linear-gradient(180deg,#ffffff,#fbfdfd);border-radius:16px;box-shadow:0 12px 28px rgba(13,74,66,.14),0 3px 8px rgba(13,74,66,.08),inset 0 1px 0 #fff;padding:18px 20px;margin-bottom:16px}
+.trk-label{display:block;font-size:12.5px;color:#5b6a67;margin:0 0 6px;font-weight:600}
+.trk-label-sub{font-weight:400;color:#93a09d}
+.trk-select{width:100%;height:42px;border:1px solid #dee3e2;border-radius:12px;background:#ffffff;color:#1f2d2b;font-size:14px;padding:0 12px;box-shadow:0 3px 8px rgba(40,50,48,.07),inset 0 1px 0 #fff;outline:none;appearance:auto;cursor:pointer}
+.trk-select:focus{border-color:#18b394;box-shadow:0 0 0 3px rgba(24,179,148,.12),0 3px 8px rgba(40,50,48,.07)}
+.trk-card{background:#ffffff;border-radius:16px;box-shadow:0 10px 24px rgba(40,50,48,.09),0 3px 8px rgba(40,50,48,.05),inset 0 1px 0 #fff;padding:18px 20px;margin-bottom:16px}
 .trk-card-t{margin:0 0 12px;font-size:14.5px;font-weight:700;color:#12322d}
 .trk-card-s{font-weight:400;font-size:12px;color:#5a7570}
 .trk-empty{display:flex;flex-direction:column;align-items:center;gap:10px;padding:38px 20px;color:#5a7570;font-size:13.5px;text-align:center}
@@ -4754,7 +4754,7 @@ table.ac-list thead th{ background:linear-gradient(180deg,#eef6f7,#dfedee); box-
 .trk-redo .trk-dot{background:radial-gradient(circle at 32% 28%,#ffd27a,#d98a12 70%);color:#fff;box-shadow:0 4px 8px rgba(217,138,18,.4),inset 0 1px 1px rgba(255,255,255,.45)}
 .trk-redo .trk-nm{color:#8a5a0a}
 /* ---- kotak keterangan ---- */
-.trk-ket{margin-top:8px;background:linear-gradient(180deg,#f6faf9,#eef5f3);border:1px solid #e0ecea;border-radius:10px;padding:8px 11px;font-size:12.5px;color:#3d5a55;display:flex;gap:8px;align-items:flex-start;box-shadow:inset 0 1px 3px rgba(13,74,66,.07);line-height:1.5}
+.trk-ket{margin-top:8px;background:#f7f8f8;border:1px solid #e7ebea;border-radius:10px;padding:8px 11px;font-size:12.5px;color:#44534f;display:flex;gap:8px;align-items:flex-start;box-shadow:inset 0 1px 3px rgba(40,50,48,.05);line-height:1.5}
 .trk-ket svg{width:15px;height:15px;flex:none;margin-top:1px;color:#0f9d80}
 .trk-ket-empty span{color:#93aba6;font-style:italic}
 .trk-fail .trk-ket{background:linear-gradient(180deg,#fdf4f3,#faeae8);border-color:#f2d6d2}
@@ -4769,16 +4769,16 @@ table.ac-list thead th{ background:linear-gradient(180deg,#eef6f7,#dfedee); box-
 .trk-adm-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:12px;align-items:start}
 .trk-adm-stat{display:flex;flex-direction:column;align-items:flex-start;gap:2px}
 .trk-adm-stat .trk-pill{margin-top:4px}
-.trk-in{width:100%;height:38px;border:1px solid #d3e4e0;border-radius:10px;background:linear-gradient(180deg,#ffffff,#f3faf8);color:#0f3d37;font-size:13px;padding:0 10px;box-shadow:inset 0 1px 3px rgba(13,74,66,.07);outline:none;margin-top:8px}
-.trk-in:focus{border-color:#18b394;box-shadow:0 0 0 3px rgba(24,179,148,.18),inset 0 1px 3px rgba(13,74,66,.07)}
+.trk-in{width:100%;height:38px;border:1px solid #dee3e2;border-radius:10px;background:#ffffff;color:#1f2d2b;font-size:13px;padding:0 10px;box-shadow:inset 0 1px 3px rgba(40,50,48,.06);outline:none;margin-top:8px}
+.trk-in:focus{border-color:#18b394;box-shadow:0 0 0 3px rgba(24,179,148,.12),inset 0 1px 3px rgba(40,50,48,.06)}
 .trk-in:disabled{opacity:.5;cursor:not-allowed}
-.trk-alab{display:block;font-size:12px;color:#4d6a64;margin:10px 0 0;font-weight:600}
-.trk-arow{border:1px solid #e2eeeb;border-radius:12px;padding:10px 12px;margin-bottom:10px;background:linear-gradient(180deg,#fdfefe,#f6fbfa);box-shadow:0 2px 5px rgba(13,74,66,.06),inset 0 1px 0 #fff}
-.trk-arow-on{border-color:#8fd0f0;box-shadow:0 0 0 3px rgba(24,115,196,.10),0 2px 5px rgba(13,74,66,.06)}
+.trk-alab{display:block;font-size:12px;color:#5b6a67;margin:10px 0 0;font-weight:600}
+.trk-arow{border:1px solid #e7ebea;border-radius:12px;padding:10px 12px;margin-bottom:10px;background:#fdfdfd;box-shadow:0 2px 5px rgba(40,50,48,.05),inset 0 1px 0 #fff}
+.trk-arow-on{border-color:#8fd0f0;box-shadow:0 0 0 3px rgba(24,115,196,.10),0 2px 5px rgba(40,50,48,.05)}
 .trk-arow-top{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
 .trk-arow-t{margin:0;font-size:13px;font-weight:600;color:#12322d}
 .trk-arow-src{font-size:11px;color:#8aa39e;font-weight:400}
-.trk-radio{font-size:12.5px;color:#4d6a64;display:flex;gap:6px;align-items:center;white-space:nowrap;cursor:pointer}
+.trk-radio{font-size:12.5px;color:#5b6a67;display:flex;gap:6px;align-items:center;white-space:nowrap;cursor:pointer}
 .trk-radio input{accent-color:#1873c4;cursor:pointer}
 .trk-arow-on .trk-radio{color:#155e9c;font-weight:600}
 .trk-pv-add{display:flex;gap:8px;margin-top:8px;align-items:flex-end}
@@ -4789,7 +4789,7 @@ table.ac-list thead th{ background:linear-gradient(180deg,#eef6f7,#dfedee); box-
 .trk-btn svg{width:15px;height:15px}
 .trk-btn-teal{background:linear-gradient(180deg,#18b394,#0f9d80);color:#fff}
 .trk-btn-amber{background:linear-gradient(180deg,#f2b23e,#d98a12);color:#fff}
-.trk-btn-ghost{background:linear-gradient(180deg,#ffffff,#eef5f3);color:#0f5c50;border:1px solid #cfe6e0;box-shadow:0 2px 6px rgba(13,74,66,.10),inset 0 1px 0 #fff}
+.trk-btn-ghost{background:#ffffff;color:#3e4e4a;border:1px solid #dbe1e0;box-shadow:0 2px 6px rgba(40,50,48,.08),inset 0 1px 0 #fff}
 .trk-gcard{border:1px solid #f2d6d2;opacity:.55;transition:opacity .2s ease}
 .trk-gcard-on{opacity:1;box-shadow:0 12px 28px rgba(201,58,44,.12),0 3px 8px rgba(201,58,44,.08),inset 0 1px 0 #fff}
 .trk-gtop{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
