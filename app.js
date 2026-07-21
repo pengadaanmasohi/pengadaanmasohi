@@ -19026,8 +19026,17 @@ function spkLeadIndentCls(html){
    spkPkIndentStd, bukan per awalan. */
 function spkPkNumW(sp){
   var t=String(sp&&sp.textContent||'').replace(/[\s\u00A0]+/g,'');
+  /* KANONIK (ketentuan sejajar 21 Jul 2026): semua digit diukur sebagai '0'.
+     Kotak nomor dirender dengan font-variant-numeric:tabular-nums sehingga
+     SETIAP digit sama lebar; kanvas pengukur tidak menerapkan tnum, jadi tanpa
+     kanonisasi "9.18." terukur beda dari "10.1." padahal di layar sama lebar —
+     inilah sumber kolom teks yang tidak lurus & jeda nomor->teks yang
+     berubah-ubah antar-deret. Dengan '0' (glyph angka terlebar) hasil ukur
+     hanya bergantung jumlah digit + titik: deret berpola sama otomatis
+     sekolom, di pasal mana pun. */
+  var tc=t.replace(/[0-9]/g,'0');
   var w=0;
-  try{ w=spkPkTextWidthCm(t); }catch(e){ w=0; }
+  try{ w=spkPkTextWidthCm(tc); }catch(e){ w=0; }
   if(!(w>0)){                                  /* pengukuran gagal: perkiraan kasar */
     var fb=parseFloat(sp && sp.style ? sp.style.width : '');
     if(fb>0) return fb;
@@ -19191,7 +19200,9 @@ function spkPkIsHuruf(tok){
 }
 function spkPkIndentStd(html, opsi){
   var s=String(html==null?'':html);
-  if(s.indexOf('class="n')<0) return s;
+  /* Pasal narasi murni tak punya kotak nomor sama sekali, tapi tetap harus
+     diluruskan ke kolom teks judul (opsi.judul) — jangan keluar lebih awal. */
+  if(s.indexOf('class="n')<0 && !(opsi && (+opsi.intro>0 || +opsi.judul>0))) return s;
   try{
     var box=document.createElement('div'); box.innerHTML=s;
     var ps=box.querySelectorAll('p');
@@ -19244,14 +19255,22 @@ function spkPkIndentStd(html, opsi){
        wadah — bukan lewat pemindaian <p> di bawah. Tanpa opsi.intro (bentuk
        Perjanjian/Kontrak) perilaku lama dipertahankan. */
     var introX=(opsi && +opsi.intro>0) ? Math.round((+opsi.intro)*100)/100 : 0, adaIntro=false;
+    /* PASAL TANPA NOMOR (permintaan 21 Jul 2026): klausul yang isinya TIDAK punya
+       butir bernomor sama sekali (mis. HARGA PEKERJAAN yang seluruhnya narasi)
+       tidak perlu jeda LEAD — teksnya diluruskan tepat ke KOLOM TEKS JUDUL
+       (opsi.judul = gantungan nomor judul, "sejajar dengan teks setelah
+       penomoran klausul"). Bila ada butir bernomor, blok pengantar tetap
+       menjorok introX (kolom teks judul + LEAD) seperti sebelumnya. */
+    var judulX=(opsi && +opsi.judul>0) ? Math.round((+opsi.judul)*100)/100 : 0;
     if(introX>0){
+      var tepiIntro=(item.length===0 && judulX>0) ? judulX : introX;
       for(var c0=0;c0<box.children.length;c0++){
         var ch=box.children[c0];
         if(ch.tagName==='P' && spkPkTok(ch)) break;        /* butir bernomor pertama */
         if(!(ch.textContent||'').replace(/[\s\u00A0]/g,'')) continue;
         if(ch.classList && (ch.classList.contains('spk-cl-h')||ch.classList.contains('spk-bab')||
            ch.classList.contains('spk-ph'))) continue;
-        ch.style.marginLeft=introX.toFixed(2)+'cm';
+        ch.style.marginLeft=tepiIntro.toFixed(2)+'cm';
         adaIntro=true;
       }
     }
@@ -19321,12 +19340,16 @@ function spkPkIndentStd(html, opsi){
          entah deret ini memuat nomor 2 digit atau tidak — sehingga penomoran
          antar-Pasal tetap sejajar, dan hanya nomor 2 digit yang keluar ke kiri
          (persis seperti penomoran rata kanan di Word). */
-      var Wb=0;
-      for(j=0;j<g.items.length;j++){
-        var sg1=spkPkSegs(g.items[j].tok);
-        if(sg1 && String(sg1[sg1.length-1]).length<=1 && g.items[j].w>Wb) Wb=g.items[j].w;
-      }
-      g.Wb = (Wb>0 && Wb<g.W) ? Math.round(Wb*100)/100 : g.W;
+      /* KETENTUAN SEJAJAR (21 Jul 2026): kolom teks TIDAK lagi dihitung dari
+         nomor 1-digit terlebar (aturan "julur ke kiri" lama) — teks sesudah
+         penomoran harus lurus antar-deret di atas & bawahnya. Kolom teks kini
+         = base + W penuh, dan karena W diukur kanonik (semua digit '0' selebar
+         tabular), deret berpola sama ("9.18." vs "10.1.") jatuh di kolom yang
+         sama persis; deret rata kiri berjeda tetap = padding karena semua
+         nomornya sama lebar. Konsekuensi yang disadari: nomor 1 digit pada
+         deret rata kanan kini mulai agak ke kanan (tidak lagi menjulur),
+         titik penutupnya tetap lurus. */
+      g.Wb = g.W;
     }
 
     /* --- Tahap 4: posisi tiap deret ---
@@ -19597,7 +19620,7 @@ function spkPkTidy(html, isPk){
     /* intro = kolom teks JUDUL klausul (gantungan JUDUL_HANG kisi SPK) + LEAD */
     var _D=(typeof spkDX==='function')?spkDX():null;
     var _jh=_D?Math.round((_D.JUDUL_HANG/566.929)*100)/100:0.65;
-    return spkPkIndentStd(spkPkBoxMark(html), {intro:Math.round((_jh+SPK_PK_LEAD)*100)/100});
+    return spkPkIndentStd(spkPkBoxMark(html), {intro:Math.round((_jh+SPK_PK_LEAD)*100)/100, judul:_jh});
   }
   /* Urutan penting: kotakkan penanda dulu supaya perbaikan nomor & inden
      bekerja pada SELURUH butir, termasuk yang lolos dari spkNumberFix.
