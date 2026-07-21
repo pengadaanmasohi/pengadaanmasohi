@@ -16103,7 +16103,9 @@ function spkDlistAlign(html){
   var n=m.length;
   /* lantai 0,45 (bukan 0,6 warisan CSS) supaya kotak daftar 1 digit tidak
      lebih lebar dari kolom pihak terhitung — keduanya harus satu garis */
-  var dlW=0.45, dlRata=(n>=10)?'right':'left';
+  /* Rata KANAN selalu (22 Jul 2026): jeda penanda->teks pada daftar
+     "Berdasarkan" ikut seragam dengan isi klausul (= padding tetap). */
+  var dlW=0.45, dlRata='right';
   try{
     var wN=spkPkTextWidthCm((String(n)+'.').replace(/[0-9]/g,'0'));
     if(wN>0) dlW=Math.max(0.45, Math.round((wN+SPK_NUM_GAP)*100)/100);
@@ -18094,7 +18096,10 @@ function spkClHeadW(nKl){
 function spkClHeadCss(nKl, isPk){
   if(isPk) return '';
   var W=spkClHeadW(nKl);
-  var al=(nKl>=10)?'right':'left';
+  /* Rata KANAN selalu (22 Jul 2026): jeda nomor->judul = padding tetap, sama
+     dengan jeda nomor->teks di isi klausul. Untuk dokumen <10 klausul semua
+     nomor sama lebar sehingga tampilannya tak berbeda dari rata kiri. */
+  var al='right';
   return '.spk-doc.spk-spk .spk-cl-h{padding-left:'+W.toFixed(2)+'cm;text-indent:-'+W.toFixed(2)+'cm}'+
          '.spk-doc.spk-spk .spk-cl-h .n{min-width:'+W.toFixed(2)+'cm;width:auto;text-align:'+al+';'+
            'padding-right:'+SPK_NUM_GAP+'cm;box-sizing:border-box}';
@@ -19259,7 +19264,13 @@ var SPK_PK_STEP = 0.75;                 /* cadangan bila induk tak diketahui (cm
    diturunkan darinya, sehingga hubungan induk-anak selalu terlihat sama —
    entah nomornya "1." yang sempit atau "2.1." yang lebar.
    Dipakai juga sebagai geseran daftar yang berada di bawah paragraf pengantar. */
-var SPK_PK_LEAD = 0.35;                 /* jarak penanda anak dari teks induk (cm) */
+/* KETENTUAN 22 Jul 2026 (permintaan user, berlaku SPK & PK):
+   "rapikan inden 0,15 dari baris di atas" — SATU langkah inden untuk SEMUA
+   tingkat. Dulu deret HURUF/bullet memakai 0,35 sedangkan deret ANGKA 0,15,
+   sehingga kedalaman tiap tingkat tidak seragam dan tidak cocok dengan
+   tampilan Lihat Pustaka Klausul maupun template .docx. Nilainya kini
+   disamakan: SPK_PK_LEAD = SPK_PK_LEAD_ANGKA = SPK_PK_LEAD_JUDUL = 0,15. */
+var SPK_PK_LEAD = 0.15;                 /* jarak penanda anak dari teks induk (cm) */
 /* KETENTUAN 21 Jul 2026 ("3.1.1 terlalu masuk dalam"): deret anak ber-ANGKA
    (mis. "3.1.1." di bawah "3.1.") memakai jorokan LEBIH TIPIS dari deret huruf,
    karena kotak nomor majemuknya sendiri sudah lebar — dengan 0,35 teksnya
@@ -19276,7 +19287,14 @@ var SPK_PK_LEAD_JUDUL = 0.15;           /* jorokan deret PEMBUKA klausul thd kol
    "i.", sehingga jeda 0,18 cm membuat huruf yang sempit terlihat jauh dari
    teksnya. Dengan 0,10 cm, lebar kolom huruf jatuh di sekitar 0,5 cm — sama
    seperti tab daftar huruf pada Word. */
-var SPK_PK_GAP_HURUF = 0.10;            /* jeda penanda huruf/bullet -> teks (cm) */
+/* DISERAGAMKAN 22 Jul 2026 (permintaan user: "samakan jarak dari penomoran ke
+   teks agar seragam dan rapi"): jeda daftar HURUF/bullet tidak lagi 0,10 cm
+   melainkan SAMA dengan daftar ANGKA (SPK_NUM_GAP 0,18). Alasan nilai 0,10
+   yang lama — huruf sempit ("i.") terlihat jauh dari teksnya karena kotaknya
+   dipatok selebar penanda TERLEBAR ("m.") — kini hilang dengan sendirinya,
+   sebab penanda huruf/bullet dirata-KANANkan di dalam kotaknya sehingga
+   jeda ke teks SELALU = padding, berapa pun lebar glifnya. */
+var SPK_PK_GAP_HURUF = SPK_NUM_GAP;     /* jeda penanda huruf/bullet -> teks (cm) */
 /* PENGUKUR LEBAR KHUSUS PERJANJIAN/KONTRAK.
    spkTextWidthCm() mengukur dengan '11pt Arial', padahal isi kontrak dirender
    dengan Inter 11pt yang angkanya ~8% LEBIH LEBAR. Akibatnya kotak nomor 2 digit
@@ -19298,8 +19316,17 @@ var SPK_PK_MEAS_FONT = '11pt "Inter Local","Inter","Segoe UI",Arial,sans-serif';
    cadangan saat Inter belum termuat (kanvas jatuh ke Segoe/Arial yang lebih
    sempit). Pengecekan diulang tiap panggilan (murah) supaya begitu font
    selesai termuat, render berikutnya langsung presisi. */
-var SPK_PK_MEAS_PAD    = 1.10;   /* cadangan: Inter belum termuat */
-var SPK_PK_MEAS_PAD_OK = 1.02;   /* Inter aktif: hampir persis */
+/* DINAIKKAN 22 Jul 2026 — sejak penanda SELALU dirata-kanankan, kelebihan lebar
+   kotak TIDAK menambah jeda ke teks (jeda = padding tetap); kelebihan itu hanya
+   menggeser tepi KIRI kotak. Sebaliknya kotak yang KEKECILAN merusak semuanya:
+   glif meluber ke kanan melewati padding sehingga jeda menyusut (terukur 0,12-0,14
+   cm pada "3.1.", "3.2.1.", "10.", "-" padahal padding 0,18). Kanvas pengukur
+   memang tidak menerapkan tabular-nums & bisa memakai font pengganti, jadi
+   pengukurannya cenderung KURANG. Karena itu kelonggaran dinaikkan dan ditambah
+   cadangan tetap SPK_PK_MEAS_SAFE untuk penanda yang sangat pendek ("-", "i."). */
+var SPK_PK_MEAS_PAD    = 1.12;   /* cadangan: Inter belum termuat */
+var SPK_PK_MEAS_PAD_OK = 1.06;   /* Inter aktif: hampir persis */
+var SPK_PK_MEAS_SAFE   = 0.05;   /* cadangan tetap (cm) supaya glif tak pernah meluber */
 var _spkMeasFontKick = false;
 function spkPkMeasPad(){
   try{
@@ -19320,7 +19347,7 @@ function spkPkTextWidthCm(txt){
   var ctx=_spkMeasCanvas.getContext('2d');
   ctx.font=SPK_PK_MEAS_FONT;
   var w=(ctx.measureText(String(txt==null?'':txt)).width)*2.54/96;
-  return w*spkPkMeasPad();
+  return w*spkPkMeasPad() + SPK_PK_MEAS_SAFE;
 }
 /* CADANGAN KIRI deret tingkat-1.
    Nomor 2 digit pada deret rata kanan menjulur ke KIRI dari kolom nomor 1 digit.
@@ -19583,8 +19610,31 @@ function spkPkIndentStd(html, opsi){
         /* Perataan penanda ANGKA mengikuti g2.rata (lihat Tahap 3): deret yang
            seluruhnya 1 digit -> rata KIRI; deret yang memuat nomor 2 digit
            (mis. "2.9." bersama "2.16.") -> rata KANAN supaya titik penutupnya
-           lurus. Huruf & bullet selalu rata kiri. */
-        sp.style.textAlign = spkPkSegs(q.tok) ? (g2.rata||'right') : 'left';
+           lurus. Aturan ini TIDAK berubah — pada deret angka semua penanda
+           diukur KANONIK & dirender tabular-nums, jadi lebarnya sama persis dan
+           rata kiri maupun kanan menghasilkan jeda ke teks yang identik.
+           HURUF & BULLET (22 Jul 2026): dulu selalu rata KIRI, padahal lebar
+           glifnya berbeda-beda ("i." jauh lebih sempit dari "m.") sedangkan
+           kotaknya dipatok selebar penanda terlebar — akibatnya jeda penanda->teks
+           berubah-ubah dari butir ke butir. Kini dirata-KANANkan: jeda ke teks
+           selalu = padding (SPK_NUM_GAP) dan titik penutupnya lurus, sementara
+           kolom teksnya tetap sejajar seperti sebelumnya. */
+        /* JEDA SERAGAM MUTLAK (22 Jul 2026, permintaan "samakan jarak dari
+           penomoran ke teks"): penanda SELALU dirata-kanankan di dalam kotaknya,
+           sehingga jeda penanda->teks SELALU = padding-right (SPK_NUM_GAP 0,18)
+           — tidak lagi bergantung pada ketelitian pengukuran kanvas.
+           Dulu deret rata KIRI memakai jeda = lebar kotak - lebar glif, sehingga
+           setiap kelebihan ukur (kelonggaran 1,02-1,10 pada spkPkTextWidthCm,
+           atau selisih glif '0' kanonik terhadap digit sebenarnya) langsung
+           menjadi jeda tambahan: nomor panjang seperti "3.2.1." berjeda ~0,44 cm
+           sedangkan deret rata kanan tepat 0,18 cm.
+           TAMPILAN ATURAN DIGIT TIDAK BERUBAH: pada deret yang seluruhnya 1 digit
+           semua penanda sama lebar (diukur kanonik & dirender tabular-nums),
+           jadi rata kanan menempatkannya di kolom yang sama persis seperti rata
+           kiri; perbedaan hanya terlihat pada deret campuran 1 & 2 digit, dan di
+           situ aturannya memang rata kanan. g2.rata tetap dihitung & dipakai
+           sebagai dokumentasi aturan serta oleh jalur lain. */
+        sp.style.textAlign = 'right';
         sp.style.boxSizing='border-box';
         sp.style.paddingRight=(g2.gap||SPK_NUM_GAP)+'cm';   /* jeda ke teks (huruf lebih rapat) */
         /* Kolom teks dipatok g2.Wb; gantungan tetap g2.W, jadi selisihnya
@@ -19592,6 +19642,12 @@ function spkPkIndentStd(html, opsi){
         q.p.style.marginLeft=(g2.base+(g2.Wb||g2.W)).toFixed(2)+'cm';
         q.p.style.textIndent='-'+g2.W.toFixed(2)+'cm';
         q.p.style.paddingLeft='0cm';
+        /* RATA KIRI-KANAN (permintaan 22 Jul 2026): baris butir bernomor harus
+           memenuhi margin kiri DAN kanan, sama seperti paragraf biasa & seperti
+           template .docx (docDefaults w:jc=both). Dipasang inline supaya berlaku
+           di ketiga tempat sekaligus: pratinjau dokumen, Lihat Pustaka Klausul,
+           dan berkas cetak — salinan aturan lama di style.css tidak menimpanya. */
+        q.p.style.textAlign='justify';
       }
     }
 
@@ -19646,6 +19702,7 @@ function spkPkIndentStd(html, opsi){
       pz.style.marginLeft=kolomTeks.toFixed(2)+'cm';
       pz.style.textIndent='0cm';
       pz.style.paddingLeft='0cm';
+      pz.style.textAlign='justify';          /* lanjutan butir ikut rata kiri-kanan */
     }
     return box.innerHTML;
   }catch(e){ return s; }
@@ -19854,7 +19911,17 @@ function spkPkPoinToButir(html){
    pengguna di Word. Mesin perapian terukur hanya berlaku untuk isi yang
    diketik langsung di aplikasi (tanpa data inden Word). */
 function spkPkDariWord(html){
-  return /<p[^>]*style="[^"]*(?:margin-left|text-indent)/i.test(String(html==null?'':html));
+  var s=String(html==null?'':html);
+  /* PERBAIKAN 22 Jul 2026 — paragraf yang indennya dipasang oleh spkNumberFix
+     (ditandai data-nf="1") BUKAN berasal dari Word. Sebelumnya gaya inline yang
+     dipasang spkNumberFix sendiri membuat pemeriksaan ini bernilai true, sehingga
+     spkPkTidy() KELUAR LEBIH AWAL dan seluruh perapian inden/perataan tidak
+     pernah dijalankan pada klausul yang ditulis di dalam aplikasi — indennya
+     tetap memakai kisi lama 0,75/1,5 cm dan berbeda dari klausul lain.
+     Klausul yang benar-benar berasal dari berkas Word tetap dikenali, karena
+     spkNumberFix sendiri tidak menyentuhnya (penjaga di awal fungsinya). */
+  s=s.replace(/<p[^>]*\bdata-nf="1"[^>]*>/gi,'<p>');
+  return /<p[^>]*style="[^"]*(?:margin-left|text-indent)/i.test(s);
 }
 function spkPkTidy(html, isPk){
   if(spkPkDariWord(html)){
@@ -19950,7 +20017,9 @@ function spkNumberFix(html){
       var nstyle='min-width:'+ti+'cm;display:inline-block;box-sizing:border-box;padding-right:'+SPK_NUM_GAP+'cm;'+
         'text-indent:0;white-space:nowrap;overflow:visible;text-align:'+(isNum?_col.al:'left');
       /* Tanpa spasi literal setelah nomor: jarak diatur oleh kotak nomor. */
-      return '<p class="'+pcls+'"'+a+'><span class="'+cls2+'" style="'+nstyle+'">'+tok+'</span>';
+      /* data-nf="1": penanda bahwa inden inline di bawah ini dipasang oleh
+         spkNumberFix, bukan dibawa dari berkas Word (lihat spkPkDariWord). */
+      return '<p class="'+pcls+'" data-nf="1"'+a+'><span class="'+cls2+'" style="'+nstyle+'">'+tok+'</span>';
     }
   );
   /* Pada daftar "Berdasarkan" (spk-dlist) yang rata kanan-kiri (justify), nomor
@@ -24105,9 +24174,17 @@ var SPK_DX = {
      otomatis template Word; pratinjau tetap merapikan ulang saat unggah) --- */
   BASE:425,                    // dasar isi klausul
   P_FIRST:425,                 // inden baris pertama paragraf narasi
-  L1:850,  L1_HANG:425,        // butir tingkat-1
-  L2:1276, L2_HANG:425,        // butir tingkat-2
-  DESC:850,                    // paragraf deskripsi
+  /* DISELARASKAN 22 Jul 2026 dengan langkah inden 0,15 cm pada pratinjau:
+       kolom teks judul      : 0,65 cm (JUDUL_HANG)
+       penanda butir tingkat-1: 0,65 + 0,15          = 0,80 cm
+       gantungan "1.1."       : 0,75 cm (L1_HANG, tetap)
+       kolom teks tingkat-1   : 0,80 + 0,75          = 1,55 cm -> L1 879
+       penanda butir tingkat-2: 1,55 + 0,15          = 1,70 cm
+       kolom teks tingkat-2   : 1,70 + 0,75          = 2,45 cm -> L2 1389
+     JUDUL_HANG & penomoran otomatis (numbering.xml) TIDAK diubah. */
+  L1:879,  L1_HANG:425,        // butir tingkat-1  (penanda 0,80 / teks 1,55 cm)
+  L2:1389, L2_HANG:425,        // butir tingkat-2  (penanda 1,70 / teks 2,45 cm)
+  DESC:879,                    // paragraf deskripsi (sejajar kolom teks tingkat-1)
   JUDUL_HANG:368,              // gantungan nomor pada judul klausul
   PUSAT:false                  // judul rata KIRI satu baris ("1. DEFINISI")
 };
@@ -24141,12 +24218,17 @@ var SPK_DX = {
 var SPK_DX_PK = {
   A4_W:11906, A4_H:16838,
   MARGIN:1440,
-  IND:0, IND_JUDUL:0, IND2:374, IND3:799,
+  IND:0, IND_JUDUL:0, IND2:261, IND3:573,
   BASE:0,                      // 0 cm    — isi klausul mulai di batas margin kiri
   P_FIRST:425,                 // 0,75 cm — inden baris pertama paragraf narasi
-  L1:374,  L1_HANG:261,        // 0,66 cm / 0,46 cm — butir "1." / "1.1."
-  L2:799,  L2_HANG:227,        // 1,41 cm / 0,40 cm — butir "a." / "b."
-  DESC:374,                    // 0,66 cm — sejajar kolom teks tingkat-1
+  /* DISELARASKAN 22 Jul 2026 dengan langkah inden 0,15 cm pada pratinjau:
+       penanda ayat "1."      : 0 cm (menempel margin kiri)
+       kolom teks tingkat-1   : 0 + 0,46                     = 0,46 cm -> L1 261
+       penanda huruf "a."     : 0,46 + 0,15                  = 0,61 cm
+       kolom teks tingkat-2   : 0,61 + 0,40                  = 1,01 cm -> L2 573 */
+  L1:261,  L1_HANG:261,        // 0,46 cm / 0,46 cm — butir "1." menempel margin
+  L2:573,  L2_HANG:227,        // 1,01 cm / 0,40 cm — butir "a." / "b."
+  DESC:261,                    // 0,46 cm — sejajar kolom teks tingkat-1
   GAP:102,                     // 0,18 cm — jeda TETAP titik nomor -> teks (SPK_NUM_GAP)
   JUDUL_HANG:0,
   PUSAT:true                   // judul rata TENGAH dua baris ("PASAL 1" + nama pasal)
@@ -25375,13 +25457,21 @@ function spkKlausulView(id){
   var _pkTidy=(typeof spkIsPk==='function' && spkIsPk());
   /* Lantai lebar penomoran diaktifkan JUGA di pratinjau Lihat Klausul
      (21 Jul 2026) supaya kolom teks deret setingkat konsisten dengan dokumen. */
+  /* KOTAK NOMOR JUDUL DINAMIS (22 Jul 2026, "sesuaikan dengan Lihat Pustaka
+     Klausul"): dokumen memakai spkClHeadW(jumlah klausul) sebagai lebar kotak
+     nomor judul DAN sebagai titik tolak inden isi (SPK_JH_OVR), sedangkan
+     Lihat Klausul dulu memakai kisi tetap 0,65 cm — selisihnya membuat seluruh
+     kolom teks bergeser. Di sini nilainya disamakan. */
+  var _jhW=0.65;
+  try{ if(typeof spkClHeadW==='function') _jhW=spkClHeadW((records_klausul&&records_klausul.length)||noKl||1); }catch(e){}
   try{
     var _pre=spkKlItalicAsing(spkBoldPihak(spkNumberFix(spkTidyKeyValue(spkMerge(spkRenumberKlausul(k.isi||'', noKl), ctx)))));
     try{ SPK_HANG_OVR=spkKumpulHang([spkPkBoxMark(_pre)]); }catch(e2){ SPK_HANG_OVR=null; }
+    if(!_pkTidy){ try{ SPK_JH_OVR=_jhW; }catch(e3){} }
     inner=spkPkTidy(_pre, _pkTidy);
   }
   catch(e){ inner=String(k.isi||''); }
-  finally{ SPK_HANG_OVR=null; }
+  finally{ SPK_HANG_OVR=null; try{ SPK_JH_OVR=0; }catch(e4){} }
   let ov=document.getElementById('spk-klausul-view-ov');
   if(!ov){ ov=document.createElement('div'); ov.id='spk-klausul-view-ov'; ov.className='spk-ov'; document.body.appendChild(ov);
     ov.addEventListener('click', e=>{ if(e.target.id==='spk-klausul-view-ov') spkKlausulViewClose(); }); }
@@ -25396,8 +25486,8 @@ function spkKlausulView(id){
         ? '<p class="spk-cl-h" style="font-weight:700;text-transform:uppercase;text-align:center;padding-left:0;text-indent:0;margin:0 0 6pt">'+
             '<span class="n" style="display:block;width:auto;min-width:0;padding-right:0;text-indent:0;text-align:center;white-space:nowrap;margin:0">PASAL '+fkEsc(String(noKl))+'</span>'+
             spkFmtJudul(k.judul)+'</p>'
-        : '<p class="spk-cl-h" style="font-weight:700;text-transform:uppercase;text-align:left;padding-left:0.65cm;text-indent:-0.65cm;margin:0 0 3pt">'+
-            '<span class="n" style="display:inline-block;box-sizing:border-box;min-width:0.65cm;padding-right:0;text-indent:0;text-align:left;white-space:nowrap">'+fkEsc(String(noKl))+'.</span>'+
+        : '<p class="spk-cl-h" style="font-weight:700;text-transform:uppercase;text-align:left;padding-left:'+_jhW.toFixed(2)+'cm;text-indent:-'+_jhW.toFixed(2)+'cm;margin:0 0 3pt">'+
+            '<span class="n" style="display:inline-block;box-sizing:border-box;min-width:'+_jhW.toFixed(2)+'cm;padding-right:'+SPK_NUM_GAP+'cm;text-indent:0;text-align:'+((records_klausul&&records_klausul.length>=10)?'right':'left')+';white-space:nowrap">'+fkEsc(String(noKl))+'.</span>'+
             spkFmtJudul(k.judul)+'</p>')
     : '';
   ov.innerHTML=

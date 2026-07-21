@@ -3262,7 +3262,10 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
 .spk-we-bulcell.none{font:600 11px Arial;color:#3d4a55;text-align:center;padding:4px}
 .spk-we-bulcell.sel{border-color:#1d9e75;border-width:2px;background:#eafaf3}
 /* Pratinjau klausul (mode Lihat) di halaman utama — samakan dengan dokumen */
-.spk-we-page .spk-cl{font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif;font-size:11pt;color:#000;line-height:var(--spk-lh,1.32);padding-left:.75cm}
+/* 22 Jul 2026 — padding 0,75cm DIBUANG supaya Lihat Pustaka Klausul mulai di
+   batas margin persis seperti dokumen cetak (.spk-clause .spk-cl{padding-left:0}).
+   Inden tiap tingkat sepenuhnya diatur inline oleh spkPkIndentStd. */
+.spk-we-page .spk-cl{font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif;font-size:11pt;color:#000;line-height:var(--spk-lh,1.3915);padding-left:0}
 .spk-we-page .spk-cl p{margin:0 0 6pt;text-align:justify;line-height:var(--spk-lh,1.32)}
 /* Judul klausul di awal lembar: tanpa spasi sebelum/sesudah yang mendorongnya turun */
 .spk-we-page .spk-cl-h:first-child,.spk-we-page .spk-clause:first-child > .spk-cl-h{margin-top:0;padding-top:0}
