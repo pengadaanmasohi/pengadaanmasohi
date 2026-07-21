@@ -19418,7 +19418,11 @@ function spkPkIndentStd(html, opsi){
          kolom teks judul (judulX) — tetap inden dari margin, tapi tidak
          bertumpuk LEAD lagi (dulu judul+0,35 membuat deret di bawahnya
          melesak makin dalam). */
-      var tepiIntro=(judulX>0) ? judulX : introX;
+      /* REVISI 21 Jul 2026 ("indennya mana, sejajar amat"): blok pengantar
+         TIDAK lagi rata dengan kolom teks judul — menjorok tipis
+         SPK_PK_LEAD_JUDUL (0,15) darinya, dan deret penomoran di bawah
+         pengantar menjorok 0,15 lagi (lihat perhitungan LEAD adaIntro). */
+      var tepiIntro=(judulX>0) ? Math.round((judulX+SPK_PK_LEAD_JUDUL)*100)/100 : introX;
       for(var c0=0;c0<box.children.length;c0++){
         var ch=box.children[c0];
         if(ch.tagName==='P' && spkPkTok(ch)) break;        /* butir bernomor pertama */
@@ -19439,7 +19443,9 @@ function spkPkIndentStd(html, opsi){
        SPK_PK_LEAD_JUDUL — dengan atau tanpa pengantar. Menghapus penumpukan
        lama (pengantar+LEAD) yang membuat kolom tingkat-1 pasal ber-pengantar
        tidak sejajar dengan pasal lain dan penomorannya tampak melesak. */
-    if(adaIntro) LEAD=(judulX>0) ? Math.round((judulX+SPK_PK_LEAD_JUDUL)*100)/100
+    /* Ada pengantar: deret menjorok 0,15 dari TEPI PENGANTAR (judulX+0,15+0,15),
+       supaya "Latar Belakang" tetap terlihat masuk sedikit dari "Lokasi". */
+    if(adaIntro) LEAD=(judulX>0) ? Math.round((judulX+2*SPK_PK_LEAD_JUDUL)*100)/100
                                 : Math.round((introX+SPK_PK_LEAD)*100)/100;
     /* Klausul yang DIBUKA LANGSUNG oleh butir bernomor (tanpa pengantar,
        mis. "4. WAKTU..." -> "4.1. ..."): penandanya menjorok KECIL
