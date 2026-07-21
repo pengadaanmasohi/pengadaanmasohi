@@ -19455,6 +19455,7 @@ function spkPkIndentStd(html, opsi){
       /* LANTAI SE-DOKUMEN (lihat spkKumpulHang): deret angka mengikuti lebar
          terlebar sekunci (tingkat|ruas) di seluruh dokumen supaya kolom teks
          antar-pasal lurus. Deret huruf/bullet tidak disentuh. */
+      var WSendiri=Math.round(W*100)/100;   /* lebar alami deret ini sendiri */
       if(adaAngka && SPK_HANG_OVR){
         var sgU=null;
         for(j=0;j<g.items.length;j++){ sgU=spkPkSegs(g.items[j].tok); if(sgU) break; }
@@ -19464,6 +19465,15 @@ function spkPkIndentStd(html, opsi){
         }
       }
       g.W=Math.round(W*100)/100;
+      /* JEDA NOMOR->TEKS SELALU IDEAL (21 Jul 2026, laporan "jauh sekali
+         penomoran dan teksnya"): deret yang kotaknya IKUT DILEBARKAN lantai
+         se-dokumen (demi kolom teks lurus dgn deret "12.x") tidak boleh
+         dibiarkan rata kiri — nomor pendek "1.1." akan berjarak lebar dari
+         teksnya. Deret semacam itu DIPAKSA RATA KANAN: titik nomornya lurus
+         dgn deret lebar, dan jeda ke teks selalu = padding (SPK_NUM_GAP),
+         apa pun lebar kotaknya. Deret yang kotaknya = lebar alaminya tetap
+         mengikuti aturan digit (1 digit kiri / ada 2 digit kanan). */
+      g.dilebarkan = adaAngka && (g.W > WSendiri + 0.02);
       /* PERATAAN NOMOR PER DERET (ketentuan user, 21 Jul 2026 — berlaku untuk
          KEDUA bentuk dokumen: Surat Perintah Kerja & Perjanjian/Kontrak):
            - Deret yang penghitung TERAKHIRNYA seluruhnya 1 digit
@@ -19478,6 +19488,7 @@ function spkPkIndentStd(html, opsi){
         if(sgs && String(sgs[sgs.length-1]).length>=2){ adaDua=true; break; }
       }
       g.rata = adaDua ? 'right' : 'left';
+      if(g.dilebarkan) g.rata='right';   /* kotak dilebarkan lantai se-dokumen -> jeda tetap padding */
       /* LEBAR DASAR (g.Wb) = lebar kotak yang dipakai untuk MENENTUKAN KOLOM TEKS,
          diambil dari nomor 1 DIGIT terlebar di deret ini. Kotaknya sendiri tetap
          selebar g.W (nomor terlebar), tetapi kelebihannya MENJULUR KE KIRI.
@@ -19863,9 +19874,15 @@ function spkNumberFix(html){
    "-"/"." menyambung) di dalam paragraf spk-dlist dengan <span class="refn">
    agar boleh dipotong di karakter mana pun saat baris justify perlu diisi rapat. */
 function spkBreakRefNumbers(html){
-  return String(html||'').replace(/<p class="spk-dlist">[\s\S]*?<\/p>/g, function(p){
+  /* PENTING (21 Jul 2026): kedua regex harus MENOLERANSI ATRIBUT ([^>]*) —
+     sejak spkDlistAlign memberi style inline pada <p class="spk-dlist"> dan
+     <span class="n">, pola lama yang menuntut tag polos tak pernah cocok lagi,
+     pembungkus .refn tidak terpasang, nomor referensi panjang jadi tak bisa
+     dipotong, dan baris justify merenggang lebar (laporan user: "penomoran
+     seperti ini tidak utuh... agar jarak teks yang lain tidak berjauhan"). */
+  return String(html||'').replace(/<p class="spk-dlist"[^>]*>[\s\S]*?<\/p>/g, function(p){
     // Pisahkan tag <span class="n">..</span> di depan agar tidak ikut diproses.
-    return p.replace(/(<span class="n">[\s\S]*?<\/span>)?([\s\S]*?)(<\/p>)/,
+    return p.replace(/(<span class="n"[^>]*>[\s\S]*?<\/span>)?([\s\S]*?)(<\/p>)/,
       function(_m, numSpan, body, end){
         const protectedBody = String(body).replace(
           /(^|[\s>(])([^\s<>]*(?:\/[^\s<>]+)+[^\s<>]*|[A-Za-z0-9]+(?:[.\-][A-Za-z0-9]+){2,})/g,
