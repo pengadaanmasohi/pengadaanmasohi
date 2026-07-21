@@ -8605,7 +8605,7 @@ function fklBuildDocHtml(){
     '</tbody></table>';
 
   return ''+
-  '<div class="fkl-doc">'+
+  '<div class="fkl-doc fkl-kd-doc">'+
     '<div class="fkl-doc-head">'+
       '<div class="fkl-doc-logo">'+
         '<img src="'+FKL_LOGO_SRC+'" alt="Logo PLN">'+
@@ -9208,8 +9208,16 @@ function hpscPageScript(){
 
 
 /* Bangun HTML dokumen lengkap (mandiri) untuk pratinjau iframe & cetak */
+/* Teks URAIAN poin B (Kelengkapan Dokumen) & C (Hasil Pemeriksaan) pada Form
+   Pemeriksaan Kelengkapan Dokumen Pengadaan dinaikkan ke 12px (permintaan
+   21 Jul 2026; bawaan #fkl-doc-css 11px). Hanya dokumen ini (.fkl-kd-doc) —
+   dokumen lain yang memakai kerangka .fkl-doc tidak tersentuh. */
+function fklKdDocCss(){
+  return '.fkl-kd-doc .fkl-chk tbody td{font-size:12px}'+
+         '.fkl-kd-doc .hasil .hs{font-size:12px}';
+}
 function fklStandaloneDocHtml(){
-  return fklDocShell('', fklBuildDocHtml());
+  return fklDocShell(fklKdDocCss(), fklBuildDocHtml());
 }
 
 function fklOpenPreview(){
@@ -10469,6 +10477,10 @@ function pnwExtraDocCss(){
   '.fkl-chk tr.cat + tr td{border-top:none}'+
   '.ttd.ttd-single{width:auto}'+
   '.ttd.ttd-single td{width:280px;text-align:center;vertical-align:top;padding-top:4px}'+
+  /* Teks URAIAN poin B (Pemeriksaan Kelengkapan Dokumen Penawaran) & C (Hasil
+     Pemeriksaan) dinaikkan ke 12px (permintaan 21 Jul 2026; bawaan 11px). */
+  '.pnw-doc .fkl-chk tbody tr:not(.cat) td{font-size:12px}'+   /* baris kategori (tr.cat) tetap 11,5px */
+  '.pnw-doc .hasil .hs{font-size:12px}'+
   '.pnw-doc .fkl-chk thead th{text-align:center;white-space:normal;line-height:1.22;vertical-align:middle}'+
   '.pnw-doc .fkl-chk:not(.pnw-hasil) th.ck,.pnw-doc .fkl-chk:not(.pnw-hasil) td.ck{width:112px}'+
   '.pnw-doc .fkl-chk:not(.pnw-hasil) .pill{min-width:0;padding:3px 8px}'+
