@@ -8755,6 +8755,35 @@ function fklDocFontLink(){
     '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'+
     '<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">';
 }
+/* ---------- PENYESUAIAN LAYAR SEMPIT (HP/TABLET) ----------
+   Lembar A4 selebar 210mm (±794px) lebih lebar dari layar HP sehingga pratinjau
+   terpotong di sisi kanan. Skrip ini menskalakan SELURUH dokumen agar pas selebar
+   layar (seperti PDF viewer), dan mengembalikannya ke 100% saat dicetak — hasil
+   cetak/PDF tidak berubah sama sekali. Dipakai oleh semua dokumen pratinjau. */
+function fklFitScript(){
+  return '<style>@media print{body{zoom:1!important;transform:none!important;width:auto!important}}</style>'+
+  '<scr'+'ipt>(function(){'+
+  'var Z=(window.CSS&&CSS.supports&&CSS.supports("zoom","1"));'+
+  'function fit(){'+
+    'var b=document.body;if(!b)return;'+
+    'b.style.zoom="";b.style.transform="";b.style.width="";'+
+    'var sh=document.querySelector(".fkl-sheet,.spk-page,.hpsc-page,.fkl-print-page,.spk-doc");'+
+    'if(!sh)return;'+
+    'var w=sh.offsetWidth;if(!w)return;'+
+    'var vw=document.documentElement.clientWidth;'+
+    'if(vw>=w+2)return;'+
+    'var s=(vw-10)/w;if(s<=0)return;'+
+    'if(Z){b.style.zoom=s;}'+
+    'else{b.style.transformOrigin="top left";b.style.transform="scale("+s+")";b.style.width=(vw/s)+"px";}'+
+  '}'+
+  'window.addEventListener("resize",fit);'+
+  'window.addEventListener("orientationchange",fit);'+
+  'window.addEventListener("load",fit);'+
+  'setTimeout(fit,120);setTimeout(fit,500);setTimeout(fit,1500);setTimeout(fit,3200);'+
+  'window.addEventListener("beforeprint",function(){var b=document.body;b.style.zoom="";b.style.transform="";b.style.width="";});'+
+  'window.addEventListener("afterprint",fit);'+
+  '})();</scr'+'ipt>';
+}
 function fklDocShell(extraCss, innerHtml){
   return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8">'+
     '<meta name="viewport" content="width=device-width, initial-scale=1">'+
@@ -8766,6 +8795,7 @@ function fklDocShell(extraCss, innerHtml){
       '<tfoot><tr><td><div class="fkl-vspace"></div></td></tr></tfoot>'+
     '</table>'+
     fklPageScript()+
+    fklFitScript()+
     '</body></html>';
 }
 
@@ -10324,7 +10354,7 @@ function pnwExtraDocCss(){
   '.pnw-penyedia-name{font-family:"Plus Jakarta Sans",sans-serif;font-weight:800;font-size:12px;letter-spacing:.4px;color:#0b3d42;background:#e3f2f3;border:1px solid #bfe0e2;border-radius:6px;padding:6px 10px;margin-bottom:6px;text-transform:uppercase}'+
   '.fkl-chk td.kt,.fkl-chk th.kt{width:22%;text-align:left}'+
   /* Baris judul kategori persyaratan — dibedakan jelas dari isi persyaratan */
-  '.fkl-chk tr.cat td{background:#e3f2f3;color:#0b3d42;font-weight:800;font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;padding:7px 12px 7px 14px;border-top:1.5px solid #0b6a73;border-bottom:1px solid #9fc7cb;border-right:none;position:relative;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  '.fkl-chk tr.cat td{background:#e3f2f3;color:#0b3d42;font-weight:800;font-size:11.5px;text-transform:uppercase;letter-spacing:.8px;padding:7px 12px 7px 14px;border-top:1.5px solid #0b6a73;border-bottom:1px solid #9fc7cb;border-right:none;position:relative;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   '.fkl-chk tr.cat td::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:#0E7C86}'+
   '.fkl-chk tr.cat:first-child td{border-top:none}'+
   '.fkl-chk tr.cat + tr td{border-top:none}'+
@@ -15286,6 +15316,7 @@ function hpscBuild(dp){
     /* Pecah tiap dokumen modul (.fkl-page-wrap) menjadi lembar A4 sungguhan, sama
        seperti cetak per-dokumen. Tanpa ini modul panjang menumpuk/berantakan. */
     hpscPageScript()+
+    fklFitScript()+
     '</body></html>';
 }
 function hpsShowComposite(){
@@ -23005,7 +23036,7 @@ function spkDocHtml(data, klausul){
          sehingga tidak tersentuh. Istilah yang sudah dibungkus <i> pada tahap
          klausul otomatis dilewati (tanpa italic bertumpuk). */
       spkKlItalicAsing(cover+toc+isi+coverLamp+lampiran)+
-    '</div>'+spkPageScript()+'</body></html>';
+    '</div>'+spkPageScript()+fklFitScript()+'</body></html>';
 }
 
 /* ---------- Pratinjau & Cetak ----------
