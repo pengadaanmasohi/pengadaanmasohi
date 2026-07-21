@@ -26102,15 +26102,20 @@ function trkSusunJadwalUlang(){
   const nama=trkSel; if(!nama){ toast('Pilih pekerjaan terlebih dahulu','warn'); return; }
   if(typeof openJadwalKerja!=='function'){ toast('Halaman Tentukan Jadwal tidak tersedia','warn'); return; }
   openJadwalKerja();
+  /* Tunggu sampai halaman Tentukan Jadwal benar-benar aktif (openJadwalKerja
+     me-reset jpState secara async), BARU pasang nama pekerjaan — mencegah
+     nama tertimpa oleh reset "input baru". */
   let n=0; const t=setInterval(function(){
     n++;
-    if(typeof jpState!=='undefined' && jpState){
+    const v=document.querySelector('.view.active');
+    if(v && v.id==='view-jadwal-kerja' && typeof jpState!=='undefined' && jpState){
       jpState.namaPekerjaan=nama;
       if(typeof renderJadwalKerja==='function') renderJadwalKerja();
       clearInterval(t);
       toast('Susun jadwal siklus ulang untuk: '+nama,'ok');
+      return;
     }
-    if(n>40) clearInterval(t);
+    if(n>60) clearInterval(t);
   },150);
 }
 async function trkSave(){
