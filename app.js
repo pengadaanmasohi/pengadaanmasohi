@@ -19247,6 +19247,13 @@ var SPK_PK_STEP = 0.75;                 /* cadangan bila induk tak diketahui (cm
    entah nomornya "1." yang sempit atau "2.1." yang lebar.
    Dipakai juga sebagai geseran daftar yang berada di bawah paragraf pengantar. */
 var SPK_PK_LEAD = 0.35;                 /* jarak penanda anak dari teks induk (cm) */
+/* KETENTUAN 21 Jul 2026 ("3.1.1 terlalu masuk dalam"): deret anak ber-ANGKA
+   (mis. "3.1.1." di bawah "3.1.") memakai jorokan LEBIH TIPIS dari deret huruf,
+   karena kotak nomor majemuknya sendiri sudah lebar — dengan 0,35 teksnya
+   tampak melesak jauh dari teks induk. Deret HURUF/bullet (a. b. -) tetap
+   memakai SPK_PK_LEAD 0,35 (dinilai sudah pas). Nilai 0,15 mengikuti revisi
+   sejenis pada SPK_PK_LEAD_JUDUL. */
+var SPK_PK_LEAD_ANGKA = 0.15;           /* jarak penanda anak ANGKA dari teks induk (cm) */
 var SPK_PK_LEAD_JUDUL = 0.15;           /* jorokan deret PEMBUKA klausul thd kolom teks judul
                                            (selisih rancangan awal 0,75->0,90); 0,35 dinilai
                                            terlalu dalam, 0 dinilai tak terlihat (21 Jul 2026) */
@@ -19431,6 +19438,12 @@ function spkPkIndentStd(html, opsi){
        menjorok LEAD lagi). Pasal narasi murni tetap lurus dgn teks judul. */
     else if(judulX>0) LEAD=Math.round((judulX+SPK_PK_LEAD_JUDUL)*100)/100;
     else if(introX>0) LEAD=introX;
+    /* PERJANJIAN/KONTRAK (ketentuan 21 Jul 2026): AYAT tingkat-1 SELALU
+       menempel MARGIN KIRI — dengan atau tanpa paragraf pengantar — sehingga
+       nomor ayat mulai di batas kiri kertas dan teksnya (justify) memenuhi
+       margin kanan. Aturan lain (rata kiri/kanan per digit, jeda nomor->teks
+       0,18, jorokan sub-angka 0,15 / huruf 0,35) tetap berlaku sama. */
+    if(opsi && opsi.pk) LEAD=0;
 
     /* --- Tahap 2: kelompokkan menjadi DERET ---
        Satu deret = butir-butir setingkat yang berurutan di bawah induk yang sama.
@@ -19460,6 +19473,7 @@ function spkPkIndentStd(html, opsi){
       var adaAngka=false;
       for(j=0;j<g.items.length;j++){ if(spkPkSegs(g.items[j].tok)){ adaAngka=true; break; } }
       g.gap = adaAngka ? SPK_NUM_GAP : SPK_PK_GAP_HURUF;
+      g.angka = adaAngka;                 /* dipakai Tahap 4: jorokan anak angka lebih tipis */
       if(!adaAngka) W = Math.max(0.4, W - (SPK_NUM_GAP - SPK_PK_GAP_HURUF));
       /* LANTAI SE-DOKUMEN (lihat spkKumpulHang): deret angka mengikuti lebar
          terlebar sekunci (tingkat|ruas) di seluruh dokumen supaya kolom teks
@@ -19527,7 +19541,10 @@ function spkPkIndentStd(html, opsi){
        terhitung lebih dulu. */
     for(i=0;i<deret.length;i++){
       var g2=deret[i];
-      if(g2.induk) g2.base=g2.induk.base + (g2.induk.Wb||g2.induk.W) + SPK_PK_LEAD;   /* dari KOLOM TEKS induk */
+      /* Jorokan anak dari KOLOM TEKS induk: deret ANGKA (mis. "3.1.1.") memakai
+         SPK_PK_LEAD_ANGKA 0,15 — kotak nomornya sudah lebar, 0,35 membuatnya
+         tampak terlalu masuk (laporan 21 Jul 2026); huruf/bullet tetap 0,35. */
+      if(g2.induk) g2.base=g2.induk.base + (g2.induk.Wb||g2.induk.W) + (g2.angka ? SPK_PK_LEAD_ANGKA : SPK_PK_LEAD);
       /* PK tanpa pengantar: deret tingkat-1 MENEMPEL MARGIN KIRI (21 Jul 2026,
          "pasal harusnya memenuhi margin kiri kanan di ayat 1"). Cadangan julur
          spkPkReserve() sudah tidak diperlukan sejak aturan julur-ke-kiri dibuang
@@ -19799,7 +19816,7 @@ function spkPkTidy(html, isPk){
      mengubah susunan simpul, jadi ia dipasang sesudah seluruh perhitungan
      inden & penomoran selesai agar tidak mengganggu penelusuran saudara-simpul. */
   return spkPkKeepPihak(
-           spkPkPoinToButir(spkPkIndentStd(spkPkSubNumberFix(spkPkBoxMark(html)))),
+           spkPkPoinToButir(spkPkIndentStd(spkPkSubNumberFix(spkPkBoxMark(html)), {pk:1})),
            isPk);
 }
 
@@ -20737,12 +20754,14 @@ function spkWECount(){
   el.textContent=(t? t.split(/\s+/).length : 0)+' kata';
   spkWEPageCount();
 }
-/* Jumlah halaman A4 (tinggi kertas 297mm = 1122,5px pada 96dpi) */
+/* Jumlah halaman A4. Sejak halaman ditampilkan TERPISAH (spkPaperPaginate),
+   tiap halaman memakan STRIDE = 297mm + celah abu SPK_WE_GAPMM, jadi jumlah
+   halaman dihitung dari kelipatan STRIDE, bukan 297mm murni. */
 function spkWEPageCount(){
   var pg=document.querySelector('#spk-we-overlay .spk-we-page');
   var el=document.getElementById('spk-we-pages'); if(!pg||!el) return;
-  var A4=297*96/25.4;                       // tinggi 1 halaman A4 dalam px
-  var n=Math.max(1, Math.ceil((pg.scrollHeight-2)/A4));
+  var PX=96/25.4, A4=297*PX, STRIDE=A4+SPK_WE_GAPMM*PX;
+  var n=Math.max(1, Math.ceil((pg.scrollHeight-2+SPK_WE_GAPMM*PX)/STRIDE));
   el.textContent=n+' halaman';
 }
 
@@ -20753,35 +20772,73 @@ function spkWEPageCount(){
    = 246,2mm; awal area ketik tiap halaman = kelipatan 297mm (koordinat dari atas doc).
    Dijalankan setelah mengetik (debounce). Spacer dibuang saat menyimpan. */
 var _spkPagBusy=false;
-function spkWEPaginate(){
-  var doc=document.getElementById('spk-we-doc'); if(!doc || _spkPagBusy) return;
-  _spkPagBusy=true;
+/* Celah abu antar halaman pada pratinjau template (mm). Membuat lembar-lembar
+   terlihat TERPISAH seperti pratinjau dokumen SPK — bukan satu lembar memanjang
+   dengan garis batas (permintaan 21 Jul 2026). */
+var SPK_WE_GAPMM = 10;
+/* ---- Pemecah halaman VISUAL untuk kertas template (dipakai BERSAMA oleh
+   editor Ubah Klausul dan popup "Lihat Klausul") ----
+   Kertas tetap SATU elemen (pada editor: contenteditable harus tetap satu alur
+   ketik), tetapi spacer di batas halaman kini DIGAMBAR sebagai celah abu selebar
+   kertas penuh: putih sisa halaman -> pita abu (latar area kerja) -> putih margin
+   atas halaman berikutnya. Hasilnya tampak sebagai lembar-lembar A4 terpisah,
+   persis pratinjau dokumen. Geometri: area ketik halaman-k mulai di
+   M + k*STRIDE (M = margin 25,4mm; STRIDE = 297mm + celah). */
+function spkPaperPaginate(doc, page){
+  if(!doc || !page) return;
   try{
     // buang spacer lama
-    Array.prototype.slice.call(doc.children).forEach(function(el){
-      if(el.nodeType===1 && el.classList && el.classList.contains('spk-pagebreak')) doc.removeChild(el);
+    Array.prototype.slice.call(doc.querySelectorAll('.spk-pagebreak')).forEach(function(el){
+      if(el.parentNode) el.parentNode.removeChild(el);
     });
-    var PX=96/25.4, USABLE=246.2*PX, PAGE=297*PX;
+    var PX=96/25.4, M=25.4*PX, PAGE=297*PX, USABLE=246.2*PX;
+    var GAP=SPK_WE_GAPMM*PX, STRIDE=PAGE+GAP;
     var kids=Array.prototype.slice.call(doc.children);
     for(var i=0;i<kids.length;i++){
       var b=kids[i]; if(b.nodeType!==1) continue;
-      var docTop=doc.getBoundingClientRect().top;
+      if(b.classList && b.classList.contains('spk-pagebreak')) continue;
+      var pgTop=page.getBoundingClientRect().top;
       var r=b.getBoundingClientRect();
-      var top=r.top-docTop, h=r.height;
-      if(h>=USABLE) continue;                       // paragraf lebih tinggi dari 1 halaman -> biarkan
-      var curPage=Math.floor((top+1)/PAGE);
-      var pageEnd=curPage*PAGE+USABLE;
-      if(top+h > pageEnd+1){                         // paragraf menembus margin bawah
-        var gap=(curPage+1)*PAGE - top;             // dorong ke awal area ketik halaman berikut
+      var top=r.top-pgTop, h=r.height;          // koordinat dari TEPI ATAS KERTAS
+      if(h>=USABLE) continue;                   // blok lebih tinggi dari 1 halaman -> biarkan
+      var curPage=Math.floor((top-M+1)/STRIDE); if(curPage<0) curPage=0;
+      var pageEnd=M+curPage*STRIDE+USABLE;
+      if(top+h > pageEnd+1){                    // blok menembus margin bawah
+        var gap=(M+(curPage+1)*STRIDE) - top;   // dorong ke awal area ketik halaman berikut
         if(gap>1){
           var sp=document.createElement('div');
           sp.className='spk-pagebreak';
           sp.setAttribute('contenteditable','false');
-          sp.style.cssText='height:'+Math.round(gap)+'px;margin:0;padding:0;border:0;list-style:none;pointer-events:none;-webkit-user-select:none;user-select:none';
+          /* segmen: putih sampai dasar kertas halaman ini, pita abu (celah),
+             lalu putih margin atas halaman berikutnya */
+          var w1=Math.max(0, Math.round((curPage*STRIDE+PAGE) - top));
+          var w2=w1+Math.round(GAP);
+          sp.style.cssText='height:'+Math.round(gap)+'px;margin:0;padding:0;border:0;list-style:none;'+
+            'pointer-events:none;-webkit-user-select:none;user-select:none;box-sizing:border-box;'+
+            'background:linear-gradient(180deg,#fff 0,#fff '+w1+'px,rgba(0,0,0,.18) '+w1+'px,#54585c '+(w1+2)+'px,'+
+            '#54585c '+(w2-2)+'px,rgba(255,255,255,.28) '+(w2-2)+'px,#fff '+w2+'px,#fff 100%)';
           doc.insertBefore(sp, b);
+          /* bentangkan selebar kertas penuh (menutupi margin kiri/kanan &
+             inden pembungkus), diukur dari posisi nyata setelah disisipkan */
+          var sr=sp.getBoundingClientRect(), pr=page.getBoundingClientRect();
+          sp.style.marginLeft=Math.round(pr.left-sr.left)+'px';
+          sp.style.width=Math.round(pr.width)+'px';
         }
       }
     }
+    /* genapkan tinggi kertas ke dasar halaman terakhir supaya lembar akhir
+       tampil utuh 297mm, tidak terpotong di tengah */
+    var innerH=page.scrollHeight;
+    var nPg=Math.max(1, Math.ceil((innerH-M+1)/STRIDE));
+    page.style.minHeight=Math.round(nPg*STRIDE-GAP)+'px';
+  }catch(e){}
+}
+function spkWEPaginate(){
+  var doc=document.getElementById('spk-we-doc'); if(!doc || _spkPagBusy) return;
+  _spkPagBusy=true;
+  try{
+    var page=document.querySelector('#spk-we-overlay .spk-we-page');
+    spkPaperPaginate(doc, page||doc.parentNode);
   }catch(e){}
   _spkPagBusy=false;
 }
@@ -23072,11 +23129,39 @@ function spkPageScript(){
     '   }',
     '   return out.length ? out : null;',
     ' }',
+    /* ==== JUDUL KLAUSUL WAJIB DITEMANI MINIMAL 3 BARIS ISI (21 Jul 2026) ====
+       Batas toleransi pengguna: 3 baris isi klausul. Bila di dasar halaman
+       sebuah JUDUL KLAUSUL (.spk-cl-h) hanya ditemani isi kurang dari itu —
+       termasuk tanpa isi sama sekali — maka saat isi berikutnya pindah
+       halaman, judul BESERTA sisa isi itu ikut diboyong ke halaman baru.
+       Ini jaring pengaman untuk KEDUA bentuk dokumen: gerbang MINCL di put()
+       bisa lolos (mis. sisa ruang > 46mm tetapi butir pertama berupa blok
+       utuh/atom yang tinggi sehingga dipindah seluruhnya), dan di sinilah
+       kasus judul yatim seperti itu tertangkap. */
+    ' var MINKEEP=mm2px(14);',   /* ambang isi penyerta: ~3 baris (16mm) lolos; <=2 baris (11mm) diboyong */
+    ' function tarikJudulKlausul(node){',
+    '   if(node && node.nodeType===1 && (hasCls(node,"spk-clause")||hasCls(node,"spk-cl-h")||hasCls(node,"spk-bab"))) return null;',
+    '   var kk=els(tgt()); if(!kk.length) return null;',
+    '   var hi=-1;',
+    '   for(var i=kk.length-1;i>=0;i--){ if(hasCls(kk[i],"spk-cl-h")){ hi=i; break; } }',
+    '   if(hi<0) return null;',
+    '   var hAfter=0;',
+    '   for(var j=hi+1;j<kk.length;j++) hAfter+=kk[j].getBoundingClientRect().height;',
+    '   if(hAfter>=MINKEEP) return null;',
+    /* Judul yang sudah duduk di puncak halaman tidak diboyong — memindahkannya
+       tidak memperbaiki apa pun dan berisiko menghasilkan halaman kosong. */
+    '   if((kk[hi].getBoundingClientRect().top - body.getBoundingClientRect().top) < mm2px(8)) return null;',
+    '   var out=[];',
+    '   for(var m=kk.length-1;m>=hi;m--){ kk[m].parentNode.removeChild(kk[m]); out.unshift(kk[m]); }',
+    '   return out;',
+    ' }',
     /* Buka lembar baru SEKALIGUS memboyong judul yang menggantung. Dipakai di
        SEMUA titik yang memulai halaman baru karena isi tak muat. */
     ' function mkTarik(node){',
     '   var _j=tarikJudulMenggantung(node);',
+    '   var _k=tarikJudulKlausul(node);',
     '   mk();',
+    '   if(_k) for(var _q=0;_q<_k.length;_q++) tgt().appendChild(_k[_q]);',
     '   if(_j) for(var _i=0;_i<_j.length;_i++) tgt().appendChild(_j[_i]);',
     ' }',
     ' function put(node){',
@@ -23157,7 +23242,10 @@ function spkPageScript(){
     '         _cnd.parentNode.removeChild(_cnd); _leads.unshift(_cnd);',
     '         _kk2=els(tgt());',
     '       }',
+    /* Judul klausul di atas blok kv juga tak boleh tertinggal yatim (< 3 baris isi) */
+    '       var _kj=tarikJudulKlausul(node);',
     '       mk();',
+    '       if(_kj) for(var _kq=0;_kq<_kj.length;_kq++) tgt().appendChild(_kj[_kq]);',
     '       for(var _li=0;_li<_leads.length;_li++) tgt().appendChild(_leads[_li]);',
     '     }',
     '   }',
@@ -23876,21 +23964,38 @@ function spkKlausulEdit(id){ const k=records_klausul.find(x=>String(x.id)===Stri
    ===================================================================== */
 
 /* ---- Ukuran (twips: 1 cm = 566,93 twips; 1 inci = 1440) ---- */
+/* =====================================================================
+   KISI SURAT PERINTAH KERJA — DIBEKUKAN DARI STANDAR INDEN PRATINJAU
+   (permintaan 21 Jul 2026: "tampilan pratinjau disamakan pada template
+   docx"). Acuan di layar (spkPkIndentStd + spkClHeadW) menghitung kolom
+   secara terukur; Word tidak dapat mengukur ulang, jadi angkanya
+   dibekukan di sini dengan ASUMSI nomor klausul 2 DIGIT (mis. "11."):
+     kotak nomor judul "11."   : ~0,53 tebal + jeda 0,18   = 0,70 cm
+     dasar isi klausul         : lurus kolom teks judul    = 0,70 cm
+     penanda "11.1."           : judul + LEAD_ANGKA 0,15   = 0,85 cm
+     kotak nomor "11.1."       : ~0,78 + jeda 0,18         = 0,955 cm
+     kolom teks tingkat-1      : 0,85 + 0,955              = 1,805 cm
+     penanda huruf "a."        : kolom teks + LEAD 0,35    = 2,155 cm
+     kotak huruf "a."          : ~0,30 + jeda huruf 0,10   = 0,40 cm
+     kolom teks tingkat-2      : 2,155 + 0,40              = 2,555 cm
+   Saat berkas diunggah balik, pratinjau tetap merapikan ulang secara
+   terukur — kisi ini hanya menentukan tampilan saat DIKETIK di Word.
+   Pemetaan dua arah w:ind <-> margin memakai BASE yang sama (spkWxBase)
+   sehingga perubahan BASE aman untuk template lama. */
 var SPK_DX = {
   A4_W:11906, A4_H:16838,      // A4 portrait
   MARGIN:1440,                 // margin Normal Word = 2,54 cm
-  IND:425,                     // 0,75 cm  (sejajar teks sesudah nomor klausul)
-  IND_JUDUL:368,               // 0,65 cm  (jarak nomor -> teks pada JUDUL klausul;
-                               //           pas untuk nomor 2 digit, mis. "15.")
-  IND2:850,                    // 1,50 cm
-  IND3:1276,                   // 2,25 cm
-  /* --- nama seragam yang dipakai pembangun gaya (nilai SPK, TIDAK BERUBAH) --- */
-  BASE:425,                    // dasar isi klausul
-  P_FIRST:425,                 // inden baris pertama paragraf narasi
-  L1:850,  L1_HANG:425,        // butir tingkat-1
-  L2:1276, L2_HANG:425,        // butir tingkat-2
-  DESC:850,                    // paragraf deskripsi
-  JUDUL_HANG:368,              // gantungan nomor pada judul klausul
+  IND:397,                     // 0,70 cm  (sejajar teks sesudah nomor klausul)
+  IND_JUDUL:397,               // 0,70 cm  (jarak nomor -> teks pada JUDUL klausul, 2 digit)
+  IND2:1023,                   // 1,805 cm
+  IND3:1448,                   // 2,555 cm
+  /* --- nama seragam yang dipakai pembangun gaya (beku dari pratinjau) --- */
+  BASE:397,                    // dasar isi klausul (0,70 cm)
+  P_FIRST:425,                 // inden baris pertama paragraf narasi (0,75 cm)
+  L1:1023, L1_HANG:541,        // butir tingkat-1: kolom teks 1,805 / kotak nomor 0,955
+  L2:1448, L2_HANG:227,        // butir tingkat-2: kolom teks 2,555 / kotak huruf 0,40
+  DESC:1023,                   // paragraf deskripsi sejajar kolom teks tingkat-1
+  JUDUL_HANG:397,              // gantungan nomor pada judul klausul (0,70 cm)
   PUSAT:false                  // judul rata KIRI satu baris ("1. DEFINISI")
 };
 
@@ -23909,15 +24014,26 @@ var SPK_DX = {
    DIBEKUKAN menjadi kisi tetap di bawah. Selisihnya terhadap layar < 0,03 cm.
    Bentuk Surat Perintah Kerja tetap memakai SPK_DX di atas — tidak tersentuh.
    ===================================================================== */
+/* DIBEKUKAN ULANG 21 Jul 2026 mengikuti standar pratinjau terbaru:
+     - Aturan julur kiri 0,20 cm sudah DIBUANG (g.Wb=g.W) -> ayat tingkat-1
+       kini MENEMPEL MARGIN KIRI: nomor "1." mulai di 0 cm, teks justify
+       memenuhi margin kanan.
+     - kotak nomor "1."     : ~0,28 + jeda 0,18            = 0,46 cm
+     - kolom teks tingkat-1 : 0 + 0,46                     = 0,46 cm
+     - penanda huruf "a."   : kolom teks + LEAD 0,35       = 0,81 cm
+     - kotak huruf "a."     : ~0,30 + jeda huruf 0,10      = 0,40 cm
+     - kolom teks tingkat-2 : 0,81 + 0,40                  = 1,21 cm
+   Asumsi ayat 1 digit; deret yang memuat ayat 2 digit dirata-KANANkan oleh
+   pratinjau secara terukur saat berkas diunggah balik. */
 var SPK_DX_PK = {
   A4_W:11906, A4_H:16838,
   MARGIN:1440,
-  IND:0, IND_JUDUL:0, IND2:374, IND3:799,
+  IND:0, IND_JUDUL:0, IND2:261, IND3:686,
   BASE:0,                      // 0 cm    — isi klausul mulai di batas margin kiri
   P_FIRST:425,                 // 0,75 cm — inden baris pertama paragraf narasi
-  L1:374,  L1_HANG:261,        // 0,66 cm / 0,46 cm — butir "1." / "1.1."
-  L2:799,  L2_HANG:227,        // 1,41 cm / 0,40 cm — butir "a." / "b."
-  DESC:374,                    // 0,66 cm — sejajar kolom teks tingkat-1
+  L1:261,  L1_HANG:261,        // 0,46 cm / 0,46 cm — ayat "1." menempel margin kiri
+  L2:686,  L2_HANG:227,        // 1,21 cm / 0,40 cm — butir "a." / "b."
+  DESC:261,                    // 0,46 cm — sejajar kolom teks tingkat-1
   GAP:102,                     // 0,18 cm — jeda TETAP titik nomor -> teks (SPK_NUM_GAP)
   JUDUL_HANG:0,
   PUSAT:true                   // judul rata TENGAH dua baris ("PASAL 1" + nama pasal)
@@ -25165,6 +25281,16 @@ function spkKlausulView(id){
       '</div>'+
     '</div>';
   ov.classList.add('show');
+  /* Pecah menjadi lembar-lembar A4 terpisah (celah abu antar halaman), sama
+     seperti pratinjau dokumen — bukan satu lembar memanjang (21 Jul 2026).
+     Ditunda sebentar agar overlay selesai tata letak & font siap diukur. */
+  setTimeout(function(){
+    try{
+      var pg=ov.querySelector('.spk-we-page');
+      var cl=pg && pg.querySelector('.spk-cl');
+      if(pg && cl) spkPaperPaginate(cl, pg);
+    }catch(e){}
+  }, 60);
 }
 function spkKlausulViewClose(){ const ov=document.getElementById('spk-klausul-view-ov'); if(ov) ov.classList.remove('show'); }
 function spkKlausulViewToEdit(id){ spkKlausulViewClose(); spkKlausulEdit(id); }
