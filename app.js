@@ -2971,6 +2971,7 @@ function autoLayoutSheet(ws, cols, dataRows, opts){
 
   // 1) Tentukan lebar tiap kolom dari teks terpanjang (header + isi data)
   const widths = cols.map((f,ci)=>{
+    if(f.type==='no'){ return Math.max(String(dataRows).length+2, 5); }   // kolom No urut: sempit
     let max = String(f.label||'').length;
     for(let r=2;r<=dataRows+1;r++){
       const v = ws.getCell(r,ci+1).value;
@@ -3010,7 +3011,9 @@ function autoLayoutSheet(ws, cols, dataRows, opts){
       cell.border = allBorder;
       const top = opts.topAlign && opts.topAlign(f, c-1);
       let horizontal = 'left';                 // teks default rata kiri
-      if(f.type==='num'){
+      if(f.type==='no'){
+        cell.numFmt = '0'; horizontal = 'center';   // kolom No urut, rata tengah
+      } else if(f.type==='num'){
         if(typeof cell.value==='number') cell.numFmt = ACCT_NODEC;
         horizontal = 'right';                   // angka rata kanan
       } else if(f.type==='date'){
@@ -3036,9 +3039,8 @@ function autoLayoutSheet(ws, cols, dataRows, opts){
     ws.getRow(r).height = Math.min(LINE_H*MAX_LINES, LINE_H*maxLines + 4);
   }
 
-  // 4) Freeze header + autofilter agar mudah ditelusuri
+  // 4) Freeze header saja (tanpa autofilter agar tabel export tidak otomatis terfilter)
   ws.views = [{state:'frozen', ySplit:1}];
-  ws.autoFilter = {from:{row:1,column:1}, to:{row:1,column:cols.length}};
 }
 
 /* ============ EXPORT EXCEL (data, format seperti template) ============ */
@@ -3050,10 +3052,11 @@ async function exportExcel(){
 
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet('Daftar Pekerjaan');
+  const NO_COL = {key:'__no__', label:'No', type:'no'};
   const headers = COLS.map(f=>f.label);
-  ws.addRow(headers);
-  rows.forEach(r=>{
-    ws.addRow(COLS.map(f=>{
+  ws.addRow(['No', ...headers]);
+  rows.forEach((r,ri)=>{
+    ws.addRow([ri+1, ...COLS.map(f=>{
       let v=r[f.key];
       if(f.auto==='sum'){ const p=f.key.replace(/_total_tanpa_ppn$/,''); const b=Number(r[p+'_harga_barang'])||0, j=Number(r[p+'_harga_jasa'])||0; const t=b+j; return t>0?t:''; }
       if(f.auto==='ppn'){ const p=f.key.replace(/_total_dengan_ppn$/,''); const b=Number(r[p+'_harga_barang'])||0, j=Number(r[p+'_harga_jasa'])||0; const t=b+j; return t>0?ppnFromBase(t):''; }
@@ -3061,10 +3064,10 @@ async function exportExcel(){
       if(f.type==='num') return Number(v);
       if(f.type==='date') return fmtDate(v);
       return v;
-    }));
+    })]);
   });
   // Rapikan tampilan: lebar kolom presisi, wrap text, tinggi baris otomatis
-  autoLayoutSheet(ws, COLS, rows.length);
+  autoLayoutSheet(ws, [NO_COL, ...COLS], rows.length);
 
   try{
     const buf = await wb.xlsx.writeBuffer();
@@ -4123,9 +4126,9 @@ async function exportExcelPl(){
   if(rows.length===0){ toast('Tidak ada data untuk diekspor','warn'); return; }
   const wb=new ExcelJS.Workbook();
   const ws=wb.addWorksheet('Daftar Pengadaan Langsung');
-  ws.addRow(COLS.map(f=>f.label));
-  rows.forEach((r,ri)=>{ ws.addRow(COLS.map(f=>{ if(isIndepKeyPl(f.key)) return indepCellValuePl(r,f.key); let v=r[f.key]; if(f.auto==='sum'){ const p=f.key.replace(/_total_tanpa_ppn$/,''); const b=Number(r[p+'_harga_barang'])||0, j=Number(r[p+'_harga_jasa'])||0; const t=b+j; return t>0?t:''; } if(f.auto==='ppn'){ const p=f.key.replace(/_total_dengan_ppn$/,''); const b=Number(r[p+'_harga_barang'])||0, j=Number(r[p+'_harga_jasa'])||0; const t=b+j; return t>0?ppnFromBase(t):''; } if(v===''||v==null) return ''; if(f.type==='num') return Number(v); if(f.type==='date') return fmtDate(v); return v; })); });
-  autoLayoutSheet(ws, COLS, rows.length, {
+  ws.addRow(['No', ...COLS.map(f=>f.label)]);
+  rows.forEach((r,ri)=>{ ws.addRow([ri+1, ...COLS.map(f=>{ if(isIndepKeyPl(f.key)) return indepCellValuePl(r,f.key); let v=r[f.key]; if(f.auto==='sum'){ const p=f.key.replace(/_total_tanpa_ppn$/,''); const b=Number(r[p+'_harga_barang'])||0, j=Number(r[p+'_harga_jasa'])||0; const t=b+j; return t>0?t:''; } if(f.auto==='ppn'){ const p=f.key.replace(/_total_dengan_ppn$/,''); const b=Number(r[p+'_harga_barang'])||0, j=Number(r[p+'_harga_jasa'])||0; const t=b+j; return t>0?ppnFromBase(t):''; } if(v===''||v==null) return ''; if(f.type==='num') return Number(v); if(f.type==='date') return fmtDate(v); return v; })]); });
+  autoLayoutSheet(ws, [{key:'__no__',label:'No',type:'no'}, ...COLS], rows.length, {
     topAlign: (f)=> isIndepKeyPl(f.key)
   });
   try{
@@ -5373,20 +5376,20 @@ async function exportExcelTender(){
   if(rows.length===0){ toast('Tidak ada data untuk diekspor','warn'); return; }
   const wb=new ExcelJS.Workbook();
   const ws=wb.addWorksheet('Monitoring Tender');
-  ws.addRow(COLS.map(f=>f.label));
+  ws.addRow(['No', ...COLS.map(f=>f.label)]);
   const colMapTd=fieldColMap(COLS);
   const FLAT_AUTO=['hpe','rab','hps'];
   const isFlatAutoTotal=(k)=>FLAT_AUTO.some(p=>k===p+'_total_tanpa_ppn');
   const isFlatPpnTotal=(k)=>FLAT_AUTO.some(p=>k===p+'_total_dengan_ppn');
-  rows.forEach((r,ri)=>{ ws.addRow(COLS.map(f=>{
+  rows.forEach((r,ri)=>{ ws.addRow([ri+1, ...COLS.map(f=>{
     if(isFlatAutoTotal(f.key)){ const p=f.key.replace(/_total_tanpa_ppn$/,''); const b=Number(r[p+'_harga_barang'])||0, j=Number(r[p+'_harga_jasa'])||0; const t=b+j; return t>0?t:''; }
     if(isFlatPpnTotal(f.key)){ const p=f.key.replace(/_total_dengan_ppn$/,''); const b=Number(r[p+'_harga_barang'])||0, j=Number(r[p+'_harga_jasa'])||0; const t=b+j; return t>0?ppnFromBase(t):''; }
     if(PENYEDIA_KEYS.includes(f.key)) return penyediaCellValue(r,f.key,f.type);
     if(INDEP_MULTI_KEYS.includes(f.key)) return indepCellValue(r,f.key);
     let v=r[f.key]; if(v===''||v==null) return ''; if(f.type==='num') return Number(v); if(f.type==='date') return fmtDate(v); return v;
-  }));
+  })]);
   });
-  autoLayoutSheet(ws, COLS, rows.length, {
+  autoLayoutSheet(ws, [{key:'__no__',label:'No',type:'no'}, ...COLS], rows.length, {
     headerFill: (f)=> isStackKey(f.key) ? 'FF0E9E8E' : 'FF0E7C86',
     topAlign:   (f)=> isStackKey(f.key)
   });
