@@ -833,7 +833,7 @@ function playLoginAnim(role, done){
     anim.classList.remove('fade-out');
     anim.classList.add('show');
     sfxSession('in');           // arpeggio naik, seiring animasi "Selamat Datang"
-    setTimeout(finish, 1300);   // mainkan animasi ± 1,3 detik sebelum masuk aplikasi
+    setTimeout(finish, 2600);   // mainkan animasi ± 2,6 detik (diperpanjang agar kutipan sempat terbaca)
   }else{
     finish();
   }
@@ -1094,7 +1094,7 @@ function performLogout(){
     anim.classList.remove('fade-out');
     anim.classList.add('show');
     sfxSession('out');          // arpeggio turun, seiring animasi keluar
-    setTimeout(finish, 1300);   // mainkan animasi ± 1,3 detik sebelum ke layar login
+    setTimeout(finish, 2600);   // mainkan animasi ± 2,6 detik (sama dengan login, agar kutipan sempat terbaca)
   }else{
     finish();
   }

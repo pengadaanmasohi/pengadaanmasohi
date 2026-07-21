@@ -853,6 +853,32 @@ td.cell-center{text-align:center}
 .li-spark.s6{top:78%;left:48%;background:#bfe6ff;box-shadow:0 0 12px 2px rgba(191,230,255,.6);animation-delay:.2s}
 @keyframes liSpark{0%{opacity:0;transform:translateY(6px) scale(.6)}30%{opacity:1;transform:translateY(-4px) scale(1)}70%{opacity:.6}100%{opacity:0;transform:translateY(-16px) scale(.5)}}
 
+/* Kutipan motivasi pada animasi login — melayang lembut di bagian bawah layar */
+.li-quote{position:absolute;left:0;right:0;bottom:max(34px, env(safe-area-inset-bottom, 0px) + 26px);
+  display:flex;flex-direction:column;align-items:center;gap:7px;margin:0 auto;max-width:min(86vw,460px)}
+.li-quote-line{width:44px;height:1px;background:linear-gradient(90deg,transparent,rgba(255,233,168,.75),transparent);
+  transform:scaleX(0);animation:liQuoteLine .8s cubic-bezier(.2,.8,.25,1) .45s both}
+.li-quote-jp{font-size:14px;font-weight:600;letter-spacing:3px;white-space:nowrap;
+  color:#ffe9a8;text-shadow:0 0 14px rgba(246,180,14,.35);
+  background:linear-gradient(90deg,#ffe9a8,#fff,#ffe9a8);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  background-size:200% 100%;
+  opacity:0;animation:liQuoteIn .9s cubic-bezier(.2,.8,.25,1) .65s both,
+    liSheen 3s linear 1.6s infinite,
+    liQuoteFloat 3.4s ease-in-out 1.6s infinite}
+.li-quote-id{font-size:12px;font-style:italic;font-weight:500;letter-spacing:.4px;color:rgba(255,255,255,.88);
+  opacity:0;animation:liQuoteIn .9s cubic-bezier(.2,.8,.25,1) 1s both,
+    liQuoteFloat 3.4s ease-in-out 1.9s infinite}
+@keyframes liQuoteIn{from{opacity:0;transform:translateY(14px);filter:blur(4px);letter-spacing:6px}
+  to{opacity:1;transform:none;filter:none}}
+@keyframes liQuoteLine{from{transform:scaleX(0);opacity:0}to{transform:scaleX(1);opacity:1}}
+@keyframes liQuoteFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@media (prefers-reduced-motion:reduce){
+  .li-quote-jp,.li-quote-id{animation:liQuoteIn .6s ease .5s both}
+  .li-quote-line{animation:liQuoteLine .5s ease .4s both}
+}
+@media (max-width:480px){.li-quote-jp{font-size:12px;letter-spacing:2px}.li-quote-id{font-size:11px}}
+
 /* ---------- Route Loader (transisi antar menu) — elegan ---------- */
 .route-loader{position:fixed;inset:0;z-index:120;display:flex;align-items:center;justify-content:center;
   background:radial-gradient(600px 400px at 50% 45%, rgba(227,242,243,.72), rgba(238,244,246,.9));
