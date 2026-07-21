@@ -18763,17 +18763,16 @@ function spkDocCss2(){
   '.spk-sheet > .sh-bd{flex:1 1 auto;overflow:hidden}'+
   '.spk-sheet > .sh-ft{flex:0 0 auto;margin-top:auto}'+
   /* ---- KOP NAIK & KAKI TURUN MENDEKATI TEPI KERTAS ----
-     HANYA berlaku pada bentuk PERJANJIAN/KONTRAK (.spk-doc.spk-pk). Bentuk
-     Surat Perintah Kerja TIDAK tersentuh: kop & kakinya tetap pada bidang teks
-     bermargin 25,4mm seperti semula.
-     Pada Perjanjian/Kontrak kop ditarik NAIK dan kaki didorong TURUN sejauh
-     13,4mm sehingga keduanya berhenti 12mm dari tepi kertas — masih menyisakan
-     celah, dan simetris atas-bawah. Ruang 2 x 13,4mm yang terbebas dikembalikan
-     ke tinggi badan halaman lewat EXPK di mk(), supaya jumlah baris per halaman
-     tetap terhitung benar. Lembar Lampiran dikecualikan karena bidang cetaknya
+     Semula hanya bentuk PERJANJIAN/KONTRAK; sejak 21 Jul 2026 (permintaan
+     "jarak header/footer PK diterapkan pada SPK") berlaku untuk KEDUA bentuk.
+     Kop ditarik NAIK dan kaki didorong TURUN sejauh 13,4mm sehingga keduanya
+     berhenti 12mm dari tepi kertas — masih menyisakan celah, dan simetris
+     atas-bawah. Ruang 2 x 13,4mm yang terbebas dikembalikan ke tinggi badan
+     halaman lewat EXPK di mk(), supaya jumlah baris per halaman tetap
+     terhitung benar. Lembar Lampiran dikecualikan karena bidang cetaknya
      memang sudah bermargin 12mm. */
-  '.spk-doc.spk-pk .spk-sheet:not(.spk-lampsheet) > .sh-hd{margin-top:-13.4mm}'+
-  '.spk-doc.spk-pk .spk-sheet:not(.spk-lampsheet) > .sh-ft{margin-bottom:-13.4mm}'+
+  '.spk-doc .spk-sheet:not(.spk-lampsheet) > .sh-hd{margin-top:-13.4mm}'+
+  '.spk-doc .spk-sheet:not(.spk-lampsheet) > .sh-ft{margin-bottom:-13.4mm}'+
   /* ---- JUDUL KLAUSUL DI AWAL LEMBAR ----
      Blok pertama pada setiap lembar TIDAK boleh membawa "spasi sebelum" (judul klausul
      bawaannya 12 pt) karena akan mendorongnya turun dari margin atas. Sama seperti Word
@@ -19844,7 +19843,24 @@ function spkPkPoinToButir(html){
   }catch(e){ return s; }
 }
 /* Pembungkus: dipakai di titik perakitan dokumen, hanya untuk bentuk PK */
+/* ===== KETENTUAN FINAL 21 Jul 2026: "inden biar saya atur di Word" =====
+   Klausul yang isinya BERASAL DARI BERKAS WORD dikenali dari paragraf yang
+   membawa margin-left / text-indent inline (hasil pembacaan w:ind saat .docx
+   diunggah). Untuk isi semacam itu SEMUA perapian tata letak (pengotakan
+   nomor, standarisasi inden/perataan) DILEWATI — inden Word dipakai apa
+   adanya sehingga tampilan pratinjau/cetak 100% sama dengan pengaturan
+   pengguna di Word. Mesin perapian terukur hanya berlaku untuk isi yang
+   diketik langsung di aplikasi (tanpa data inden Word). */
+function spkPkDariWord(html){
+  return /<p[^>]*style="[^"]*(?:margin-left|text-indent)/i.test(String(html==null?'':html));
+}
 function spkPkTidy(html, isPk){
+  if(spkPkDariWord(html)){
+    /* transformasi TEKS tetap jalan (poin->butir, blok PIHAK anti-pisah
+       halaman); posisi paragraf tidak disentuh sama sekali. spkPkKeepPihak
+       tidak menimpa margin yang sudah ada (lihat penjaganya). */
+    return isPk ? spkPkKeepPihak(spkPkPoinToButir(html), isPk) : String(html==null?'':html);
+  }
   /* SPK (permintaan 21 Jul 2026): ikut PERAPIAN TATA LETAK yang sama —
      penanda dikotakkan (spkPkBoxMark) lalu inden & perataan distandarkan
      (spkPkIndentStd): deret 1 digit rata kiri, deret ber-2-digit rata kanan,
@@ -19870,6 +19886,11 @@ function spkPkTidy(html, isPk){
 }
 
 function spkNumberFix(html){
+  /* KETENTUAN 21 Jul 2026 ("inden biar saya atur di Word"): isi yang berasal
+     dari berkas Word (paragraf membawa margin-left/text-indent inline hasil
+     pembacaan w:ind) TIDAK disentuh sama sekali — pengotakan nomor maupun
+     penyeragaman DOM di bawah dilewati supaya tampilan 100% mengikuti Word. */
+  try{ if(typeof spkPkDariWord==='function' && spkPkDariWord(html)) return String(html||''); }catch(e){}
   /* Normalisasi: bila label nomor di AWAL paragraf kl1/kl2 langsung menempel ke teks
      tanpa spasi (mis. "10.10.Petugas" atau "11.1.2.Peristiwa"), sisipkan satu nbsp
      agar label tetap dikenali & dikotakkan seperti label yang berspasi. Idempotent:
@@ -19884,6 +19905,10 @@ function spkNumberFix(html){
       // Lindungi singkatan umum yang kebetulan tampak seperti angka romawi
       // (mis. "CV." "CD." "MM." "DVD.") agar tidak salah dianggap penomoran.
       if(/^(CV|CD|MM|DVD|DIV|MMC|LC|DC|ID|IL|IM)[.)]$/i.test(tok)) return m;
+      /* Paragraf ber-inden Word (margin-left/text-indent inline) TIDAK
+         dikotakkan — inden & jarak nomor mengikuti Word apa adanya
+         (ketentuan 21 Jul 2026 "inden biar saya atur di Word"). */
+      if(/style="[^"]*(?:margin-left|text-indent)/i.test(attrs||'')) return m;
       const isSingleNum = /^[0-9]+\.$/.test(tok);          // "1." "10."
       const right = isSingleNum && parseInt(tok,10) >= 10; // 2 digit -> rata kanan
       const multi = /^(?:[0-9]+\.){2,}$/.test(tok);        // "5.1." "3.1.1."
@@ -23022,7 +23047,9 @@ function spkPageScript(){
        ini tiap lembar menyisakan pita kosong setinggi 26,8mm di atas kaki
        halaman. Surat Perintah Kerja dan lembar Lampiran memakai perhitungan apa
        adanya karena margin negatif itu tidak berlaku padanya. */
-    '   var EXPK=(ISPK && extra.indexOf("spk-lampsheet")<0) ? mm2px(26.8) : 0;',
+    /* EXPK kini berlaku KEDUA bentuk (kop naik & kaki turun juga di SPK,
+       21 Jul 2026); hanya lembar Lampiran yang dikecualikan. */
+    '   var EXPK=(extra.indexOf("spk-lampsheet")<0) ? mm2px(26.8) : 0;',
     '   b.style.height=Math.max(80,(PH-hh-fh-6+EXPK))+"px";',
     '   b.style.overflow="hidden";',
     '   body=b;',
