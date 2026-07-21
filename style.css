@@ -853,31 +853,6 @@ td.cell-center{text-align:center}
 .li-spark.s6{top:78%;left:48%;background:#bfe6ff;box-shadow:0 0 12px 2px rgba(191,230,255,.6);animation-delay:.2s}
 @keyframes liSpark{0%{opacity:0;transform:translateY(6px) scale(.6)}30%{opacity:1;transform:translateY(-4px) scale(1)}70%{opacity:.6}100%{opacity:0;transform:translateY(-16px) scale(.5)}}
 
-/* Kutipan motivasi pada animasi login — melayang lembut di bagian bawah layar */
-.li-quote{position:absolute;left:0;right:0;bottom:max(34px, env(safe-area-inset-bottom, 0px) + 26px);
-  display:flex;flex-direction:column;align-items:center;gap:7px;margin:0 auto;max-width:min(86vw,460px)}
-.li-quote-line{width:44px;height:1px;background:linear-gradient(90deg,transparent,rgba(255,233,168,.75),transparent);
-  transform:scaleX(0);animation:liQuoteLine .8s cubic-bezier(.2,.8,.25,1) .45s both}
-.li-quote-jp{font-size:14px;font-weight:600;letter-spacing:3px;white-space:nowrap;
-  color:#ffe9a8;text-shadow:0 0 14px rgba(246,180,14,.35);
-  background:linear-gradient(90deg,#ffe9a8,#fff,#ffe9a8);
-  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
-  background-size:200% 100%;
-  opacity:0;animation:liQuoteIn .9s cubic-bezier(.2,.8,.25,1) .65s both,
-    liSheen 3s linear 1.6s infinite,
-    liQuoteFloat 3.4s ease-in-out 1.6s infinite}
-.li-quote-id{font-size:12px;font-style:italic;font-weight:500;letter-spacing:.4px;color:rgba(255,255,255,.88);
-  opacity:0;animation:liQuoteIn .9s cubic-bezier(.2,.8,.25,1) 1s both,
-    liQuoteFloat 3.4s ease-in-out 1.9s infinite}
-@keyframes liQuoteIn{from{opacity:0;transform:translateY(14px);filter:blur(4px);letter-spacing:6px}
-  to{opacity:1;transform:none;filter:none}}
-@keyframes liQuoteLine{from{transform:scaleX(0);opacity:0}to{transform:scaleX(1);opacity:1}}
-@keyframes liQuoteFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
-@media (prefers-reduced-motion:reduce){
-  .li-quote-jp,.li-quote-id{animation:liQuoteIn .6s ease .5s both}
-  .li-quote-line{animation:liQuoteLine .5s ease .4s both}
-}
-@media (max-width:480px){.li-quote-jp{font-size:12px;letter-spacing:2px}.li-quote-id{font-size:11px}}
 
 /* ---------- Route Loader (transisi antar menu) — elegan ---------- */
 .route-loader{position:fixed;inset:0;z-index:120;display:flex;align-items:center;justify-content:center;
@@ -2846,16 +2821,22 @@ table.ana-uraian td.c-calc{text-align:right;font-weight:800;color:#0b6a73;white-
 .ana-res td.c-inf .c-inf-suf{color:#9aa7ab;font-weight:700;margin-left:4px}
 .ana-res-wrap{overflow-x:auto}
 table.ana-res{width:100%;border-collapse:collapse;border-spacing:0;min-width:760px}
-/* Grid penuh 1px #dce6e9 (vertikal + horizontal) — sama seperti tabel Monitoring/Daftar Pekerjaan */
-table.ana-res th,table.ana-res td{border:1px solid #dce6e9}
-table.ana-res thead th{background:#0E7C86;color:#fff;font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:.3px;padding:8px 10px;text-align:center;white-space:normal;word-break:normal;overflow-wrap:break-word;line-height:1.25;vertical-align:middle;border-color:rgba(255,255,255,.45)}
+/* Desain mengikuti tabel input (ana-uraian): tanpa grid vertikal, hanya garis
+   horizontal tipis antar baris + zebra lembut. */
+table.ana-res th,table.ana-res td{border:none}
+table.ana-res tbody td{border-bottom:1px solid #e8f0f1}
+table.ana-res tbody tr:last-child td{border-bottom:none}
+table.ana-res thead th{background:#0E7C86;color:#fff;font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:.3px;padding:9px 10px;text-align:center;white-space:normal;word-break:normal;overflow-wrap:break-word;line-height:1.25;vertical-align:middle}
 table.ana-res thead th.c-ur{text-align:center}
 table.ana-res thead th.c-no{text-align:center;width:46px;min-width:40px;max-width:52px}
 table.ana-res tbody td.c-no{width:46px;min-width:40px;max-width:52px}
-table.ana-res tbody td{padding:8px 10px;font-size:12px;text-align:right;white-space:nowrap;color:#2b3f48}
-table.ana-res tbody tr:nth-child(even) td{background:#f6fafb}
+table.ana-res tbody td{padding:9px 10px;font-size:12px;text-align:right;white-space:nowrap;color:#2b3f48}
+table.ana-res tbody tr:nth-child(even) td{background:#f8fbfc}
 table.ana-res tbody td.c-no{text-align:center;font-weight:800;color:#0b6a73}
 table.ana-res tbody td.c-ur{text-align:left;font-weight:600}
+table.ana-res th.c-sat,table.ana-res td.c-sat,
+table.ana-res th.c-vol,table.ana-res td.c-vol{width:1%;min-width:64px;text-align:center;white-space:nowrap}
+table.ana-res td.c-vol{font-weight:600}
 table.ana-res tbody td.c-res{font-weight:800;color:#0b3d42;background:#eef7f8}
 /* Lebar kolom: Uraian Pekerjaan menyerap seluruh sisa ruang; kolom lain menyusut
    secukupnya (width:1% + nowrap) sehingga kolom harga tidak melebar berlebihan. */
@@ -2869,7 +2850,7 @@ table.ana-res th.c-mtd{white-space:normal;word-break:normal;overflow-wrap:break-
 table.ana-res th.c-money,table.ana-res td.c-money{width:1%;min-width:118px;white-space:nowrap}
 .ana-res-hint{padding:10px 15px;font-size:11px;color:#5a6b70;background:#f6fafb;border-top:1px solid #eef4f5;line-height:1.55}
 .ana-res-hint b{color:var(--teal-dark)}
-.ana-method-chip{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;color:#0b6a73;background:#dff1f2;padding:2px 8px;border-radius:20px;margin-left:6px}
+.ana-method-chip{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;color:#0b6a73;background:#dff1f2;padding:2px 8px;border-radius:20px}
 @media(max-width:640px){ table.ana-uraian{min-width:940px} .ana-toolbar{justify-content:flex-start} }
 
 /* Selector Jenis Pekerjaan (kanan atas kartu Data Pekerjaan) */

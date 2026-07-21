@@ -833,7 +833,7 @@ function playLoginAnim(role, done){
     anim.classList.remove('fade-out');
     anim.classList.add('show');
     sfxSession('in');           // arpeggio naik, seiring animasi "Selamat Datang"
-    setTimeout(finish, 3000);   // mainkan animasi ± 3 detik agar kutipan sempat terbaca
+    setTimeout(finish, 2000);   // mainkan animasi ± 2 detik sebelum masuk aplikasi
   }else{
     finish();
   }
@@ -1094,7 +1094,7 @@ function performLogout(){
     anim.classList.remove('fade-out');
     anim.classList.add('show');
     sfxSession('out');          // arpeggio turun, seiring animasi keluar
-    setTimeout(finish, 3000);   // mainkan animasi ± 3 detik (sama dengan login, agar kutipan sempat terbaca)
+    setTimeout(finish, 2000);   // mainkan animasi ± 2 detik sebelum ke layar login
   }else{
     finish();
   }
@@ -5606,7 +5606,18 @@ function renderHariLibur(){
         '<thead><tr><th class="col-no">No</th><th class="col-date">Tanggal</th><th>Hari</th><th>Keterangan</th><th style="text-align:center;width:80px">Aksi</th></tr></thead>'+
         '<tbody>'+rows+'</tbody>'+
       '</table></div>'+
+    '</div>'+
+    '<div class="jp-actions" style="justify-content:flex-end;margin-top:14px">'+
+      '<button class="btn btn-red" onclick="hlBatalClick()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg> Batal</button>'+
     '</div>';
+}
+/* Tombol Batal pada Tentukan Hari Libur — kosongkan isian tambah tanggal lalu
+   kembali ke halaman Lihat Jadwal (perubahan daftar sudah tersimpan otomatis). */
+function hlBatalClick(){
+  const tglEl=document.getElementById('hl-tgl'), ketEl=document.getElementById('hl-ket');
+  if(tglEl) tglEl.value='';
+  if(ketEl) ketEl.value='';
+  openJadwalLihat();
 }
 async function hlAdd(){
   if(!requireInput()) return;
@@ -5971,6 +5982,7 @@ function renderJadwalKerja(){
       '<div class="jp-actions">'+
         '<button class="btn btn-teal" onclick="jpAddTahap()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Tambah Tahapan</button>'+
         '<button class="btn btn-green" onclick="jpSaveRecord()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> '+(jpEditId?'Simpan Perubahan':'Simpan Jadwal')+'</button>'+
+        '<button class="btn btn-red" onclick="jpBatalClick()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg> Batal</button>'+
       '</div>'+
     '</div>';
 }
@@ -6364,6 +6376,23 @@ async function jpSaveRecord(){
   // Alihkan otomatis ke halaman "Lihat Jadwal"
   jadwalViewPage = 1;
   showView('jadwal-view');
+}
+
+/* Tombol Batal pada Tentukan Jadwal — sama seperti form lain: minta konfirmasi,
+   kosongkan isian, lalu kembali ke halaman Lihat Jadwal. */
+function jpBatalClick(){
+  openConfirm({
+    icon:'back', title:'Batal',
+    text:'Apakah anda yakin ingin membatalkan? Seluruh isian pada form Tentukan Jadwal akan dikosongkan.',
+    onYes:function(){
+      jpEditId=null;
+      jpState=jpBlankState();
+      renderJadwalKerja();
+      jadwalViewPage=1;
+      showView('jadwal-view');
+      toast('Penyusunan jadwal dibatalkan — form dikosongkan','warn');
+    }
+  });
 }
 
 /* ================= LIHAT JADWAL ================= */
@@ -7550,7 +7579,28 @@ function pnAmbilUnifiedFormHtml(){
       '</div>' +
     '</div>' +
   '</div>' +
-  '<div id="pn-ambil-result"></div>';
+  '<div id="pn-ambil-result"></div>' +
+  '<div class="jp-actions" style="justify-content:flex-end;margin-top:14px">' +
+    '<button class="btn btn-red" onclick="pnAmbilBatalClick()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg> Batal</button>' +
+  '</div>';
+}
+/* Tombol Batal pada Ambil Nomor — minta konfirmasi, kosongkan isian formulir,
+   lalu kembali ke halaman Lihat Nomor. Nomor yang SUDAH diterbitkan tetap
+   tersimpan dan tidak terpengaruh. */
+function pnAmbilBatalClick(){
+  openConfirm({
+    icon:'back', title:'Batal',
+    text:'Apakah anda yakin ingin membatalkan? Isian formulir Ambil Nomor akan dikosongkan (nomor yang sudah diterbitkan tetap tersimpan).',
+    onYes:function(){
+      delete pnState.ambil.dpId; delete pnState.ambil.dpNama;
+      pnState.lastResult=null;
+      const nEl=document.getElementById('pn-uni-nama'); if(nEl) nEl.value='';
+      const kEl=document.getElementById('pn-uni-klas'); if(kEl) kEl.value='';
+      document.querySelectorAll('.pn-doc-check').forEach(function(c){ c.checked=false; });
+      if(typeof pnDocUpdateCount==='function'){ try{ pnDocUpdateCount(); }catch(e){} }
+      openPnLihat('pl');
+    }
+  });
 }
 function pnPendingHtml(label){
   return '<div class="panel pn-pending"><div class="empty">' + PN_WARN_ICON +
@@ -13930,17 +13980,21 @@ function anaRenderResult(){
   const st=anaState;
   const struct=(st.refs[0]&&st.refs[0].items)||[];
   const infOn=(st.inflasi==='Ya');
+  const rokOn=(st.rokOn==='Ya');
   let rows='';
   struct.forEach((it,i)=>{
     const res=anaResultFor(i);
     const uraian=(it.uraian||'').trim()||('Uraian ke-'+(i+1));
     const sat=(it.sat||'').trim();
+    const rokCell=rokOn?('<td class="c-rok">'+anaPct(anaNum(st.rok),'–')+'</td>'):'';
     const infCell=infOn?('<td class="c-inf">'+anaPct(anaNum(st.inflasiNilai),'–')+'</td>'):'';
     rows+='<tr>'+
       '<td class="c-no">'+(i+1)+'</td>'+
-      '<td class="c-ur">'+fkEsc(uraian)+(sat?(' <span style="color:#9aa7ab;font-weight:600">('+fkEsc(sat)+')</span>'):'')+'</td>'+
+      '<td class="c-ur">'+fkEsc(uraian)+'</td>'+
+      '<td class="c-sat">'+(sat?fkEsc(sat):'–')+'</td>'+
+      '<td class="c-vol">'+jsVolDoc(it&&it.vol)+'</td>'+
       '<td class="c-mtd"><span class="ana-method-chip">'+res.method+'</span></td>'+
-      '<td class="c-rok">'+anaPct(anaNum(st.rok),'–')+'</td>'+
+      rokCell+
       infCell+
       '<td class="c-money" id="ana-hb-'+i+'">'+anaRp(res.hargaBarang)+'</td>'+
       '<td class="c-money" id="ana-hj-'+i+'">'+anaRp(res.hargaJasa)+'</td>'+
@@ -13958,9 +14012,10 @@ function anaRenderResult(){
     : (' ROK belum diisi — '+jenisTxt+'.');
   const infHint = infOn ? ' Inflasi (%) per uraian ikut ditambahkan ke Harga Barang &amp; Jasa.' : '';
   const infHead = infOn ? '<th class="c-inf">Inflasi (%)</th>' : '';
-  const cols = infOn ? 7 : 6;
+  const rokHead = rokOn ? '<th class="c-rok">ROK</th>' : '';
+  const cols = 7 + (rokOn?1:0) + (infOn?1:0);
   body.innerHTML='<div class="ana-res-wrap"><table class="ana-res"><thead><tr>'+
-      '<th class="c-no">No</th><th class="c-ur">Uraian Pekerjaan</th><th class="c-mtd">Metode Perhitungan</th><th class="c-rok">ROK</th>'+infHead+
+      '<th class="c-no">No</th><th class="c-ur">Uraian Pekerjaan</th><th class="c-sat">Sat</th><th class="c-vol">Vol</th><th class="c-mtd">Metode Perhitungan</th>'+rokHead+infHead+
       '<th class="c-money">Harga Satuan Barang</th><th class="c-money">Harga Satuan Jasa</th>'+
     '</tr></thead><tbody>'+(rows||'<tr><td colspan="'+cols+'" style="text-align:center;color:#9aa7ab">Belum ada data</td></tr>')+'</tbody></table></div>';
 }
@@ -17358,6 +17413,7 @@ function renderSpkSusun(){
       stepper+
       groupsHtml+
       '<div class="jp-actions" style="justify-content:flex-end;margin-top:4px">'+
+        '<button class="btn btn-red" onclick="spkBatalClick()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg> Batal</button>'+
         '<button class="btn btn-teal" onclick="spkGoStep(2)">Berikutnya: Ubah Klausul Kontrak <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>'+
       '</div>';
     spkHlInitAll();
@@ -17368,7 +17424,10 @@ function renderSpkSusun(){
       '<div id="spk-klausul-content"></div>'+
       '<div class="jp-actions" style="justify-content:space-between;margin-top:4px">'+
         '<button class="btn btn-ghost" onclick="spkGoStep(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 12H5M11 6l-6 6 6 6"/></svg> Kembali</button>'+
-        '<button class="btn btn-teal" onclick="spkGoStep(3)">Berikutnya: Pilih Klausul <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>'+
+        '<span style="display:flex;gap:10px">'+
+          '<button class="btn btn-red" onclick="spkBatalClick()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg> Batal</button>'+
+          '<button class="btn btn-teal" onclick="spkGoStep(3)">Berikutnya: Pilih Klausul <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>'+
+        '</span>'+
       '</div>';
     try{ renderSpkKlausul(); }catch(e){ console.error(e); }
   }else if(spkStep===3){
@@ -17383,7 +17442,10 @@ function renderSpkSusun(){
       '</div>'+
       '<div class="jp-actions" style="justify-content:space-between;margin-top:4px">'+
         '<button class="btn btn-ghost" onclick="spkGoStep(2)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 12H5M11 6l-6 6 6 6"/></svg> Kembali</button>'+
-        '<button class="btn btn-teal" onclick="spkGoStep(4)">Berikutnya: Lampiran <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>'+
+        '<span style="display:flex;gap:10px">'+
+          '<button class="btn btn-red" onclick="spkBatalClick()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg> Batal</button>'+
+          '<button class="btn btn-teal" onclick="spkGoStep(4)">Berikutnya: Lampiran <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>'+
+        '</span>'+
       '</div>';
   }else{
     // ---------- Langkah 4: Lampiran ----------
@@ -17399,6 +17461,7 @@ function renderSpkSusun(){
       '<div class="jp-actions" style="justify-content:space-between;margin-top:4px">'+
         '<button class="btn btn-ghost" onclick="spkGoStep(3)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 12H5M11 6l-6 6 6 6"/></svg> Kembali</button>'+
         '<span style="display:flex;gap:10px">'+
+          '<button class="btn btn-red" onclick="spkBatalClick()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg> Batal</button>'+
           '<button class="btn btn-teal" onclick="spkPreviewCurrent()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg> Pratinjau / Cetak</button>'+
           '<button class="btn btn-green" onclick="spkSaveKontrak()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> '+(spkEditId?'Simpan Perubahan':'Simpan Kontrak')+'</button>'+
         '</span>'+
@@ -17416,6 +17479,23 @@ function spkGoStep(n){
   spkStep=n;
   renderSpkSusun();
   try{ window.scrollTo({top:0,left:0,behavior:'smooth'}); }catch(e){}
+}
+
+/* Tombol Batal pada Penyusunan Kontrak — sama seperti form lain: minta
+   konfirmasi lalu mengosongkan seluruh isian (kembali ke Langkah 1). */
+function spkBatalClick(){
+  openConfirm({
+    icon:'back', title:'Batal',
+    text:'Apakah anda yakin ingin membatalkan? Seluruh isian pada form Susun Kontrak akan dikosongkan.',
+    onYes:function(){
+      spkEditId=null;
+      spkState=spkBlankState();
+      spkStep=1;
+      renderSpkSusun();
+      try{ window.scrollTo({top:0,left:0,behavior:'smooth'}); }catch(e){}
+      toast('Penyusunan kontrak dibatalkan — form dikosongkan','warn');
+    }
+  });
 }
 
 /* Kumpulkan klausul terpilih (snapshot judul+isi, sesuai urutan pustaka) */
