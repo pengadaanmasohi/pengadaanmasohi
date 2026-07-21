@@ -6089,7 +6089,7 @@ function jpProfilOpenLoad(){
   ).join('');
   jpProfilOverlay(
     '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6M9 14h6"/></svg>Muat Profil Jadwal'+profilUploadBtnHtml('jadwal')+'</div>'+
-    '<div class="pnw-profil-sub">Tanggal dihitung ulang dari <b>Awal tahapan pertama</b> yang sedang terisi, mengikuti sifat yang terekam (hari kerja, Sabtu/Minggu &amp; hari libur dilompati). <b>Isian saat ini akan diganti.</b></div>'+
+    '<div class="pnw-profil-sub">Tanggal dihitung ulang dari <b>Titik Mulai</b>, mengikuti sifat yang terekam (hari kerja, Sabtu/Minggu &amp; hari libur dilompati). <b>Jam bergeser relatif</b> mengikuti Jam Mulai \u2014 durasi jam tiap tahapan tetap (mendukung selisih zona WIB/WIT). <b>Isian saat ini akan diganti.</b></div>'+
     '<div class="pnw-profil-list">'+items+'</div>'+
     '<div class="pnw-profil-actions"><button type="button" class="btn btn-ghost" onclick="jpProfilClose()">Tutup</button></div>'
   );
@@ -6109,9 +6109,16 @@ function jpApplyProfil(name, opts){
   const lama=jpState.tahapan||[];
   const tglAnchor = jpState.tglMulai || (lama[0] && lama[0].awalTgl) || '';
   const jamAnchor = jpState.jamMulai || (p.tahapan[0] && p.tahapan[0].awalJam) || '08:00';
+  const jamProfil0 = (p.tahapan[0] && p.tahapan[0].awalJam) || '08:00';
+  /* Pergeseran jam RELATIF (dukungan WIB/WIT): selisih Jam Mulai baru terhadap
+     jam awal tahap pertama yang terekam diterapkan ke SEMUA jam awal & akhir,
+     sehingga DURASI JAM tiap tahapan tetap. Contoh: profil dibuat 08:00-15:00
+     (7 jam); dimuat dengan Jam Mulai 10:00 -> menjadi 10:00-17:00, dan tahap
+     berikutnya yang terekam mulai 08:00 ikut menjadi 10:00. */
+  const deltaMenit = jpTimeToMin(jamAnchor) - jpTimeToMin(jamProfil0);
   const hasil=[]; let prevAwal=null, prevAkhir=null;
   p.tahapan.forEach((t,i)=>{
-    const jam = (i===0) ? jamAnchor : (t.awalJam || '08:00');   // tahap pertama pakai Jam Mulai
+    const jam = (i===0) ? jamProfil0 : (t.awalJam || '08:00');   // jam terekam; digeser deltaMenit di bawah
     // profil format lama (hari/jam/menit kalender) -> konversi seadanya
     const hariKerja   = (t.hariKerja!=null)   ? Number(t.hariKerja)   : Number(t.hari||0);
     const menitOffset = (t.menitOffset!=null) ? Number(t.menitOffset) : ((Number(t.jam)||0)*60 + (Number(t.menit)||0));
@@ -6131,12 +6138,14 @@ function jpApplyProfil(name, opts){
       awal = jpCombine(hlToISO(prevAkhir), jam);
     }
     awal = jpEnsureWorkStart(awal);                                     // jangan jatuh di libur
+    if(deltaMenit) awal.setMinutes(awal.getMinutes()+deltaMenit);           // geser jam relatif (WIB/WIT)
     // 2) akhir = maju N hari kerja, lalu pasang Jam Akhir yang terekam
     //    (profil lama tanpa akhirJam: geser memakai selisih menit)
     const akhir = jpAddWorkDays(awal, hariKerja);
     if(t.akhirJam){
       const ja=String(t.akhirJam).split(':');
       akhir.setHours(Number(ja[0])||0, Number(ja[1])||0, 0, 0);
+      if(deltaMenit) akhir.setMinutes(akhir.getMinutes()+deltaMenit);       // durasi jam dipertahankan
     }else{
       akhir.setMinutes(akhir.getMinutes() + menitOffset);
     }
