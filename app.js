@@ -16515,7 +16515,9 @@ function spkTidyKeyValue(html){
      menyusut menjadi 4 pt bawaan CSS. */
   function kvSty(attr){
     var m=/style\s*=\s*"([^"]*)"/i.exec(attr||''); if(!m) return '';
-    var keep=String(m[1]).match(/margin-(?:top|bottom)\s*:\s*[^;"]+/gi);
+    /* margin-left ikut dipertahankan (21 Jul 2026): posisi kiri baris
+       "Label : nilai" mengikuti pengaturan pengguna di Word apa adanya. */
+    var keep=String(m[1]).match(/margin-(?:top|bottom|left)\s*:\s*[^;"]+/gi);
     return keep ? (' style="'+keep.join(';')+'"') : '';
   }
   return String(src||'').replace(
@@ -24837,6 +24839,17 @@ function spkWTblToHtml(tbl){
     var rowSty='';
     if(bef) rowSty+='margin-top:'+spkTwPt(bef)+'pt;';
     if(aft) rowSty+='margin-bottom:'+spkTwPt(aft)+'pt;';
+    /* INDEN KIRI TABEL (w:tblInd) DIPERTAHANKAN (21 Jul 2026, "inden biar
+       saya atur di Word"): tabel "Label : nilai" yang ditaruh menjorok di
+       Word tampil menjorok sama persis — dipetakan relatif dasar klausul
+       (BASE) seperti pemetaan w:ind paragraf. */
+    try{
+      var tp=tbl.getElementsByTagNameNS(SPK_W_NS,'tblPr')[0];
+      var ti=tp?tp.getElementsByTagNameNS(SPK_W_NS,'tblInd')[0]:null;
+      var tiw=ti?(+ti.getAttributeNS(SPK_W_NS,'w')||0):0;
+      var mlCm=Math.round(((tiw-(typeof spkWxBase==='function'?spkWxBase():0))/566.93)*100)/100;
+      if(mlCm) rowSty+='margin-left:'+mlCm+'cm;';
+    }catch(eTi){}
     rowSty = rowSty ? (' style="'+rowSty+'"') : '';
     if(cells.length===3 && cells[1].plain===':'){                // label | : | nilai
       html+='<div class="spk-kv"'+rowSty+'><span class="k"'+kStyle+'>'+cells[0].html+'</span>'+
