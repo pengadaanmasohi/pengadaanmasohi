@@ -11772,7 +11772,7 @@ function renderDpPickerList(){
   if(!rows.length){ list.innerHTML='<div class="hps-ana-empty">Belum ada data tersimpan.<br>Silakan buat lewat menu <b>Data Pekerjaan</b> terlebih dahulu.</div>'; return; }
   list.innerHTML=rows.map(r=>{
     const rid=fkEsc(String(r.id));
-    const dipakai=!!dpUsedBy(_dpPickerTarget, String(r.id));
+    const dipakai=!!dpUsedBy(_dpPickerTarget, String(r.id), r.nama_pekerjaan||'');
     const tag=dipakai?'<span class="dp-used-tag">Sudah digunakan</span>':'';
     return '<div class="hps-ana-item'+(dipakai?' is-used':'')+'" onclick="dpPickerSelect(\''+rid+'\')">'+
       '<div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg></div>'+
@@ -11791,7 +11791,7 @@ function renderDpPickerList(){
 const DP_USE_TARGETS = {
   hps:    { label:'Perhitungan HPS',       list:()=>(typeof records_hps!=='undefined'?records_hps:[]),         edit:()=>(typeof hpsEditId!=='undefined'?hpsEditId:null) },
   ana:    { label:'Analisa Harga Satuan',  list:()=>(typeof records_ana!=='undefined'?records_ana:[]),         edit:()=>(typeof anaEditId!=='undefined'?anaEditId:null) },
-  rho:    { label:'Riwayat Harga',         list:()=>(typeof records_rho!=='undefined'?records_rho:[]),         edit:()=>(typeof rhoEditId!=='undefined'?rhoEditId:null) },
+  rho:    { label:'Referensi Harga Online', list:()=>(typeof records_rho!=='undefined'?records_rho:[]),         edit:()=>(typeof rhoEditId!=='undefined'?rhoEditId:null) },
   pnw:    { label:'Pembukaan Penawaran',   list:()=>(typeof records_pembukaan!=='undefined'?records_pembukaan:[]),   edit:()=>(typeof pnwEditId!=='undefined'?pnwEditId:null) },
   fkl:    { label:'Kelengkapan Dokumen',   list:()=>(typeof records_kelengkapan!=='undefined'?records_kelengkapan:[]), edit:()=>(typeof fklEditId!=='undefined'?fklEditId:null) },
   jadwal: { label:'Jadwal Pengadaan',      list:()=>(typeof records_jadwal!=='undefined'?records_jadwal:[]),   edit:()=>(typeof jpEditId!=='undefined'?jpEditId:null) },
@@ -11806,22 +11806,31 @@ function dpIdOfRecord(r){
                (r.data && r.data.__dpId) || '';
   return cand ? String(cand) : '';
 }
-/* Kembalikan record yang SUDAH memakai Data Pekerjaan ini (null bila belum) */
-function dpUsedBy(target, dpId){
+/* Kembalikan record yang SUDAH memakai Data Pekerjaan ini (null bila belum).
+   Pencocokan utama lewat tautan dpId. Untuk dokumen LAMA yang belum menyimpan
+   tautan dpId (dibuat manual sebelum fitur "Pilih Pekerjaan"), dipakai
+   pencocokan cadangan lewat NAMA pekerjaan agar tetap terdeteksi. */
+function dpUsedBy(target, dpId, nama){
   const t=DP_USE_TARGETS[target];
-  if(!t || !dpId) return null;
+  if(!t || (!dpId && !nama)) return null;
   let list=[]; try{ list=t.list()||[]; }catch(e){ list=[]; }
   let cur=null;  try{ cur=t.edit(); }catch(e){ cur=null; }
+  const nm=String(nama||'').trim().toLowerCase();
   return list.find(r=>{
     if(cur && String(r.id)===String(cur)) return false;   // dokumen yang sedang diubah
-    return dpIdOfRecord(r)===String(dpId);
+    const rid=dpIdOfRecord(r);
+    if(rid) return rid===String(dpId);                    // record baru: cocokkan lewat tautan
+    if(!nm) return false;
+    // record lama tanpa tautan: cocokkan lewat nama pekerjaan (kolom / state.info.nama)
+    const rn=String(r.nama_pekerjaan || (r.state&&r.state.info&&r.state.info.nama) || '').trim().toLowerCase();
+    return rn!=='' && rn===nm;
   }) || null;
 }
 
 function dpPickerSelect(id){
   const rec=(records_dp||[]).find(r=>String(r.id)===String(id)); if(!rec) return;
   // Tolak bila Data Pekerjaan ini sudah dipakai dokumen lain pada modul yang sama
-  const dipakai=dpUsedBy(_dpPickerTarget, String(rec.id));
+  const dipakai=dpUsedBy(_dpPickerTarget, String(rec.id), rec.nama_pekerjaan||'');
   if(dipakai){
     toast('Data pekerjaan sudah digunakan','err');
     return;
