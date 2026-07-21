@@ -19189,7 +19189,7 @@ function spkPkSegs(tok){
 function spkPkIsHuruf(tok){
   return /^[A-Za-z][.)]$/.test(tok) || /^[ivxlcdmIVXLCDM]{2,4}[.)]$/.test(tok);
 }
-function spkPkIndentStd(html){
+function spkPkIndentStd(html, opsi){
   var s=String(html==null?'':html);
   if(s.indexOf('class="n')<0) return s;
   try{
@@ -19235,12 +19235,40 @@ function spkPkIndentStd(html){
        tingkat berikutnya diturunkan dari kolom teks induknya, jadi sub-butir
        tidak pernah tergeser dua kali (inilah cacat geseran 0,5 cm yang lama). */
     var LEAD=0;
+    /* KETENTUAN 21 Jul 2026 (SPK): blok PENGANTAR klausul — baris "Label : nilai"
+       (spk-kv/spk-kvgrp, mis. "Pekerjaan :" / "Lokasi :") maupun paragraf pembuka —
+       menjorok sedikit dari kolom TEKS judul klausul di atasnya (opsi.intro =
+       gantungan judul + SPK_PK_LEAD). Deret penomoran tingkat-1 lalu menjorok
+       SPK_PK_LEAD lagi dari blok pengantar itu ("Latar Belakang" masuk sedikit
+       dari "Lokasi"). Baris kv bukan <p>, jadi dideteksi lewat anak langsung
+       wadah — bukan lewat pemindaian <p> di bawah. Tanpa opsi.intro (bentuk
+       Perjanjian/Kontrak) perilaku lama dipertahankan. */
+    var introX=(opsi && +opsi.intro>0) ? Math.round((+opsi.intro)*100)/100 : 0, adaIntro=false;
+    if(introX>0){
+      for(var c0=0;c0<box.children.length;c0++){
+        var ch=box.children[c0];
+        if(ch.tagName==='P' && spkPkTok(ch)) break;        /* butir bernomor pertama */
+        if(!(ch.textContent||'').replace(/[\s\u00A0]/g,'')) continue;
+        if(ch.classList && (ch.classList.contains('spk-cl-h')||ch.classList.contains('spk-bab')||
+           ch.classList.contains('spk-ph'))) continue;
+        ch.style.marginLeft=introX.toFixed(2)+'cm';
+        adaIntro=true;
+      }
+    }
     for(i=0;i<ps.length;i++){
       var t0=(ps[i].textContent||'').replace(/[\s\u00A0]/g,'');
       if(!t0) continue;                                   /* lewati paragraf kosong */
       if(!spkPkTok(ps[i])) LEAD=SPK_PK_LEAD;               /* pembuka = teks biasa */
       break;
     }
+    if(adaIntro) LEAD=Math.round((introX+SPK_PK_LEAD)*100)/100;
+    /* SEMUA klausul diperlakukan seragam (permintaan 21 Jul 2026): klausul yang
+       DIBUKA LANGSUNG oleh butir bernomor (tanpa pengantar, mis. DEFINISI) juga
+       menjorok dari kolom teks judulnya — deret tingkat-1 mulai tepat di introX
+       (kolom teks judul + LEAD), sama dengan posisi blok pengantar pada klausul
+       lain. Dengan begitu isi pertama SETIAP klausul selalu mulai di titik yang
+       sama, dan penomoran di bawahnya berjenjang dari sana. */
+    else if(introX>0) LEAD=introX;
 
     /* --- Tahap 2: kelompokkan menjadi DERET ---
        Satu deret = butir-butir setingkat yang berurutan di bawah induk yang sama.
@@ -19565,7 +19593,12 @@ function spkPkTidy(html, isPk){
      teks pengantar klausul tetap di batas margin halaman.
      Transformasi TEKS khusus PK (penomoran ulang huruf->angka, "poin"->"butir",
      pembungkus PIHAK) sengaja TIDAK diterapkan ke SPK. */
-  if(!isPk) return spkPkIndentStd(spkPkBoxMark(html));
+  if(!isPk){
+    /* intro = kolom teks JUDUL klausul (gantungan JUDUL_HANG kisi SPK) + LEAD */
+    var _D=(typeof spkDX==='function')?spkDX():null;
+    var _jh=_D?Math.round((_D.JUDUL_HANG/566.929)*100)/100:0.65;
+    return spkPkIndentStd(spkPkBoxMark(html), {intro:Math.round((_jh+SPK_PK_LEAD)*100)/100});
+  }
   /* Urutan penting: kotakkan penanda dulu supaya perbaikan nomor & inden
      bekerja pada SELURUH butir, termasuk yang lolos dari spkNumberFix.
      spkPkKeepPihak() dijalankan TERAKHIR: pembungkus <div class="spk-keep">
