@@ -8710,15 +8710,11 @@ function fklDocCssPatch(){
        huruf awal judul. Hanya berlaku pada tabel info yang PERSIS di bawah judul
        seksi, jadi blok tanpa judul (mis. Lampiran SPK) tidak ikut terindent. */
     '.fkl-sec-h + table.fkl-info td.k{padding-left:19px}'+
-    /* ---- LEBAR PEMBUNGKUS CETAK DIKUNCI 210mm ----
-       table.fkl-page-wrap semula hanya width:100%. Sebuah <table> TIDAK PERNAH
-       lebih sempit dari lebar minimum isinya, jadi begitu dokumennya memuat tabel
-       lebar (Analisa: kolom mengikuti jumlah Referensi; HPS: nominal miliaran
-       white-space:nowrap) pembungkus ikut MELEBAR. Akibatnya .fkl-print-page yang
-       ber-margin:0 auto dipusatkan pada kotak yang lebih lebar, sehingga halaman
-       modul tampak BERGESER KE KANAN dibanding halaman sampul (.hpsc-page).
-       table-layout:fixed + width:210mm membuat lebarnya persis A4 apa pun isinya. */
-    'table.fkl-page-wrap{table-layout:fixed;width:210mm;max-width:210mm;margin:0 auto}'+
+    /* Pembungkus cetak cukup dipusatkan. JANGAN dipatok table-layout:fixed —
+       .fkl-print-page di dalamnya sudah ber-width:210mm sehingga pembungkus tidak
+       pernah melebar karena isinya, sedangkan mengubah cara <table> ini dihitung
+       membuat paginator salah mengukur dan batal memecah halaman. */
+    'table.fkl-page-wrap{margin:0 auto}'+
     fklSheetCss();
 }
 /* ===================== LEMBAR A4 BERSAMA (WYSIWYG) =====================
@@ -8782,6 +8778,13 @@ function fklFitScript(){
     'var sh=document.querySelector(".fkl-sheet,.spk-page,.hpsc-page,.fkl-print-page,.spk-doc");'+
     'if(!sh)return;'+
     'var w=sh.offsetWidth;if(!w)return;'+
+    /* Yang harus dimuat = mana yang lebih lebar antara halaman dan SELURUH isi.
+       Dulu hanya offsetWidth halaman PERTAMA, sehingga tabel yang meluber ke
+       kanan tidak ikut diperhitungkan dan terpotong di tepi jendela — inilah
+       yang terlihat sebagai "halaman bergeser ke kanan" di Rekap HPS. Dokumen
+       yang isinya sudah muat TIDAK berubah (scrollWidth = lebar halaman). */
+    'try{var sw=Math.max(document.body.scrollWidth||0,document.documentElement.scrollWidth||0);'+
+      'if(sw>w+2) w=sw;}catch(e){}'+
     'var vw=document.documentElement.clientWidth;'+
     'if(vw>=w+2)return;'+
     'var s=(vw-10)/w;if(s<=0)return;'+
@@ -8802,48 +8805,92 @@ function fklFitScript(){
    lebar minimumnya melewati bidang cetak (180mm), isinya terpotong oleh
    .fkl-sheet{overflow:hidden} — inilah gejala "isi tidak sesuai halaman".
    Skrip ini mengukur lebar minimum tiap tabel, lalu HANYA yang kelewat lebar
-   dikecilkan memakai zoom (lantai 0,55 supaya tetap terbaca). Tabel yang sudah
-   muat tidak disentuh sama sekali.
+   dikecilkan UKURAN HURUFNYA bertahap (lantai 6px) sampai muat. Sengaja TIDAK
+   memakai zoom: zoom membuat pengukuran tinggi milik paginator jadi kacau,
+   sehingga pemecahan halaman batal dan dokumen kembali ke satu lembar panjang
+   (gejala: isi meluber ke kanan + muncul lembar putih kosong di Rekap HPS).
+   Tabel yang sudah muat tidak disentuh sama sekali.
    WAJIB dipasang SEBELUM paginator, supaya tinggi baris yang dipakai memecah
    halaman sudah tinggi yang sebenarnya (setelah dikecilkan). */
 function fklFitTblScript(){
   const js=[
     '(function(){',
-    'var Z=(window.CSS&&CSS.supports&&CSS.supports("zoom","1"));',
-    'if(!Z) return;',
     'var SEL="table.hps-doc-tbl,table.ana-doc-tbl";',
-    'var MIN=0.55;',
+    'var MINPX=6;',
+    /* Bidang cetak = lebar isi lembar (210mm dikurangi padding kiri-kanan). */
     'function bidang(t){',
     ' var n=t.parentNode;',
     ' while(n && n.nodeType===1){',
     '  if(n.classList && (n.classList.contains("fkl-doc")||n.classList.contains("fkl-print-page")||n.classList.contains("fkl-sheet"))){',
     '   var cs=getComputedStyle(n);',
-    '   return n.clientWidth - (parseFloat(cs.paddingLeft)||0) - (parseFloat(cs.paddingRight)||0);',
+    '   var w=n.clientWidth-(parseFloat(cs.paddingLeft)||0)-(parseFloat(cs.paddingRight)||0);',
+    '   if(w>40) return w;',
     '  }',
     '  n=n.parentNode;',
     ' }',
     ' return t.parentNode ? t.parentNode.clientWidth : 0;',
     '}',
+    /* Lebar TERSEMPIT yang masih mungkin bagi tabel ini pada ukuran huruf sekarang. */
     'function ukurMin(t){',
-    ' var w=t.style.width, tl=t.style.tableLayout, z=t.style.zoom;',
-    ' t.style.zoom=""; t.style.tableLayout="auto"; t.style.width="min-content";',
+    ' var w=t.style.width, tl=t.style.tableLayout;',
+    ' t.style.tableLayout="auto"; t.style.width="min-content";',
     ' var m=t.getBoundingClientRect().width;',
-    ' t.style.width=w; t.style.tableLayout=tl; t.style.zoom=z;',
+    ' t.style.width=w; t.style.tableLayout=tl;',
     ' return m;',
     '}',
+    /* PENTING: aturan asal menulis font-size LANGSUNG pada th/td
+       (table.hps-doc-tbl th,td{font-size:8.7px}), jadi font-size yang dipasang
+       pada elemen <table> TIDAK DIWARISI sel — dulu skrip ini tidak berefek
+       sama sekali. Karena itu ukurannya ditulis lewat <style> tersendiri yang
+       menargetkan th/td tabel tsb (penanda data-fkfit) dengan !important. */
+    'function gaya(t,i){',
+    ' var tag="f"+i, id="fkfit-"+tag;',
+    ' t.setAttribute("data-fkfit", tag);',
+    ' var st=document.getElementById(id);',
+    ' if(!st){ st=document.createElement("style"); st.id=id; (document.head||document.body).appendChild(st); }',
+    ' st.__tag=tag; return st;',
+    '}',
+    'function pakaiFont(st,f){',
+    ' var sel="table[data-fkfit="+st.__tag+"]";',
+    ' st.textContent=sel+" th,"+sel+" td{font-size:"+f+"px !important}";',
+    '}',
+    /* Ukuran huruf dasar dibaca dari SEL pertama, bukan dari <table>. */
+    'function pxFont(t){ var c=t.querySelector("td,th")||t; var v=parseFloat(getComputedStyle(c).fontSize); return (v>0)?v:8.7; }',
     'function paskan(){',
     ' var ts=[].slice.call(document.querySelectorAll(SEL));',
     ' for(var i=0;i<ts.length;i++){',
     '  var t=ts[i];',
     '  try{',
+    '   var st=gaya(t,i); st.textContent="";',
     '   var avail=bidang(t); if(!(avail>40)) continue;',
-    '   var min=ukurMin(t); if(!(min>avail+1)) continue;',
-    '   var sk=Math.floor(avail/min*1000)/1000; if(sk<MIN) sk=MIN;',
-    '   t.style.zoom=sk;',
+    '   var min=ukurMin(t); if(!(min>0) || min<=avail+1) continue;',
+    '   var f0=pxFont(t);',
+    /* Kecilkan bertahap; tiap putaran diukur ulang karena padding & garis sel
+       tidak ikut mengecil, jadi perbandingannya tidak lurus. Maksimal 8 putaran. */
+    '   var f=f0;',
+    '   for(var k=0;k<8 && min>avail+1;k++){',
+    '    var f2=f*(avail/min);',
+    '    if(f2>f-0.15) f2=f-0.15;',
+    '    if(f2<MINPX) f2=MINPX;',
+    '    if(f2>=f) break;',
+    '    f=Math.round(f2*100)/100;',
+    '    pakaiFont(st,f);',
+    '    min=ukurMin(t);',
+    '    if(f<=MINPX) break;',
+    '   }',
     '  }catch(e){}',
     ' }',
     '}',
-    'try{ paskan(); }catch(e){}',
+    /* Ukuran huruf baru benar setelah font dokumen selesai dimuat — sama seperti
+       paginator. Callback ini didaftarkan LEBIH DULU dari paginator (tag skripnya
+       lebih awal), jadi tabel sudah dipaskan sebelum halaman dipecah. */
+    'function mulai(){ try{ paskan(); }catch(e){} }',
+    'mulai();',
+    'try{',
+    ' if(document.fonts && document.fonts.ready && document.fonts.ready.then){',
+    '  document.fonts.ready.then(function(){ mulai(); });',
+    ' }',
+    '}catch(e){}',
     '})();'
   ].join('');
   return '<scr'+'ipt>'+js+'<\/scr'+'ipt>';
@@ -15347,9 +15394,14 @@ function hpscAllCss(){
      sebaris dengan sampul (gejala "halaman bergeser ke kanan"). */
   return base + x + hpscCss() +
     '.hpsc-modpage{page-break-after:always;break-after:page}.hpsc-modpage:last-child{page-break-after:auto}'+
-    '.hpsc-modpage{width:210mm;max-width:210mm;margin-left:auto;margin-right:auto}'+
-    '.hpsc-modpage table.fkl-page-wrap{table-layout:fixed;width:210mm;max-width:210mm;margin-left:auto;margin-right:auto}'+
-    '.hpsc-modpage .fkl-print-page,.hpsc-modpage .fkl-sheet{margin-left:auto;margin-right:auto}';
+    '.hpsc-modpage{width:210mm;margin-left:auto;margin-right:auto}'+
+    '.hpsc-modpage table.fkl-page-wrap{margin-left:auto;margin-right:auto}'+
+    '.hpsc-modpage .fkl-print-page,.hpsc-modpage .fkl-sheet{margin-left:auto;margin-right:auto}'+
+    /* Jaring pengaman: bila paginasi sebuah modul GAGAL, dokumennya dikembalikan
+       ke satu lembar panjang .fkl-print-page yang ber-min-height:297mm — inilah
+       asal "lembar putih kosong" di Rekap HPS. Di Rekap tingginya cukup mengikuti
+       isi, sehingga kegagalan tidak lagi meninggalkan kertas kosong. */
+    '.hpsc-modpage .fkl-print-page{min-height:0}';
 }
 /* Cari record modul yang cocok berdasarkan Nama Pekerjaan */
 function hpscMatch(list, nama){
