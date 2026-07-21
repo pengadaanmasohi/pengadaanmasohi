@@ -2212,7 +2212,7 @@ tr.hl-weekend td{background:#f5f8fb}
 .fkl-check input:checked~.fkl-num{background:linear-gradient(135deg,var(--teal),var(--cyan));color:#fff}
 .fkl-check input:checked+.pn-check-box{background:linear-gradient(135deg,var(--teal),var(--cyan));border-color:var(--teal)}
 .fkl-check input:checked+.pn-check-box svg{opacity:1}
-.fkl-check .fkl-lbl{flex:1 1 auto;font-family:'Plus Jakarta Sans';font-size:12px;font-weight:600;color:#3d4d53;line-height:1.35}
+.fkl-check .fkl-lbl{flex:1 1 auto;font-family:'Plus Jakarta Sans';font-size:11px;font-weight:600;color:#3d4d53;line-height:1.35}
 .fkl-check input:checked~.fkl-lbl{color:var(--ink)}
 .fkl-count-chip{margin-left:8px;font-family:'Plus Jakarta Sans';font-size:10.5px;font-weight:800;color:var(--teal-dark);background:var(--teal-soft);padding:3px 10px;border-radius:20px;vertical-align:middle}
 .fkl-selall{display:flex;align-items:center;gap:10px;margin-top:12px}
@@ -2225,7 +2225,7 @@ tr.hl-weekend td{background:#f5f8fb}
 .fkl-ada-list{display:flex;flex-direction:column;gap:8px}
 .fkl-ada-row{display:flex;align-items:center;gap:12px;padding:9px 12px 9px 10px;border:1px solid var(--line);border-radius:11px;background:#fff}
 .fkl-ada-num{flex:0 0 auto;width:22px;height:22px;border-radius:7px;background:var(--teal-soft);color:var(--teal-dark);font-family:'Plus Jakarta Sans';font-weight:800;font-size:11px;display:flex;align-items:center;justify-content:center}
-.fkl-ada-name{flex:1 1 auto;font-family:'Plus Jakarta Sans';font-size:12px;font-weight:600;color:var(--ink);line-height:1.35}
+.fkl-ada-name{flex:1 1 auto;font-family:'Plus Jakarta Sans';font-size:11px;font-weight:600;color:var(--ink);line-height:1.35}
 .fkl-ada-opts{flex:0 0 auto;display:flex;gap:7px}
 .fkl-ada-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:9px;border:1.5px solid var(--line);background:#fff;color:#7c8a8f;font-family:'Plus Jakarta Sans';font-weight:800;font-size:11px;cursor:pointer;transition:.15s}
 .fkl-ada-btn svg{width:13px;height:13px;opacity:.7}
@@ -2348,8 +2348,8 @@ tr.hl-weekend td{background:#f5f8fb}
 .pnw-stab.on .pnw-stab-dot{background:linear-gradient(135deg,var(--teal),var(--cyan))}
 /* Tabel pemeriksaan */
 .pnw-table-wrap{padding:16px 20px 20px;overflow-x:hidden}
-.pnw-periksa-table{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:12px;border:1px solid #e6eef0;border-radius:12px;overflow:hidden}
-.pnw-periksa-table th{background:#0E7C86;color:#eafcfd!important;font-family:'Plus Jakarta Sans';font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:.6px;padding:12px 13px;text-align:center;border:none;white-space:nowrap}
+.pnw-periksa-table{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;font-size:11px;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;border:1px solid #e6eef0;border-radius:12px;overflow:hidden}
+.pnw-periksa-table th{background:#0E7C86;color:#eafcfd!important;font-family:'Plus Jakarta Sans';font-weight:800;font-size:11px;text-transform:uppercase;letter-spacing:.6px;padding:12px 13px;text-align:center;border:none;white-space:nowrap}
 .pnw-periksa-table th.pnw-no{text-align:center;color:#eafcfd}
 .pnw-periksa-table td{padding:11px 13px;border-bottom:1px solid #eef3f4;vertical-align:middle;background:#fff;transition:background .15s}
 .pnw-periksa-table tbody tr:last-child td{border-bottom:none}
@@ -2417,7 +2417,7 @@ tr.hl-weekend td{background:#f5f8fb}
 .fkl-info td.s{width:16px;color:#54666c}
 .fkl-info td.v{font-weight:700;color:#1a2b31}
 /* Tabel kelengkapan dokumen */
-.fkl-chk{width:100%;border-collapse:separate;border-spacing:0;margin-top:2px;border:1.5px solid #0b6a73;border-radius:9px;overflow:hidden}
+.fkl-chk{width:100%;border-collapse:separate;border-spacing:0;margin-top:2px;border:1.5px solid #0b6a73;border-radius:9px;overflow:hidden;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 .fkl-chk thead th{background:#0E7C86;color:#fff;font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;padding:9px 12px;text-align:center;border-right:1px solid rgba(255,255,255,.3)}
 .fkl-chk thead th:last-child{border-right:none}
 .fkl-chk th.no,.fkl-chk td.no{width:44px;text-align:center}
