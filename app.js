@@ -16062,6 +16062,51 @@ const SPK_PK_DASAR_DOK = [
  {l:'Surat Penunjukan Penyedia Barang/Jasa (SPPBJ)',no:'no_sppbj',      tg:'tgl_sppbj'}
 ];
 /* Susun template preamble Perjanjian/Kontrak sesuai data yang terisi */
+/* SELARASKAN DAFTAR "Berdasarkan" (p.spk-dlist) — dipakai KEDUA bentuk
+   (SPK & Perjanjian/Kontrak), ketentuan 21 Jul 2026: teks butir 1./2. harus
+   LURUS dengan kolom teks blok pihak "II. PT ..." (0,75cm, CSS .spk-party-h).
+   Jumlah butir dihitung dari markup; lebar kotak diukur KANONIK (digit '0',
+   selaras tabular-nums); kolom teks T = max(0,75; lebar kotak) — daftar <=9
+   butir jatuh persis di 0,75, daftar 10+ melebar seperlunya tanpa terpotong.
+   margin-left inline menimpa margin CSS (SPK 0,5 / PK 0,35). Sebelumnya hanya
+   PK yang dirapikan — preamble SPK (SPK_PREAMBLE_TPL statis) lolos memakai
+   CSS lama sehingga teks butirnya menjorok ±0,45cm dari teks pihak. */
+/* KOLOM NOMOR PIHAK "I./II." — dihitung dari teks penandanya (21 Jul 2026,
+   "penomoran I. II. terlalu jauh dari teks" — berlaku SPK & PK). Kotak tetap
+   0,75cm lama menyisakan jeda besar untuk angka Romawi yang sempit. Lebar =
+   lebar "II." (penanda terlebar; teks pihak dicetak TEBAL, kelonggaran 1,06)
+   + SPK_NUM_GAP; penanda dirata-KANANkan supaya titik "I." & "II." lurus dan
+   jeda ke teks selalu = padding. Nilai ini juga jadi patokan kolom teks
+   daftar "Berdasarkan" (spkDlistAlign) & padding uraian pihak (.spk-party-d)
+   supaya ketiganya tetap satu garis. */
+function spkPartyColCm(){
+  var w=0; try{ w=spkPkTextWidthCm('II.'); }catch(e){ w=0; }
+  if(!(w>0)) return 0.6;
+  return Math.max(0.5, Math.round((w*1.06+SPK_NUM_GAP)*100)/100);
+}
+function spkDlistAlign(html){
+  var s=String(html==null?'':html);
+  var m=s.match(/<p class="spk-dlist"><span class="n">/g);
+  if(!m || !m.length) return s;
+  var n=m.length;
+  /* lantai 0,45 (bukan 0,6 warisan CSS) supaya kotak daftar 1 digit tidak
+     lebih lebar dari kolom pihak terhitung — keduanya harus satu garis */
+  var dlW=0.45, dlRata=(n>=10)?'right':'left';
+  try{
+    var wN=spkPkTextWidthCm((String(n)+'.').replace(/[0-9]/g,'0'));
+    if(wN>0) dlW=Math.max(0.45, Math.round((wN+SPK_NUM_GAP)*100)/100);
+  }
+  catch(e){ if(n>=10) dlW=0.85; }
+  if(!(dlW>0)) dlW=0.45;
+  var _pc=0.75; try{ _pc=spkPartyColCm(); }catch(e){ _pc=0.75; }
+  var dlT=Math.max(_pc, dlW);                      /* kolom teks daftar = kolom teks pihak */
+  var dlMl=Math.round((dlT-dlW)*100)/100;          /* posisi kiri kotak nomor */
+  return s.replace(/<p class="spk-dlist"><span class="n">/g,
+    '<p class="spk-dlist" style="margin-left:'+dlMl.toFixed(2)+'cm;padding-left:'+dlW.toFixed(2)+'cm;text-indent:-'+dlW.toFixed(2)+'cm">'+
+    '<span class="n" style="width:'+dlW.toFixed(2)+'cm;min-width:'+dlW.toFixed(2)+'cm;'+
+    'display:inline-block;box-sizing:border-box;padding-right:'+SPK_NUM_GAP+'cm;text-indent:0;'+
+    'white-space:nowrap;overflow:visible;text-align:'+dlRata+'">');
+}
 function spkPreamblePkTpl(data){
   data=data||{};
   var esc=fkEsc, out='', n=0, i;
@@ -16158,20 +16203,7 @@ function spkPreamblePkTpl(data){
      KANONIK (digit → '0', selaras render tabular-nums) seperti penomoran
      klausul. Aturan julur dlWb lama dibuang — margin-left inline yang
      mengatur posisi kotak, menimpa margin 0,35cm dari CSS. */
-  var dlW=0.6, dlRata=(n>=10)?'right':'left';
-  try{
-    var wN=spkPkTextWidthCm((String(n)+'.').replace(/[0-9]/g,'0'));
-    if(wN>0) dlW=Math.max(0.6, Math.round((wN+SPK_NUM_GAP)*100)/100);
-  }
-  catch(e){ if(n>=10) dlW=0.85; }
-  if(!(dlW>0)) dlW=0.6;
-  var dlT=Math.max(0.75, dlW);                     /* kolom teks daftar */
-  var dlMl=Math.round((dlT-dlW)*100)/100;          /* posisi kiri kotak nomor */
-  out = out.replace(/<p class="spk-dlist"><span class="n">/g,
-    '<p class="spk-dlist" style="margin-left:'+dlMl.toFixed(2)+'cm;padding-left:'+dlW.toFixed(2)+'cm;text-indent:-'+dlW.toFixed(2)+'cm">'+
-    '<span class="n" style="width:'+dlW.toFixed(2)+'cm;min-width:'+dlW.toFixed(2)+'cm;'+
-    'display:inline-block;box-sizing:border-box;padding-right:'+SPK_NUM_GAP+'cm;text-indent:0;'+
-    'white-space:nowrap;overflow:visible;text-align:'+dlRata+'">');
+  out = spkDlistAlign(out);
   return out;
 }
 
@@ -18054,6 +18086,7 @@ function spkClHeadCss(nKl, isPk){
            'padding-right:'+SPK_NUM_GAP+'cm;box-sizing:border-box}';
 }
 function spkDocCss(){
+  var _pwParty=(typeof spkPartyColCm==='function'?spkPartyColCm():0.6).toFixed(2)+'cm';
   var D=spkDxGrid('SPK'), P=spkDxGrid('PK');
   return ''+
   spkInterFontFace()+
@@ -18224,9 +18257,10 @@ function spkDocCss(){
   '.spk-cl .spk-kvgrp .spk-kv .v{flex:none;text-align:justify}'+
   /* Blok PIHAK pada pembuka: label (I./II.) menggantung, deskripsi sejajar di bawah label */
   '.spk-cl .spk-party{margin:0 0 9pt}'+
-  '.spk-cl .spk-party-h{font-weight:700;line-height:'+spkLHCss(1.15)+';padding-left:0.75cm;text-indent:-0.75cm;margin:0}'+
-  '.spk-cl .spk-party-h .n{display:inline-block;width:0.75cm;text-indent:0}'+
-  '.spk-cl .spk-party-d{margin:0;padding-left:0.75cm;text-align:justify;line-height:'+spkLHCss(1.15)+'}'+
+  '.spk-cl .spk-party-h{font-weight:700;line-height:'+spkLHCss(1.15)+';padding-left:'+_pwParty+';text-indent:-'+_pwParty+';margin:0}'+
+  '.spk-cl .spk-party-h .n{display:inline-block;width:'+_pwParty+';min-width:'+_pwParty+';text-indent:0;'+
+    'text-align:right;padding-right:'+SPK_NUM_GAP+'cm;box-sizing:border-box;white-space:nowrap}'+
+  '.spk-cl .spk-party-d{margin:0;padding-left:'+_pwParty+';text-align:justify;line-height:'+spkLHCss(1.15)+'}'+
   /* "Berdasarkan :" rata margin kiri (sejajar "Pada hari ini"), jarak 12 pt dari blok pihak */
   '.spk-cl p.spk-berdasar{margin-top:12pt;margin-left:0;padding-left:0}'+
   /* Daftar "Berdasarkan": nomor tunggal (1. a. I.) dengan jarak tab ~0,7 cm,
@@ -19061,6 +19095,39 @@ function spkLeadIndentCls(html){
    di bawahnya. Akibatnya jarak nomor ke teks tampak jauh padahal penomorannya
    hanya satu digit. Penyeragaman yang benar dilakukan per DERET di
    spkPkIndentStd, bukan per awalan. */
+/* SERAGAM SE-DOKUMEN (ketentuan 21 Jul 2026, "teks setelah 7.5 dan 8.1 tidak
+   sejajar"): lebar kotak nomor selama ini diseragamkan per DERET, sehingga
+   deret yang memuat butir 2 digit (mis. 7.1..7.12) berkotak lebih lebar dari
+   deret pendek di pasal sebelahnya (8.1..8.4) — kolom teksnya tak ketemu.
+   Sebelum perapian, SELURUH klausul dipindai; lebar kanonik TERLEBAR per
+   kunci (tingkat|jumlah-ruas-nomor) dijadikan LANTAI bersama, persis tab stop
+   Word yang berlaku se-dokumen. Kunci memisahkan jumlah ruas supaya deret
+   nomor tunggal DEFINISI (1. 2. ...) tidak ikut melebar demi "7.12.".
+   Konsekuensi Word-like yang disadari: pada deret pendek, jeda nomor->teks
+   sedikit lebih longgar demi kolom teks yang lurus antar-pasal. */
+var SPK_HANG_OVR = null;   /* peta 'lvl|ruas' -> W (cm); aktif hanya selama spkDocHtml */
+function spkKumpulHang(daftarHtml){
+  var peta={};
+  try{
+    for(var d=0; d<daftarHtml.length; d++){
+      var box=document.createElement('div'); box.innerHTML=String(daftarHtml[d]||'');
+      var ps=box.querySelectorAll('p'), lvlNomor={};
+      for(var i2=0;i2<ps.length;i2++){
+        var tok=spkPkTok(ps[i2]); if(!tok) continue;
+        var segs=spkPkSegs(tok); if(!segs) continue;         /* hanya nomor ANGKA */
+        var kunci=segs.join('.')+'.', induk=segs.slice(0,-1).join('.')+'.';
+        var L=(segs.length>1 && lvlNomor[induk]) ? lvlNomor[induk]+1 : 1;
+        lvlNomor[kunci]=L; if(L>5) L=5;
+        var w=0; try{ w=spkPkTextWidthCm(tok.replace(/[0-9]/g,'0')); }catch(e){ w=0; }
+        if(!(w>0)) continue;
+        var W=Math.max(0.4, Math.round((w+SPK_NUM_GAP)*100)/100);
+        var k2=L+'|'+segs.length;
+        if(!peta[k2] || W>peta[k2]) peta[k2]=W;
+      }
+    }
+  }catch(e){}
+  return peta;
+}
 function spkPkNumW(sp){
   var t=String(sp&&sp.textContent||'').replace(/[\s\u00A0]+/g,'');
   /* KANONIK (ketentuan sejajar 21 Jul 2026): semua digit diukur sebagai '0'.
@@ -19180,6 +19247,9 @@ var SPK_PK_STEP = 0.75;                 /* cadangan bila induk tak diketahui (cm
    entah nomornya "1." yang sempit atau "2.1." yang lebar.
    Dipakai juga sebagai geseran daftar yang berada di bawah paragraf pengantar. */
 var SPK_PK_LEAD = 0.35;                 /* jarak penanda anak dari teks induk (cm) */
+var SPK_PK_LEAD_JUDUL = 0.15;           /* jorokan deret PEMBUKA klausul thd kolom teks judul
+                                           (selisih rancangan awal 0,75->0,90); 0,35 dinilai
+                                           terlalu dalam, 0 dinilai tak terlihat (21 Jul 2026) */
 /* Jeda penanda -> teks untuk daftar HURUF / bullet (a. b. i. - ●).
    Lebih rapat daripada jeda daftar ANGKA (SPK_NUM_GAP) karena kolomnya dipatok
    selebar penanda TERLEBAR di deret: pada huruf, "m." jauh lebih lebar daripada
@@ -19344,13 +19414,13 @@ function spkPkIndentStd(html, opsi){
     }
     if(adaIntro) LEAD=Math.round((introX+SPK_PK_LEAD)*100)/100;
     /* Klausul yang DIBUKA LANGSUNG oleh butir bernomor (tanpa pengantar,
-       mis. "9. KESELAMATAN..." -> "9.1. ..."): penandanya SEJAJAR KOLOM TEKS
-       JUDUL (judulX), TANPA jeda LEAD tambahan — revisi 21 Jul 2026 setelah
-       versi "mulai di introX" dinilai terlalu masuk ke kanan. LEAD hanya
-       berlaku bila ada blok pengantar di antaranya (pengantar di judulX+LEAD,
-       deret di bawahnya menjorok LEAD lagi). Sama dengan perlakuan pasal
-       narasi murni: isi pertama klausul selalu lurus dengan teks judul. */
-    else if(judulX>0) LEAD=judulX;
+       mis. "4. WAKTU..." -> "4.1. ..."): penandanya menjorok KECIL
+       (SPK_PK_LEAD_JUDUL 0,15) dari kolom teks judul — revisi bertingkat
+       21 Jul 2026: +0,35 dinilai terlalu masuk ke kanan, 0 dinilai tak
+       terlihat indennya. LEAD penuh (0,35) hanya berlaku bila ada blok
+       pengantar di antaranya (pengantar di judulX+LEAD, deret di bawahnya
+       menjorok LEAD lagi). Pasal narasi murni tetap lurus dgn teks judul. */
+    else if(judulX>0) LEAD=Math.round((judulX+SPK_PK_LEAD_JUDUL)*100)/100;
     else if(introX>0) LEAD=introX;
 
     /* --- Tahap 2: kelompokkan menjadi DERET ---
@@ -19382,6 +19452,17 @@ function spkPkIndentStd(html, opsi){
       for(j=0;j<g.items.length;j++){ if(spkPkSegs(g.items[j].tok)){ adaAngka=true; break; } }
       g.gap = adaAngka ? SPK_NUM_GAP : SPK_PK_GAP_HURUF;
       if(!adaAngka) W = Math.max(0.4, W - (SPK_NUM_GAP - SPK_PK_GAP_HURUF));
+      /* LANTAI SE-DOKUMEN (lihat spkKumpulHang): deret angka mengikuti lebar
+         terlebar sekunci (tingkat|ruas) di seluruh dokumen supaya kolom teks
+         antar-pasal lurus. Deret huruf/bullet tidak disentuh. */
+      if(adaAngka && SPK_HANG_OVR){
+        var sgU=null;
+        for(j=0;j<g.items.length;j++){ sgU=spkPkSegs(g.items[j].tok); if(sgU) break; }
+        if(sgU){
+          var kU=g.lvl+'|'+sgU.length, WU=SPK_HANG_OVR[kU];
+          if(WU>W) W=WU;
+        }
+      }
       g.W=Math.round(W*100)/100;
       /* PERATAAN NOMOR PER DERET (ketentuan user, 21 Jul 2026 — berlaku untuk
          KEDUA bentuk dokumen: Surat Perintah Kerja & Perjanjian/Kontrak):
@@ -19427,7 +19508,12 @@ function spkPkIndentStd(html, opsi){
     for(i=0;i<deret.length;i++){
       var g2=deret[i];
       if(g2.induk) g2.base=g2.induk.base + (g2.induk.Wb||g2.induk.W) + SPK_PK_LEAD;   /* dari KOLOM TEKS induk */
-      else if(g2.lvl===1) g2.base=(LEAD>0?LEAD:spkPkReserve());   /* geseran thd pengantar / cadangan julur */
+      /* PK tanpa pengantar: deret tingkat-1 MENEMPEL MARGIN KIRI (21 Jul 2026,
+         "pasal harusnya memenuhi margin kiri kanan di ayat 1"). Cadangan julur
+         spkPkReserve() sudah tidak diperlukan sejak aturan julur-ke-kiri dibuang
+         (g.Wb=g.W): nomor 2 digit rata kanan tinggal DI DALAM kotak [base,base+W],
+         tidak pernah keluar batas kertas. Kanan sudah justify dari CSS. */
+      else if(g2.lvl===1) g2.base=(LEAD>0?LEAD:0);
       else g2.base=LEAD + (g2.lvl-1)*SPK_PK_STEP;        /* cadangan: induk tak ketemu */
       /* Pengaman: apa pun hasil hitungan di atas, ruang julur ke kiri harus muat
          supaya nomor tidak pernah terpotong tepi lembar. */
@@ -23274,7 +23360,7 @@ function spkDocHtml(data, klausul){
   // 2) Daftar Isi
   const toc=spkTocHtml(data, klausul);
   // 3) Isi kontrak (kop + footer berulang tiap halaman)
-  const _tpl = (spkBentukOf(data)==='PK') ? spkPreamblePkTpl(data) : SPK_PREAMBLE_TPL;
+  const _tpl = (spkBentukOf(data)==='PK') ? spkPreamblePkTpl(data) : spkDlistAlign(SPK_PREAMBLE_TPL);
   let preamble = spkNomorToNo(spkNumberFix(spkTidyKeyValue(spkMerge(_tpl, ctx))));
   /* PK: butir daftar "Berdasarkan" (mis. "24. Berita Acara Klarifikasi dan
      Negosiasi") diikat menjadi satu blok utuh dengan baris No./Tanggal miliknya,
@@ -23297,13 +23383,20 @@ function spkDocHtml(data, klausul){
      dimulai dengan butir bernomor (mis. Pasal 1 DEFINISI) tetap rata margin. */
   /* Titik tolak inden isi = lebar kotak nomor judul dokumen INI (dinamis). */
   try{ SPK_JH_OVR = _isPkDoc ? 0 : spkClHeadW((klausul||[]).length); }catch(e){ SPK_JH_OVR=0; }
-  const clausesHtml = (klausul||[]).map((k,i)=>{
-    const inner = spkPkTidy(spkKvGroup(spkKlItalicAsing(spkBoldPihak(spkNomorToNo(spkNumberFix(spkTidyKeyValue(
+  /* FASE 1: bangun isi tiap klausul TANPA perapian inden, lalu pindai seluruh
+     nomor untuk lantai lebar se-dokumen (spkKumpulHang). FASE 2: perapian
+     (spkPkTidy) berjalan dengan SPK_HANG_OVR aktif sehingga kolom teks
+     penomoran setingkat lurus antar-pasal. */
+  const _innersPre = (klausul||[]).map((k,i)=> spkKvGroup(spkKlItalicAsing(spkBoldPihak(spkNomorToNo(spkNumberFix(spkTidyKeyValue(
         spkPruneKlausul(spkMerge(spkRenumberKlausul(spkSortDefinisiIf(k.judul, k.isi||''), i+1), ctx), i+1, data)
-      )))))), _isPkDoc);
+      )))))));
+  try{ SPK_HANG_OVR = spkKumpulHang(_innersPre); }catch(e){ SPK_HANG_OVR=null; }
+  const clausesHtml = (klausul||[]).map((k,i)=>{
+    const inner = spkPkTidy(_innersPre[i], _isPkDoc);
     return '<div class="spk-clause"><div class="spk-cl-h"><span class="n"></span>'+spkFmtJudul(k.judul)+'</div>'+
       '<div class="spk-cl'+spkLeadIndentCls(inner)+'">'+inner+'</div></div>';
   }).join('');
+  SPK_HANG_OVR=null;
   SPK_JH_OVR=0;   /* kembalikan: jalur lain (Lihat Klausul) pakai kisi bawaan */
   /* Judul dokumen. Pada Perjanjian/Kontrak nomornya TIDAK ditulis lagi di sini,
      karena tepat di bawahnya sudah ada blok "Nomor PIHAK PERTAMA / PIHAK KEDUA"
