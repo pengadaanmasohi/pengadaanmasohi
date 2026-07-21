@@ -5849,17 +5849,23 @@ function jpFmtJam(d){ const pad=n=>String(n).padStart(2,'0'); return pad(d.getHo
 /* ---- Util hari kerja (melompati Sabtu/Minggu & hari libur nasional) ---- */
 function jpDateOnly(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
 function jpSameDate(a,b){ return a && b && jpDateOnly(a).getTime()===jpDateOnly(b).getTime(); }
-/* Maju n hari kerja dari d (jam dipertahankan). n=0 -> tanggal sama. */
+/* Maju/mundur n hari kerja dari d (jam dipertahankan). n=0 -> tanggal sama.
+   n negatif = mundur (dipakai profil untuk tahapan yang tumpang tindih). */
 function jpAddWorkDays(d, n){
-  const r=new Date(d); let sisa=Math.max(0, Number(n)||0), guard=0;
-  while(sisa>0 && guard<3000){ guard++; do{ r.setDate(r.getDate()+1); }while(!jpIsWorkDay(r)); sisa--; }
+  const r=new Date(d); n=Number(n)||0; let sisa=Math.abs(n), arah=n<0?-1:1, guard=0;
+  while(sisa>0 && guard<3000){ guard++; do{ r.setDate(r.getDate()+arah); }while(!jpIsWorkDay(r)); sisa--; }
   return r;
 }
-/* Berapa langkah hari kerja dari a ke b (tanggal saja). b<=a -> 0. */
+/* Berapa langkah hari kerja dari a ke b (tanggal saja).
+   Hasil NEGATIF bila b sebelum a — agar jarak mundur/tumpang tindih ikut terekam. */
 function jpWorkDaysBetween(a, b){
   if(!a || !b) return 0;
   let cur=jpDateOnly(a); const end=jpDateOnly(b); let n=0, guard=0;
-  while(cur.getTime() < end.getTime() && guard<3000){ guard++; do{ cur.setDate(cur.getDate()+1); }while(!jpIsWorkDay(cur)); n++; }
+  if(end.getTime() >= cur.getTime()){
+    while(cur.getTime() < end.getTime() && guard<3000){ guard++; do{ cur.setDate(cur.getDate()+1); }while(!jpIsWorkDay(cur)); n++; }
+    return n;
+  }
+  while(cur.getTime() > end.getTime() && guard<3000){ guard++; do{ cur.setDate(cur.getDate()-1); }while(!jpIsWorkDay(cur)); n--; }
   return n;
 }
 /* Format tanggal panjang: 10 Juli 2026 */
@@ -5964,7 +5970,6 @@ function renderJadwalKerja(){
       '</table></div>'+
       '<div class="jp-actions">'+
         '<button class="btn btn-teal" onclick="jpAddTahap()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Tambah Tahapan</button>'+
-        '<button class="btn btn-teal" onclick="jpPrint()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg> Cetak / PDF</button>'+
         '<button class="btn btn-green" onclick="jpSaveRecord()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> '+(jpEditId?'Simpan Perubahan':'Simpan Jadwal')+'</button>'+
       '</div>'+
     '</div>';
@@ -6027,9 +6032,10 @@ function jpProfilAll(){ return profilesGet('jadwal'); }
 function jpProfilSnapshot(){
   const rows=jpCompute();
   const tahapan = rows.map((r,i)=>{
-    const t={ nama:r.nama||'', ket:r.ket||'', awalJam:r.awalJam||'08:00', awalRel:'anchor', awalOffset:0, hariKerja:0, menitOffset:0 };
+    const t={ nama:r.nama||'', ket:r.ket||'', awalJam:r.awalJam||'08:00', akhirJam:'', awalRel:'anchor', awalOffset:0, hariKerja:0, menitOffset:0 };
     if(r.awal && r.akhir){
       t.hariKerja = jpWorkDaysBetween(r.awal, r.akhir);
+      t.akhirJam  = jpFmtJam(r.akhir);          /* Jam Akhir eksplisit — dibaca semua */
       const base = jpAddWorkDays(r.awal, t.hariKerja);
       t.menitOffset = Math.round((r.akhir.getTime() - base.getTime())/60000);
     }
@@ -6058,7 +6064,7 @@ function jpProfilOpenSave(){
   const existing = list.length ? ('<div class="pnw-profil-existing">Profil tersimpan: '+list.map(p=>fkEsc(p.name)).join(' &middot; ')+'</div>') : '';
   jpProfilOverlay(
     '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Simpan Profil Jadwal</div>'+
-    '<div class="pnw-profil-sub">Menyimpan <b>'+cnt+'</b> Tahapan Pengadaan beserta <b>Keterangan</b>, <b>Jam Awal</b>, <b>durasi dalam hari kerja</b>, dan <b>hubungan antar tahapan</b> (mulai bersamaan / menyambung / berjarak N hari kerja). Tanggal tidak ikut tersimpan.</div>'+
+    '<div class="pnw-profil-sub">Menyimpan <b>'+cnt+'</b> Tahapan Pengadaan dan membaca <b>semua</b> sifat jadwalnya: durasi Awal\u2192Akhir tiap tahapan (dalam <b>hari kerja</b>), jarak tanggal antar tahapan (menyambung / mulai bersamaan / berjarak N hari kerja, termasuk tumpang tindih), serta <b>Jam Awal</b> dan <b>Jam Akhir</b> setiap tahapan. Tanggal mati tidak ikut tersimpan \u2014 saat dimuat, semuanya dihitung ulang dari Titik Mulai.</div>'+
     '<input id="jp-profil-name" class="pnw-profil-input" type="text" placeholder="Nama profil (mis. Pengadaan Langsung Standar)" maxlength="60" onkeydown="if(event.key===\'Enter\')jpProfilDoSave()">'+
     existing+
     '<div class="pnw-profil-actions"><button type="button" class="btn btn-ghost" onclick="jpProfilClose()">Batal</button>'+
@@ -6125,9 +6131,15 @@ function jpApplyProfil(name, opts){
       awal = jpCombine(hlToISO(prevAkhir), jam);
     }
     awal = jpEnsureWorkStart(awal);                                     // jangan jatuh di libur
-    // 2) akhir = maju N hari kerja, lalu geser sesuai selisih jam
+    // 2) akhir = maju N hari kerja, lalu pasang Jam Akhir yang terekam
+    //    (profil lama tanpa akhirJam: geser memakai selisih menit)
     const akhir = jpAddWorkDays(awal, hariKerja);
-    akhir.setMinutes(akhir.getMinutes() + menitOffset);
+    if(t.akhirJam){
+      const ja=String(t.akhirJam).split(':');
+      akhir.setHours(Number(ja[0])||0, Number(ja[1])||0, 0, 0);
+    }else{
+      akhir.setMinutes(akhir.getMinutes() + menitOffset);
+    }
     prevAwal=new Date(awal); prevAkhir=new Date(akhir);
     hasil.push(jpTahapNorm({
       nama:t.nama, ket:t.ket, awalJam:jpFmtJam(awal),
