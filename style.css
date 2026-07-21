@@ -4705,99 +4705,99 @@ table.ac-list thead th{ background:linear-gradient(180deg,#eef6f7,#dfedee); box-
 /* =========================================================================
    TRACKING PENGADAAN — gaya elegan 3D (khusus halaman Tracking, prefix trk-)
    ========================================================================= */
-.trk-scene{background:linear-gradient(160deg,#f8f9f9 0%,#f3f5f5 55%,#eef1f1 100%);border-radius:18px;padding:22px;box-shadow:inset 0 1px 0 rgba(255,255,255,.8),0 1px 2px rgba(40,50,48,.05)}
+.trk-scene{background:#ffffff;border:1px solid #ececec;border-radius:18px;padding:22px;box-shadow:0 10px 30px rgba(0,0,0,.05),0 2px 6px rgba(0,0,0,.03)}
 .trk-scene *{box-sizing:border-box}
 .trk-toolbar{margin-bottom:16px}
 .trk-pickbox{max-width:560px}
-.trk-label{display:block;font-size:12.5px;color:#5b6a67;margin:0 0 6px;font-weight:600}
-.trk-label-sub{font-weight:400;color:#93a09d}
-.trk-select{width:100%;height:42px;border:1px solid #dee3e2;border-radius:12px;background:#ffffff;color:#1f2d2b;font-size:14px;padding:0 12px;box-shadow:0 3px 8px rgba(40,50,48,.07),inset 0 1px 0 #fff;outline:none;appearance:auto;cursor:pointer}
-.trk-select:focus{border-color:#18b394;box-shadow:0 0 0 3px rgba(24,179,148,.12),0 3px 8px rgba(40,50,48,.07)}
-.trk-card{background:#ffffff;border-radius:16px;box-shadow:0 10px 24px rgba(40,50,48,.09),0 3px 8px rgba(40,50,48,.05),inset 0 1px 0 #fff;padding:18px 20px;margin-bottom:16px}
-.trk-card-t{margin:0 0 12px;font-size:14.5px;font-weight:700;color:#12322d}
-.trk-card-s{font-weight:400;font-size:12px;color:#5a7570}
-.trk-empty{display:flex;flex-direction:column;align-items:center;gap:10px;padding:38px 20px;color:#5a7570;font-size:13.5px;text-align:center}
+.trk-label{display:block;font-size:12.5px;color:#555;margin:0 0 6px;font-weight:600}
+.trk-label-sub{font-weight:400;color:#999}
+.trk-select{width:100%;height:42px;border:1px solid #dcdedd;border-radius:12px;background:#ffffff;color:#222;font-size:14px;padding:0 12px;box-shadow:0 3px 8px rgba(0,0,0,.06),inset 0 1px 0 #fff;outline:none;appearance:auto;cursor:pointer}
+.trk-select:focus{border-color:#18b394;box-shadow:0 0 0 3px rgba(24,179,148,.10),0 3px 8px rgba(0,0,0,.06)}
+.trk-card{background:#ffffff;border:1px solid #eceded;border-radius:16px;box-shadow:0 10px 24px rgba(0,0,0,.07),0 2px 6px rgba(0,0,0,.04),inset 0 1px 0 #fff;padding:18px 20px;margin-bottom:16px}
+.trk-card-t{margin:0 0 12px;font-size:14.5px;font-weight:700;color:#222}
+.trk-card-s{font-weight:400;font-size:12px;color:#6b706f}
+.trk-empty{display:flex;flex-direction:column;align-items:center;gap:10px;padding:38px 20px;color:#6b706f;font-size:13.5px;text-align:center}
 .trk-empty svg{width:44px;height:44px;color:#0f9d80;opacity:.75}
 .trk-empty p{margin:0}
-.trk-localnote{margin:10px 0 0;font-size:11.5px;color:#8aa39e;font-style:italic}
-.trk-hint{margin:10px 0 0;font-size:12.5px;color:#5a7570;line-height:1.55}
-.trk-hint b{color:#0f5c50;font-weight:600}
+.trk-localnote{margin:10px 0 0;font-size:11.5px;color:#9a9e9d;font-style:italic}
+.trk-hint{margin:10px 0 0;font-size:12.5px;color:#6b706f;line-height:1.55}
+.trk-hint b{color:#333;font-weight:600}
 /* ---- kepala kartu + badge status otomatis ---- */
 .trk-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding-bottom:14px;border-bottom:1px solid #e7f0ee;margin-bottom:14px}
-.trk-head-nama{margin:0;font-size:15.5px;font-weight:700;color:#12322d}
-.trk-head-meta{margin:2px 0 0;font-size:12.5px;color:#5a7570}
-.trk-pill{display:inline-block;font-size:12px;font-weight:700;padding:5px 14px;border-radius:99px;white-space:nowrap;box-shadow:0 3px 7px rgba(13,74,66,.18),inset 0 1px 0 rgba(255,255,255,.55)}
-.trk-pill-proses{background:linear-gradient(180deg,#e3f1fb,#cfe6f8);color:#155e9c}
-.trk-pill-kontrak{background:linear-gradient(180deg,#e4f6ef,#cdeee1);color:#0c6b52}
-.trk-pill-gagal{background:linear-gradient(180deg,#fdeae7,#f8d3cd);color:#b02f22}
-.trk-admin-badge{font-size:11px;background:linear-gradient(180deg,#18b394,#0f9d80);color:#fff;border-radius:99px;padding:3px 10px;vertical-align:3px;box-shadow:0 2px 5px rgba(15,157,128,.4)}
+.trk-head-nama{margin:0;font-size:15.5px;font-weight:700;color:#222}
+.trk-head-meta{margin:2px 0 0;font-size:12.5px;color:#6b706f}
+.trk-pill{display:inline-block;font-size:12px;font-weight:700;padding:5px 14px;border-radius:99px;white-space:nowrap;box-shadow:0 2px 5px rgba(0,0,0,.08),inset 0 1px 0 rgba(255,255,255,.6)}
+.trk-pill-proses{background:#e0eefa;color:#155e9c}
+.trk-pill-kontrak{background:#e0f3ea;color:#0c6b52}
+.trk-pill-gagal{background:#fbe7e3;color:#b02f22}
+.trk-admin-badge{font-size:11px;background:#14a186;color:#fff;border-radius:99px;padding:3px 10px;vertical-align:3px;box-shadow:0 2px 5px rgba(0,0,0,.14)}
 /* ---- timeline ---- */
 .trk-timeline{padding-top:2px}
 .trk-item{display:flex;gap:14px}
 .trk-railcol{width:26px;display:flex;flex-direction:column;align-items:center;flex:none}
 .trk-dot{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none}
 .trk-dot svg{width:13px;height:13px}
-.trk-rail{flex:1;width:3px;border-radius:2px;background:linear-gradient(180deg,#bfe6dc,#dce9e6);box-shadow:inset 0 1px 2px rgba(13,74,66,.15);min-height:14px}
+.trk-rail{flex:1;width:3px;border-radius:2px;background:#e4e6e6;box-shadow:inset 0 1px 2px rgba(0,0,0,.08);min-height:14px}
 .trk-body{flex:1;min-width:0;padding-bottom:18px}
 .trk-item:last-child .trk-body{padding-bottom:2px}
-.trk-nm{margin:2px 0 0;font-size:14px;font-weight:600;color:#12322d}
-.trk-sub{margin:2px 0 0;font-size:12px;color:#5a7570}
-.trk-done .trk-dot{background:radial-gradient(circle at 32% 28%,#34d3b2,#0f9d80 70%);color:#fff;box-shadow:0 4px 8px rgba(15,157,128,.45),inset 0 1px 1px rgba(255,255,255,.5)}
-.trk-now  .trk-dot{background:radial-gradient(circle at 32% 28%,#5cc0f5,#1873c4 70%);color:#fff;box-shadow:0 0 0 5px rgba(24,115,196,.14),0 4px 9px rgba(24,115,196,.45),inset 0 1px 1px rgba(255,255,255,.5)}
+.trk-nm{margin:2px 0 0;font-size:14px;font-weight:600;color:#222}
+.trk-sub{margin:2px 0 0;font-size:12px;color:#6b706f}
+.trk-done .trk-dot{background:#14a186;color:#fff;box-shadow:0 3px 6px rgba(0,0,0,.14),inset 0 1px 1px rgba(255,255,255,.35)}
+.trk-now  .trk-dot{background:#1d7fce;color:#fff;box-shadow:0 0 0 4px rgba(24,115,196,.12),0 3px 6px rgba(0,0,0,.14),inset 0 1px 1px rgba(255,255,255,.35)}
 .trk-now  .trk-nm{color:#155e9c}
-.trk-wait .trk-dot{background:linear-gradient(180deg,#f4f7f6,#e2e9e7);box-shadow:inset 0 1px 2px rgba(13,74,66,.12),0 1px 0 #fff;border:2px solid #cfe0db}
-.trk-wait .trk-nm{color:#8aa39e;font-weight:500}
-.trk-wait .trk-sub{color:#9db3ae}
+.trk-wait .trk-dot{background:#f2f3f3;box-shadow:inset 0 1px 2px rgba(0,0,0,.06),0 1px 0 #fff;border:2px solid #dcdedd}
+.trk-wait .trk-nm{color:#9a9e9d;font-weight:500}
+.trk-wait .trk-sub{color:#a8acab}
 .trk-wait .trk-ket{opacity:.7}
-.trk-fail .trk-dot{background:radial-gradient(circle at 32% 28%,#f97f6f,#c93a2c 70%);color:#fff;box-shadow:0 4px 8px rgba(201,58,44,.4),inset 0 1px 1px rgba(255,255,255,.45)}
+.trk-fail .trk-dot{background:#d3483a;color:#fff;box-shadow:0 3px 6px rgba(0,0,0,.14),inset 0 1px 1px rgba(255,255,255,.35)}
 .trk-fail .trk-nm{color:#b02f22}
-.trk-redo .trk-dot{background:radial-gradient(circle at 32% 28%,#ffd27a,#d98a12 70%);color:#fff;box-shadow:0 4px 8px rgba(217,138,18,.4),inset 0 1px 1px rgba(255,255,255,.45)}
+.trk-redo .trk-dot{background:#e39b23;color:#fff;box-shadow:0 3px 6px rgba(0,0,0,.14),inset 0 1px 1px rgba(255,255,255,.35)}
 .trk-redo .trk-nm{color:#8a5a0a}
 /* ---- kotak keterangan ---- */
-.trk-ket{margin-top:8px;background:#f7f8f8;border:1px solid #e7ebea;border-radius:10px;padding:8px 11px;font-size:12.5px;color:#44534f;display:flex;gap:8px;align-items:flex-start;box-shadow:inset 0 1px 3px rgba(40,50,48,.05);line-height:1.5}
+.trk-ket{margin-top:8px;background:#fafafa;border:1px solid #eceded;border-radius:10px;padding:8px 11px;font-size:12.5px;color:#4a4f4e;display:flex;gap:8px;align-items:flex-start;box-shadow:inset 0 1px 3px rgba(0,0,0,.04);line-height:1.5}
 .trk-ket svg{width:15px;height:15px;flex:none;margin-top:1px;color:#0f9d80}
-.trk-ket-empty span{color:#93aba6;font-style:italic}
-.trk-fail .trk-ket{background:linear-gradient(180deg,#fdf4f3,#faeae8);border-color:#f2d6d2}
+.trk-ket-empty span{color:#a2a6a5;font-style:italic}
+.trk-fail .trk-ket{background:#fdf4f3;border-color:#f2d6d2}
 .trk-fail .trk-ket svg{color:#c93a2c}
 /* ---- chip penyedia ---- */
 .trk-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;align-items:center}
-.trk-chip{display:inline-flex;align-items:center;gap:5px;background:linear-gradient(180deg,#ffffff,#f0f8f6);border:1px solid #cfe6e0;border-radius:99px;padding:3px 10px;font-size:12px;color:#0f5c50;box-shadow:0 2px 4px rgba(13,74,66,.10),inset 0 1px 0 #fff}
+.trk-chip{display:inline-flex;align-items:center;gap:5px;background:#ffffff;border:1px solid #dcdedd;border-radius:99px;padding:3px 10px;font-size:12px;color:#444;box-shadow:0 2px 4px rgba(0,0,0,.06),inset 0 1px 0 #fff}
 .trk-chip svg{width:13px;height:13px}
-.trk-chip-count{background:linear-gradient(180deg,#e9f8f3,#d6f0e8);font-weight:600}
+.trk-chip-count{background:#f2f3f3;font-weight:600}
 .trk-chip-x{border:none;background:none;color:#b02f22;font-size:14px;line-height:1;cursor:pointer;padding:0 0 0 2px}
 /* ---- form admin ---- */
 .trk-adm-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:12px;align-items:start}
 .trk-adm-stat{display:flex;flex-direction:column;align-items:flex-start;gap:2px}
 .trk-adm-stat .trk-pill{margin-top:4px}
-.trk-in{width:100%;height:38px;border:1px solid #dee3e2;border-radius:10px;background:#ffffff;color:#1f2d2b;font-size:13px;padding:0 10px;box-shadow:inset 0 1px 3px rgba(40,50,48,.06);outline:none;margin-top:8px}
-.trk-in:focus{border-color:#18b394;box-shadow:0 0 0 3px rgba(24,179,148,.12),inset 0 1px 3px rgba(40,50,48,.06)}
+.trk-in{width:100%;height:38px;border:1px solid #dcdedd;border-radius:10px;background:#ffffff;color:#222;font-size:13px;padding:0 10px;box-shadow:inset 0 1px 3px rgba(0,0,0,.06);outline:none;margin-top:8px}
+.trk-in:focus{border-color:#18b394;box-shadow:0 0 0 3px rgba(24,179,148,.10),inset 0 1px 3px rgba(0,0,0,.06)}
 .trk-in:disabled{opacity:.5;cursor:not-allowed}
-.trk-alab{display:block;font-size:12px;color:#5b6a67;margin:10px 0 0;font-weight:600}
-.trk-arow{border:1px solid #e7ebea;border-radius:12px;padding:10px 12px;margin-bottom:10px;background:#fdfdfd;box-shadow:0 2px 5px rgba(40,50,48,.05),inset 0 1px 0 #fff}
-.trk-arow-on{border-color:#8fd0f0;box-shadow:0 0 0 3px rgba(24,115,196,.10),0 2px 5px rgba(40,50,48,.05)}
+.trk-alab{display:block;font-size:12px;color:#555;margin:10px 0 0;font-weight:600}
+.trk-arow{border:1px solid #eceded;border-radius:12px;padding:10px 12px;margin-bottom:10px;background:#ffffff;box-shadow:0 3px 8px rgba(0,0,0,.05),inset 0 1px 0 #fff}
+.trk-arow-on{border-color:#8fd0f0;box-shadow:0 0 0 3px rgba(24,115,196,.08),0 3px 8px rgba(0,0,0,.05)}
 .trk-arow-top{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
-.trk-arow-t{margin:0;font-size:13px;font-weight:600;color:#12322d}
-.trk-arow-src{font-size:11px;color:#8aa39e;font-weight:400}
-.trk-radio{font-size:12.5px;color:#5b6a67;display:flex;gap:6px;align-items:center;white-space:nowrap;cursor:pointer}
+.trk-arow-t{margin:0;font-size:13px;font-weight:600;color:#222}
+.trk-arow-src{font-size:11px;color:#9a9e9d;font-weight:400}
+.trk-radio{font-size:12.5px;color:#555;display:flex;gap:6px;align-items:center;white-space:nowrap;cursor:pointer}
 .trk-radio input{accent-color:#1873c4;cursor:pointer}
 .trk-arow-on .trk-radio{color:#155e9c;font-weight:600}
 .trk-pv-add{display:flex;gap:8px;margin-top:8px;align-items:flex-end}
 .trk-pv-add .trk-in,.trk-pv-add .trk-select{margin-top:0;flex:1}
-.trk-btn{height:38px;border:none;border-radius:10px;padding:0 16px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:7px;box-shadow:0 4px 10px rgba(13,74,66,.2),inset 0 1px 0 rgba(255,255,255,.4);white-space:nowrap;transition:transform .12s ease,filter .12s ease}
+.trk-btn{height:38px;border:none;border-radius:10px;padding:0 16px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:7px;box-shadow:0 4px 10px rgba(0,0,0,.14),inset 0 1px 0 rgba(255,255,255,.35);white-space:nowrap;transition:transform .12s ease,filter .12s ease,box-shadow .12s ease}
 .trk-btn:hover{filter:brightness(1.05)}
-.trk-btn:active{transform:translateY(1px) scale(.99)}
+.trk-btn:active{transform:translateY(1px) scale(.99);box-shadow:0 2px 5px rgba(0,0,0,.14),inset 0 1px 0 rgba(255,255,255,.35)}
 .trk-btn svg{width:15px;height:15px}
-.trk-btn-teal{background:linear-gradient(180deg,#18b394,#0f9d80);color:#fff}
-.trk-btn-amber{background:linear-gradient(180deg,#f2b23e,#d98a12);color:#fff}
-.trk-btn-ghost{background:#ffffff;color:#3e4e4a;border:1px solid #dbe1e0;box-shadow:0 2px 6px rgba(40,50,48,.08),inset 0 1px 0 #fff}
+.trk-btn-teal{background:#14a186;color:#fff}
+.trk-btn-amber{background:#e39b23;color:#fff}
+.trk-btn-ghost{background:#ffffff;color:#444;border:1px solid #dcdedd;box-shadow:0 3px 8px rgba(0,0,0,.08),inset 0 1px 0 #fff}
 .trk-gcard{border:1px solid #f2d6d2;opacity:.55;transition:opacity .2s ease}
-.trk-gcard-on{opacity:1;box-shadow:0 12px 28px rgba(201,58,44,.12),0 3px 8px rgba(201,58,44,.08),inset 0 1px 0 #fff}
+.trk-gcard-on{opacity:1;box-shadow:0 10px 24px rgba(201,58,44,.08),0 2px 6px rgba(0,0,0,.04),inset 0 1px 0 #fff}
 .trk-gtop{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
 .trk-gt{margin:0;color:#b02f22;display:flex;align-items:center;gap:7px}
 .trk-gt svg{width:16px;height:16px}
 .trk-gcard .trk-radio input{accent-color:#c93a2c}
 .trk-ulang{margin-top:12px;border-top:1px dashed #f2d6d2;padding-top:4px}
-.trk-hist{margin:6px 0 0;font-size:12.5px;color:#8a5a5a;background:linear-gradient(180deg,#fdf6f5,#faefed);border:1px solid #f2ddd9;border-radius:9px;padding:7px 10px}
+.trk-hist{margin:6px 0 0;font-size:12.5px;color:#8a5a5a;background:#fdf6f5;border:1px solid #f2ddd9;border-radius:9px;padding:7px 10px}
 .trk-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:4px}
 @media (max-width:720px){
   .trk-scene{padding:14px;border-radius:14px}
@@ -4809,13 +4809,13 @@ table.ac-list thead th{ background:linear-gradient(180deg,#eef6f7,#dfedee); box-
 }
 /* Tracking: grid keterangan + tanggal selesai (realisasi) per tahap */
 .trk-arow-grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,.9fr);gap:10px;align-items:start}
-.trk-tgl-note{margin:4px 0 0;font-size:10.5px;color:#8aa39e;line-height:1.4}
+.trk-tgl-note{margin:4px 0 0;font-size:10.5px;color:#9a9e9d;line-height:1.4}
 @media (max-width:720px){ .trk-arow-grid{grid-template-columns:1fr} }
 /* Tracking: chip status otomatis pada baris admin (pengganti radio Tahap Berjalan) */
-.trk-stchip{font-size:11.5px;font-weight:700;padding:3px 11px;border-radius:99px;white-space:nowrap;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 2px 5px rgba(13,74,66,.12)}
-.trk-stchip-done{background:linear-gradient(180deg,#e4f6ef,#cdeee1);color:#0c6b52}
-.trk-stchip-now{background:linear-gradient(180deg,#e3f1fb,#cfe6f8);color:#155e9c}
-.trk-stchip-wait{background:linear-gradient(180deg,#f4f7f6,#e7edeb);color:#8aa39e}
+.trk-stchip{font-size:11.5px;font-weight:700;padding:3px 11px;border-radius:99px;white-space:nowrap;box-shadow:0 2px 4px rgba(0,0,0,.07),inset 0 1px 0 rgba(255,255,255,.6)}
+.trk-stchip-done{background:#e0f3ea;color:#0c6b52}
+.trk-stchip-now{background:#e0eefa;color:#155e9c}
+.trk-stchip-wait{background:#efefef;color:#8b8f8e}
 /* Tracking: pasangan tanggal + jam untuk tahap manual */
 .trk-tj{display:flex;gap:6px}
 .trk-tj .trk-in{margin-top:8px}
