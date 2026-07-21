@@ -8778,13 +8778,10 @@ function fklFitScript(){
     'var sh=document.querySelector(".fkl-sheet,.spk-page,.hpsc-page,.fkl-print-page,.spk-doc");'+
     'if(!sh)return;'+
     'var w=sh.offsetWidth;if(!w)return;'+
-    /* Yang harus dimuat = mana yang lebih lebar antara halaman dan SELURUH isi.
-       Dulu hanya offsetWidth halaman PERTAMA, sehingga tabel yang meluber ke
-       kanan tidak ikut diperhitungkan dan terpotong di tepi jendela — inilah
-       yang terlihat sebagai "halaman bergeser ke kanan" di Rekap HPS. Dokumen
-       yang isinya sudah muat TIDAK berubah (scrollWidth = lebar halaman). */
-    'try{var sw=Math.max(document.body.scrollWidth||0,document.documentElement.scrollWidth||0);'+
-      'if(sw>w+2) w=sw;}catch(e){}'+
+    /* JANGAN pakai scrollWidth di sini: scrollWidth body >= lebar jendela >
+       lebar lembar, jadi syarat sw>w+2 SELALU benar di desktop dan semua
+       dokumen ikut di-zoom 0.99xx (terverifikasi di Chromium 21 Jul 2026).
+       Luberan tabel ditangani fklFitTblScript, bukan penskala pratinjau. */
     'var vw=document.documentElement.clientWidth;'+
     'if(vw>=w+2)return;'+
     'var s=(vw-10)/w;if(s<=0)return;'+
@@ -15349,17 +15346,32 @@ const HPSC_DOC_MODULES = {
 function hpscExtractDocFrag(html){
   const m=String(html||'').match(/<body[^>]*>([\s\S]*)<\/body>/i);
   let frag = m ? m[1].trim() : '';
-  /* 0) BUANG semua <script> dokumen mandiri (fklPageScript). Tanpa ini, script
-     tertinggal setelah </table> membuat regex pembungkus di bawah GAGAL cocok
-     (ter-anchor ke </table>$), sehingga fragmen tak terlepas — dokumennya lalu
-     terbungkus ganda + membawa paginatornya sendiri yang bentrok dgn hpscPageScript,
-     dan modul (Perhitungan HPS / Analisa / Jadwal) bisa hilang. Rekap HPS memaginasi
-     sendiri lewat hpscPageScript, jadi pager modul memang tidak diperlukan. */
-  frag = frag.replace(/<script[\s\S]*?<\/script>/gi, '').trim();
-  // 1) lepas tabel pembungkus margin (thead/tfoot spacer) → ambil isi <tbody><tr><td>
+  /* JALUR UTAMA — BERBASIS DOM (perbaikan 21 Jul 2026).
+     Jalur regex lama GAGAL DIAM-DIAM: setelah <script> dibuang masih tersisa
+     tag <style> milik fklFitScript (skrip itu diawali <style>@media print...),
+     sehingga regex pembungkus yang ter-anchor ke <\/table>$ tak pernah cocok.
+     Akibatnya fragmen tetap membawa .fkl-page-wrap + .fkl-print-page sendiri,
+     hpscModulePage membungkus SEKALI LAGI, dan paginator memecah struktur
+     ganda: .fkl-print-page 210mm terjebak di bidang lembar 180mm -> isi
+     terpotong kanan + lembar putih kosong (Rekap HPS "hancur").
+     <template> aman: skrip di dalamnya tidak pernah tereksekusi. */
+  try{
+    const tpl=document.createElement('template');
+    tpl.innerHTML=frag;
+    tpl.content.querySelectorAll('script,style,link').forEach(n=>n.remove());
+    const pp=tpl.content.querySelector('.fkl-print-page');
+    if(pp) return pp.innerHTML.trim();
+    /* Tak ada .fkl-print-page: kembalikan isi bersih (tanpa script/style/link) */
+    const dv=document.createElement('div');
+    dv.appendChild(tpl.content.cloneNode(true));
+    if(dv.innerHTML.trim()) return dv.innerHTML.trim();
+  }catch(e){ console.warn('hpscExtractDocFrag DOM path gagal, pakai regex cadangan', e); }
+  /* CADANGAN — regex lama, kini juga membuang <style> & <link> */
+  frag = frag.replace(/<script[\s\S]*?<\/script>/gi, '')
+             .replace(/<style[\s\S]*?<\/style>/gi, '')
+             .replace(/<link[^>]*>/gi, '').trim();
   const mw = frag.match(/^<table class="fkl-page-wrap"[^>]*>[\s\S]*?<tbody>\s*<tr>\s*<td>([\s\S]*)<\/td>\s*<\/tr>\s*<\/tbody>[\s\S]*<\/table>$/i);
   if(mw) frag = mw[1].trim();
-  // 2) lepas div halaman cetak
   const mp = frag.match(/^<div class="fkl-print-page"[^>]*>([\s\S]*)<\/div>$/i);
   return mp ? mp[1].trim() : frag;
 }
