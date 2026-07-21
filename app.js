@@ -25784,7 +25784,7 @@ function trkFindMon(nama){
 
 /* ---------- Model info tracking ---------- */
 function trkBlankInfo(){
-  return { ket:{}, tgl:{}, aktif:'dok', penyedia:[], gagal:{aktif:false, tanggal:'', ket:''}, riwayat:[] };
+  return { ket:{}, tgl:{}, jam:{}, aktif:'dok', penyedia:[], gagal:{aktif:false, tanggal:'', ket:''}, riwayat:[] };
 }
 function trkNormInfo(o){
   o=(o&&typeof o==='object')?o:{};
@@ -25792,6 +25792,7 @@ function trkNormInfo(o){
   return {
     ket:(o.ket&&typeof o.ket==='object')?o.ket:{},
     tgl:(o.tgl&&typeof o.tgl==='object')?o.tgl:{},
+    jam:(o.jam&&typeof o.jam==='object')?o.jam:{},
     aktif:o.aktif||'dok',
     penyedia:Array.isArray(o.penyedia)?o.penyedia.slice():[],
     gagal:{aktif:!!g.aktif, tanggal:g.tanggal||'', ket:g.ket||''},
@@ -25848,11 +25849,24 @@ function trkStepDone(s, info){
   const t=(info&&info.tgl)?info.tgl[s.key]:'';
   if(!t) return false;
   const p=String(t).split('-'); if(p.length<3) return false;
-  const d=new Date(Number(p[0]),Number(p[1])-1,Number(p[2]));
-  const now=new Date();
-  if(s.key==='fin'){ now.setHours(0,0,0,0); return now.getTime()>=d.getTime(); }
-  /* dok & hps: status Selesai mulai hari SETELAH tanggal yang ditentukan */
-  return now.getTime() >= d.getTime()+24*3600*1000;
+  const jamStr=(info.jam&&info.jam[s.key])?info.jam[s.key]:'';
+  let d;
+  if(jamStr){
+    const jm=String(jamStr).split(':');
+    d=new Date(Number(p[0]),Number(p[1])-1,Number(p[2]),Number(jm[0])||0,Number(jm[1])||0);
+  }else if(s.key==='fin'){
+    /* tanpa jam: Terkontrak tercapai begitu tanggalnya tiba (00:00 setempat) */
+    d=new Date(Number(p[0]),Number(p[1])-1,Number(p[2]),0,0);
+  }else{
+    /* tanpa jam: Dokumen Diterima / HPS selesai saat berganti ke tanggal berikutnya */
+    d=new Date(Number(p[0]),Number(p[1])-1,Number(p[2])+1,0,0);
+  }
+  return Date.now() >= d.getTime();
+}
+function trkRealTxt(info,key){
+  const t=(info.tgl&&info.tgl[key])?info.tgl[key]:''; if(!t) return '';
+  const j=(info.jam&&info.jam[key])?info.jam[key]:'';
+  return trkTgl(t)+(j?(' '+j):'');
 }
 function trkUndanganKey(steps){
   const s=steps.find(x=>x.jIdx!=null && /undangan/i.test(x.nama));
@@ -25954,16 +25968,16 @@ function renderTrackUser(){
     let st;
     if(info.gagal.aktif) st = dn ? 'done' : 'wait';
     else st = dn ? 'done' : (i===trkFirstOpen ? 'now' : 'wait');
-    const real=(info.tgl&&info.tgl[s.key])?info.tgl[s.key]:'';
+    const real=trkRealTxt(info,s.key);
     const jdw=trkStepTglTxt(s);
     let sub;
-    if(st==='done')      sub='Selesai'+(real?(' \u00b7 '+trkTgl(real)):(jdw?(' \u00b7 '+jdw):''));
-    else if(st==='now')  sub='Sedang berjalan'+(jdw?(' \u00b7 jadwal '+jdw):'')+(real?(' \u00b7 target selesai '+trkTgl(real)):'');
-    else                 sub='Menunggu'+(real?(' \u00b7 target selesai '+trkTgl(real)):(jdw?(' \u00b7 jadwal '+jdw):''));
+    if(st==='done')      sub='Selesai'+(real?(' \u00b7 '+real):(jdw?(' \u00b7 '+jdw):''));
+    else if(st==='now')  sub='Sedang berjalan'+(jdw?(' \u00b7 jadwal '+jdw):'')+(real?(' \u00b7 selesai otomatis '+real):'');
+    else                 sub='Menunggu'+(real?(' \u00b7 selesai otomatis '+real):(jdw?(' \u00b7 jadwal '+jdw):''));
     const o={st:st, nama:s.nama, sub:sub, ket:trkStepKet(s,info)};
     if(s.tanpaJadwal) o.sub+=' \u00b7 jadwal belum ditentukan';
     if(s.key===undKey && info.penyedia.length) o.chips=info.penyedia;
-    if(s.key==='fin' && st==='done'){ o.sub='Terkontrak'+(real?(' \u00b7 '+trkTgl(real)):''); }
+    if(s.key==='fin' && st==='done'){ o.sub='Terkontrak'+(real?(' \u00b7 ditandatangani '+real):''); }
     else if(s.key==='fin' && st==='now'){ o.sub=real?('Menunggu tanggal Penandatanganan Kontrak/SPK: '+trkTgl(real)):'Menunggu tanggal Penandatanganan Kontrak/SPK ditentukan'; }
     else if(s.key==='fin'){ o.sub='Menunggu \u00b7 tahap penutup'; }
     items.push(o);
@@ -25993,6 +26007,7 @@ function trkAdmPick(v){ trkSel=v||''; trkDraft=null; renderTrackKelola(); }
 function trkDraftEnsure(){ if(!trkDraft) trkDraft=trkGetInfo(trkSel); return trkDraft; }
 function trkSetKet(key,val){ trkDraftEnsure().ket[key]=val; }
 function trkSetTgl(key,val){ trkDraftEnsure().tgl[key]=val; }
+function trkSetJam(key,val){ trkDraftEnsure().jam[key]=val; }
 function trkSetAktif(key){ trkDraftEnsure().aktif=key; trkAdmPill(); }
 function trkAdmPill(){
   const el=document.getElementById('trk-adm-pill'); if(!el) return;
@@ -26101,8 +26116,9 @@ function trkAdmRow(s, info, undKey){
   }else{
     h+='<div class="trk-arow-grid">'
       +'<div><input class="trk-in" placeholder="Tulis keterangan tahap ini\u2026" value="'+trkEsc(trkStepKet(s,info))+'" oninput="trkSetKet(\''+s.key+'\',this.value)"></div>'
-      +'<div><input type="date" class="trk-in" title="Tanggal selesai (realisasi) tahap ini" value="'+trkEsc(info.tgl&&info.tgl[s.key]?info.tgl[s.key]:'')+'" onchange="trkSetTgl(\''+s.key+'\',this.value)">'
-      +'<p class="trk-tgl-note">'+(s.key==='fin'?'Tanggal <b>Penandatanganan Kontrak/SPK</b> \u2014 status langsung bergeser ke Terkontrak/Selesai begitu tanggal ini tercapai.':'Tanggal selesai tahap ini \u2014 otomatis <b>Selesai</b> sehari setelah tanggal tersebut, lalu lanjut ke tahap berikutnya.')+'</p></div>'
+      +'<div><div class="trk-tj"><input type="date" class="trk-in" title="Tanggal selesai tahap ini" value="'+trkEsc(info.tgl&&info.tgl[s.key]?info.tgl[s.key]:'')+'" onchange="trkSetTgl(\''+s.key+'\',this.value)">'
+      +'<input type="time" class="trk-in trk-in-jam" title="Jam selesai (waktu setempat)" value="'+trkEsc(info.jam&&info.jam[s.key]?info.jam[s.key]:'')+'" onchange="trkSetJam(\''+s.key+'\',this.value)"></div>'
+      +'<p class="trk-tgl-note">'+(s.key==='fin'?'Tanggal & jam <b>Penandatanganan Kontrak/SPK</b> (waktu setempat) \u2014 status bergeser ke Terkontrak/Selesai tepat pada waktu ini; tanpa jam, berlaku sejak awal hari tersebut.':'Tanggal & jam selesai tahap ini (waktu setempat) \u2014 tahap bergeser <b>Selesai</b> tepat pada waktu ini; tanpa jam, bergeser saat berganti ke tanggal berikutnya.')+'</p></div>'
       +'</div>';
   }
   if(s.key===undKey){

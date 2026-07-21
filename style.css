@@ -4790,3 +4790,7 @@ table.ac-list thead th{ background:linear-gradient(180deg,#eef6f7,#dfedee); box-
 .trk-stchip-done{background:linear-gradient(180deg,#e4f6ef,#cdeee1);color:#0c6b52}
 .trk-stchip-now{background:linear-gradient(180deg,#e3f1fb,#cfe6f8);color:#155e9c}
 .trk-stchip-wait{background:linear-gradient(180deg,#f4f7f6,#e7edeb);color:#8aa39e}
+/* Tracking: pasangan tanggal + jam untuk tahap manual */
+.trk-tj{display:flex;gap:6px}
+.trk-tj .trk-in{margin-top:8px}
+.trk-in-jam{max-width:104px;flex:none}
