@@ -16149,20 +16149,26 @@ function spkPreamblePkTpl(data){
      "10." tidak menempel/menabrak teksnya; bila seluruhnya 1 digit -> rata KIRI.
      Lebar bawaan CSS (0,6 cm) hanya cukup untuk 1 digit, karena itu ditimpa
      inline di sini. */
-  var dlW=0.6, dlWb=0.6, dlRata=(n>=10)?'right':'left';
+  /* KETENTUAN SEJAJAR (21 Jul 2026): teks butir "Berdasarkan" 1./2./… harus
+     LURUS dengan kolom teks blok pihak di atasnya ("II. PT …" — teks pihak
+     mulai di 0,75cm, lihat CSS .spk-party-h). Kolom teks daftar dipatok
+     T = max(0,75; lebar kotak nomor) — daftar 1 digit jatuh persis di 0,75;
+     daftar yang mencapai 10+ butir melebar seperlunya (nomornya lebih lebar
+     dari 0,75) tanpa pernah menjulur keluar margin/terpotong. Lebar diukur
+     KANONIK (digit → '0', selaras render tabular-nums) seperti penomoran
+     klausul. Aturan julur dlWb lama dibuang — margin-left inline yang
+     mengatur posisi kotak, menimpa margin 0,35cm dari CSS. */
+  var dlW=0.6, dlRata=(n>=10)?'right':'left';
   try{
-    var wN=spkPkTextWidthCm(String(n)+'.');
+    var wN=spkPkTextWidthCm((String(n)+'.').replace(/[0-9]/g,'0'));
     if(wN>0) dlW=Math.max(0.6, Math.round((wN+SPK_NUM_GAP)*100)/100);
-    /* kolom teks mengikuti nomor 1 DIGIT terlebar ("9."); nomor 2 digit
-       menjulur ke kiri, jadi butir 1 digit tetap sejajar dgn daftar lain */
-    var w9=spkPkTextWidthCm('9.');
-    dlWb=(n>=10 && w9>0) ? Math.max(0.6, Math.round((w9+SPK_NUM_GAP)*100)/100) : dlW;
   }
-  catch(e){ if(n>=10){ dlW=0.85; dlWb=0.6; } }
+  catch(e){ if(n>=10) dlW=0.85; }
   if(!(dlW>0)) dlW=0.6;
-  if(!(dlWb>0) || dlWb>dlW) dlWb=dlW;
+  var dlT=Math.max(0.75, dlW);                     /* kolom teks daftar */
+  var dlMl=Math.round((dlT-dlW)*100)/100;          /* posisi kiri kotak nomor */
   out = out.replace(/<p class="spk-dlist"><span class="n">/g,
-    '<p class="spk-dlist" style="padding-left:'+dlWb.toFixed(2)+'cm;text-indent:-'+dlW.toFixed(2)+'cm">'+
+    '<p class="spk-dlist" style="margin-left:'+dlMl.toFixed(2)+'cm;padding-left:'+dlW.toFixed(2)+'cm;text-indent:-'+dlW.toFixed(2)+'cm">'+
     '<span class="n" style="width:'+dlW.toFixed(2)+'cm;min-width:'+dlW.toFixed(2)+'cm;'+
     'display:inline-block;box-sizing:border-box;padding-right:'+SPK_NUM_GAP+'cm;text-indent:0;'+
     'white-space:nowrap;overflow:visible;text-align:'+dlRata+'">');
@@ -18016,6 +18022,37 @@ function spkDxGrid(bentuk){
     numAlign:(D.PUSAT ? 'right' : 'left')
   };
 }
+/* KOTAK NOMOR JUDUL KLAUSUL SPK — dihitung PER DOKUMEN (ketentuan 21 Jul 2026:
+   "jarak penomoran ke klausul terlalu jauh"). Gantungan tetap 0,65cm dari kisi
+   template dibuat untuk nomor 2 digit, sehingga pada nomor 1 digit jeda ke
+   judul terasa jauh & tidak konsisten dengan jeda nomor->teks di isi klausul
+   (SPK_NUM_GAP). Di sini lebar kotak = lebar KANONIK nomor klausul terbesar
+   (digit '0', selaras tabular-nums) + SPK_NUM_GAP, dan perataan mengikuti
+   aturan digit (>=10 klausul -> rata kanan). Hanya bentuk SPK; judul PK rata
+   tengah "PASAL n" tidak tersentuh. Dipasang SETELAH spkDocCss di <style>
+   dokumen sehingga menang urutan & kekhususan. */
+var SPK_JH_OVR=0;   /* lebar kotak nomor judul dokumen yang sedang dibangun (cm) —
+                       dipakai spkPkTidy sebagai titik tolak inden isi klausul
+                       supaya jorokan "sedikit dari teks judul" selalu 0,35
+                       berapa pun jumlah klausulnya. 0 = pakai kisi (0,65). */
+function spkClHeadW(nKl){
+  var d=String(Math.max(1, nKl||1)).length, tok='';
+  for(var q=0;q<d;q++) tok+='0';
+  tok+='.';
+  var w=0; try{ w=spkPkTextWidthCm(tok); }catch(e){ w=0; }
+  if(!(w>0)) w=(d>=2?0.64:0.42);
+  /* judul dicetak TEBAL: beri kelonggaran kecil di atas pengukuran regular */
+  w=w*1.06;
+  return Math.max(0.4, Math.round((w+SPK_NUM_GAP)*100)/100);
+}
+function spkClHeadCss(nKl, isPk){
+  if(isPk) return '';
+  var W=spkClHeadW(nKl);
+  var al=(nKl>=10)?'right':'left';
+  return '.spk-doc.spk-spk .spk-cl-h{padding-left:'+W.toFixed(2)+'cm;text-indent:-'+W.toFixed(2)+'cm}'+
+         '.spk-doc.spk-spk .spk-cl-h .n{min-width:'+W.toFixed(2)+'cm;width:auto;text-align:'+al+';'+
+           'padding-right:'+SPK_NUM_GAP+'cm;box-sizing:border-box}';
+}
 function spkDocCss(){
   var D=spkDxGrid('SPK'), P=spkDxGrid('PK');
   return ''+
@@ -19162,13 +19199,38 @@ var SPK_PK_GAP_HURUF = 0.10;            /* jeda penanda huruf/bullet -> teks (cm
    Kelebihan lebar TIDAK merusak tampilan: karena nomor dirata-kanankan dan jeda
    berasal dari padding, kelebihan itu hanya menambah ruang julur di sisi KIRI. */
 var SPK_PK_MEAS_FONT = '11pt "Inter Local","Inter","Segoe UI",Arial,sans-serif';
-var SPK_PK_MEAS_PAD  = 1.10;
+/* KELONGGARAN PENGUKUR — kini DINAMIS (21 Jul 2026, "penomoran ke teks terlalu
+   jauh" pada nomor panjang spt "3.1.1."). Kelonggaran 10% lama bersifat
+   proporsional: nomor makin panjang, slack absolutnya makin besar, sehingga
+   jeda nomor->teks tidak konsisten (jeda "3.1.1." tampak jauh dibanding "a."
+   atau "1."). Bila font Inter memang sudah aktif di dokumen aplikasi,
+   pengukuran kanvas hampir persis — cukup slack 2%; 10% dipakai HANYA sebagai
+   cadangan saat Inter belum termuat (kanvas jatuh ke Segoe/Arial yang lebih
+   sempit). Pengecekan diulang tiap panggilan (murah) supaya begitu font
+   selesai termuat, render berikutnya langsung presisi. */
+var SPK_PK_MEAS_PAD    = 1.10;   /* cadangan: Inter belum termuat */
+var SPK_PK_MEAS_PAD_OK = 1.02;   /* Inter aktif: hampir persis */
+var _spkMeasFontKick = false;
+function spkPkMeasPad(){
+  try{
+    if(document.fonts){
+      if(!_spkMeasFontKick){
+        _spkMeasFontKick=true;
+        try{ document.fonts.load('11pt "Inter Local"'); }catch(e){}
+        try{ document.fonts.load('11pt Inter'); }catch(e){}
+      }
+      if(document.fonts.check('11pt "Inter Local"') || document.fonts.check('11pt Inter'))
+        return SPK_PK_MEAS_PAD_OK;
+    }
+  }catch(e){}
+  return SPK_PK_MEAS_PAD;
+}
 function spkPkTextWidthCm(txt){
   if(!_spkMeasCanvas){ _spkMeasCanvas=document.createElement('canvas'); }
   var ctx=_spkMeasCanvas.getContext('2d');
   ctx.font=SPK_PK_MEAS_FONT;
   var w=(ctx.measureText(String(txt==null?'':txt)).width)*2.54/96;
-  return w*SPK_PK_MEAS_PAD;
+  return w*spkPkMeasPad();
 }
 /* CADANGAN KIRI deret tingkat-1.
    Nomor 2 digit pada deret rata kanan menjulur ke KIRI dari kolom nomor 1 digit.
@@ -19281,12 +19343,14 @@ function spkPkIndentStd(html, opsi){
       break;
     }
     if(adaIntro) LEAD=Math.round((introX+SPK_PK_LEAD)*100)/100;
-    /* SEMUA klausul diperlakukan seragam (permintaan 21 Jul 2026): klausul yang
-       DIBUKA LANGSUNG oleh butir bernomor (tanpa pengantar, mis. DEFINISI) juga
-       menjorok dari kolom teks judulnya — deret tingkat-1 mulai tepat di introX
-       (kolom teks judul + LEAD), sama dengan posisi blok pengantar pada klausul
-       lain. Dengan begitu isi pertama SETIAP klausul selalu mulai di titik yang
-       sama, dan penomoran di bawahnya berjenjang dari sana. */
+    /* Klausul yang DIBUKA LANGSUNG oleh butir bernomor (tanpa pengantar,
+       mis. "9. KESELAMATAN..." -> "9.1. ..."): penandanya SEJAJAR KOLOM TEKS
+       JUDUL (judulX), TANPA jeda LEAD tambahan — revisi 21 Jul 2026 setelah
+       versi "mulai di introX" dinilai terlalu masuk ke kanan. LEAD hanya
+       berlaku bila ada blok pengantar di antaranya (pengantar di judulX+LEAD,
+       deret di bawahnya menjorok LEAD lagi). Sama dengan perlakuan pasal
+       narasi murni: isi pertama klausul selalu lurus dengan teks judul. */
+    else if(judulX>0) LEAD=judulX;
     else if(introX>0) LEAD=introX;
 
     /* --- Tahap 2: kelompokkan menjadi DERET ---
@@ -19619,7 +19683,8 @@ function spkPkTidy(html, isPk){
   if(!isPk){
     /* intro = kolom teks JUDUL klausul (gantungan JUDUL_HANG kisi SPK) + LEAD */
     var _D=(typeof spkDX==='function')?spkDX():null;
-    var _jh=_D?Math.round((_D.JUDUL_HANG/566.929)*100)/100:0.65;
+    var _jh=(typeof SPK_JH_OVR!=='undefined' && SPK_JH_OVR>0) ? SPK_JH_OVR
+            : (_D?Math.round((_D.JUDUL_HANG/566.929)*100)/100:0.65);
     return spkPkIndentStd(spkPkBoxMark(html), {intro:Math.round((_jh+SPK_PK_LEAD)*100)/100, judul:_jh});
   }
   /* Urutan penting: kotakkan penanda dulu supaya perbaikan nomor & inden
@@ -23230,6 +23295,8 @@ function spkDocHtml(data, klausul){
      bernomor, butir-butir itu diberi indentasi kecil terhadap teks pengantar di
      atasnya — sesuai kelaziman dokumen Perjanjian/Kontrak. Klausul yang langsung
      dimulai dengan butir bernomor (mis. Pasal 1 DEFINISI) tetap rata margin. */
+  /* Titik tolak inden isi = lebar kotak nomor judul dokumen INI (dinamis). */
+  try{ SPK_JH_OVR = _isPkDoc ? 0 : spkClHeadW((klausul||[]).length); }catch(e){ SPK_JH_OVR=0; }
   const clausesHtml = (klausul||[]).map((k,i)=>{
     const inner = spkPkTidy(spkKvGroup(spkKlItalicAsing(spkBoldPihak(spkNomorToNo(spkNumberFix(spkTidyKeyValue(
         spkPruneKlausul(spkMerge(spkRenumberKlausul(spkSortDefinisiIf(k.judul, k.isi||''), i+1), ctx), i+1, data)
@@ -23237,6 +23304,7 @@ function spkDocHtml(data, klausul){
     return '<div class="spk-clause"><div class="spk-cl-h"><span class="n"></span>'+spkFmtJudul(k.judul)+'</div>'+
       '<div class="spk-cl'+spkLeadIndentCls(inner)+'">'+inner+'</div></div>';
   }).join('');
+  SPK_JH_OVR=0;   /* kembalikan: jalur lain (Lihat Klausul) pakai kisi bawaan */
   /* Judul dokumen. Pada Perjanjian/Kontrak nomornya TIDAK ditulis lagi di sini,
      karena tepat di bawahnya sudah ada blok "Nomor PIHAK PERTAMA / PIHAK KEDUA"
      yang memuat nomor yang sama — kalau ditulis dua kali jadi kembar. Bentuk
@@ -23273,6 +23341,7 @@ function spkDocHtml(data, klausul){
     (typeof fklDocBaseCss==='function'?fklDocBaseCss():'')+
     (typeof hpsExtraDocCss==='function'?hpsExtraDocCss():'')+
     spkDocCss()+spkDocCss2()+
+    spkClHeadCss((klausul||[]).length, _isPkDoc)+
     '</style></head><body><div class="spk-doc'+(spkBentukOf(data)==='PK'?' spk-pk':' spk-spk')+'">'+
       /* Auto-italic istilah asing diterapkan pada SELURUH konten dokumen Susun
          Kontrak (cover, daftar isi, kop/footer, preamble, klausul, tanda tangan,
