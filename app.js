@@ -25784,13 +25784,14 @@ function trkFindMon(nama){
 
 /* ---------- Model info tracking ---------- */
 function trkBlankInfo(){
-  return { ket:{}, aktif:'dok', penyedia:[], gagal:{aktif:false, tanggal:'', ket:''}, riwayat:[] };
+  return { ket:{}, tgl:{}, aktif:'dok', penyedia:[], gagal:{aktif:false, tanggal:'', ket:''}, riwayat:[] };
 }
 function trkNormInfo(o){
   o=(o&&typeof o==='object')?o:{};
   const g=(o.gagal&&typeof o.gagal==='object')?o.gagal:{};
   return {
     ket:(o.ket&&typeof o.ket==='object')?o.ket:{},
+    tgl:(o.tgl&&typeof o.tgl==='object')?o.tgl:{},
     aktif:o.aktif||'dok',
     penyedia:Array.isArray(o.penyedia)?o.penyedia.slice():[],
     gagal:{aktif:!!g.aktif, tanggal:g.tanggal||'', ket:g.ket||''},
@@ -25925,9 +25926,13 @@ function renderTrackUser(){
     if(info.gagal.aktif) st = i<aktifIdx ? 'done' : (i===aktifIdx?'done':'wait');
     else if(info.aktif==='fin') st='done';
     else st = i<aktifIdx?'done':(i===aktifIdx?'now':'wait');
-    const o={st:st, nama:s.nama, sub:(st==='now'?'Sedang berjalan':(st==='done'?'Selesai':'Menunggu')), ket:trkStepKet(s,info)};
-    const tgl=trkStepTglTxt(s);
-    if(tgl) o.sub+=' \u00b7 '+tgl;
+    const real=(info.tgl&&info.tgl[s.key])?info.tgl[s.key]:'';
+    const jdw=trkStepTglTxt(s);
+    let sub;
+    if(st==='done')      sub='Selesai'+(real?(' \u00b7 '+trkTgl(real)):(jdw?(' \u00b7 '+jdw):''));
+    else if(st==='now')  sub='Sedang berjalan'+(jdw?(' \u00b7 jadwal '+jdw):'')+(real?(' \u00b7 target selesai '+trkTgl(real)):'');
+    else                 sub='Menunggu'+(real?(' \u00b7 target selesai '+trkTgl(real)):(jdw?(' \u00b7 jadwal '+jdw):''));
+    const o={st:st, nama:s.nama, sub:sub, ket:trkStepKet(s,info)};
     if(s.tanpaJadwal) o.sub+=' \u00b7 jadwal belum ditentukan';
     if(s.key===undKey && info.penyedia.length) o.chips=info.penyedia;
     if(s.key==='fin' && st!=='done'){ o.sub='Menunggu \u00b7 tahap penutup'; }
@@ -25957,6 +25962,7 @@ function openTrackKelola(){
 function trkAdmPick(v){ trkSel=v||''; trkDraft=null; renderTrackKelola(); }
 function trkDraftEnsure(){ if(!trkDraft) trkDraft=trkGetInfo(trkSel); return trkDraft; }
 function trkSetKet(key,val){ trkDraftEnsure().ket[key]=val; }
+function trkSetTgl(key,val){ trkDraftEnsure().tgl[key]=val; }
 function trkSetAktif(key){ trkDraftEnsure().aktif=key; trkAdmPill(); }
 function trkAdmPill(){
   const el=document.getElementById('trk-adm-pill'); if(!el) return;
@@ -26049,8 +26055,12 @@ function trkAdmRow(s, info, undKey){
   let h='<div class="trk-arow'+(aktif?' trk-arow-on':'')+'">'
     +'<div class="trk-arow-top"><p class="trk-arow-t">'+no+' \u00b7 '+trkEsc(s.nama)
     +' <span class="trk-arow-src">'+trkEsc(tgl?tgl+' \u00b7 '+src:src)+'</span></p>'
-    +'<label class="trk-radio"><input type="radio" name="trk-aktif" value="'+s.key+'"'+(aktif?' checked':'')+' onchange="trkSetAktif(\''+s.key+'\')"><span>Berjalan</span></label></div>'
-    +'<input class="trk-in" placeholder="Tulis keterangan tahap ini\u2026" value="'+trkEsc(trkStepKet(s,info))+'" oninput="trkSetKet(\''+s.key+'\',this.value)">';
+    +'<label class="trk-radio" title="Posisi pengadaan saat ini: tahap sebelum ini otomatis Selesai, sesudahnya Menunggu"><input type="radio" name="trk-aktif" value="'+s.key+'"'+(aktif?' checked':'')+' onchange="trkSetAktif(\''+s.key+'\')"><span>Tahap Berjalan</span></label></div>'
+    +'<div class="trk-arow-grid">'
+    +'<div><input class="trk-in" placeholder="Tulis keterangan tahap ini\u2026" value="'+trkEsc(trkStepKet(s,info))+'" oninput="trkSetKet(\''+s.key+'\',this.value)"></div>'
+    +'<div><input type="date" class="trk-in" title="Tanggal selesai (realisasi) tahap ini" value="'+trkEsc(info.tgl&&info.tgl[s.key]?info.tgl[s.key]:'')+'" onchange="trkSetTgl(\''+s.key+'\',this.value)">'
+    +'<p class="trk-tgl-note">Tanggal selesai (realisasi) \u2014 kosongkan bila ikut jadwal</p></div>'
+    +'</div>';
   if(s.key===undKey){
     h+='<p class="trk-alab">Penyedia yang diundang</p>'
       +'<div class="trk-chips" id="trk-pv-wrap"></div>'
@@ -26084,7 +26094,8 @@ function renderTrackKelola(keep){
       :'Pekerjaan ini belum memiliki jadwal di <b>Jadwal Pelaksanaan Pengadaan</b>; tahapan jadwal diwakili satu langkah umum sampai jadwalnya dibuat.')
     +'</p></div>';
 
-  h+='<div class="trk-card"><p class="trk-card-t">Keterangan per tahapan <span class="trk-card-s">\u2014 pilih satu tahap sebagai \u201csedang berjalan\u201d</span></p>';
+  h+='<div class="trk-card"><p class="trk-card-t">Keterangan per tahapan</p>'
+    +'<p class="trk-hint" style="margin:0 0 12px">\u201cTahap Berjalan\u201d = posisi pengadaan saat ini: tahap sebelum posisi ini otomatis berstatus <b>Selesai</b>, tahap sesudahnya <b>Menunggu</b>. Setiap tahap dapat diberi keterangan dan <b>Tanggal Selesai (realisasi)</b> \u2014 bila diisi, tanggal ini yang tampil ke pengguna menggantikan tanggal jadwal.</p>';
   steps.forEach(s=>{ h+=trkAdmRow(s,d,undKey); });
   h+='</div>';
 

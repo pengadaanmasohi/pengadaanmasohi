@@ -4781,3 +4781,7 @@ table.ac-list thead th{ background:linear-gradient(180deg,#eef6f7,#dfedee); box-
   .trk-actions .trk-btn{justify-content:center}
   .trk-pv-add{flex-direction:column;align-items:stretch}
 }
+/* Tracking: grid keterangan + tanggal selesai (realisasi) per tahap */
+.trk-arow-grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,.9fr);gap:10px;align-items:start}
+.trk-tgl-note{margin:4px 0 0;font-size:10.5px;color:#8aa39e;line-height:1.4}
+@media (max-width:720px){ .trk-arow-grid{grid-template-columns:1fr} }
