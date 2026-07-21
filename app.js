@@ -19395,7 +19395,11 @@ function spkPkIndentStd(html, opsi){
        menjorok introX (kolom teks judul + LEAD) seperti sebelumnya. */
     var judulX=(opsi && +opsi.judul>0) ? Math.round((+opsi.judul)*100)/100 : 0;
     if(introX>0){
-      var tepiIntro=(item.length===0 && judulX>0) ? judulX : introX;
+      /* SKEMA SERAGAM (21 Jul 2026 akhir): blok pengantar/kv SELALU sejajar
+         kolom teks judul (judulX) — tetap inden dari margin, tapi tidak
+         bertumpuk LEAD lagi (dulu judul+0,35 membuat deret di bawahnya
+         melesak makin dalam). */
+      var tepiIntro=(judulX>0) ? judulX : introX;
       for(var c0=0;c0<box.children.length;c0++){
         var ch=box.children[c0];
         if(ch.tagName==='P' && spkPkTok(ch)) break;        /* butir bernomor pertama */
@@ -19412,7 +19416,12 @@ function spkPkIndentStd(html, opsi){
       if(!spkPkTok(ps[i])) LEAD=SPK_PK_LEAD;               /* pembuka = teks biasa */
       break;
     }
-    if(adaIntro) LEAD=Math.round((introX+SPK_PK_LEAD)*100)/100;
+    /* Basis SEMUA deret tingkat-1 SERAGAM se-dokumen = kolom teks judul +
+       SPK_PK_LEAD_JUDUL — dengan atau tanpa pengantar. Menghapus penumpukan
+       lama (pengantar+LEAD) yang membuat kolom tingkat-1 pasal ber-pengantar
+       tidak sejajar dengan pasal lain dan penomorannya tampak melesak. */
+    if(adaIntro) LEAD=(judulX>0) ? Math.round((judulX+SPK_PK_LEAD_JUDUL)*100)/100
+                                : Math.round((introX+SPK_PK_LEAD)*100)/100;
     /* Klausul yang DIBUKA LANGSUNG oleh butir bernomor (tanpa pengantar,
        mis. "4. WAKTU..." -> "4.1. ..."): penandanya menjorok KECIL
        (SPK_PK_LEAD_JUDUL 0,15) dari kolom teks judul — revisi bertingkat
