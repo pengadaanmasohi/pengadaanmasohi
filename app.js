@@ -15425,6 +15425,24 @@ function hpscMatch(list, nama){
    HPS di Penetapan Nomor dengan yang tampil di Rekap HPS. Mengembalikan objek dokumen
    {no, tgl_terbit, ...} atau null bila belum ada. */
 function hpscPenetapanHpsDoc(nama){ return fklPenetapanDoc(nama, ['HPS','T_HPS']); }
+/* RHO dianggap ADA hanya bila record-nya benar-benar punya isi — item terisi,
+   sumber terisi, atau kartu referensi berisi (foto/link/harga). Record RHO yang
+   kosong (pernah dibuat lalu tak diisi) TIDAK memunculkan bagian Referensi Harga
+   di Rekap HPS maupun daftar dokumen pada Cover HPS. */
+function hpscRhoAdaIsi(rec){
+  if(!rec) return false;
+  const s=(rec.state&&typeof rec.state==='object')?rec.state:{};
+  const isi=v=>v!=null&&String(v).trim()!=='';
+  if(Array.isArray(s.items) && s.items.some(isi)) return true;
+  if(Array.isArray(s.sumber) && s.sumber.some(isi)) return true;
+  if(s.refs && typeof s.refs==='object'){
+    for(const k of Object.keys(s.refs)){
+      const a=s.refs[k];
+      if(Array.isArray(a) && a.some(c=>c&&(isi(c.foto)||isi(c.fotoPath)||isi(c.link)||isi(c.harga)))) return true;
+    }
+  }
+  return false;
+}
 function hpscBuild(dp){
   const nama=dp.nama_pekerjaan;
   const hpsRec=hpscMatch(records_hps, nama);
@@ -15454,7 +15472,7 @@ function hpscBuild(dp){
      ke Nama Pekerjaan yang sama. Tanpa data: cover & dokumen tidak dibuat sama sekali,
      sehingga tidak ada lagi lembar/kertas kosong di Rekap HPS. Cover HPS (indeks +
      Data Pekerjaan) tetap selalu tampil sebagai sampul utama. */
-  const hasHps=!!hpsRec, hasAna=!!anaRec, hasJadwal=!!jadwalRec, hasRho=!!rhoRec;
+  const hasHps=!!hpsRec, hasAna=!!anaRec, hasJadwal=!!jadwalRec, hasRho=hpscRhoAdaIsi(rhoRec);
   let pages='';
   pages+=hpscCoverIndex(dp, tglHps, nomor, {hps:hasHps, ana:hasAna, jadwal:hasJadwal, ref:hasRho}); // 1 — selalu
   if(hasHps){
@@ -18076,7 +18094,10 @@ function spkDocCss(){
   /* Dasar isi klausul = w:ind left gaya "Klausul Isi" pada template (SPK 0,75 cm).
      Sebelumnya 0,90 cm sehingga seluruh isi klausul di layar bergeser 0,15 cm ke
      kanan dibanding hasil Word. */
-  '.spk-clause .spk-cl{padding-left:'+D.base+'}'+
+  /* Ketentuan 21 Jul 2026: TEKS PERTAMA KLAUSUL SELALU DI BATAS MARGIN halaman
+     (dulu menjorok D.base=0,75cm mengikuti gaya "Klausul Isi" template). Inden
+     penomoran di bawahnya diatur inline oleh spkPkIndentStd. */
+  '.spk-clause .spk-cl{padding-left:0}'+
   /* PERJANJIAN/KONTRAK: isi klausul TIDAK menjorok terhadap judul. Judul (PASAL n
      + nama pasal) sudah rata tengah, sedangkan isi — baik paragraf bernomor
      ("1.", "a.") maupun teks biasa — dimulai tepat di batas margin kiri kertas
@@ -19251,22 +19272,20 @@ function spkPkIndentStd(html){
       g.gap = adaAngka ? SPK_NUM_GAP : SPK_PK_GAP_HURUF;
       if(!adaAngka) W = Math.max(0.4, W - (SPK_NUM_GAP - SPK_PK_GAP_HURUF));
       g.W=Math.round(W*100)/100;
-      /* PERATAAN NOMOR PER DERET (aturan Perjanjian/Kontrak):
-         SELURUH deret angka dirata-KANANkan, tanpa kecuali. Dulu deret yang
-         seluruhnya 1 digit dirata-kirikan — akibatnya titik "9." tidak lurus
-         dengan titik "10." dan jaraknya ke teks lebih jauh. Dengan rata kanan
-         menyeluruh:
-           - titik penutup SEMUA nomor (1 & 2 digit) lurus pada satu garis,
-           - jarak titik -> teks TETAP (= padding kanan kotak) untuk semua butir,
-           - nomor 2 digit memanjang ke KIRI, tidak pernah menggeser kolom teks.
-         adaDua kini hanya dipakai untuk mencatat apakah deret memuat 2 digit
-         (dipakai perhitungan lebar dasar g.Wb di bawah). */
+      /* PERATAAN NOMOR PER DERET (ketentuan user, 21 Jul 2026 — berlaku untuk
+         KEDUA bentuk dokumen: Surat Perintah Kerja & Perjanjian/Kontrak):
+           - Deret yang penghitung TERAKHIRNYA seluruhnya 1 digit
+             (1..9, atau X.1..X.9) -> RATA KIRI.
+           - Begitu deret memuat penghitung terakhir 2 digit (10..99,
+             atau X.10..X.99) -> RATA KANAN, sehingga titik penutup semua
+             nomor (1 & 2 digit) lurus pada satu garis; nomor 2 digit
+             memanjang ke KIRI dan tidak pernah menggeser kolom teks. */
       var adaDua=false;
       for(j=0;j<g.items.length;j++){
         var sgs=spkPkSegs(g.items[j].tok);
         if(sgs && String(sgs[sgs.length-1]).length>=2){ adaDua=true; break; }
       }
-      g.rata = 'right';
+      g.rata = adaDua ? 'right' : 'left';
       /* LEBAR DASAR (g.Wb) = lebar kotak yang dipakai untuk MENENTUKAN KOLOM TEKS,
          diambil dari nomor 1 DIGIT terlebar di deret ini. Kotaknya sendiri tetap
          selebar g.W (nomor terlebar), tetapi kelebihannya MENJULUR KE KIRI.
@@ -19539,7 +19558,14 @@ function spkPkPoinToButir(html){
 }
 /* Pembungkus: dipakai di titik perakitan dokumen, hanya untuk bentuk PK */
 function spkPkTidy(html, isPk){
-  if(!isPk) return html;                 /* SPK: kembalikan apa adanya */
+  /* SPK (permintaan 21 Jul 2026): ikut PERAPIAN TATA LETAK yang sama —
+     penanda dikotakkan (spkPkBoxMark) lalu inden & perataan distandarkan
+     (spkPkIndentStd): deret 1 digit rata kiri, deret ber-2-digit rata kanan,
+     tiap tingkat penomoran menjorok sedikit dari kolom teks di atasnya, dan
+     teks pengantar klausul tetap di batas margin halaman.
+     Transformasi TEKS khusus PK (penomoran ulang huruf->angka, "poin"->"butir",
+     pembungkus PIHAK) sengaja TIDAK diterapkan ke SPK. */
+  if(!isPk) return spkPkIndentStd(spkPkBoxMark(html));
   /* Urutan penting: kotakkan penanda dulu supaya perbaikan nomor & inden
      bekerja pada SELURUH butir, termasuk yang lolos dari spkNumberFix.
      spkPkKeepPihak() dijalankan TERAKHIR: pembungkus <div class="spk-keep">
@@ -24862,7 +24888,8 @@ function spkKlausulView(id){
   // nomor klausul mengikuti posisinya di pustaka -> butir & rujukan ikut menyesuaikan
   const noKl=(records_klausul.findIndex(x=>String(x.id)===String(id))+1)||1;
   let inner='';
-  try{ inner=spkKlItalicAsing(spkBoldPihak(spkNumberFix(spkTidyKeyValue(spkMerge(spkRenumberKlausul(k.isi||'', noKl), ctx))))); }
+  var _pkTidy=(typeof spkIsPk==='function' && spkIsPk());
+  try{ inner=spkPkTidy(spkKlItalicAsing(spkBoldPihak(spkNumberFix(spkTidyKeyValue(spkMerge(spkRenumberKlausul(k.isi||'', noKl), ctx))))), _pkTidy); }
   catch(e){ inner=String(k.isi||''); }
   let ov=document.getElementById('spk-klausul-view-ov');
   if(!ov){ ov=document.createElement('div'); ov.id='spk-klausul-view-ov'; ov.className='spk-ov'; document.body.appendChild(ov);
