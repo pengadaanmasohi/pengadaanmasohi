@@ -19594,6 +19594,30 @@ function spkPkIndentStd(html, opsi){
       }
     }
 
+    /* --- Tahap 4b: BLOK "Label : nilai" DI TENGAH ISI (21 Jul 2026) ---
+       Blok kv/kvgrp yang muncul SESUDAH sebuah butir bernomor (mis. Nama
+       Rekening / Nomor Rekening / Bank pada pasal Tata Cara Pembayaran)
+       dibuat "agak masuk ke kanan" dari kolom TEKS butir di atasnya
+       (+SPK_PK_LEAD_JUDUL 0,15) supaya terlihat sebagai bagian butir itu.
+       Blok pengantar SEBELUM butir pertama tidak tersentuh (sudah diatur
+       aturan intro di atas). */
+    try{
+      var kolKv=0, cAll=box.children, ci;
+      var kolItem={};                                   /* p butir -> kolom teksnya */
+      for(ci=0;ci<deret.length;ci++){
+        var gk=deret[ci];
+        for(var cm=0;cm<gk.items.length;cm++) kolItem[gk.items[cm].p.__spkKvId=('k'+ci+'_'+cm)]=gk.base+(gk.Wb||gk.W);
+      }
+      var lastKol=0;
+      for(ci=0;ci<cAll.length;ci++){
+        var ce=cAll[ci];
+        if(ce.tagName==='P' && spkPkTok(ce)){ lastKol=(ce.__spkKvId && kolItem[ce.__spkKvId]!=null)?kolItem[ce.__spkKvId]:lastKol; continue; }
+        if(lastKol>0 && ce.classList && (ce.classList.contains('spk-kv')||ce.classList.contains('spk-kvgrp'))){
+          ce.style.marginLeft=Math.round((lastKol+SPK_PK_LEAD_JUDUL)*100)/100+'cm';
+        }
+      }
+    }catch(eKv){}
+
     /* --- Tahap 5: PARAGRAF LANJUTAN ---
        Paragraf tanpa penanda yang muncul SESUDAH sebuah butir adalah lanjutan
        penjelasan butir itu, jadi harus menggantung di kolom TEKS butir tersebut
@@ -19776,6 +19800,13 @@ function spkPkKeepPihak(html, isPk){
       wrap.className='spk-keep';
       box.insertBefore(wrap, grup[0]);
       for(var g=0; g<grup.length; g++) wrap.appendChild(grup[g]);
+      /* Isian di bawah label PIHAK PERTAMA/KEDUA (nama, alamat, Telepon/Fax/
+         Email) menjorok 0,35 cm dari labelnya "biar enak diliat" (21 Jul 2026).
+         Label (grup[0]) tetap di posisinya; baris yang sudah punya margin
+         inline sendiri tidak ditimpa. */
+      for(var g2=1; g2<grup.length; g2++){
+        try{ if(!grup[g2].style.marginLeft) grup[g2].style.marginLeft='0.35cm'; }catch(e3){}
+      }
       ubah=true; i=j;
     }
     return ubah ? box.innerHTML : s;
@@ -23549,7 +23580,13 @@ function spkDocHtml(data, klausul){
   const _innersPre = (klausul||[]).map((k,i)=> spkKvGroup(spkKlItalicAsing(spkBoldPihak(spkNomorToNo(spkNumberFix(spkTidyKeyValue(
         spkPruneKlausul(spkMerge(spkRenumberKlausul(spkSortDefinisiIf(k.judul, k.isi||''), i+1), ctx), i+1, data)
       )))))));
-  try{ SPK_HANG_OVR = spkKumpulHang(_innersPre); }catch(e){ SPK_HANG_OVR=null; }
+  /* PENTING (21 Jul 2026, laporan "1.10 vs 2.1 tidak sekolom"): pemindaian
+     lantai HARUS pada markup yang penandanya sudah DIKOTAKKAN — spkPkTok tidak
+     mengenali penanda polos (mis. isi unggahan Word tanpa kelas kl1/kl2),
+     sehingga peta lantai diam-diam kosong & kolom antar-deret tak pernah
+     diseragamkan. spkPkBoxMark idempoten, aman dipakai dua kali. */
+  try{ SPK_HANG_OVR = spkKumpulHang(_innersPre.map(function(x){ try{ return spkPkBoxMark(x); }catch(e2){ return x; } })); }
+  catch(e){ SPK_HANG_OVR=null; }
   const clausesHtml = (klausul||[]).map((k,i)=>{
     const inner = spkPkTidy(_innersPre[i], _isPkDoc);
     return '<div class="spk-clause"><div class="spk-cl-h"><span class="n"></span>'+spkFmtJudul(k.judul)+'</div>'+
@@ -24030,17 +24067,19 @@ function spkKlausulEdit(id){ const k=records_klausul.find(x=>String(x.id)===Stri
 var SPK_DX = {
   A4_W:11906, A4_H:16838,      // A4 portrait
   MARGIN:1440,                 // margin Normal Word = 2,54 cm
-  IND:397,                     // 0,70 cm  (sejajar teks sesudah nomor klausul)
-  IND_JUDUL:397,               // 0,70 cm  (jarak nomor -> teks pada JUDUL klausul, 2 digit)
-  IND2:1023,                   // 1,805 cm
-  IND3:1448,                   // 2,555 cm
-  /* --- nama seragam yang dipakai pembangun gaya (beku dari pratinjau) --- */
-  BASE:397,                    // dasar isi klausul (0,70 cm)
-  P_FIRST:425,                 // inden baris pertama paragraf narasi (0,75 cm)
-  L1:1023, L1_HANG:541,        // butir tingkat-1: kolom teks 1,805 / kotak nomor 0,955
-  L2:1448, L2_HANG:227,        // butir tingkat-2: kolom teks 2,555 / kotak huruf 0,40
-  DESC:1023,                   // paragraf deskripsi sejajar kolom teks tingkat-1
-  JUDUL_HANG:397,              // gantungan nomor pada judul klausul (0,70 cm)
+  IND:425,                     // 0,75 cm  (sejajar teks sesudah nomor klausul)
+  IND_JUDUL:368,               // 0,65 cm  (jarak nomor -> teks pada JUDUL klausul)
+  IND2:850,                    // 1,50 cm
+  IND3:1276,                   // 2,25 cm
+  /* --- nama seragam yang dipakai pembangun gaya (nilai SPK, TIDAK BERUBAH —
+     dikembalikan 21 Jul 2026: kisi taksiran sempat merusak format penomoran
+     otomatis template Word; pratinjau tetap merapikan ulang saat unggah) --- */
+  BASE:425,                    // dasar isi klausul
+  P_FIRST:425,                 // inden baris pertama paragraf narasi
+  L1:850,  L1_HANG:425,        // butir tingkat-1
+  L2:1276, L2_HANG:425,        // butir tingkat-2
+  DESC:850,                    // paragraf deskripsi
+  JUDUL_HANG:368,              // gantungan nomor pada judul klausul
   PUSAT:false                  // judul rata KIRI satu baris ("1. DEFINISI")
 };
 
@@ -24073,12 +24112,12 @@ var SPK_DX = {
 var SPK_DX_PK = {
   A4_W:11906, A4_H:16838,
   MARGIN:1440,
-  IND:0, IND_JUDUL:0, IND2:261, IND3:686,
+  IND:0, IND_JUDUL:0, IND2:374, IND3:799,
   BASE:0,                      // 0 cm    — isi klausul mulai di batas margin kiri
   P_FIRST:425,                 // 0,75 cm — inden baris pertama paragraf narasi
-  L1:261,  L1_HANG:261,        // 0,46 cm / 0,46 cm — ayat "1." menempel margin kiri
-  L2:686,  L2_HANG:227,        // 1,21 cm / 0,40 cm — butir "a." / "b."
-  DESC:261,                    // 0,46 cm — sejajar kolom teks tingkat-1
+  L1:374,  L1_HANG:261,        // 0,66 cm / 0,46 cm — butir "1." / "1.1."
+  L2:799,  L2_HANG:227,        // 1,41 cm / 0,40 cm — butir "a." / "b."
+  DESC:374,                    // 0,66 cm — sejajar kolom teks tingkat-1
   GAP:102,                     // 0,18 cm — jeda TETAP titik nomor -> teks (SPK_NUM_GAP)
   JUDUL_HANG:0,
   PUSAT:true                   // judul rata TENGAH dua baris ("PASAL 1" + nama pasal)
@@ -25294,8 +25333,15 @@ function spkKlausulView(id){
   const noKl=(records_klausul.findIndex(x=>String(x.id)===String(id))+1)||1;
   let inner='';
   var _pkTidy=(typeof spkIsPk==='function' && spkIsPk());
-  try{ inner=spkPkTidy(spkKlItalicAsing(spkBoldPihak(spkNumberFix(spkTidyKeyValue(spkMerge(spkRenumberKlausul(k.isi||'', noKl), ctx))))), _pkTidy); }
+  /* Lantai lebar penomoran diaktifkan JUGA di pratinjau Lihat Klausul
+     (21 Jul 2026) supaya kolom teks deret setingkat konsisten dengan dokumen. */
+  try{
+    var _pre=spkKlItalicAsing(spkBoldPihak(spkNumberFix(spkTidyKeyValue(spkMerge(spkRenumberKlausul(k.isi||'', noKl), ctx)))));
+    try{ SPK_HANG_OVR=spkKumpulHang([spkPkBoxMark(_pre)]); }catch(e2){ SPK_HANG_OVR=null; }
+    inner=spkPkTidy(_pre, _pkTidy);
+  }
   catch(e){ inner=String(k.isi||''); }
+  finally{ SPK_HANG_OVR=null; }
   let ov=document.getElementById('spk-klausul-view-ov');
   if(!ov){ ov=document.createElement('div'); ov.id='spk-klausul-view-ov'; ov.className='spk-ov'; document.body.appendChild(ov);
     ov.addEventListener('click', e=>{ if(e.target.id==='spk-klausul-view-ov') spkKlausulViewClose(); }); }
