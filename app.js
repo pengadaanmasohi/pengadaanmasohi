@@ -8710,6 +8710,15 @@ function fklDocCssPatch(){
        huruf awal judul. Hanya berlaku pada tabel info yang PERSIS di bawah judul
        seksi, jadi blok tanpa judul (mis. Lampiran SPK) tidak ikut terindent. */
     '.fkl-sec-h + table.fkl-info td.k{padding-left:19px}'+
+    /* ---- LEBAR PEMBUNGKUS CETAK DIKUNCI 210mm ----
+       table.fkl-page-wrap semula hanya width:100%. Sebuah <table> TIDAK PERNAH
+       lebih sempit dari lebar minimum isinya, jadi begitu dokumennya memuat tabel
+       lebar (Analisa: kolom mengikuti jumlah Referensi; HPS: nominal miliaran
+       white-space:nowrap) pembungkus ikut MELEBAR. Akibatnya .fkl-print-page yang
+       ber-margin:0 auto dipusatkan pada kotak yang lebih lebar, sehingga halaman
+       modul tampak BERGESER KE KANAN dibanding halaman sampul (.hpsc-page).
+       table-layout:fixed + width:210mm membuat lebarnya persis A4 apa pun isinya. */
+    'table.fkl-page-wrap{table-layout:fixed;width:210mm;max-width:210mm;margin:0 auto}'+
     fklSheetCss();
 }
 /* ===================== LEMBAR A4 BERSAMA (WYSIWYG) =====================
@@ -8787,6 +8796,58 @@ function fklFitScript(){
   'window.addEventListener("afterprint",fit);'+
   '})();</scr'+'ipt>';
 }
+/* ---------- TABEL LEBAR DIPASKAN KE BIDANG CETAK ----------
+   Sebagian tabel dokumen tidak bisa menyempit lagi: kolom harga HPS ber-nowrap,
+   dan tabel AHSP Analisa menambah SATU KOLOM untuk setiap sumber Referensi. Bila
+   lebar minimumnya melewati bidang cetak (180mm), isinya terpotong oleh
+   .fkl-sheet{overflow:hidden} — inilah gejala "isi tidak sesuai halaman".
+   Skrip ini mengukur lebar minimum tiap tabel, lalu HANYA yang kelewat lebar
+   dikecilkan memakai zoom (lantai 0,55 supaya tetap terbaca). Tabel yang sudah
+   muat tidak disentuh sama sekali.
+   WAJIB dipasang SEBELUM paginator, supaya tinggi baris yang dipakai memecah
+   halaman sudah tinggi yang sebenarnya (setelah dikecilkan). */
+function fklFitTblScript(){
+  const js=[
+    '(function(){',
+    'var Z=(window.CSS&&CSS.supports&&CSS.supports("zoom","1"));',
+    'if(!Z) return;',
+    'var SEL="table.hps-doc-tbl,table.ana-doc-tbl";',
+    'var MIN=0.55;',
+    'function bidang(t){',
+    ' var n=t.parentNode;',
+    ' while(n && n.nodeType===1){',
+    '  if(n.classList && (n.classList.contains("fkl-doc")||n.classList.contains("fkl-print-page")||n.classList.contains("fkl-sheet"))){',
+    '   var cs=getComputedStyle(n);',
+    '   return n.clientWidth - (parseFloat(cs.paddingLeft)||0) - (parseFloat(cs.paddingRight)||0);',
+    '  }',
+    '  n=n.parentNode;',
+    ' }',
+    ' return t.parentNode ? t.parentNode.clientWidth : 0;',
+    '}',
+    'function ukurMin(t){',
+    ' var w=t.style.width, tl=t.style.tableLayout, z=t.style.zoom;',
+    ' t.style.zoom=""; t.style.tableLayout="auto"; t.style.width="min-content";',
+    ' var m=t.getBoundingClientRect().width;',
+    ' t.style.width=w; t.style.tableLayout=tl; t.style.zoom=z;',
+    ' return m;',
+    '}',
+    'function paskan(){',
+    ' var ts=[].slice.call(document.querySelectorAll(SEL));',
+    ' for(var i=0;i<ts.length;i++){',
+    '  var t=ts[i];',
+    '  try{',
+    '   var avail=bidang(t); if(!(avail>40)) continue;',
+    '   var min=ukurMin(t); if(!(min>avail+1)) continue;',
+    '   var sk=Math.floor(avail/min*1000)/1000; if(sk<MIN) sk=MIN;',
+    '   t.style.zoom=sk;',
+    '  }catch(e){}',
+    ' }',
+    '}',
+    'try{ paskan(); }catch(e){}',
+    '})();'
+  ].join('');
+  return '<scr'+'ipt>'+js+'<\/scr'+'ipt>';
+}
 function fklDocShell(extraCss, innerHtml){
   return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8">'+
     '<meta name="viewport" content="width=device-width, initial-scale=1">'+
@@ -8797,6 +8858,7 @@ function fklDocShell(extraCss, innerHtml){
       '<tbody><tr><td><div class="fkl-print-page">'+innerHtml+'</div></td></tr></tbody>'+
       '<tfoot><tr><td><div class="fkl-vspace"></div></td></tr></tfoot>'+
     '</table>'+
+    fklFitTblScript()+
     fklPageScript()+
     fklFitScript()+
     '</body></html>';
@@ -12049,13 +12111,23 @@ function jsKolPx(len){  return Math.max(30, Math.min(130, Math.round(len*6.2)+16
 
 /* Lebar kolom dokumen HPS (table-layout:fixed → persen). No, Sat & Vol menyesuaikan
    data terpanjang; sisa ruang diberikan ke kolom Uraian Pekerjaan. */
-function jsHpsColPct(items,cfg){
+/* Lebar SATU kolom harga (persen) menurut panjang angka terpanjang yang akan
+   dicetak di sana. Bidang cetak dokumen = 180mm (~680px), font 8,7px sehingga
+   satu digit ~5,2px, ditambah padding+garis sel ~12px. Dibatasi 9%-14%: 11%
+   yang dulu dipatok mati membuat nominal miliaran (nowrap) meluber sehingga
+   tabel jadi lebih lebar dari kertas. */
+function jsHpsHargaPct(len){
+  const px = Math.round(Number(len||0)*5.2) + 12;
+  return Math.max(9, Math.min(14, Math.round(px/680*1000)/10));
+}
+function jsHpsColPct(items,cfg,hargaPct){
   const L=jsSatVolLen(items);
   const no =jsKolPct(jsNoLen(items,cfg));
   const sat=jsKolPct(L.satLen);
   const vol=jsKolPct(L.volLen);
-  const ur =Math.max(14, 100 - no - sat - vol - 55);   // 55 = lima kolom harga
-  return {no, ur, sat, vol};
+  const hg =(hargaPct!=null&&!isNaN(hargaPct)) ? Number(hargaPct) : 11;   // satu kolom harga
+  const ur =Math.max(14, Math.round((100 - no - sat - vol - hg*5)*10)/10); // lima kolom harga
+  return {no, ur, sat, vol, hg};
 }
 /* Lebar kolom KHUSUS tabel rincian Lampiran SPK.
    Sama seperti dokumen HPS, tetapi kolom Sat & Vol dipepatkan agar HANYA cukup untuk
@@ -13089,12 +13161,16 @@ function hpsBuildDocHtml(){
       '</tr></tbody></table>'+
     '</td></tr>';
 
-  const _cw=jsHpsColPct(st.items, cfg);
+  /* Angka terpanjang di kolom harga = Jumlah Total (nilai terbesar di tabel).
+     Lebar kolom harga dihitung dari situ, bukan dipatok 11%. */
+  const _hgLen=String(hpsRpDoc(s.totT)||'').length;
+  const _cw=jsHpsColPct(st.items, cfg, jsHpsHargaPct(_hgLen));
   const tbl=
     '<table class="hps-doc-tbl">'+
       // Lebar Sat & Vol mengikuti data terpanjang; sisanya jadi milik kolom Uraian.
       '<colgroup><col style="width:'+_cw.no+'%"><col style="width:'+_cw.ur+'%"><col style="width:'+_cw.sat+'%"><col style="width:'+_cw.vol+'%">'+
-        '<col style="width:11%"><col style="width:11%"><col style="width:11%"><col style="width:11%"><col style="width:11%"></colgroup>'+
+        '<col style="width:'+_cw.hg+'%"><col style="width:'+_cw.hg+'%"><col style="width:'+_cw.hg+'%">'+
+        '<col style="width:'+_cw.hg+'%"><col style="width:'+_cw.hg+'%"></colgroup>'+
       '<thead>'+
         '<tr>'+
           '<th class="no" rowspan="2">No</th>'+
@@ -15265,7 +15341,15 @@ function hpscAllCss(){
     : ((document.getElementById('fkl-doc-css')||{}).textContent||'');
   let x='';
   Object.keys(HPSC_DOC_MODULES).forEach(k=>{ try{ x+=HPSC_DOC_MODULES[k].css(); }catch(e){ console.error('hpscAllCss',k,e); } });
-  return base + x + hpscCss() + '.hpsc-modpage{page-break-after:always;break-after:page}.hpsc-modpage:last-child{page-break-after:auto}';
+  /* Halaman modul dikunci selebar A4 & dipusatkan, PERSIS seperti halaman sampul
+     .hpsc-page (210mm; margin:0 auto). Tanpa ini .hpsc-modpage selebar <body>
+     sedangkan pembungkus di dalamnya bisa melebar, sehingga lembar modul tidak
+     sebaris dengan sampul (gejala "halaman bergeser ke kanan"). */
+  return base + x + hpscCss() +
+    '.hpsc-modpage{page-break-after:always;break-after:page}.hpsc-modpage:last-child{page-break-after:auto}'+
+    '.hpsc-modpage{width:210mm;max-width:210mm;margin-left:auto;margin-right:auto}'+
+    '.hpsc-modpage table.fkl-page-wrap{table-layout:fixed;width:210mm;max-width:210mm;margin-left:auto;margin-right:auto}'+
+    '.hpsc-modpage .fkl-print-page,.hpsc-modpage .fkl-sheet{margin-left:auto;margin-right:auto}';
 }
 /* Cari record modul yang cocok berdasarkan Nama Pekerjaan */
 function hpscMatch(list, nama){
@@ -15325,6 +15409,9 @@ function hpscBuild(dp){
   }
   return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>&#8203;</title>'+
     fklDocFontLink()+'<style>'+hpscAllCss()+'</style></head><body>'+pages+
+    /* Paskan dulu tabel yang lebih lebar dari kertas (HPS/Analisa), baru dipecah
+       jadi lembar A4 — supaya tinggi baris yang dipakai memecah halaman benar. */
+    fklFitTblScript()+
     /* Pecah tiap dokumen modul (.fkl-page-wrap) menjadi lembar A4 sungguhan, sama
        seperti cetak per-dokumen. Tanpa ini modul panjang menumpuk/berantakan. */
     hpscPageScript()+
