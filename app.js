@@ -26169,25 +26169,19 @@ function trkAdmRow(s, info, undKey, ttdKey){
     /* Terkontrak/Selesai: otomatis dari tanggal & jam Penandatanganan Kontrak/SPK */
     const isi=trkRealTxt(info,'fin');
     h+='<input class="trk-in" placeholder="Tulis keterangan tahap ini\u2026" value="'+trkEsc(trkStepKet(s,info))+'" oninput="trkSetKet(\''+s.key+'\',this.value)">'
-      +'<p class="trk-tgl-note">Terisi <b>otomatis</b> dari tanggal & jam pada tahap <b>Penandatanganan Kontrak / SPK</b>'
-      +(isi?(' \u2014 saat ini: <b>'+trkEsc(isi)+'</b>. Status bergeser ke Terkontrak/Selesai tepat pada waktu tersebut (waktu setempat).')
-           :' \u2014 belum diisi; lengkapi tanggal & jam pada tahap tersebut.')+'</p>';
+      +(isi?('<p class="trk-tgl-note">Penandatanganan: <b>'+trkEsc(isi)+'</b></p>'):'');
   }else if(s.jIdx!=null && !s.tanpaJadwal && !isTtd){
     /* tahap jadwal biasa: tanggal otomatis, tidak ada input tanggal */
     h+='<input class="trk-in" placeholder="Tulis keterangan tahap ini\u2026" value="'+trkEsc(trkStepKet(s,info))+'" oninput="trkSetKet(\''+s.key+'\',this.value)">'
-      +'<p class="trk-tgl-note">Tanggal otomatis dari jadwal \u2014 tahap ini <b>selesai otomatis</b> setelah '+trkEsc((s.akhirTgl?trkTgl(s.akhirTgl):'tanggal akhirnya')+(s.akhirJam?(' '+s.akhirJam):''))+'.</p>';
+      ;
   }else{
     /* tahap dengan input tanggal & jam: dok, hps, TTD (kunci 'fin'), atau fin fallback */
     const tKey = isTtd ? 'fin' : s.key;
-    let note;
-    if(isTtd) note='Tanggal & jam <b>penandatanganan</b> (waktu setempat) \u2014 otomatis mengisi tahap <b>Terkontrak/Selesai</b>; status bergeser tepat pada waktu ini. Tanpa jam, berlaku sejak awal hari tersebut.';
-    else if(s.key==='fin') note='Tanggal & jam <b>Penandatanganan Kontrak/SPK</b> (waktu setempat) \u2014 status bergeser ke Terkontrak/Selesai tepat pada waktu ini; tanpa jam, berlaku sejak awal hari tersebut.';
-    else note='Tanggal & jam selesai tahap ini (waktu setempat) \u2014 tahap bergeser <b>Selesai</b> tepat pada waktu ini; tanpa jam, bergeser saat berganti ke tanggal berikutnya.';
     h+='<div class="trk-arow-grid">'
       +'<div><input class="trk-in" placeholder="Tulis keterangan tahap ini\u2026" value="'+trkEsc(trkStepKet(s,info))+'" oninput="trkSetKet(\''+s.key+'\',this.value)"></div>'
       +'<div><div class="trk-tj"><input type="date" class="trk-in" title="Tanggal" value="'+trkEsc(info.tgl&&info.tgl[tKey]?info.tgl[tKey]:'')+'" onchange="trkSetTgl(\''+tKey+'\',this.value)">'
       +'<input type="time" class="trk-in trk-in-jam" title="Jam (waktu setempat)" value="'+trkEsc(info.jam&&info.jam[tKey]?info.jam[tKey]:'')+'" onchange="trkSetJam(\''+tKey+'\',this.value)"></div>'
-      +'<p class="trk-tgl-note">'+note+'</p></div>'
+      +'</div>'
       +'</div>';
   }
   if(s.key===undKey){
@@ -26208,7 +26202,7 @@ function renderTrackKelola(keep){
     +'</div><div class="trk-adm-stat"><label class="trk-label">Status pengadaan (otomatis)</label>'
     +'<span id="trk-adm-pill" class="trk-pill trk-pill-proses">Dalam Proses</span></div></div>';
   if(!trkSel){
-    h+='<p class="trk-hint">Pilih pekerjaan untuk memuat tahapannya. Nama & tanggal tahap jadwal diambil otomatis dari Jadwal Pelaksanaan Pengadaan dan selesai sendiri saat tanggalnya terlewati \u2014 admin cukup mengisi keterangan, penyedia yang diundang, tiga tanggal manual (Dokumen Diterima, Penyusunan HPS, Penandatanganan Kontrak/SPK), dan panel gagal/batal.</p></div>';
+    h+='<p class="trk-hint">Pilih pekerjaan untuk memuat tahapannya.</p></div>';
     box.innerHTML=h;
     trkFillPick('trk-adm-pick');
     return;
@@ -26225,13 +26219,10 @@ function renderTrackKelola(keep){
   const undKey=trkUndanganKey(steps);
   const ttdKey=trkTtdKey(steps);
   const nJ=steps.filter(s=>s.jIdx!=null).length;
-  h+='<p class="trk-hint">'+(jadwal
-      ?('Jadwal terhubung: <b>'+nJ+' tahapan termuat otomatis</b> \u2014 nama & tanggal tahap tidak perlu diketik ulang.')
-      :'Pekerjaan ini belum memiliki jadwal di <b>Jadwal Pelaksanaan Pengadaan</b>; tahapan jadwal diwakili satu langkah umum sampai jadwalnya dibuat.')
-    +'</p></div>';
+  if(!jadwal) h+='<p class="trk-hint">Pekerjaan ini belum memiliki jadwal di Jadwal Pelaksanaan Pengadaan.</p>';
+  h+='</div>';
 
-  h+='<div class="trk-card"><p class="trk-card-t">Keterangan per tahapan</p>'
-    +'<p class="trk-hint" style="margin:0 0 12px">Seluruh tahapan berjalan <b>otomatis berdasarkan tanggal</b>: tahap jadwal selesai begitu tanggal akhirnya terlewati; Dokumen Pengadaan Diterima & Penyusunan HPS selesai sehari setelah tanggal yang Anda tentukan; dan status bergeser ke <b>Terkontrak/Selesai</b> begitu tanggal Penandatanganan Kontrak/SPK tercapai. Nama penyedia pada tahap Undangan dapat diisi sejak awal, dan semua kotak keterangan tetap terbuka walau tahapnya sudah lewat.</p>';
+  h+='<div class="trk-card"><p class="trk-card-t">Keterangan per tahapan</p>';
   steps.forEach(s=>{ h+=trkAdmRow(s,d,undKey,ttdKey); });
   h+='</div>';
 
@@ -26250,8 +26241,7 @@ function renderTrackKelola(keep){
   steps.forEach(s=>{ if(s.key!=='fin') h+='<option value="'+s.key+'">'+trkEsc(s.__no+' \u00b7 '+s.nama)+'</option>'; });
   h+='</select><button type="button" class="trk-btn trk-btn-amber" '+(gOn?'':'disabled ')+'onclick="trkMulaiUlang()">\u21bb Mulai Pengadaan Ulang</button>'
     +'<button type="button" class="trk-btn trk-btn-ghost" onclick="trkSusunJadwalUlang()">+ Susun Jadwal Ulang</button></div>'
-    +'<p class="trk-hint">Saat pengadaan ulang: riwayat gagal <b>diarsipkan</b> (termasuk salinan jadwal siklus lama) dan tetap tampil di timeline pengguna, lalu tahapan berjalan lagi dari tahap yang dipilih. '
-    +'Untuk tanggal siklus baru, susun <b>jadwal baru dengan nama pekerjaan yang sama</b> di Tentukan Jadwal (cepat lewat <b>Muat Profil</b> + Titik Mulai baru) \u2014 tracking otomatis memakai <b>jadwal terbaru</b>; jadwal lama tetap tersimpan di Lihat Jadwal.</p></div>';
+    +'</div>';
   if(d.riwayat.length){
     h+='<p class="trk-alab" style="margin-top:12px">Riwayat gagal sebelumnya</p>';
     d.riwayat.forEach((r,i)=>{
