@@ -17484,18 +17484,12 @@ function spkGoStep(n){
 /* Tombol Batal pada Penyusunan Kontrak — sama seperti form lain: minta
    konfirmasi lalu mengosongkan seluruh isian (kembali ke Langkah 1). */
 function spkBatalClick(){
-  openConfirm({
-    icon:'back', title:'Batal',
-    text:'Apakah anda yakin ingin membatalkan? Seluruh isian pada form Susun Kontrak akan dikosongkan.',
-    onYes:function(){
-      spkEditId=null;
-      spkState=spkBlankState();
-      spkStep=1;
-      renderSpkSusun();
-      try{ window.scrollTo({top:0,left:0,behavior:'smooth'}); }catch(e){}
-      toast('Penyusunan kontrak dibatalkan — form dikosongkan','warn');
-    }
-  });
+  // Langsung kembali ke Daftar Susun Kontrak (spk-view) tanpa konfirmasi & tanpa notifikasi.
+  spkEditId=null;
+  spkState=spkBlankState();
+  spkStep=1;
+  showView('spk-view');
+  try{ window.scrollTo({top:0,left:0,behavior:'auto'}); }catch(e){}
 }
 
 /* Kumpulkan klausul terpilih (snapshot judul+isi, sesuai urutan pustaka) */

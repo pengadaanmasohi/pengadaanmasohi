@@ -4801,3 +4801,35 @@ table.ac-list thead th{ background:linear-gradient(180deg,#eef6f7,#dfedee); box-
 .trk-tj{display:flex;gap:6px}
 .trk-tj .trk-in{margin-top:8px}
 .trk-in-jam{max-width:104px;flex:none}
+
+/* =================================================================
+   Samakan gaya tabel "Hasil Analisa Harga Satuan" (tabel 1)
+   dengan tabel Lampiran / Susun Kontrak (tabel 2, .spk-lamp-tbl):
+   kartu membulat + bayangan halus, grid penuh (garis horizontal &
+   vertikal), zebra & padding seragam, serta efek hover baris.
+   Ditaruh paling akhir agar menang atas aturan .ana-res sebelumnya.
+   ================================================================= */
+.ana-res-card{
+  border:1px solid #dde9eb;
+  border-radius:14px;
+  overflow:hidden;
+  box-shadow:0 2px 8px rgba(16,40,50,.05);
+}
+.ana-res-wrap{ overflow-x:auto; }
+table.ana-res{ border-collapse:separate; border-spacing:0; }
+/* Grid penuh horizontal + vertikal (sama seperti tabel Lampiran) */
+table.ana-res th, table.ana-res td{ border:1px solid #dce6e9; }
+/* Header teal rata + garis pemisah kolom senada */
+table.ana-res thead th{
+  background:#0E7C86; color:#fff; border-color:#0b6b74;
+  font-size:10.5px; padding:9px 8px;
+}
+/* Padding baris & zebra seragam dengan tabel Lampiran */
+table.ana-res tbody td{ padding:8px 9px; }
+table.ana-res tbody tr:nth-child(even) td{ background:#f6fafb; }
+table.ana-res tbody tr:hover td{ background:#f2fafb; }
+/* Buang garis paling luar agar rapi mengikuti sudut membulat kartu */
+table.ana-res thead th{ border-top:none; }
+table.ana-res tr>*:first-child{ border-left:none; }
+table.ana-res tr>*:last-child{ border-right:none; }
+table.ana-res tbody tr:last-child td{ border-bottom:none; }
