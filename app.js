@@ -25868,6 +25868,12 @@ function trkRealTxt(info,key){
   const j=(info.jam&&info.jam[key])?info.jam[key]:'';
   return trkTgl(t)+(j?(' '+j):'');
 }
+/* Tahap jadwal "Penandatanganan Kontrak / SPK" — tempat input tanggal & jam
+   penandatanganan; nilainya otomatis mengisi tahap Terkontrak/Selesai (kunci 'fin') */
+function trkTtdKey(steps){
+  const s=steps.find(x=>x.jIdx!=null && /(penandatanganan|tanda\s*tangan|\bspk\b)/i.test(x.nama));
+  return s?s.key:null;
+}
 function trkUndanganKey(steps){
   const s=steps.find(x=>x.jIdx!=null && /undangan/i.test(x.nama));
   if(s) return s.key;
@@ -25950,6 +25956,7 @@ function renderTrackUser(){
   const stat=trkStatus(info);
   const aktifIdx=trkStepIndex(steps, info.aktif);
   const undKey=trkUndanganKey(steps);
+  const ttdKey=trkTtdKey(steps);
   /* posisi efektif: tahap pertama yang belum selesai (tanda admin ATAU otomatis lewat tanggal) */
   const finOk = trkStatus(info).kode==='kontrak';
   let trkFirstOpen=-1;
@@ -25968,7 +25975,7 @@ function renderTrackUser(){
     let st;
     if(info.gagal.aktif) st = dn ? 'done' : 'wait';
     else st = dn ? 'done' : (i===trkFirstOpen ? 'now' : 'wait');
-    const real=trkRealTxt(info,s.key);
+    const real=trkRealTxt(info,(ttdKey&&s.key===ttdKey)?'fin':s.key);
     const jdw=trkStepTglTxt(s);
     let sub;
     if(st==='done')      sub='Selesai'+(real?(' \u00b7 '+real):(jdw?(' \u00b7 '+jdw):''));
@@ -26098,27 +26105,41 @@ async function trkSave(){
   }catch(e){ console.warn('Sinkron keterangan ke jadwal dilewati:', e&&e.message); }
   renderTrackKelola(true);
 }
-function trkAdmRow(s, info, undKey){
+function trkAdmRow(s, info, undKey, ttdKey){
   const no=s.__no;
   const tgl=trkStepTglTxt(s);
   const stTxt = s.__st==='done' ? '\u2713 Selesai' : (s.__st==='now' ? '\u25cf Berjalan' : 'Menunggu');
+  const isTtd = ttdKey && s.key===ttdKey;
   let src=s.tetap?(s.key==='dok'?'tahap tetap \u00b7 titik awal':(s.key==='hps'?'tahap tetap':'tahap penutup \u00b7 badge hijau otomatis')):(s.tanpaJadwal?'jadwal belum ditentukan':'dari jadwal');
-  if(s.jIdx!=null && !s.tanpaJadwal && trkStepAutoDone(s)) src+=' \u00b7 \u2713 selesai otomatis (tanggal terlewati)';
+  if(isTtd) src+=' \u00b7 input tanggal & jam penandatanganan';
+  if(s.jIdx!=null && !s.tanpaJadwal && !isTtd && trkStepAutoDone(s)) src+=' \u00b7 \u2713 selesai otomatis (tanggal terlewati)';
   let h='<div class="trk-arow'+(s.__st==='now'?' trk-arow-on':'')+'">'
     +'<div class="trk-arow-top"><p class="trk-arow-t">'+no+' \u00b7 '+trkEsc(s.nama)
     +' <span class="trk-arow-src">'+trkEsc(tgl?tgl+' \u00b7 '+src:src)+'</span></p>'
-    +'<span class="trk-stchip trk-stchip-'+s.__st+'">'+stTxt+'</span></div>'
-    ;
-  if(s.jIdx!=null && !s.tanpaJadwal){
-    /* tahap dari jadwal: tanggal otomatis, tidak ada input tanggal */
+    +'<span class="trk-stchip trk-stchip-'+s.__st+'">'+stTxt+'</span></div>';
+  if(s.key==='fin' && ttdKey){
+    /* Terkontrak/Selesai: otomatis dari tanggal & jam Penandatanganan Kontrak/SPK */
+    const isi=trkRealTxt(info,'fin');
+    h+='<input class="trk-in" placeholder="Tulis keterangan tahap ini\u2026" value="'+trkEsc(trkStepKet(s,info))+'" oninput="trkSetKet(\''+s.key+'\',this.value)">'
+      +'<p class="trk-tgl-note">Terisi <b>otomatis</b> dari tanggal & jam pada tahap <b>Penandatanganan Kontrak / SPK</b>'
+      +(isi?(' \u2014 saat ini: <b>'+trkEsc(isi)+'</b>. Status bergeser ke Terkontrak/Selesai tepat pada waktu tersebut (waktu setempat).')
+           :' \u2014 belum diisi; lengkapi tanggal & jam pada tahap tersebut.')+'</p>';
+  }else if(s.jIdx!=null && !s.tanpaJadwal && !isTtd){
+    /* tahap jadwal biasa: tanggal otomatis, tidak ada input tanggal */
     h+='<input class="trk-in" placeholder="Tulis keterangan tahap ini\u2026" value="'+trkEsc(trkStepKet(s,info))+'" oninput="trkSetKet(\''+s.key+'\',this.value)">'
       +'<p class="trk-tgl-note">Tanggal otomatis dari jadwal \u2014 tahap ini <b>selesai otomatis</b> setelah '+trkEsc((s.akhirTgl?trkTgl(s.akhirTgl):'tanggal akhirnya')+(s.akhirJam?(' '+s.akhirJam):''))+'.</p>';
   }else{
+    /* tahap dengan input tanggal & jam: dok, hps, TTD (kunci 'fin'), atau fin fallback */
+    const tKey = isTtd ? 'fin' : s.key;
+    let note;
+    if(isTtd) note='Tanggal & jam <b>penandatanganan</b> (waktu setempat) \u2014 otomatis mengisi tahap <b>Terkontrak/Selesai</b>; status bergeser tepat pada waktu ini. Tanpa jam, berlaku sejak awal hari tersebut.';
+    else if(s.key==='fin') note='Tanggal & jam <b>Penandatanganan Kontrak/SPK</b> (waktu setempat) \u2014 status bergeser ke Terkontrak/Selesai tepat pada waktu ini; tanpa jam, berlaku sejak awal hari tersebut.';
+    else note='Tanggal & jam selesai tahap ini (waktu setempat) \u2014 tahap bergeser <b>Selesai</b> tepat pada waktu ini; tanpa jam, bergeser saat berganti ke tanggal berikutnya.';
     h+='<div class="trk-arow-grid">'
       +'<div><input class="trk-in" placeholder="Tulis keterangan tahap ini\u2026" value="'+trkEsc(trkStepKet(s,info))+'" oninput="trkSetKet(\''+s.key+'\',this.value)"></div>'
-      +'<div><div class="trk-tj"><input type="date" class="trk-in" title="Tanggal selesai tahap ini" value="'+trkEsc(info.tgl&&info.tgl[s.key]?info.tgl[s.key]:'')+'" onchange="trkSetTgl(\''+s.key+'\',this.value)">'
-      +'<input type="time" class="trk-in trk-in-jam" title="Jam selesai (waktu setempat)" value="'+trkEsc(info.jam&&info.jam[s.key]?info.jam[s.key]:'')+'" onchange="trkSetJam(\''+s.key+'\',this.value)"></div>'
-      +'<p class="trk-tgl-note">'+(s.key==='fin'?'Tanggal & jam <b>Penandatanganan Kontrak/SPK</b> (waktu setempat) \u2014 status bergeser ke Terkontrak/Selesai tepat pada waktu ini; tanpa jam, berlaku sejak awal hari tersebut.':'Tanggal & jam selesai tahap ini (waktu setempat) \u2014 tahap bergeser <b>Selesai</b> tepat pada waktu ini; tanpa jam, bergeser saat berganti ke tanggal berikutnya.')+'</p></div>'
+      +'<div><div class="trk-tj"><input type="date" class="trk-in" title="Tanggal" value="'+trkEsc(info.tgl&&info.tgl[tKey]?info.tgl[tKey]:'')+'" onchange="trkSetTgl(\''+tKey+'\',this.value)">'
+      +'<input type="time" class="trk-in trk-in-jam" title="Jam (waktu setempat)" value="'+trkEsc(info.jam&&info.jam[tKey]?info.jam[tKey]:'')+'" onchange="trkSetJam(\''+tKey+'\',this.value)"></div>'
+      +'<p class="trk-tgl-note">'+note+'</p></div>'
       +'</div>';
   }
   if(s.key===undKey){
@@ -26153,6 +26174,7 @@ function renderTrackKelola(keep){
   const admFin = trkStatus(d).kode==='kontrak';
   steps.forEach((s,i)=>{ s.__st = (trkStepDone(s,d)||admFin) ? 'done' : (i===admOpen ? 'now' : 'wait'); });
   const undKey=trkUndanganKey(steps);
+  const ttdKey=trkTtdKey(steps);
   const nJ=steps.filter(s=>s.jIdx!=null).length;
   h+='<p class="trk-hint">'+(jadwal
       ?('Jadwal terhubung: <b>'+nJ+' tahapan termuat otomatis</b> \u2014 nama & tanggal tahap tidak perlu diketik ulang.')
@@ -26161,7 +26183,7 @@ function renderTrackKelola(keep){
 
   h+='<div class="trk-card"><p class="trk-card-t">Keterangan per tahapan</p>'
     +'<p class="trk-hint" style="margin:0 0 12px">Seluruh tahapan berjalan <b>otomatis berdasarkan tanggal</b>: tahap jadwal selesai begitu tanggal akhirnya terlewati; Dokumen Pengadaan Diterima & Penyusunan HPS selesai sehari setelah tanggal yang Anda tentukan; dan status bergeser ke <b>Terkontrak/Selesai</b> begitu tanggal Penandatanganan Kontrak/SPK tercapai. Nama penyedia pada tahap Undangan dapat diisi sejak awal, dan semua kotak keterangan tetap terbuka walau tahapnya sudah lewat.</p>';
-  steps.forEach(s=>{ h+=trkAdmRow(s,d,undKey); });
+  steps.forEach(s=>{ h+=trkAdmRow(s,d,undKey,ttdKey); });
   h+='</div>';
 
   const gOn=d.gagal.aktif;
