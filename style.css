@@ -4785,3 +4785,8 @@ table.ac-list thead th{ background:linear-gradient(180deg,#eef6f7,#dfedee); box-
 .trk-arow-grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,.9fr);gap:10px;align-items:start}
 .trk-tgl-note{margin:4px 0 0;font-size:10.5px;color:#8aa39e;line-height:1.4}
 @media (max-width:720px){ .trk-arow-grid{grid-template-columns:1fr} }
+/* Tracking: chip status otomatis pada baris admin (pengganti radio Tahap Berjalan) */
+.trk-stchip{font-size:11.5px;font-weight:700;padding:3px 11px;border-radius:99px;white-space:nowrap;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 2px 5px rgba(13,74,66,.12)}
+.trk-stchip-done{background:linear-gradient(180deg,#e4f6ef,#cdeee1);color:#0c6b52}
+.trk-stchip-now{background:linear-gradient(180deg,#e3f1fb,#cfe6f8);color:#155e9c}
+.trk-stchip-wait{background:linear-gradient(180deg,#f4f7f6,#e7edeb);color:#8aa39e}

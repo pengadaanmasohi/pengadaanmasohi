@@ -25832,6 +25832,28 @@ function trkStepTglTxt(step){
   if(step.awalTgl) return trkTgl(step.awalTgl);
   return '';
 }
+function trkStepEndDate(s){
+  if(!s || s.jIdx==null || !s.akhirTgl) return null;
+  try{ if(typeof jpCombine==='function') return jpCombine(s.akhirTgl, s.akhirJam||'23:59'); }catch(e){}
+  const p=String(s.akhirTgl).split('-'); const j=String(s.akhirJam||'23:59').split(':');
+  return new Date(Number(p[0]),Number(p[1])-1,Number(p[2]),Number(j[0])||23,Number(j[1])||59);
+}
+/* SEMUA tahap selesai otomatis berdasarkan tanggal:
+   - tahap jadwal: begitu tanggal/jam AKHIR jadwalnya terlewati
+   - Dokumen Diterima & Penyusunan HPS: sehari SETELAH tanggal yang ditentukan admin
+   - Terkontrak/Selesai: begitu tanggal Penandatanganan Kontrak/SPK tercapai */
+function trkStepAutoDone(s){ const e=trkStepEndDate(s); return !!(e && e.getTime() < Date.now()); }
+function trkStepDone(s, info){
+  if(s && s.jIdx!=null) return trkStepAutoDone(s);
+  const t=(info&&info.tgl)?info.tgl[s.key]:'';
+  if(!t) return false;
+  const p=String(t).split('-'); if(p.length<3) return false;
+  const d=new Date(Number(p[0]),Number(p[1])-1,Number(p[2]));
+  const now=new Date();
+  if(s.key==='fin'){ now.setHours(0,0,0,0); return now.getTime()>=d.getTime(); }
+  /* dok & hps: status Selesai mulai hari SETELAH tanggal yang ditentukan */
+  return now.getTime() >= d.getTime()+24*3600*1000;
+}
 function trkUndanganKey(steps){
   const s=steps.find(x=>x.jIdx!=null && /undangan/i.test(x.nama));
   if(s) return s.key;
@@ -25841,7 +25863,8 @@ function trkUndanganKey(steps){
 /* Status otomatis dari posisi tracking */
 function trkStatus(info){
   if(info.gagal && info.gagal.aktif) return {kode:'gagal',   label:'Gagal/Batal',  cls:'trk-pill-gagal'};
-  if(info.aktif==='fin')             return {kode:'kontrak', label:'Terkontrak',   cls:'trk-pill-kontrak'};
+  const finDone = trkStepDone({key:'fin'}, info) || info.aktif==='fin'; /* aktif==='fin' = kompatibilitas data lama */
+  if(finDone)                        return {kode:'kontrak', label:'Terkontrak',   cls:'trk-pill-kontrak'};
   return                                    {kode:'proses',  label:'Dalam Proses', cls:'trk-pill-proses'};
 }
 function trkStepIndex(steps,key){ const i=steps.findIndex(s=>s.key===key); return i<0?0:i; }
@@ -25913,6 +25936,11 @@ function renderTrackUser(){
   const stat=trkStatus(info);
   const aktifIdx=trkStepIndex(steps, info.aktif);
   const undKey=trkUndanganKey(steps);
+  /* posisi efektif: tahap pertama yang belum selesai (tanda admin ATAU otomatis lewat tanggal) */
+  const finOk = trkStatus(info).kode==='kontrak';
+  let trkFirstOpen=-1;
+  steps.forEach((s,i)=>{ if(trkFirstOpen<0 && !trkStepDone(s,info)) trkFirstOpen=i; });
+  if(trkFirstOpen<0) trkFirstOpen=steps.length-1;
   const items=[];
   steps.forEach((s,i)=>{
     /* sisipkan riwayat gagal + pengadaan ulang tepat sebelum tahap tujuan pengulangan */
@@ -25922,10 +25950,10 @@ function renderTrackUser(){
         items.push({st:'redo', nama:'Pengadaan ulang dimulai', sub:'Mengulang dari: '+trkStepNama(steps,r.ulangDari)});
       }
     });
+    const dn = trkStepDone(s,info) || finOk;
     let st;
-    if(info.gagal.aktif) st = i<aktifIdx ? 'done' : (i===aktifIdx?'done':'wait');
-    else if(info.aktif==='fin') st='done';
-    else st = i<aktifIdx?'done':(i===aktifIdx?'now':'wait');
+    if(info.gagal.aktif) st = dn ? 'done' : 'wait';
+    else st = dn ? 'done' : (i===trkFirstOpen ? 'now' : 'wait');
     const real=(info.tgl&&info.tgl[s.key])?info.tgl[s.key]:'';
     const jdw=trkStepTglTxt(s);
     let sub;
@@ -25935,7 +25963,9 @@ function renderTrackUser(){
     const o={st:st, nama:s.nama, sub:sub, ket:trkStepKet(s,info)};
     if(s.tanpaJadwal) o.sub+=' \u00b7 jadwal belum ditentukan';
     if(s.key===undKey && info.penyedia.length) o.chips=info.penyedia;
-    if(s.key==='fin' && st!=='done'){ o.sub='Menunggu \u00b7 tahap penutup'; }
+    if(s.key==='fin' && st==='done'){ o.sub='Terkontrak'+(real?(' \u00b7 '+trkTgl(real)):''); }
+    else if(s.key==='fin' && st==='now'){ o.sub=real?('Menunggu tanggal Penandatanganan Kontrak/SPK: '+trkTgl(real)):'Menunggu tanggal Penandatanganan Kontrak/SPK ditentukan'; }
+    else if(s.key==='fin'){ o.sub='Menunggu \u00b7 tahap penutup'; }
     items.push(o);
   });
   if(info.gagal.aktif){
@@ -26003,8 +26033,14 @@ function trkMulaiUlang(){
   if(!dari){ toast('Pilih tahap awal pengulangan','warn'); return; }
   d.riwayat.push({tanggal:d.gagal.tanggal||trkTodayISO(), ket:d.gagal.ket||'', ulangDari:dari});
   d.gagal={aktif:false, tanggal:'', ket:''};
-  d.aktif=dari;
+  /* kosongkan tanggal manual mulai dari titik pengulangan agar siklus baru
+     tidak langsung dianggap selesai oleh tanggal siklus lama */
+  d.tgl=d.tgl||{};
+  if(dari==='dok'){ delete d.tgl.dok; delete d.tgl.hps; }
+  if(dari==='dok'||dari==='hps'){ delete d.tgl.hps; }
+  delete d.tgl.fin;
   toast('Pengadaan ulang dimulai dari: '+trkStepNama(trkBuildSteps(trkSel).steps,dari),'ok');
+  toast('Perbarui tanggal tahapan di Jadwal Pelaksanaan Pengadaan untuk siklus ulang','warn',5200);
   renderTrackKelola(true);
 }
 async function trkSave(){
@@ -26049,18 +26085,26 @@ async function trkSave(){
 }
 function trkAdmRow(s, info, undKey){
   const no=s.__no;
-  const aktif=(info.aktif===s.key);
   const tgl=trkStepTglTxt(s);
-  const src=s.tetap?(s.key==='dok'?'tahap tetap \u00b7 titik awal':(s.key==='hps'?'tahap tetap':'tahap penutup \u00b7 badge hijau otomatis')):(s.tanpaJadwal?'jadwal belum ditentukan':'dari jadwal');
-  let h='<div class="trk-arow'+(aktif?' trk-arow-on':'')+'">'
+  const stTxt = s.__st==='done' ? '\u2713 Selesai' : (s.__st==='now' ? '\u25cf Berjalan' : 'Menunggu');
+  let src=s.tetap?(s.key==='dok'?'tahap tetap \u00b7 titik awal':(s.key==='hps'?'tahap tetap':'tahap penutup \u00b7 badge hijau otomatis')):(s.tanpaJadwal?'jadwal belum ditentukan':'dari jadwal');
+  if(s.jIdx!=null && !s.tanpaJadwal && trkStepAutoDone(s)) src+=' \u00b7 \u2713 selesai otomatis (tanggal terlewati)';
+  let h='<div class="trk-arow'+(s.__st==='now'?' trk-arow-on':'')+'">'
     +'<div class="trk-arow-top"><p class="trk-arow-t">'+no+' \u00b7 '+trkEsc(s.nama)
     +' <span class="trk-arow-src">'+trkEsc(tgl?tgl+' \u00b7 '+src:src)+'</span></p>'
-    +'<label class="trk-radio" title="Posisi pengadaan saat ini: tahap sebelum ini otomatis Selesai, sesudahnya Menunggu"><input type="radio" name="trk-aktif" value="'+s.key+'"'+(aktif?' checked':'')+' onchange="trkSetAktif(\''+s.key+'\')"><span>Tahap Berjalan</span></label></div>'
-    +'<div class="trk-arow-grid">'
-    +'<div><input class="trk-in" placeholder="Tulis keterangan tahap ini\u2026" value="'+trkEsc(trkStepKet(s,info))+'" oninput="trkSetKet(\''+s.key+'\',this.value)"></div>'
-    +'<div><input type="date" class="trk-in" title="Tanggal selesai (realisasi) tahap ini" value="'+trkEsc(info.tgl&&info.tgl[s.key]?info.tgl[s.key]:'')+'" onchange="trkSetTgl(\''+s.key+'\',this.value)">'
-    +'<p class="trk-tgl-note">Tanggal selesai (realisasi) \u2014 kosongkan bila ikut jadwal</p></div>'
-    +'</div>';
+    +'<span class="trk-stchip trk-stchip-'+s.__st+'">'+stTxt+'</span></div>'
+    ;
+  if(s.jIdx!=null && !s.tanpaJadwal){
+    /* tahap dari jadwal: tanggal otomatis, tidak ada input tanggal */
+    h+='<input class="trk-in" placeholder="Tulis keterangan tahap ini\u2026" value="'+trkEsc(trkStepKet(s,info))+'" oninput="trkSetKet(\''+s.key+'\',this.value)">'
+      +'<p class="trk-tgl-note">Tanggal otomatis dari jadwal \u2014 tahap ini <b>selesai otomatis</b> setelah '+trkEsc((s.akhirTgl?trkTgl(s.akhirTgl):'tanggal akhirnya')+(s.akhirJam?(' '+s.akhirJam):''))+'.</p>';
+  }else{
+    h+='<div class="trk-arow-grid">'
+      +'<div><input class="trk-in" placeholder="Tulis keterangan tahap ini\u2026" value="'+trkEsc(trkStepKet(s,info))+'" oninput="trkSetKet(\''+s.key+'\',this.value)"></div>'
+      +'<div><input type="date" class="trk-in" title="Tanggal selesai (realisasi) tahap ini" value="'+trkEsc(info.tgl&&info.tgl[s.key]?info.tgl[s.key]:'')+'" onchange="trkSetTgl(\''+s.key+'\',this.value)">'
+      +'<p class="trk-tgl-note">'+(s.key==='fin'?'Tanggal <b>Penandatanganan Kontrak/SPK</b> \u2014 status langsung bergeser ke Terkontrak/Selesai begitu tanggal ini tercapai.':'Tanggal selesai tahap ini \u2014 otomatis <b>Selesai</b> sehari setelah tanggal tersebut, lalu lanjut ke tahap berikutnya.')+'</p></div>'
+      +'</div>';
+  }
   if(s.key===undKey){
     h+='<p class="trk-alab">Penyedia yang diundang</p>'
       +'<div class="trk-chips" id="trk-pv-wrap"></div>'
@@ -26079,7 +26123,7 @@ function renderTrackKelola(keep){
     +'</div><div class="trk-adm-stat"><label class="trk-label">Status pengadaan (otomatis)</label>'
     +'<span id="trk-adm-pill" class="trk-pill trk-pill-proses">Dalam Proses</span></div></div>';
   if(!trkSel){
-    h+='<p class="trk-hint">Pilih pekerjaan untuk memuat tahapannya. Nama & tanggal tahap diambil otomatis dari Jadwal Pelaksanaan Pengadaan \u2014 admin hanya mengisi keterangan, penyedia, tahap berjalan, dan panel gagal/batal.</p></div>';
+    h+='<p class="trk-hint">Pilih pekerjaan untuk memuat tahapannya. Nama & tanggal tahap jadwal diambil otomatis dari Jadwal Pelaksanaan Pengadaan dan selesai sendiri saat tanggalnya terlewati \u2014 admin cukup mengisi keterangan, penyedia yang diundang, tiga tanggal manual (Dokumen Diterima, Penyusunan HPS, Penandatanganan Kontrak/SPK), dan panel gagal/batal.</p></div>';
     box.innerHTML=h;
     trkFillPick('trk-adm-pick');
     return;
@@ -26087,6 +26131,11 @@ function renderTrackKelola(keep){
   const d=trkDraftEnsure();
   const {steps,jadwal}=trkBuildSteps(trkSel);
   steps.forEach((s,i)=>{ s.__no=i+1; });
+  let admOpen=-1;
+  steps.forEach((s,i)=>{ if(admOpen<0 && !trkStepDone(s,d)) admOpen=i; });
+  if(admOpen<0) admOpen=steps.length-1;
+  const admFin = trkStatus(d).kode==='kontrak';
+  steps.forEach((s,i)=>{ s.__st = (trkStepDone(s,d)||admFin) ? 'done' : (i===admOpen ? 'now' : 'wait'); });
   const undKey=trkUndanganKey(steps);
   const nJ=steps.filter(s=>s.jIdx!=null).length;
   h+='<p class="trk-hint">'+(jadwal
@@ -26095,7 +26144,7 @@ function renderTrackKelola(keep){
     +'</p></div>';
 
   h+='<div class="trk-card"><p class="trk-card-t">Keterangan per tahapan</p>'
-    +'<p class="trk-hint" style="margin:0 0 12px">\u201cTahap Berjalan\u201d = posisi pengadaan saat ini: tahap sebelum posisi ini otomatis berstatus <b>Selesai</b>, tahap sesudahnya <b>Menunggu</b>. Setiap tahap dapat diberi keterangan dan <b>Tanggal Selesai (realisasi)</b> \u2014 bila diisi, tanggal ini yang tampil ke pengguna menggantikan tanggal jadwal.</p>';
+    +'<p class="trk-hint" style="margin:0 0 12px">Seluruh tahapan berjalan <b>otomatis berdasarkan tanggal</b>: tahap jadwal selesai begitu tanggal akhirnya terlewati; Dokumen Pengadaan Diterima & Penyusunan HPS selesai sehari setelah tanggal yang Anda tentukan; dan status bergeser ke <b>Terkontrak/Selesai</b> begitu tanggal Penandatanganan Kontrak/SPK tercapai. Nama penyedia pada tahap Undangan dapat diisi sejak awal, dan semua kotak keterangan tetap terbuka walau tahapnya sudah lewat.</p>';
   steps.forEach(s=>{ h+=trkAdmRow(s,d,undKey); });
   h+='</div>';
 
