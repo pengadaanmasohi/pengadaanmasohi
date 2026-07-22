@@ -24884,8 +24884,34 @@ function spkNumBox(txt, hangCm, jc){
      Word), sama seperti cabang ANGKA, supaya awal teks SEMUA butir sejajar walau
      lebar hurufnya berbeda (mis. "l." sempit vs "m."/"n." lebih lebar). */
   var gap=SPK_NUM_GAP+'cm';                     /* jeda tetap nomor -> teks */
+  /* PERBAIKAN 22 Jul 2026 — nomor 2 digit "hancur" pada klausul dari Word:
+     kotak rata-kanan berlebar TETAP = gantungan Word. Sejak SPK_NUM_GAP dinaikkan
+     ke 0,40 cm, sisa ruang kotak (gantungan - jeda) tak lagi cukup menampung nomor
+     2 digit ("10." dst) sehingga glifnya MELUBER KE KANAN melewati padding dan jeda
+     nomor->teks menyusut (0,40 cm untuk 1 digit vs ~0,11 cm untuk 2 digit) — belang
+     seperti yang dilaporkan pada Pasal 1 Definisi.
+     Solusi (persis rata-kanan Word): bila nomor + jeda lebih lebar dari gantungan,
+     kotak DILEBARKAN dan digeser ke KIRI (margin-left negatif) sebesar kelebihannya,
+     sehingga TEPI KANAN kotak (dan karenanya jeda ke teks & kolom teks) TIDAK
+     bergeser; nomor 2 digit menjulur ke kiri ke area gantungan — sama seperti Word.
+     Nomor yang sudah muat (semua 1 digit, huruf, dsb) TIDAK berubah sedikit pun
+     (lebar tetap = gantungan, tanpa margin) sehingga klausul seperti Pasal 2 yang
+     sudah sempurna tetap identik. */
+  var _numLeftWiden=function(w0){
+    /* Ukur KANONIK: kotak nomor dirender tabular-nums (semua digit selebar '0'),
+       sedangkan kanvas mengukur proporsional ("1" lebih sempit) — tanpa ini nomor
+       ber-"1" (mis. "11.") diukur terlalu sempit lalu masih meluber ke kanan. */
+    var _tk=String(txt).replace(/[0-9]/g,'0');
+    var mW=0; try{ mW=spkPkTextWidthCm(_tk); }catch(e){}
+    var need=mW+SPK_NUM_GAP;
+    if(need>w0+0.001) return { w:need, ml:(w0-need) };   /* melebar & geser kiri */
+    return { w:w0, ml:0 };                                /* muat -> tak berubah */
+  };
   if(isNum){
-    return '<span class="n" style="display:inline-block;width:'+hangCm+'cm;box-sizing:border-box;'+
+    var _b=_numLeftWiden(hangCm);
+    var _mlN=_b.ml?('margin-left:'+_b.ml.toFixed(2)+'cm;'):'';
+    var _wN=_b.ml?_b.w.toFixed(2):(''+hangCm);            /* pertahankan format lama bila tak berubah */
+    return '<span class="n" style="display:inline-block;'+_mlN+'width:'+_wN+'cm;box-sizing:border-box;'+
       'padding-right:'+gap+';text-indent:0;white-space:nowrap;overflow:visible;text-align:right">'+txt+'</span>';
   }
   /* RATA KIRI (bawaan): kotak LEBAR TETAP = hanging. Nomor rata kiri di dalam kotak;
@@ -24893,7 +24919,13 @@ function spkNumBox(txt, hangCm, jc){
      yang lebih lebar. Bila nomor lebih lebar dari kotak, ia meluber ke kanan
      (overflow:visible) — sama seperti tab hanging-indent di Word. */
   var al=(jc==='right'||jc==='end')?'right':((jc==='center')?'center':'left');
-  return '<span class="n" style="display:inline-block;width:'+hangCm+'cm;box-sizing:border-box;'+
+  /* Bila penanda ini rata KANAN (mengikuti w:lvlJc Word) & lebih lebar dari
+     gantungan, lebarkan ke kiri juga — sama seperti cabang ANGKA. Rata kiri/tengah
+     dibiarkan (perilaku hanging-indent Word: meluber ke kanan bila terlalu lebar). */
+  var _lw=(al==='right')?_numLeftWiden(hangCm):{w:hangCm,ml:0};
+  var _mlL=_lw.ml?('margin-left:'+_lw.ml.toFixed(2)+'cm;'):'';
+  var _wL=_lw.ml?_lw.w.toFixed(2):(''+hangCm);
+  return '<span class="n" style="display:inline-block;'+_mlL+'width:'+_wL+'cm;box-sizing:border-box;'+
     'padding-right:'+gap+';text-indent:0;white-space:nowrap;overflow:visible;text-align:'+al+'">'+txt+'</span>';
 }
 /* Peta styleId -> NAMA gaya (dinormalkan) dari word/styles.xml */
