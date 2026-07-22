@@ -2525,9 +2525,9 @@ function efisiensiCardHTML(data, totRAB, totHPS, nilaiPekerjaan){
     </div>`;
   }
 
-  return card('Efisiensi Kontrak vs RAB', sRAB, sPek, 'penghematan terhadap RAB')
-       + card('Efisiensi Kontrak vs HPS', sHPS, sPek, 'penghematan terhadap HPS')
-       + card('Efisiensi HPS vs RAB',     sRAB, sHPS, 'penghematan HPS terhadap RAB');
+  return card('Efisiensi HPS vs RAB',     sRAB, sHPS, 'penghematan HPS terhadap RAB')
+       + card('Efisiensi Kontrak vs RAB', sRAB, sPek, 'penghematan terhadap RAB')
+       + card('Efisiensi Kontrak vs HPS', sHPS, sPek, 'penghematan terhadap HPS');
 }
 
 function renderBars(elId,key,cats,data,opts){

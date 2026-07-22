@@ -1533,10 +1533,12 @@ td{padding:2px 4px}
    yang sama — cukup untuk teks terpanjang ("SPBJ / Kontrak Rinci") sehingga tidak
    ada teks yang terpotong dan semua field seragam. */
 #view-dashboard .page-head{flex-direction:column;align-items:flex-start;gap:20px}
+/* Kelompok field filter rata kanan halaman (judul tetap di kiri) */
+#view-dashboard .dash-filter-bar{align-self:flex-end}
 /* Beri ruang di bawah judul agar ekor huruf (mis. 'g' pada "Langsung") tidak terpotong */
 #view-dashboard .page-head h2{line-height:1.35;padding-bottom:4px}
 .dash-filter-bar .filter-field{flex:0 0 auto;min-width:0}
-#view-dashboard .dash-filter-bar .filter-field select{width:235px;min-width:235px;max-width:235px}
+#view-dashboard .dash-filter-bar .filter-field select{width:205px;min-width:205px;max-width:205px}
 @media(max-width:640px){
   .dash-filter-bar{width:100%;padding:0}
   .dash-filter-bar .filter-field{flex:1 1 100%}
