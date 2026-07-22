@@ -24411,9 +24411,14 @@ function spkStyXml(id, name, ind, extraP, extraR){
 }
 function spkStylesXml(){
   var D=spkDX();
-  var tab1='<w:tabs><w:tab w:val="left" w:pos="'+D.L1+'"/></w:tabs>';
-  var tab2='<w:tabs><w:tab w:val="left" w:pos="'+D.L2+'"/></w:tabs>';
-  var tabH='<w:tabs><w:tab w:val="left" w:pos="'+D.JUDUL_HANG+'"/></w:tabs>';
+  /* HAPUS LEFT TAB (permintaan 22 Jul 2026): tab kiri manual mengganggu saat
+     mengedit teks & mengatur inden di Word. Awal teks butir kini bersandar pada
+     HANGING INDENT — Word otomatis membuat perhentian tab di posisi inden kiri,
+     sehingga "1.1.<TAB>teks" / "a.<TAB>teks" tetap mendarat di kolom teks tanpa
+     perlu tab kiri manual. */
+  var tab1='';
+  var tab2='';
+  var tabH='';
   /* PERJANJIAN/KONTRAK — NOMOR BUTIR RATA KANAN.
      Word tidak bisa merata-kanankan nomor yang diketik manual lewat inden saja,
      jadi dipakai dua tab stop:
@@ -24423,8 +24428,10 @@ function spkStylesXml(){
      Hasilnya sama seperti tampilan layar: "9." dan "10." titiknya satu garis,
      jarak titik -> teks tetap, nomor 2 digit memanjang ke KIRI. */
   if(D.PUSAT){
-    tab1='<w:tabs><w:tab w:val="right" w:pos="'+(D.L1-D.GAP)+'"/>'+
-         '<w:tab w:val="left" w:pos="'+D.L1+'"/></w:tabs>';
+    /* PK: nomor 2 digit dirata-kanankan lewat SATU tab kanan (titik penutup lurus);
+       nomor 1 digit tidak memakai tab ini (dibiarkan rata kiri, lihat spkHtmlToWordParas).
+       Awal teks bersandar pada hanging indent — tanpa tab kiri manual. */
+    tab1='<w:tabs><w:tab w:val="right" w:pos="'+(D.L1-D.GAP)+'"/></w:tabs>';
   }
   /* --- Gaya judul klausul ---
      SPK : satu baris rata KIRI, nomor menggantung  -> persis seperti semula.
@@ -24553,13 +24560,20 @@ function spkPPrFromCss(el){
      PERJANJIAN/KONTRAK: ditambah tab KANAN di (kolom teks - jeda) supaya nomor
      yang diketik manual ikut rata kanan — titik penutupnya lurus untuk 1 maupun
      2 digit, persis seperti tampilan di layar. */
+  /* HAPUS LEFT TAB (22 Jul 2026) + ATURAN DIGIT: awal teks butir bersandar pada
+     HANGING INDENT (perhentian tab implisit Word), bukan tab kiri manual. Untuk PK,
+     tab KANAN hanya dipasang bila SEGMEN TERAKHIR nomor 2 digit (rata kanan, titik
+     lurus); nomor 1 digit dibiarkan rata kiri tanpa tab. */
   var tabs='';
   if(hang>0){
     var _D=spkDX();
-    tabs = _D.PUSAT
-      ? '<w:tabs><w:tab w:val="right" w:pos="'+Math.max(0,left-_D.GAP)+'"/>'+
-        '<w:tab w:val="left" w:pos="'+Math.max(0,left)+'"/></w:tabs>'
-      : '<w:tabs><w:tab w:val="left" w:pos="'+Math.max(0,left)+'"/></w:tabs>';
+    if(_D.PUSAT){
+      var _mNum=/^\s*((?:\d+\.)+|\d+\))/.exec(String(el.textContent||''));
+      var _seg=_mNum ? _mNum[1].replace(/[.)]+$/,'').split('.').pop() : '';
+      if(/^\d{2,}$/.test(_seg)){
+        tabs='<w:tabs><w:tab w:val="right" w:pos="'+Math.max(0,left-_D.GAP)+'"/></w:tabs>';
+      }
+    }
   }
   return tabs+ind+sp+jc;
 }
@@ -24657,7 +24671,11 @@ function spkHtmlToWordParas(html){
        Penanda HURUF (a. b.) tetap rata kiri seperti semula, jadi tidak disentuh. */
     if(spkDX().PUSAT && cls==='kl1' && runs.length && runs[0].t!=='\t' &&
        /^(?:(?:[0-9]+\.)+|[0-9]+\))$/.test(String(runs[0].t||'').trim())){
-      runs.unshift({t:'\t', f:runs[0].f});
+      /* ATURAN DIGIT (22 Jul 2026): hanya nomor yang SEGMEN TERAKHIRnya 2 digit
+         yang diberi TAB awal (agar rata KANAN lewat tab kanan). Nomor 1 digit
+         dibiarkan rata KIRI (tanpa TAB). */
+      var _seg0=String(runs[0].t).trim().replace(/[.)]+$/,'').split('.').pop();
+      if(/^\d{2,}$/.test(_seg0)) runs.unshift({t:'\t', f:runs[0].f});
     }
     var rx='';
     for(j=0;j<runs.length;j++){ if(runs[j].t!=='') rx+=spkRunXml(runs[j].t, runs[j].f); }
@@ -24908,11 +24926,21 @@ function spkNumBox(txt, hangCm, jc){
     return { w:w0, ml:0 };                                /* muat -> tak berubah */
   };
   if(isNum){
-    var _b=_numLeftWiden(hangCm);
-    var _mlN=_b.ml?('margin-left:'+_b.ml.toFixed(2)+'cm;'):'';
-    var _wN=_b.ml?_b.w.toFixed(2):(''+hangCm);            /* pertahankan format lama bila tak berubah */
-    return '<span class="n" style="display:inline-block;'+_mlN+'width:'+_wN+'cm;box-sizing:border-box;'+
-      'padding-right:'+gap+';text-indent:0;white-space:nowrap;overflow:visible;text-align:right">'+txt+'</span>';
+    /* ATURAN DIGIT (permintaan 22 Jul 2026): patokan = SEGMEN TERAKHIR nomor
+       setelah titik. 1 digit (mis. "1", "1.1", "10.1" -> segmen terakhir "1")
+       -> RATA KIRI; 2 digit (mis. "10", "1.10", "10.10" -> "10") -> RATA KANAN.
+       Kolom teks tetap sejajar (kotak berlebar tetap = gantungan); hanya posisi
+       angka DI DALAM kotak yang berbeda, sehingga titik nomor 2 digit tetap lurus. */
+    var _seg=String(txt).trim().replace(/[.)]+$/,'').split('.').pop();
+    if(/^\d{2,}$/.test(_seg)){
+      var _b=_numLeftWiden(hangCm);
+      var _mlN=_b.ml?('margin-left:'+_b.ml.toFixed(2)+'cm;'):'';
+      var _wN=_b.ml?_b.w.toFixed(2):(''+hangCm);          /* pertahankan format lama bila tak berubah */
+      return '<span class="n" style="display:inline-block;'+_mlN+'width:'+_wN+'cm;box-sizing:border-box;'+
+        'padding-right:'+gap+';text-indent:0;white-space:nowrap;overflow:visible;text-align:right">'+txt+'</span>';
+    }
+    return '<span class="n" style="display:inline-block;width:'+hangCm+'cm;box-sizing:border-box;'+
+      'padding-right:'+gap+';text-indent:0;white-space:nowrap;overflow:visible;text-align:left">'+txt+'</span>';
   }
   /* RATA KIRI (bawaan): kotak LEBAR TETAP = hanging. Nomor rata kiri di dalam kotak;
      awal teks butir selalu sejajar (di posisi hanging) tanpa terdorong oleh huruf
@@ -25505,8 +25533,14 @@ async function spkKlDocDownload(){
     if(spkKlDoc.docx){
       if(_isDef){
         /* DEFINISI: urutkan A-Z LANGSUNG pada berkas .docx asli agar penomoran
-           OTOMATIS Word tetap utuh. Bila struktur tak dikenali -> null -> fallback. */
+           OTOMATIS Word tetap utuh. Bila struktur tak dikenali -> null. */
         try{ blob = await spkDefinisiDocxSortedBlob(spkB642u8(spkKlDoc.docx)); }catch(e){ blob=null; }
+        /* PERBAIKAN FIDELITAS 22 Jul 2026: bila pengurutan gagal, JANGAN jatuh ke
+           bangun-ulang dari HTML (yang mengubah penomoran Word menjadi teks biasa
+           dan kadang merusak tata letak). Kembalikan BYTE ASLI apa adanya supaya
+           penomoran & format PERSIS seperti saat diunggah — hanya urutan A-Z yang
+           tidak dijamin pada kasus langka ini. */
+        if(!blob){ blob=new Blob([spkB642u8(spkKlDoc.docx)], {type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}); }
       }else{
         /* Non-definisi: kembalikan berkas asli apa adanya (SAMA PERSIS). */
         blob=new Blob([spkB642u8(spkKlDoc.docx)], {type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
