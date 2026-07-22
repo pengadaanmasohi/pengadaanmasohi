@@ -25562,6 +25562,28 @@ function spkKlDocUpload(ev){
   var f=ev && ev.target && ev.target.files ? ev.target.files[0] : null;
   if(f) spkKlDocReadFile(f);
 }
+/* =====================================================================
+   DETEKSI BENTUK (PK / SPK) LANGSUNG DARI BERKAS .docx
+   ---------------------------------------------------------------------
+   Grid pembacaan menentukan "inden dasar" (base) yang dikurangkan dari
+   w:ind left tiap paragraf: PK base=0, SPK base=425 twip (0,75 cm). Bila
+   berkas Perjanjian/Kontrak (butir di ~0,75 cm) dibaca memakai grid SPK,
+   left-nya dikurangi 425 sehingga RUNTUH ke ~0 — nomor jatuh ke margin dan
+   gantungannya hilang, jadi tampilan web RATA walau di Word rapi.
+   Karena itu bentuk dibaca dari ISI berkas (bukan dari dropdown), sehingga
+   grid yang dipakai selalu cocok dan pratinjau web = tampilan Word.
+   Tanda PK: judul "PASAL n" -> penomoran "PASAL %1" (numbering.xml) atau gaya
+   "Klausul Pasal" (KlausulPasal) pada styles.xml. Cadangan: kisi KlausulButir1
+   (PK left~386 vs SPK left~879). Mengembalikan '' bila tak terdeteksi. */
+function spkDetectBentukFromDocx(stylesXml, numberingXml){
+  var s=String(stylesXml||''), n=String(numberingXml||'');
+  if(/PASAL\s*%\d/i.test(n)) return 'PK';
+  if(/w:styleId="KlausulPasal"/.test(s)) return 'PK';
+  if(/<w:name\s+w:val="Klausul Pasal"\s*\/?>/i.test(s)) return 'PK';
+  var m=/w:styleId="KlausulButir1"[\s\S]*?<w:ind\b[^>]*w:left="(\d+)"/i.exec(s);
+  if(m){ var L=parseInt(m[1],10)||0; if(L>0) return (L<650)?'PK':'SPK'; }
+  return '';
+}
 async function spkKlDocReadFile(file){
   if(!/\.docx$/i.test(file.name||'')){ toast('Berkas harus berformat .docx','warn'); return; }
   try{
@@ -25573,7 +25595,18 @@ async function spkKlDocReadFile(file){
       var dec=new TextDecoder();
       var sty=zip['word/styles.xml'] ? dec.decode(zip['word/styles.xml']) : '';
       var num=zip['word/numbering.xml'] ? dec.decode(zip['word/numbering.xml']) : '';
-      var res=spkWithDX(spkKlDocBentuk(), function(){
+      /* PERBAIKAN 22 Jul 2026 — BACA DENGAN GRID YANG SESUAI BENTUK BERKAS.
+         Bentuk (PK/SPK) dideteksi dari isi .docx, bukan dari dropdown, agar
+         "inden dasar" yang dikurangkan benar. Tanpa ini, berkas PK yang dibaca
+         memakai grid SPK indennya runtuh ke ~0 -> web rata padahal Word rapi. */
+      var _bentukFile = spkDetectBentukFromDocx(sty, num) || spkKlDocBentuk();
+      /* Samakan dropdown & state supaya unduh/pratinjau berikutnya konsisten. */
+      try{
+        var _bsel=document.getElementById('spk-kldoc-bentuk');
+        if(_bsel) _bsel.value=_bentukFile;
+        spkKlDoc.bentuk=_bentukFile;
+      }catch(eB){}
+      var res=spkWithDX(_bentukFile, function(){
         return spkWordXmlToKlausul(dec.decode(xml), sty, num);
       });
       if(!res.html) throw new Error('Tidak ada isi klausul yang terbaca pada template.');
