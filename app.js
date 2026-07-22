@@ -18238,6 +18238,17 @@ function spkDocCss(){
      (dulu menjorok D.base=0,75cm mengikuti gaya "Klausul Isi" template). Inden
      penomoran di bawahnya diatur inline oleh spkPkIndentStd. */
   '.spk-clause .spk-cl{padding-left:0}'+
+  /* PERBAIKAN 23 Jul 2026 (SPK): klausul HASIL IMPOR WORD (paragraf ber-kelas
+     .spk-wx) membawa margin-left = (w:ind left - BASE), karena parser .docx
+     mengurangi BASE dengan asumsi wadah .spk-cl menambahkannya kembali sebagai
+     padding-left. Sejak padding wadah dijadikan 0 (21 Jul 2026), BASE tidak
+     pernah dikembalikan sehingga SELURUH isi klausul dari Word bergeser 0,75 cm
+     ke KIRI dibanding tampilan Word aslinya. Di sini BASE dikembalikan sebagai
+     padding-left HANYA pada badan klausul yang memuat konten Word, sehingga
+     posisi Pekerjaan/Lokasi, 1.1/1.2, paragraf & butir a./b./c. PERSIS seperti
+     template Word. Konten yang DI-GENERATE aplikasi (tanpa .spk-wx) tetap rata
+     margin (padding 0), jadi tidak pernah tergeser dua kali. */
+  '.spk-doc.spk-spk .spk-clause .spk-cl:has(.spk-wx){padding-left:'+D.base+'}'+
   /* PERJANJIAN/KONTRAK: isi klausul TIDAK menjorok terhadap judul. Judul (PASAL n
      + nama pasal) sudah rata tengah, sedangkan isi — baik paragraf bernomor
      ("1.", "a.") maupun teks biasa — dimulai tepat di batas margin kiri kertas
