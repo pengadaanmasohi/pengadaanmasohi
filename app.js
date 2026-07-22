@@ -2405,7 +2405,7 @@ function renderDashboard(){
           </div>
           <div class="v" style="${c.vs||''}">${c.v}</div><div class="sub">${c.sub}</div>
         </div>`).join('');
-      nilaiRow.innerHTML = nilaiCards + efisiensiCardHTML(data, totHPS, nilai);
+      nilaiRow.innerHTML = nilaiCards + efisiensiCardHTML(data, totRAB, totHPS, nilai);
     }
   }
 
@@ -2461,24 +2461,79 @@ function playGrandDashEntrance(){
   });
 }
 
-/* Kartu Efisiensi: Nilai Kontrak terhadap HPS (grafik batang % + penghematan Rp) */
-function efisiensiCardHTML(data, totHPS, nilaiPekerjaan){
-  const sHPS = Number(totHPS)||0;          // Nilai HPS (akumulasi, sesuai kartu Dashboard)
+/* Kartu Efisiensi (1 kotak carousel, bisa digeser kiri/kanan):
+   • Slide 0 (DEFAULT) : Efisiensi Kontrak vs RAB
+   • Slide 1          : Efisiensi Kontrak vs HPS
+   Pola hitung sama untuk kedua basis:
+     penghematan = Basis − Kontrak ; persen = penghematan / Basis × 100. */
+function efisiensiCardHTML(data, totRAB, totHPS, nilaiPekerjaan){
   const sPek = Number(nilaiPekerjaan)||0;  // Nilai Pekerjaan (akumulasi nilai kontrak)
-  if(sHPS<=0){
-    return `<div class="card efisiensi-card" style="--card-accent:var(--green)"><div class="accent" style="background:var(--green)"></div>
-      <div class="k">Efisiensi Kontrak vs HPS</div>
-      <div class="eff-empty">Data tidak tersedia</div></div>`;
+  const sRAB = Number(totRAB)||0;          // Nilai RAB (akumulasi, sesuai kartu Dashboard)
+  const sHPS = Number(totHPS)||0;          // Nilai HPS (akumulasi, sesuai kartu Dashboard)
+
+  // Isi satu slide efisiensi terhadap sebuah basis (RAB / HPS)
+  function slide(judul, basis, labelBasis){
+    const b = Number(basis)||0;
+    if(b<=0){
+      return `<div class="eff-slide">
+        <div class="k">${judul}</div>
+        <div class="eff-empty">Data tidak tersedia</div>
+      </div>`;
+    }
+    const hemat = Math.round(b - sPek);      // penghematan = Basis − Kontrak
+    const pct   = (b - sPek) / b * 100;      // persen = penghematan / Basis × 100
+    const barW  = Math.max(0, Math.min(100, pct));
+    return `<div class="eff-slide">
+      <div class="k">${judul}</div>
+      <div class="eff-pct">${pct.toFixed(2)}<span>%</span></div>
+      <div class="eff-bar"><div class="eff-bar-fill" style="width:${barW}%"></div></div>
+      <div class="eff-rp">${rupiah(hemat)||'Rp 0'}<small>penghematan terhadap ${labelBasis}</small></div>
+    </div>`;
   }
-  const hemat = Math.round(sHPS - sPek);   // Rp Penghematan terhadap HPS = Nilai HPS − Nilai Pekerjaan
-  const pct = (sHPS - sPek) / sHPS * 100;  // Persentase = Penghematan / Nilai HPS × 100
-  const barW = Math.max(0, Math.min(100, pct));
-  return `<div class="card efisiensi-card" style="--card-accent:var(--green)"><div class="accent" style="background:var(--green)"></div>
-    <div class="k">Efisiensi Kontrak vs HPS</div>
-    <div class="eff-pct">${pct.toFixed(2)}<span>%</span></div>
-    <div class="eff-bar"><div class="eff-bar-fill" style="width:${barW}%"></div></div>
-    <div class="eff-rp">${rupiah(hemat)||'Rp 0'}<small>penghematan terhadap HPS</small></div>
+
+  const slideRAB = slide('Efisiensi Kontrak vs RAB', sRAB, 'RAB');  // default tampil
+  const slideHPS = slide('Efisiensi Kontrak vs HPS', sHPS, 'HPS');
+
+  return `<div class="card efisiensi-card eff-carousel" style="--card-accent:var(--green)" data-eff-idx="0">
+    <div class="accent" style="background:var(--green)"></div>
+    <button class="eff-nav eff-prev" type="button" aria-label="Efisiensi sebelumnya" onclick="effSwitch(this,-1)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <button class="eff-nav eff-next" type="button" aria-label="Efisiensi berikutnya" onclick="effSwitch(this,1)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+    </button>
+    <div class="eff-view">
+      <div class="eff-slides">${slideRAB}${slideHPS}</div>
+    </div>
+    <div class="eff-dots" role="tablist" aria-label="Pilih basis efisiensi">
+      <button class="eff-dot active" type="button" aria-label="Terhadap RAB" onclick="effGoto(this,0)"></button>
+      <button class="eff-dot" type="button" aria-label="Terhadap HPS" onclick="effGoto(this,1)"></button>
+    </div>
   </div>`;
+}
+
+/* Navigasi kartu efisiensi — 1 kotak, geser kiri/kanan, melingkar. */
+function effSwitch(btn, dir){
+  const card = btn && btn.closest('.eff-carousel'); if(!card) return;
+  const slides = card.querySelector('.eff-slides'); if(!slides) return;
+  const n = slides.children.length || 1;
+  let idx = (Number(card.dataset.effIdx)||0) + dir;
+  idx = ((idx % n) + n) % n;               // melingkar (wrap)
+  effApply(card, idx);
+}
+function effGoto(btn, idx){
+  const card = btn && btn.closest('.eff-carousel');
+  if(card) effApply(card, idx);
+}
+function effApply(card, idx){
+  const slides = card.querySelector('.eff-slides'); if(!slides) return;
+  card.dataset.effIdx = String(idx);
+  slides.style.transform = `translateX(-${idx*100}%)`;
+  card.querySelectorAll('.eff-dot').forEach((d,i)=>d.classList.toggle('active', i===idx));
+  // Picu ulang animasi tumbuh bar pada slide yang aktif
+  const active = slides.children[idx];
+  const bar = active && active.querySelector('.eff-bar-fill');
+  if(bar){ bar.style.animation='none'; void bar.offsetWidth; bar.style.animation=''; }
 }
 
 function renderBars(elId,key,cats,data,opts){
