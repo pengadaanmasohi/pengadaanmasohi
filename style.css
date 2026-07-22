@@ -1532,7 +1532,9 @@ td{padding:2px 4px}
 /* Filter bar diletakkan pada baris DI BAWAH judul; ke-4 field dibuat lebar tetap
    yang sama — cukup untuk teks terpanjang ("SPBJ / Kontrak Rinci") sehingga tidak
    ada teks yang terpotong dan semua field seragam. */
-#view-dashboard .page-head{flex-direction:column;align-items:flex-start;gap:14px}
+#view-dashboard .page-head{flex-direction:column;align-items:flex-start;gap:20px}
+/* Beri ruang di bawah judul agar ekor huruf (mis. 'g' pada "Langsung") tidak terpotong */
+#view-dashboard .page-head h2{line-height:1.35;padding-bottom:4px}
 .dash-filter-bar .filter-field{flex:0 0 auto;min-width:0}
 #view-dashboard .dash-filter-bar .filter-field select{width:235px;min-width:235px;max-width:235px}
 @media(max-width:640px){
@@ -2606,8 +2608,6 @@ tr.hl-weekend td{background:#f5f8fb}
 }
 /* Sub-teks kartu: netral & ringan */
 #view-dashboard .card .sub{color:#859299 !important;font-weight:500 !important}
-/* Sembunyikan keterangan (bullet) di bawah nilai pada kartu dashboard */
-#view-dashboard .card .sub{display:none !important}
 /* Chip ikon: netral, bersih, tidak mencolok */
 #view-dashboard .card-ic{
   background:#f3f6f7 !important;
