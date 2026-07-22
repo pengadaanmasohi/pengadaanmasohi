@@ -19511,6 +19511,25 @@ function spkPkIndentStd(html, opsi){
         ch.style.marginLeft=tepiIntro.toFixed(2)+'cm';
         adaIntro=true;
       }
+      /* HARDENING 23 Jul 2026 ("Pekerjaan/Lokasi tampak di margin"): blok
+         pembuka kv/kvgrp yang TIDAK terbaca loop anak-langsung di atas (mis.
+         terbungkus wadah lain oleh editor/paginator) tetap menjorok dari kolom
+         teks judul. Hanya menambah inden bila blok itu DAN seluruh leluhurnya
+         dalam klausul belum ter-inden, jadi tidak pernah dobel dengan loop di
+         atas. SPK saja (introX>0); PK tak pernah masuk cabang ini. */
+      try{
+        var _fi=null, _aps=box.querySelectorAll('p');
+        for(var _fk=0;_fk<_aps.length;_fk++){ if(spkPkTok(_aps[_fk])){ _fi=_aps[_fk]; break; } }
+        var _kvs=box.querySelectorAll('.spk-kvgrp,.spk-kv');
+        for(var _kk=0;_kk<_kvs.length;_kk++){
+          var _kv=_kvs[_kk];
+          if(_kv.classList.contains('spk-kv') && _kv.closest('.spk-kvgrp')) continue;   /* baris di dalam grup */
+          if(_fi && (_kv.compareDocumentPosition(_fi) & 2)) continue;                    /* kv SESUDAH butir -> Tahap 4b */
+          var _ind=false, _nd=_kv;
+          while(_nd && _nd!==box){ if((parseFloat(_nd.style.marginLeft)||0)>0.02){ _ind=true; break; } _nd=_nd.parentElement; }
+          if(!_ind){ _kv.style.marginLeft=tepiIntro.toFixed(2)+'cm'; adaIntro=true; }
+        }
+      }catch(_eIntro){}
     }
     for(i=0;i<ps.length;i++){
       var t0=(ps[i].textContent||'').replace(/[\s\u00A0]/g,'');
