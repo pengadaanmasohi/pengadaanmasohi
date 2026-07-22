@@ -18911,8 +18911,8 @@ function spkDocCss2(){
    rata-kanan agar titik desimalnya sejajar dengan nomor 1 digit. Label majemuk
    memakai lebar kolom otomatis (min 0,75 cm) supaya "11.1.1." tetap mendapat
    jarak cukup tanpa menabrak teks. */
-/* Jeda tetap antara nomor dan teks (cm). Cukup untuk tidak bertabrakan, tidak terlalu jauh. */
-const SPK_NUM_GAP = 0.18;
+/* Jeda tetap antara nomor dan teks (cm). Dilebarkan 22 Jul 2026 dari 0,18 -> 0,40 menyamai tab daftar bernomor pada template Word master (permintaan user). CATATAN: kisi .docx (SPK_DX/SPK_DX_PK GAP:102) SENGAJA tetap 0,18 — belum diselaraskan. */
+const SPK_NUM_GAP = 0.40;
 
 /* =====================================================================
    KOLOM PENOMORAN BUTIR = KISI TEMPLATE .docx
@@ -24255,7 +24255,12 @@ var SPK_DX = {
    DIBEKUKAN menjadi kisi tetap di bawah. Selisihnya terhadap layar < 0,03 cm.
    Bentuk Surat Perintah Kerja tetap memakai SPK_DX di atas — tidak tersentuh.
    ===================================================================== */
-/* DIBEKUKAN ULANG 21 Jul 2026 mengikuti standar pratinjau terbaru:
+/* DILEBARKAN 22 Jul 2026 (permintaan "yang diketik di Word tampil sama di web"):
+     jeda nomor->teks 0,18 -> 0,40 cm (GAP 102->227) menyamai SPK_NUM_GAP web;
+     L1/L2/DESC/IND2/IND3 digeser ikut (teks tingkat-1 0,68 / tingkat-2 1,38 cm),
+     nomor tetap menempel margin via tab kanan. BASE/P_FIRST/JUDUL_HANG/numbering.xml TETAP beku.
+     Bentuk SPK (SPK_DX) BELUM diubah (butir pakai tab kiri, jeda bervariasi) - tunggu konfirmasi PK.
+   --- catatan lama (nilai 0,18): DIBEKUKAN ULANG 21 Jul 2026 mengikuti standar pratinjau terbaru:
      - Aturan julur kiri 0,20 cm sudah DIBUANG (g.Wb=g.W) -> ayat tingkat-1
        kini MENEMPEL MARGIN KIRI: nomor "1." mulai di 0 cm, teks justify
        memenuhi margin kanan.
@@ -24269,7 +24274,7 @@ var SPK_DX = {
 var SPK_DX_PK = {
   A4_W:11906, A4_H:16838,
   MARGIN:1440,
-  IND:0, IND_JUDUL:0, IND2:261, IND3:573,
+  IND:0, IND_JUDUL:0, IND2:386, IND3:782,
   BASE:0,                      // 0 cm    — isi klausul mulai di batas margin kiri
   P_FIRST:425,                 // 0,75 cm — inden baris pertama paragraf narasi
   /* DISELARASKAN 22 Jul 2026 dengan langkah inden 0,15 cm pada pratinjau:
@@ -24277,10 +24282,10 @@ var SPK_DX_PK = {
        kolom teks tingkat-1   : 0 + 0,46                     = 0,46 cm -> L1 261
        penanda huruf "a."     : 0,46 + 0,15                  = 0,61 cm
        kolom teks tingkat-2   : 0,61 + 0,40                  = 1,01 cm -> L2 573 */
-  L1:261,  L1_HANG:261,        // 0,46 cm / 0,46 cm — butir "1." menempel margin
-  L2:573,  L2_HANG:227,        // 1,01 cm / 0,40 cm — butir "a." / "b."
-  DESC:261,                    // 0,46 cm — sejajar kolom teks tingkat-1
-  GAP:102,                     // 0,18 cm — jeda TETAP titik nomor -> teks (SPK_NUM_GAP)
+  L1:386,  L1_HANG:386,        // 0,68 cm / 0,68 cm - kolom teks butir; nomor "1." tetap di margin (tab kanan)
+  L2:782,  L2_HANG:396,        // 1,38 cm / 0,70 cm - butir "a." / "b."
+  DESC:386,                    // 0,68 cm - sejajar kolom teks tingkat-1
+  GAP:227,                     // 0,40 cm - jeda TETAP titik nomor -> teks (= SPK_NUM_GAP web)
   JUDUL_HANG:0,
   PUSAT:true                   // judul rata TENGAH dua baris ("PASAL 1" + nama pasal)
 };
