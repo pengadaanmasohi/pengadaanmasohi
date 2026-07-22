@@ -103,6 +103,7 @@ a{color:inherit}
 
 /* ---------- Cards ---------- */
 .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.cards-5{grid-template-columns:repeat(5,1fr)}   /* baris atas saat memuat 5 kartu */
 .card{background:linear-gradient(180deg,#ffffff,#fbfdfd);border:1px solid var(--line);border-radius:var(--radius);padding:18px 18px 18px 22px;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease}
 .card:hover{transform:translateY(-3px);box-shadow:var(--shadow-md);border-color:#cfdde0}
 .card .accent{position:absolute;left:0;top:0;bottom:0;width:5px;border-radius:0 4px 4px 0}
@@ -138,6 +139,7 @@ a{color:inherit}
 #dash-content.dash-in #dash-cards .card:nth-child(2){animation-delay:.04s}
 #dash-content.dash-in #dash-cards .card:nth-child(3){animation-delay:.08s}
 #dash-content.dash-in #dash-cards .card:nth-child(4){animation-delay:.12s}
+#dash-content.dash-in #dash-cards .card:nth-child(5){animation-delay:.16s}
 #dash-content.dash-in #dash-nilai .card:nth-child(1){animation-delay:.06s}
 #dash-content.dash-in #dash-nilai .card:nth-child(2){animation-delay:.10s}
 #dash-content.dash-in #dash-nilai .card:nth-child(3){animation-delay:.14s}
@@ -1527,6 +1529,10 @@ td{padding:2px 4px}
   outline:none;border-color:var(--teal);
   box-shadow:0 0 0 3px var(--teal-soft),0 6px 16px rgba(14,124,134,.18)
 }
+/* Empat filter (Jenis, Anggaran, Tahun, Periode) berbagi satu baris dengan lebar sama,
+   sehingga Anggaran/Tahun/Periode berukuran sama & tidak muncul baris baru. */
+.dash-filter-bar .filter-field{flex:1 1 0;min-width:0}
+#view-dashboard .dash-filter-bar .filter-field select{width:100%;min-width:0;max-width:none}
 @media(max-width:640px){
   .dash-filter-bar{width:100%;padding:0}
   .dash-filter-bar .filter-field{flex:1 1 100%}

@@ -1272,7 +1272,7 @@ function resetAllFilters(){
    'filter-tender-bidang','filter-tender-tahapan','filter-tender-tahun','filter-tender-search',
    'fk-input-bidang','fk-input-search','fk-view-bidang','fk-view-search',
    'pn-lihat-search','fkl-view-search',
-   'dash-filter-anggaran','dash-filter-tahun','dash-filter-metode'
+   'dash-filter-anggaran','dash-filter-tahun','dash-filter-periode','dash-filter-metode'
   ].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   // Filter dashboard "Jenis Pekerjaan" kembali ke default (SPBJ / Kontrak Rinci)
   const dj=document.getElementById('dash-filter-jenis'); if(dj) dj.value='kr';
@@ -1987,6 +1987,35 @@ function dashHPS(r){ return Number(r.hps_total_dengan_ppn)||0; }
 /* Total RAB (dengan PPN) sesuai jenis data */
 function dashRAB(r){ return Number(r.rab_total_dengan_ppn)||0; }
 
+/* Tanggal acuan sebuah record (ISO YYYY-MM-DD) — sumbernya sama dengan penentu Tahun. */
+function dashDate(r, jenis){
+  if(jenis==='kr') return r.tgl_terbit_kr || '';
+  return r.tgl_awal_kontrak || r.tgl_anggaran || r.tgl_nota_dinas || r.tgl_nd_rendan || '';
+}
+/* Bulan (1..12) dari tanggal acuan; 0 bila tak diketahui. */
+function dashMonth(r, jenis){
+  const p=String(dashDate(r,jenis)||'').split('-');
+  const m=parseInt(p[1],10);
+  return (m>=1&&m<=12)?m:0;
+}
+/* Apakah record termasuk periode terpilih.
+   TW I=Jan-Mar, TW II=Apr-Jun, TW III=Jul-Sep, TW IV=Okt-Des,
+   SM I=Jan-Jun (TW I+II), SM II=Jul-Des (TW III+IV). */
+function inPeriode(r, jenis, periode){
+  if(!periode) return true;
+  const m=dashMonth(r,jenis);
+  if(!m) return false;                 // tanpa bulan → tak masuk periode tertentu
+  switch(periode){
+    case 'TW I':   return m>=1  && m<=3;
+    case 'TW II':  return m>=4  && m<=6;
+    case 'SM I':   return m>=1  && m<=6;
+    case 'TW III': return m>=7  && m<=9;
+    case 'TW IV':  return m>=10 && m<=12;
+    case 'SM II':  return m>=7  && m<=12;
+    default:       return true;
+  }
+}
+
 
 /* Transisi halus saat berpindah Jenis Data pada Dashboard */
 let dashSwitchTimer=null;
@@ -2318,6 +2347,8 @@ function renderDashboard(){
   const ft=ftEl?ftEl.value:'';
   const faEl=document.getElementById('dash-filter-anggaran');
   const fa=faEl?faEl.value:'';
+  const fpEl=document.getElementById('dash-filter-periode');
+  const fp=fpEl?fpEl.value:'';   // Periode: TW I/II/III/IV atau SM I/II
 
   // #2: Filter Metode Pengadaan hanya tampil & berlaku untuk jenis Tender
   const metodeWrap=document.getElementById('dash-metode-wrap');
@@ -2332,6 +2363,7 @@ function renderDashboard(){
   let data = ft ? src.filter(r=>dashYear(r,jenis)===ft) : src;
   if(fa) data = data.filter(r=>r.jenis_anggaran===fa);
   if(fm) data = data.filter(r=>r.metode_pengadaan===fm);
+  if(fp) data = data.filter(r=>inPeriode(r,jenis,fp));
 
   // Subtitle & label status
   const meta = {
@@ -2370,12 +2402,16 @@ function renderDashboard(){
   ];
   if(jenis!=='kr'){
     cards.push({k:'Gagal / Batal', v:gagal, sub:'Pengadaan gagal / dibatalkan', c:'var(--red)'});
+    // Nilai Pekerjaan dipindah ke baris atas → baris atas jadi 5 kartu (baris nilai juga 5)
+    cards.push({k:'Nilai Pekerjaan', v:rupiah(nilai)||'Rp 0', sub:'Akumulasi nilai kontrak', c:'var(--teal-dark)', vs:'font-size:18px;line-height:1.2;word-break:break-word'});
   }else{
     // KR tidak punya RAB/HPS → Nilai Pekerjaan tetap di baris status
     cards.push({k:'Nilai Pekerjaan', v:rupiah(nilai)||'Rp 0', sub:'Akumulasi nilai pekerjaan', c:'var(--teal-dark)', vs:'font-size:18px;line-height:1.2;word-break:break-word'});
   }
 
-  document.getElementById('dash-cards').innerHTML=cards.map(c=>`
+  const dashCardsEl=document.getElementById('dash-cards');
+  dashCardsEl.classList.toggle('cards-5', cards.length>=5);   // 5 kartu → grid 5 kolom
+  dashCardsEl.innerHTML=cards.map(c=>`
     <div class="card" style="--card-accent:${c.c}"><div class="accent" style="background:${c.c}"></div>
       <div class="card-head">
         <div class="card-ic" style="--ic:${c.c}">${cardIcon(c.k)}</div>
@@ -2396,7 +2432,6 @@ function renderDashboard(){
       const nilaiCards=[
         {k:'Nilai RAB',       v:rupiah(totRAB)||'Rp 0', sub:'Akumulasi RAB', c:'var(--cyan)', vs:vNum},
         {k:'Nilai HPS',       v:rupiah(totHPS)||'Rp 0', sub:'Akumulasi HPS', c:'var(--yellow)', vs:vNum},
-        {k:'Nilai Pekerjaan', v:rupiah(nilai)||'Rp 0',  sub:'Akumulasi nilai kontrak', c:'var(--teal-dark)', vs:vNum},
       ].map(c=>`
         <div class="card" style="--card-accent:${c.c}"><div class="accent" style="background:${c.c}"></div>
           <div class="card-head">
@@ -2461,34 +2496,38 @@ function playGrandDashEntrance(){
   });
 }
 
-/* Kartu Efisiensi — dua kotak terpisah, urut: RAB dulu, lalu HPS.
-   Pola hitung sama untuk kedua basis:
-     penghematan = Basis − Kontrak ; persen = penghematan / Basis × 100. */
+/* Kartu Efisiensi — tiga kotak terpisah:
+     1) Efisiensi Kontrak vs RAB   = (RAB − Kontrak) / RAB
+     2) Efisiensi Kontrak vs HPS   = (HPS − Kontrak) / HPS
+     3) Efisiensi HPS vs RAB       = (RAB − HPS)     / RAB
+   Pola sama: penghematan = Basis − Pembanding ; persen = penghematan / Basis × 100. */
 function efisiensiCardHTML(data, totRAB, totHPS, nilaiPekerjaan){
   const sPek = Number(nilaiPekerjaan)||0;  // Nilai Pekerjaan (akumulasi nilai kontrak)
+  const sRAB = Number(totRAB)||0;          // Nilai RAB (akumulasi)
+  const sHPS = Number(totHPS)||0;          // Nilai HPS (akumulasi)
 
-  // Satu kartu efisiensi kontrak terhadap sebuah basis (RAB / HPS)
-  function card(judul, basis, labelBasis){
-    const b = Number(basis)||0;
+  // Satu kartu efisiensi: basis dibandingkan terhadap pembanding
+  function card(judul, basis, pembanding, subteks){
+    const b = Number(basis)||0, p = Number(pembanding)||0;
     if(b<=0){
       return `<div class="card efisiensi-card" style="--card-accent:var(--green)"><div class="accent" style="background:var(--green)"></div>
         <div class="k">${judul}</div>
         <div class="eff-empty">Data tidak tersedia</div></div>`;
     }
-    const hemat = Math.round(b - sPek);      // penghematan = Basis − Kontrak
-    const pct   = (b - sPek) / b * 100;      // persen = penghematan / Basis × 100
+    const hemat = Math.round(b - p);         // penghematan = Basis − Pembanding
+    const pct   = (b - p) / b * 100;         // persen = penghematan / Basis × 100
     const barW  = Math.max(0, Math.min(100, pct));
     return `<div class="card efisiensi-card" style="--card-accent:var(--green)"><div class="accent" style="background:var(--green)"></div>
       <div class="k">${judul}</div>
       <div class="eff-pct">${pct.toFixed(2)}<span>%</span></div>
       <div class="eff-bar"><div class="eff-bar-fill" style="width:${barW}%"></div></div>
-      <div class="eff-rp">${rupiah(hemat)||'Rp 0'}<small>penghematan terhadap ${labelBasis}</small></div>
+      <div class="eff-rp">${rupiah(hemat)||'Rp 0'}<small>${subteks}</small></div>
     </div>`;
   }
 
-  // RAB dulu (sebelum HPS)
-  return card('Efisiensi Kontrak vs RAB', Number(totRAB)||0, 'RAB')
-       + card('Efisiensi Kontrak vs HPS', Number(totHPS)||0, 'HPS');
+  return card('Efisiensi Kontrak vs RAB', sRAB, sPek, 'penghematan terhadap RAB')
+       + card('Efisiensi Kontrak vs HPS', sHPS, sPek, 'penghematan terhadap HPS')
+       + card('Efisiensi HPS vs RAB',     sRAB, sHPS, 'penghematan HPS terhadap RAB');
 }
 
 function renderBars(elId,key,cats,data,opts){
