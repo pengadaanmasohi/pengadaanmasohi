@@ -103,7 +103,6 @@ a{color:inherit}
 
 /* ---------- Cards ---------- */
 .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
-.cards-5{grid-template-columns:repeat(5,1fr)}   /* baris atas saat memuat 5 kartu */
 .card{background:linear-gradient(180deg,#ffffff,#fbfdfd);border:1px solid var(--line);border-radius:var(--radius);padding:18px 18px 18px 22px;box-shadow:var(--shadow);position:relative;overflow:hidden;transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease}
 .card:hover{transform:translateY(-3px);box-shadow:var(--shadow-md);border-color:#cfdde0}
 .card .accent{position:absolute;left:0;top:0;bottom:0;width:5px;border-radius:0 4px 4px 0}
@@ -113,8 +112,6 @@ a{color:inherit}
 .card .sub{font-size:10px;color:var(--muted);margin-top:8px}
 /* ---- Baris nilai & kartu Efisiensi Kontrak vs HPS ---- */
 .dash-nilai{margin-top:-8px}
-/* Baris nilai kini memuat 5 kartu (3 nilai + 2 efisiensi: RAB lalu HPS) */
-.dash-nilai{grid-template-columns:repeat(5,1fr)}
 .efisiensi-card{background:linear-gradient(160deg,#f2fbf6,#ffffff 60%);border-color:#c7ead6;display:flex;flex-direction:column}
 .efisiensi-card::after{background:radial-gradient(circle,rgba(30,158,90,.10),transparent 70%)}
 .efisiensi-card .k{color:var(--green-dark)}
@@ -139,12 +136,10 @@ a{color:inherit}
 #dash-content.dash-in #dash-cards .card:nth-child(2){animation-delay:.04s}
 #dash-content.dash-in #dash-cards .card:nth-child(3){animation-delay:.08s}
 #dash-content.dash-in #dash-cards .card:nth-child(4){animation-delay:.12s}
-#dash-content.dash-in #dash-cards .card:nth-child(5){animation-delay:.16s}
 #dash-content.dash-in #dash-nilai .card:nth-child(1){animation-delay:.06s}
 #dash-content.dash-in #dash-nilai .card:nth-child(2){animation-delay:.10s}
 #dash-content.dash-in #dash-nilai .card:nth-child(3){animation-delay:.14s}
 #dash-content.dash-in #dash-nilai .card:nth-child(4){animation-delay:.18s}
-#dash-content.dash-in #dash-nilai .card:nth-child(5){animation-delay:.22s}
 @keyframes cardRise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 
 /* ✦✦✦ GRAND ENTRANCE — animasi masuk dashboard megah (khusus setelah login) ✦✦✦ */
@@ -1197,34 +1192,11 @@ tbody.tbody-reveal>tr:nth-child(10){animation-delay:.29s}
 .settings-item.danger:hover{background:#fdecec;color:var(--red)}
 .settings-item.danger:hover svg{color:var(--red)}
 
-/* ===== Perbaikan iPad / layar sentuh =====
-   a) Ikon gear tidak boleh menyusut/terpotong walau topbar sesak.
-   b) Rentang 1025-1200px (iPad Air landscape, laptop kecil): navigasi & area akun
-      dipadatkan supaya seluruh isi topbar muat tanpa terdorong keluar.
-   c) Perangkat sentuh: efek hover (ikon berputar & tombol bergeser) dimatikan
-      karena state hover "nyangkut" setelah disentuh -> ikon tampak tidak presisi. */
-.settings-gear{flex:0 0 40px}
-.topbar-inner{min-width:0}
-@media (min-width:1025px) and (max-width:1200px){
-  .topbar-inner{gap:10px;padding:10px 14px}
-  .topnav{gap:2px}
-  .topnav-link,.topnav-trigger{padding:8px 9px;font-size:11.5px;gap:6px}
-  .topnav-link svg,.topnav-trigger svg{width:15px;height:15px}
-  .topbar-user{gap:8px}
-  .topbar-user .user-chip{padding:6px 11px 6px 8px;font-size:10.5px}
-  .topbar-user .logout-btn{padding:7px 11px;font-size:10.5px}
-}
-@media (hover:none){
-  .settings-gear:hover{transform:none;background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,.07))}
-  .settings-gear:hover svg{transform:none}
-  .topbar-user .logout-btn:hover{transform:none;background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.06));border-color:rgba(255,255,255,.22);box-shadow:inset 0 1px 0 rgba(255,255,255,.2)}
-  .topnav-link:hover{transform:none}
-}
 .nav-burger{display:none;appearance:none;background:rgba(255,255,255,.12);border:none;color:#fff;width:38px;height:38px;border-radius:10px;cursor:pointer;align-items:center;justify-content:center}
 .nav-burger svg{width:20px;height:20px}
 .topnav-backdrop{display:none}
 
-@media (max-width:1024px){
+@media (max-width:920px){
   .topbar-inner{flex-wrap:wrap;padding:10px 16px;gap:12px}
   .nav-burger{display:inline-flex}
   .topbar-user{order:2}
@@ -1529,20 +1501,10 @@ td{padding:2px 4px}
   outline:none;border-color:var(--teal);
   box-shadow:0 0 0 3px var(--teal-soft),0 6px 16px rgba(14,124,134,.18)
 }
-/* Filter bar diletakkan pada baris DI BAWAH judul; ke-4 field dibuat lebar tetap
-   yang sama — cukup untuk teks terpanjang ("SPBJ / Kontrak Rinci") sehingga tidak
-   ada teks yang terpotong dan semua field seragam. */
-#view-dashboard .page-head{flex-direction:column;align-items:flex-start;gap:20px}
-/* Kelompok field filter rata kanan halaman (judul tetap di kiri) */
-#view-dashboard .dash-filter-bar{align-self:flex-end}
-/* Beri ruang di bawah judul agar ekor huruf (mis. 'g' pada "Langsung") tidak terpotong */
-#view-dashboard .page-head h2{line-height:1.35;padding-bottom:4px}
-.dash-filter-bar .filter-field{flex:0 0 auto;min-width:0}
-#view-dashboard .dash-filter-bar .filter-field select{width:205px;min-width:205px;max-width:205px}
 @media(max-width:640px){
   .dash-filter-bar{width:100%;padding:0}
   .dash-filter-bar .filter-field{flex:1 1 100%}
-  #view-dashboard .dash-filter-bar .filter-field select{width:100%;min-width:0;max-width:none}
+  .dash-filter-bar .filter-field select{width:100%;min-width:0;max-width:none}
 }
 
 @media (prefers-reduced-motion: reduce){
@@ -1553,7 +1515,7 @@ td{padding:2px 4px}
    Menu kini tampil tajam & bisa diklik; tata letak dirapikan untuk layar kecil
    ===================================================================== */
 body.nav-open{overflow:hidden}
-@media(max-width:1024px){
+@media(max-width:920px){
   .topnav .topnav-link,.topnav .topnav-trigger{padding:12px 14px;font-size:13px;border-radius:11px}
   .topnav .topnav-item{padding:12px 12px;font-size:12.5px}
 }
@@ -1812,7 +1774,7 @@ tbody tr{animation:rowIn .3s ease both}
   .topnav-subtrigger>svg:first-child{color:rgba(255,255,255,.65)}
   .topnav-subtrigger:hover,.topnav-sub.open>.topnav-subtrigger{background:rgba(255,255,255,.1);color:#fff}
 }
-@media (max-width:1024px){
+@media (max-width:920px){
   .topnav-sub{position:static}
   .topnav-subtrigger .caret2{transform:rotate(-90deg)}
   .topnav-sub.open>.topnav-subtrigger .caret2{transform:rotate(0deg)}
@@ -2456,16 +2418,16 @@ tr.hl-weekend td{background:#f5f8fb}
 .fkl-info td.v{font-weight:700;color:#1a2b31}
 /* Tabel kelengkapan dokumen */
 .fkl-chk{width:100%;border-collapse:separate;border-spacing:0;margin-top:2px;border:1.5px solid #0b6a73;border-radius:9px;overflow:hidden;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
-.fkl-chk thead th{background:#0E7C86;color:#fff;font-size:11.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;padding:9px 12px;text-align:center;border-right:1px solid rgba(255,255,255,.3)}
+.fkl-chk thead th{background:#0E7C86;color:#fff;font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;padding:9px 12px;text-align:center;border-right:1px solid rgba(255,255,255,.3)}
 .fkl-chk thead th:last-child{border-right:none}
 .fkl-chk th.no,.fkl-chk td.no{width:44px;text-align:center}
 .fkl-chk th.ck,.fkl-chk td.ck{width:190px;text-align:center}.fkl-chk th.ck{padding-top:7px;padding-bottom:7px}.fkl-chk th.ck .ck-main{display:block;line-height:1.2;white-space:nowrap}
-.fkl-chk tbody td{padding:8px 12px;font-size:11.5px;font-weight:600;border-top:1px solid #bcd6d9;border-right:1px solid #bcd6d9;color:#22343a}
+.fkl-chk tbody td{padding:8px 12px;font-size:11px;font-weight:600;border-top:1px solid #bcd6d9;border-right:1px solid #bcd6d9;color:#22343a}
 .fkl-chk tbody td:last-child{border-right:none}
 .fkl-chk tbody tr:nth-child(even) td{background:#f6fafb}
 .fkl-chk td.nm{font-weight:600}
 .fkl-chk td.empty{text-align:center;color:#9aabb0;font-style:italic;padding:14px}
-.fkl-chk .pill{display:inline-flex;align-items:center;justify-content:center;min-width:74px;padding:3px 12px;border-radius:20px;font-size:11.5px;font-weight:800;letter-spacing:.3px}
+.fkl-chk .pill{display:inline-flex;align-items:center;justify-content:center;min-width:74px;padding:3px 12px;border-radius:20px;font-size:10.5px;font-weight:800;letter-spacing:.3px}
 .fkl-chk .pill.ada{background:#e0f5ea;color:#127a43;border:1px solid #a8dcc0}
 .fkl-chk .pill.no{background:#fce4e4;color:#b02626;border:1px solid #edbcbc}
 .fkl-chk .pill.nn{background:#eef2f4;color:#98a6ab;border:1px solid #dde5e8}
@@ -3277,10 +3239,7 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
 .spk-we-bulcell.none{font:600 11px Arial;color:#3d4a55;text-align:center;padding:4px}
 .spk-we-bulcell.sel{border-color:#1d9e75;border-width:2px;background:#eafaf3}
 /* Pratinjau klausul (mode Lihat) di halaman utama — samakan dengan dokumen */
-/* 22 Jul 2026 — padding 0,75cm DIBUANG supaya Lihat Pustaka Klausul mulai di
-   batas margin persis seperti dokumen cetak (.spk-clause .spk-cl{padding-left:0}).
-   Inden tiap tingkat sepenuhnya diatur inline oleh spkPkIndentStd. */
-.spk-we-page .spk-cl{font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif;font-size:11pt;color:#000;line-height:var(--spk-lh,1.3915);padding-left:0}
+.spk-we-page .spk-cl{font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif;font-size:11pt;color:#000;line-height:var(--spk-lh,1.32);padding-left:.75cm}
 .spk-we-page .spk-cl p{margin:0 0 6pt;text-align:justify;line-height:var(--spk-lh,1.32)}
 /* Judul klausul di awal lembar: tanpa spasi sebelum/sesudah yang mendorongnya turun */
 .spk-we-page .spk-cl-h:first-child,.spk-we-page .spk-clause:first-child > .spk-cl-h{margin-top:0;padding-top:0}
@@ -3980,13 +3939,9 @@ table.hps-uraian.spk-lamp-tbl td.c-no{
 .settings-item.settings-logout svg{ color:var(--red) }
 .settings-item.settings-logout:hover{ background:#f7d6d6; color:var(--red-dark); box-shadow:inset 0 0 0 1px rgba(211,58,58,.38) }
 .settings-item.settings-logout:hover svg{ color:var(--red-dark) }
-/* Gerigi berputar saat kursor mouse di atasnya — HANYA untuk perangkat bermouse.
-   Di layar sentuh (iPad/HP) state hover "menempel" setelah di-tap sehingga tombol
-   tertinggal dalam posisi miring 40 derajat -> tampak terpotong & tidak presisi. */
+/* Gerigi berputar saat disentuh */
 .settings-gear{ transition:transform .4s cubic-bezier(.34,1.56,.64,1) }
-@media (hover:hover) and (pointer:fine){
-  .settings-gear:hover{ transform:rotate(40deg) }
-}
+.settings-gear:hover{ transform:rotate(40deg) }
 
 /* Ikon di judul seksi form & panel: timbul tipis */
 .form-section-title svg,.fkl-sec-h svg{ filter:drop-shadow(0 1px 2px rgba(16,40,50,.22)) }
