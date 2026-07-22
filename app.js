@@ -2359,6 +2359,7 @@ function renderDashboard(){
   // Pilih sumber data sesuai jenis
   const src = jenis==='pl' ? (records_pl||[])
             : jenis==='tender' ? (records_tender||[])
+            : jenis==='pl_tender' ? [...(records_pl||[]), ...(records_tender||[])]
             : (records||[]);
   let data = ft ? src.filter(r=>dashYear(r,jenis)===ft) : src;
   if(fa) data = data.filter(r=>r.jenis_anggaran===fa);
@@ -2370,6 +2371,7 @@ function renderDashboard(){
     kr:     {label:'SPBJ / Kontrak Rinci', title:'Kontrak Rinci',       sub:'Ringkasan monitoring SPBJ / Kontrak Rinci UP3 Masohi'},
     pl:     {label:'Pengadaan Langsung',   title:'Pengadaan Langsung',  sub:'Ringkasan monitoring Pengadaan Langsung UP3 Masohi'},
     tender: {label:'Tender',               title:'Tender',              sub:'Ringkasan monitoring Tender UP3 Masohi'},
+    pl_tender:{label:'PL & Tender',        title:'PL & Tender',         sub:'Ringkasan monitoring Pengadaan Langsung & Tender UP3 Masohi'},
   }[jenis];
   const titleEl=document.getElementById('dash-title'); if(titleEl) titleEl.textContent = meta && meta.title ? ('Dashboard '+meta.title) : 'Dashboard';
   const subEl=document.getElementById('dash-subtitle'); if(subEl) subEl.textContent=meta.sub;
