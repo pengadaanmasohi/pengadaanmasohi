@@ -1529,14 +1529,16 @@ td{padding:2px 4px}
   outline:none;border-color:var(--teal);
   box-shadow:0 0 0 3px var(--teal-soft),0 6px 16px rgba(14,124,134,.18)
 }
-/* Empat filter (Jenis, Anggaran, Tahun, Periode) berbagi satu baris dengan lebar sama,
-   sehingga Anggaran/Tahun/Periode berukuran sama & tidak muncul baris baru. */
-.dash-filter-bar .filter-field{flex:1 1 0;min-width:0}
-#view-dashboard .dash-filter-bar .filter-field select{width:100%;min-width:0;max-width:none}
+/* Filter bar diletakkan pada baris DI BAWAH judul; ke-4 field dibuat lebar tetap
+   yang sama — cukup untuk teks terpanjang ("SPBJ / Kontrak Rinci") sehingga tidak
+   ada teks yang terpotong dan semua field seragam. */
+#view-dashboard .page-head{flex-direction:column;align-items:flex-start;gap:14px}
+.dash-filter-bar .filter-field{flex:0 0 auto;min-width:0}
+#view-dashboard .dash-filter-bar .filter-field select{width:235px;min-width:235px;max-width:235px}
 @media(max-width:640px){
   .dash-filter-bar{width:100%;padding:0}
   .dash-filter-bar .filter-field{flex:1 1 100%}
-  .dash-filter-bar .filter-field select{width:100%;min-width:0;max-width:none}
+  #view-dashboard .dash-filter-bar .filter-field select{width:100%;min-width:0;max-width:none}
 }
 
 @media (prefers-reduced-motion: reduce){
@@ -2604,6 +2606,8 @@ tr.hl-weekend td{background:#f5f8fb}
 }
 /* Sub-teks kartu: netral & ringan */
 #view-dashboard .card .sub{color:#859299 !important;font-weight:500 !important}
+/* Sembunyikan keterangan (bullet) di bawah nilai pada kartu dashboard */
+#view-dashboard .card .sub{display:none !important}
 /* Chip ikon: netral, bersih, tidak mencolok */
 #view-dashboard .card-ic{
   background:#f3f6f7 !important;
