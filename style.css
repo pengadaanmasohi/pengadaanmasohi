@@ -112,6 +112,8 @@ a{color:inherit}
 .card .sub{font-size:10px;color:var(--muted);margin-top:8px}
 /* ---- Baris nilai & kartu Efisiensi Kontrak vs HPS ---- */
 .dash-nilai{margin-top:-8px}
+/* Baris nilai kini memuat 5 kartu (3 nilai + 2 efisiensi: RAB lalu HPS) */
+.dash-nilai{grid-template-columns:repeat(5,1fr)}
 .efisiensi-card{background:linear-gradient(160deg,#f2fbf6,#ffffff 60%);border-color:#c7ead6;display:flex;flex-direction:column}
 .efisiensi-card::after{background:radial-gradient(circle,rgba(30,158,90,.10),transparent 70%)}
 .efisiensi-card .k{color:var(--green-dark)}
@@ -123,39 +125,6 @@ a{color:inherit}
 .eff-rp{font-family:'Plus Jakarta Sans';font-weight:800;font-size:15px;color:var(--ink);line-height:1.15;word-break:break-word}
 .eff-rp small{display:block;font-family:'Plus Jakarta Sans';font-weight:500;font-size:9.5px;color:var(--muted);margin-top:3px;letter-spacing:.2px}
 .eff-empty{font-size:10.5px;color:var(--muted);margin-top:14px;line-height:1.5}
-/* ===== Kartu Efisiensi — carousel 1 kotak (geser kiri/kanan RAB ↔ HPS) ===== */
-.eff-carousel{position:relative}
-.eff-view{overflow:hidden;width:100%}
-.eff-slides{display:flex;will-change:transform;transition:transform .38s cubic-bezier(.2,.8,.2,1)}
-.eff-slide{flex:0 0 100%;min-width:100%;box-sizing:border-box}
-/* beri ruang di sisi agar teks tak tertutup tombol panah */
-.eff-slide .k{padding-right:26px}
-/* Tombol panah navigasi */
-.eff-nav{position:absolute;top:50%;transform:translateY(-50%);z-index:3;
-  width:26px;height:26px;display:flex;align-items:center;justify-content:center;
-  padding:0;border:1px solid #bfe6cf;border-radius:50%;cursor:pointer;
-  color:var(--green-dark);background:rgba(255,255,255,.86);backdrop-filter:blur(2px);
-  box-shadow:0 1px 4px rgba(16,40,50,.10);
-  transition:background .18s ease,box-shadow .18s ease,transform .18s ease,opacity .18s ease}
-.eff-nav svg{width:15px;height:15px;display:block}
-.eff-nav:hover{background:var(--green);border-color:var(--green);color:#fff;
-  box-shadow:0 3px 10px rgba(30,158,90,.35);transform:translateY(-50%) scale(1.06)}
-.eff-nav:active{transform:translateY(-50%) scale(.94)}
-.eff-nav:focus-visible{outline:2px solid var(--green);outline-offset:2px}
-.eff-prev{left:5px}
-.eff-next{right:5px}
-/* Titik indikator */
-.eff-dots{display:flex;gap:6px;justify-content:center;align-items:center;margin-top:10px}
-.eff-dot{width:7px;height:7px;padding:0;border:none;border-radius:50%;cursor:pointer;
-  background:#c4e3d1;transition:background .2s ease,transform .2s ease,width .2s ease}
-.eff-dot:hover{background:#8fd3ab}
-.eff-dot.active{background:var(--green);width:18px;border-radius:5px}
-.eff-dot:focus-visible{outline:2px solid var(--green);outline-offset:2px}
-@media (prefers-reduced-motion: reduce){
-  .eff-slides{transition:none}
-  .eff-nav,.eff-dot{transition:none}
-}
-
 #view-dashboard .eff-pct{font-size:32px}
 #view-dashboard .eff-rp{font-size:16px}
 #view-dashboard .eff-rp small{font-size:11px}
@@ -173,6 +142,7 @@ a{color:inherit}
 #dash-content.dash-in #dash-nilai .card:nth-child(2){animation-delay:.10s}
 #dash-content.dash-in #dash-nilai .card:nth-child(3){animation-delay:.14s}
 #dash-content.dash-in #dash-nilai .card:nth-child(4){animation-delay:.18s}
+#dash-content.dash-in #dash-nilai .card:nth-child(5){animation-delay:.22s}
 @keyframes cardRise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 
 /* ✦✦✦ GRAND ENTRANCE — animasi masuk dashboard megah (khusus setelah login) ✦✦✦ */
