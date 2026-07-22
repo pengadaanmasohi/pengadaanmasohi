@@ -25368,21 +25368,120 @@ function spkKlDocPick(){
 function spkKlDocDzHide(){ var dz=document.getElementById('spk-kldoc-dz'); if(dz){ dz.classList.remove('show','drag'); } }
 /* Klik pada kotak -> buka dialog pilih berkas */
 function spkKlDocBrowse(){ var f=document.getElementById('spk-kldoc-file'); if(f){ f.value=''; f.click(); } }
-function spkKlDocDownload(){
+/* =====================================================================
+   URUT DEFINISI PADA LEVEL .docx  (penomoran OTOMATIS Word tetap utuh)
+   ---------------------------------------------------------------------
+   Mengurutkan butir daftar bernomor (A-Z) LANGSUNG di word/document.xml,
+   TANPA menyentuh numbering.xml / styles.xml / numPr tiap paragraf. Karena
+   penomoran Word bersifat otomatis, angka 1,2,3,... ikut menata ulang sesuai
+   urutan baru — sehingga berkas yang diunduh SAMA PERSIS dengan yang diunggah,
+   hanya berbeda urutan (konsisten dengan tampilan web yang juga terurut A-Z).
+   Mengembalikan Blob .docx terurut; null bila struktur tak dikenali agar
+   pemanggil dapat fallback ke pembangunan ulang dari HTML.
+   ===================================================================== */
+async function spkDefinisiDocxSortedBlob(u8){
+  try{
+    var ab = (u8 && u8.buffer) ? u8.buffer : u8;
+    var zip = await spkUnzip(ab);
+    var docPart = zip['word/document.xml'];
+    if(!docPart) return null;
+    var dec = new TextDecoder(), enc = new TextEncoder();
+    var doc = new DOMParser().parseFromString(dec.decode(docPart), 'application/xml');
+    if(doc.getElementsByTagName('parsererror').length) return null;
+    var body = doc.getElementsByTagNameNS(SPK_W_NS,'body')[0];
+    if(!body) return null;
+
+    /* Blok level-atas <w:body> (paragraf & tabel) berurut; sectPr dikecualikan. */
+    var kids = [], c = body.firstChild;
+    while(c){ if(c.nodeType===1 && c.localName!=='sectPr') kids.push(c); c = c.nextSibling; }
+
+    /* Level butir (ilvl) paragraf ber-numPr; -1 tanpa numPr; -2 bukan paragraf. */
+    var ilvlOf = function(el){
+      if(el.localName!=='p') return -2;
+      var pPr = el.getElementsByTagNameNS(SPK_W_NS,'pPr')[0]; if(!pPr) return -1;
+      var np  = pPr.getElementsByTagNameNS(SPK_W_NS,'numPr')[0]; if(!np) return -1;
+      var il  = np.getElementsByTagNameNS(SPK_W_NS,'ilvl')[0];
+      return il ? (parseInt(il.getAttributeNS(SPK_W_NS,'val'),10)||0) : 0;
+    };
+    var textOf = function(el){
+      var ts = el.getElementsByTagNameNS(SPK_W_NS,'t'), s='';
+      for(var i=0;i<ts.length;i++) s += ts[i].textContent||'';
+      return s;
+    };
+
+    /* Susun UNIT: 'item' (butir ilvl-0 + lanjutan sub-butir ilvl>=1) atau 'plain'
+       (paragraf tanpa numPr / tabel) — 'plain' tetap di posisinya (tidak diurut). */
+    var units = [], i = 0;
+    while(i < kids.length){
+      var lv = ilvlOf(kids[i]);
+      if(lv === 0){
+        var els = [kids[i]], j = i+1;
+        while(j < kids.length && ilvlOf(kids[j]) >= 1){ els.push(kids[j]); j++; }
+        var txt = els.map(textOf).join(' ');
+        units.push({ item:true, els:els, key:spkDefKey({textContent:txt}) });
+        i = j;
+      }else{
+        units.push({ item:false, els:[kids[i]] });
+        i++;
+      }
+    }
+
+    /* Deret UNIT 'item' berurutan TERPANJANG (bagian lain tak diacak posisinya). */
+    var bs=-1, bl=0, k=0;
+    while(k < units.length){
+      if(!units[k].item){ k++; continue; }
+      var s=k; while(k<units.length && units[k].item) k++;
+      if((k-s) > bl){ bl=k-s; bs=s; }
+    }
+    if(bs < 0 || bl < 2) return null;                 // bukan daftar bernomor -> fallback
+
+    /* Urutkan deret A-Z (locale id, numerik). Kunci sama -> urutan asal dijaga. */
+    var run = units.slice(bs, bs+bl);
+    var order = run.map(function(u,ix){ return {u:u, ix:ix}; });
+    order.sort(function(a,b){
+      var cc = a.u.key.localeCompare(b.u.key, 'id', {sensitivity:'base', numeric:true});
+      return cc!==0 ? cc : (a.ix - b.ix);
+    });
+
+    /* Rakit ulang <w:body>: unit di luar deret tetap pada slotnya; slot deret
+       diisi unit yang sudah terurut. sectPr dikembalikan di akhir. */
+    var sectList = body.getElementsByTagNameNS(SPK_W_NS,'sectPr');
+    var sectEl = sectList.length ? sectList[sectList.length-1] : null;
+    var seq = [];
+    for(k=0;k<units.length;k++){ seq.push((k>=bs && k<bs+bl) ? order[k-bs].u : units[k]); }
+    while(body.firstChild) body.removeChild(body.firstChild);
+    for(k=0;k<seq.length;k++){ for(var e=0;e<seq[k].els.length;e++) body.appendChild(seq[k].els[e]); }
+    if(sectEl) body.appendChild(sectEl);
+
+    /* Serialize & bungkus ulang SELURUH part apa adanya (metode Store). */
+    var outXml = new XMLSerializer().serializeToString(doc);
+    if(outXml.indexOf('<?xml')!==0) outXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' + outXml;
+    var files = [];
+    for(var nm in zip){ if(!Object.prototype.hasOwnProperty.call(zip,nm)) continue;
+      files.push({ name:nm, data: (nm==='word/document.xml') ? enc.encode(outXml) : zip[nm] });
+    }
+    return spkZipBuild(files);
+  }catch(e){ console.error('[SPK] urut definisi .docx gagal:', e); return null; }
+}
+
+async function spkKlDocDownload(){
   try{
     var jd=spkKlDocJudul(), jp=spkJudulPlain(jd);
     var nm='Template Klausul'+(jp?(' - '+jp):' Baru');
     nm=nm.replace(/[\\/:*?"<>|]+/g,'-').slice(0,90)+'.docx';
-    var blob;
-    /* Bila ada berkas .docx ASLI (dari unggahan / tersimpan di record), kembalikan
-       apa adanya agar penomoran & jarak spasi baris SAMA PERSIS dengan saat diunggah.
-       Hanya bila belum pernah ada unggahan, template dibangun ulang dari isi HTML.
-       PENGECUALIAN: klausul DEFINISI selalu dibangun ulang dari isi HTML yang sudah
-       diurutkan A-Z, sehingga template yang diunduh ikut tersusun menurut abjad. */
-    var _isDef = spkIsDefinisiJudul(jd);
-    if(spkKlDoc.docx && !_isDef){
-      blob=new Blob([spkB642u8(spkKlDoc.docx)], {type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
-    }else{
+    var blob=null, _isDef=spkIsDefinisiJudul(jd);
+    if(spkKlDoc.docx){
+      if(_isDef){
+        /* DEFINISI: urutkan A-Z LANGSUNG pada berkas .docx asli agar penomoran
+           OTOMATIS Word tetap utuh. Bila struktur tak dikenali -> null -> fallback. */
+        try{ blob = await spkDefinisiDocxSortedBlob(spkB642u8(spkKlDoc.docx)); }catch(e){ blob=null; }
+      }else{
+        /* Non-definisi: kembalikan berkas asli apa adanya (SAMA PERSIS). */
+        blob=new Blob([spkB642u8(spkKlDoc.docx)], {type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+      }
+    }
+    if(!blob){
+      /* Belum ada berkas asli (atau struktur tak dikenali) -> bangun ulang dari isi HTML. */
       blob=spkWithDX(spkKlDocBentuk(), function(){
         return spkDocxTemplateBlob(jd, spkSortDefinisiIf(jd, spkKlDoc.isi), spkKlDoc.no);
       });
