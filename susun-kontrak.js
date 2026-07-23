@@ -10023,8 +10023,25 @@ function spkKlausulView(id){
   const k=records_klausul.find(x=>String(x.id)===String(id)); if(!k) return;
   let ctx={};
   try{ ctx=spkBuildCtx((spkState&&spkState.data)||{}); }catch(e){}
-  // nomor klausul mengikuti posisinya di pustaka -> butir & rujukan ikut menyesuaikan
-  const noKl=(records_klausul.findIndex(x=>String(x.id)===String(id))+1)||1;
+  /* BASIS = DAFTAR KLAUSUL YANG DIPAKAI DOKUMEN (23 Jul 2026, "ayat 3.1 di Lihat
+     Klausul terlalu masuk"): dokumen dibangun dari spkSelectedClauses() — hanya
+     klausul aktif & terpilih — sedangkan pratinjau ini dulu memakai SELURUH isi
+     pustaka. Dua akibatnya (terukur di Chromium, pustaka 12 klausul vs kontrak 5):
+       - kotak nomor judul spkClHeadW: 0,84 cm (12 klausul, 2 digit) vs 0,60 cm (5)
+       - lantai lebar kotak nomor butir: 1,14 cm (ada "10.1.") vs 0,92 cm
+     sehingga butir 3.1 tampil di 2,13 cm pada pratinjau tetapi 1,67 cm pada
+     dokumen — pratinjaunya yang menjorok 0,46 cm terlalu dalam. Kini basisnya
+     disamakan; bila belum ada klausul terpilih, seluruh pustaka dipakai. */
+  var _basis=[];
+  try{ if(typeof spkSelectedClauses==='function') _basis=spkSelectedClauses()||[]; }catch(e){}
+  if(!_basis.length) _basis=(records_klausul||[]).map(function(x){
+    return {id:String(x.id), judul:x.judul||'', isi:x.isi||''}; });
+  var _bi=-1;
+  for(var _bj=0;_bj<_basis.length;_bj++){ if(String(_basis[_bj].id)===String(id)){ _bi=_bj; break; } }
+  /* nomor klausul = kedudukannya DI DOKUMEN (bukan di pustaka), supaya butir &
+     rujukan bernomor sama persis dengan yang tercetak. Klausul yang tidak
+     dipakai dokumen tetap memakai kedudukannya di pustaka. */
+  const noKl=(_bi>=0 ? _bi+1 : ((records_klausul.findIndex(x=>String(x.id)===String(id))+1)||1));
   let inner='';
   var _pkTidy=(typeof spkIsPk==='function' && spkIsPk());
   /* Lantai lebar penomoran diaktifkan JUGA di pratinjau Lihat Klausul
@@ -10035,7 +10052,7 @@ function spkKlausulView(id){
      Lihat Klausul dulu memakai kisi tetap 0,65 cm — selisihnya membuat seluruh
      kolom teks bergeser. Di sini nilainya disamakan. */
   var _jhW=0.65;
-  try{ if(typeof spkClHeadW==='function') _jhW=spkClHeadW((records_klausul&&records_klausul.length)||noKl||1); }catch(e){}
+  try{ if(typeof spkClHeadW==='function') _jhW=spkClHeadW(_basis.length||noKl||1); }catch(e){}
   try{
     /* PIPELINE DISAMAKAN DENGAN DOKUMEN (23 Jul 2026, "samakan preview Pustaka
        Klausul dengan pratinjau Susun Kontrak"): dulu jalur ini memakai rangkaian
@@ -10053,19 +10070,18 @@ function spkKlausulView(id){
       ))))));
     };
     var _pre=_pipeV(k, noKl-1);
-    /* LANTAI LEBAR SE-PUSTAKA (23 Jul 2026, "samakan preview Pustaka Klausul
-       dengan pratinjau Susun Kontrak"): dokumen menghitung lantai lebar kotak
-       nomor dari SELURUH klausul (spkDocHtml dua fase), sedangkan Lihat Klausul
-       dulu hanya dari SATU klausul — akibatnya kolom teks butir di pratinjau
-       pustaka bisa lebih sempit daripada di dokumen. Di sini lantainya dihitung
-       dari seluruh isi pustaka, memakai pipeline yang sama. */
+    /* LANTAI LEBAR SE-DOKUMEN: dihitung dari DAFTAR YANG SAMA dengan yang
+       dipakai spkDocHtml (fase 1 -> spkKumpulHang), bukan dari seluruh pustaka.
+       Klausul yang sedang dilihat tetapi tidak dipakai dokumen tetap ikut
+       dihitung supaya penomorannya sendiri tak pernah terpotong. */
     try{
       var _semua=[];
-      for(var _ai=0;_ai<records_klausul.length;_ai++){
-        var _kx=records_klausul[_ai];
+      for(var _ai=0;_ai<_basis.length;_ai++){
+        var _kx=_basis[_ai];
         var _hx=(String(_kx.id)===String(id)) ? _pre : _pipeV(_kx, _ai);
         _semua.push(spkPkBoxMark(_hx));
       }
+      if(_bi<0) _semua.push(spkPkBoxMark(_pre));
       SPK_HANG_OVR=spkKumpulHang(_semua.length?_semua:[spkPkBoxMark(_pre)]);
     }catch(e2){ SPK_HANG_OVR=null; }
     if(!_pkTidy){ try{ SPK_JH_OVR=_jhW; }catch(e3){} }
