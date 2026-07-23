@@ -3283,9 +3283,11 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
    batas margin persis seperti dokumen cetak (.spk-clause .spk-cl{padding-left:0}).
    Inden tiap tingkat sepenuhnya diatur inline oleh spkPkIndentStd. */
 .spk-we-page .spk-cl{font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif;font-size:11pt;color:#000;line-height:var(--spk-lh,1.3915);padding-left:0}
-/* 23 Jul 2026 - samakan dgn dokumen: badan klausul yg memuat paragraf hasil
-   unggahan Word memakai dasar 0,90 cm (susun-kontrak.js: .spk-cl:has(.spk-wx)). */
-.spk-we-page .spk-cl:has(.spk-wx){padding-left:.9cm}
+/* DIBATALKAN 23 Jul 2026 - isi klausul dari Word kini ikut dirapikan
+   spkPkIndentStd (indennya dihitung dari MARGIN, bukan relatif BASE 0,90 cm),
+   sama seperti pratinjau dokumen SPK. Dasar 0,90 cm di sini akan menggeser
+   isinya dua kali sehingga Lihat Klausul tak lagi sama dengan pratinjau SPK. */
+.spk-we-page .spk-cl:has(.spk-wx){padding-left:0}
 .spk-we-page .spk-cl p{margin:0 0 6pt;text-align:justify;line-height:var(--spk-lh,1.32)}
 /* Judul klausul di awal lembar: tanpa spasi sebelum/sesudah yang mendorongnya turun */
 .spk-we-page .spk-cl-h:first-child,.spk-we-page .spk-clause:first-child > .spk-cl-h{margin-top:0;padding-top:0}

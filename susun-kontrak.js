@@ -2367,7 +2367,10 @@ function spkDocCss(){
      posisi Pekerjaan/Lokasi, 1.1/1.2, paragraf & butir a./b./c. PERSIS seperti
      template Word. Konten yang DI-GENERATE aplikasi (tanpa .spk-wx) tetap rata
      margin (padding 0), jadi tidak pernah tergeser dua kali. */
-  '.spk-doc.spk-spk .spk-clause .spk-cl:has(.spk-wx){padding-left:'+D.base+'}'+
+  /* DIHAPUS 23 Jul 2026: sejak isi klausul dari Word ikut dirapikan
+     spkPkIndentStd (lihat spkPkTidy), inden dihitung dari MARGIN — bukan lagi
+     relatif BASE. Mengembalikan BASE di sini membuat seluruh isi tergeser dua
+     kali sehingga klausul unggahan tidak sekolom dengan klausul lain. */
   /* PERJANJIAN/KONTRAK: isi klausul TIDAK menjorok terhadap judul. Judul (PASAL n
      + nama pasal) sudah rata tengah, sedangkan isi — baik paragraf bernomor
      ("1.", "a.") maupun teks biasa — dimulai tepat di batas margin kiri kertas
@@ -3581,6 +3584,20 @@ function spkPkSegs(tok){
 function spkPkIsHuruf(tok){
   return /^[A-Za-z][.)]$/.test(tok) || /^[ivxlcdmIVXLCDM]{2,4}[.)]$/.test(tok);
 }
+/* Blok "Label : nilai" hasil unggahan Word membawa margin-left sendiri dari
+   w:tblInd (dipetakan relatif BASE, jadi tabel yang menempel margin di Word
+   bernilai NEGATIF). Begitu posisi kiri bloknya ditentukan oleh mesin perapian,
+   inden dalaman itu harus dinolkan — kalau tidak, baris Nama Pekerjaan/Lokasi
+   tertarik keluar ke kiri dan tampak menempel batas kertas. */
+function spkKvResetInner(el){
+  try{
+    if(!el || !el.querySelectorAll) return;
+    var kv=el.querySelectorAll('.spk-kv'), i;
+    for(i=0;i<kv.length;i++){
+      kv[i].style.marginLeft='0cm'; kv[i].style.paddingLeft='0cm'; kv[i].style.textIndent='0cm';
+    }
+  }catch(e){}
+}
 function spkPkIndentStd(html, opsi){
   var s=String(html==null?'':html);
   /* Pasal narasi murni tak punya kotak nomor sama sekali, tapi tetap harus
@@ -3662,6 +3679,10 @@ function spkPkIndentStd(html, opsi){
         if(ch.classList && (ch.classList.contains('spk-cl-h')||ch.classList.contains('spk-bab')||
            ch.classList.contains('spk-ph'))) continue;
         ch.style.marginLeft=tepiIntro.toFixed(2)+'cm';
+        ch.style.paddingLeft='0cm';
+        if(parseFloat(ch.style.textIndent)<0) ch.style.textIndent='0cm';
+        if(ch.tagName==='P') ch.style.textAlign='justify';
+        spkKvResetInner(ch);
         adaIntro=true;
       }
       /* HARDENING 23 Jul 2026 ("Pekerjaan/Lokasi tampak di margin"): blok
@@ -3680,7 +3701,7 @@ function spkPkIndentStd(html, opsi){
           if(_fi && (_kv.compareDocumentPosition(_fi) & 2)) continue;                    /* kv SESUDAH butir -> Tahap 4b */
           var _ind=false, _nd=_kv;
           while(_nd && _nd!==box){ if((parseFloat(_nd.style.marginLeft)||0)>0.02){ _ind=true; break; } _nd=_nd.parentElement; }
-          if(!_ind){ _kv.style.marginLeft=tepiIntro.toFixed(2)+'cm'; adaIntro=true; }
+          if(!_ind){ _kv.style.marginLeft=tepiIntro.toFixed(2)+'cm'; spkKvResetInner(_kv); adaIntro=true; }
         }
       }catch(_eIntro){}
     }
@@ -3696,7 +3717,14 @@ function spkPkIndentStd(html, opsi){
        tidak sejajar dengan pasal lain dan penomorannya tampak melesak. */
     /* Ada pengantar: deret menjorok 0,15 dari TEPI PENGANTAR (judulX+0,15+0,15),
        supaya "Latar Belakang" tetap terlihat masuk sedikit dari "Lokasi". */
-    if(adaIntro) LEAD=(judulX>0) ? Math.round((judulX+2*SPK_PK_LEAD_JUDUL)*100)/100
+    /* DISERAGAMKAN 23 Jul 2026 ("rapikan inden"): deret tingkat-1 memakai
+       titik tolak yang SAMA — kolom teks judul + satu langkah 0,15 cm —
+       baik klausul itu berpengantar (kv "Nama Pekerjaan/Lokasi") maupun
+       tidak. Sebelumnya klausul berpengantar memakai dua langkah (0,30),
+       sehingga penomoran klausul 1 mulai 0,15 cm lebih dalam daripada
+       klausul 2 — terukur di Chromium: penanda 0,90 vs 0,75 cm. Kini blok
+       pengantar & deret tingkat-1 berbagi satu kolom di SELURUH klausul. */
+    if(adaIntro) LEAD=(judulX>0) ? Math.round((judulX+SPK_PK_LEAD_JUDUL)*100)/100
                                 : Math.round((introX+SPK_PK_LEAD)*100)/100;
     /* Klausul yang DIBUKA LANGSUNG oleh butir bernomor (tanpa pengantar,
        mis. "4. WAKTU..." -> "4.1. ..."): penandanya menjorok KECIL
@@ -3830,6 +3858,11 @@ function spkPkIndentStd(html, opsi){
         var q=g2.items[m], sp=q.p.firstElementChild;
         sp.style.width=g2.W.toFixed(2)+'cm';
         sp.style.minWidth=g2.W.toFixed(2)+'cm';
+        /* Kotak nomor bawaan unggahan Word (spkNumBox) bisa membawa margin-left
+           NEGATIF untuk menjulurkan nomor 2 digit ke kiri. Di sini lebar & posisi
+           kotak dihitung ulang oleh mesin perapian, jadi geseran itu harus dinolkan
+           — kalau dibiarkan, penanda 2 digit tampak keluar sendiri dari kolomnya. */
+        sp.style.marginLeft='0cm';
         /* Perataan penanda ANGKA mengikuti g2.rata (lihat Tahap 3): deret yang
            seluruhnya 1 digit -> rata KIRI; deret yang memuat nomor 2 digit
            (mis. "2.9." bersama "2.16.") -> rata KANAN supaya titik penutupnya
@@ -3902,6 +3935,7 @@ function spkPkIndentStd(html, opsi){
         if(ce.tagName==='P' && spkPkTok(ce)){ lastKol=(ce.__spkKvId && kolItem[ce.__spkKvId]!=null)?kolItem[ce.__spkKvId]:lastKol; continue; }
         if(lastKol>0 && ce.classList && (ce.classList.contains('spk-kv')||ce.classList.contains('spk-kvgrp'))){
           ce.style.marginLeft=Math.round((lastKol+SPK_PK_LEAD_JUDUL)*100)/100+'cm';
+          spkKvResetInner(ce);
         }
       }
     }catch(eKv){}
@@ -4155,6 +4189,26 @@ function spkPkDariWord(html){
   return /<p[^>]*style="[^"]*(?:margin-left|text-indent)/i.test(s);
 }
 function spkPkTidy(html, isPk){
+  /* PERBAIKAN 23 Jul 2026 — "di Lihat Klausul rapi, di pratinjau SPK hancur":
+     jalur SPK dipindah KE ATAS penjaga spkPkDariWord(). Dulu klausul hasil
+     unggahan template Word KELUAR LEBIH AWAL (mode WYSIWYG) sehingga di dalam
+     SATU dokumen ada dua sistem kolom yang berbeda:
+       klausul dari Word     : kv 0,90 / penanda 0,73 / kolom teks 1,65 cm
+       klausul dari aplikasi : kv 0,75 / penanda 0,90 / kolom teks 2,04 cm
+     (terukur di Chromium). Di Lihat Klausul hanya SATU klausul yang tampil, jadi
+     ketidakcocokan itu tidak terlihat — begitu dirangkai jadi dokumen SPK, tiap
+     klausul mulai di tempat yang berbeda. Kini SEMUA klausul SPK — diketik di
+     aplikasi maupun diunggah dari Word — melewati mesin perapian yang sama
+     (spkPkBoxMark + spkPkIndentStd): inden bertingkat, penomoran rata kiri/kanan
+     menurut jumlah digit, dan teks rata kiri-kanan (justify).
+     Bentuk PERJANJIAN/KONTRAK TIDAK berubah: konten Word tetap WYSIWYG. */
+  if(!isPk){
+    /* intro = kolom teks JUDUL klausul (gantungan JUDUL_HANG kisi SPK) + LEAD */
+    var _D=(typeof spkDX==='function')?spkDX():null;
+    var _jh=(typeof SPK_JH_OVR!=='undefined' && SPK_JH_OVR>0) ? SPK_JH_OVR
+            : (_D?Math.round((_D.JUDUL_HANG/566.929)*100)/100:0.65);
+    return spkPkIndentStd(spkPkBoxMark(html), {intro:Math.round((_jh+SPK_PK_LEAD)*100)/100, judul:_jh});
+  }
   if(spkPkDariWord(html)){
     /* transformasi TEKS tetap jalan (poin->butir, blok PIHAK anti-pisah
        halaman); posisi paragraf tidak disentuh sama sekali. spkPkKeepPihak
@@ -4168,13 +4222,6 @@ function spkPkTidy(html, isPk){
      teks pengantar klausul tetap di batas margin halaman.
      Transformasi TEKS khusus PK (penomoran ulang huruf->angka, "poin"->"butir",
      pembungkus PIHAK) sengaja TIDAK diterapkan ke SPK. */
-  if(!isPk){
-    /* intro = kolom teks JUDUL klausul (gantungan JUDUL_HANG kisi SPK) + LEAD */
-    var _D=(typeof spkDX==='function')?spkDX():null;
-    var _jh=(typeof SPK_JH_OVR!=='undefined' && SPK_JH_OVR>0) ? SPK_JH_OVR
-            : (_D?Math.round((_D.JUDUL_HANG/566.929)*100)/100:0.65);
-    return spkPkIndentStd(spkPkBoxMark(html), {intro:Math.round((_jh+SPK_PK_LEAD)*100)/100, judul:_jh});
-  }
   /* Urutan penting: kotakkan penanda dulu supaya perbaikan nomor & inden
      bekerja pada SELURUH butir, termasuk yang lolos dari spkNumberFix.
      spkPkKeepPihak() dijalankan TERAKHIR: pembungkus <div class="spk-keep">
