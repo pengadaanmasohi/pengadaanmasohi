@@ -2467,7 +2467,12 @@ function spkDocCss(){
      baris sambungan sejajar teks di atasnya (mengikuti penggaris Word).
      Seluruh daftar digeser 0,5 cm ke kanan terhadap kalimat pengantar di atasnya
      ("…berpedoman pada :"), sama seperti butir bernomor di dalam klausul. */
-  '.spk-cl p.spk-dlist{margin:0 0 4pt 0.5cm;padding-left:0.7cm;text-indent:-0.7cm;text-align:justify;line-height:'+spkLHCss(1.15)+'}'+
+  /* DIKEMBALIKAN 23 Jul 2026: TANPA pergeseran 0,5 cm. Pada draft SPK acuan,
+     daftar "Berdasarkan" mulai tepat di batas margin kiri (nomor "1." di 0,000
+     cm, teksnya di 0,700 cm) — sejajar dengan kalimat "Pada hari ini …" dan
+     "Berdasarkan :" di atasnya. Aturan khusus Perjanjian/Kontrak di bawah
+     (0,35 / 0,60 cm) tidak terpengaruh. */
+  '.spk-cl p.spk-dlist{margin:0 0 4pt 0;padding-left:0.7cm;text-indent:-0.7cm;text-align:justify;line-height:'+spkLHCss(1.15)+'}'+
   '.spk-cl p.spk-dlist .n{display:inline-block;width:0.7cm;text-indent:0}'+
   /* Nomor/kode referensi panjang di daftar "Berdasarkan" boleh dipotong di titik
      mana pun agar mengisi baris justify secara rapat — sisa nomor turun ke baris
@@ -2481,7 +2486,10 @@ function spkDocCss(){
      No./Tanggal miliknya. Tanpa gaya visual sama sekali — hanya penanda
      bagi paginator agar blok ini pindah halaman secara utuh. */
   '.spk-cl .spk-keep{margin:0;padding:0;border:0;background:none;break-inside:avoid;page-break-inside:avoid}'+
-  '.spk-cl .spk-kv.spk-dkv{margin:0 0 4pt 1.2cm}'+
+  /* 1,2 cm = 0,5 (pergeseran daftar) + 0,7 (kotak nomor). Karena pergeseran
+     0,5 cm dicabut (lihat spk-dlist di atas), rinciannya kini 0,7 cm supaya
+     tetap menggantung di kolom TEKS butir daftar, bukan di kolom nomornya. */
+  '.spk-cl .spk-kv.spk-dkv{margin:0 0 4pt 0.7cm}'+
   /* PERJANJIAN/KONTRAK: daftar "Berdasarkan" memakai inden standar yang sama
      dengan butir klausul — penanda menjorok 0,35 cm dari teks paragraf
      pengantarnya, bukan 0,5 cm dengan kotak nomor selebar 0,7 cm. Baris
@@ -3041,8 +3049,23 @@ function spkDocCss2(){
    rata-kanan agar titik desimalnya sejajar dengan nomor 1 digit. Label majemuk
    memakai lebar kolom otomatis (min 0,75 cm) supaya "11.1.1." tetap mendapat
    jarak cukup tanpa menabrak teks. */
-/* Jeda tetap antara nomor dan teks (cm). Dilebarkan 22 Jul 2026 dari 0,18 -> 0,40 menyamai tab daftar bernomor pada template Word master (permintaan user). CATATAN: kisi .docx (SPK_DX/SPK_DX_PK GAP:102) SENGAJA tetap 0,18 — belum diselaraskan. */
-const SPK_NUM_GAP = 0.40;
+/* Jeda tetap antara nomor dan teks (cm).
+   DIKEMBALIKAN 23 Jul 2026 ke 0,18 — nilai inilah yang dipakai draft SPK acuan
+   (Draft_SPK_..._Pengelolaan_Data_Aset.pdf, dibuat 16 Jul 2026). Pengukuran
+   ulang pada berkas itu (margin kiri kertas = 0 cm):
+     - kotak nomor JUDUL klausul  = 0,75 cm  -> lebar("00.")x1,06 + 0,18
+       ("1." mulai 0,235 / "10." mulai 0,000 / teks judul selalu 0,750)
+     - kotak "2.1."   = 0,83 cm = lebar Arial 0,647 + 0,18
+     - kotak "8.12."  = 1,04 cm = 0,863 + 0,18
+     - kotak "3.1.1." = 1,15 cm = 0,971 + 0,18
+     - kotak "10.1.1."= 1,37 cm = 1,186 + 0,18
+     - kolom uraian PIHAK (I./II.) = 0,75 cm = lebar("II.")x1,06 + 0,18
+   Dengan 0,40 seluruh kotak nomor melebar 0,22 cm; karena kotak tumbuh KE KIRI
+   (text-indent negatif, kolom teks dipatok w:ind dari Word), penomoran tampak
+   menjorok keluar & jarak nomor->teks jadi jauh. CATATAN: kisi .docx SPK_DX_PK
+   (GAP:227) sengaja TIDAK disentuh di sini — bentuk Perjanjian/Kontrak dibiarkan
+   seperti apa adanya sampai ada konfirmasi terpisah. */
+const SPK_NUM_GAP = 0.18;
 
 /* =====================================================================
    KOLOM PENOMORAN BUTIR = KISI TEMPLATE .docx
@@ -3834,7 +3857,15 @@ function spkPkIndentStd(html, opsi){
            kiri; perbedaan hanya terlihat pada deret campuran 1 & 2 digit, dan di
            situ aturannya memang rata kanan. g2.rata tetap dihitung & dipakai
            sebagai dokumentasi aturan serta oleh jalur lain. */
-        sp.style.textAlign = 'right';
+        /* DIKEMBALIKAN 23 Jul 2026: perataan mengikuti g2.rata lagi (deret
+           huruf/bullet & deret angka 1 digit -> rata KIRI; deret yang memuat
+           penghitung 2 digit / kotaknya dilebarkan lantai se-dokumen -> rata
+           KANAN). Pada draft SPK acuan seluruh penanda deret huruf a..n mulai
+           di kolom yang sama (2,150 cm) dan penanda lebar ("m.") mendorong
+           teksnya ke kanan (2,774 cm) — ciri khas rata KIRI di dalam kotak
+           ber-min-width. Rata kanan mutlak membuat "i." dan "m." tidak lagi
+           satu kolom. */
+        sp.style.textAlign = (g2.rata==='right' ? 'right' : 'left');
         sp.style.boxSizing='border-box';
         sp.style.paddingRight=(g2.gap||SPK_NUM_GAP)+'cm';   /* jeda ke teks (huruf lebih rapat) */
         /* Kolom teks dipatok g2.Wb; gantungan tetap g2.W, jadi selisihnya
@@ -8372,7 +8403,16 @@ var SPK_DX = {
   /* --- nama seragam yang dipakai pembangun gaya (nilai SPK, TIDAK BERUBAH —
      dikembalikan 21 Jul 2026: kisi taksiran sempat merusak format penomoran
      otomatis template Word; pratinjau tetap merapikan ulang saat unggah) --- */
-  BASE:425,                    // dasar isi klausul
+  /* DIKEMBALIKAN 23 Jul 2026 ke 510tw = 0,90 cm. Draft SPK acuan menempatkan
+     seluruh isi klausul yang tidak bernomor di 0,90 cm dari margin kiri —
+     terukur pada baris "Pekerjaan"/"Lokasi" (klausul 1), badan klausul 6
+     (HARGA PEKERJAAN) dan klausul 12 (BIAYA PENYUSUNAN KONTRAK). Nilai 425
+     (0,75 cm) membuat semuanya naik 0,15 cm ke kiri sehingga tidak lagi
+     "sedikit lebih kanan" dari teks judul klausul (0,75 cm).
+     AMAN untuk template lama: pemetaan w:ind <-> margin memakai BASE yang sama
+     (spkWxBase), dan pembungkus .spk-cl mengembalikannya sebagai padding-left,
+     jadi paragraf hasil unggahan Word tetap jatuh persis di w:ind aslinya. */
+  BASE:510,                    // 0,90 cm - dasar isi klausul
   P_FIRST:425,                 // inden baris pertama paragraf narasi
   /* DISELARASKAN 22 Jul 2026 dengan langkah inden 0,15 cm pada pratinjau:
        kolom teks judul      : 0,65 cm (JUDUL_HANG)
