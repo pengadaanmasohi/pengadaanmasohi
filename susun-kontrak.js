@@ -3353,7 +3353,7 @@ function spkKumpulHang(daftarHtml){
   }catch(e){}
   return peta;
 }
-function spkPkNumW(sp){
+function spkPkNumW(sp, kanonHuruf){
   var t=String(sp&&sp.textContent||'').replace(/[\s\u00A0]+/g,'');
   /* KANONIK (ketentuan sejajar 21 Jul 2026): semua digit diukur sebagai '0'.
      Kotak nomor dirender dengan font-variant-numeric:tabular-nums sehingga
@@ -3364,6 +3364,15 @@ function spkPkNumW(sp){
      hanya bergantung jumlah digit + titik: deret berpola sama otomatis
      sekolom, di pasal mana pun. */
   var tc=t.replace(/[0-9]/g,'0');
+  /* KANONIK HURUF (permintaan 23 Jul 2026: "deret a sampai m jaraknya lebih
+     jauh — samakan saja dengan deret a b c, m. boleh agak rapat asal teksnya
+     sejajar"): tiap HURUF diukur sebagai 'a'. Dulu lebar kotak deret diambil
+     dari penanda TERLEBAR, jadi daftar yang sampai "m." memakai kotak lebih
+     lebar dan seluruh butirnya (a. b. c. …) berjeda lebih jauh daripada daftar
+     yang berhenti di "c.". Dengan kanonisasi ini semua deret huruf memakai
+     lebar yang sama: jeda penanda->teks selalu SPK_NUM_GAP, kolom teks tetap
+     sejajar, dan huruf lebar seperti "m." memakan sedikit jedanya sendiri. */
+  if(kanonHuruf) tc=tc.replace(/[A-Za-z]/g,'a');   /* SPK saja; PK tidak diubah */
   var w=0;
   try{ w=spkPkTextWidthCm(tc); }catch(e){ w=0; }
   if(!(w>0)){                                  /* pengukuran gagal: perkiraan kasar */
@@ -3634,7 +3643,7 @@ function spkPkIndentStd(html, opsi){
         L=terakhir+1;                     /* bullet / tanda hubung */
       }
       if(L>5) L=5;
-      item.push({p:p, tok:tok, lvl:L, w:spkPkNumW(p.firstElementChild)});
+      item.push({p:p, tok:tok, lvl:L, w:spkPkNumW(p.firstElementChild, !(opsi&&opsi.pk))});
     }
 
     /* --- Tahap 1b: titik awal daftar ---
@@ -3848,7 +3857,10 @@ function spkPkIndentStd(html, opsi){
          (g.Wb=g.W): nomor 2 digit rata kanan tinggal DI DALAM kotak [base,base+W],
          tidak pernah keluar batas kertas. Kanan sudah justify dari CSS. */
       else if(g2.lvl===1) g2.base=(LEAD>0?LEAD:0);
-      else g2.base=LEAD + (g2.lvl-1)*SPK_PK_STEP;        /* cadangan: induk tak ketemu */
+      /* SATU UKURAN LANGKAH (permintaan 23 Jul 2026 "jangan ada variasi ukuran
+         inden"): cadangan ini pun memakai langkah yang sama dengan jalur normal
+         (SPK_PK_LEAD), bukan lagi SPK_PK_STEP 0,75 cm. */
+      else g2.base=LEAD + (g2.lvl-1)*SPK_PK_LEAD;       /* cadangan: induk tak ketemu */
       /* Pengaman: apa pun hasil hitungan di atas, ruang julur ke kiri harus muat
          supaya nomor tidak pernah terpotong tepi lembar. */
       var julur=g2.W-(g2.Wb||g2.W);
@@ -10025,8 +10037,37 @@ function spkKlausulView(id){
   var _jhW=0.65;
   try{ if(typeof spkClHeadW==='function') _jhW=spkClHeadW((records_klausul&&records_klausul.length)||noKl||1); }catch(e){}
   try{
-    var _pre=spkKlItalicAsing(spkBoldPihak(spkNumberFix(spkTidyKeyValue(spkMerge(spkRenumberKlausul(k.isi||'', noKl), ctx)))));
-    try{ SPK_HANG_OVR=spkKumpulHang([spkPkBoxMark(_pre)]); }catch(e2){ SPK_HANG_OVR=null; }
+    /* PIPELINE DISAMAKAN DENGAN DOKUMEN (23 Jul 2026, "samakan preview Pustaka
+       Klausul dengan pratinjau Susun Kontrak"): dulu jalur ini memakai rangkaian
+       yang lebih pendek — tanpa spkSortDefinisiIf / spkPruneKlausul /
+       spkNomorToNo / spkKvGroup. Akibatnya bukan cuma indennya yang beda:
+       NOMOR BUTIRNYA pun beda, karena spkPruneKlausul membuang butir contoh dan
+       menomori ulang deret (terukur: pustaka menampilkan 1.9/1.10/1.11 & 2.12,
+       dokumen menampilkan 1.3/1.4/1.5 & 2.2). Nomor yang berbeda membuat lebar
+       kotak nomor berbeda pula, sehingga kolom teks pustaka 1,89 cm vs dokumen
+       1,67 cm. Kini keduanya memakai rangkaian yang sama persis. */
+    var _dataV=(spkState&&spkState.data)||{};
+    var _pipeV=function(kx, ix){
+      return spkKvGroup(spkKlItalicAsing(spkBoldPihak(spkNomorToNo(spkNumberFix(spkTidyKeyValue(
+        spkPruneKlausul(spkMerge(spkRenumberKlausul(spkSortDefinisiIf(kx.judul, kx.isi||''), ix+1), ctx), ix+1, _dataV)
+      ))))));
+    };
+    var _pre=_pipeV(k, noKl-1);
+    /* LANTAI LEBAR SE-PUSTAKA (23 Jul 2026, "samakan preview Pustaka Klausul
+       dengan pratinjau Susun Kontrak"): dokumen menghitung lantai lebar kotak
+       nomor dari SELURUH klausul (spkDocHtml dua fase), sedangkan Lihat Klausul
+       dulu hanya dari SATU klausul — akibatnya kolom teks butir di pratinjau
+       pustaka bisa lebih sempit daripada di dokumen. Di sini lantainya dihitung
+       dari seluruh isi pustaka, memakai pipeline yang sama. */
+    try{
+      var _semua=[];
+      for(var _ai=0;_ai<records_klausul.length;_ai++){
+        var _kx=records_klausul[_ai];
+        var _hx=(String(_kx.id)===String(id)) ? _pre : _pipeV(_kx, _ai);
+        _semua.push(spkPkBoxMark(_hx));
+      }
+      SPK_HANG_OVR=spkKumpulHang(_semua.length?_semua:[spkPkBoxMark(_pre)]);
+    }catch(e2){ SPK_HANG_OVR=null; }
     if(!_pkTidy){ try{ SPK_JH_OVR=_jhW; }catch(e3){} }
     inner=spkPkTidy(_pre, _pkTidy);
   }
@@ -10047,7 +10088,7 @@ function spkKlausulView(id){
             '<span class="n" style="display:block;width:auto;min-width:0;padding-right:0;text-indent:0;text-align:center;white-space:nowrap;margin:0">PASAL '+fkEsc(String(noKl))+'</span>'+
             spkFmtJudul(k.judul)+'</p>'
         : '<p class="spk-cl-h" style="font-weight:700;text-transform:uppercase;text-align:left;padding-left:'+_jhW.toFixed(2)+'cm;text-indent:-'+_jhW.toFixed(2)+'cm;margin:0 0 3pt">'+
-            '<span class="n" style="display:inline-block;box-sizing:border-box;min-width:'+_jhW.toFixed(2)+'cm;padding-right:'+SPK_NUM_GAP+'cm;text-indent:0;text-align:'+((records_klausul&&records_klausul.length>=10)?'right':'left')+';white-space:nowrap">'+fkEsc(String(noKl))+'.</span>'+
+            '<span class="n" style="display:inline-block;box-sizing:border-box;min-width:'+_jhW.toFixed(2)+'cm;padding-right:'+SPK_NUM_GAP+'cm;text-indent:0;text-align:right;white-space:nowrap">'+fkEsc(String(noKl))+'.</span>'+
             spkFmtJudul(k.judul)+'</p>')
     : '';
   ov.innerHTML=
