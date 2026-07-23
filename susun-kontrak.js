@@ -1593,6 +1593,15 @@ function spkFieldInput(f){
     return lockedField(f.t==='date'?spkDispDate(v):(v||''));
   }
   if(f.t==='select'){
+    /* Pilihan "Ya / Tidak" TIDAK lagi memakai dropdown, melainkan SAKELAR
+       (switch on/off) yang diletakkan di sebelah kanan judul field.
+       ON = Ya, OFF = Tidak. */
+    if(spkIsYaTidak(f.opts)){
+      const sOn=(String(v||'')==='Ya')?'Ya':'Tidak';
+      return '<div class="field"'+span+'>'+
+        jsLabelSwitchHtml(spkLbl(f),'spk-sw-'+f.k,sOn,'spkSwitchChange','data-k="'+f.k+'"')+
+        '<div class="sw-row">'+jsSwitchStateHtml(sOn)+'</div></div>';
+    }
     const opts=(f.opts||[]).map(o=>'<option value="'+fkEsc(o)+'"'+((v===o)?' selected':'')+'>'+fkEsc(o)+'</option>').join('');
     const fn = (f.k==='perubahan') ? 'spkSetPerubahan(this.value)'
              : (f.k==='ada_akta_perubahan') ? 'spkSetAdaAktaPerubahan(this.value)'
@@ -1663,6 +1672,21 @@ function spkFieldInput(f){
     return '<div class="field"'+span+'><label>'+spkLbl(f)+'</label><input type="text" inputmode="numeric" placeholder="Rp" value="'+fkEsc(disp)+'" oninput="spkSetRupiah(\''+f.k+'\',this)"></div>';
   }
   return '<div class="field"'+span+'><label>'+spkLbl(f)+'</label><input type="text" value="'+fkEsc(v||'')+'"'+(f.ph?(' placeholder="'+fkEsc(f.ph)+'"'):'')+' oninput="spkSet(\''+f.k+'\',this.value)"></div>';
+}
+/* Apakah daftar pilihan sebuah field hanya berisi "Ya" dan "Tidak"? */
+function spkIsYaTidak(opts){
+  if(!Array.isArray(opts) || opts.length!==2) return false;
+  var a=opts.map(function(o){ return String(o==null?'':o).trim().toLowerCase(); });
+  return (a.indexOf('ya')>=0 && a.indexOf('tidak')>=0);
+}
+/* Sakelar Ya/Tidak pada form Penyusunan Kontrak diklik */
+function spkSwitchChange(el){
+  if(!el || !spkState) return;
+  var k=el.getAttribute('data-k')||'';
+  var v=(el.value==='Ya')?'Ya':'Tidak';
+  if(k==='perubahan'){ spkSetPerubahan(v); return; }
+  if(k==='ada_akta_perubahan'){ spkSetAdaAktaPerubahan(v); return; }
+  spkSet(k,v); renderSpkSusun();
 }
 function spkSet(k,v){ if(!spkState) return; spkState.data[k]=v; spkRefreshAuto(); }
 /* "Perubahan?" pada SK Pimpinan Unit:

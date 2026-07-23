@@ -12307,11 +12307,49 @@ function jsNumSelectHtml(id,val,handler){
   return '<select class="js-numsel" id="'+id+'" onchange="'+handler+'(this)" title="Gaya penomoran (— = tanpa nomor)">'+
     JS_NUM_STYLES.map(function(o){ return '<option value="'+o[0]+'"'+(o[0]===val?' selected':'')+' title="'+o[1]+'">'+(o[0]||'&mdash;')+'</option>'; }).join('')+'</select>';
 }
-function jsYaTidakHtml(id,val,handler){
-  return '<select id="'+id+'" onchange="'+handler+'(this)">'+
-    '<option value="Tidak"'+(!jsOn(val)?' selected':'')+'>Tidak</option>'+
-    '<option value="Ya"'+(jsOn(val)?' selected':'')+'>Ya</option></select>';
+/* ===== SAKELAR (SWITCH) YA / TIDAK =====
+   Menggantikan dropdown "Ya/Tidak". Sakelar ditempatkan di sebelah KANAN judul
+   field: posisi ON berarti "Ya", posisi OFF berarti "Tidak".
+   Elemen yang dipakai adalah <button>, yang secara bawaan sudah memiliki
+   properti .value — sehingga SELURUH handler lama yang membaca el.value
+   (mis. hpsOnJudulOn, anaOnRokOn, ...) tetap bekerja tanpa perubahan. */
+function jsSwitchHtml(id,val,handler,extra){
+  var on=jsOn(val);
+  return '<button type="button" class="js-switch'+(on?' is-on':'')+'"'+
+    (id?(' id="'+id+'"'):'')+' value="'+(on?'Ya':'Tidak')+'" role="switch"'+
+    ' aria-checked="'+(on?'true':'false')+'" aria-label="Ya / Tidak"'+
+    ' title="'+(on?'Ya (aktif) — klik untuk mematikan':'Tidak (nonaktif) — klik untuk mengaktifkan')+'"'+
+    (extra?(' '+extra):'')+
+    ' onclick="jsSwitchToggle(this,\''+handler+'\')"><span class="sw-knob"></span></button>';
 }
+/* Selaraskan tampilan sakelar dengan nilainya (dipakai setelah handler jalan,
+   karena sebagian handler membatalkan perubahan dengan menulis ulang el.value) */
+function jsSwitchSync(el){
+  if(!el) return;
+  var on=(el.value==='Ya');
+  el.classList.toggle('is-on',on);
+  el.setAttribute('aria-checked',on?'true':'false');
+  el.setAttribute('title',on?'Ya (aktif) \u2014 klik untuk mematikan':'Tidak (nonaktif) \u2014 klik untuk mengaktifkan');
+}
+function jsSwitchToggle(el,handler){
+  if(!el) return;
+  el.value=(el.value==='Ya')?'Tidak':'Ya';
+  jsSwitchSync(el);
+  try{ var fn=window[handler]; if(typeof fn==='function') fn(el); }catch(e){ console.error(e); }
+  jsSwitchSync(el);
+}
+/* Judul field + sakelar di sebelah kanannya */
+function jsLabelSwitchHtml(lbl,id,val,handler,extra){
+  return '<div class="lbl-switch"><label>'+lbl+'</label>'+
+    jsSwitchHtml(id,val,handler,extra)+'</div>';
+}
+/* Kotak nilai pengganti dropdown (dipakai bila tidak ada kontrol pendamping) */
+function jsSwitchStateHtml(val){
+  var on=jsOn(val);
+  return '<div class="sw-state'+(on?' is-on':'')+'">'+(on?'Ya':'Tidak')+'</div>';
+}
+/* Kompatibilitas nama lama — kini mengembalikan sakelar, bukan dropdown */
+function jsYaTidakHtml(id,val,handler){ return jsSwitchHtml(id,val,handler); }
 
 function hpsBlankItem(){ return {judul:'', subjudul:'', uraian:'', sat:'', vol:'', hargaMat:'', hargaJasa:''}; }
 function hpsNormItem(c){ c=c||{}; return {judul:(c.judul!=null?c.judul:(c.kelompok||'')), subjudul:c.subjudul||'', uraian:c.uraian||'', sat:c.sat||'', vol:(c.vol!=null?c.vol:''), hargaMat:(c.hargaMat!=null?c.hargaMat:''), hargaJasa:(c.hargaJasa!=null?c.hargaJasa:'')}; }
@@ -12461,11 +12499,13 @@ function hpsCountFieldHtml(){
 /* Dua field baru pada Data Pekerjaan: Judul? & Sub-Judul? (+ dropdown gaya penomoran) */
 function hpsJudulFieldsHtml(){
   const st=hpsState; const locked=hpsItemsLocked();
-  const dis=locked?' data-locked="1"':'';
+  const dis=locked?'data-locked="1"':'';
+  /* Ya/Tidak kini berupa SAKELAR di sebelah kanan judul field. */
   const f=(lbl,idOn,vOn,hOn,idN,vN,hN)=>
-    '<div class="field js-judul-field'+(locked?' is-locked':'')+'"><label>'+lbl+'</label>'+
-      '<div class="js-judul-row">'+jsYaTidakHtml(idOn,vOn,hOn)+
-        (jsOn(vOn)?jsNumSelectHtml(idN,vN,hN):'')+'</div>'+
+    '<div class="field js-judul-field'+(locked?' is-locked':'')+'">'+
+      jsLabelSwitchHtml(lbl,idOn,vOn,hOn,dis)+
+      '<div class="js-judul-row">'+
+        (jsOn(vOn)?jsNumSelectHtml(idN,vN,hN):jsSwitchStateHtml(vOn))+'</div>'+
       (locked?HPS_LOCK_BADGE:'')+'</div>';
   return f('Judul?','hps-judulon',st.judulOn,'hpsOnJudulOn','hps-judulnum',st.judulNum,'hpsOnJudulNum')+
          f('Sub-Judul?','hps-subon',st.subjudulOn,'hpsOnSubOn','hps-subnum',st.subjudulNum,'hpsOnSubNum');
@@ -14019,13 +14059,17 @@ function anaRokInflasiFieldsHtml(){
   const rokVal=(st.rok!==''&&st.rok!=null)?String(st.rok):'';
   const infNilai=(st.inflasiNilai!==''&&st.inflasiNilai!=null)?String(st.inflasiNilai):'';
   const rokMax=(st.jenis==='Konstruksi')?15:10;
-  return '<div class="field js-judul-field"><label id="ana-rok-label">ROK? (maks '+rokMax+'%)</label>'+
-      '<div class="js-judul-row">'+jsYaTidakHtml('ana-rokon',st.rokOn,'anaOnRokOn')+
-        (rokOn?('<input class="js-numbox js-num2" id="ana-rok" type="text" inputmode="decimal" maxlength="5" placeholder="0" title="Maksimal '+rokMax+'% ('+(st.jenis==='Konstruksi'?'Pekerjaan Konstruksi':'Pekerjaan Umum')+')" value="'+fkEsc(rokVal)+'" oninput="anaOnRok(this)">'):'')+
+  /* Ya/Tidak kini berupa SAKELAR di sebelah kanan judul field. */
+  return '<div class="field js-judul-field">'+
+      '<div class="lbl-switch"><label id="ana-rok-label">ROK? (maks '+rokMax+'%)</label>'+
+        jsSwitchHtml('ana-rokon',st.rokOn,'anaOnRokOn')+'</div>'+
+      '<div class="js-judul-row">'+
+        (rokOn?('<input class="js-numbox js-num2" id="ana-rok" type="text" inputmode="decimal" maxlength="5" placeholder="0" title="Maksimal '+rokMax+'% ('+(st.jenis==='Konstruksi'?'Pekerjaan Konstruksi':'Pekerjaan Umum')+')" value="'+fkEsc(rokVal)+'" oninput="anaOnRok(this)">'):jsSwitchStateHtml(st.rokOn))+
       '</div></div>'+
-    '<div class="field js-judul-field"><label>Inflasi?</label>'+
-      '<div class="js-judul-row">'+jsYaTidakHtml('ana-inflasi',st.inflasi,'anaOnInflasi')+
-        (infOn?('<input class="js-numbox js-num4" id="ana-inflasi-nilai" type="text" inputmode="decimal" maxlength="6" placeholder="0" title="Nilai inflasi (%)" value="'+fkEsc(infNilai)+'" oninput="anaOnInflasiNilai(this)">'):'')+
+    '<div class="field js-judul-field">'+
+      jsLabelSwitchHtml('Inflasi?','ana-inflasi',st.inflasi,'anaOnInflasi')+
+      '<div class="js-judul-row">'+
+        (infOn?('<input class="js-numbox js-num4" id="ana-inflasi-nilai" type="text" inputmode="decimal" maxlength="6" placeholder="0" title="Nilai inflasi (%)" value="'+fkEsc(infNilai)+'" oninput="anaOnInflasiNilai(this)">'):jsSwitchStateHtml(st.inflasi))+
       '</div></div>';
 }
 /* Isi ulang baris ROK/Inflasi (+Judul/Sub-Judul bila Pekerjaan Umum) */
@@ -14042,9 +14086,11 @@ function anaOnRokOn(el){
 /* Field Judul? & Sub-Judul? — tampil pada kartu Data Pekerjaan (Umum & Konstruksi) */
 function anaJudulFieldsHtml(){
   const st=anaState;
+  /* Ya/Tidak kini berupa SAKELAR di sebelah kanan judul field. */
   const f=(lbl,idOn,vOn,hOn,idN,vN,hN)=>
-    '<div class="field js-judul-field"><label>'+lbl+'</label>'+
-      '<div class="js-judul-row">'+jsYaTidakHtml(idOn,vOn,hOn)+(jsOn(vOn)?jsNumSelectHtml(idN,vN,hN):'')+'</div></div>';
+    '<div class="field js-judul-field">'+jsLabelSwitchHtml(lbl,idOn,vOn,hOn)+
+      '<div class="js-judul-row">'+
+        (jsOn(vOn)?jsNumSelectHtml(idN,vN,hN):jsSwitchStateHtml(vOn))+'</div></div>';
   return f('Judul?','ana-judulon',st.judulOn,'anaOnJudulOn','ana-judulnum',st.judulNum,'anaOnJudulNum')+
          f('Sub-Judul?','ana-subon',st.subjudulOn,'anaOnSubOn','ana-subnum',st.subjudulNum,'anaOnSubNum');
 }
