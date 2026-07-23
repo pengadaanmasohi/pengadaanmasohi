@@ -8440,7 +8440,7 @@ var SPK_DX = {
   A4_W:11906, A4_H:16838,      // A4 portrait
   MARGIN:1440,                 // margin Normal Word = 2,54 cm
   IND:425,                     // 0,75 cm  (sejajar teks sesudah nomor klausul)
-  IND_JUDUL:368,               // 0,65 cm  (jarak nomor -> teks pada JUDUL klausul)
+  IND_JUDUL:425,               // 0,75 cm  (= kolom judul hasil spkClHeadW; dulu 368)
   IND2:850,                    // 1,50 cm
   IND3:1276,                   // 2,25 cm
   /* --- nama seragam yang dipakai pembangun gaya (nilai SPK, TIDAK BERUBAH —
@@ -8465,10 +8465,22 @@ var SPK_DX = {
        penanda butir tingkat-2: 1,55 + 0,15          = 1,70 cm
        kolom teks tingkat-2   : 1,70 + 0,75          = 2,45 cm -> L2 1389
      JUDUL_HANG & penomoran otomatis (numbering.xml) TIDAK diubah. */
-  L1:879,  L1_HANG:425,        // butir tingkat-1  (penanda 0,80 / teks 1,55 cm)
-  L2:1389, L2_HANG:425,        // butir tingkat-2  (penanda 1,70 / teks 2,45 cm)
-  DESC:879,                    // paragraf deskripsi (sejajar kolom teks tingkat-1)
-  JUDUL_HANG:368,              // gantungan nomor pada judul klausul
+  /* DIKEMBALIKAN 23 Jul 2026 ke kisi draft acuan (terukur pada berkas
+     Draft_SPK_..._Pengelolaan_Data_Aset.pdf, titik nol = margin kiri):
+       kolom judul klausul  0,75 cm  (JUDUL_HANG 425 = hasil spkClHeadW)
+       penanda butir-1      0,90 cm  = kolom judul + SPK_PK_LEAD_JUDUL 0,15
+       kolom teks butir-1   1,65 cm  -> L1 935  (draft: 2.1./3.1./7.1. semua 1,650)
+       penanda butir-2      1,90 cm  = kolom teks butir-1 + 0,25
+       kolom teks butir-2   2,40 cm  -> L2 1360, L2_HANG 283 (gantungan huruf 0,50)
+     Nilai 22 Jul (JUDUL_HANG 368 / L1 879 / L2 1389 / L2_HANG 425) menghapus
+     jorokan judul -> butir-1: template membekukan kolom judul 0,65 cm sedangkan
+     spkClHeadW menghitungnya 0,75 cm untuk dokumen >=10 klausul, jadi jorokan
+     0,15 cm termakan habis (terukur di layar tersisa 0,01 cm). Kini keduanya
+     0,75 cm sehingga jorokan itu utuh lagi. */
+  L1:935,  L1_HANG:425,        // butir tingkat-1  (penanda 0,90 / teks 1,65 cm)
+  L2:1360, L2_HANG:283,        // butir tingkat-2  (penanda 1,90 / teks 2,40 cm)
+  DESC:935,                    // paragraf deskripsi (sejajar kolom teks tingkat-1)
+  JUDUL_HANG:425,              // gantungan nomor pada judul klausul (= kolom judul)
   PUSAT:false                  // judul rata KIRI satu baris ("1. DEFINISI")
 };
 

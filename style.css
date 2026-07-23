@@ -3082,7 +3082,8 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
 .spk-narasi-prev p.kl1{margin-left:.75cm;text-indent:-.75cm}
 .spk-narasi-prev p.kl2{margin-left:1.5cm;text-indent:-.75cm}
 .spk-narasi-prev p.kldesc{margin-left:.75cm;text-indent:0}
-.spk-narasi-prev p .n{display:inline-block;box-sizing:border-box;min-width:.75cm;text-indent:0;white-space:nowrap}
+.spk-narasi-prev p .n{display:inline-block;box-sizing:border-box;text-indent:0;white-space:nowrap}
+.spk-narasi-prev p .n:not([style]){min-width:.75cm}
 .spk-narasi-prev p .n.m{display:inline-block;box-sizing:border-box;width:auto;min-width:1.5em;padding-right:.35em;text-indent:0;text-align:left}
 .spk-narasi-prev i{font-style:italic}
 .spk-narasi-prev b{font-weight:700}
@@ -3184,9 +3185,10 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
 .spk-we-doc p.klp1{margin-left:.75cm;text-indent:.75cm}
 .spk-we-doc p.klp2{margin-left:1.5cm;text-indent:.75cm}
 .spk-we-doc p.kl1{margin-left:.75cm;text-indent:-.75cm}
-.spk-we-doc p.kl2{margin-left:1.5cm;text-indent:-.75cm}
+.spk-we-doc p.kl2{margin-left:1.5cm;text-indent:-.5cm}
 .spk-we-doc p.kldesc{margin-left:.75cm;text-indent:0}
-.spk-we-doc p .n{display:inline-block;box-sizing:border-box;min-width:.75cm;text-indent:0;text-align:left;white-space:nowrap}
+.spk-we-doc p .n{display:inline-block;box-sizing:border-box;text-indent:0;text-align:left;white-space:nowrap}
+.spk-we-doc p .n:not([style]){min-width:.75cm}
 .spk-we-doc i{font-style:italic}
 .spk-we-doc b{font-weight:700}
 .spk-we-doc.fp-active{cursor:crosshair}
@@ -3292,12 +3294,12 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
 .spk-we-page .spk-cl p.klp1{margin-left:.75cm;text-indent:.75cm}
 .spk-we-page .spk-cl p.klp2{margin-left:1.5cm;text-indent:.75cm}
 .spk-we-page .spk-cl p.kl1{margin-left:.75cm;text-indent:-.75cm}
-.spk-we-page .spk-cl p.kl2{margin-left:1.5cm;text-indent:-.75cm}
+.spk-we-page .spk-cl p.kl2{margin-left:1.5cm;text-indent:-.5cm}
 .spk-we-page .spk-cl p.kl1.spk-sl{margin-left:.75cm;text-indent:-.75cm;padding-left:0}
-.spk-we-page .spk-cl p.kl2.spk-sl{margin-left:1.5cm;text-indent:-.75cm;padding-left:0}
+.spk-we-page .spk-cl p.kl2.spk-sl{margin-left:1.5cm;text-indent:-.5cm;padding-left:0}
 .spk-we-page .spk-cl p.spk-sl .n{display:inline-block;box-sizing:border-box;text-indent:0;text-align:left;white-space:nowrap}
 .spk-we-page .spk-cl p.spk-sl .n:not([style]){min-width:.75cm}
-.spk-we-page .spk-cl p.kl2.spk-sl .n:not([style]){min-width:.75cm}
+.spk-we-page .spk-cl p.kl2.spk-sl .n:not([style]){min-width:.5cm}
 /* Label majemuk (5.1. / 3.1.1.) memakai kolom yang SAMA dengan butir
    tingkat-1 pada template .docx; kotak nomor hanya melebar bila perlu. */
 .spk-we-page .spk-cl p.kl1.spk-ml{margin-left:.75cm;text-indent:-.75cm}
