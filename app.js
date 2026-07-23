@@ -2703,6 +2703,7 @@ function spkDupSaring(batch, existing, opt){
       const noTxt=String(rec[opt.nomor]||'').trim();
       let nmTxt=''; for(const k of (opt.nama||[])){ if(String(rec[k]||'').trim()){ nmTxt=String(rec[k]).trim(); break; } }
       dupRows.push({ row:rec.__xlRow, by:hit.by, asal:hit.asal,
+                     nama:nmTxt, nomor:noTxt,
                      no:(noTxt||nmTxt||'-') });
       return;
     }
@@ -2742,6 +2743,82 @@ function spkImporMsg(okCount, dupCount){
 function spkImporTone(okCount, dupCount){
   if(okCount>0 && dupCount>0) return "warn";
   return okCount>0 ? "ok" : "err";
+}
+/* =====================================================================
+   POP UP HASIL UNGGAH TEMPLATE (bertahan sampai tombol \u00d7 ditekan)
+   Dipakai modul Monitoring/Kontrak Rinci, Pengadaan Langsung, & Tender.
+   Isi pop up:
+     • "<n> Data pekerjaan berhasil ditambahkan"  + daftar nama pekerjaan
+     • "<m> Data pekerjaan tidak berhasil ditambahkan : data sudah ada"
+       + daftar nama pekerjaan beserta alasannya
+   Bagian yang jumlahnya 0 TIDAK ditampilkan. Warna kepala pop up mengikuti
+   aturan lama (spkImporTone): hijau bila semua masuk, kuning bila sebagian,
+   merah bila tidak ada satu pun yang bisa ditambahkan.
+   ===================================================================== */
+function spkImporNama(rec, opt){
+  var nm=(opt&&opt.nama)||[];
+  for(var i=0;i<nm.length;i++){
+    var v=String(rec[nm[i]]==null?'':rec[nm[i]]).trim();
+    if(v) return v;
+  }
+  var no=String((opt&&opt.nomor)?(rec[opt.nomor]||''):'').trim();
+  return no || '(Tanpa nama pekerjaan)';
+}
+/* Rangkum hasil saringan menjadi dua daftar siap tampil */
+function spkImporHasil(toAdd, dupRows, opt){
+  return {
+    ok: (toAdd||[]).map(function(r){
+          return { nama:spkImporNama(r,opt), row:r.__xlRow }; }),
+    dup:(dupRows||[]).map(function(d){
+          return { nama:(String(d.nama||'').trim()||String(d.no||'').trim()||'(Tanpa nama pekerjaan)'),
+                   row:d.row, by:d.by, asal:d.asal }; })
+  };
+}
+var IMP_IC_OK  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+var IMP_IC_DUP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>';
+function spkImporSecHtml(kind, jml, judul, items, ikon){
+  var li=items.map(function(x){
+    var ket=[];
+    if(x.row) ket.push('baris '+x.row);
+    if(x.by)  ket.push(x.by+' sama dengan '+(x.asal||'data lain'));
+    return '<li>'+fkEsc(x.nama)+
+      (ket.length?('<span class="imp-note">'+fkEsc(ket.join(' \u2022 '))+'</span>'):'')+'</li>';
+  }).join('');
+  return '<div class="imp-sec '+kind+'">'+
+    '<div class="imp-sec-h">'+ikon+'<span><span class="imp-n">'+jml+'</span> '+judul+'</span></div>'+
+    '<ol class="imp-list">'+li+'</ol></div>';
+}
+function spkImporModalClose(){
+  var ov=document.getElementById('imp-res-overlay');
+  if(ov) ov.classList.remove('show');
+}
+/* hasil : { ok:[...], dup:[...] }  dari spkImporHasil()
+   modul : nama modul untuk judul pop up (mis. 'Monitoring')
+   tunda : true bila dipanggil bersamaan dengan perpindahan halaman, agar
+           pop up muncul setelah animasi "Memuat" selesai. */
+function spkImporModal(hasil, modul, tunda){
+  var ok=(hasil&&hasil.ok)||[], dup=(hasil&&hasil.dup)||[];
+  var tone=spkImporTone(ok.length, dup.length);
+  var ov=document.getElementById('imp-res-overlay');
+  var body=document.getElementById('imp-res-body');
+  var head=document.getElementById('imp-res-head');
+  var ttl=document.getElementById('imp-res-title');
+  if(!ov || !body){   /* cadangan: bila markup belum tersedia, pakai notifikasi lama */
+    toast(spkImporMsg(ok.length, dup.length), tone, TOAST_MS_UPLOAD); return;
+  }
+  var html='';
+  /* Bagian dengan jumlah 0 tidak ditampilkan sama sekali. */
+  if(ok.length)  html+=spkImporSecHtml('imp-ok',  ok.length,
+                    'Data pekerjaan berhasil ditambahkan', ok, IMP_IC_OK);
+  if(dup.length) html+=spkImporSecHtml('imp-dup', dup.length,
+                    'Data pekerjaan tidak berhasil ditambahkan : data sudah ada', dup, IMP_IC_DUP);
+  if(!html) html='<div class="imp-empty">Tidak ada data yang diproses.</div>';
+  body.innerHTML=html;
+  if(ttl)  ttl.textContent='Hasil Unggah Template'+(modul?(' \u2014 '+modul):'');
+  if(head){ head.classList.remove('tone-ok','tone-warn','tone-err'); head.classList.add('tone-'+tone); }
+  body.scrollTop=0;
+  if(tunda) setTimeout(function(){ ov.classList.add('show'); }, 560);
+  else ov.classList.add('show');
 }
 function spkMissingMsg(keys, map, fields, xlRow){
   const byKey={}; (fields||[]).forEach(f=>{ byKey[f.key]=f; });
@@ -3221,10 +3298,18 @@ function handleUpload(ev){
         catch(err){ console.error(err); toast('Gagal mengimpor: '+errMsg(err),'warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
         await refreshData();
       }
-      toast(spkImporMsg(toAdd.length, dupCount), spkImporTone(toAdd.length, dupCount), TOAST_MS_UPLOAD);
+      /* Hasil unggah ditampilkan lewat POP UP yang bertahan (ditutup dengan
+         tombol \u00d7 di kanan atas), bukan notifikasi sekilas. */
+      const _hasilKr=spkImporHasil(toAdd, dupRows, DUPOPT_KR);
       // Data berhasil ditambahkan lewat template → langsung tampilkan loading &
       // kembali ke Daftar Monitoring (showView sudah memunculkan animasi "Memuat").
-      if(toAdd.length){ ev.target.value=''; showView('list','Memuat daftar'); return; }
+      if(toAdd.length){
+        ev.target.value='';
+        showView('list','Memuat daftar');
+        spkImporModal(_hasilKr,'Monitoring',true);
+        return;
+      }
+      spkImporModal(_hasilKr,'Monitoring');
     }catch(err){ console.error(err); toast('Gagal membaca file Excel','warn', TOAST_MS_UPLOAD); }
     ev.target.value='';
   };
@@ -4245,10 +4330,18 @@ function handleUploadPl(ev){
         catch(err){ console.error(err); toast('Gagal mengimpor: '+errMsg(err),'warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
         await refreshDataPl();
       }
-      toast(spkImporMsg(toAdd.length, dupCount), spkImporTone(toAdd.length, dupCount), TOAST_MS_UPLOAD);
+      /* Hasil unggah ditampilkan lewat POP UP yang bertahan (ditutup dengan
+         tombol \u00d7 di kanan atas), bukan notifikasi sekilas. */
+      const _hasilPl=spkImporHasil(toAdd, dupRows, DUPOPT_K);
       // Data berhasil ditambahkan lewat template → langsung tampilkan loading &
       // kembali ke Daftar Monitoring Pengadaan Langsung.
-      if(toAdd.length){ ev.target.value=''; showView('list-pl','Memuat daftar'); return; }
+      if(toAdd.length){
+        ev.target.value='';
+        showView('list-pl','Memuat daftar');
+        spkImporModal(_hasilPl,'Pengadaan Langsung',true);
+        return;
+      }
+      spkImporModal(_hasilPl,'Pengadaan Langsung');
     }catch(err){ console.error(err); toast('Gagal membaca file Excel','warn', TOAST_MS_UPLOAD); }
     ev.target.value='';
   };
@@ -5538,10 +5631,18 @@ function handleUploadTender(ev){
         catch(err){ console.error(err); toast('Gagal mengimpor: '+errMsg(err),'warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
         await refreshDataTender();
       }
-      toast(spkImporMsg(toAdd.length, dupCount), spkImporTone(toAdd.length, dupCount), TOAST_MS_UPLOAD);
+      /* Hasil unggah ditampilkan lewat POP UP yang bertahan (ditutup dengan
+         tombol \u00d7 di kanan atas), bukan notifikasi sekilas. */
+      const _hasilTd=spkImporHasil(toAdd, dupRows, DUPOPT_K);
       // Data berhasil ditambahkan lewat template → langsung tampilkan loading &
       // kembali ke Daftar Monitoring Tender.
-      if(toAdd.length){ ev.target.value=''; showView('list-tender','Memuat daftar'); return; }
+      if(toAdd.length){
+        ev.target.value='';
+        showView('list-tender','Memuat daftar');
+        spkImporModal(_hasilTd,'Tender',true);
+        return;
+      }
+      spkImporModal(_hasilTd,'Tender');
     }catch(err){ console.error(err); toast('Gagal membaca file Excel','warn', TOAST_MS_UPLOAD); }
     ev.target.value='';
   };
