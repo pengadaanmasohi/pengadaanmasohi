@@ -3070,9 +3070,9 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
 .spk-narasi-prevlabel{font-size:10.5px;color:#6B7885;font-weight:800;letter-spacing:.04em;text-transform:uppercase;margin-bottom:5px}
 /* --spk-lh = nilai CSS untuk "1,15 baris" gaya Word. Nilainya diukur ulang oleh JS
    (spkLHInit) dari tinggi baris tunggal font dokumen; 1.32 hanya nilai cadangan. */
-:root{--spk-lh:1.3225;--spk-kv-gap:4pt}
-.spk-narasi-prev{font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:var(--spk-lh,1.3225);color:#1c2733;background:#F8FAFB;border:1px solid #E2E7EB;border-radius:10px;padding:12px 15px;max-height:300px;overflow:auto}
-.spk-narasi-prev p{margin:0 0 9px;text-align:justify;line-height:var(--spk-lh,1.3225)}
+:root{--spk-lh:1.32;--spk-kv-gap:4pt}
+.spk-narasi-prev{font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:var(--spk-lh,1.32);color:#1c2733;background:#F8FAFB;border:1px solid #E2E7EB;border-radius:10px;padding:12px 15px;max-height:300px;overflow:auto}
+.spk-narasi-prev p{margin:0 0 9px;text-align:justify;line-height:var(--spk-lh,1.32)}
 .spk-narasi-prev p:last-child{margin-bottom:0}
 /* Kisi cm mengikuti gaya paragraf template .docx (bukan em, agar tidak ikut
    mengecil/membesar oleh ukuran huruf pratinjau). */
@@ -3165,20 +3165,20 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
 /* Kanvas edit: samakan persis dengan .spk-cl dokumen (Arial 11pt, indent 0,75cm) */
 /* Isi klausul pada dokumen SPK selalu menjorok 0,75cm (sejajar dengan huruf
    sesudah nomor klausul) -> kanvas editor dibuat sama persis. */
-.spk-we-doc{outline:none;font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:var(--spk-lh,1.3225);color:#000;min-height:246.2mm;padding-left:.75cm}
+.spk-we-doc{outline:none;font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif;font-size:11pt;line-height:var(--spk-lh,1.32);color:#000;min-height:246.2mm;padding-left:.75cm}
 /* Blok pertama editor tidak membawa spasi-sebelum (sejajar margin atas) */
 .spk-we-doc > *:first-child{margin-top:0}
 /* Baris judul klausul (pratinjau, tidak dapat diedit) */
 /* Gaya Word "Klausul Judul": ind left=0,65cm hanging=0,65cm, spacing after 3pt,
    line 1,15. Nomor otomatis Word rata KIRI, kotaknya selebar gantungan; dipakai
    min-width agar nomor 2 digit mendorong judulnya seperti tab stop Word. */
-.spk-we-clhead{font-family:Arial,Helvetica,sans-serif;font-size:11pt;font-weight:700;text-transform:uppercase;color:#000;line-height:var(--spk-lh,1.3225);
+.spk-we-clhead{font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif;font-size:11pt;font-weight:700;text-transform:uppercase;color:#000;line-height:var(--spk-lh,1.3915);
   margin:0 0 3pt;padding-left:.65cm;text-indent:-.65cm;user-select:none}
 .spk-we-clhead .n{display:inline-block;box-sizing:border-box;min-width:.65cm;text-indent:0;text-align:left;white-space:nowrap}
 .spk-we-clhead .ph{color:#9AA7B2;font-weight:700}
 .spk-we-clhead-tag{font:10px Arial;color:#9AA7B2;text-transform:none;font-weight:400;margin-left:6px;letter-spacing:.02em}
 .spk-we-doc:empty:before{content:attr(data-ph);color:#9AA7B2;font-style:italic}
-.spk-we-doc p{margin:0 0 6pt;text-align:justify;line-height:var(--spk-lh,1.3225)}
+.spk-we-doc p{margin:0 0 6pt;text-align:justify;line-height:var(--spk-lh,1.32)}
 .spk-we-doc p.kl0{margin-left:0;text-indent:0}
 .spk-we-doc p.klp{margin-left:0;text-indent:.75cm}
 .spk-we-doc p.klp1{margin-left:.75cm;text-indent:.75cm}
@@ -3280,8 +3280,8 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
 /* 22 Jul 2026 — padding 0,75cm DIBUANG supaya Lihat Pustaka Klausul mulai di
    batas margin persis seperti dokumen cetak (.spk-clause .spk-cl{padding-left:0}).
    Inden tiap tingkat sepenuhnya diatur inline oleh spkPkIndentStd. */
-.spk-we-page .spk-cl{font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;line-height:var(--spk-lh,1.3225);padding-left:0}
-.spk-we-page .spk-cl p{margin:0 0 6pt;text-align:justify;line-height:var(--spk-lh,1.3225)}
+.spk-we-page .spk-cl{font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif;font-size:11pt;color:#000;line-height:var(--spk-lh,1.3915);padding-left:0}
+.spk-we-page .spk-cl p{margin:0 0 6pt;text-align:justify;line-height:var(--spk-lh,1.32)}
 /* Judul klausul di awal lembar: tanpa spasi sebelum/sesudah yang mendorongnya turun */
 .spk-we-page .spk-cl-h:first-child,.spk-we-page .spk-clause:first-child > .spk-cl-h{margin-top:0;padding-top:0}
 .spk-we-page .spk-cl p.kl0{margin-left:0;text-indent:0}
@@ -3363,7 +3363,7 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
    Catch-all agar tidak ada elemen yang jatuh ke line-height default (~1). */
 .spk-we-page .spk-cl,.spk-we-page .spk-cl *,
 .spk-we-doc,.spk-we-doc *,
-.spk-narasi-prev,.spk-narasi-prev *{line-height:var(--spk-lh,1.3225)}
+.spk-narasi-prev,.spk-narasi-prev *{line-height:var(--spk-lh,1.32)}
 /* Contoh pengisian klausul (placeholder) di Pustaka Klausul: titik-titik sampai
    batas margin kanan, HURUF HITAM (bukan samar/transparan) agar keterangan
    "Isi Klausul ......" terbaca jelas. Blok bertanda .spk-ph tetap TIDAK PERNAH
@@ -3394,11 +3394,11 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
 /* Angka tabular pada kotak nomor: digit '1' dan '2' sama lebar, sehingga '4.1.'
    dan '4.2.' berhenti di titik yang sama (seperti penomoran Word). */
 .spk-cl .n,.spk-cl-h .n,.spk-clause .n,.spk-we-doc .n,.spk-we-page .n,.spk-narasi-prev .n{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1,"lnum" 1}
-.spk-cl .spk-kv{display:flex;margin:0 0 var(--spk-kv-gap,4pt);line-height:var(--spk-lh,1.3225)}
+.spk-cl .spk-kv{display:flex;margin:0 0 var(--spk-kv-gap,4pt);line-height:var(--spk-lh,1.32)}
 .spk-cl .spk-kv .k{flex:0 0 34%;max-width:34%}
 .spk-cl .spk-kv .s{flex:0 0 auto;width:1.2em}
 .spk-cl .spk-kv .v{flex:1;text-align:justify}
-.spk-we-doc .spk-kv{display:flex;margin:0 0 var(--spk-kv-gap,4pt);line-height:var(--spk-lh,1.3225)}
+.spk-we-doc .spk-kv{display:flex;margin:0 0 var(--spk-kv-gap,4pt);line-height:var(--spk-lh,1.32)}
 .spk-we-doc .spk-kv .k{flex:0 0 34%;max-width:34%}
 .spk-we-doc .spk-kv .s{flex:0 0 auto;width:1.2em}
 .spk-we-doc .spk-kv .v{flex:1;text-align:justify}
