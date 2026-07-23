@@ -3109,7 +3109,7 @@ function spkNumUniform(html){
       if(!n || n.tagName!=='SPAN' || !n.classList || !n.classList.contains('n')) continue;
       var tok=String(n.textContent||'').replace(/[\s\u00A0]+/g,'');
       if(!tok || !/^(?:[0-9]+[.)])+$/.test(tok)) continue;         /* hanya nomor ANGKA */
-      var w=spkTextWidthCm(tok); if(!(w>0)) continue;
+      var w=spkNumTokWidthCm(tok); if(!(w>0)) continue;
       var lvl=(p.classList.contains('kl2')?'kl2':'kl1')+(p.classList.contains('spk-lv1')?'|lv1':'');
       k=lvl+'|'+tok.replace(/[0-9]+[.)]$/,'');                     /* "8.9." & "8.12." -> awalan "8." */
       if(!grup[k]) grup[k]={min:w, max:w, items:[]};
@@ -3191,7 +3191,7 @@ function spkBoxLeadNumDom(html){
       if(!mm) continue;                                    /* tidak diawali nomor ANGKA bertingkat/tunggal */
       var tok=mm[2];
       first.nodeValue = first.nodeValue.slice(mm[0].length);
-      var hug=Math.max(0.4, Math.round((spkTextWidthCm(tok)+SPK_NUM_GAP)*100)/100);
+      var hug=Math.max(0.4, Math.round((spkNumTokWidthCm(tok)+SPK_NUM_GAP)*100)/100);
       var multi=/^(?:[0-9]+\.){2,}$/.test(tok);
       var _col2=spkNumCol(p.classList.contains('kl2') && !multi, hug);
       var span=document.createElement('span');
@@ -3985,7 +3985,7 @@ function spkPkBoxMark(html){
       /* lindungi singkatan yang menyerupai angka romawi / huruf berturut */
       if(/^(CV|CD|MM|DVD|DIV|MMC|LC|DC|ID|IL|IM)[.)]$/i.test(tok)) continue;
       first.nodeValue=first.nodeValue.slice(mm[0].length);
-      var hug=Math.max(0.4, Math.round((spkTextWidthCm(tok)+SPK_NUM_GAP)*100)/100);
+      var hug=Math.max(0.4, Math.round((spkNumTokWidthCm(tok)+SPK_NUM_GAP)*100)/100);
       var multi=/^(?:[0-9]+\.){2,}$/.test(tok);
       var isNum=/^(?:[0-9]+[.)])+$/.test(tok);
       var span=document.createElement('span');
@@ -4224,7 +4224,7 @@ function spkNumberFix(html){
          punya hanging sendiri (margin-left/text-indent inline), jadi baris ke-2 sejajar
          tepat di bawah huruf pertama. Nomor 2 digit (8.10) otomatis mendorong teksnya
          sedikit ke kanan — natural seperti Word. */
-      var hug=Math.max(0.4, Math.round((spkTextWidthCm(tok)+SPK_NUM_GAP)*100)/100);
+      var hug=Math.max(0.4, Math.round((spkNumTokWidthCm(tok)+SPK_NUM_GAP)*100)/100);
       /* Kolom mengikuti kisi template .docx (bukan lebar teks nomor). */
       var _col=spkNumCol(cls==='kl2' && !forceLv1, hug);
       var ml=_col.ml.toFixed(2), ti=_col.w.toFixed(2);
@@ -5467,6 +5467,49 @@ function spkTextWidthCm(txt){
   if(!_spkMeasCanvas){ _spkMeasCanvas=document.createElement('canvas'); }
   var ctx=_spkMeasCanvas.getContext('2d'); ctx.font='11pt Arial';
   return (ctx.measureText(String(txt==null?'':txt)).width) * 2.54/96;
+}
+/* =====================================================================
+   LEBAR PENANDA UNTUK KOTAK NOMOR — DIUKUR DENGAN FONT DOKUMEN
+   (23 Jul 2026, laporan "penomorannya sangat rapat bahkan menyatu dengan
+   teks" pada 10.1. / 10.1.1. / 11.5.9.)
+
+   Kotak nomor selama ini dihitung spkTextWidthCm() = '11pt Arial', padahal
+   isi kontrak dirender dengan Inter 11pt yang ANGKAnya ~11% lebih lebar
+   (terukur pada draft acuan: "2.1." Arial 0,647 vs Inter 0,714; "10.1."
+   0,863 vs 0,956; "3.1.1." 0,971 vs 1,070). Kotak jadi kekecilan, glif
+   meluber ke kanan MEMAKAN padding-right, dan jeda nomor->teks menyusut:
+   makin panjang nomornya makin rapat — pada "10.1.1." tersisa ~0,09 cm dari
+   0,18 cm, sehingga terlihat menyatu. Huruf (a., b.) tidak terpengaruh
+   karena lebarnya praktis sama di kedua font, itu sebabnya hanya penomoran
+   majemuk yang bermasalah.
+
+   Di sini penanda diukur dengan tumpukan font dokumen yang sebenarnya.
+   Bila kanvas belum bisa memastikan Inter termuat, dipakai cadangan
+   Arial x 1,11 khusus penanda ber-ANGKA. Kelonggaran 2% menjaga glif tidak
+   pernah meluber, dan karena kecil ia tidak menambah jeda secara kentara.
+
+   KONSEKUENSI YANG DISADARI: pada isi klausul dari Word, kolom teks dipatok
+   w:ind sedangkan kotak tumbuh KE KIRI, jadi penomoran majemuk bergeser
+   ~0,09 cm ke kiri dibanding draft acuan. Itu memang harga dari jeda 0,18 cm
+   yang benar — di draft acuan jeda itu tergerus habis oleh selisih ukur.
+   ===================================================================== */
+function spkNumTokWidthCm(tok){
+  var t=String(tok==null?'':tok), w=0;
+  if(!t) return 0;
+  try{
+    if(typeof spkPkMeasPad==='function' && typeof SPK_PK_MEAS_PAD_OK!=='undefined' &&
+       spkPkMeasPad()===SPK_PK_MEAS_PAD_OK){
+      if(!_spkMeasCanvas){ _spkMeasCanvas=document.createElement('canvas'); }
+      var ctx=_spkMeasCanvas.getContext('2d');
+      ctx.font=SPK_PK_MEAS_FONT;                       /* font dokumen (Inter 11pt) */
+      w=(ctx.measureText(t).width)*2.54/96;
+    }
+  }catch(e){ w=0; }
+  if(!(w>0)){
+    try{ w=spkTextWidthCm(t); }catch(e){ w=0; }
+    if(/[0-9]/.test(t)) w=w*1.11;                      /* cadangan: angka Inter ~11% > Arial */
+  }
+  return w*1.02;
 }
 /* Setel lebar kotak nomor (span.n) = jarak gantung (cm) hasil seret penggaris, tapi
    tidak boleh lebih kecil dari lebar teks nomornya sendiri (agar nomor tak menabrak
@@ -9128,7 +9171,22 @@ function spkNumBox(txt, hangCm, jc){
       return '<span class="n" style="display:inline-block;'+_mlN+'width:'+_wN+'cm;box-sizing:border-box;'+
         'padding-right:'+gap+';text-indent:0;white-space:nowrap;overflow:visible;text-align:right">'+txt+'</span>';
     }
-    return '<span class="n" style="display:inline-block;width:'+hangCm+'cm;box-sizing:border-box;'+
+    /* 23 Jul 2026 — laporan "penomorannya sangat rapat, bahkan menyatu dengan
+       teks" pada 1.2. / 10.1. / 10.1.1. Kotak berlebar TETAP = gantungan Word
+       memakai box-sizing:border-box, jadi ruang bersih untuk glif hanya
+       (gantungan - jeda). Angka Inter ~11% lebih lebar dari perkiraan, sehingga
+       nomor majemuk meluber melewati padding dan jeda ke teks habis
+       (terukur: "1.2." menyisakan ~0,03 cm dari 0,18 cm). Cabang rata-KANAN
+       sudah ditangani _numLeftWiden sejak 22 Jul; cabang rata-KIRI ikut
+       dipakaikan di sini. Kotak melebar KE KIRI, jadi tepi kanannya — dan
+       karenanya jeda ke teks serta kolom teks butir — tidak bergeser sama
+       sekali; hanya penomoran yang menjulur sedikit ke area gantungan, persis
+       perilaku nomor rata kanan di Word. Nomor yang memang sudah muat tidak
+       berubah sedikit pun. */
+    var _bL=_numLeftWiden(hangCm);
+    var _mlLn=_bL.ml?('margin-left:'+_bL.ml.toFixed(2)+'cm;'):'';
+    var _wLn=_bL.ml?_bL.w.toFixed(2):(''+hangCm);
+    return '<span class="n" style="display:inline-block;'+_mlLn+'width:'+_wLn+'cm;box-sizing:border-box;'+
       'padding-right:'+gap+';text-indent:0;white-space:nowrap;overflow:visible;text-align:left">'+txt+'</span>';
   }
   /* RATA KIRI (bawaan): kotak LEBAR TETAP = hanging. Nomor rata kiri di dalam kotak;

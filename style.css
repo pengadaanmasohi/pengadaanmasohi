@@ -3165,7 +3165,7 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
 /* Kanvas edit: samakan persis dengan .spk-cl dokumen (Arial 11pt, indent 0,75cm) */
 /* Isi klausul pada dokumen SPK selalu menjorok 0,75cm (sejajar dengan huruf
    sesudah nomor klausul) -> kanvas editor dibuat sama persis. */
-.spk-we-doc{outline:none;font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif;font-size:11pt;line-height:var(--spk-lh,1.32);color:#000;min-height:246.2mm;padding-left:.75cm}
+.spk-we-doc{outline:none;font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif;font-size:11pt;line-height:var(--spk-lh,1.32);color:#000;min-height:246.2mm;padding-left:.9cm}
 /* Blok pertama editor tidak membawa spasi-sebelum (sejajar margin atas) */
 .spk-we-doc > *:first-child{margin-top:0}
 /* Baris judul klausul (pratinjau, tidak dapat diedit) */
@@ -3173,8 +3173,8 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
    line 1,15. Nomor otomatis Word rata KIRI, kotaknya selebar gantungan; dipakai
    min-width agar nomor 2 digit mendorong judulnya seperti tab stop Word. */
 .spk-we-clhead{font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif;font-size:11pt;font-weight:700;text-transform:uppercase;color:#000;line-height:var(--spk-lh,1.3915);
-  margin:0 0 3pt;padding-left:.65cm;text-indent:-.65cm;user-select:none}
-.spk-we-clhead .n{display:inline-block;box-sizing:border-box;min-width:.65cm;text-indent:0;text-align:left;white-space:nowrap}
+  margin:0 0 3pt;padding-left:.75cm;text-indent:-.75cm;user-select:none}
+.spk-we-clhead .n{display:inline-block;box-sizing:border-box;min-width:.75cm;text-indent:0;text-align:right;padding-right:.18cm;white-space:nowrap}
 .spk-we-clhead .ph{color:#9AA7B2;font-weight:700}
 .spk-we-clhead-tag{font:10px Arial;color:#9AA7B2;text-transform:none;font-weight:400;margin-left:6px;letter-spacing:.02em}
 .spk-we-doc:empty:before{content:attr(data-ph);color:#9AA7B2;font-style:italic}
@@ -3281,6 +3281,9 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
    batas margin persis seperti dokumen cetak (.spk-clause .spk-cl{padding-left:0}).
    Inden tiap tingkat sepenuhnya diatur inline oleh spkPkIndentStd. */
 .spk-we-page .spk-cl{font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif;font-size:11pt;color:#000;line-height:var(--spk-lh,1.3915);padding-left:0}
+/* 23 Jul 2026 - samakan dgn dokumen: badan klausul yg memuat paragraf hasil
+   unggahan Word memakai dasar 0,90 cm (susun-kontrak.js: .spk-cl:has(.spk-wx)). */
+.spk-we-page .spk-cl:has(.spk-wx){padding-left:.9cm}
 .spk-we-page .spk-cl p{margin:0 0 6pt;text-align:justify;line-height:var(--spk-lh,1.32)}
 /* Judul klausul di awal lembar: tanpa spasi sebelum/sesudah yang mendorongnya turun */
 .spk-we-page .spk-cl-h:first-child,.spk-we-page .spk-clause:first-child > .spk-cl-h{margin-top:0;padding-top:0}
@@ -3292,18 +3295,21 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
 .spk-we-page .spk-cl p.kl2{margin-left:1.5cm;text-indent:-.75cm}
 .spk-we-page .spk-cl p.kl1.spk-sl{margin-left:.75cm;text-indent:-.75cm;padding-left:0}
 .spk-we-page .spk-cl p.kl2.spk-sl{margin-left:1.5cm;text-indent:-.75cm;padding-left:0}
-.spk-we-page .spk-cl p.spk-sl .n{display:inline-block;box-sizing:border-box;min-width:.75cm;text-indent:0;text-align:left;white-space:nowrap}
-.spk-we-page .spk-cl p.kl2.spk-sl .n{min-width:.75cm}
+.spk-we-page .spk-cl p.spk-sl .n{display:inline-block;box-sizing:border-box;text-indent:0;text-align:left;white-space:nowrap}
+.spk-we-page .spk-cl p.spk-sl .n:not([style]){min-width:.75cm}
+.spk-we-page .spk-cl p.kl2.spk-sl .n:not([style]){min-width:.75cm}
 /* Label majemuk (5.1. / 3.1.1.) memakai kolom yang SAMA dengan butir
    tingkat-1 pada template .docx; kotak nomor hanya melebar bila perlu. */
 .spk-we-page .spk-cl p.kl1.spk-ml{margin-left:.75cm;text-indent:-.75cm}
 .spk-we-page .spk-cl p.kl2.spk-ml{margin-left:.75cm;text-indent:-.75cm}
-.spk-we-page .spk-cl p.spk-ml .n.m{display:inline-block;box-sizing:border-box;min-width:.75cm;text-indent:0;text-align:left;white-space:nowrap}
+.spk-we-page .spk-cl p.spk-ml .n.m{display:inline-block;box-sizing:border-box;text-indent:0;text-align:left;white-space:nowrap}
+.spk-we-page .spk-cl p.spk-ml .n.m:not([style]){min-width:.75cm}
 .spk-we-page .spk-cl p.kldesc{margin-left:.75cm;text-indent:0}
-.spk-we-page .spk-cl p .n{display:inline-block;box-sizing:border-box;min-width:.75cm;text-indent:0;text-align:left;white-space:nowrap}
+.spk-we-page .spk-cl p .n{display:inline-block;box-sizing:border-box;text-indent:0;text-align:left;white-space:nowrap}
+.spk-we-page .spk-cl p .n:not([style]){min-width:.75cm}
 /* Kop klausul SPK: gantungan 0,65 cm mengikuti gaya "Klausul Judul" template. */
-.spk-we-page .spk-cl p.spk-cl-h{padding-left:.65cm;text-indent:-.65cm}
-.spk-we-page .spk-cl p.spk-cl-h .n{min-width:.65cm;text-align:left;padding-right:0}
+.spk-we-page .spk-cl p.spk-cl-h{padding-left:.75cm;text-indent:-.75cm}
+.spk-we-page .spk-cl p.spk-cl-h .n{min-width:.75cm;text-align:right;padding-right:.18cm}
 .spk-we-page .spk-cl i{font-style:italic}
 .spk-we-page .spk-cl b{font-weight:700}
 
