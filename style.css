@@ -4922,6 +4922,20 @@ button.js-switch:hover{filter:brightness(1.05)}
 button.js-switch:active>.sw-knob{width:19px}
 button.js-switch:focus-visible{box-shadow:0 0 0 3px rgba(14,124,134,.30)}
 button.js-switch[data-locked="1"]{opacity:.55;cursor:not-allowed}
+button.js-switch:disabled{opacity:.55;cursor:not-allowed;filter:none}
+
+/* Field form Monitoring yang memakai sakelar (pilihan Ya/Tidak & Ada/Tidak Ada).
+   Kotak nilai .sw-state menggantikan dropdown, jadi ia ikut aturan tampilan
+   "terkunci" dan "wajib diisi" yang selama ini hanya mengenai input/select. */
+#view-input .field.is-switch .sw-state,
+#view-input-pl .field.is-switch .sw-state,
+#view-input-tender .field.is-switch .sw-state{font-size:12px}
+.field.locked .sw-state{background:#f1f4f6;color:#9aa7ad;border-style:dashed}
+.field.locked .sw-state::before{background:#c3ccd1;box-shadow:none}
+.field.field-error .sw-state{border-color:var(--red)!important;background:#fdecec}
+/* Samakan tinggi kotak nilai dengan kotak isian biasa (input/select) supaya
+   sebaris dengan field lain: padding & radius sudah sama, tinggal baris teks. */
+.field.is-switch .sw-state{line-height:1.25}
 
 /* Baris kontrol di bawah judul (untuk field yang memakai sakelar) */
 .sw-row{display:flex;align-items:center;gap:6px;width:100%}

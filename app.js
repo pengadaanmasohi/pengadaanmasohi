@@ -56,7 +56,6 @@ const RISIKO_OPTS = ['Tidak Ada','Rendah','Moderat','Tinggi','Sangat Tinggi','Ek
 /* table:true => tampil di Tabel Daftar Pekerjaan; seluruh field selalu tampil di "Lihat" */
 const FIELDS_PL = [
   // I. Informasi Pekerjaan
-  {key:'tahun', label:'Tahun', type:'select', options:TAHUN_OPTS},
   {key:'nama_pekerjaan', label:'Nama Pekerjaan', type:'text', table:true, span:2, req:true},
   {key:'lokasi_pekerjaan', label:'Lokasi Pekerjaan', type:'text', req:true},
   {key:'jangka_waktu', label:'Jangka Waktu Pelaksanaan Pekerjaan', type:'text', req:true, ph:'..........(hari)'},
@@ -66,7 +65,8 @@ const FIELDS_PL = [
   {key:'no_nota_dinas', label:'No. Nota Dinas', type:'text', req:true},
   {key:'tgl_nota_dinas', label:'Tgl. Nota Dinas', type:'date', req:true},
   // III. Dokumen Pengadaan
-  {key:'tgl_terima_dok', label:'Tgl. Diterima Dokumen Pengadaan', type:'date'},
+  /* WAJIB: jadi dasar penentuan Tahun (lihat yearPengadaan) */
+  {key:'tgl_terima_dok', label:'Tgl. Diterima Dokumen Pengadaan', type:'date', req:true},
   {key:'ketersediaan_drp', label:'Ketersediaan DRP', type:'select', options:['Ada','Tidak Ada'], ctrl:true},
   {key:'no_drp', label:'No. DRP', type:'text', lock:'drp_tidak_ada'},
   {key:'tgl_drp', label:'Tgl. DRP', type:'date', lock:'drp_tidak_ada'},
@@ -148,7 +148,7 @@ const FIELDS_PL = [
   {key:'manajemen_kontrak', label:'Manajemen Kontrak', type:'select', options:['Sudah','Belum'], table:true},
 ];
 const GROUPS_PL = [
-  {title:'I. Informasi Pekerjaan', cols:3, keys:['tahun','nama_pekerjaan','lokasi_pekerjaan','jangka_waktu','bidang_pelaksana','level_risiko']},
+  {title:'I. Informasi Pekerjaan', cols:3, keys:['nama_pekerjaan','lokasi_pekerjaan','jangka_waktu','bidang_pelaksana','level_risiko']},
   {title:'II. Nota Dinas Pengadaan', cols:3, keys:['no_nota_dinas','tgl_nota_dinas']},
   {title:'III. Dokumen Pengadaan', cols:3, keys:['tgl_terima_dok','ketersediaan_drp','no_drp','tgl_drp']},
   {title:'IV. Rencana Anggaran Biaya', cols:3, keys:['rab_harga_barang','rab_harga_jasa','rab_total_tanpa_ppn','rab_total_dengan_ppn','no_prk','no_anggaran','tgl_anggaran','jenis_anggaran']},
@@ -558,7 +558,9 @@ function fillPenyediaFilter(){
 
 /* Ambil TAHUN dari Tgl. Terbit Kontrak Rinci (format YYYY-MM-DD) */
 /* Tahun sebuah record untuk filter: pakai field "Tahun" bila terisi (4 digit),
-   selain itu turunkan dari tanggal (kompatibilitas data lama). */
+   selain itu turunkan dari tanggal (kompatibilitas data lama).
+   Dipakai SPBJ/Kontrak Rinci. Pengadaan Langsung & Tender memakai
+   yearPengadaan() di bawah. */
 function yearOf(r, fallbackDate){
   const t=String((r&&r.tahun)||'').trim();
   if(/^\d{4}$/.test(t)) return t;
@@ -567,6 +569,20 @@ function yearOf(r, fallbackDate){
 }
 function contractYear(r){
   return yearOf(r, r.tgl_terbit_kr);
+}
+/* TAHUN sebuah pekerjaan PENGADAAN (Pengadaan Langsung & Tender).
+   ATURAN 24 Jul 2026 (permintaan user): acuannya **Tgl. Diterima Dokumen
+   Pengadaan**. Alasannya pengadaan yang GAGAL/BATAL tidak pernah punya tanggal
+   kontrak, sehingga dengan acuan lama (tgl_awal_kontrak) ia hilang dari filter
+   tahun. Karena acuannya kini sebuah tanggal yang selalu ada, field "Tahun"
+   manual DIHAPUS dari form input & template Excel.
+   Nilai `tahun` dan tanggal lain tetap dibaca sebagai CADANGAN supaya record
+   lama (yang belum punya Tgl. Diterima Dokumen) tidak hilang dari daftar. */
+function yearPengadaan(r){
+  if(!r) return '';
+  const p=String(r.tgl_terima_dok||'').split('-');
+  if(p[0] && p[0].length===4) return p[0];
+  return yearOf(r, r.tgl_awal_kontrak || r.tgl_nota_dinas || r.tgl_nd_rendan || '');
 }
 /* Komparator daftar pekerjaan:
    1) Urut berdasarkan Tahun (terbaru → lama). Tanpa tahun ditaruh paling bawah.
@@ -955,8 +971,8 @@ function closeSettingsMenu(){
 function bkCatInfo(cat){
   switch(cat){
     case 'kr':     return {label:'SPBJ / Kontrak Rinci', table:TABLE,        removeAll:()=>Store.removeAll(),        refresh:refreshData,        rows:()=>records,        yearFn:r=>contractYear(r)};
-    case 'pl':     return {label:'Pengadaan Langsung',   table:TABLE_PL,     removeAll:()=>Store_PL.removeAll(),     refresh:refreshDataPl,     rows:()=>records_pl,     yearFn:r=>yearOf(r,r.tgl_awal_kontrak)};
-    case 'tender': return {label:'Tender',               table:TABLE_TENDER, removeAll:()=>Store_TENDER.removeAll(), refresh:refreshDataTender, rows:()=>records_tender, yearFn:r=>yearOf(r,r.tgl_awal_kontrak)};
+    case 'pl':     return {label:'Pengadaan Langsung',   table:TABLE_PL,     removeAll:()=>Store_PL.removeAll(),     refresh:refreshDataPl,     rows:()=>records_pl,     yearFn:r=>yearPengadaan(r)};
+    case 'tender': return {label:'Tender',               table:TABLE_TENDER, removeAll:()=>Store_TENDER.removeAll(), refresh:refreshDataTender, rows:()=>records_tender, yearFn:r=>yearPengadaan(r)};
   }
   return null;
 }
@@ -1022,10 +1038,16 @@ document.addEventListener('click',function(ev){
   if(w && w.classList.contains('open') && !w.contains(ev.target)) closeSettingsMenu();
 });
 
-/* Nada klik untuk menu & tombol.
+/* Nada klik untuk TOMBOL (bukan menu navigasi).
    Dipasang sebagai SATU listener global (fase capture) alih-alih ditempel pada
-   tiap onclick: menu memakai handler yang berbeda-beda (showView, openDpView,
-   openFklView, ...), dan cara ini otomatis mencakup menu yang ditambah nanti.
+   tiap onclick, sehingga otomatis mencakup tombol yang ditambah nanti.
+
+   MENU & SUB MENU SENGAJA TIDAK BERBUNYI (permintaan 24 Jul 2026): kelas
+   .topnav-link / .topnav-item / .topnav-trigger DIBUANG dari daftar selektor
+   di bawah. Pemicu sub menu (.topnav-subtrigger) & tombol burger (.nav-burger)
+   memang sejak awal tidak pernah masuk daftar. Yang masih berbunyi: tombol
+   biasa (.btn), isi menu Pengaturan (.settings-item — supaya sakelar "Bunyi
+   Notifikasi" tetap punya nada uji saat diklik), dan tombol masuk.
    Fase capture dipakai agar nada tetap berbunyi walau handler lain memanggil
    stopPropagation() (mis. toggleTopGroup / toggleSettingsMenu).
 
@@ -1037,7 +1059,7 @@ document.addEventListener('click',function(ev){
 document.addEventListener('click',function(ev){
   if(typeof sfxClick!=='function') return;
   const el=ev.target && ev.target.closest ? ev.target.closest(
-    '.topnav-link,.topnav-item,.topnav-trigger,.settings-item,.settings-gear,.btn,.login-btn') : null;
+    '.settings-item,.settings-gear,.btn,.login-btn') : null;
   if(!el) return;
   if(el.disabled) return;
   if(el.classList.contains('login-btn')) return;              // masuk -> sfxSession('in')
@@ -1516,6 +1538,11 @@ function buildFormKr(){
       const req=f.req?' <span class="req">*</span>':'';
       const pxw=fieldPxStyle(f);
       const ph=f.ph?` placeholder="${f.ph}"`:'';
+      /* Pilihan berpasangan (Ya/Tidak, Ada/Tidak Ada) -> SAKELAR on/off */
+      if(f.type==='select' && jsSwPair(f.options)){
+        html+=`<div class="field${pxw.cls} is-switch"${pxw.style} id="wrap_${id}">${jsSwFieldHtml(f,id,`${f.label}${req}`,'')}</div>`;
+        return;
+      }
       let ctl='';
       if(f.type==='select') ctl=`<select id="${id}"><option value="">— Pilih —</option>${(f.options||[]).map(o=>`<option>${o}</option>`).join('')}</select>`;
       else if(f.type==='num'){
@@ -1535,10 +1562,12 @@ function buildFormKr(){
 function clearForm(){
   FIELDS.forEach(f=>{ const el=document.getElementById(krInputId(f)); if(el) el.value=''; });
   clearFormErrorsKr();
+  jsSwSyncAll(document.getElementById('work-form-fields'));
 }
 function fillForm(rec){
   FIELDS.forEach(f=>{ const el=document.getElementById(krInputId(f)); if(el) el.value = f.type==='num' ? rupiahInputText(rec[f.key]) : (rec[f.key]!=null ? rec[f.key] : ''); });
   refreshAutoTotals(FIELDS, krInputId);
+  jsSwSyncAll(document.getElementById('work-form-fields'));
 }
 function readForm(){
   const rec={};
@@ -1972,7 +2001,7 @@ function resetFilters(){
 function dashYear(r, jenis){
   let fallback='';
   if(jenis==='kr')      fallback = r.tgl_terbit_kr || '';
-  else                  fallback = r.tgl_awal_kontrak || r.tgl_anggaran || r.tgl_nota_dinas || r.tgl_nd_rendan || '';
+  else                  return yearPengadaan(r);   // PL & Tender: Tgl. Diterima Dokumen Pengadaan
   return yearOf(r, fallback);
 }
 
@@ -1990,7 +2019,8 @@ function dashRAB(r){ return Number(r.rab_total_dengan_ppn)||0; }
 /* Tanggal acuan sebuah record (ISO YYYY-MM-DD) — sumbernya sama dengan penentu Tahun. */
 function dashDate(r, jenis){
   if(jenis==='kr') return r.tgl_terbit_kr || '';
-  return r.tgl_awal_kontrak || r.tgl_anggaran || r.tgl_nota_dinas || r.tgl_nd_rendan || '';
+  /* PL & Tender: urutannya HARUS sama dengan penentu Tahun (yearPengadaan) */
+  return r.tgl_terima_dok || r.tgl_awal_kontrak || r.tgl_nota_dinas || r.tgl_nd_rendan || '';
 }
 /* Bulan (1..12) dari tanggal acuan; 0 bila tak diketahui. */
 function dashMonth(r, jenis){
@@ -2832,7 +2862,7 @@ function spkMissingMsg(keys, map, fields, xlRow){
   msg+='.';
   return msg;
 }
-async function spkFinishTemplate(wsD, COLS, OPSI, isStackFn, ROWS){
+async function spkFinishTemplate(wsD, COLS, OPSI, isStackFn, ROWS, WAJIB){
   ROWS = ROWS || 250;
   const lastRow = ROWS + 1;
   const colOf = {}; COLS.forEach((f,i)=>{ colOf[f.key]=i+1; });
@@ -2871,12 +2901,16 @@ async function spkFinishTemplate(wsD, COLS, OPSI, isStackFn, ROWS){
       });
     }catch(e){ console.warn('[SPK] conditional format gagal utk '+k+':',e); }
   });
-  // 1c) TAHUN WAJIB: sel Tahun disorot MERAH bila barisnya sudah diisi tetapi
-  //     kolom Tahun dibiarkan kosong. Aturan ini keras — saat diunggah, satu
-  //     baris tanpa Tahun membatalkan SELURUH berkas. Sorotan ini agar
-  //     ketahuan sejak di Excel, bukan setelah ditolak aplikasi.
-  const thC = colOf['tahun'];
-  if(thC){
+  // 1c) KOLOM WAJIB MUTLAK: selnya disorot MERAH bila barisnya sudah diisi tetapi
+  //     kolom itu dibiarkan kosong. Aturan ini keras — saat diunggah, satu baris
+  //     kosong membatalkan SELURUH berkas. Sorotan ini agar ketahuan sejak di
+  //     Excel, bukan setelah ditolak aplikasi.
+  //     Parameter WAJIB berisi daftar key; bawaan ['tahun'] (dipakai SPBJ/Kontrak
+  //     Rinci). Pengadaan Langsung & Tender memakai ['tgl_terima_dok'] sejak
+  //     kolom Tahun dihapus (lihat yearPengadaan).
+  ((Array.isArray(WAJIB) && WAJIB.length) ? WAJIB : ['tahun']).forEach(function(wk){
+    const thC = colOf[wk];
+    if(!thC) return;
     const LT = spkColLetterTpl(thC);
     const LAST = spkColLetterTpl(COLS.length);
     const redEdge2={style:'thin',color:{argb:'FF9C0006'}};
@@ -2891,8 +2925,8 @@ async function spkFinishTemplate(wsD, COLS, OPSI, isStackFn, ROWS){
                   border:{top:redEdge2,left:redEdge2,bottom:redEdge2,right:redEdge2} }
         }]
       });
-    }catch(e){ console.warn('[SPK] conditional format Tahun gagal:',e); }
-  }
+    }catch(e){ console.warn('[SPK] conditional format kolom wajib gagal utk '+wk+':',e); }
+  });
   // 2) Kolom Total → rumus otomatis + terkunci
   COLS.forEach((f)=>{
     const tC=colOf[f.key]; if(!tC) return;
@@ -3555,13 +3589,9 @@ function buildFormPl(){
   let html='';
   GROUPS_PL.forEach((g,gi)=>{
     const cols=pynGroupCols(g);
-    let titleExtra='';
-    if(gi===0 && g.keys.includes('tahun')){
-      titleExtra=`<div class="title-controls">${yearControlHTML(plInputId('tahun'))}</div>`;
-    }
+    let titleExtra='';   // kontrol "Tahun" dihapus — tahun kini diturunkan dari Tgl. Diterima Dokumen Pengadaan
     html+=`<div class="form-card"><div class="form-section-title">${PL_SECTION_ICON}${g.title}${titleExtra}</div><div class="form-flow" style="--cols:${cols}">`;
     g.keys.forEach(k=>{
-      if(gi===0 && k==='tahun') return; // Tahun sudah dipindah ke baris judul
       const f=FIELDS_PL.find(x=>x.key===k); if(!f) return;
       if(isIndepKeyPl(k)){ html+=indepFieldHTMLPl(f); return; }
       const id=plInputId(k);
@@ -3569,6 +3599,12 @@ function buildFormPl(){
       const pxw=fieldPxStyle(f);
       const onCtrl=f.ctrl?' onchange="applyLocksPl()"':'';
       const ph=f.ph?` placeholder="${f.ph}"`:'';
+      /* Pilihan berpasangan (Ya/Tidak, Ada/Tidak Ada) -> SAKELAR on/off */
+      if(f.type==='select' && jsSwPair(f.options)){
+        const noteSw=f.lock?LOCK_NOTE:'';
+        html+=`<div class="field${pxw.cls} is-switch"${pxw.style} id="wrap_${id}">${jsSwFieldHtml(f,id,`${f.label}${req}${noteSw?' ':''}${noteSw}`,f.ctrl?'applyLocksPl':'')}</div>`;
+        return;
+      }
       let ctl='';
       if(f.type==='select') ctl=`<select id="${id}"${onCtrl}><option value="">— Pilih —</option>${(f.options||[]).map(o=>`<option>${o}</option>`).join('')}</select>`;
       else if(f.type==='num'){
@@ -3604,6 +3640,7 @@ function applyLocksPl(){
     wrap.classList.toggle('locked',locked);
     if(locked){ el.value=''; wrap.classList.remove('field-error'); }
   });
+  jsSwSyncAll(document.getElementById('form-pl-fields'));
 }
 
 /* ---- Form helpers PL ---- */
@@ -4089,14 +4126,14 @@ function getFilteredRecordsPl(){
   return records_pl.filter(r=>{
     if(fb && r.bidang_pelaksana!==fb) return false;
     if(!matchTahapanFilter(r.tahapan, ftp)) return false;
-    if(fyr && yearOf(r, r.tgl_awal_kontrak)!==fyr) return false;
+    if(fyr && yearPengadaan(r)!==fyr) return false;
     if(fs){
       const hay=[r.nama_pekerjaan,r.no_kontrak,r.perusahaan,r.no_prk,r.no_eproc,r.no_nota_dinas].join(' ').toLowerCase();
       if(!hay.includes(fs)) return false;
     }
     return true;
   }).sort(makeWorkComparator(
-    r=>yearOf(r, r.tgl_awal_kontrak),
+    r=>yearPengadaan(r),
     r=>!!String(r.no_kontrak||'').trim(),
     r=>r.tgl_awal_kontrak
   ));
@@ -4220,7 +4257,7 @@ async function downloadTemplatePl(){
   const wsG=wb.addWorksheet('Petunjuk');
   wsG.columns=[{width:30},{width:80}];
   [['PETUNJUK PENGISIAN — PENGADAAN LANGSUNG',''],['',''],
-   ['Tahun','WAJIB diisi pada setiap baris. Bila ada satu baris saja yang kosong, seluruh berkas ditolak.'],
+   ['Tgl. Diterima Dokumen Pengadaan','WAJIB diisi pada setiap baris — tanggal inilah dasar filter Tahun. Bila ada satu baris saja yang kosong, seluruh berkas ditolak.'],
    ['No. Kontrak','Tidak boleh kembar — baris dengan nomor yang sama ditolak. Boleh dikosongkan bila kontrak belum terbit (tanda "-" juga dianggap kosong).'],
    ['Bidang Pelaksana','Pilih dari dropdown (7 bidang)'],
    ['Level Risiko / Level Risiko (CSMS)','Pilih dari dropdown: Tidak Ada s/d Ekstrem'],
@@ -4244,7 +4281,7 @@ async function downloadTemplatePl(){
   for(let r=3;r<=18;r++){ wsG.getCell(`A${r}`).font={bold:true,color:{argb:'FF095E66'}}; }
 
   // Rapikan: rumus+kunci Total, sorot dropdown, proteksi sheet
-  await spkFinishTemplate(wsD, COLS, OPSI, null, ROWS);
+  await spkFinishTemplate(wsD, COLS, OPSI, null, ROWS, ['tgl_terima_dok']);
 
   try{
     const buf=await wb.xlsx.writeBuffer();
@@ -4314,7 +4351,9 @@ function handleUploadPl(ev){
         FIELDS_PL.forEach(f=>{ if(f.auto==='ppn'){ const base=Number(rec[f.key.replace(/_total_dengan_ppn$/,'_total_tanpa_ppn')])||0; rec[f.key]=base>0?ppnFromBase(base):''; } });
         // Field multi-nilai independen: pecah baris (Alt+Enter dalam satu sel) menjadi daftar
         INDEP_MULTI_KEYS_PL.forEach(k=>{ const raw=String(rec[k]!=null?rec[k]:''); const list=raw.split(/\r?\n/).map(s=>s.trim()).filter(Boolean); rec[k+'_list']=list; rec[k]=list[0]||''; });
-        if(!String(rec.tahun||'').trim()){ const xlRow=r+1; console.warn('[SPK] Upload Pengadaan Langsung — kolom Tahun kosong di baris '+xlRow); toast(spkMissingMsg(['tahun'], map, FIELDS_PL, xlRow),'warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
+        /* Kolom Tahun sudah dihapus; kewajiban pindah ke Tgl. Diterima Dokumen
+           Pengadaan (req:true) yang diperiksa missingRequiredPl di bawah — satu
+           baris kosong tetap membatalkan SELURUH berkas. */
         { const miss=missingRequiredPl(rec); if(miss.length){ const xlRow=r+1; console.warn('[SPK] Upload Pengadaan Langsung — kolom wajib kosong di baris '+xlRow+':', miss); toast(spkMissingMsg(miss, map, FIELDS_PL, xlRow),'warn', TOAST_MS_UPLOAD); ev.target.value=''; return; } }
         rec.__xlRow = r+1;   // nomor baris di Excel, dipakai pesan duplikat
         batch.push(rec);
@@ -4537,7 +4576,6 @@ const TINDAK_LANJUT_OPTS = ['Serah Terima','Amandemen','Dikembalikan','Proses Kl
    lock:'<rule>' => terkunci otomatis sesuai aturan pada TENDER_LOCK_RULES. */
 const FIELDS_TENDER = [
   // I. Informasi Pekerjaan
-  {key:'tahun', label:'Tahun', type:'select', options:TAHUN_OPTS},
   {key:'nama_pekerjaan', label:'Nama Pekerjaan', type:'text', table:true, span:2, req:true},
   {key:'lokasi_pekerjaan', label:'Lokasi Pekerjaan', type:'text', req:true},
   {key:'jangka_waktu', label:'Jangka Waktu Pelaksanaan Pekerjaan', type:'text', req:true, ph:'..........(hari)'},
@@ -4712,7 +4750,7 @@ const FIELDS_TENDER = [
   {key:'manajemen_kontrak', label:'Manajemen Kontrak', type:'select', options:['Sudah','Belum']},
 ];
 const GROUPS_TENDER = [
-  {title:'I. Informasi Pekerjaan', cols:3, keys:['tahun','nama_pekerjaan','lokasi_pekerjaan','jangka_waktu','bidang_pelaksana','level_risiko']},
+  {title:'I. Informasi Pekerjaan', cols:3, keys:['nama_pekerjaan','lokasi_pekerjaan','jangka_waktu','bidang_pelaksana','level_risiko']},
   {title:'II. Nota Dinas Pengadaan', cols:3, keys:['no_nd_rendan','tgl_nd_rendan','no_nd_laksda','tgl_nd_laksda']},
   {title:'III. Dokumen Pengadaan', cols:3, keys:['tgl_terima_dok','ketersediaan_drp','no_drp','tgl_drp']},
   {title:'IV. Dokumen RKS', cols:3, keys:['no_rks','tgl_rks','addendum_rks','no_add_rks','tgl_add_rks']},
@@ -4734,11 +4772,13 @@ const GROUPS_TENDER = [
 ];
 /* #6: Field wajib Tender hanya untuk kelompok data I–II
    (I. Informasi Pekerjaan & II. Nota Dinas Pengadaan). Field lain tidak wajib.
-   'tahun' dikecualikan karena dipindah ke baris judul (bukan field biasa). */
+   PENGECUALIAN 24 Jul 2026: 'tgl_terima_dok' (kelompok III) IKUT WAJIB karena
+   tanggal itulah dasar penentuan Tahun sejak field "Tahun" dihapus — lihat
+   yearPengadaan(). Ditambahkan di sini karena baris ini menimpa seluruh f.req. */
 (function(){
   const reqKeys=new Set();
   [0,1].forEach(i=>{ (GROUPS_TENDER[i] && GROUPS_TENDER[i].keys || []).forEach(k=>reqKeys.add(k)); });
-  reqKeys.delete('tahun');
+  reqKeys.add('tgl_terima_dok');
   FIELDS_TENDER.forEach(f=>{ f.req = reqKeys.has(f.key); });
 })();
 /* Snapshot tata letak awal Tender (untuk "Kembalikan ke Default") */
@@ -4898,6 +4938,7 @@ function writePenyediaInputs(o){
   PENYEDIA_KEYS.forEach(k=>{ if(PENYEDIA_STACK_FIELDS.includes(k)) return; const f=FIELDS_TENDER.find(x=>x.key===k); const el=document.getElementById(tenderInputId(k)); if(el) el.value=(f&&f.type==='num')?rupiahInputText(o&&o[k]):((o&&o[k]!=null)?o[k]:''); });
   computeAutoTotal('tawar', tenderInputId);
   computeAutoTotal('kontrak', tenderInputId);
+  jsSwSyncAll(document.getElementById('form-tender-fields'));
 }
 /* simpan input aktif (seksi tab) + seluruh kotak field bertumpuk ke penyediaLayers */
 function commitActivePenyedia(){
@@ -5107,17 +5148,16 @@ function buildFormTender(){
     const cols=pynGroupCols(g);
     let titleExtra=isPnw?'<span class="pp-tag">per penyedia</span>':'';
     if(gi===0){
-      // Kelompok I. Informasi Pekerjaan: Tahun di kiri, Jumlah Penyedia di kanan (gap 30px)
-      let yearHtml = g.keys.includes('tahun') ? yearControlHTML(tenderInputId('tahun')) : '';
+      // Kelompok I. Informasi Pekerjaan: Jumlah Penyedia di kanan baris judul.
+      // Kontrol "Tahun" dihapus — tahun diturunkan dari Tgl. Diterima Dokumen Pengadaan.
       let opts=''; for(let i=1;i<=MAX_PENYEDIA;i++){ opts+=`<option value="${i}"${i===1?' selected':''}>${i} Penyedia</option>`; }
       const jpHtml=`<div class="jp-control"><label for="tender-jumlah-penyedia">Jumlah Penyedia</label><select id="tender-jumlah-penyedia" onchange="setJumlahPenyedia(this.value)">${opts}</select></div>`;
-      titleExtra+=`<div class="title-controls">${yearHtml}${jpHtml}</div>`;
+      titleExtra+=`<div class="title-controls">${jpHtml}</div>`;
     }
     html+=`<div class="form-card"><div class="form-section-title">${TENDER_SECTION_ICON}${g.title}${titleExtra}</div>`;
     if(isPnw) html+=penyediaBarHTML();
     html+=`<div class="form-flow" style="--cols:${cols}">`;
     g.keys.forEach(k=>{
-      if(gi===0 && k==='tahun') return; // Tahun sudah dipindah ke baris judul
       const f=FIELDS_TENDER.find(x=>x.key===k); if(!f) return;
       if(INDEP_MULTI_KEYS.includes(k)){ html+=indepFieldHTML(f); return; }
       if(PENYEDIA_STACK_FIELDS.includes(k)){ html+=stackFieldHTML(f); return; }
@@ -5126,6 +5166,15 @@ function buildFormTender(){
       const req=f.req?' <span class="req">*</span>':'';
       const onCtrl=f.ctrl?' onchange="applyLocksTender()"':'';
       const ph=f.ph?` placeholder="${f.ph}"`:'';
+      /* Pilihan berpasangan (Ya/Tidak, Ada/Tidak Ada) -> SAKELAR on/off.
+         Judul tetap dibungkus .fld-label-text supaya label dinamis (Sampul Satu
+         -> Penawaran) tetap dapat diperbarui refreshTenderDynamicLabels(). */
+      if(f.type==='select' && jsSwPair(f.options)){
+        const noteSw=f.lock?LOCK_NOTE:'';
+        const lblSw=`<span class="fld-label-text" data-fk="${f.key}">${tenderFieldLabel(f,{})}</span>`;
+        html+=`<div class="field${pxw.cls} is-switch"${pxw.style} id="wrap_${id}">${jsSwFieldHtml(f,id,`${lblSw}${req}${noteSw?' ':''}${noteSw}`,f.ctrl?'applyLocksTender':'')}</div>`;
+        return;
+      }
       let ctl='';
       if(f.type==='select') ctl=`<select id="${id}"${onCtrl}><option value="">— Pilih —</option>${(f.options||[]).map(o=>`<option>${o}</option>`).join('')}</select>`;
       else if(f.type==='num'){
@@ -5160,6 +5209,7 @@ function applyLocksTender(){
     wrap.classList.toggle('locked',locked);
     if(locked){ el.value=''; wrap.classList.remove('field-error'); }
   });
+  jsSwSyncAll(document.getElementById('form-tender-fields'));
   refreshTenderDynamicLabels(vals);
 }
 /* Perbarui label BA Sampul Satu -> BA Penawaran mengikuti Metode Penyampaian */
@@ -5338,14 +5388,14 @@ function getFilteredRecordsTender(){
   return records_tender.filter(r=>{
     if(fb && r.bidang_pelaksana!==fb) return false;
     if(!matchTahapanFilter(r.tahapan, ftp)) return false;
-    if(fyr && yearOf(r, r.tgl_awal_kontrak)!==fyr) return false;
+    if(fyr && yearPengadaan(r)!==fyr) return false;
     if(fs){
       const hay=[r.nama_pekerjaan,r.no_kontrak,r.perusahaan,r.no_prk,r.no_eproc,r.no_rks].join(' ').toLowerCase();
       if(!hay.includes(fs)) return false;
     }
     return true;
   }).sort(makeWorkComparator(
-    r=>yearOf(r, r.tgl_awal_kontrak),
+    r=>yearPengadaan(r),
     r=>{
       if(String(r.no_kontrak||'').trim()) return true;
       const layers=Array.isArray(r.penyedia_layers)?r.penyedia_layers:[];
@@ -5478,7 +5528,7 @@ async function downloadTemplateTender(){
   wsG.columns=[{width:34},{width:84}];
   [['PETUNJUK PENGISIAN — TENDER',''],['',''],
    ['Bidang Pelaksana','Pilih dari dropdown (7 bidang)'],
-   ['Tahun','WAJIB diisi pada setiap baris. Bila ada satu baris saja yang kosong, seluruh berkas ditolak.'],
+   ['Tgl. Diterima Dokumen Pengadaan','WAJIB diisi pada setiap baris — tanggal inilah dasar filter Tahun. Bila ada satu baris saja yang kosong, seluruh berkas ditolak.'],
    ['No. Kontrak','Tidak boleh kembar — baris dengan nomor yang sama ditolak. Boleh dikosongkan bila kontrak belum terbit (tanda "-" juga dianggap kosong).'],
    ['Level Risiko / Level Risiko (CSMS)','Pilih dari dropdown: Tidak Ada s/d Ekstrem'],
    ['Addendum RKS','Pilih: Ada / Tidak Ada. Bila selain "Ada", No./Tgl. Addendum RKS dikosongkan.'],
@@ -5502,7 +5552,7 @@ async function downloadTemplateTender(){
 
   // Rapikan: rumus+kunci Total (HPE/RAB/HPS), sorot dropdown, proteksi sheet.
   // Total per-penyedia (Penawaran/Kontrak) dikunci-kosong; dihitung app saat impor.
-  await spkFinishTemplate(wsD, COLS, OPSI, isStackKey, ROWS);
+  await spkFinishTemplate(wsD, COLS, OPSI, isStackKey, ROWS, ['tgl_terima_dok']);
 
   try{
     const buf=await wb.xlsx.writeBuffer();
@@ -5615,7 +5665,8 @@ function handleUploadTender(ev){
         ['hpe','rab','hps'].forEach(p=>{ if(FIELDS_TENDER.some(f=>f.key===p+'_total_dengan_ppn'&&f.auto==='ppn')){ const base=Number(rec[p+'_total_tanpa_ppn'])||0; rec[p+'_total_dengan_ppn']=base>0?ppnFromBase(base):''; } });
         layers.forEach(lay=>{ ['tawar','kontrak'].forEach(p=>{ const b=Number(lay[p+'_harga_barang'])||0, j=Number(lay[p+'_harga_jasa'])||0; if(lay[p+'_total_tanpa_ppn']!==undefined) lay[p+'_total_tanpa_ppn']=(b+j)>0?(b+j):''; if(lay[p+'_total_dengan_ppn']!==undefined){ const base=Number(lay[p+'_total_tanpa_ppn'])||0; lay[p+'_total_dengan_ppn']=base>0?ppnFromBase(base):''; } }); });
         PENYEDIA_KEYS.forEach(k=>{ rec[k]=layers[0]&&layers[0][k]!=null?layers[0][k]:''; });
-        if(!String(rec.tahun||'').trim()){ const xlRow=r+1; console.warn('[SPK] Upload Tender — kolom Tahun kosong di baris '+xlRow); toast(spkMissingMsg(['tahun'], map, FIELDS_TENDER, xlRow),'warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
+        /* Kolom Tahun sudah dihapus; kewajiban pindah ke Tgl. Diterima Dokumen
+           Pengadaan (masuk reqKeys) yang diperiksa missingRequiredTender di bawah. */
         { const miss=missingRequiredTender(rec); if(miss.length){ const xlRow=r+1; console.warn('[SPK] Upload Tender — kolom wajib kosong di baris '+xlRow+':', miss); toast(spkMissingMsg(miss, map, FIELDS_TENDER, xlRow),'warn', TOAST_MS_UPLOAD); ev.target.value=''; return; } }
         rec.__xlRow = r+1;   // nomor baris di Excel, dipakai pesan duplikat
         batch.push(rec);
@@ -12414,40 +12465,99 @@ function jsNumSelectHtml(id,val,handler){
    Elemen yang dipakai adalah <button>, yang secara bawaan sudah memiliki
    properti .value — sehingga SELURUH handler lama yang membaca el.value
    (mis. hpsOnJudulOn, anaOnRokOn, ...) tetap bekerja tanpa perubahan. */
-function jsSwitchHtml(id,val,handler,extra){
-  var on=jsOn(val);
+/* Pasangan pilihan yang ditampilkan sebagai SAKELAR (bukan dropdown).
+   Ditulis terpusat supaya mudah ditambah: elemen [0] = posisi ON (positif),
+   elemen [1] = posisi OFF (negatif). */
+function jsSwPairs(){ return [ ['Ya','Tidak'], ['Ada','Tidak Ada'] ]; }
+/* Bila daftar pilihan sebuah field TEPAT sepasang nilai berlawanan, kembalikan
+   [labelON, labelOFF] persis seperti tertulis pada definisi field; selain itu null. */
+function jsSwPair(options){
+  if(!Array.isArray(options) || options.length!==2) return null;
+  var a=options.map(function(o){ return String(o==null?'':o).trim().toLowerCase(); });
+  var p=jsSwPairs();
+  for(var i=0;i<p.length;i++){
+    var iOn=a.indexOf(p[i][0].toLowerCase()), iOff=a.indexOf(p[i][1].toLowerCase());
+    if(iOn>=0 && iOff>=0 && iOn!==iOff) return [ options[iOn], options[iOff] ];
+  }
+  return null;
+}
+function jsSwTitle(on,onLbl,offLbl){
+  return on ? (onLbl+' (aktif) \u2014 klik untuk mematikan')
+            : (offLbl+' (nonaktif) \u2014 klik untuk mengaktifkan');
+}
+/* Label ON/OFF sebuah sakelar (disimpan pada atribut data-on / data-off) */
+function jsSwLbls(el){
+  return [ (el.getAttribute&&el.getAttribute('data-on'))||'Ya',
+           (el.getAttribute&&el.getAttribute('data-off'))||'Tidak' ];
+}
+function jsSwitchHtml(id,val,handler,extra,onLbl,offLbl){
+  onLbl=onLbl||'Ya'; offLbl=offLbl||'Tidak';
+  var on=(String(val==null?'':val).trim()===onLbl);
   return '<button type="button" class="js-switch'+(on?' is-on':'')+'"'+
-    (id?(' id="'+id+'"'):'')+' value="'+(on?'Ya':'Tidak')+'" role="switch"'+
-    ' aria-checked="'+(on?'true':'false')+'" aria-label="Ya / Tidak"'+
-    ' title="'+(on?'Ya (aktif) — klik untuk mematikan':'Tidak (nonaktif) — klik untuk mengaktifkan')+'"'+
+    (id?(' id="'+id+'"'):'')+' value="'+fkEsc(on?onLbl:offLbl)+'" role="switch"'+
+    ' data-on="'+fkEsc(onLbl)+'" data-off="'+fkEsc(offLbl)+'"'+
+    ' aria-checked="'+(on?'true':'false')+'" aria-label="'+fkEsc(onLbl+' / '+offLbl)+'"'+
+    ' title="'+fkEsc(jsSwTitle(on,onLbl,offLbl))+'"'+
     (extra?(' '+extra):'')+
     ' onclick="jsSwitchToggle(this,\''+handler+'\')"><span class="sw-knob"></span></button>';
 }
 /* Selaraskan tampilan sakelar dengan nilainya (dipakai setelah handler jalan,
-   karena sebagian handler membatalkan perubahan dengan menulis ulang el.value) */
+   karena sebagian handler membatalkan perubahan dengan menulis ulang el.value).
+   Nilai kosong / asing dianggap OFF. */
 function jsSwitchSync(el){
   if(!el) return;
-  var on=(el.value==='Ya');
+  var Lb=jsSwLbls(el), on=(String(el.value==null?'':el.value).trim()===Lb[0]);
+  if(!on && el.value!==Lb[1]) el.value=Lb[1];
   el.classList.toggle('is-on',on);
   el.setAttribute('aria-checked',on?'true':'false');
-  el.setAttribute('title',on?'Ya (aktif) \u2014 klik untuk mematikan':'Tidak (nonaktif) \u2014 klik untuk mengaktifkan');
+  el.setAttribute('title',jsSwTitle(on,Lb[0],Lb[1]));
+  jsSwStateSync(el,on,Lb);
+}
+/* Perbarui kotak nilai pendamping (.sw-state) pada form yang TIDAK dirender
+   ulang setiap perubahan (form Monitoring). Hanya untuk sakelar bertanda
+   data-sw="1" supaya modul lain (HPS/Analisa/Susun Kontrak) tak terpengaruh. */
+function jsSwStateSync(el,on,Lb){
+  if(!el || !el.getAttribute || el.getAttribute('data-sw')!=='1') return;
+  var f=el.closest?el.closest('.field'):null; if(!f) return;
+  var box=f.querySelector('.sw-state'); if(!box) return;
+  box.classList.toggle('is-on',!!on);
+  box.textContent = on?Lb[0]:Lb[1];
+}
+/* Selaraskan SELURUH sakelar form Monitoring dalam sebuah wadah — dipanggil
+   setiap kali nilai field ditulis langsung ke el.value (isi/kosongkan form,
+   kunci otomatis, pindah layer penyedia). */
+function jsSwSyncAll(root){
+  var r=root||document;
+  if(!r || !r.querySelectorAll) return;
+  var list=r.querySelectorAll('button.js-switch[data-sw="1"]');
+  for(var i=0;i<list.length;i++) jsSwitchSync(list[i]);
 }
 function jsSwitchToggle(el,handler){
-  if(!el) return;
-  el.value=(el.value==='Ya')?'Tidak':'Ya';
+  if(!el || el.disabled) return;
+  var Lb=jsSwLbls(el);
+  el.value=(String(el.value==null?'':el.value).trim()===Lb[0])?Lb[1]:Lb[0];
   jsSwitchSync(el);
   try{ var fn=window[handler]; if(typeof fn==='function') fn(el); }catch(e){ console.error(e); }
   jsSwitchSync(el);
 }
 /* Judul field + sakelar di sebelah kanannya */
-function jsLabelSwitchHtml(lbl,id,val,handler,extra){
+function jsLabelSwitchHtml(lbl,id,val,handler,extra,onLbl,offLbl){
   return '<div class="lbl-switch"><label>'+lbl+'</label>'+
-    jsSwitchHtml(id,val,handler,extra)+'</div>';
+    jsSwitchHtml(id,val,handler,extra,onLbl,offLbl)+'</div>';
 }
 /* Kotak nilai pengganti dropdown (dipakai bila tidak ada kontrol pendamping) */
-function jsSwitchStateHtml(val){
-  var on=jsOn(val);
-  return '<div class="sw-state'+(on?' is-on':'')+'">'+(on?'Ya':'Tidak')+'</div>';
+function jsSwitchStateHtml(val,onLbl,offLbl){
+  onLbl=onLbl||'Ya'; offLbl=offLbl||'Tidak';
+  var on=(String(val==null?'':val).trim()===onLbl);
+  return '<div class="sw-state'+(on?' is-on':'')+'">'+fkEsc(on?onLbl:offLbl)+'</div>';
+}
+/* Field bertipe select berpasangan pada form Monitoring (SPBJ/Kontrak Rinci,
+   Pengadaan Langsung, Tender) -> judul + sakelar di kanannya, lalu kotak nilai.
+   Mengembalikan null bila pilihannya bukan pasangan sakelar. */
+function jsSwFieldHtml(f,id,labelHtml,handler){
+  var p=jsSwPair(f&&f.options); if(!p) return null;
+  return jsLabelSwitchHtml(labelHtml,id,p[1],handler||'','data-sw="1"',p[0],p[1])+
+    '<div class="sw-row">'+jsSwitchStateHtml(p[1],p[0],p[1])+'</div>';
 }
 /* Kompatibilitas nama lama — kini mengembalikan sakelar, bukan dropdown */
 function jsYaTidakHtml(id,val,handler){ return jsSwitchHtml(id,val,handler); }
