@@ -4077,7 +4077,12 @@ function spkPkIndentStd(html, opsi){
            teksnya ke kanan (2,774 cm) — ciri khas rata KIRI di dalam kotak
            ber-min-width. Rata kanan mutlak membuat "i." dan "m." tidak lagi
            satu kolom. */
-        sp.style.textAlign = (g2.rata==='right' ? 'right' : 'left');
+        /* JEDA NOMOR->TEKS SERAGAM (permintaan "samakan semua jarak penomoran ke
+           teks"): deret ANGKA SELALU rata-kanan, sehingga jeda penanda->teks selalu
+           = padding (SPK_NUM_GAP 0,18), tidak lagi bertambah oleh selisih ukur digit
+           kanonik ("1" diukur selebar "0"). Deret HURUF/bullet tetap rata-kiri
+           (glifnya sudah diukur apa adanya, jedanya sudah rapat & seragam). */
+        sp.style.textAlign = (g2.angka || g2.rata==='right') ? 'right' : 'left';
         sp.style.boxSizing='border-box';
         sp.style.paddingRight=(g2.gap||SPK_NUM_GAP)+'cm';   /* jeda ke teks (huruf lebih rapat) */
         /* Kolom teks dipatok g2.Wb; gantungan tetap g2.W, jadi selisihnya
