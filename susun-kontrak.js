@@ -3458,6 +3458,19 @@ function spkPkWLeft(p){
     var n=parseFloat(v); return isNaN(n)?null:n;
   }catch(e){ return null; }
 }
+/* CADANGAN sinyal indent: margin-left inline (cm) -> twip. Paragraf hasil impor
+   .docx SELALU membawa margin-left inline dari indent Word (spkParaCss), bahkan
+   pada klausul yang diimpor SEBELUM atribut data-wleft ada. Dipakai bila data-wleft
+   tidak lengkap, agar kedalaman butir pada DOKUMEN sama dengan "Lihat Klausul". */
+function spkPkMLeftTw(p){
+  try{
+    if(!p || !p.style) return null;
+    var ml=String(p.style.marginLeft||'').trim();
+    if(!/cm$/.test(ml)) return null;
+    var n=parseFloat(ml); if(isNaN(n)) return null;
+    return Math.round(n*566.929);
+  }catch(e){ return null; }
+}
 /* Ubah daftar indent-kiri Word (twip) menjadi LEVEL 1..5 menurut PERINGKAT kolom:
    indent-indent yang berdekatan (dalam toleransi) dianggap satu kolom/level, lalu
    diurutkan menaik -> kolom terkiri = level 1, berikutnya level 2, dst. Dipakai agar
@@ -3726,6 +3739,19 @@ function spkPkIndentStd(html, opsi){
       var _wl=spkPkWLeft(ps[i]);
       if(_wl==null) _allLeft=false;
       _lefts.push(_wl);
+    }
+    /* Cadangan: bila data-wleft tak lengkap, coba margin-left inline (indent Word
+       saat impor) untuk SEMUA butir — sumber harus SATU jenis agar peringkatnya
+       konsisten. Ini menyamakan DOKUMEN dengan "Lihat Klausul" untuk klausul yang
+       diimpor sebelum data-wleft ada. */
+    if(!_allLeft && _numPs.length){
+      var _ml=[], _allML=true;
+      for(var _mi=0;_mi<_numPs.length;_mi++){
+        var _mv=spkPkMLeftTw(_numPs[_mi]);
+        if(_mv==null) _allML=false;
+        _ml.push(_mv);
+      }
+      if(_allML){ _lefts=_ml; _allLeft=true; }
     }
     var _leftLvl=(_allLeft && _numPs.length) ? spkPkLeftRankLevels(_lefts) : null;
 
