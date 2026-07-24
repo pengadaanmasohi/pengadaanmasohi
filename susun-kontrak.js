@@ -3704,7 +3704,18 @@ function spkPkIndentStd(html, opsi){
          TIDAK lagi rata dengan kolom teks judul — menjorok tipis
          SPK_PK_LEAD_JUDUL (0,15) darinya, dan deret penomoran di bawah
          pengantar menjorok 0,15 lagi (lihat perhitungan LEAD adaIntro). */
-      var tepiIntro=(judulX>0) ? Math.round((judulX+SPK_PK_LEAD_JUDUL)*100)/100 : introX;
+      /* PERBAIKAN 24 Jul 2026 ("klausul tanpa penomoran / hanya teks, teksnya
+         sejajar dengan teks judul klausul"): bila klausul TIDAK punya butir
+         bernomor sama sekali (item.length===0, mis. pasal HARGA PEKERJAAN yang
+         seluruhnya narasi), teksnya diluruskan TEPAT ke kolom teks judul (judulX)
+         tanpa tambahan SPK_PK_LEAD_JUDUL — persis intent komentar "PASAL TANPA
+         NOMOR" di atas yang dulu tak terpakai karena tepiIntro selalu +0,15.
+         Klausul yang MEMANG punya butir bernomor tetap memakai blok pengantar yang
+         menjorok tipis 0,15 dari kolom judul seperti sebelumnya. */
+      var _pureNarasi=(item.length===0);
+      var tepiIntro=(judulX>0)
+        ? Math.round((_pureNarasi ? judulX : (judulX+SPK_PK_LEAD_JUDUL))*100)/100
+        : introX;
       for(var c0=0;c0<box.children.length;c0++){
         var ch=box.children[c0];
         if(ch.tagName==='P' && spkPkTok(ch)) break;        /* butir bernomor pertama */
@@ -3809,15 +3820,20 @@ function spkPkIndentStd(html, opsi){
          terlebar sekunci (tingkat|ruas) di seluruh dokumen supaya kolom teks
          antar-pasal lurus. Deret huruf/bullet tidak disentuh. */
       var WSendiri=Math.round(W*100)/100;   /* lebar alami deret ini sendiri */
-      if(adaAngka && SPK_HANG_OVR){
-        var sgU=null;
-        for(j=0;j<g.items.length;j++){ sgU=spkPkSegs(g.items[j].tok); if(sgU) break; }
-        if(sgU){
-          var kU=g.lvl+'|'+sgU.length, WU=SPK_HANG_OVR[kU];
-          if(WU>W) W=WU;
-        }
-      }
-      g.W=Math.round(W*100)/100;
+      /* PERBAIKAN 24 Jul 2026 ("jarak penomoran single digit terlalu jauh dari
+         teks — samakan rapat spt 9.1"): PELEBARAN LANTAI SE-DOKUMEN (SPK_HANG_OVR)
+         DINONAKTIFKAN. Dulu kotak nomor deret pasal ber-angka satu digit (mis.
+         2.1/3.1) dilebarkan mengikuti nomor terlebar sepola di SELURUH dokumen
+         (mis. 10.1) supaya kolom teks antar-pasal lurus; begitu nomor rata KIRI,
+         kelebihan lebar itu berubah jadi JARAK KOSONG lebar antara nomor & teks.
+         Kerapatan jarak & kelurusan kolom teks antar-pasal tak bisa keduanya untuk
+         nomor yang lebih pendek, jadi kerapatan jarak (permintaan user) dipilih:
+         tiap deret memakai LEBAR ALAMINYA sendiri -> jarak nomor->teks SELALU rapat
+         & seragam (= SPK_NUM_GAP) seperti pada 9.1. Perataan 2-digit DALAM satu
+         deret (mis. 2.9 vs 2.16) tetap terjaga karena W sudah = penanda terlebar
+         deret (Tahap 3 di atas). SPK_HANG_OVR sengaja dibiarkan terhitung di
+         pemanggilnya (idempoten, tak berefek lagi di sini). */
+      g.W=WSendiri;
       /* JEDA NOMOR->TEKS SELALU IDEAL (21 Jul 2026, laporan "jauh sekali
          penomoran dan teksnya"): deret yang kotaknya IKUT DILEBARKAN lantai
          se-dokumen (demi kolom teks lurus dgn deret "12.x") tidak boleh
