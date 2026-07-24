@@ -3197,6 +3197,9 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
 /* Modal editor lebih lebar untuk memuat kertas A4 utuh (210mm + ruang scroll) */
 .spk-ov-we{width:min(1060px,98vw);height:94vh;max-height:94vh}
 .spk-ov-we .spk-ov-body{padding:0;background:#e7eaed;display:flex;flex-direction:column;min-height:0}
+/* Iframe Lihat Klausul (dirender via spkClauseDocHtml, identik pratinjau SPK).
+   flex:1 agar mengisi tinggi overlay; latar abu sama dengan pratinjau dokumen. */
+#spk-klausul-view-frame{flex:1 1 auto;width:100%;min-height:0;border:0;background:#e7eaed;display:block}
 /* ---- Title bar bergaya jendela: Minimize / Maximize / Close ---- */
 .spk-we-head{background:#12303f;border-bottom:none;padding:0 0 0 16px;user-select:none;cursor:default}
 .spk-we-head .spk-ov-title{color:#fff;font-size:14px;letter-spacing:.01em}
@@ -3282,6 +3285,13 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
 /* 22 Jul 2026 — padding 0,75cm DIBUANG supaya Lihat Pustaka Klausul mulai di
    batas margin persis seperti dokumen cetak (.spk-clause .spk-cl{padding-left:0}).
    Inden tiap tingkat sepenuhnya diatur inline oleh spkPkIndentStd. */
+/* CATATAN (tata ulang konsistensi): sejak "Lihat Klausul" dirender via IFRAME
+   memakai spkClauseDocHtml() — CSS dokumen yang sama dengan Pratinjau SPK —
+   aturan ".spk-we-page .spk-cl ..." di bawah TIDAK LAGI dipakai untuk Lihat
+   Klausul dan menjadi inert (tak ada elemen .spk-we-page > .spk-cl di DOM utama).
+   Dibiarkan agar tidak berisiko mengganggu selector gabungan; boleh dibersihkan
+   di kemudian hari bila dipastikan tak ada modul lain yang memakainya. Kanvas
+   EDITOR memakai ".spk-we-doc" (bukan ".spk-cl") dan tetap berlaku. */
 .spk-we-page .spk-cl{font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif;font-size:11pt;color:#000;line-height:var(--spk-lh,1.3915);padding-left:0}
 /* DIBATALKAN 23 Jul 2026 - isi klausul dari Word kini ikut dirapikan
    spkPkIndentStd (indennya dihitung dari MARGIN, bukan relatif BASE 0,90 cm),

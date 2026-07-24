@@ -8972,31 +8972,50 @@ function fklDocFontLink(){
    layar (seperti PDF viewer), dan mengembalikannya ke 100% saat dicetak — hasil
    cetak/PDF tidak berubah sama sekali. Dipakai oleh semua dokumen pratinjau. */
 function fklFitScript(){
-  return '<style>@media print{body{zoom:1!important;transform:none!important;width:auto!important}}</style>'+
+  return '<style>'+
+    '@media print{'+
+      '.fkl-fit-wrap{transform:none!important;width:auto!important;height:auto!important}'+
+      'body{transform:none!important;zoom:1!important;width:auto!important}'+
+    '}'+
+    '.fkl-fit-wrap{transform-origin:top left;will-change:transform}'+
+  '</style>'+
   '<scr'+'ipt>(function(){'+
-  'var Z=(window.CSS&&CSS.supports&&CSS.supports("zoom","1"));'+
-  'function fit(){'+
-    'var b=document.body;if(!b)return;'+
-    'b.style.zoom="";b.style.transform="";b.style.width="";'+
-    'var sh=document.querySelector(".fkl-sheet,.spk-page,.hpsc-page,.fkl-print-page,.spk-doc");'+
-    'if(!sh)return;'+
-    'var w=sh.offsetWidth;if(!w)return;'+
-    /* JANGAN pakai scrollWidth di sini: scrollWidth body >= lebar jendela >
-       lebar lembar, jadi syarat sw>w+2 SELALU benar di desktop dan semua
-       dokumen ikut di-zoom 0.99xx (terverifikasi di Chromium 21 Jul 2026).
-       Luberan tabel ditangani fklFitTblScript, bukan penskala pratinjau. */
-    'var vw=document.documentElement.clientWidth;'+
-    'if(vw>=w+2)return;'+
-    'var s=(vw-10)/w;if(s<=0)return;'+
-    'if(Z){b.style.zoom=s;}'+
-    'else{b.style.transformOrigin="top left";b.style.transform="scale("+s+")";b.style.width=(vw/s)+"px";}'+
-  '}'+
-  'window.addEventListener("resize",fit);'+
-  'window.addEventListener("orientationchange",fit);'+
-  'window.addEventListener("load",fit);'+
-  'setTimeout(fit,120);setTimeout(fit,500);setTimeout(fit,1500);setTimeout(fit,3200);'+
-  'window.addEventListener("beforeprint",function(){var b=document.body;b.style.zoom="";b.style.transform="";b.style.width="";});'+
-  'window.addEventListener("afterprint",fit);'+
+    'function ensureWrap(){'+
+      'var b=document.body;if(!b)return null;'+
+      'var w=b.querySelector(":scope > .fkl-fit-wrap");'+
+      'if(w)return w;'+
+      'w=document.createElement("div");w.className="fkl-fit-wrap";'+
+      'while(b.firstChild){w.appendChild(b.firstChild);}'+
+      'b.appendChild(w);'+
+      'return w;'+
+    '}'+
+    'function target(w){'+
+      'return w.querySelector(".spk-page,.fkl-sheet,.hpsc-page,.fkl-print-page")||w.firstElementChild||w;'+
+    '}'+
+    'var raf=0;'+
+    'function fit(){'+
+      'var w=ensureWrap();if(!w)return;'+
+      'w.style.transform="none";w.style.width="";w.style.height="";'+
+      'var sheet=target(w);'+
+      'var sw=sheet?sheet.offsetWidth:w.offsetWidth;if(!sw)return;'+
+      'var vw=document.documentElement.clientWidth||window.innerWidth||sw;'+
+      'var avail=vw-8;'+
+      'var s=avail/sw;'+
+      'if(s>=1){w.style.transform="none";w.style.width="";w.style.height="";return;}'+
+      'if(s<=0)return;'+
+      'w.style.width=sw+"px";'+
+      'w.style.transform="scale("+s+")";'+
+      'var h=w.scrollHeight;'+
+      'w.style.height=(h*s)+"px";'+
+    '}'+
+    'function schedule(){if(raf)cancelAnimationFrame(raf);raf=requestAnimationFrame(fit);}'+
+    'window.addEventListener("resize",schedule);'+
+    'window.addEventListener("orientationchange",schedule);'+
+    'window.addEventListener("load",schedule);'+
+    'try{if(document.fonts&&document.fonts.ready&&document.fonts.ready.then){document.fonts.ready.then(schedule);}}catch(e){}'+
+    'setTimeout(fit,120);setTimeout(fit,500);setTimeout(fit,1500);setTimeout(fit,3200);'+
+    'window.addEventListener("beforeprint",function(){var w=document.querySelector(".fkl-fit-wrap");if(w){w.style.transform="none";w.style.width="";w.style.height="";}});'+
+    'window.addEventListener("afterprint",schedule);'+
   '})();</scr'+'ipt>';
 }
 /* ---------- TABEL LEBAR DIPASKAN KE BIDANG CETAK ----------

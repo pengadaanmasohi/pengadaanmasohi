@@ -609,16 +609,43 @@ function spkStripFontStyle(html){
   var s = String(html==null?'':html);
   /* buang tag <font ...> / </font> pembungkus, pertahankan isinya */
   s = s.replace(/<\/?font\b[^>]*>/gi, '');
-  /* bersihkan deklarasi font-family / font-size (dan awalan mso-*) di tiap style="" */
-  s = s.replace(/style="([^"]*)"/gi, function(m, body){
-    var cleaned = body
-      .replace(/(?:^|;)\s*(?:mso-[a-z-]*)?font-family\s*:[^;]*/gi, '')
-      .replace(/(?:^|;)\s*(?:mso-[a-z-]*)?font-size\s*:[^;]*/gi, '')
+  /* Buang atribut usang face="" / size="" yang kadang tersisa di tag lain. */
+  s = s.replace(/\s(?:face|size)\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '');
+  /* Inti pembersih satu blok isi style. Membuang:
+       - font-family / font-size (termasuk SEMUA awalan mso-*, mis.
+         mso-bidi-font-family, mso-ansi-font-size, mso-fareast-font-family)
+       - shorthand `font:` (mis. font:11pt Arial) yang sebelumnya lolos
+     Margin/spasi/line-height/perataan TIDAK disentuh. */
+  function cleanBody(body){
+    var t = String(body||'');
+    /* Netralkan dulu entitas kutip (&quot; &#34;) yang muncul di dalam nilai
+       font Word seperti mso-bidi-font-family:&quot;Times New Roman&quot; agar
+       tidak mengecoh pemotongan berbasis ';'. Dikembalikan setelah dibersihkan. */
+    t = t.replace(/&quot;|&#0*34;/gi, '\u0001');
+    /* Nilai deklarasi bisa mengandung tanda kutip literal (mis. "Times New
+       Roman", Arial). Pola [^;]* saja bisa berhenti di ; DI DALAM kutip, maka
+       kita izinkan segmen berkutip utuh: (?:"[^"]*"|'[^']*'|[^;])* */
+    var VAL = '(?:"[^"]*"|\'[^\']*\'|[^;])*';
+    t = t
+      .replace(new RegExp('(?:^|;)\\s*[a-z-]*font-family\\s*:'+VAL, 'gi'), '')
+      .replace(new RegExp('(?:^|;)\\s*[a-z-]*font-size\\s*:'+VAL, 'gi'), '')
+      .replace(new RegExp('(?:^|;)\\s*(?:mso-[a-z-]*)?font\\s*:'+VAL, 'gi'), '')
+      .replace(/\u0001/g, '&quot;')
       .replace(/^\s*;+/, '')
       .replace(/;\s*;+/g, ';')
       .replace(/;\s*$/, '')
       .trim();
+    return t;
+  }
+  /* style="..." (kutip ganda) */
+  s = s.replace(/style\s*=\s*"([^"]*)"/gi, function(m, body){
+    var cleaned = cleanBody(body);
     return cleaned ? 'style="'+cleaned+'"' : '';
+  });
+  /* style='...' (kutip tunggal — lazim dari konverter .docx tertentu) */
+  s = s.replace(/style\s*=\s*'([^']*)'/gi, function(m, body){
+    var cleaned = cleanBody(body);
+    return cleaned ? "style='"+cleaned+"'" : '';
   });
   return s;
 }
@@ -6861,7 +6888,7 @@ function spkNarasiPreviewHtml(raw){
   try{ ctx=spkBuildCtx((typeof spkState!=='undefined'&&spkState&&spkState.data)||{}); }catch(e){}
   var html;
   // HTML dari editor WYSIWYG -> pakai apa adanya (hanya merge placeholder & rapikan nomor)
-  if(/<p[\s>]/i.test(String(raw||''))) html=spkNumberFix(spkMerge(raw||'', ctx));
+  if(/<p[\s>]/i.test(String(raw||''))) html=spkNumberFix(spkStripFontStyle(spkMerge(raw||'', ctx)));
   else html=spkNumberFix(spkFormatNarasi(spkMerge(raw||'', ctx)));
   return html || '<div class="spk-narasi-empty">Belum ada teks. Klik tombol di atas untuk membuka editor.</div>';
 }
@@ -8203,6 +8230,63 @@ function spkPageScript(){
 /* Nama lama tetap dipertahankan agar pemanggilan lain (bila ada) tidak rusak */
 function spkTocScript(){ return spkPageScript(); }
 
+/* ============================================================================
+   spkClauseDocHtml — DOKUMEN HTML MANDIRI berisi HANYA klausul terpilih.
+   Dipakai oleh "Lihat Klausul" agar tampilannya IDENTIK dengan Pratinjau SPK:
+   memakai <head>, spkDocCss()+spkDocCss2()+spkClHeadCss(), font, paginator
+   (spkPageScript) dan penyesuai layar (fklFitScript) YANG SAMA PERSIS dengan
+   spkDocHtml. Bedanya hanya: tanpa sampul, daftar isi, preamble, tanda tangan,
+   dan lampiran — hanya blok .spk-clause. Dengan berbagi jalur render ini,
+   perubahan gaya di spkDocCss otomatis tercermin di Lihat Klausul & Pratinjau
+   tanpa perlu menyamakan CSS secara manual.
+   Param:
+     data     : data dokumen (untuk konteks merge & bentuk SPK/PK)
+     klausul  : array {judul,isi,id} — daftar klausul dokumen (BASIS penomoran)
+     opts     : { focusId } — bila diisi, hanya klausul ber-id itu yang
+                ditampilkan, TAPI penomoran & lantai lebar tetap dihitung dari
+                SELURUH "klausul" agar identik dengan dokumen.
+   ========================================================================= */
+function spkClauseDocHtml(data, klausul, opts){
+  data=data||{}; opts=opts||{};
+  const ctx=spkBuildCtx(data);
+  const _isPkDoc = spkBentukOf(data)==='PK';
+  const _all = Array.isArray(klausul)?klausul:[];
+  const focusId = (opts.focusId!=null) ? String(opts.focusId) : null;
+  /* Titik tolak inden isi = lebar kotak nomor judul dokumen INI (dinamis) —
+     SAMA seperti spkDocHtml, dihitung dari jumlah klausul dokumen. */
+  try{ SPK_JH_OVR = _isPkDoc ? 0 : spkClHeadW(_all.length); }catch(e){ SPK_JH_OVR=0; }
+  /* FASE 1: bangun isi TIAP klausul dokumen (pipeline identik spkDocHtml). */
+  const _innersPre = _all.map((k,i)=> spkKvGroup(spkKlItalicAsing(spkBoldPihak(spkNomorToNo(spkNumberFix(spkTidyKeyValue(
+        spkStripFontStyle(spkPruneKlausul(spkMerge(spkRenumberKlausul(spkSortDefinisiIf(k.judul, k.isi||''), i+1), ctx), i+1, data))
+      )))))));
+  /* Lantai lebar nomor se-dokumen — dari SELURUH klausul, bukan hanya yang tampil. */
+  try{ SPK_HANG_OVR = spkKumpulHang(_innersPre.map(function(x){ try{ return spkPkBoxMark(x); }catch(e2){ return x; } })); }
+  catch(e){ SPK_HANG_OVR=null; }
+  /* FASE 2: rakit blok .spk-clause; bila focusId diisi, hanya klausul itu
+     yang dimasukkan (nomornya tetap kedudukan dokumen i+1). */
+  const clausesHtml = _all.map((k,i)=>{
+    if(focusId!=null && String(k.id)!==focusId) return '';
+    const inner = spkPkTidy(_innersPre[i], _isPkDoc);
+    return '<div class="spk-clause" style="counter-reset:spkcl '+i+'"><div class="spk-cl-h"><span class="n"></span>'+spkFmtJudul(k.judul)+'</div>'+
+      '<div class="spk-cl'+spkLeadIndentCls(inner)+'">'+inner+'</div></div>';
+  }).join('');
+  SPK_HANG_OVR=null; SPK_JH_OVR=0;
+  const isi=
+    '<section class="spk-page spk-flow" id="spk-flow">'+
+      '<table class="spk-run"><tbody><tr><td>'+clausesHtml+'</td></tr></tbody></table>'+
+    '</section>';
+  return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>&#8203;</title>'+
+    (typeof fklDocFontLink==='function'?fklDocFontLink():'')+
+    '<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">'+
+    '<style>'+
+    (typeof fklDocBaseCss==='function'?fklDocBaseCss():'')+
+    (typeof hpsExtraDocCss==='function'?hpsExtraDocCss():'')+
+    spkDocCss()+spkDocCss2()+
+    spkClHeadCss(_all.length, _isPkDoc)+
+    '</style></head><body><div class="spk-doc'+(_isPkDoc?' spk-pk':' spk-spk')+'">'+
+      spkKlItalicAsing(isi)+
+    '</div>'+spkPageScript()+fklFitScript()+'</body></html>';
+}
 function spkDocHtml(data, klausul){
   data=data||{};
   const ctx=spkBuildCtx(data);
@@ -8289,7 +8373,7 @@ function spkDocHtml(data, klausul){
   const coverLamp=spkCoverHtml(data, ctx, spkLampTitle(data));
   const lampiran='<section class="spk-page spk-flow spk-lampsheet">'+spkLampiranDocInner(data)+'</section>';
 
-  return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><title>&#8203;</title>'+
+  return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>&#8203;</title>'+
     (typeof fklDocFontLink==='function'?fklDocFontLink():'')+
     /* Font isi kontrak: Inter — sans modern & bersih untuk badan dokumen */
     '<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">'+
@@ -10262,114 +10346,48 @@ function spkKlDocSave(){
 /* Lihat klausul: pratinjau isi persis seperti dokumen (read-only). */
 function spkKlausulView(id){
   const k=records_klausul.find(x=>String(x.id)===String(id)); if(!k) return;
-  let ctx={};
-  try{ ctx=spkBuildCtx((spkState&&spkState.data)||{}); }catch(e){}
-  /* BASIS = DAFTAR KLAUSUL YANG DIPAKAI DOKUMEN (23 Jul 2026, "ayat 3.1 di Lihat
-     Klausul terlalu masuk"): dokumen dibangun dari spkSelectedClauses() — hanya
-     klausul aktif & terpilih — sedangkan pratinjau ini dulu memakai SELURUH isi
-     pustaka. Dua akibatnya (terukur di Chromium, pustaka 12 klausul vs kontrak 5):
-       - kotak nomor judul spkClHeadW: 0,84 cm (12 klausul, 2 digit) vs 0,60 cm (5)
-       - lantai lebar kotak nomor butir: 1,14 cm (ada "10.1.") vs 0,92 cm
-     sehingga butir 3.1 tampil di 2,13 cm pada pratinjau tetapi 1,67 cm pada
-     dokumen — pratinjaunya yang menjorok 0,46 cm terlalu dalam. Kini basisnya
-     disamakan; bila belum ada klausul terpilih, seluruh pustaka dipakai. */
+  /* KONSISTENSI TAMPILAN (tata ulang): Lihat Klausul kini dirender lewat IFRAME
+     memakai spkClauseDocHtml() — jalur CSS + pipeline klausul + paginator yang
+     SAMA PERSIS dengan Pratinjau SPK (spkDocHtml). Tidak ada lagi CSS .spk-we-*
+     yang disalin manual, sehingga perubahan gaya di spkDocCss otomatis tercermin
+     di sini dan di pratinjau bersamaan. */
+  var data=(spkState&&spkState.data)||{};
+  /* BASIS = DAFTAR KLAUSUL DOKUMEN (klausul aktif & terpilih). Penomoran &
+     lantai lebar dihitung dari daftar ini, identik dengan dokumen. Bila belum
+     ada yang terpilih, seluruh pustaka dipakai sebagai basis. */
   var _basis=[];
   try{ if(typeof spkSelectedClauses==='function') _basis=spkSelectedClauses()||[]; }catch(e){}
   if(!_basis.length) _basis=(records_klausul||[]).map(function(x){
     return {id:String(x.id), judul:x.judul||'', isi:x.isi||''}; });
-  var _bi=-1;
-  for(var _bj=0;_bj<_basis.length;_bj++){ if(String(_basis[_bj].id)===String(id)){ _bi=_bj; break; } }
-  /* nomor klausul = kedudukannya DI DOKUMEN (bukan di pustaka), supaya butir &
-     rujukan bernomor sama persis dengan yang tercetak. Klausul yang tidak
-     dipakai dokumen tetap memakai kedudukannya di pustaka. */
-  const noKl=(_bi>=0 ? _bi+1 : ((records_klausul.findIndex(x=>String(x.id)===String(id))+1)||1));
-  let inner='';
-  var _pkTidy=(typeof spkIsPk==='function' && spkIsPk());
-  /* Lantai lebar penomoran diaktifkan JUGA di pratinjau Lihat Klausul
-     (21 Jul 2026) supaya kolom teks deret setingkat konsisten dengan dokumen. */
-  /* KOTAK NOMOR JUDUL DINAMIS (22 Jul 2026, "sesuaikan dengan Lihat Pustaka
-     Klausul"): dokumen memakai spkClHeadW(jumlah klausul) sebagai lebar kotak
-     nomor judul DAN sebagai titik tolak inden isi (SPK_JH_OVR), sedangkan
-     Lihat Klausul dulu memakai kisi tetap 0,65 cm — selisihnya membuat seluruh
-     kolom teks bergeser. Di sini nilainya disamakan. */
-  var _jhW=0.65;
-  try{ if(typeof spkClHeadW==='function') _jhW=spkClHeadW(_basis.length||noKl||1); }catch(e){}
-  try{
-    /* PIPELINE DISAMAKAN DENGAN DOKUMEN (23 Jul 2026, "samakan preview Pustaka
-       Klausul dengan pratinjau Susun Kontrak"): dulu jalur ini memakai rangkaian
-       yang lebih pendek — tanpa spkSortDefinisiIf / spkPruneKlausul /
-       spkNomorToNo / spkKvGroup. Akibatnya bukan cuma indennya yang beda:
-       NOMOR BUTIRNYA pun beda, karena spkPruneKlausul membuang butir contoh dan
-       menomori ulang deret (terukur: pustaka menampilkan 1.9/1.10/1.11 & 2.12,
-       dokumen menampilkan 1.3/1.4/1.5 & 2.2). Nomor yang berbeda membuat lebar
-       kotak nomor berbeda pula, sehingga kolom teks pustaka 1,89 cm vs dokumen
-       1,67 cm. Kini keduanya memakai rangkaian yang sama persis. */
-    var _dataV=(spkState&&spkState.data)||{};
-    var _pipeV=function(kx, ix){
-      return spkKvGroup(spkKlItalicAsing(spkBoldPihak(spkNomorToNo(spkNumberFix(spkTidyKeyValue(
-        spkStripFontStyle(spkPruneKlausul(spkMerge(spkRenumberKlausul(spkSortDefinisiIf(kx.judul, kx.isi||''), ix+1), ctx), ix+1, _dataV))
-      ))))));
-    };
-    var _pre=_pipeV(k, noKl-1);
-    /* LANTAI LEBAR SE-DOKUMEN: dihitung dari DAFTAR YANG SAMA dengan yang
-       dipakai spkDocHtml (fase 1 -> spkKumpulHang), bukan dari seluruh pustaka.
-       Klausul yang sedang dilihat tetapi tidak dipakai dokumen tetap ikut
-       dihitung supaya penomorannya sendiri tak pernah terpotong. */
-    try{
-      var _semua=[];
-      for(var _ai=0;_ai<_basis.length;_ai++){
-        var _kx=_basis[_ai];
-        var _hx=(String(_kx.id)===String(id)) ? _pre : _pipeV(_kx, _ai);
-        _semua.push(spkPkBoxMark(_hx));
-      }
-      if(_bi<0) _semua.push(spkPkBoxMark(_pre));
-      SPK_HANG_OVR=spkKumpulHang(_semua.length?_semua:[spkPkBoxMark(_pre)]);
-    }catch(e2){ SPK_HANG_OVR=null; }
-    if(!_pkTidy){ try{ SPK_JH_OVR=_jhW; }catch(e3){} }
-    inner=spkPkTidy(_pre, _pkTidy);
+  /* Bila klausul yang dilihat TIDAK termasuk daftar dokumen (mis. sedang lihat
+     dari pustaka), sisipkan di posisi pustakanya agar tetap bisa ditampilkan
+     dengan penomoran kedudukannya sendiri. */
+  var _ada=false; for(var _b=0;_b<_basis.length;_b++){ if(String(_basis[_b].id)===String(id)){ _ada=true; break; } }
+  if(!_ada){
+    var _pos=(records_klausul||[]).findIndex(function(x){return String(x.id)===String(id);});
+    var _ins={id:String(k.id), judul:k.judul||'', isi:k.isi||''};
+    if(_pos>=0 && _pos<=_basis.length) _basis.splice(_pos,0,_ins); else _basis.push(_ins);
   }
-  catch(e){ inner=String(k.isi||''); }
-  finally{ SPK_HANG_OVR=null; try{ SPK_JH_OVR=0; }catch(e4){} }
+  var _html='';
+  try{ _html=spkClauseDocHtml(data, _basis, { focusId:String(id) }); }
+  catch(e){ _html='<!DOCTYPE html><meta charset="utf-8"><body style="font:11pt Inter,Arial;padding:16px">Gagal memuat pratinjau klausul.</body>'; }
   let ov=document.getElementById('spk-klausul-view-ov');
   if(!ov){ ov=document.createElement('div'); ov.id='spk-klausul-view-ov'; ov.className='spk-ov'; document.body.appendChild(ov);
     ov.addEventListener('click', e=>{ if(e.target.id==='spk-klausul-view-ov') spkKlausulViewClose(); }); }
-  var _pk=(typeof spkIsPk==='function' && spkIsPk());
-  /* Kop klausul mengikuti gaya judul pada template .docx:
-       SPK : satu baris rata KIRI — nomor otomatis + judul, gantungan 0,65 cm
-             (w:ind left=368 hanging=368), jarak sesudah 3 pt (w:after=60).
-       PK  : dua baris rata TENGAH — "PASAL n" lalu nama pasal, jarak sesudah
-             6 pt (w:after=120) dan tanpa jarak di antara kedua barisnya. */
-  var _kop = k.judul
-    ? (_pk
-        ? '<p class="spk-cl-h" style="font-weight:700;text-transform:uppercase;text-align:center;padding-left:0;text-indent:0;margin:0 0 6pt">'+
-            '<span class="n" style="display:block;width:auto;min-width:0;padding-right:0;text-indent:0;text-align:center;white-space:nowrap;margin:0">PASAL '+fkEsc(String(noKl))+'</span>'+
-            spkFmtJudul(k.judul)+'</p>'
-        : '<p class="spk-cl-h" style="font-weight:700;text-transform:uppercase;text-align:left;padding-left:'+_jhW.toFixed(2)+'cm;text-indent:-'+_jhW.toFixed(2)+'cm;margin:0 0 3pt">'+
-            '<span class="n" style="display:inline-block;box-sizing:border-box;min-width:'+_jhW.toFixed(2)+'cm;padding-right:'+SPK_NUM_GAP+'cm;text-indent:0;text-align:right;white-space:nowrap">'+fkEsc(String(noKl))+'.</span>'+
-            spkFmtJudul(k.judul)+'</p>')
-    : '';
   ov.innerHTML=
     '<div class="spk-ov-modal spk-ov-we">'+
       '<div class="spk-ov-head"><span class="spk-ov-title">Lihat Klausul — '+spkJudulPlain(k.judul)+'</span>'+
         '<div style="display:flex;gap:8px"><button class="btn btn-teal btn-sm" onclick="spkKlausulViewToEdit(\''+fkEscJs(String(k.id))+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> Ubah</button>'+
         '<button class="btn btn-ghost btn-sm" onclick="spkKlausulViewClose()">Tutup</button></div></div>'+
-      '<div class="spk-ov-body">'+
-        '<div class="spk-we-pagearea"><div class="spk-we-page'+(_pk?' spk-pk':'')+'">'+
-          '<div class="spk-cl">'+_kop+inner+'</div>'+
-        '</div></div>'+
+      '<div class="spk-ov-body fkl-preview-body">'+
+        '<iframe id="spk-klausul-view-frame" title="Lihat Klausul"></iframe>'+
       '</div>'+
     '</div>';
   ov.classList.add('show');
-  /* Pecah menjadi lembar-lembar A4 terpisah (celah abu antar halaman), sama
-     seperti pratinjau dokumen — bukan satu lembar memanjang (21 Jul 2026).
-     Ditunda sebentar agar overlay selesai tata letak & font siap diukur. */
-  setTimeout(function(){
-    try{
-      var pg=ov.querySelector('.spk-we-page');
-      var cl=pg && pg.querySelector('.spk-cl');
-      if(pg && cl) spkPaperPaginate(cl, pg);
-    }catch(e){}
-  }, 60);
+  try{
+    var ifr=document.getElementById('spk-klausul-view-frame');
+    var doc=ifr.contentWindow.document; doc.open(); doc.write(_html); doc.close();
+  }catch(e){}
 }
 function spkKlausulViewClose(){ const ov=document.getElementById('spk-klausul-view-ov'); if(ov) ov.classList.remove('show'); }
 function spkKlausulViewToEdit(id){ spkKlausulViewClose(); spkKlausulEdit(id); }
