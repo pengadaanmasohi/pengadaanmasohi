@@ -4237,7 +4237,8 @@ function spkPkTidy(html, isPk){
      aplikasi maupun diunggah dari Word — melewati mesin perapian yang sama
      (spkPkBoxMark + spkPkIndentStd): inden bertingkat, penomoran rata kiri/kanan
      menurut jumlah digit, dan teks rata kiri-kanan (justify).
-     Bentuk PERJANJIAN/KONTRAK TIDAK berubah: konten Word tetap WYSIWYG. */
+     CATATAN 24 Jul 2026: bentuk PERJANJIAN/KONTRAK kini IKUT diseragamkan juga
+     (penjaga WYSIWYG-nya dihapus — lihat komentar cabang isPk di bawah). */
   if(!isPk){
     /* intro = kolom teks JUDUL klausul (gantungan JUDUL_HANG kisi SPK) + LEAD */
     var _D=(typeof spkDX==='function')?spkDX():null;
@@ -4245,13 +4246,20 @@ function spkPkTidy(html, isPk){
             : (_D?Math.round((_D.JUDUL_HANG/566.929)*100)/100:0.65);
     return spkPkIndentStd(spkPkBoxMark(html), {intro:Math.round((_jh+SPK_PK_LEAD)*100)/100, judul:_jh});
   }
-  if(spkPkDariWord(html)){
-    /* transformasi TEKS tetap jalan (poin->butir, blok PIHAK anti-pisah
-       halaman); posisi paragraf tidak disentuh sama sekali. spkPkKeepPihak
-       tidak menimpa margin yang sudah ada (lihat penjaganya). */
-    return isPk ? spkPkKeepPihak(spkPkPoinToButir(html), isPk) : String(html==null?'':html);
-  }
-  /* SPK (permintaan 21 Jul 2026): ikut PERAPIAN TATA LETAK yang sama —
+  /* PERBAIKAN 24 Jul 2026 — "di Lihat Klausul PK rapi, di pratinjau kontrak PK
+     hancur": penjaga spkPkDariWord() yang dulu MELOLOSKAN klausul PK asal Word
+     sebagai WYSIWYG dihapus, mengikuti perbaikan SPK 23 Jul. Dulu di dalam SATU
+     dokumen Perjanjian/Kontrak bisa ada dua sistem kolom sekaligus — klausul yang
+     diunggah dari Word memakai margin bawaannya sendiri sementara klausul yang
+     diketik di aplikasi memakai kolom standar. Di Lihat Klausul hanya SATU klausul
+     tampil sehingga ketidakcocokan itu tak terlihat (karenanya "sudah rapih"); begitu
+     dirangkai jadi dokumen, tiap klausul mulai di tempat berbeda dan tampak hancur.
+     Kini SEMUA klausul PK — diketik maupun diunggah dari Word — melewati mesin
+     perapian yang SAMA (spkPkBoxMark + spkPkIndentStd): inden bertingkat, penomoran
+     rata kiri/kanan menurut jumlah digit, dan teks rata kiri-kanan (justify) — persis
+     ketentuan pada Susun Kontrak SPK. Karena Lihat Klausul & pratinjau dokumen
+     sama-sama memanggil spkPkTidy(), tampilan keduanya kini selalu identik. */
+  /* PK (cabang isPk): ikut PERAPIAN TATA LETAK yang sama seperti SPK —
      penanda dikotakkan (spkPkBoxMark) lalu inden & perataan distandarkan
      (spkPkIndentStd): deret 1 digit rata kiri, deret ber-2-digit rata kanan,
      tiap tingkat penomoran menjorok sedikit dari kolom teks di atasnya, dan
