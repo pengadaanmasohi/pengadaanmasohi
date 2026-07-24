@@ -3255,10 +3255,7 @@ function spkBoxLeadNumDom(html){
       p.insertBefore(span, p.firstChild);
       p.classList.add('spk-sl');
       if(multi){ p.classList.add('spk-ml'); if(p.classList.contains('kl2')) p.classList.add('spk-lv1'); }
-      /* spk-wx = paragraf dari template Word -> PERTAHANKAN margin-left asli Word;
-         kotak nomor hanya melebar ke kiri lewat text-indent (selaras spkNumberFix isWx). */
-      if(!(p.classList && p.classList.contains('spk-wx')))
-        p.style.marginLeft=_col2.ml.toFixed(2)+'cm';
+      p.style.marginLeft=_col2.ml.toFixed(2)+'cm';
       p.style.textIndent='-'+_col2.w.toFixed(2)+'cm';
       changed=true;
     }
@@ -3441,6 +3438,15 @@ function spkPkTok(p){
   var fe=p.firstElementChild;
   if(!fe || fe.tagName!=='SPAN' || !fe.classList || !fe.classList.contains('n')) return '';
   return String(fe.textContent||'').replace(/[\s\u00A0]+/g,'');
+}
+/* Identitas DAFTAR asal Word (numId) sebuah paragraf, dari atribut data-wnum yang
+   ditanam saat impor .docx. Dipakai spkPkIndentStd untuk MEMISAHKAN silsilah nomor
+   antar-daftar: Word menyimpan tiap daftar sebagai numId sendiri, jadi butir "1."
+   pada daftar A tidak boleh menjadi induk butir "1.4" pada daftar B walau angkanya
+   kebetulan sama. Tanpa data-wnum (mis. nomor yang diketik manual) kembalikan ''
+   -> perilaku lama (silsilah global) tetap berlaku. */
+function spkPkWNum(p){
+  try{ return (p && p.getAttribute) ? (p.getAttribute('data-wnum')||'') : ''; }catch(e){ return ''; }
 }
 
 /* ---- (1) SUSUN ULANG NOMOR MAJEMUK DARI SILSILAHNYA ----
@@ -3683,10 +3689,15 @@ function spkPkIndentStd(html, opsi){
     var item=[], lvlNomor={}, tingkatHuruf=1, terakhir=1;
     for(i=0;i<ps.length;i++){
       p=ps[i]; tok=spkPkTok(p); if(!tok) continue;
+      /* Kualifikasikan kunci silsilah dengan identitas DAFTAR Word (numId): butir
+         "1." dari daftar lain tidak boleh jadi induk "1.4" milik daftar bagian,
+         walau angkanya sama. Tanpa numId (nomor ketik manual) awalan kosong ->
+         perilaku lama. */
+      var _wn=spkPkWNum(p), _pfx=_wn?(_wn+'|'):'';
       var L, segs=spkPkSegs(tok);
       if(segs){
-        var kunci=segs.join('.')+'.';
-        var indukKunci=segs.slice(0,-1).join('.')+'.';
+        var kunci=_pfx+segs.join('.')+'.';
+        var indukKunci=_pfx+segs.slice(0,-1).join('.')+'.';
         L=(segs.length>1 && lvlNomor[indukKunci]) ? lvlNomor[indukKunci]+1 : 1;
         lvlNomor[kunci]=L;
         tingkatHuruf=L+1;                 /* huruf di bawahnya turun satu tingkat */
@@ -9265,11 +9276,6 @@ function spkParaCss(eff, noInd){
     if(hang>0) css+='text-indent:-'+spkTwCm(hang)+'cm;';
     else if(first>0) css+='text-indent:'+spkTwCm(first)+'cm;';
     else css+='text-indent:0;';
-  }else{
-    /* Nomor dibiarkan polos (hanging kecil) -> kotak & hanging diserahkan ke
-       spkNumberFix, TAPI margin-left (posisi kiri) dari Word tetap dipertahankan
-       agar butir mendarat persis di indent yang diatur pengguna di Word. */
-    css+='margin-left:'+spkTwCm((+eff.ind.left||0)-spkWxBase())+'cm;';
   }
   css+='margin-top:'+spkTwPt(eff.sp.before||0)+'pt;';
   css+='margin-bottom:'+spkTwPt(eff.sp.after||0)+'pt;';
@@ -9686,12 +9692,13 @@ function spkWordXmlToKlausul(xmlText, stylesXml, numberingXml){
     /* Style inline dari Word. Bila nomor dibiarkan polos (fallback), indentasi
        diserahkan ke spkNumberFix agar kotak nomornya tetap rapi. */
     var css=spkParaCss(eff, plainNumFallback);
+    /* Tanam identitas DAFTAR Word (numId) agar spkPkIndentStd bisa memisahkan
+       silsilah nomor antar-daftar (butir "1." daftar lain tak jadi induk "1.4"). */
+    var wnAttr=(b.numId?(' data-wnum="'+spkXmlEsc(String(b.numId))+'"'):'');
     if(plainNumFallback){
-      /* Nomor polos (hanging kecil) tetap ditandai spk-wx agar margin-left Word
-         (dari spkParaCss) dipertahankan pass hilir, bukan dihitung ulang otomatis. */
-      html += '<p class="'+cls+' spk-wx" style="'+css+'">'+out+'</p>';
+      html += '<p class="'+cls+'"'+wnAttr+' style="'+css+'">'+out+'</p>';
     }else{
-      html += '<p class="'+cls+' spk-wx'+(wrapped?' spk-sl':'')+'" style="'+css+'">'+out+'</p>';
+      html += '<p class="'+cls+' spk-wx'+(wrapped?' spk-sl':'')+'"'+wnAttr+' style="'+css+'">'+out+'</p>';
     }
   }
   return { judul:judul, html:html };
