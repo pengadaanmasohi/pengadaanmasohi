@@ -3448,6 +3448,34 @@ function spkPkTok(p){
 function spkPkWNum(p){
   try{ return (p && p.getAttribute) ? (p.getAttribute('data-wnum')||'') : ''; }catch(e){ return ''; }
 }
+/* Indent kiri asli Word (twip) sebuah paragraf, dari atribut data-wleft yang
+   ditanam saat impor .docx. Mengembalikan null bila tidak ada. */
+function spkPkWLeft(p){
+  try{
+    if(!p || !p.getAttribute) return null;
+    var v=p.getAttribute('data-wleft');
+    if(v==null||v==='') return null;
+    var n=parseFloat(v); return isNaN(n)?null:n;
+  }catch(e){ return null; }
+}
+/* Ubah daftar indent-kiri Word (twip) menjadi LEVEL 1..5 menurut PERINGKAT kolom:
+   indent-indent yang berdekatan (dalam toleransi) dianggap satu kolom/level, lalu
+   diurutkan menaik -> kolom terkiri = level 1, berikutnya level 2, dst. Dipakai agar
+   kedalaman butir MENGIKUTI indent yang diatur di Word (mis. daftar "1./2." yang di
+   Word menjorok = level 2), bukan ditebak dari pola nomor. */
+function spkPkLeftRankLevels(lefts){
+  var TOL=140;                                   /* ~0,25 cm: gabungkan indent yang mirip */
+  var uniq=lefts.slice().sort(function(a,b){ return a-b; });
+  var reps=[];
+  for(var i=0;i<uniq.length;i++){
+    if(!reps.length || (uniq[i]-reps[reps.length-1])>TOL) reps.push(uniq[i]);
+  }
+  return lefts.map(function(v){
+    var bi=0, bd=Infinity;
+    for(var c=0;c<reps.length;c++){ var dd=Math.abs(v-reps[c]); if(dd<bd){ bd=dd; bi=c; } }
+    return Math.min(5, bi+1);
+  });
+}
 
 /* ---- (1) SUSUN ULANG NOMOR MAJEMUK DARI SILSILAHNYA ----
    Nomor majemuk ("2.1.") disusun ULANG SEPENUHNYA dari kedudukan butirnya,
@@ -3686,26 +3714,46 @@ function spkPkIndentStd(html, opsi){
        Bila induk sebuah nomor majemuk TIDAK ada di klausul itu (mis. pasal yang
        memang langsung memakai "5.1.", "5.2."), nomor itu dianggap tingkat 1
        sehingga tidak menjorok tanpa alasan. */
-    var item=[], lvlNomor={}, tingkatHuruf=1, terakhir=1;
+    /* --- Pra-pindai: bila SEMUA butir bernomor membawa indent-kiri Word
+       (data-wleft), tentukan LEVEL langsung dari peringkat kolom indent Word —
+       kedalaman butir jadi PERSIS seperti di Word (mis. daftar "1./2." yang di Word
+       menjorok = level 2). Bila ada butir tanpa data-wleft (mis. klausul lama /
+       nomor ketik manual), pakai penurunan level dari silsilah nomor (di bawah). */
+    var _numPs=[], _lefts=[], _allLeft=true;
+    for(i=0;i<ps.length;i++){
+      if(!spkPkTok(ps[i])) continue;
+      _numPs.push(ps[i]);
+      var _wl=spkPkWLeft(ps[i]);
+      if(_wl==null) _allLeft=false;
+      _lefts.push(_wl);
+    }
+    var _leftLvl=(_allLeft && _numPs.length) ? spkPkLeftRankLevels(_lefts) : null;
+
+    var item=[], lvlNomor={}, tingkatHuruf=1, terakhir=1, _li=0;
     for(i=0;i<ps.length;i++){
       p=ps[i]; tok=spkPkTok(p); if(!tok) continue;
-      /* Kualifikasikan kunci silsilah dengan identitas DAFTAR Word (numId): butir
-         "1." dari daftar lain tidak boleh jadi induk "1.4" milik daftar bagian,
-         walau angkanya sama. Tanpa numId (nomor ketik manual) awalan kosong ->
-         perilaku lama. */
-      var _wn=spkPkWNum(p), _pfx=_wn?(_wn+'|'):'';
       var L, segs=spkPkSegs(tok);
-      if(segs){
-        var kunci=_pfx+segs.join('.')+'.';
-        var indukKunci=_pfx+segs.slice(0,-1).join('.')+'.';
-        L=(segs.length>1 && lvlNomor[indukKunci]) ? lvlNomor[indukKunci]+1 : 1;
-        lvlNomor[kunci]=L;
-        tingkatHuruf=L+1;                 /* huruf di bawahnya turun satu tingkat */
-        terakhir=L;
-      } else if(spkPkIsHuruf(tok)){
-        L=tingkatHuruf; terakhir=L;
+      if(_leftLvl){
+        /* Mode WORD: level = peringkat kolom indent Word butir ini. */
+        L=_leftLvl[_li++];
       } else {
-        L=terakhir+1;                     /* bullet / tanda hubung */
+        /* Kualifikasikan kunci silsilah dengan identitas DAFTAR Word (numId): butir
+           "1." dari daftar lain tidak boleh jadi induk "1.4" milik daftar bagian,
+           walau angkanya sama. Tanpa numId (nomor ketik manual) awalan kosong ->
+           perilaku lama. */
+        var _wn=spkPkWNum(p), _pfx=_wn?(_wn+'|'):'';
+        if(segs){
+          var kunci=_pfx+segs.join('.')+'.';
+          var indukKunci=_pfx+segs.slice(0,-1).join('.')+'.';
+          L=(segs.length>1 && lvlNomor[indukKunci]) ? lvlNomor[indukKunci]+1 : 1;
+          lvlNomor[kunci]=L;
+          tingkatHuruf=L+1;                 /* huruf di bawahnya turun satu tingkat */
+          terakhir=L;
+        } else if(spkPkIsHuruf(tok)){
+          L=tingkatHuruf; terakhir=L;
+        } else {
+          L=terakhir+1;                     /* bullet / tanda hubung */
+        }
       }
       if(L>5) L=5;
       item.push({p:p, tok:tok, lvl:L, w:spkPkNumW(p.firstElementChild, !(opsi&&opsi.pk))});
@@ -9692,13 +9740,15 @@ function spkWordXmlToKlausul(xmlText, stylesXml, numberingXml){
     /* Style inline dari Word. Bila nomor dibiarkan polos (fallback), indentasi
        diserahkan ke spkNumberFix agar kotak nomornya tetap rapi. */
     var css=spkParaCss(eff, plainNumFallback);
-    /* Tanam identitas DAFTAR Word (numId) agar spkPkIndentStd bisa memisahkan
-       silsilah nomor antar-daftar (butir "1." daftar lain tak jadi induk "1.4"). */
+    /* Tanam identitas DAFTAR Word (numId) + indent-kiri asli Word (data-wleft, twip)
+       agar spkPkIndentStd bisa: (1) memisahkan silsilah nomor antar-daftar, dan
+       (2) menetapkan kedalaman butir PERSIS menurut indent Word (mode WORD). */
     var wnAttr=(b.numId?(' data-wnum="'+spkXmlEsc(String(b.numId))+'"'):'');
+    var wlAttr=(typeof eff.ind.left==='number'?(' data-wleft="'+Math.round(eff.ind.left)+'"'):'');
     if(plainNumFallback){
-      html += '<p class="'+cls+'"'+wnAttr+' style="'+css+'">'+out+'</p>';
+      html += '<p class="'+cls+'"'+wnAttr+wlAttr+' style="'+css+'">'+out+'</p>';
     }else{
-      html += '<p class="'+cls+' spk-wx'+(wrapped?' spk-sl':'')+'"'+wnAttr+' style="'+css+'">'+out+'</p>';
+      html += '<p class="'+cls+' spk-wx'+(wrapped?' spk-sl':'')+'"'+wnAttr+wlAttr+' style="'+css+'">'+out+'</p>';
     }
   }
   return { judul:judul, html:html };
