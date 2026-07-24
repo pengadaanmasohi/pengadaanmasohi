@@ -595,6 +595,33 @@ function spkNomorToNo(html){
 function spkBoldPihak(html){
   return String(html==null?'':html).replace(/PIHAK(\s+)(PERTAMA|KEDUA)/g, '<b>PIHAK$1$2</b>');
 }
+/* ===== Paksa jenis & ukuran huruf ISI KLAUSUL = Inter 11pt =====
+   Sebagian klausul masih membawa gaya sebaris font-family / font-size pada kata
+   tertentu — lazim pada jabatan yang ditebalkan seperti "Direksi Pekerjaan" /
+   "Pengawas Pekerjaan" — biasanya ikut terbawa saat klausul ditempel/diimpor dari
+   Microsoft Word. Gaya sebaris itu MENGALAHKAN CSS dokumen (yang tanpa !important),
+   sehingga kata tsb tampil dengan huruf/ukuran berbeda dari Inter 11pt di pratinjau
+   & cetak. Fungsi ini membuang deklarasi font-family & font-size (termasuk awalan
+   mso-*) dari atribut style dan meng-unwrap tag <font>, agar seluruh isi seragam.
+   CATATAN: hanya FONT yang dibuang; margin/spasi/line-height/perataan (dipakai agar
+   tata letak persis seperti Word) TIDAK disentuh. */
+function spkStripFontStyle(html){
+  var s = String(html==null?'':html);
+  /* buang tag <font ...> / </font> pembungkus, pertahankan isinya */
+  s = s.replace(/<\/?font\b[^>]*>/gi, '');
+  /* bersihkan deklarasi font-family / font-size (dan awalan mso-*) di tiap style="" */
+  s = s.replace(/style="([^"]*)"/gi, function(m, body){
+    var cleaned = body
+      .replace(/(?:^|;)\s*(?:mso-[a-z-]*)?font-family\s*:[^;]*/gi, '')
+      .replace(/(?:^|;)\s*(?:mso-[a-z-]*)?font-size\s*:[^;]*/gi, '')
+      .replace(/^\s*;+/, '')
+      .replace(/;\s*;+/g, ';')
+      .replace(/;\s*$/, '')
+      .trim();
+    return cleaned ? 'style="'+cleaned+'"' : '';
+  });
+  return s;
+}
 /* ===== Miringkan (italic) istilah ASING pada ISI KLAUSUL SPK =====
    Kaidah PUEBI: kata/istilah bahasa asing yang BELUM diserap ditulis MIRING;
    kata serapan yang SUDAH baku (mis. "sistem", "aktivitas", "risiko", "standar",
@@ -2560,7 +2587,7 @@ function spkDocCss(){
      Mencakup preamble, semua klausul (judul & isi), daftar, blok pihak, baris
      "Label : nilai", dan blok tanda tangan. Ketebalan/format (bold, garis bawah)
      tetap dipertahankan; hanya jenis huruf & ukuran yang diseragamkan. */
-  '.spk-flow .spk-cl,.spk-flow .spk-cl *,.spk-flow .spk-clause,.spk-flow .spk-clause *,.spk-flow .spk-cl-h,.spk-flow .spk-cl-h *,.spk-flow .spk-sign,.spk-flow .spk-sign *{font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif;font-size:11pt}'+
+  '.spk-flow .spk-cl,.spk-flow .spk-cl *,.spk-flow .spk-clause,.spk-flow .spk-clause *,.spk-flow .spk-cl-h,.spk-flow .spk-cl-h *,.spk-flow .spk-sign,.spk-flow .spk-sign *{font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif !important;font-size:11pt !important}'+
   /* ===== Tampilan PRATINJAU di layar (bukan cetak) =====
      Menampilkan tiap bagian sebagai lembar A4 putih (210×297mm) di atas latar
      abu-abu, dengan bayangan & margin dalam 12mm/15mm — meniru gaya pratinjau
@@ -3010,7 +3037,7 @@ function spkDocCss2(){
   '.spk-sheet .spk-signpage{page-break-before:auto;break-before:auto;padding-top:0}'+
   /* klausul yang bersambung ke lembar berikutnya TIDAK menambah nomor klausul */
   '.spk-clause.spk-cont{counter-increment:none}'+
-  '.spk-sheet .spk-cl,.spk-sheet .spk-cl *,.spk-sheet .spk-clause,.spk-sheet .spk-clause *,.spk-sheet .spk-cl-h,.spk-sheet .spk-cl-h *,.spk-sheet .spk-sign,.spk-sheet .spk-sign *{font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif;font-size:11pt}'+
+  '.spk-sheet .spk-cl,.spk-sheet .spk-cl *,.spk-sheet .spk-clause,.spk-sheet .spk-clause *,.spk-sheet .spk-cl-h,.spk-sheet .spk-cl-h *,.spk-sheet .spk-sign,.spk-sheet .spk-sign *{font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif !important;font-size:11pt !important}'+
   /* ---------- PRATINJAU DI LAYAR (lembar A4) ---------- */
   '@media screen{'+
     'html,body{background:#54585c;margin:0;padding:24px 0}'+
@@ -3412,6 +3439,15 @@ function spkPkTok(p){
   if(!fe || fe.tagName!=='SPAN' || !fe.classList || !fe.classList.contains('n')) return '';
   return String(fe.textContent||'').replace(/[\s\u00A0]+/g,'');
 }
+/* Identitas DAFTAR asal Word (numId) sebuah paragraf, dari atribut data-wnum yang
+   ditanam saat impor .docx. Dipakai spkPkIndentStd untuk MEMISAHKAN silsilah nomor
+   antar-daftar: Word menyimpan tiap daftar sebagai numId sendiri, jadi butir "1."
+   pada daftar A tidak boleh menjadi induk butir "1.4" pada daftar B walau angkanya
+   kebetulan sama. Tanpa data-wnum (mis. nomor yang diketik manual) kembalikan ''
+   -> perilaku lama (silsilah global) tetap berlaku. */
+function spkPkWNum(p){
+  try{ return (p && p.getAttribute) ? (p.getAttribute('data-wnum')||'') : ''; }catch(e){ return ''; }
+}
 
 /* ---- (1) SUSUN ULANG NOMOR MAJEMUK DARI SILSILAHNYA ----
    Nomor majemuk ("2.1.") disusun ULANG SEPENUHNYA dari kedudukan butirnya,
@@ -3653,10 +3689,15 @@ function spkPkIndentStd(html, opsi){
     var item=[], lvlNomor={}, tingkatHuruf=1, terakhir=1;
     for(i=0;i<ps.length;i++){
       p=ps[i]; tok=spkPkTok(p); if(!tok) continue;
+      /* Kualifikasikan kunci silsilah dengan identitas DAFTAR Word (numId): butir
+         "1." dari daftar lain tidak boleh jadi induk "1.4" milik daftar bagian,
+         walau angkanya sama. Tanpa numId (nomor ketik manual) awalan kosong ->
+         perilaku lama. */
+      var _wn=spkPkWNum(p), _pfx=_wn?(_wn+'|'):'';
       var L, segs=spkPkSegs(tok);
       if(segs){
-        var kunci=segs.join('.')+'.';
-        var indukKunci=segs.slice(0,-1).join('.')+'.';
+        var kunci=_pfx+segs.join('.')+'.';
+        var indukKunci=_pfx+segs.slice(0,-1).join('.')+'.';
         L=(segs.length>1 && lvlNomor[indukKunci]) ? lvlNomor[indukKunci]+1 : 1;
         lvlNomor[kunci]=L;
         tingkatHuruf=L+1;                 /* huruf di bawahnya turun satu tingkat */
@@ -8069,7 +8110,7 @@ function spkDocHtml(data, klausul){
      (spkPkTidy) berjalan dengan SPK_HANG_OVR aktif sehingga kolom teks
      penomoran setingkat lurus antar-pasal. */
   const _innersPre = (klausul||[]).map((k,i)=> spkKvGroup(spkKlItalicAsing(spkBoldPihak(spkNomorToNo(spkNumberFix(spkTidyKeyValue(
-        spkPruneKlausul(spkMerge(spkRenumberKlausul(spkSortDefinisiIf(k.judul, k.isi||''), i+1), ctx), i+1, data)
+        spkStripFontStyle(spkPruneKlausul(spkMerge(spkRenumberKlausul(spkSortDefinisiIf(k.judul, k.isi||''), i+1), ctx), i+1, data))
       )))))));
   /* PENTING (21 Jul 2026, laporan "1.10 vs 2.1 tidak sekolom"): pemindaian
      lantai HARUS pada markup yang penandanya sudah DIKOTAKKAN — spkPkTok tidak
@@ -9651,10 +9692,13 @@ function spkWordXmlToKlausul(xmlText, stylesXml, numberingXml){
     /* Style inline dari Word. Bila nomor dibiarkan polos (fallback), indentasi
        diserahkan ke spkNumberFix agar kotak nomornya tetap rapi. */
     var css=spkParaCss(eff, plainNumFallback);
+    /* Tanam identitas DAFTAR Word (numId) agar spkPkIndentStd bisa memisahkan
+       silsilah nomor antar-daftar (butir "1." daftar lain tak jadi induk "1.4"). */
+    var wnAttr=(b.numId?(' data-wnum="'+spkXmlEsc(String(b.numId))+'"'):'');
     if(plainNumFallback){
-      html += '<p class="'+cls+'" style="'+css+'">'+out+'</p>';
+      html += '<p class="'+cls+'"'+wnAttr+' style="'+css+'">'+out+'</p>';
     }else{
-      html += '<p class="'+cls+' spk-wx'+(wrapped?' spk-sl':'')+'" style="'+css+'">'+out+'</p>';
+      html += '<p class="'+cls+' spk-wx'+(wrapped?' spk-sl':'')+'"'+wnAttr+' style="'+css+'">'+out+'</p>';
     }
   }
   return { judul:judul, html:html };
@@ -10126,7 +10170,7 @@ function spkKlausulView(id){
     var _dataV=(spkState&&spkState.data)||{};
     var _pipeV=function(kx, ix){
       return spkKvGroup(spkKlItalicAsing(spkBoldPihak(spkNomorToNo(spkNumberFix(spkTidyKeyValue(
-        spkPruneKlausul(spkMerge(spkRenumberKlausul(spkSortDefinisiIf(kx.judul, kx.isi||''), ix+1), ctx), ix+1, _dataV)
+        spkStripFontStyle(spkPruneKlausul(spkMerge(spkRenumberKlausul(spkSortDefinisiIf(kx.judul, kx.isi||''), ix+1), ctx), ix+1, _dataV))
       ))))));
     };
     var _pre=_pipeV(k, noKl-1);
