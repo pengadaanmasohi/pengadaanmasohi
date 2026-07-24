@@ -4001,7 +4001,26 @@ function spkPkIndentStd(html, opsi){
          nomornya sama lebar. Konsekuensi yang disadari: nomor 1 digit pada
          deret rata kanan kini mulai agak ke kanan (tidak lagi menjulur),
          titik penutupnya tetap lurus. */
-      g.Wb = g.W;
+      /* KOLOM TEKS SEJAJAR ANTAR-KLAUSUL (permintaan: "klausul 10 indennya jauh
+         beda dgn klausul 1.x"): kolom teks deret ANGKA dipatok dari lebar
+         referensi 1-DIGIT-per-ruas ("10.1." & "1.1." -> sama-sama "0.0."), bukan
+         dari lebar nomor sebenarnya. Akibatnya teks butir "10.1" mulai di kolom
+         yang SAMA dengan "1.1"; digit ekstra "10" MENJULUR KE KIRI (kotak tetap
+         g.W, kelebihannya = g.W-g.Wb). Karena deret angka sudah rata-kanan, jeda
+         nomor->teks tetap 0,18 cm. Deret huruf/bullet tidak diubah. */
+      if(adaAngka){
+        var _refMax=0;
+        for(var _r=0;_r<g.items.length;_r++){
+          var _rt=String(g.items[_r].tok||'').replace(/[0-9]+/g,'0');   /* tiap ruas -> 1 digit */
+          var _rw=0; try{ _rw=spkPkTextWidthCm(_rt); }catch(_e){}
+          if(!(_rw>0)) _rw=_rt.length*0.16;
+          _rw=Math.max(0.4, Math.round((_rw+SPK_NUM_GAP)*100)/100);
+          if(_rw>_refMax) _refMax=_rw;
+        }
+        g.Wb = Math.min(g.W, _refMax);
+      } else {
+        g.Wb = g.W;
+      }
     }
 
     /* --- Tahap 4: posisi tiap deret ---
