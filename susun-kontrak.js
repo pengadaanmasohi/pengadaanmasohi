@@ -2388,7 +2388,17 @@ function spkDocCss(){
      Sub-klausul (X.1) & sub-sub (a. / X.1.1) memakai hanging tab 0,75 cm yang
        konsisten, bertingkat 0,75 cm tiap level — persis penggaris Word. */
   '.spk-clause{margin:0}'+
-  '.spk-clause,.spk-clause *,.spk-cl,.spk-cl *,.spk-cl-h,.spk-cl-h *{font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif}'+
+  '.spk-clause,.spk-clause *,.spk-cl,.spk-cl *,.spk-cl-h,.spk-cl-h *{font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif !important}'+
+  /* JARING PENGAMAN FONT (tata ulang konsistensi): paksa Inter 11pt pada SELURUH
+     isi dokumen di level .spk-doc — berlaku baik SEBELUM paginasi (isi di
+     .spk-flow), SESUDAH paginasi (isi di .spk-sheet), maupun di Lihat Klausul
+     (iframe spkClauseDocHtml). Ini menutup celah bila ada gaya font sebaris dari
+     Word yang lolos: karena !important stylesheet mengalahkan gaya inline yang
+     tidak ber-!important (spkStripFontStyle sudah membuang !important dari font
+     inline), teks jabatan seperti "Direksi/Pengawas Pekerjaan" tak pernah lagi
+     tampil dengan huruf lain. Hanya jenis & ukuran huruf yang dipaksa; tebal,
+     miring, margin, dan tata letak tidak disentuh. */
+  '.spk-doc .spk-clause,.spk-doc .spk-clause *,.spk-doc .spk-cl,.spk-doc .spk-cl *,.spk-doc .spk-cl-h,.spk-doc .spk-cl-h *{font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif !important;font-size:11pt !important}'+
   /* Kotak nomor judul klausul dipersempit 0,75cm -> 0,65cm: cukup untuk nomor
      2 digit (mis. "15." = ~0,54cm pada Arial bold 11pt) plus sedikit jarak,
      sehingga judul lebih dekat ke nomornya. */
