@@ -3841,7 +3841,19 @@ function spkPkIndentStd(html, opsi){
         if(sgs && String(sgs[sgs.length-1]).length>=2){ adaDua=true; break; }
       }
       g.rata = adaDua ? 'right' : 'left';
-      if(g.dilebarkan) g.rata='right';   /* kotak dilebarkan lantai se-dokumen -> jeda tetap padding */
+      /* PERBAIKAN 24 Jul 2026 ("inden penomoran pasal 1 digit samakan dengan
+         pasal 2 digit spt 10, 11"): pemaksaan RATA KANAN untuk deret yang kotaknya
+         dilebarkan lantai se-dokumen DIHAPUS. Dulu deret pasal ber-angka satu digit
+         (mis. 9.1/9.2) yang dilebarkan agar kolom teksnya sejajar dengan pasal dua
+         digit (10.1/11.1) ikut DIPAKSA rata kanan, sehingga NOMORNYA terdorong ke
+         kanan dan tidak lagi mulai di tepi yang sama dengan nomor pasal dua digit
+         (yang tetap rata kiri). Kini perataan MENGIKUTI ATURAN DIGIT saja: deret
+         yang penghitung terakhirnya seluruhnya 1 digit -> rata KIRI (nomor mulai di
+         tepi yang sama untuk pasal 1 & 2 digit), deret yang memuat penghitung 2 digit
+         -> rata KANAN. Kolom teks tetap disejajarkan oleh lantai (g.W), jadi baik
+         nomor MAUPUN kolom teks kini lurus antar-pasal; hanya jeda nomor->teks pada
+         nomor pendek yang sedikit lebih longgar — persis kelaziman daftar bertingkat
+         Word (nomor rata kiri di indennya, teks di tab-stop yang sama). */
       /* LEBAR DASAR (g.Wb) = lebar kotak yang dipakai untuk MENENTUKAN KOLOM TEKS,
          diambil dari nomor 1 DIGIT terlebar di deret ini. Kotaknya sendiri tetap
          selebar g.W (nomor terlebar), tetapi kelebihannya MENJULUR KE KIRI.
