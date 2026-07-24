@@ -3756,6 +3756,17 @@ function spkPkIndentStd(html, opsi){
     var _leftLvl=(_allLeft && _numPs.length) ? spkPkLeftRankLevels(_lefts) : null;
 
     var item=[], lvlNomor={}, tingkatHuruf=1, terakhir=1, _li=0;
+    /* --- PENYELARASAN SILSILAH (24 Jul 2026, laporan "klausul 10: inden level 2
+       & level 3 rusak") ---
+       Peta bantu untuk MEMAKSA kedalaman butir mengikuti SILSILAH NOMORNYA,
+       berapa pun indent yang tertulis di berkas Word asalnya.
+         _lvlAwalan : awalan nomor (mis. "10.1.") -> tingkat SAUDARA-saudara di
+                      bawahnya, supaya "10.1.1." & "10.1.2." selalu sederet.
+         _lvlButir  : nomor lengkap (mis. "10.1.") -> tingkatnya sendiri, supaya
+                      anaknya bisa dihitung satu tingkat di bawahnya.
+         _lvlAngka  : tingkat butir BERNOMOR terakhir (induk daftar huruf).
+         _lvlAkhir  : tingkat butir terakhir apa pun (induk daftar bullet). */
+    var _lvlAwalan={}, _lvlButir={}, _lvlAngka=0, _lvlAkhir=0;
     for(i=0;i<ps.length;i++){
       p=ps[i]; tok=spkPkTok(p); if(!tok) continue;
       var L, segs=spkPkSegs(tok);
@@ -3781,6 +3792,44 @@ function spkPkIndentStd(html, opsi){
           L=terakhir+1;                     /* bullet / tanda hubung */
         }
       }
+      /* --- SILSILAH NOMOR MENGALAHKAN INDENT WORD (24 Jul 2026) ---
+         Mode WORD di atas menetapkan kedalaman butir dari PERINGKAT indent kiri
+         yang tertulis di berkas .docx. Pada klausul yang indent Word-nya sendiri
+         tidak konsisten, peringkat itu menyesatkan — kasus nyata klausul 10
+         TERMINASI DALAM KONTRAK:
+             "a. b. c. d." di Word ber-indent SEDIKIT LEBIH KECIL daripada
+             "10.1." -> keduanya masuk satu peringkat -> huruf-huruf itu
+             dianggap tingkat-1 dan berbagi kolom teks dengan "10.1.";
+             "10.1.1." jatuh di peringkat ke-3 padahal tak ada butir tingkat-2
+             di atasnya -> deretnya tak punya induk -> posisinya jatuh ke rumus
+             cadangan (LEAD + n x 0,15) yang tak ada hubungannya dengan kolom
+             teks "10.1." -> tampak melesak ke kiri.
+         Karena itu kedalaman DIKUNCI ke silsilah nomornya sendiri, yang selalu
+         benar dan tak bergantung ketelitian pengetikan di Word:
+           - "X.Y." & "X.Z." (awalan sama) SELALU sederet/setingkat;
+           - "X.Y.Z." SELALU satu tingkat di bawah butir "X.Y.";
+           - daftar HURUF selalu satu tingkat di bawah butir bernomor terakhir;
+           - daftar BULLET selalu satu tingkat di bawah butir terakhir.
+         Butir bernomor TUNGGAL ("1.", "2.") sengaja TIDAK disentuh, sehingga
+         kelaziman lama tetap jalan: daftar "1./2." yang di Word memang sengaja
+         dijorokkan tetap dibaca sebagai tingkat-2. */
+      var _wnS=spkPkWNum(p), _pfS=_wnS?(_wnS+'|'):'';
+      if(segs){
+        if(segs.length>1){
+          var _kInd=_pfS+segs.slice(0,-1).join('.')+'.';
+          if(_lvlAwalan[_kInd])     L=_lvlAwalan[_kInd];      /* saudara: setingkat */
+          else if(_lvlButir[_kInd]) L=_lvlButir[_kInd]+1;     /* anak: satu tingkat di bawah induk */
+          _lvlAwalan[_kInd]=L;
+        }
+        _lvlButir[_pfS+segs.join('.')+'.']=L;
+        _lvlAngka=L; _lvlAkhir=L;
+      } else if(spkPkIsHuruf(tok)){
+        if(_lvlAngka>0) L=_lvlAngka+1;
+        _lvlAkhir=L;
+      } else {
+        if(_lvlAkhir>0) L=_lvlAkhir+1;
+      }
+      if(L<1) L=1;
       if(L>5) L=5;
       item.push({p:p, tok:tok, lvl:L, w:spkPkNumW(p.firstElementChild, !(opsi&&opsi.pk))});
     }
@@ -3910,7 +3959,14 @@ function spkPkIndentStd(html, opsi){
       var it=item[i], L=it.lvl, d;
       for(d in buka){ if(Number(d)>L) delete buka[d]; }   /* tutup deret yang lebih dalam */
       if(!buka[L]){
-        buka[L]={lvl:L, items:[], induk:(buka[L-1]||null), W:0, base:0};
+        /* INDUK TERDEKAT (24 Jul 2026): bila deret tepat satu tingkat di atas
+           belum pernah dibuka (mis. klausul yang melompat dari tingkat-1 ke
+           tingkat-3), pakai deret terbuka TERDALAM yang masih lebih dangkal —
+           posisinya tetap diturunkan dari kolom teks induk, bukan dari rumus
+           cadangan LEAD + n x 0,15 yang membuat butir tampak melesak ke kiri. */
+        var _ind=buka[L-1]||null;
+        if(!_ind){ for(var _kk=L-2;_kk>=1;_kk--){ if(buka[_kk]){ _ind=buka[_kk]; break; } } }
+        buka[L]={lvl:L, items:[], induk:_ind, W:0, base:0};
         deret.push(buka[L]);
       }
       buka[L].items.push(it);
