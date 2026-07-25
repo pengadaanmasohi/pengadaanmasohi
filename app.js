@@ -5858,7 +5858,7 @@ function renderHariLibur(){
       '</table></div>'+
     '</div>'+
     '<div class="jp-actions" style="justify-content:flex-end;margin-top:14px">'+
-      '<button class="btn btn-red" onclick="hlBatalClick()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg> Batal</button>'+
+      '<button class="btn btn-red" onclick="hlBatalClick()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"/></svg> Batal</button>'+
     '</div>';
 }
 /* Tombol Batal pada Tentukan Hari Libur — kosongkan isian tambah tanggal lalu
@@ -6231,8 +6231,8 @@ function renderJadwalKerja(){
       '</table></div>'+
       '<div class="jp-actions">'+
         '<button class="btn btn-teal" onclick="jpAddTahap()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Tambah Tahapan</button>'+
-        '<button class="btn btn-green" onclick="jpSaveRecord()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> '+(jpEditId?'Simpan Perubahan':'Simpan Jadwal')+'</button>'+
         '<button class="btn btn-red" onclick="jpBatalClick()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg> Batal</button>'+
+        '<button class="btn btn-green" onclick="jpSaveRecord()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> '+(jpEditId?'Simpan Perubahan':'Simpan')+'</button>'+
       '</div>'+
     '</div>';
 }
