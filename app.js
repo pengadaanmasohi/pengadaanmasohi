@@ -1631,6 +1631,50 @@ function openConfirm({icon,title,text,onYes,sfxNone}){
 }
 function closeConfirm(){ document.getElementById('confirm-overlay').classList.remove('show'); }
 
+/* ============ KONFIRMASI TOMBOL BATAL / SIMPAN (terpusat) ============
+   Permintaan: setiap tombol Batal (btn merah) memunculkan "Batalkan Proses?"
+   dan setiap tombol Simpan (btn hijau) memunculkan "Simpan Perubahan?" sebelum
+   aksinya dijalankan. Dipasang SATU kali sebagai penyadap klik fase-capture di
+   document, sehingga menjangkau SEMUA tombol tersebut di seluruh modul (Form
+   Kelengkapan, Pembukaan Penawaran, HPS, Analisa, Susun Kontrak, dll) tanpa perlu
+   menyunting tiap pemanggil. Hanya menyasar tombol AKSI UTAMA (btn-red = Batal,
+   btn-green = Simpan); tombol kecil "Batal/OK" pada popup kecil (btn-ghost) tidak
+   ikut, agar konfirmasi "Batalkan Proses?" tidak muncul untuk sekadar menutup
+   popup. Alur: klik pertama ditahan & memunculkan modal; bila pengguna memilih
+   "Ya", tombol diklik ulang dengan penanda __spkConfirmed sehingga aksi aslinya
+   berjalan normal. */
+(function(){
+  function txt(b){ return (b.textContent||'').trim().toLowerCase(); }
+  function isBatalBtn(b){
+    if(!b||b.tagName!=='BUTTON'||!b.classList.contains('btn-red')) return false;
+    var oc=b.getAttribute('onclick')||'';
+    return /batal/i.test(oc) || txt(b).indexOf('batal')===0;
+  }
+  function isSimpanBtn(b){
+    if(!b||b.tagName!=='BUTTON'||!b.classList.contains('btn-green')) return false;
+    var oc=b.getAttribute('onclick')||'';
+    return /simpan/i.test(oc) || txt(b).indexOf('simpan')===0;
+  }
+  document.addEventListener('click', function(e){
+    var b=(e.target&&e.target.closest)?e.target.closest('button'):null;
+    if(!b) return;
+    if(b.closest('#confirm-overlay')) return;                 /* jangan sadap tombol modal konfirmasi */
+    if(b.__spkConfirmed){ b.__spkConfirmed=false; return; }   /* klik ulang hasil "Ya" -> lewatkan */
+    var batal=isBatalBtn(b), simpan=isSimpanBtn(b);
+    if(!batal && !simpan) return;
+    if(typeof openConfirm!=='function') return;               /* modal tak tersedia -> biarkan default */
+    e.preventDefault(); e.stopImmediatePropagation();
+    try{ if(typeof sfxClick==='function') sfxClick(); }catch(_){}   /* nada klik tetap terdengar */
+    var cfg = batal
+      ? {icon:'back', title:'Batalkan Proses?', text:'Perubahan yang belum disimpan tidak akan tersimpan.'}
+      : {icon:'save', title:'Simpan Perubahan?', text:'Simpan data sesuai isian saat ini?'};
+    openConfirm({icon:cfg.icon, title:cfg.title, text:cfg.text, onYes:function(){
+      b.__spkConfirmed=true;
+      b.click();
+    }});
+  }, true);
+})();
+
 /* SIMPAN */
 /* Kunci pembanding duplikat (No. SPBJ / No. Kontrak), tahan spasi & huruf besar/kecil */
 function dupKey(v){ return String(v||'').trim().toLowerCase(); }
@@ -8506,7 +8550,7 @@ function renderFormKelengkapan(){
     html+=FKL_INFO_FIELDS.map(fklInfoInputHtml).join('');
     html+='</div></div>';
     html+='<div class="fkl-actions"><div class="fkl-actions-right">'+
-      '<button class="btn btn-red" onclick="fklBatal()">'+FKL_IC_X+'Batal</button>'+
+      '<button class="btn btn-red" onclick="fklBatal()">'+FKL_IC_RELOAD+'Batal</button>'+
       '<button class="btn btn-teal" onclick="fklNext()">Selanjutnya'+FKL_IC_NEXT+'</button>'+
     '</div></div>';
   }
@@ -8519,7 +8563,7 @@ function renderFormKelengkapan(){
       '<div class="fkl-checkgrid" style="--rows:'+Math.ceil(fklDocPool().length/2)+'">'+fklPilihHtml()+'</div>'+
     '</div>';
     html+='<div class="fkl-actions"><div class="fkl-actions-right">'+
-        '<button class="btn btn-red" onclick="fklBatal()">'+FKL_IC_X+'Batal</button>'+
+        '<button class="btn btn-red" onclick="fklBatal()">'+FKL_IC_RELOAD+'Batal</button>'+
         '<button class="btn btn-light" onclick="fklBack()">'+FKL_IC_BACK+'Kembali</button>'+
         '<button class="btn btn-teal" onclick="fklNext()">Selanjutnya'+FKL_IC_NEXT+'</button>'+
     '</div></div>';
@@ -8532,7 +8576,7 @@ function renderFormKelengkapan(){
     '</div>';
     html+='<div class="form-card"><div class="form-section-title">'+FKL_SEC_ICON+'Ringkasan Pemeriksaan</div><div id="fkl-status"></div></div>';
     html+='<div class="fkl-actions"><div class="fkl-actions-right">'+
-        '<button class="btn btn-red" onclick="fklBatal()">'+FKL_IC_X+'Batal</button>'+
+        '<button class="btn btn-red" onclick="fklBatal()">'+FKL_IC_RELOAD+'Batal</button>'+
         '<button class="btn btn-light" onclick="fklBack()">'+FKL_IC_BACK+'Sebelumnya</button>'+
         '<button class="btn btn-green" onclick="fklSimpan()">'+FKL_IC_SAVE+'Simpan</button>'+
     '</div></div>';
@@ -8555,6 +8599,9 @@ const FKL_IC_X='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strok
 const FKL_IC_NEXT='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:15px;height:15px"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
 const FKL_IC_BACK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:15px;height:15px"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>';
 const FKL_IC_SAVE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>';
+/* Ikon RELOAD untuk tombol "Batal" (permintaan: semua tombol batal memakai ikon
+   putar-ulang, bukan tanda silang). Ukuran & goresan disamakan dengan ikon aksi lain. */
+const FKL_IC_RELOAD='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>';
 
 /* ---------- Interaksi data ---------- */
 function fklOnInfoChange(){
@@ -10299,7 +10346,7 @@ function pnwPenyampaianNoteText(){
 function pnwActionsHtml(o){
   o=o||{};
   // Batal (merah) berdampingan dengan tombol navigasi di pojok kanan
-  let right='<button class="btn btn-red" onclick="pnwBatal()">'+FKL_IC_X+'Batal</button>';
+  let right='<button class="btn btn-red" onclick="pnwBatal()">'+FKL_IC_RELOAD+'Batal</button>';
   if(o.back) right+='<button class="btn btn-light" onclick="pnwBack()">'+FKL_IC_BACK+(pnwStep===4?'Sebelumnya':'Kembali')+'</button>';
   if(o.save) right+='<button class="btn btn-green" onclick="pnwSimpan()">'+FKL_IC_SAVE+'Simpan</button>';
   else right+='<button class="btn btn-teal" onclick="pnwNext()">Selanjutnya'+FKL_IC_NEXT+'</button>';
@@ -11373,7 +11420,7 @@ function renderRhoForm(){
 function rhoActionsHtml(o){
   o=o||{};
   // Batal (merah) berdampingan dengan tombol navigasi di pojok kanan
-  let right='<button class="btn btn-red" onclick="rhoBatal()">'+FKL_IC_X+'Batal</button>';
+  let right='<button class="btn btn-red" onclick="rhoBatal()">'+FKL_IC_RELOAD+'Batal</button>';
   if(o.back) right+='<button class="btn btn-light" onclick="rhoBack()">'+FKL_IC_BACK+'Kembali</button>';
   if(o.save) right+='<button class="btn btn-green" onclick="rhoSimpan()">'+FKL_IC_SAVE+'Simpan &amp; Lihat PDF</button>';
   else right+='<button class="btn btn-teal" onclick="rhoNext()">Selanjutnya'+FKL_IC_NEXT+'</button>';
@@ -11973,7 +12020,7 @@ function renderDpForm(){
     '<div class="form-flow" style="--cols:4">'+DP_INFO_FIELDS.map(dpInfoInputHtml).join('')+'</div></div>';
   // Batal & Simpan berdampingan di pojok kanan (Batal merah)
   html+='<div class="fkl-actions"><div class="fkl-actions-right">'+
-      '<button class="btn btn-red" onclick="dpBatal()">'+FKL_IC_X+'Batal</button>'+
+      '<button class="btn btn-red" onclick="dpBatal()">'+FKL_IC_RELOAD+'Batal</button>'+
       '<button class="btn btn-green" onclick="dpSimpan()">'+FKL_IC_SAVE+'Simpan</button>'+
     '</div></div>';
   cont.innerHTML=html;
@@ -13129,7 +13176,7 @@ function openHpsAnalisa(){
 function hpsActionsHtml(o){
   o=o||{};
   // Batal (merah) berdampingan dengan tombol navigasi di pojok kanan
-  let right='<button class="btn btn-red" onclick="hpsBatal()">'+FKL_IC_X+'Batal</button>';
+  let right='<button class="btn btn-red" onclick="hpsBatal()">'+FKL_IC_RELOAD+'Batal</button>';
   if(o.back) right+='<button class="btn btn-light" onclick="hpsBack()">'+FKL_IC_BACK+'Kembali</button>';
   if(o.save) right+='<button class="btn btn-green" onclick="hpsSimpan()">'+FKL_IC_SAVE+'Simpan &amp; Lihat PDF</button>';
   else right+='<button class="btn btn-teal" onclick="hpsNext()">Selanjutnya'+FKL_IC_NEXT+'</button>';
@@ -14909,7 +14956,7 @@ function renderAnalisaForm(){
 function anaActionsHtml(o){
   o=o||{};
   // Batal (merah) berdampingan dengan tombol navigasi di pojok kanan
-  let right='<button class="btn btn-red" onclick="anaBatal()">'+FKL_IC_X+'Batal</button>';
+  let right='<button class="btn btn-red" onclick="anaBatal()">'+FKL_IC_RELOAD+'Batal</button>';
   if(o.back) right+='<button class="btn btn-light" onclick="anaBack()">'+FKL_IC_BACK+'Kembali</button>';
   if(o.save) right+='<button class="btn btn-green" onclick="anaSimpan()">'+FKL_IC_SAVE+'Simpan dan Lihat</button>';
   if(o.next) right+='<button class="btn btn-teal" onclick="anaNext()">Selanjutnya'+FKL_IC_NEXT+'</button>';
