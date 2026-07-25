@@ -2479,11 +2479,13 @@ function spkDocCss(){
   '.spk-doc.spk-pk .spk-cl p.klp1{margin-left:'+P.l1+';text-indent:'+P.first+'}'+
   '.spk-doc.spk-pk .spk-cl p.klp2{margin-left:'+P.l2+';text-indent:'+P.first+'}'+
   /* Tingkat-1 (angka) mengikuti tab KANAN template; tingkat-2 (huruf a./b.)
-     tetap rata KIRI dengan jeda lebih rapat, seperti spkPkIndentStd(). */
+     juga rata KANAN dalam kotaknya supaya huruf MENEMPEL dekat teks (jeda tetap
+     0,22 cm), bukan tertinggal jauh di kiri kotak. Kolom teks (margin-left P.l2)
+     TIDAK diubah, jadi baris sambungan, klp2, butir angka, & ekspor tetap sama. */
   '.spk-doc.spk-pk .spk-cl p.kl1.spk-sl .n{min-width:'+P.h1+';width:auto;text-align:right;'+
     'padding-right:'+P.gap+';box-sizing:border-box}'+
-  '.spk-doc.spk-pk .spk-cl p.kl2.spk-sl .n{min-width:'+P.h2+';width:auto;text-align:left;'+
-    'padding-right:0.10cm;box-sizing:border-box}'+
+  '.spk-doc.spk-pk .spk-cl p.kl2.spk-sl .n{min-width:'+P.h2+';width:auto;text-align:right;'+
+    'padding-right:0.22cm;box-sizing:border-box}'+
   /* Butir bernomor yang BERADA DI BAWAH paragraf pengantar menjorok 0,5 cm dari
      teks pengantar. Dipakai padding-left (bukan margin-left) agar tidak bentrok
      dengan hanging indent per paragraf yang dipasang spkNumberFix(); seluruh blok
