@@ -630,6 +630,30 @@ function spkStripFontStyle(html){
       .replace(new RegExp('(?:^|;)\\s*[a-z-]*font-family\\s*:'+VAL, 'gi'), '')
       .replace(new RegExp('(?:^|;)\\s*[a-z-]*font-size\\s*:'+VAL, 'gi'), '')
       .replace(new RegExp('(?:^|;)\\s*(?:mso-[a-z-]*)?font\\s*:'+VAL, 'gi'), '')
+      /* LEBAR HURUF ikut disamakan. Word menyimpan "Character Spacing"
+         (Condensed/Expanded) & "Scale" sebagai letter-spacing / word-spacing /
+         font-stretch / font-variation-settings pada run tertentu. Nilai itu
+         TIDAK dibuang oleh pembersih font-family di atas, sehingga kata yang
+         membawanya tampak lebih rapat/renggang dari teks sekitarnya — persis
+         gejala "jabatan Direksi & Pengawas fontnya beda" walau family-nya sama.
+         Semua dibuang agar seluruh isi klausul memakai metrik Inter apa adanya. */
+      .replace(new RegExp('(?:^|;)\\s*(?:mso-[a-z-]*)?letter-spacing\\s*:'+VAL, 'gi'), '')
+      .replace(new RegExp('(?:^|;)\\s*(?:mso-[a-z-]*)?word-spacing\\s*:'+VAL, 'gi'), '')
+      .replace(new RegExp('(?:^|;)\\s*[a-z-]*font-stretch\\s*:'+VAL, 'gi'), '')
+      .replace(new RegExp('(?:^|;)\\s*font-variation-settings\\s*:'+VAL, 'gi'), '')
+      .replace(new RegExp('(?:^|;)\\s*font-feature-settings\\s*:'+VAL, 'gi'), '')
+      .replace(new RegExp('(?:^|;)\\s*[a-z-]*text-scale\\s*:'+VAL, 'gi'), '')
+      /* KETEBALAN disatukan: 600/650/800 dari Word disamakan menjadi 700, dan
+         nilai di bawah 550 menjadi 400. Maksud tebal/biasa tetap terjaga, tetapi
+         satu kata tidak lagi tampil "semi bold" di antara kata lain yang "bold" —
+         pada huruf variabel seperti Inter, selisih berat itu terlihat sebagai
+         lebar huruf yang berbeda. */
+      .replace(new RegExp('(?:^|;)\\s*(?:mso-[a-z-]*)?font-weight\\s*:('+VAL+')', 'gi'), function(m, val){
+        var v=String(val||'').trim().toLowerCase();
+        var n=parseFloat(v);
+        var tebal = /bold|bolder/.test(v) || (!isNaN(n) && n>=550);
+        return ';font-weight:'+(tebal?'700':'400');
+      })
       .replace(/\u0001/g, '&quot;')
       .replace(/^\s*;+/, '')
       .replace(/;\s*;+/g, ';')
@@ -2399,6 +2423,16 @@ function spkDocCss(){
      tampil dengan huruf lain. Hanya jenis & ukuran huruf yang dipaksa; tebal,
      miring, margin, dan tata letak tidak disentuh. */
   '.spk-doc .spk-clause,.spk-doc .spk-clause *,.spk-doc .spk-cl,.spk-doc .spk-cl *,.spk-doc .spk-cl-h,.spk-doc .spk-cl-h *{font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif !important;font-size:11pt !important}'+
+  /* JARING PENGAMAN LEBAR HURUF — pasangan aturan di atas.
+     Memaksa family & ukuran saja belum cukup: bila sebuah run membawa
+     letter-spacing / word-spacing / font-stretch / font-variation-settings dari
+     Word, kata itu tetap terlihat lebih rapat atau lebih renggang sehingga
+     dikira "fontnya beda". Semua metrik itu dikembalikan ke normal di sini,
+     dan SETIAP teks tebal di isi klausul dipatok pada satu berat (700) —
+     termasuk nilai mail merge Direksi/Pengawas Pekerjaan yang dibungkus <b>
+     oleh spkMerge. Tebal/miring/tata letak tidak disentuh. */
+  '.spk-clause,.spk-clause *,.spk-cl,.spk-cl *,.spk-cl-h,.spk-cl-h *{letter-spacing:normal !important;word-spacing:normal !important;font-stretch:normal !important;font-variation-settings:normal !important}'+
+  '.spk-cl b,.spk-cl strong,.spk-clause b,.spk-clause strong{font-weight:700 !important}'+
   /* Kotak nomor judul klausul dipersempit 0,75cm -> 0,65cm: cukup untuk nomor
      2 digit (mis. "15." = ~0,54cm pada Arial bold 11pt) plus sedikit jarak,
      sehingga judul lebih dekat ke nomornya. */
