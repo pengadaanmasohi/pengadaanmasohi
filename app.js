@@ -8515,6 +8515,49 @@ function fklSelectedDocs(){
   const st=fklActiveState();
   return fklDocPool().filter(nama=>st.pilih[nama]);
 }
+/* ---------- Tindak Lanjut (poin D) ----------
+   Kesimpulan akhir pemeriksaan: dokumen DITERIMA atau DIKEMBALIKAN.
+   Nilainya disimpan di dalam `info` (kunci `tindak_lanjut`) sehingga IKUT
+   tersimpan ke Supabase apa adanya — kolom `info` sudah JSONB, jadi TIDAK perlu
+   menambah kolom baru di tabel `kelengkapan_dokumen`.
+   Bila pengguna belum memilih, dipakai SARAN OTOMATIS yang mengikuti hasil
+   pemeriksaan (lengkap -> Diterima, tidak lengkap -> Dikembalikan) dan saran itu
+   ikut berubah setiap tanda Ada/Tidak Ada diubah. Begitu pengguna menekan salah
+   satu tombol, pilihannya menjadi tetap (tidak lagi mengikuti saran). */
+const FKL_TL_TERIMA='Dokumen Diterima';
+const FKL_TL_KEMBALI='Dokumen Dikembalikan';
+function fklTindakVal(){
+  const st=fklActiveState(); const v=String((st&&st.info&&st.info.tindak_lanjut)||'').trim();
+  return (v===FKL_TL_TERIMA||v===FKL_TL_KEMBALI)?v:'';
+}
+function fklTindakSaran(){ return fklCountAda().lengkap ? FKL_TL_TERIMA : FKL_TL_KEMBALI; }
+/* Nilai yang dipakai dokumen: pilihan pengguna, atau saran otomatis bila kosong */
+function fklTindakEfektif(){ return fklTindakVal() || fklTindakSaran(); }
+function fklTindakKet(val){
+  return (val===FKL_TL_TERIMA)
+    ? 'Dokumen diterima dan diproses ke tahap berikutnya'
+    : 'Dokumen dikembalikan kepada pengusul untuk dilengkapi';
+}
+function fklSetTindak(val){
+  const st=fklState[fklModul]; st.info=st.info||{};
+  st.info.tindak_lanjut=val;
+  fklSaveState(); renderFormKelengkapan();
+}
+const FKL_IC_TL_OK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M20 6 9 17l-5-5"/></svg>';
+const FKL_IC_TL_BACK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>';
+function fklTindakHtml(){
+  const explicit=fklTindakVal(), eff=explicit||fklTindakSaran();
+  const btn=(val,cls,ic)=>'<button type="button" class="fkl-ada-btn '+cls+(eff===val?' on':'')+'" '+
+    'onclick="fklSetTindak(\''+val+'\')">'+ic+val+'</button>';
+  return '<div class="fkl-ada-list"><div class="fkl-ada-row fkl-tl-row">'+
+    '<span class="fkl-ada-name">Kesimpulan Tindak Lanjut'+
+      (explicit?'':'<span class="fkl-tl-auto">saran otomatis</span>')+'</span>'+
+    '<span class="fkl-ada-opts">'+
+      btn(FKL_TL_TERIMA,'ada',FKL_IC_TL_OK)+
+      btn(FKL_TL_KEMBALI,'no',FKL_IC_TL_BACK)+
+    '</span>'+
+  '</div></div>';
+}
 function fklAdaHtml(){
   const st=fklState[fklModul], list=fklSelectedDocs();
   if(!list.length) return '<div class="fkl-empty-note">Belum ada dokumen yang dipilih. Kembali ke langkah <b>Pilih Dokumen</b> untuk memilih berkas yang akan diperiksa.</div>';
@@ -8569,12 +8612,16 @@ function renderFormKelengkapan(){
     '</div></div>';
   }
   else{
-    if(sub) sub.textContent='Langkah 3 dari 3 — Tandai ketersediaan tiap dokumen';
+    if(sub) sub.textContent='Langkah 3 dari 3 — Tandai ketersediaan dokumen & tindak lanjut';
     html+='<div class="form-card"><div class="form-section-title">'+FKL_SEC_ICON+'Kelengkapan Dokumen</div>'+
       '<div class="fkl-hint">Tandai tiap dokumen: <b>Ada</b> atau <b>Tidak Ada</b>.</div>'+
       fklAdaHtml()+
     '</div>';
     html+='<div class="form-card"><div class="form-section-title">'+FKL_SEC_ICON+'Ringkasan Pemeriksaan</div><div id="fkl-status"></div></div>';
+    html+='<div class="form-card"><div class="form-section-title">'+FKL_SEC_ICON+'Tindak Lanjut</div>'+
+      '<div class="fkl-hint">Pilih kesimpulan tindak lanjut: <b>Dokumen Diterima</b> atau <b>Dokumen Dikembalikan</b>. Bila belum dipilih, dipakai saran otomatis yang mengikuti hasil pemeriksaan.</div>'+
+      fklTindakHtml()+
+    '</div>';
     html+='<div class="fkl-actions"><div class="fkl-actions-right">'+
         '<button class="btn btn-red" onclick="fklBatal()">'+FKL_IC_RELOAD+'Batal</button>'+
         '<button class="btn btn-light" onclick="fklBack()">'+FKL_IC_BACK+'Sebelumnya</button>'+
@@ -8854,6 +8901,18 @@ function fklBuildDocHtml(){
     '<tr><td class="no">1</td><td class="nm">'+fkEsc(hasilNama)+'</td><td class="ck">'+hasilStatus+'</td><td class="kt">'+fkEsc(hasilKet)+'</td></tr>'+
     '</tbody></table>';
 
+  // Tindak Lanjut (poin D) — bergaya sama dengan poin C.
+  const tlVal = fklTindakEfektif();
+  const tlStatus = (tlVal===FKL_TL_TERIMA)
+    ? '<span class="pill ada">'+FKL_TL_TERIMA+'</span>'
+    : '<span class="pill no">'+FKL_TL_KEMBALI+'</span>';
+  const tlBlock = '<table class="fkl-chk pnw-hasil fkl-tl-tbl"><thead><tr>'+
+    '<th class="no">No</th><th class="nm">Nama Pekerjaan</th>'+
+    '<th class="ck">Tindak Lanjut</th><th class="kt">Keterangan</th>'+
+    '</tr></thead><tbody>'+
+    '<tr><td class="no">1</td><td class="nm">'+fkEsc(hasilNama)+'</td><td class="ck">'+tlStatus+'</td><td class="kt">'+fkEsc(fklTindakKet(tlVal))+'</td></tr>'+
+    '</tbody></table>';
+
   return ''+
   '<div class="fkl-doc fkl-kd-doc">'+
     '<div class="fkl-doc-head">'+
@@ -8889,6 +8948,9 @@ function fklBuildDocHtml(){
     '<div class="fkl-doc-tail">'+
     '<div class="fkl-sec-h"><span class="rn">C</span>Hasil Pemeriksaan</div>'+
     hasilBlock+
+
+    '<div class="fkl-sec-h"><span class="rn">D</span>Tindak Lanjut</div>'+
+    tlBlock+
 
     '<div class="fkl-doc-foot">'+
       '<div class="ttd-date">Masohi, '+fkEsc(tglTerima)+'</div>'+

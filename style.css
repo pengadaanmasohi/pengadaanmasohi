@@ -2273,6 +2273,10 @@ tr.hl-weekend td{background:#f5f8fb}
 .fkl-ada-btn.no.on{background:linear-gradient(180deg,#fce4e4,#f7d6d6);border-color:#e79a9a;color:#b02626}
 .fkl-ada-btn.no.on svg{opacity:1}
 @media(max-width:600px){.fkl-ada-row{flex-wrap:wrap}.fkl-ada-opts{width:100%;justify-content:flex-end}}
+/* Baris Tindak Lanjut (poin D) pada langkah 3 — memakai kerangka .fkl-ada-row
+   supaya bentuknya persis sama dengan baris Ada/Tidak Ada di atasnya. */
+.fkl-tl-row .fkl-ada-name{font-weight:700}
+.fkl-tl-auto{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:20px;background:var(--teal-soft);color:var(--teal-dark);font-family:'Plus Jakarta Sans';font-weight:800;font-size:9.5px;letter-spacing:.3px;text-transform:uppercase;vertical-align:middle}
 /* ----- Ringkasan status ----- */
 .fkl-status-card{display:flex;flex-wrap:wrap;align-items:center;gap:16px;padding:16px 18px;border-radius:14px;border:1px solid var(--line);background:linear-gradient(180deg,#ffffff,#f7fbfc)}
 .fkl-status-badge{display:inline-flex;align-items:center;gap:9px;padding:9px 18px;border-radius:30px;font-family:'Plus Jakarta Sans';font-weight:800;font-size:13px;letter-spacing:.3px}
