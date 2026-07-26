@@ -928,14 +928,16 @@ function applyRole(role){
   renderTableTender();
 }
 /* ====== MENU PENGATURAN (gear) ====== */
-/* Ikon & label tombol "Bunyi Notifikasi" mengikuti kondisi tersimpan. */
+/* Ikon & label tombol "Bunyi Aplikasi" mengikuti kondisi tersimpan.
+   Dinamai "Aplikasi" (bukan "Notifikasi") sejak sakelar ini juga mengatur nada
+   menu atas: satu sakelar untuk seluruh bunyi. */
 function syncSfxBtn(){
   const on=(typeof sfxEnabled==='function')?sfxEnabled():true;
   const ic=document.getElementById('sfx-ic'), lb=document.getElementById('sfx-lbl');
   if(ic) ic.innerHTML = on
     ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>'
     : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M22 9l-6 6M16 9l6 6"/></svg>';
-  if(lb) lb.textContent = on ? 'Bunyi Notifikasi: Aktif' : 'Bunyi Notifikasi: Nonaktif';
+  if(lb) lb.textContent = on ? 'Bunyi Aplikasi: Aktif' : 'Bunyi Aplikasi: Nonaktif';
 }
 /* Menu sengaja TIDAK ditutup: pengguna langsung mendengar nada uji & melihat
    labelnya berubah, jadi bisa mencoba nyala/mati beberapa kali. */
@@ -1059,13 +1061,16 @@ document.addEventListener('click',function(ev){
 document.addEventListener('click',function(ev){
   if(typeof sfxClick!=='function') return;
   const el=ev.target && ev.target.closest ? ev.target.closest(
-    '.settings-item,.settings-gear,.btn,.login-btn') : null;
+    SFX_MENU_SEL+',.settings-item,.settings-gear,.btn,.login-btn') : null;
   if(!el) return;
   if(el.disabled) return;
   if(el.classList.contains('login-btn')) return;              // masuk -> sfxSession('in')
   if(el.matches('.settings-item.danger')) return;             // keluar -> sfxSession('out')
   if(el.classList.contains('settings-gear')) return;          // gear -> sfxGear() sendiri (suara putaran)
   if(el.dataset && el.dataset.sfx==='none') return;           // "Ya" pada konfirmasi keluar
+  // Menu atas memakai nada navigasi (dua nada naik) agar terasa "berpindah
+  // halaman", bukan sekadar tombol ditekan seperti tombol biasa.
+  if(el.matches(SFX_MENU_SEL) && typeof sfxNav==='function'){ sfxNav(); return; }
   sfxClick();
 }, true);
 document.addEventListener('keydown',function(ev){ if(ev.key==='Escape') closeSettingsMenu(); });
@@ -1081,6 +1086,41 @@ document.addEventListener('mouseover',function(ev){
   // Hanya saat BENAR-BENAR masuk ke area gear (bukan bergerak antar anak elemennya).
   if(ev.relatedTarget && t.contains(ev.relatedTarget)) return;
   if(typeof sfxGear==='function') sfxGear();
+});
+
+/* ============================================================
+   NADA MENU ATAS — kursor mengenai & mengeklik
+   Permintaan 26 Jul 2026: menu di bilah atas ikut bersuara, baik saat
+   tersentuh kursor maupun saat diklik.
+
+   SFX_MENU_SEL dipakai bersama oleh dua tempat (penangan klik di atas dan
+   penangan hover di bawah) supaya daftar menunya cukup ditulis sekali:
+     .topnav-link       - menu tunggal (Dashboard, Penetapan, dst.)
+     .topnav-trigger    - menu bergrup (Monitoring, Formulir)
+     .topnav-item       - isi menu turun
+     .topnav-subtrigger - submenu di dalam menu turun
+     .settings-item     - isi menu Pengaturan (roda gigi)
+
+   Gear TIDAK ikut: ia sudah punya bunyi putaran sendiri (sfxGear) — kalau
+   dimasukkan, hover di atasnya akan berbunyi dua kali bertumpuk.
+
+   Perangkat sentuh dikecualikan: di sana 'mouseover' ikut terpicu oleh
+   sentuhan, sehingga satu ketukan akan berbunyi dua kali (hover + klik). */
+const SFX_MENU_SEL='.topnav-link,.topnav-trigger,.topnav-item,.topnav-subtrigger,.settings-item';
+function _sfxPointerFine(){
+  try{ return window.matchMedia('(hover:hover) and (pointer:fine)').matches; }
+  catch(e){ return true; }
+}
+document.addEventListener('mouseover',function(ev){
+  if(typeof sfxHover!=='function') return;
+  if(!_sfxPointerFine()) return;
+  const t=ev.target && ev.target.closest ? ev.target.closest(SFX_MENU_SEL) : null;
+  if(!t) return;
+  if(t.disabled) return;
+  // Hanya saat benar-benar MASUK ke tombolnya — bukan saat kursor berpindah
+  // antar elemen anak (ikon/teks) di dalam tombol yang sama.
+  if(ev.relatedTarget && t.contains(ev.relatedTarget)) return;
+  sfxHover();
 });
 
 /* Memicu ulang animasi zoom-out pada kartu login (dipakai saat login screen
@@ -4523,6 +4563,47 @@ function sfxClick(){
     const ctx=_sfxCtx;
     if(ctx.state==='suspended') ctx.resume().catch(()=>{});
     _sfxTone(ctx, 2000, ctx.currentTime+0.005, 0.035, 0.05);
+  }catch(e){}
+}
+
+/* --- Nada kursor mengenai menu ----------------------------------------------
+   Paling sering terdengar dari semua nada di aplikasi ini — sekali sapuan
+   kursor melintasi bilah menu sudah bisa memicunya beberapa kali. Karena itu
+   dibuat SANGAT pelan & pendek (0,028 dtk, puncak 0,022): terasa sebagai
+   sentuhan halus, bukan bunyi yang menuntut perhatian.
+
+   Jeda 90 md mencegah nada bertumpuk saat kursor menyapu cepat melewati
+   banyak menu sekaligus (tanpa jeda, bunyinya berubah jadi "gemerincing"). */
+let _sfxHoverLast=-1;
+function sfxHover(){
+  if(!sfxEnabled()) return;
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
+    if(!_sfxCtx) _sfxCtx=new AC();
+    const ctx=_sfxCtx;
+    if(ctx.state==='suspended') ctx.resume().catch(()=>{});
+    const nowT=ctx.currentTime;
+    if(_sfxHoverLast>=0 && (nowT-_sfxHoverLast)<0.09) return;
+    _sfxHoverLast=nowT;
+    _sfxTone(ctx, 1567.98, nowT+0.004, 0.028, 0.022);   // G6, nyaris berbisik
+  }catch(e){}
+}
+
+/* --- Nada klik menu atas ----------------------------------------------------
+   Dua nada naik yang rapat (D6 -> G6) — cukup untuk terasa "berpindah tempat",
+   masih lebih pelan daripada nada notifikasi agar tidak mendominasi. Sengaja
+   dibedakan dari sfxClick (tombol biasa) supaya telinga bisa membedakan
+   "saya berpindah menu" dari "saya menekan tombol". */
+function sfxNav(){
+  if(!sfxEnabled()) return;
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
+    if(!_sfxCtx) _sfxCtx=new AC();
+    const ctx=_sfxCtx;
+    if(ctx.state==='suspended') ctx.resume().catch(()=>{});
+    const t0=ctx.currentTime+0.005;
+    _sfxTone(ctx, 1174.66, t0,       0.055, 0.045);     // D6
+    _sfxTone(ctx, 1567.98, t0+0.048, 0.110, 0.040);     // G6
   }catch(e){}
 }
 
