@@ -20,7 +20,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <!-- Gaya UI aplikasi dipindah ke berkas eksternal -->
-<link rel="stylesheet" href="style.css?v=20260726a">
+<link rel="stylesheet" href="style.css?v=20260726c">
 
 <!-- Variabel dokumen SPK.
      --spk-lh    : nilai CSS untuk "1,15 baris" gaya Word = 1,15 x K.
@@ -106,10 +106,15 @@
 .fkl-chk.pnw-hasil{margin-top:2px}
 .fkl-chk.pnw-hasil th.ck,.fkl-chk.pnw-hasil td.ck{width:150px}
 .fkl-chk.pnw-hasil td.kt{white-space:normal}
-/* Tabel poin D (Tindak Lanjut) — kolomnya sedikit lebih lebar karena tulisan
-   "Dokumen Dikembalikan" lebih panjang, dan pil dijaga tetap satu baris. */
-.fkl-chk.fkl-tl-tbl th.ck,.fkl-chk.fkl-tl-tbl td.ck{width:196px}
-.fkl-chk.fkl-tl-tbl .pill{min-width:0;white-space:nowrap;padding:3px 14px}
+/* Tabel poin C (Hasil Pemeriksaan) & poin D (Tindak Lanjut) pada Form
+   Kelengkapan memakai kelas yang SAMA PERSIS supaya lebar tiap kolomnya identik
+   dan kedua tabel sejajar. Kolom status dibuat 176px: cukup untuk tulisan
+   terpanjang ("Dokumen Dikembalikan", 154px termasuk pil) tanpa terpotong,
+   dan kolom Keterangan 30% agar kolom Nama Pekerjaan tetap lega. */
+.fkl-chk.fkl-cd-tbl th.no,.fkl-chk.fkl-cd-tbl td.no{width:44px}
+.fkl-chk.fkl-cd-tbl th.ck,.fkl-chk.fkl-cd-tbl td.ck{width:186px}
+.fkl-chk.fkl-cd-tbl th.kt,.fkl-chk.fkl-cd-tbl td.kt{width:30%}
+.fkl-chk.fkl-cd-tbl .pill{min-width:0;white-space:nowrap;padding:3px 14px}
 /* Hasil pemeriksaan */
 .fkl-doc .hasil{display:flex;align-items:center;gap:14px;padding:14px 18px;border-radius:11px;margin-top:2px}
 .fkl-doc .hasil .hi{flex:0 0 auto;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center}
@@ -122,9 +127,11 @@
 .fkl-doc .hasil.no{background:linear-gradient(180deg,#fdeaea,#f9dcdc);border:1px solid #edbcbc}
 .fkl-doc .hasil.no .hi{background:#b02626;color:#fff}
 .fkl-doc .hasil.no .ht{color:#9c2222}.fkl-doc .hasil.no .hs{color:#a15353}
-/* Bagian C (Hasil Pemeriksaan) + D (Tindak Lanjut) + tanda tangan diperlakukan
-   sebagai satu blok utuh: jika tanda tangan pindah halaman, Bagian C & D ikut
-   pindah bersamanya. */
+/* Poin C berdiri sendiri sebagai blok utuh (judul + tabelnya tidak pernah
+   terpisah). Poin D + tanda tangan adalah blok utuh yang lain: bila tanda
+   tangan tidak muat, HANYA D + tanda tangan yang pindah halaman, poin C tetap
+   di halaman sebelumnya. */
+.fkl-doc-secc{break-inside:avoid;page-break-inside:avoid}
 .fkl-doc-tail{break-inside:avoid;page-break-inside:avoid}
 /* Tanda terima */
 .fkl-doc-foot{margin-top:26px}
@@ -2016,9 +2023,9 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
 
 <!-- app.js dipecah menjadi 3 bagian. URUTAN WAJIB: inti -> susun-kontrak -> lain.
      Memisah "Susun Kontrak" (SPK) agar bisa disunting tanpa memuat seluruh app.js. -->
-<script src="app.js?v=20260726a"></script>
-<script src="susun-kontrak.js?v=20260726a"></script>
-<script src="app-lain.js?v=20260726a"></script>
+<script src="app.js?v=20260726c"></script>
+<script src="susun-kontrak.js?v=20260726c"></script>
+<script src="app-lain.js?v=20260726c"></script>
 
 </body>
 </html>
