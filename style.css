@@ -5265,3 +5265,89 @@ html body:has(#view-dashboard.active){
   -webkit-backdrop-filter:none !important;
           backdrop-filter:none !important;
 }
+
+/* ============================================================================
+   SOROT BARIS TABEL — ORANYE ELEGAN (BERLAKU DI SELURUH MENU)
+   Permintaan 26 Jul 2026: baris tabel yang disentuh kursor menyala oranye
+   elegan, persis seperti pada menu Penetapan Nomor — bukan lagi biru-teal.
+
+   Alasannya sama dengan di Penetapan: sorotan hangat yang jelas membuat mata
+   tidak "melompat baris" saat membaca/menyalin data ke samping, terutama pada
+   tabel lebar yang harus digulir.
+
+   Cara kerja:
+   - Warna disimpan sebagai variabel (--row-hi-*) agar cukup diubah di satu
+     tempat kalau nuansanya mau digeser.
+   - Latar dipasang pada <tr> DAN pada tiap <td>. Sel kolom beku (col-no,
+     col-nama-freeze) punya latar sendiri, jadi harus ditimpa di tingkat sel;
+     kalau hanya di <tr> kolom bekunya akan tetap kelabu.
+   - !important dipakai karena beberapa aturan lama juga memakai !important
+     (mis. `tbody tr:hover{background:#dceaed !important}`).
+   - Blok ini ditulis di AKHIR berkas supaya menang tanpa perlu menghapus
+     aturan lama; kalau suatu saat ingin kembali ke teal, cukup buang blok ini.
+
+   TIDAK ikut disorot:
+   - Baris judul grup (tr.grp) dan baris jumlah (tfoot) — bukan data.
+   - Dokumen cetak/pratinjau (.fkl-doc) — lembar dokumen, bukan tabel data.
+   ============================================================================ */
+:root{
+  --row-hi-top:#fff5e6;      /* puncak gradien - krem terang */
+  --row-hi-bot:#ffe7c4;      /* dasar gradien - oranye lembut */
+  --row-hi-bar:#e08a1e;      /* batang penanda di tepi kiri baris */
+  --row-hi-line:rgba(201,118,26,.22);
+  --row-hi-ink:#5a3d00;      /* teks utama di atas latar oranye */
+  --row-hi-ink2:#9a5a12;     /* teks pendukung/nomor urut */
+}
+
+/* --- Latar baris --------------------------------------------------------- */
+.table-wrap tbody tr:not(.grp):hover,
+table tbody tr:not(.grp):hover{
+  background:linear-gradient(180deg,var(--row-hi-top),var(--row-hi-bot)) !important;
+}
+.table-wrap tbody tr:not(.grp):hover td,
+table tbody tr:not(.grp):hover td,
+.table-wrap tbody tr:not(.grp):hover td:first-child,
+.table-wrap tbody tr:not(.grp):hover td.col-no,
+.table-wrap tbody tr:not(.grp):hover td.col-nama-freeze{
+  background:linear-gradient(180deg,var(--row-hi-top),var(--row-hi-bot)) !important;
+  color:var(--row-hi-ink);
+}
+
+/* --- Batang penanda di tepi kiri (sel pertama) ---------------------------- */
+.table-wrap tbody tr:not(.grp):hover td:first-child{
+  box-shadow:inset 5px 0 0 var(--row-hi-bar), inset 0 -1px 0 var(--row-hi-line);
+}
+/* Monitoring memakai kolom beku yang garis-garisnya dipalsukan lewat inset
+   box-shadow; garis putih itu harus tetap ada, jadi batang penanda disisipkan
+   ke dalam susunan bayangan yang sama, bukan menggantinya. */
+#view-list .table-wrap tbody tr:hover td.col-no,
+#view-list-pl .table-wrap tbody tr:hover td.col-no,
+#view-list-tender .table-wrap tbody tr:hover td.col-no{
+  box-shadow:inset 5px 0 0 var(--row-hi-bar), inset -1px 0 0 #fff,
+             inset 0 -1px 0 #fff, inset 0 1px 0 #fff;
+}
+#view-list .table-wrap tbody tr:hover td.col-nama-freeze,
+#view-list-pl .table-wrap tbody tr:hover td.col-nama-freeze,
+#view-list-tender .table-wrap tbody tr:hover td.col-nama-freeze{
+  box-shadow:inset 1px 0 0 #fff, inset -1px 0 0 #fff,
+             inset 0 -1px 0 #fff, inset 0 1px 0 #fff;
+}
+
+/* --- Isi sel ikut menghangat supaya tidak ada warna dingin yang tertinggal - */
+.table-wrap tbody tr:not(.grp):hover .stack-no,
+table tbody tr:not(.grp):hover .stack-no{ color:var(--row-hi-ink2); }
+.table-wrap tbody tr:not(.grp):hover .stack-line+.stack-line,
+table tbody tr:not(.grp):hover .stack-line+.stack-line{
+  border-top-color:rgba(201,118,26,.34);
+}
+
+/* --- Pengecualian -------------------------------------------------------- */
+table.ana-ahsp-table tbody tr.grp:hover td,
+table.ana-ahsp-table tfoot tr:hover td,
+table tfoot tr:hover td{ background:inherit !important; color:inherit; }
+/* Kelas ditulis dua kali (.fkl-doc.fkl-doc) semata-mata untuk menaikkan
+   kekhususan agar menang atas aturan sorot di atas — bukan salah ketik. */
+.fkl-doc.fkl-doc table tbody tr:hover,
+.fkl-doc.fkl-doc table tbody tr:hover td{
+  background:inherit !important; color:inherit; box-shadow:none;
+}
