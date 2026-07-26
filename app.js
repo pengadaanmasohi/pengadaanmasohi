@@ -8925,7 +8925,7 @@ function fklBuildDocHtml(){
     ? 'Seluruh dokumen yang diperiksa dinyatakan lengkap'
     : ('Terdapat '+c.tidak+' dari '+c.total+' dokumen yang tidak ada'+(c.belum?(' ('+c.belum+' belum ditandai)'):''));
   const hasilNama = (info.nama && String(info.nama).trim()) ? String(info.nama) : 'Kelengkapan Dokumen Pengadaan';
-  const hasilBlock = '<table class="fkl-chk fkl-cd-tbl"><thead><tr>'+
+  const hasilBlock = '<table class="fkl-chk fkl-hasil-tbl"><thead><tr>'+
     '<th class="no">No</th><th class="nm">Nama Pekerjaan</th>'+
     '<th class="ck">Hasil Pemeriksaan</th><th class="kt">Keterangan</th>'+
     '</tr></thead><tbody>'+
@@ -8937,7 +8937,7 @@ function fklBuildDocHtml(){
   const tlStatus = (tlVal===FKL_TL_TERIMA)
     ? '<span class="pill ada">'+FKL_TL_TERIMA+'</span>'
     : '<span class="pill no">'+FKL_TL_KEMBALI+'</span>';
-  const tlBlock = '<table class="fkl-chk fkl-cd-tbl fkl-tl-tbl"><thead><tr>'+
+  const tlBlock = '<table class="fkl-chk fkl-tl-tbl"><thead><tr>'+
     '<th class="no">No</th><th class="nm">Nama Pekerjaan</th>'+
     '<th class="ck">Tindak Lanjut</th><th class="kt">Keterangan</th>'+
     '</tr></thead><tbody>'+
@@ -9264,6 +9264,85 @@ function fklFitTblScript(){
   ].join('');
   return '<scr'+'ipt>'+js+'<\/scr'+'ipt>';
 }
+/* ---------- KOLOM STATUS KETIGA TABEL MENGIKUTI ISI TERPANJANG ----------
+   Kolom status pada poin B (Kelengkapan Dokumen), poin C (Hasil Pemeriksaan)
+   dan poin D (Tindak Lanjut) TIDAK lagi dipatok lebar tetap dan TIDAK lagi
+   berbeda-beda antar tabel. Skrip ini mengukur pil terpanjang dari KETIGA tabel
+   (mis. "Ada" / "Lengkap" / "Dokumen Dikembalikan"), lalu memakai lebar TERBESAR
+   di antara semuanya untuk KETIGA tabel sekaligus — ukurannya selalu saling
+   mengikuti sehingga seluruh garis kolom sejajar dari tabel B sampai D.
+
+   Judul kolom sendiri BOLEH turun menjadi 2 baris ("HASIL / PEMERIKSAAN"),
+   sehingga panjang judul tidak lagi memaksa kolom melebar; yang menentukan
+   lebar adalah datanya. Batas bawahnya cuma satu: kata terpanjang pada judul
+   harus tetap utuh (tidak terpotong di tengah kata).
+
+   Dijalankan SEBELUM paginator (dipanggil di awal jalan()) supaya tinggi baris
+   yang dipakai memecah halaman sudah tinggi yang sebenarnya. */
+function fklKdColSyncScript(){
+  const js=[
+    '(function(){',
+    'var SEL=".fkl-kd-doc table.fkl-chk";',
+    'function px(v){var n=parseFloat(v);return (n>0)?n:0;}',
+    /* Lebar kata TERPANJANG pada sebuah judul kolom, diukur dengan huruf judul itu sendiri. */
+    'function lebarKata(th){',
+    ' var c=getComputedStyle(th);',
+    ' var s=document.createElement("span");',
+    ' s.style.cssText="position:absolute;visibility:hidden;left:-9999px;top:0;white-space:pre";',
+    ' s.style.fontFamily=c.fontFamily; s.style.fontSize=c.fontSize;',
+    ' s.style.fontWeight=c.fontWeight; s.style.fontStyle=c.fontStyle;',
+    ' s.style.letterSpacing=c.letterSpacing; s.style.textTransform=c.textTransform;',
+    ' document.body.appendChild(s);',
+    ' var kata=String(th.textContent||"").trim().split(/\\s+/), m=0;',
+    ' for(var i=0;i<kata.length;i++){ s.textContent=kata[i]; var w=s.getBoundingClientRect().width; if(w>m) m=w; }',
+    ' s.parentNode.removeChild(s);',
+    ' return m;',
+    '}',
+    'function sync(){',
+    ' var tbl=[].slice.call(document.querySelectorAll(SEL));',
+    ' if(!tbl.length) return;',
+    ' var perluIsi=0, perluJudul=0, i, j;',
+    ' for(i=0;i<tbl.length;i++){',
+    /* Isi: pil ber-nowrap, jadi lebarnya = lebar alaminya, tak terpengaruh kolom. */
+    '  var sel=tbl[i].querySelectorAll("td.ck");',
+    '  for(j=0;j<sel.length;j++){',
+    '   var isi=sel[j].querySelector(".pill")||sel[j];',
+    '   var cs=getComputedStyle(sel[j]);',
+    '   var w=isi.getBoundingClientRect().width+px(cs.paddingLeft)+px(cs.paddingRight)+2;',
+    '   if(w>perluIsi) perluIsi=w;',
+    '  }',
+    /* Judul: cukup selebar kata terpanjangnya (boleh 2 baris). */
+    '  var th=tbl[i].querySelector("th.ck");',
+    '  if(th){',
+    '   var ct=getComputedStyle(th);',
+    '   var k=lebarKata(th)+px(ct.paddingLeft)+px(ct.paddingRight)+2;',
+    '   if(k>perluJudul) perluJudul=k;',
+    '  }',
+    ' }',
+    ' if(perluIsi<=0) return;',
+    ' var lebar=Math.ceil(Math.max(perluIsi,perluJudul));',
+    ' for(i=0;i<tbl.length;i++){',
+    '  var el=tbl[i].querySelectorAll("th.ck,td.ck");',
+    '  for(j=0;j<el.length;j++) el[j].style.width=lebar+"px";',
+    ' }',
+    '}',
+    /* Idempoten & hanya sekali: paginator memanggilnya lebih dulu; pemanggilan
+       susulan (fonts.ready) dilewati supaya tata letak lembar tidak berubah lagi
+       setelah halaman dipecah. */
+    'window.__fklSyncKdCol=function(){',
+    ' if(window.__fklSyncKdColDone) return;',
+    ' try{ sync(); }catch(e){}',
+    ' window.__fklSyncKdColDone=true;',
+    '};',
+    'try{',
+    ' if(document.fonts && document.fonts.ready && document.fonts.ready.then){',
+    '  document.fonts.ready.then(function(){ window.__fklSyncKdCol(); });',
+    ' }else{ window.__fklSyncKdCol(); }',
+    '}catch(e){ try{ window.__fklSyncKdCol(); }catch(_){} }',
+    '})();'
+  ].join('');
+  return '<scr'+'ipt>'+js+'<\/scr'+'ipt>';
+}
 function fklDocShell(extraCss, innerHtml){
   return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8">'+
     '<meta name="viewport" content="width=device-width, initial-scale=1">'+
@@ -9274,6 +9353,7 @@ function fklDocShell(extraCss, innerHtml){
       '<tbody><tr><td><div class="fkl-print-page">'+innerHtml+'</div></td></tr></tbody>'+
       '<tfoot><tr><td><div class="fkl-vspace"></div></td></tr></tfoot>'+
     '</table>'+
+    fklKdColSyncScript()+
     fklFitTblScript()+
     fklPageScript()+
     fklFitScript()+
@@ -9405,6 +9485,9 @@ function fklPageScript(){
     '}',
     'function jalan(){',
     ' if(DONE) return; DONE=true;',
+    /* Kolom status ketiga tabel dipaskan ke isi terpanjang DULU (lihat
+       fklKdColSyncScript) supaya tinggi barisnya sudah final saat dipecah. */
+    ' try{ if(window.__fklSyncKdCol) window.__fklSyncKdCol(); }catch(e0){}',
     ' var wrap=document.querySelector("table.fkl-page-wrap");',
     ' var cadangan=wrap?wrap.outerHTML:"";',
     ' try{',
@@ -9541,6 +9624,9 @@ function hpscPageScript(){
     '}',
     'function jalan(){',
     ' if(DONE) return; DONE=true;',
+    /* Kolom status ketiga tabel dipaskan ke isi terpanjang DULU (lihat
+       fklKdColSyncScript) supaya tinggi barisnya sudah final saat dipecah. */
+    ' try{ if(window.__fklSyncKdCol) window.__fklSyncKdCol(); }catch(e0){}',
     ' var wraps=[].slice.call(document.querySelectorAll("table.fkl-page-wrap"));',
     ' for(var w=0; w<wraps.length; w++){',
     '   var wrap=wraps[w]; if(!wrap||!wrap.parentNode) continue;',
@@ -9584,20 +9670,31 @@ function hpscPageScript(){
    Pemeriksaan Kelengkapan Dokumen Pengadaan dinaikkan ke 12px (permintaan
    21 Jul 2026; bawaan #fkl-doc-css 11px). Hanya dokumen ini (.fkl-kd-doc) —
    dokumen lain yang memakai kerangka .fkl-doc tidak tersentuh. */
-/* Tabel poin C (Hasil Pemeriksaan) & poin D (Tindak Lanjut) memakai kerangka
-   kolom yang SAMA PERSIS (table-layout:fixed + lebar kolom identik) sehingga
-   kedua tabel sama besar dan garis kolomnya sejajar. Kolom status dipatok 196px:
-   cukup untuk pil terpanjang ("Dokumen Dikembalikan") sehingga teks Tindak Lanjut
-   tidak lagi terpotong/turun baris. */
+/* KETIGA tabel berkolom-4 pada dokumen ini — poin B (Kelengkapan Dokumen),
+   poin C (Hasil Pemeriksaan) & poin D (Tindak Lanjut) — memakai KERANGKA KOLOM
+   YANG SAMA PERSIS: table-layout:fixed, No 44px, kolom status selebar isi
+   terpanjang (dihitung fklKdColSyncScript), Keterangan 30%, sisanya untuk kolom
+   nama. Hasilnya ketiga tabel sama lebar dan seluruh garis kolomnya sejajar
+   dari atas ke bawah.
+
+   Judul kolom status BOLEH turun menjadi 2 baris ("HASIL / PEMERIKSAAN",
+   "KELENGKAPAN / DOKUMEN") supaya panjang judul tidak memaksa kolom melebar —
+   yang menentukan lebar adalah datanya. Hanya sel DATA yang dijaga tetap satu
+   baris agar pil status tidak pernah terpotong. */
 function fklKdDocCss(){
   return '.fkl-kd-doc .fkl-chk tbody td{font-size:12px}'+
          '.fkl-kd-doc .hasil .hs{font-size:12px}'+
-         '.fkl-kd-doc .fkl-cd-tbl{width:100%;table-layout:fixed}'+
-         '.fkl-kd-doc .fkl-cd-tbl th.no,.fkl-kd-doc .fkl-cd-tbl td.no{width:44px}'+
-         '.fkl-kd-doc .fkl-cd-tbl th.ck,.fkl-kd-doc .fkl-cd-tbl td.ck{width:196px;white-space:nowrap}'+
-         '.fkl-kd-doc .fkl-cd-tbl th.kt,.fkl-kd-doc .fkl-cd-tbl td.kt{width:30%}'+
-         '.fkl-kd-doc .fkl-cd-tbl td.nm,.fkl-kd-doc .fkl-cd-tbl td.kt{white-space:normal;word-break:break-word;overflow-wrap:break-word}'+
-         '.fkl-kd-doc .fkl-cd-tbl .pill{min-width:0;max-width:100%;white-space:nowrap;padding:3px 14px}'+
+         '.fkl-kd-doc .fkl-chk{width:100%;table-layout:fixed}'+
+         '.fkl-kd-doc .fkl-chk th.no,.fkl-kd-doc .fkl-chk td.no{width:44px}'+
+         /* 176px hanya nilai awal/cadangan; fklKdColSyncScript menimpanya dengan
+            lebar isi terpanjang dari ketiga tabel. */
+         '.fkl-kd-doc .fkl-chk th.ck,.fkl-kd-doc .fkl-chk td.ck{width:176px}'+
+         '.fkl-kd-doc .fkl-chk th.ck{white-space:normal;line-height:1.25}'+
+         '.fkl-kd-doc .fkl-chk th.ck .ck-main{white-space:normal}'+
+         '.fkl-kd-doc .fkl-chk td.ck{white-space:nowrap}'+
+         '.fkl-kd-doc .fkl-chk th.kt,.fkl-kd-doc .fkl-chk td.kt{width:30%}'+
+         '.fkl-kd-doc .fkl-chk td.nm,.fkl-kd-doc .fkl-chk td.kt{white-space:normal;word-break:break-word;overflow-wrap:break-word}'+
+         '.fkl-kd-doc .fkl-chk .pill{max-width:100%;white-space:nowrap}'+
          /* Poin C tidak pernah terbelah, dan tidak ikut pindah bersama poin D */
          '.fkl-kd-doc .fkl-doc-secc{break-inside:avoid;page-break-inside:avoid}'+
          '.fkl-kd-doc .fkl-doc-tail{break-inside:avoid;page-break-inside:avoid}';
