@@ -2462,7 +2462,7 @@ function renderDashboard(){
     kr:     {label:'SPBJ / Kontrak Rinci', title:'Kontrak Rinci',       sub:'Ringkasan monitoring SPBJ / Kontrak Rinci UP3 Masohi'},
     pl:     {label:'Pengadaan Langsung',   title:'Pengadaan Langsung',  sub:'Ringkasan monitoring Pengadaan Langsung UP3 Masohi'},
     tender: {label:'Tender',               title:'Tender',              sub:'Ringkasan monitoring Tender UP3 Masohi'},
-    pl_tender:{label:'PL & Tender',        title:'PL & Tender',         sub:'Ringkasan monitoring Pengadaan Langsung & Tender UP3 Masohi'},
+    pl_tender:{label:'PL & Tender',        title:'Pengadaan Langsung & Tender', sub:'Ringkasan monitoring Pengadaan Langsung & Tender UP3 Masohi'},
   }[jenis];
   const titleEl=document.getElementById('dash-title'); if(titleEl) titleEl.textContent = meta && meta.title ? ('Dashboard '+meta.title) : 'Dashboard';
   const subEl=document.getElementById('dash-subtitle'); if(subEl) subEl.textContent=meta.sub;
@@ -9284,7 +9284,9 @@ function fklKdColSyncScript(){
     '(function(){',
     'var SEL=".fkl-kd-doc table.fkl-chk";',
     'function px(v){var n=parseFloat(v);return (n>0)?n:0;}',
-    /* Lebar kata TERPANJANG pada sebuah judul kolom, diukur dengan huruf judul itu sendiri. */
+    /* Lebar kata TERPANJANG pada sebuah teks, diukur dengan huruf elemen itu sendiri.
+       Dipakai untuk judul kolom MAUPUN pil status: keduanya boleh turun 2 baris,
+       jadi yang wajib muat cuma kata terpanjangnya, bukan seluruh kalimat. */
     'function lebarKata(th){',
     ' var c=getComputedStyle(th);',
     ' var s=document.createElement("span");',
@@ -9303,12 +9305,23 @@ function fklKdColSyncScript(){
     ' if(!tbl.length) return;',
     ' var perluIsi=0, perluJudul=0, i, j;',
     ' for(i=0;i<tbl.length;i++){',
-    /* Isi: pil ber-nowrap, jadi lebarnya = lebar alaminya, tak terpengaruh kolom. */
+    /* Isi: pil BOLEH turun 2 baris ("Dokumen / Dikembalikan"), jadi kolom cukup
+       selebar KATA terpanjang di dalam pil + bantalan pil + bantalan sel. Sisa
+       ruangnya jatuh ke kolom Keterangan sehingga tabel terlihat lebih lega. */
     '  var sel=tbl[i].querySelectorAll("td.ck");',
     '  for(j=0;j<sel.length;j++){',
-    '   var isi=sel[j].querySelector(".pill")||sel[j];',
+    '   var isi=sel[j].querySelector(".pill");',
     '   var cs=getComputedStyle(sel[j]);',
-    '   var w=isi.getBoundingClientRect().width+px(cs.paddingLeft)+px(cs.paddingRight)+2;',
+    '   var luar=px(cs.paddingLeft)+px(cs.paddingRight)+2;',
+    '   var w;',
+    '   if(isi){',
+    '    var ip=getComputedStyle(isi);',
+    '    w=lebarKata(isi)+px(ip.paddingLeft)+px(ip.paddingRight)+px(ip.borderLeftWidth)+px(ip.borderRightWidth)+luar+2;',
+    '    var mn=px(ip.minWidth)+luar;',
+    '    if(mn>w) w=mn;',
+    '   }else{',
+    '    w=lebarKata(sel[j])+luar;',
+    '   }',
     '   if(w>perluIsi) perluIsi=w;',
     '  }',
     /* Judul: cukup selebar kata terpanjangnya (boleh 2 baris). */
@@ -9686,15 +9699,18 @@ function fklKdDocCss(){
          '.fkl-kd-doc .hasil .hs{font-size:12px}'+
          '.fkl-kd-doc .fkl-chk{width:100%;table-layout:fixed}'+
          '.fkl-kd-doc .fkl-chk th.no,.fkl-kd-doc .fkl-chk td.no{width:44px}'+
-         /* 176px hanya nilai awal/cadangan; fklKdColSyncScript menimpanya dengan
-            lebar isi terpanjang dari ketiga tabel. */
-         '.fkl-kd-doc .fkl-chk th.ck,.fkl-kd-doc .fkl-chk td.ck{width:176px}'+
+         /* 140px hanya nilai awal/cadangan; fklKdColSyncScript menimpanya dengan
+            lebar kata terpanjang dari ketiga tabel. */
+         '.fkl-kd-doc .fkl-chk th.ck,.fkl-kd-doc .fkl-chk td.ck{width:140px}'+
          '.fkl-kd-doc .fkl-chk th.ck{white-space:normal;line-height:1.25}'+
          '.fkl-kd-doc .fkl-chk th.ck .ck-main{white-space:normal}'+
-         '.fkl-kd-doc .fkl-chk td.ck{white-space:nowrap}'+
-         '.fkl-kd-doc .fkl-chk th.kt,.fkl-kd-doc .fkl-chk td.kt{width:30%}'+
+         '.fkl-kd-doc .fkl-chk td.ck{white-space:normal}'+
+         '.fkl-kd-doc .fkl-chk th.kt,.fkl-kd-doc .fkl-chk td.kt{width:35%}'+
          '.fkl-kd-doc .fkl-chk td.nm,.fkl-kd-doc .fkl-chk td.kt{white-space:normal;word-break:break-word;overflow-wrap:break-word}'+
-         '.fkl-kd-doc .fkl-chk .pill{max-width:100%;white-space:nowrap}'+
+         /* Pil status boleh turun 2 baris ("Dokumen / Dikembalikan") supaya kolomnya
+            tidak perlu selebar satu kalimat penuh — ruang sisanya diberikan ke
+            kolom Keterangan. */
+         '.fkl-kd-doc .fkl-chk .pill{max-width:100%;white-space:normal;text-align:center;line-height:1.3}'+
          /* Poin C tidak pernah terbelah, dan tidak ikut pindah bersama poin D */
          '.fkl-kd-doc .fkl-doc-secc{break-inside:avoid;page-break-inside:avoid}'+
          '.fkl-kd-doc .fkl-doc-tail{break-inside:avoid;page-break-inside:avoid}';

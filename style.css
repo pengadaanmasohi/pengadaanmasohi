@@ -5141,3 +5141,83 @@ html body:has(#view-dashboard.active){
 @media(max-width:640px){
   #view-dashboard::before{background-size:20px 20px;inset:-14px -14px -30px}
 }
+
+/* ============================================================
+   KARTU DASHBOARD — BINGKAI GRADIEN (Varian B)
+   Permintaan 26 Jul 2026: kotak-kotak dashboard terlihat terlalu polos.
+   Setiap kartu KPI kini dibungkus GARIS TEPI GRADIEN setebal 1,6px yang
+   warnanya mengikuti warna status kartu (--card-accent: teal / hijau /
+   kuning / merah), sementara isinya tetap putih bersih agar angka mudah
+   dibaca. Bayangan kartu ikut diberi rona warna yang sama sehingga kartu
+   terasa "melayang" berwarna, bukan abu-abu datar.
+
+   Teknik: dua lapis background — `padding-box` untuk permukaan putih dan
+   `border-box` untuk gradien — dengan border transparan. Cara ini membuat
+   gradien hanya tampak di bidang border, sesuatu yang tidak bisa dicapai
+   dengan `border-color` biasa (border-color tidak menerima gradient).
+
+   !important dipakai karena blok "permukaan bersih & flat" di atas
+   (#view-dashboard .card{background:#fff !important; border:… !important})
+   memakai !important juga; tanpa ini aturan di bawah tidak pernah berlaku.
+   ============================================================ */
+#view-dashboard .card{
+  --ca:var(--card-accent,var(--teal));
+  border:1.6px solid transparent !important;
+  border-radius:16px !important;
+  padding:18px 20px !important;
+  background:
+    linear-gradient(180deg,#ffffff,#fdfeff) padding-box,
+    linear-gradient(140deg,
+      color-mix(in srgb,var(--ca) 78%,#fff) 0%,
+      color-mix(in srgb,var(--ca) 24%,#fff) 40%,
+      #e9f0f2 76%,
+      color-mix(in srgb,var(--ca) 50%,#fff) 100%) border-box !important;
+  box-shadow:
+    0 2px 4px rgba(16,40,50,.04),
+    0 14px 34px color-mix(in srgb,var(--ca) 16%,rgba(16,40,50,.07)) !important;
+}
+/* Batang aksen dipindah ke tepi BAWAH sebagai garis tipis yang memudar di
+   kedua ujungnya — penegas warna status tanpa mengganggu bingkai gradien. */
+#view-dashboard .card .accent{
+  left:14px !important;right:14px !important;top:auto !important;bottom:0 !important;
+  width:auto !important;height:3px !important;border-radius:3px 3px 0 0 !important;
+  background:linear-gradient(90deg,transparent,var(--ca),transparent) !important;
+  opacity:.9 !important;
+}
+/* Chip ikon ikut memakai rona warna kartunya (sebelumnya abu-abu netral). */
+#view-dashboard .card-ic{
+  background:color-mix(in srgb,var(--ca) 13%,#fff) !important;
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ca) 28%,transparent) !important;
+}
+#view-dashboard .card:hover{
+  box-shadow:
+    0 3px 8px rgba(16,40,50,.05),
+    0 22px 46px color-mix(in srgb,var(--ca) 24%,rgba(16,40,50,.09)) !important;
+}
+/* Peramban lama tanpa color-mix(): kembali ke bingkai polos, bukan hilang. */
+@supports not (color:color-mix(in srgb,#000 50%,#fff)){
+  #view-dashboard .card{
+    border:1px solid #e6ebee !important;
+    background:#ffffff !important;
+  }
+}
+
+/* Panel grafik dibungkus bingkai gradien yang sama (rona teal) supaya kartu KPI
+   dan panel di bawahnya terbaca sebagai satu keluarga, bukan dua gaya berbeda. */
+#view-dashboard .panel{
+  border:1.6px solid transparent !important;
+  border-radius:16px !important;
+  background:
+    linear-gradient(180deg,#ffffff,#fdfeff) padding-box,
+    linear-gradient(140deg,
+      color-mix(in srgb,var(--teal) 62%,#fff) 0%,
+      color-mix(in srgb,var(--teal) 20%,#fff) 42%,
+      #e9f0f2 78%,
+      color-mix(in srgb,var(--cyan) 40%,#fff) 100%) border-box !important;
+  box-shadow:
+    0 2px 4px rgba(16,40,50,.04),
+    0 14px 34px color-mix(in srgb,var(--teal) 12%,rgba(16,40,50,.07)) !important;
+}
+@supports not (color:color-mix(in srgb,#000 50%,#fff)){
+  #view-dashboard .panel{border:1px solid #e6ebee !important;background:#ffffff !important}
+}
