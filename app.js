@@ -1619,7 +1619,20 @@ const ICON_BG={save:'#d8f0e3',back:'#fbe0e0',del:'#fbe0e0',warn:'#fdf0d6'};
    konfirmasi Keluar yang sudah punya nada sesi sendiri. Penanda dipasang
    per-pemakaian & selalu dibersihkan, karena modal ini dipakai bersama
    (hapus data, dll) yang tetap butuh nada klik normal. */
+/* Penyadap klik terpusat di bawah SUDAH memunculkan konfirmasi "Batalkan Proses?"
+   untuk setiap tombol Batal. Bila fungsi tombol itu sendiri masih memanggil
+   openConfirm dengan pesan pembatalan lagi, pengguna melihat DUA popup berturut-
+   turut. Popup KEDUA (yang terakhir) dibuang: saat penyadap sedang menjalankan
+   ulang klik tombol Batal, konfirmasi lanjutan yang judulnya juga soal pembatalan
+   langsung dianggap "Ya" tanpa ditampilkan. Konfirmasi lain yang isinya berbeda
+   (mis. "Masih Ada yang Belum Ditandai") tetap muncul seperti biasa. */
+let __confirmSkipRe=null;
 function openConfirm({icon,title,text,onYes,sfxNone}){
+  if(__confirmSkipRe && __confirmSkipRe.test(String(title||''))){
+    __confirmSkipRe=null;
+    if(typeof onYes==='function'){ try{ onYes(); }catch(e){ console.error(e); } }
+    return;
+  }
   document.getElementById('confirm-icon').innerHTML=ICONS[icon];
   document.getElementById('confirm-icon').style.background=ICON_BG[icon];
   document.getElementById('confirm-title').textContent=title;
@@ -1670,7 +1683,11 @@ function closeConfirm(){ document.getElementById('confirm-overlay').classList.re
       : {icon:'save', title:'Simpan Perubahan?', text:'Simpan data sesuai isian saat ini?'};
     openConfirm({icon:cfg.icon, title:cfg.title, text:cfg.text, onYes:function(){
       b.__spkConfirmed=true;
-      b.click();
+      /* Tombol Batal: konfirmasi pembatalan susulan milik tombol itu sendiri
+         ditelan supaya tidak ada popup kedua. */
+      if(batal) __confirmSkipRe=/batal/i;
+      try{ b.click(); }
+      finally{ __confirmSkipRe=null; }
     }});
   }, true);
 })();
@@ -8427,7 +8444,7 @@ async function refreshDataKelengkapan(){
 /* ---- Input Data (wizard). editId opsional untuk mode ubah ---- */
 function openFklInput(editId){
   if(!isAdmin()){ toast('Menu ini hanya untuk akun admin','warn'); return; }
-  fklPreviewState=null;
+  fklPreviewState=null; fklTlError=false;
   if(editId){
     const rec=records_kelengkapan.find(r=>String(r.id)===String(editId));
     fklEditId = rec ? rec.id : null;
@@ -8538,20 +8555,27 @@ function fklTindakKet(val){
     ? 'Dokumen diterima dan diproses ke tahap berikutnya'
     : 'Dokumen dikembalikan kepada pengusul untuk dilengkapi';
 }
+/* Penanda kesalahan: dinyalakan saat Simpan ditekan sementara Tindak Lanjut
+   belum dipilih, dimatikan lagi begitu pengguna memilih salah satu tombol. */
+let fklTlError=false;
 function fklSetTindak(val){
   const st=fklState[fklModul]; st.info=st.info||{};
   st.info.tindak_lanjut=val;
+  fklTlError=false;
   fklSaveState(); renderFormKelengkapan();
 }
 const FKL_IC_TL_OK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M20 6 9 17l-5-5"/></svg>';
 const FKL_IC_TL_BACK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>';
+/* Tindak Lanjut WAJIB dipilih: tidak ada lagi pilihan "saran otomatis" yang
+   ikut tersorot, sehingga pengguna harus benar-benar menekan salah satu tombol
+   sebelum data dapat disimpan. */
 function fklTindakHtml(){
-  const explicit=fklTindakVal(), eff=explicit||fklTindakSaran();
-  const btn=(val,cls,ic)=>'<button type="button" class="fkl-ada-btn '+cls+(eff===val?' on':'')+'" '+
+  const explicit=fklTindakVal();
+  const btn=(val,cls,ic)=>'<button type="button" class="fkl-ada-btn '+cls+(explicit===val?' on':'')+'" '+
     'onclick="fklSetTindak(\''+val+'\')">'+ic+val+'</button>';
-  return '<div class="fkl-ada-list"><div class="fkl-ada-row fkl-tl-row">'+
+  return '<div class="fkl-ada-list"><div class="fkl-ada-row fkl-tl-row'+((!explicit&&fklTlError)?' is-error':'')+'" id="fkl-tl-row">'+
     '<span class="fkl-ada-name">Kesimpulan Tindak Lanjut'+
-      (explicit?'':'<span class="fkl-tl-auto">saran otomatis</span>')+'</span>'+
+      '<span class="fkl-tl-wajib">wajib</span></span>'+
     '<span class="fkl-ada-opts">'+
       btn(FKL_TL_TERIMA,'ada',FKL_IC_TL_OK)+
       btn(FKL_TL_KEMBALI,'no',FKL_IC_TL_BACK)+
@@ -8619,7 +8643,7 @@ function renderFormKelengkapan(){
     '</div>';
     html+='<div class="form-card"><div class="form-section-title">'+FKL_SEC_ICON+'Ringkasan Pemeriksaan</div><div id="fkl-status"></div></div>';
     html+='<div class="form-card"><div class="form-section-title">'+FKL_SEC_ICON+'Tindak Lanjut</div>'+
-      '<div class="fkl-hint">Pilih kesimpulan tindak lanjut: <b>Dokumen Diterima</b> atau <b>Dokumen Dikembalikan</b>. Bila belum dipilih, dipakai saran otomatis yang mengikuti hasil pemeriksaan.</div>'+
+      '<div class="fkl-hint">Pilih kesimpulan tindak lanjut: <b>Dokumen Diterima</b> atau <b>Dokumen Dikembalikan</b>. Pilihan ini <b>wajib</b> — data tidak dapat disimpan sebelum salah satunya dipilih.</div>'+
       fklTindakHtml()+
     '</div>';
     html+='<div class="fkl-actions"><div class="fkl-actions-right">'+
@@ -8726,7 +8750,7 @@ function fklBatal(){
     text:'Batalkan proses ini? Data yang belum disimpan akan hilang.',
     onYes:()=>{
       fklEditId=null; fklState[fklModul]=fklBlankState(); fklSaveState();
-      fklStep=1; openFklView(); toast('Proses dibatalkan','ok');
+      fklTlError=false; fklStep=1; openFklView(); toast('Proses dibatalkan','ok');
     }
   });
 }
@@ -8739,6 +8763,13 @@ async function fklSimpan(){
   const st=fklState[fklModul]; const info=st.info||{};
   const nama=String(info.nama||'').trim();
   if(!nama){ toast('Nama Pekerjaan wajib diisi','warn'); fklStep=1; renderFormKelengkapan(); return; }
+  /* Tindak Lanjut (poin D) WAJIB dipilih — tanpa itu data tidak boleh tersimpan. */
+  if(!fklTindakVal()){
+    fklTlError=true; fklStep=3; renderFormKelengkapan();
+    toast('Tindak Lanjut wajib dipilih sebelum data disimpan','warn');
+    setTimeout(()=>{ const r=document.getElementById('fkl-tl-row'); if(r) r.scrollIntoView({behavior:'smooth',block:'center'}); },40);
+    return;
+  }
   const c=fklCountAda();
   const doSave=async()=>{
     const rec={
@@ -8761,7 +8792,7 @@ async function fklSimpan(){
     if(!ok) return;
     toast(fklEditId?'Data berhasil diperbarui':'Data berhasil disimpan','ok');
     // #6: kosongkan seluruh isian input agar siap data baru
-    fklEditId=null; fklState[fklModul]=fklBlankState(); fklSaveState(); fklStep=1;
+    fklEditId=null; fklState[fklModul]=fklBlankState(); fklSaveState(); fklTlError=false; fklStep=1;
     // #5: alihkan ke Lihat Data
     showView('fkl-view');
   };
@@ -8894,7 +8925,7 @@ function fklBuildDocHtml(){
     ? 'Seluruh dokumen yang diperiksa dinyatakan lengkap'
     : ('Terdapat '+c.tidak+' dari '+c.total+' dokumen yang tidak ada'+(c.belum?(' ('+c.belum+' belum ditandai)'):''));
   const hasilNama = (info.nama && String(info.nama).trim()) ? String(info.nama) : 'Kelengkapan Dokumen Pengadaan';
-  const hasilBlock = '<table class="fkl-chk pnw-hasil"><thead><tr>'+
+  const hasilBlock = '<table class="fkl-chk fkl-cd-tbl"><thead><tr>'+
     '<th class="no">No</th><th class="nm">Nama Pekerjaan</th>'+
     '<th class="ck">Hasil Pemeriksaan</th><th class="kt">Keterangan</th>'+
     '</tr></thead><tbody>'+
@@ -8906,7 +8937,7 @@ function fklBuildDocHtml(){
   const tlStatus = (tlVal===FKL_TL_TERIMA)
     ? '<span class="pill ada">'+FKL_TL_TERIMA+'</span>'
     : '<span class="pill no">'+FKL_TL_KEMBALI+'</span>';
-  const tlBlock = '<table class="fkl-chk pnw-hasil fkl-tl-tbl"><thead><tr>'+
+  const tlBlock = '<table class="fkl-chk fkl-cd-tbl fkl-tl-tbl"><thead><tr>'+
     '<th class="no">No</th><th class="nm">Nama Pekerjaan</th>'+
     '<th class="ck">Tindak Lanjut</th><th class="kt">Keterangan</th>'+
     '</tr></thead><tbody>'+
@@ -8945,10 +8976,16 @@ function fklBuildDocHtml(){
       (chkRows||'<tr><td colspan="4" class="empty">Data tidak tersedia</td></tr>')+
     '</tbody></table>'+
 
-    '<div class="fkl-doc-tail">'+
+    /* Poin C berdiri sendiri: judul + tabelnya tidak pernah terpisah, TAPI juga
+       tidak ikut terdorong ketika poin D + tanda tangan pindah halaman. */
+    '<div class="fkl-doc-secc">'+
     '<div class="fkl-sec-h"><span class="rn">C</span>Hasil Pemeriksaan</div>'+
     hasilBlock+
+    '</div>'+
 
+    /* Poin D + tanda tangan adalah satu blok utuh: bila tanda tangan tidak muat,
+       HANYA bagian ini yang pindah ke halaman berikutnya. */
+    '<div class="fkl-doc-tail">'+
     '<div class="fkl-sec-h"><span class="rn">D</span>Tindak Lanjut</div>'+
     tlBlock+
 
@@ -9292,7 +9329,7 @@ function fklPageScript(){
        sehingga utuh() gagal mengenalinya dan tanda tangan bisa berdiri sendiri di
        halaman berikutnya, meninggalkan angka rekapnya. Dikunci lewat KELAS agar
        selalu dipindah utuh — sama seperti penjaga di spkPageScript. */
-    ' if(n.classList && (n.classList.contains("hps-tail")||n.classList.contains("ttd-row")||n.classList.contains("rho-doc-item")||n.classList.contains("fkl-doc-tail"))) return true;',
+    ' if(n.classList && (n.classList.contains("hps-tail")||n.classList.contains("ttd-row")||n.classList.contains("rho-doc-item")||n.classList.contains("fkl-doc-tail")||n.classList.contains("fkl-doc-secc"))) return true;',
     ' if(utuh(n)) return true;',
     ' return els(n).length===0;',
     '}',
@@ -9432,7 +9469,7 @@ function hpscPageScript(){
     ' var t=n.tagName;',
     ' if(t==="P"||t==="TR"||t==="IMG"||t==="BR"||t==="HR"||t==="LI"||t==="THEAD"||t==="TFOOT"||t==="COLGROUP") return true;',
     ' if(n.namespaceURI && n.namespaceURI!=="http://www.w3.org/1999/xhtml") return true;',
-    ' if(n.classList && (n.classList.contains("hps-tail")||n.classList.contains("ttd-row")||n.classList.contains("rho-doc-item")||n.classList.contains("fkl-doc-tail"))) return true;',
+    ' if(n.classList && (n.classList.contains("hps-tail")||n.classList.contains("ttd-row")||n.classList.contains("rho-doc-item")||n.classList.contains("fkl-doc-tail")||n.classList.contains("fkl-doc-secc"))) return true;',
     ' if(utuh(n)) return true;',
     ' return els(n).length===0;',
     '}',
@@ -9547,9 +9584,23 @@ function hpscPageScript(){
    Pemeriksaan Kelengkapan Dokumen Pengadaan dinaikkan ke 12px (permintaan
    21 Jul 2026; bawaan #fkl-doc-css 11px). Hanya dokumen ini (.fkl-kd-doc) —
    dokumen lain yang memakai kerangka .fkl-doc tidak tersentuh. */
+/* Tabel poin C (Hasil Pemeriksaan) & poin D (Tindak Lanjut) memakai kerangka
+   kolom yang SAMA PERSIS (table-layout:fixed + lebar kolom identik) sehingga
+   kedua tabel sama besar dan garis kolomnya sejajar. Kolom status dipatok 196px:
+   cukup untuk pil terpanjang ("Dokumen Dikembalikan") sehingga teks Tindak Lanjut
+   tidak lagi terpotong/turun baris. */
 function fklKdDocCss(){
   return '.fkl-kd-doc .fkl-chk tbody td{font-size:12px}'+
-         '.fkl-kd-doc .hasil .hs{font-size:12px}';
+         '.fkl-kd-doc .hasil .hs{font-size:12px}'+
+         '.fkl-kd-doc .fkl-cd-tbl{width:100%;table-layout:fixed}'+
+         '.fkl-kd-doc .fkl-cd-tbl th.no,.fkl-kd-doc .fkl-cd-tbl td.no{width:44px}'+
+         '.fkl-kd-doc .fkl-cd-tbl th.ck,.fkl-kd-doc .fkl-cd-tbl td.ck{width:196px;white-space:nowrap}'+
+         '.fkl-kd-doc .fkl-cd-tbl th.kt,.fkl-kd-doc .fkl-cd-tbl td.kt{width:30%}'+
+         '.fkl-kd-doc .fkl-cd-tbl td.nm,.fkl-kd-doc .fkl-cd-tbl td.kt{white-space:normal;word-break:break-word;overflow-wrap:break-word}'+
+         '.fkl-kd-doc .fkl-cd-tbl .pill{min-width:0;max-width:100%;white-space:nowrap;padding:3px 14px}'+
+         /* Poin C tidak pernah terbelah, dan tidak ikut pindah bersama poin D */
+         '.fkl-kd-doc .fkl-doc-secc{break-inside:avoid;page-break-inside:avoid}'+
+         '.fkl-kd-doc .fkl-doc-tail{break-inside:avoid;page-break-inside:avoid}';
 }
 function fklStandaloneDocHtml(){
   return fklDocShell(fklKdDocCss(), fklBuildDocHtml());
