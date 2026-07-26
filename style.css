@@ -5221,3 +5221,47 @@ html body:has(#view-dashboard.active){
 @supports not (color:color-mix(in srgb,#000 50%,#fff)){
   #view-dashboard .panel{border:1px solid #e6ebee !important;background:#ffffff !important}
 }
+
+/* ============================================================
+   LATAR HALAMAN PUTIH POLOS
+   Permintaan 26 Jul 2026: latar aplikasi dibuat putih bersih agar
+   sama rata dengan bidang tabel dan lebih enak dilihat.
+
+   Semua lapisan hiasan latar dimatikan di sini — gradasi dasar
+   `html body`, kanvas "aurora" khusus Dashboard, dan tekstur titik
+   `#view-dashboard::before`. Ditulis di AKHIR berkas supaya menang
+   atas ketiga blok tersebut tanpa perlu menghapusnya (kalau suatu saat
+   ingin dikembalikan, cukup buang blok ini).
+
+   TIDAK disentuh:
+   - Layar Masuk (.login-screen) — punya latar sendiri & tetap berwarna.
+   - Sidebar — tetap teal sebagai penanda navigasi.
+   - Dokumen Cetak/PDF (#fkl-doc-css di index.html) — latar lembarnya
+     diatur terpisah dan tetap seperti semula.
+   ============================================================ */
+html body,
+html body:has(#view-dashboard.active){
+  background:#ffffff !important;
+  background-attachment:scroll !important;
+}
+/* Tekstur butiran titik pada Dashboard dimatikan */
+#view-dashboard::before{display:none !important}
+
+/* Panel & kartu tidak lagi perlu efek kaca (kanvas di belakangnya sudah
+   putih polos); dibuat padat supaya tepinya bersih tanpa warna menumpuk. */
+#view-dashboard .split .panel,
+#view-dashboard #dash-content > .panel{
+  background:linear-gradient(180deg,#ffffff,#fdfeff) !important;
+  -webkit-backdrop-filter:none !important;
+          backdrop-filter:none !important;
+}
+#view-dashboard #dash-cards .card,
+#view-dashboard #dash-nilai .card{
+  -webkit-backdrop-filter:none !important;
+          backdrop-filter:none !important;
+}
+#view-dashboard .dash-filter-bar .filter-field select{
+  background-color:#ffffff !important;
+  -webkit-backdrop-filter:none !important;
+          backdrop-filter:none !important;
+}
