@@ -11019,7 +11019,7 @@ function pnwBuildDocHtml(sk){
   const two=pnwIsTwoSampul(st);
   const kats=pnwSelectedKategori(st,sk);
   const fmtNilai = (info.nilai!=='' && info.nilai!=null) ? 'Rp '+Number(info.nilai).toLocaleString('id-ID') : '-';
-  const tglDoc = st.__tgl ? pnwDateLong(st.__tgl) : pnwDateLong((new Date()).toISOString().slice(0,10));
+  const tglDoc = st.tgl_pembukaan ? pnwDateLong(st.tgl_pembukaan) : (st.__tgl ? pnwDateLong(st.__tgl) : pnwDateLong((new Date()).toISOString().slice(0,10)));
   const infoRow=(k,v)=>'<tr><td class="k">'+k+'</td><td class="s">:</td><td class="v" style="text-align:justify">'+fkEsc(v||'-')+'</td></tr>';
 
   // Per penyedia: satu blok tabel
