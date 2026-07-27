@@ -307,6 +307,11 @@ a{color:inherit}
 .toolbar.fk-toolbar .fk-search{flex:0 0 auto}
 .toolbar.fk-toolbar .fk-search input{min-width:236px!important;max-width:236px!important;width:236px!important}
 .toolbar.fk-toolbar .fk-actions-inline{margin-left:0;flex:1 1 auto}
+/* Dropdown "Pilih Pekerjaan" melebar mengisi sisa ruang (nama pekerjaan panjang tak terpotong) */
+.toolbar.fk-toolbar .filter-field:has(#dpeng-view-pekerjaan){flex:1 1 auto;min-width:200px}
+.toolbar.fk-toolbar #dpeng-view-pekerjaan{min-width:0!important;max-width:none!important;width:100%!important}
+/* Khusus toolbar Dokumen Pengadaan: blok tombol tidak ikut memuai, agar sisa ruang jatuh ke dropdown */
+.toolbar.fk-toolbar:has(#dpeng-view-pekerjaan) .fk-actions-inline{flex:0 0 auto}
 /* Tombol "Tambah Data" didorong ke pojok kanan toolbar, Reset tetap menempel di kanan Cari */
 .toolbar.fk-toolbar .fk-actions-inline > .fk-corner-btn{margin-left:auto}
 @media(max-width:640px){
