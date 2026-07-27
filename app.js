@@ -9996,7 +9996,7 @@ const PNW_INFO_FIELDS = [
    periksa   : { s1:{ penyediaIdx:{ 'kat||baris': {ada:bool, ket:str} } }, s2:{...} }
 */
 function pnwBlankState(){
-  return { info:{}, penyedia:[''], pejabat:'', pilih:{s1:{},s2:{}}, syarat:{s1:{},s2:{}}, periksa:{s1:{},s2:{}}, profilLoaded:false };
+  return { info:{}, penyedia:[''], pejabat:'', tgl_pembukaan:'', pilih:{s1:{},s2:{}}, syarat:{s1:{},s2:{}}, periksa:{s1:{},s2:{}}, profilLoaded:false };
 }
 let pnwState = pnwBlankState();
 let pnwStep = 1;               // 1..4
@@ -10078,6 +10078,7 @@ function pnwRecordToState(rec){
     info:  Object.assign({}, base.info,  s.info||{}),
     penyedia: Array.isArray(s.penyedia)&&s.penyedia.length ? s.penyedia.slice() : [''],
     pejabat: s.pejabat||'',
+    tgl_pembukaan: s.tgl_pembukaan||'',
     pilih: { s1:Object.assign({}, (s.pilih&&s.pilih.s1)||{}), s2:Object.assign({}, (s.pilih&&s.pilih.s2)||{}) },
     syarat:{ s1:Object.assign({}, (s.syarat&&s.syarat.s1)||{}), s2:Object.assign({}, (s.syarat&&s.syarat.s2)||{}) },
     periksa:{ s1:Object.assign({}, (s.periksa&&s.periksa.s1)||{}), s2:Object.assign({}, (s.periksa&&s.periksa.s2)||{}) }
@@ -10121,7 +10122,10 @@ function pnwPenyediaFieldsHtml(){
   const st=pnwState, n=st.penyedia.length;
   let opts=''; for(let i=1;i<=20;i++) opts+='<option value="'+i+'"'+(i===n?' selected':'')+'>'+i+' Penyedia</option>';
   let html='<div class="field"><label>Jumlah Penyedia</label><select id="pnw-jumlah" onchange="pnwOnJumlahChange(this)">'+opts+'</select></div>';
-  html+='<div class="field" style="grid-column:span 3"><label>Nama Pejabat Pelaksana Pengadaan</label><input id="pnw-pejabat" type="text" placeholder="Nama pejabat pelaksana" oninput="pnwOnPejabatChange(this)"></div>';
+  const pjLocked=!!(st.info && st.info.dpId);
+  const pjDis=pjLocked?' disabled':'';
+  html+='<div class="field'+(pjLocked?' is-locked':'')+'" style="grid-column:span 2"><label>Nama Pejabat Pelaksana Pengadaan</label><input id="pnw-pejabat" type="text" placeholder="Nama pejabat pelaksana"'+pjDis+' oninput="pnwOnPejabatChange(this)">'+(pjLocked?DP_LOCK_BADGE:'')+'</div>';
+  html+='<div class="field"><label>Tgl. Pembukaan Dokumen</label><input id="pnw-tgl-pembukaan" type="date" onchange="pnwOnTglPembukaanChange(this)"></div>';
   return html;
 }
 function pnwPenyediaListHtml(){
@@ -10714,6 +10718,7 @@ function renderPnwForm(){
       el.value = (f.type==='num') ? rupiahInputText(v) : (v!=null?v:'');
     });
     const pj=document.getElementById('pnw-pejabat'); if(pj) pj.value=st.pejabat||'';
+    const tp=document.getElementById('pnw-tgl-pembukaan'); if(tp) tp.value=st.tgl_pembukaan||'';
   }
 }
 function pnwPenyampaianNoteText(){
@@ -10754,7 +10759,8 @@ function pnwOnJumlahChange(el){
   pnwSaveState(); renderPnwForm();
 }
 function pnwOnPenyediaNama(el){ const i=+el.dataset.pidx; pnwState.penyedia[i]=el.value; pnwSaveState(); }
-function pnwOnPejabatChange(el){ pnwState.pejabat=el.value; pnwSaveState(); }
+function pnwOnPejabatChange(el){ if(pnwState.info && pnwState.info.dpId){ el.value=pnwState.pejabat||''; return; } pnwState.pejabat=el.value; pnwSaveState(); }
+function pnwOnTglPembukaanChange(el){ pnwState.tgl_pembukaan=el.value; pnwSaveState(); }
 
 /* ---------- Interaksi langkah 2 ---------- */
 function pnwOnPilih(el){
@@ -12656,6 +12662,7 @@ function pnwCancelDp(){
   const st=pnwState; if(!st.info) return;
   delete st.info.dpId; delete st.info.dpNama;
   ['nama','lokasi','nilai','no_anggaran','tgl_anggaran','jenis_anggaran','metode'].forEach(k=>{ st.info[k]=''; });
+  st.pejabat='';
   pnwSaveState(); if(typeof renderPnwForm==='function') renderPnwForm();
   toast('Pilihan pekerjaan dibatalkan','ok');
 }
@@ -12678,6 +12685,8 @@ function pnwApplyDp(rec){
   const st=pnwState; st.info=st.info||{};
   const info=(rec.state&&rec.state.info)||{};
   ['nama','lokasi','nilai','no_anggaran','tgl_anggaran','jenis_anggaran','metode'].forEach(k=>{ if(info[k]!=null&&info[k]!=='') st.info[k]=info[k]; });
+  /* Nama Pejabat Pelaksana Pengadaan mengikuti Data Pekerjaan (otomatis & terkunci) */
+  st.pejabat = (info.pejabat!=null) ? String(info.pejabat) : '';
   st.info.dpId=String(rec.id);
   pnwSaveState();
   if(typeof renderPnwForm==='function') renderPnwForm();
