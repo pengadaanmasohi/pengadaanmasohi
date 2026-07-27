@@ -8258,24 +8258,19 @@ function pnTglCellHtml(r){
     return '<div class="pn-nomor-item pn-tgl-item"><span class="pn-tgl-val">'+tgl+'</span></div>';
   }).join('')+'</div>';
 }
-/* Aksi (unggah/lihat/unduh/hapus) per masing-masing nomor dokumen */
+/* Aksi per masing-masing nomor dokumen — HANYA "Hapus Nomor".
+   Tombol Unggah/Ganti File dan Lihat File sengaja tidak ditampilkan di tabel ini
+   (fungsi pnUpload/pnPreview tetap ada di kode bila sewaktu-waktu dibutuhkan). */
 function pnActionCellHtml(r){
   const docs=Array.isArray(r.dokumen)?r.dokumen:[];
   if(!docs.length) return '—';
   const allow=canInput();
-  const upIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v13"/></svg>';
-  const eyeIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
   const delIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6M14 11v6"/></svg>';
   const rid=fkEsc(String(r.id));
   return '<div class="pn-nomor-list">'+docs.map(d=>{
     const dk=fkEsc(String(d.key));
-    const hasFile=!!(d.file && d.file.nama_file);
-    const up = allow ? '<button class="act act-up" title="'+(hasFile?'Ganti File':'Unggah File')+'" onclick="pnUpload(\''+rid+'\',\''+dk+'\',this)">'+upIcon+'</button>' : '';
-    const lihat = hasFile
-      ? '<button class="act act-view" title="Lihat File" onclick="pnPreview(\''+rid+'\',\''+dk+'\')">'+eyeIcon+'</button>'
-      : '<button class="act act-view" title="Belum ada file" disabled>'+eyeIcon+'</button>';
     const del = allow ? '<button class="act act-del" title="Hapus Nomor" onclick="pnDelete(\''+rid+'\',\''+dk+'\',this)">'+delIcon+'</button>' : '';
-    return '<div class="pn-nomor-item pn-aksi-item"><div class="pn-actions">'+up+lihat+del+'</div></div>';
+    return '<div class="pn-nomor-item pn-aksi-item"><div class="pn-actions">'+del+'</div></div>';
   }).join('')+'</div>';
 }
 /* Cari dokumen dalam record berdasarkan key */
