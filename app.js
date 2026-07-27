@@ -11090,6 +11090,7 @@ function pnwBuildDocHtml(sk){
       infoRow('Tgl. Anggaran', info.tgl_anggaran?pnwDateLong(info.tgl_anggaran):'-')+
       infoRow('Jenis Anggaran', info.jenis_anggaran)+
       infoRow('Metode Pengadaan', info.metode)+
+      infoRow('Tgl. Pembukaan Dokumen', st.tgl_pembukaan?pnwDateLong(st.tgl_pembukaan):'-')+
     '</tbody></table>'+
 
     '<div class="fkl-sec-h"><span class="rn">B</span>Pemeriksaan Kelengkapan Dokumen Penawaran</div>'+
