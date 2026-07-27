@@ -8841,6 +8841,7 @@ function renderDpengView(){
       '<td><div class="action-cell" style="justify-content:center">'+
         '<button class="act act-edit" title="Ubah / Unggah Dokumen" onclick="dpengOpenUnggah(\''+rid+'\')">'+DPENG_IC_EDIT+'</button>'+
         '<button class="act act-view" title="Lihat Dokumen" onclick="dpengOpenDocList(\''+rid+'\')">'+DPENG_IC_VIEW+'</button>'+
+        '<button class="act act-del" title="Hapus Pekerjaan" onclick="dpengHapusPekerjaan(\''+rid+'\')">'+DPENG_IC_DEL+'</button>'+
       '</div></td>'+
     '</tr>';
   }).join('');
@@ -9254,9 +9255,17 @@ function dpengRemoveFile(recId, key){
     }});
 }
 /* ---- Hapus seluruh pekerjaan (opsional dari daftar) ---- */
+/* Hapus SATU pekerjaan beserta seluruh berkas R2-nya (dipanggil dari kolom Aksi). */
 function dpengHapusPekerjaan(recId){
+  if(!isAdmin()){ toast('Menu ini hanya untuk akun admin','warn'); return; }
+  const target=(records_dpeng||[]).find(r=>String(r.id)===String(recId));
+  if(!target){ toast('Data pekerjaan tidak ditemukan','warn'); return; }
+  const nDoc=(target.dokumen||[]).length;
+  const nFile=(target.dokumen||[]).filter(d=>!!d.path).length;
   openConfirm({ icon:'warn', title:'Hapus Pekerjaan',
-    text:'Hapus pekerjaan ini beserta seluruh berkasnya? Tindakan tidak dapat dibatalkan.',
+    // openConfirm memakai textContent → tulis sebagai teks biasa (tanpa tag HTML).
+    text:'Hapus "'+(dpengNama(target)||'(tanpa nama)')+'" beserta '+nDoc+' jenis dokumen'+
+         (nFile?(' dan '+nFile+' berkas terunggah'):'')+'? Tindakan tidak dapat dibatalkan.',
     onYes:async function(){
       const rec=(records_dpeng||[]).find(r=>String(r.id)===String(recId)); if(!rec) return;
       try{
