@@ -2183,9 +2183,9 @@ tr.hl-weekend td{background:#f5f8fb}
 .pn-doc-modal-foot .btn:active{transform:translateY(0) scale(.99)}
 .pn-doc-modal-foot .btn svg{width:16px;height:16px}
 /* Checkbox berada di sebelah kanan nama dokumen */
-#pn-doc-modal-list .pn-check-item{align-items:center}
+#pn-doc-modal-list .pn-check-item{align-items:flex-start}
 #pn-doc-modal-list .pn-check-label{order:0;flex:1 1 auto}
-#pn-doc-modal-list .pn-check-box{order:1;margin-top:0}
+#pn-doc-modal-list .pn-check-box{order:1;margin-top:1px}
 /* Overlay progres unggah file */
 .pn-upload-overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(7,63,69,.42);backdrop-filter:blur(3px);align-items:center;justify-content:center}
 .pn-upload-overlay.show{display:flex}

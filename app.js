@@ -1727,6 +1727,7 @@ function closeConfirm(){ document.getElementById('confirm-overlay').classList.re
     var b=(e.target&&e.target.closest)?e.target.closest('button'):null;
     if(!b) return;
     if(b.closest('#confirm-overlay')) return;                 /* jangan sadap tombol modal konfirmasi */
+    if(b.closest('#dpeng-doc-overlay')) return;               /* modal Pilih Dokumen: Batal/Simpan langsung jalan tanpa konfirmasi */
     if(b.__spkConfirmed){ b.__spkConfirmed=false; return; }   /* klik ulang hasil "Ya" -> lewatkan */
     var batal=isBatalBtn(b), simpan=isSimpanBtn(b);
     if(!batal && !simpan) return;
@@ -8849,12 +8850,12 @@ function dpengFormHtml(){
             '<span class="pn-doc-count" id="dpeng-doc-count"'+(nPick?'':' style="display:none"')+'>'+nPick+'</span>' +
             '<svg class="pn-doc-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>' +
           '</button>' +
+          '<button type="button" class="btn btn-indigo" onclick="dpengSubmitForm()">'+DPENG_IC_UP+' Unggah Dokumen</button>' +
         '</div></div>' +
     '</div>' +
   '</div>' +
   '<div class="jp-actions" style="justify-content:flex-end;margin-top:14px;gap:10px">' +
     '<button class="btn btn-red" onclick="dpengUnggahBatal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg> Batal</button>' +
-    '<button class="btn btn-indigo" onclick="dpengSubmitForm()">'+DPENG_IC_UP+' Unggah Dokumen</button>' +
   '</div>';
 }
 function dpengNamaInput(){
