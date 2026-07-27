@@ -9346,9 +9346,11 @@ async function dpengPreview(recId, key){
     const nm=String(d.nama_file||'').toLowerCase();
     const isPdf=mime.includes('pdf')||nm.endsWith('.pdf');
     const isImg=mime.indexOf('image/')===0||/\.(png|jpe?g|gif|webp|bmp)$/.test(nm);
+    const isXls=/\.(xlsx|xls|xlsm|csv)$/.test(nm) || mime.indexOf('spreadsheet')>=0 || mime.indexOf('ms-excel')>=0;
     if(!bodyEl) return;
     if(isPdf){ bodyEl.innerHTML='<iframe title="Pratinjau PDF"></iframe>'; bodyEl.querySelector('iframe').src=url; }
     else if(isImg){ bodyEl.innerHTML='<img alt="Pratinjau gambar">'; bodyEl.querySelector('img').src=url; }
+    else if(isXls){ await dpengPreviewExcel(bodyEl, blob, recId, d); }
     else{ bodyEl.innerHTML=dpengPreviewFallbackHtml(recId,d,'Jenis berkas ini tidak dapat dipratinjau di peramban. Silakan unduh untuk membukanya.'); }
   }catch(err){
     console.error('dpengPreview:',err);
@@ -9363,6 +9365,86 @@ function dpengPreviewFallbackHtml(recId, d, msg){
     '<div style="margin-top:14px"><button class="btn btn-teal" onclick="dpengDownload(\''+fkEsc(String(recId))+'\',\''+fkEsc((d&&d.key)||'')+'\')">'+DPENG_IC_DL+' Unduh Berkas</button></div>'+
   '</div>';
 }
+/* ==================================================================
+   PRATINJAU EXCEL DI DALAM APLIKASI
+   Peramban tidak punya penampil .xlsx bawaan (isinya arsip ZIP berisi XML),
+   jadi berkas dibaca dengan SheetJS lalu dirender sebagai tabel HTML.
+   Setiap sheet mendapat satu tab; tombol unduh tetap disediakan.
+   ================================================================== */
+let dpengXlsState=null;   // {sheets:[{nama,html}], aktif, recId, key}
+async function dpengPreviewExcel(bodyEl, blob, recId, d){
+  if(typeof XLSX==='undefined' || !XLSX || !XLSX.read){
+    bodyEl.innerHTML=dpengPreviewFallbackHtml(recId,d,'Pustaka pembaca Excel belum termuat. Silakan muat ulang halaman atau unduh berkasnya.');
+    return;
+  }
+  bodyEl.innerHTML='<div class="pn-preview-nofile">Membaca isi berkas Excel…</div>';
+  try{
+    const buf=await blob.arrayBuffer();
+    const wb=XLSX.read(new Uint8Array(buf), {type:'array'});
+    const names=(wb.SheetNames||[]).filter(Boolean);
+    if(!names.length){
+      bodyEl.innerHTML=dpengPreviewFallbackHtml(recId,d,'Berkas Excel ini tidak memuat lembar kerja.');
+      return;
+    }
+    const sheets=names.map(n=>{
+      let html='';
+      try{
+        /* header/footer dikosongkan agar SheetJS mengembalikan <table> saja,
+           bukan dokumen HTML utuh. Sebagai pengaman, bila versi pustaka tetap
+           menyertakan pembungkus, tabelnya diambil ulang lewat pencocokan. */
+        html=XLSX.utils.sheet_to_html(wb.Sheets[n], {editable:false, header:'', footer:''});
+        const m=/<table[\s\S]*<\/table>/i.exec(html);
+        if(m) html=m[0];
+      }
+      catch(e){ html='<p>Lembar ini gagal dibaca.</p>'; }
+      const ref=wb.Sheets[n] && wb.Sheets[n]['!ref'];
+      return { nama:n, html:html, kosong:!ref };
+    });
+    dpengXlsState={ sheets, aktif:0, recId:String(recId), key:(d&&d.key)||'' };
+    dpengRenderExcel(bodyEl);
+  }catch(err){
+    console.error('dpengPreviewExcel:',err);
+    bodyEl.innerHTML=dpengPreviewFallbackHtml(recId,d,'Gagal membaca berkas Excel: '+errMsg(err));
+  }
+}
+function dpengRenderExcel(bodyEl){
+  const st=dpengXlsState; if(!st||!bodyEl) return;
+  const tabs=st.sheets.length>1
+    ? '<div class="dpeng-xls-tabs">'+st.sheets.map((s,i)=>
+        '<button type="button" class="dpeng-xls-tab'+(i===st.aktif?' active':'')+'" onclick="dpengExcelTab('+i+')">'+
+          fkEsc(s.nama)+(s.kosong?' <span class="dpeng-xls-empty">kosong</span>':'')+
+        '</button>').join('')+'</div>'
+    : '';
+  const s=st.sheets[st.aktif]||st.sheets[0];
+  bodyEl.classList.add('dpeng-xls-body');
+  bodyEl.innerHTML=
+    '<div class="dpeng-xls-wrap">'+
+      tabs+
+      '<div class="dpeng-xls-bar">'+
+        '<span class="dpeng-xls-nama">'+fkEsc(s.nama)+'</span>'+
+        '<button class="btn btn-teal btn-sm" onclick="dpengDownload(\''+fkEsc(st.recId)+'\',\''+fkEsc(st.key)+'\')">'+DPENG_IC_DL+' Unduh Berkas</button>'+
+      '</div>'+
+      '<div class="dpeng-xls-scroll">'+(s.kosong?'<div class="dpeng-xls-blank">Lembar ini kosong.</div>':s.html)+'</div>'+
+    '</div>';
+}
+function dpengExcelTab(i){
+  if(!dpengXlsState) return;
+  dpengXlsState.aktif=i;
+  dpengRenderExcel(document.getElementById('pn-preview-body'));
+}
+/* Bersihkan sisa pratinjau Excel saat modal ditutup — closePnPreview milik
+   modul lain, jadi dibungkus alih-alih diubah agar tidak mengganggu pemakai
+   lainnya. */
+(function(){
+  const asli=window.closePnPreview;
+  if(typeof asli!=='function') return;
+  window.closePnPreview=function(){
+    asli.apply(this, arguments);
+    const b=document.getElementById('pn-preview-body');
+    if(b) b.classList.remove('dpeng-xls-body');
+    dpengXlsState=null;
+  };
+})();
 async function dpengDownload(recId, key){
   try{
     const rec=(records_dpeng||[]).find(r=>String(r.id)===String(recId));

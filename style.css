@@ -5666,3 +5666,41 @@ table tfoot tr:hover td{ background:inherit !important; color:inherit; }
   #view-fk-view *,#view-dpeng-view *,#view-dpeng-unggah *,#view-materi-view *,
   #dpeng-list-overlay *,#dpeng-doc-overlay *{ transition:none!important;transform:none!important }
 }
+
+/* ===== Pratinjau Excel (Dokumen Pengadaan) =====
+   Isi .xlsx dibaca SheetJS lalu dirender sebagai tabel. Kolom & baris dibuat
+   ringkas agar BoQ yang lebar tetap terbaca; area tabel bergulir dua arah. */
+.pn-preview-body.dpeng-xls-body{display:block;background:#eef2f4;padding:0;overflow:hidden}
+.dpeng-xls-wrap{display:flex;flex-direction:column;height:74vh;min-height:0}
+.pn-preview-modal.is-max .dpeng-xls-wrap{height:calc(100vh - 62px)}
+@media(max-width:640px){ .dpeng-xls-wrap{height:64vh} }
+
+.dpeng-xls-tabs{flex:0 0 auto;display:flex;gap:6px;padding:8px 10px 0;overflow-x:auto;
+  background:linear-gradient(180deg,#e7edf0,#eef2f4);border-bottom:1px solid rgba(16,40,50,.10)}
+.dpeng-xls-tab{flex:0 0 auto;border:1px solid rgba(16,40,50,.14);border-bottom:none;
+  background:#f7fafb;color:#5d6b74;font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:11.5px;font-weight:700;letter-spacing:.15px;padding:7px 14px;
+  border-radius:9px 9px 0 0;cursor:pointer;white-space:nowrap;
+  transition:background .16s ease,color .16s ease,box-shadow .16s ease}
+.dpeng-xls-tab:hover{background:#fff;color:var(--teal-dark,#0d2a30)}
+.dpeng-xls-tab.active{background:#fff;color:var(--teal-dark,#0d2a30);
+  box-shadow:inset 0 3px 0 var(--teal,#0E7C86),0 -2px 6px rgba(16,40,50,.06)}
+.dpeng-xls-empty{font-weight:600;font-size:10px;color:#98a4ac;margin-left:5px}
+
+.dpeng-xls-bar{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;
+  gap:12px;padding:9px 14px;background:#fff;border-bottom:1px solid rgba(16,40,50,.10)}
+.dpeng-xls-nama{font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:800;
+  color:var(--teal-dark,#0d2a30);letter-spacing:.2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dpeng-xls-bar .btn{flex:0 0 auto}
+
+.dpeng-xls-scroll{flex:1 1 auto;min-height:0;overflow:auto;background:#fff;padding:0}
+.dpeng-xls-blank{padding:46px 16px;text-align:center;font-size:12.5px;color:var(--muted,#6b7280)}
+.dpeng-xls-scroll table{border-collapse:collapse;width:max-content;min-width:100%;
+  font-family:'Plus Jakarta Sans',system-ui,sans-serif;font-size:12px;color:#22343a}
+.dpeng-xls-scroll td,.dpeng-xls-scroll th{border:1px solid #dbe3e8;padding:6px 10px;
+  vertical-align:top;white-space:pre-wrap;max-width:420px;background:#fff}
+.dpeng-xls-scroll tr:first-child td,.dpeng-xls-scroll th{
+  background:linear-gradient(180deg,#f2f7f8,#e9f1f3);font-weight:800;color:#0d2a30;
+  position:sticky;top:0;z-index:2}
+.dpeng-xls-scroll tr:nth-child(even) td{background:#fbfdfe}
+.dpeng-xls-scroll tr:nth-child(even) td:first-child{background:#f7fafb}
