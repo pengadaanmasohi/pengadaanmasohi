@@ -1985,29 +1985,6 @@ tr.hl-weekend td{background:#f5f8fb}
 .fk-actcell{position:relative;transition:background .16s ease}
 .fk-actcell.fk-drop-over{background:rgba(20,166,177,.14);outline:2px dashed var(--teal);outline-offset:-4px;border-radius:10px}
 .fk-actcell.fk-drop-over .fk-act-up{transform:translateY(-2px) scale(1.04);box-shadow:0 8px 22px rgba(16,40,50,.3)}
-/* ============================================================
-   Efek 3D tombol Aksi (Lihat/Hapus) pada tabel File Kontrak —
-   disamakan dengan .act pada tabel lain (cincin cahaya + animasi ikon).
-   ============================================================ */
-.fk-act-icon{position:relative;overflow:visible;
-  transition:transform .28s cubic-bezier(.34,1.56,.64,1),box-shadow .25s ease,filter .2s ease}
-.fk-act-icon svg{transition:transform .3s cubic-bezier(.34,1.56,.64,1);position:relative;z-index:2}
-.fk-act-icon::before{content:"";position:absolute;inset:0;border-radius:inherit;z-index:1;
-  box-shadow:0 0 0 0 rgba(14,124,134,.45);transition:box-shadow .35s ease;pointer-events:none}
-.fk-act-icon::after{content:"";position:absolute;inset:-3px;border-radius:13px;z-index:0;opacity:0;
-  background:radial-gradient(circle,rgba(255,255,255,.55),transparent 70%);
-  transform:scale(.4);transition:opacity .3s ease,transform .3s ease;pointer-events:none}
-.fk-act-icon:hover{transform:translateY(-3px) scale(1.12)}
-.fk-act-icon:hover::after{opacity:1;transform:scale(1)}
-.fk-act-icon:active{transform:translateY(-1px) scale(.94)}
-.fk-act-icon:active::before{box-shadow:0 0 0 8px rgba(14,124,134,0);transition:box-shadow .01s}
-.fk-act-view.fk-act-icon:hover{box-shadow:0 8px 20px rgba(14,124,134,.5)}
-.fk-act-view.fk-act-icon:hover::before{box-shadow:0 0 0 4px rgba(14,124,134,.28)}
-.fk-act-view.fk-act-icon:hover svg{animation:actView .6s ease-in-out}
-.fk-act-del.fk-act-icon:hover{box-shadow:0 8px 20px rgba(211,58,58,.5)}
-.fk-act-del.fk-act-icon:hover::before{box-shadow:0 0 0 4px rgba(211,58,58,.28)}
-.fk-act-del.fk-act-icon:hover svg{animation:actDel .5s ease-in-out}
-@media (prefers-reduced-motion: reduce){ .fk-act-icon:hover svg{animation:none !important} }
 /* Popup Unggah File Kontrak — kotak drag & drop / telusuri (efek 3D) */
 .fk-upload-modal{max-width:460px}
 .fk-up-body{padding:26px 24px 30px;perspective:900px}
@@ -5576,7 +5553,8 @@ table tfoot tr:hover td{ background:inherit !important; color:inherit; }
 
 /* ---------- Tombol aksi: tombol fisik yang bisa ditekan ---------- */
 #view-fk-view .act,#view-dpeng-view .act,#view-dpeng-unggah .act,
-#dpeng-list-overlay .act{
+#dpeng-list-overlay .act,
+#view-fk-view .fk-act-icon,#view-fk-input .fk-act-icon{
   transition:transform .16s cubic-bezier(.16,1,.3,1),box-shadow .16s ease,filter .16s ease;
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,.34),
@@ -5585,7 +5563,8 @@ table tfoot tr:hover td{ background:inherit !important; color:inherit; }
     0 1px 2px rgba(16,40,50,.14);
 }
 #view-fk-view .act:hover,#view-dpeng-view .act:hover,#view-dpeng-unggah .act:hover,
-#dpeng-list-overlay .act:hover{
+#dpeng-list-overlay .act:hover,
+#view-fk-view .fk-act-icon:hover,#view-fk-input .fk-act-icon:hover{
   transform:scale(1.10);
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,.40),
@@ -5595,7 +5574,8 @@ table tfoot tr:hover td{ background:inherit !important; color:inherit; }
   filter:brightness(1.05);
 }
 #view-fk-view .act:active,#view-dpeng-view .act:active,#view-dpeng-unggah .act:active,
-#dpeng-list-overlay .act:active{
+#dpeng-list-overlay .act:active,
+#view-fk-view .fk-act-icon:active,#view-fk-input .fk-act-icon:active{
   transform:scale(.94);
   box-shadow:inset 0 2px 5px rgba(0,0,0,.26),0 1px 1px rgba(16,40,50,.14);
 }
@@ -5853,6 +5833,7 @@ table tfoot tr:hover td{ background:inherit !important; color:inherit; }
 
 /* ---------- Tombol aksi (ikon): tombol fisik yang bisa ditekan ---------- */
 .view .act:not([disabled]),
+.view .fk-act-icon:not([disabled]),
 .overlay:not(#pn-preview-overlay) .act:not([disabled]){
   transition:transform .16s cubic-bezier(.16,1,.3,1),box-shadow .16s ease,filter .16s ease;
   box-shadow:
@@ -5862,6 +5843,7 @@ table tfoot tr:hover td{ background:inherit !important; color:inherit; }
     0 1px 2px rgba(16,40,50,.14);
 }
 .view .act:not([disabled]):hover,
+.view .fk-act-icon:not([disabled]):hover,
 .overlay:not(#pn-preview-overlay) .act:not([disabled]):hover{
   transform:scale(1.10);
   box-shadow:
@@ -5872,6 +5854,7 @@ table tfoot tr:hover td{ background:inherit !important; color:inherit; }
   filter:brightness(1.05);
 }
 .view .act:not([disabled]):active,
+.view .fk-act-icon:not([disabled]):active,
 .overlay:not(#pn-preview-overlay) .act:not([disabled]):active{
   transform:scale(.94);
   box-shadow:inset 0 2px 5px rgba(0,0,0,.26),0 1px 1px rgba(16,40,50,.14);
