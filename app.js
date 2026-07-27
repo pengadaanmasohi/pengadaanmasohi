@@ -6965,20 +6965,43 @@ async function fkFetchToken(username, password){
 }
 
 /* Unggah bytes file ke R2 (via Worker) — atau ke sandbox demo. */
-async function fkStoragePut(path, file){
+/* Unggah bytes ke Worker R2 memakai XMLHttpRequest, BUKAN fetch.
+   fetch() tidak menyediakan event progres unggah sama sekali, sehingga bar
+   progres sebelumnya hanya angka tetap. XHR memberi loaded/total sungguhan
+   lewat xhr.upload.onprogress. onProgress(loaded,total) opsional. */
+function r2XhrPut(path, file, onProgress){
+  return new Promise(function(resolve, reject){
+    const xhr=new XMLHttpRequest();
+    xhr.open('POST', R2_GATEWAY_URL+'/api/file?path='+encodeURIComponent(path), true);
+    xhr.setRequestHeader('Authorization','Bearer '+fkAuthToken());
+    xhr.setRequestHeader('X-File-Content-Type', file.type||'application/octet-stream');
+    xhr.timeout=0;
+    if(xhr.upload && typeof onProgress==='function'){
+      xhr.upload.onprogress=function(e){ if(e.lengthComputable) onProgress(e.loaded, e.total); };
+    }
+    xhr.onload=function(){
+      if(xhr.status===401) return reject(new Error('Sesi berakhir — silakan login ulang.'));
+      /* 413 = melampaui batas body permintaan Cloudflare Worker
+         (Free/Pro 100 MB, Business 200 MB, Enterprise 500 MB). */
+      if(xhr.status===413) return reject(new Error('Berkas terlalu besar untuk gateway Cloudflare. Silakan kompres atau pecah berkasnya.'));
+      if(xhr.status<200 || xhr.status>=300) return reject(new Error('Unggah gagal ('+xhr.status+')'));
+      if(typeof onProgress==='function') onProgress(file.size, file.size);
+      resolve();
+    };
+    xhr.onerror=function(){ reject(new Error('Koneksi terputus saat mengunggah. Periksa jaringan lalu ulangi.')); };
+    xhr.onabort=function(){ reject(new Error('Unggahan dibatalkan.')); };
+    xhr.send(file);
+  });
+}
+async function fkStoragePut(path, file, onProgress){
   if(fkIsDemo()){
     const up=await db.storage.from(FK_BUCKET).upload(path, file,
       {contentType:file.type||'application/octet-stream', upsert:true});
-    if(up.error) throw up.error; return;
+    if(up.error) throw up.error;
+    if(typeof onProgress==='function') onProgress(file.size, file.size);
+    return;
   }
-  const resp=await fetch(R2_GATEWAY_URL+'/api/file?path='+encodeURIComponent(path),{
-    method:'POST',
-    headers:{'Authorization':'Bearer '+fkAuthToken(),
-             'X-File-Content-Type':file.type||'application/octet-stream'},
-    body:file
-  });
-  if(resp.status===401) throw new Error('Sesi berakhir — silakan login ulang.');
-  if(!resp.ok) throw new Error('Unggah gagal ('+resp.status+')');
+  await r2XhrPut(path, file, onProgress);
 }
 
 /* Ambil bytes file dari R2 (via Worker) — atau dari sandbox demo. Balikan: Blob / null. */
@@ -7115,11 +7138,11 @@ const FileKontrak = {
   /* Simpan file ke Storage lalu simpan metadata (path) ke tabel.
      onProgress opsional (0..1) — hanya mencakup pembacaan; Storage upload
      tidak melaporkan progres granular, jadi diteruskan oleh pemanggil. */
-  async saveFile(modul, recordId, file, meta){
+  async saveFile(modul, recordId, file, meta, onProgress){
     const safe=String(file.name||'file').replace(/[^\w.\-]+/g,'_');
     const path=`${modul}/${String(recordId)}/${Date.now()}_${safe}`;
     // Unggah file mentah (Blob) ke R2 lewat Worker — TANPA base64, tanpa batas payload DB
-    await fkStoragePut(path, file);
+    await fkStoragePut(path, file, onProgress);
     // Ambil path lama (bila ada) agar bisa dibersihkan setelah metadata diganti
     let oldPath=null;
     try{
@@ -7182,10 +7205,14 @@ function fkFileToBase64Progress(file, onProgress){
   });
 }
 /* ---- Kontrol overlay progres unggah ---- */
+let _pnUpStat=null;   // { t0, last, lastT, bps } — dasar hitung kecepatan & sisa waktu
 function pnUploadProgressOpen(fname){
   const ov=document.getElementById('pn-upload-overlay'); if(!ov) return;
   const t=document.getElementById('pn-upload-title'); if(t) t.textContent='Mengunggah file…';
   const fn=document.getElementById('pn-upload-fname'); if(fn) fn.textContent=fname||'';
+  const st=document.getElementById('pn-upload-stats'); if(st) st.textContent='Menyiapkan…';
+  const now=(window.performance&&performance.now)?performance.now():Date.now();
+  _pnUpStat={ t0:now, last:0, lastT:now, bps:0 };
   pnUploadProgressSet(0);
   ov.classList.add('show');
 }
@@ -7194,12 +7221,66 @@ function pnUploadProgressSet(pct){
   const bar=document.getElementById('pn-upload-bar'); if(bar) bar.style.width=pct+'%';
   const lab=document.getElementById('pn-upload-pct'); if(lab) lab.textContent=pct+'%';
 }
+/* Ganti judul overlay saat memasuki tahap lain (mis. menyimpan metadata). */
+function pnUploadProgressPhase(txt){
+  const t=document.getElementById('pn-upload-title'); if(t) t.textContent=txt||'';
+}
+function pnFmtSpeed(bps){
+  if(!bps || !isFinite(bps) || bps<=0) return '—';
+  const mbps=bps*8/1e6;
+  const utama = bps<1048576 ? (bps/1024).toFixed(0)+' KB/s' : (bps/1048576).toFixed(2)+' MB/s';
+  return utama+' ('+mbps.toFixed(1)+' Mbps)';
+}
+function pnFmtEta(det){
+  if(!isFinite(det) || det<0) return '—';
+  det=Math.round(det);
+  if(det<60) return det+' dtk';
+  const m=Math.floor(det/60);
+  if(m<60) return m+' mnt '+String(det%60).padStart(2,'0')+' dtk';
+  return Math.floor(m/60)+' jam '+String(m%60).padStart(2,'0')+' mnt';
+}
+/* Dipanggil dari xhr.upload.onprogress: menampilkan byte terkirim, kecepatan
+   rata-rata bergerak, dan perkiraan sisa waktu. */
+function pnUploadProgressBytes(loaded, total){
+  const now=(window.performance&&performance.now)?performance.now():Date.now();
+  let st=_pnUpStat;
+  if(!st) st=_pnUpStat={ t0:now, last:0, lastT:now, bps:0 };
+  const dt=(now-st.lastT)/1000;
+  if(dt>=0.3){
+    const inst=(loaded-st.last)/dt;
+    /* rata-rata bergerak eksponensial supaya angkanya tidak berkedip */
+    st.bps = st.bps>0 ? (st.bps*0.7 + inst*0.3) : inst;
+    st.last=loaded; st.lastT=now;
+  }
+  if(st.bps<=0){
+    const el=(now-st.t0)/1000;
+    if(el>0.5) st.bps=loaded/el;
+  }
+  pnUploadProgressSet(total ? (loaded/total)*100 : 0);
+  const el=document.getElementById('pn-upload-stats');
+  if(el){
+    let txt=fkFmtSize(loaded)+' / '+fkFmtSize(total)+' · '+pnFmtSpeed(st.bps);
+    if(loaded<total && st.bps>0) txt+=' · sisa '+pnFmtEta((total-loaded)/st.bps);
+    el.textContent=txt;
+  }
+}
 function pnUploadProgressDone(cb){
   pnUploadProgressSet(100);
   const t=document.getElementById('pn-upload-title'); if(t) t.textContent='Selesai';
+  const st=document.getElementById('pn-upload-stats');
+  if(st && _pnUpStat){
+    const now=(window.performance&&performance.now)?performance.now():Date.now();
+    const el=(now-_pnUpStat.t0)/1000;
+    st.textContent='Selesai dalam '+pnFmtEta(el);
+  }
+  _pnUpStat=null;
   setTimeout(()=>{ const ov=document.getElementById('pn-upload-overlay'); if(ov) ov.classList.remove('show'); if(typeof cb==='function') cb(); }, 480);
 }
-function pnUploadProgressClose(){ const ov=document.getElementById('pn-upload-overlay'); if(ov) ov.classList.remove('show'); }
+function pnUploadProgressClose(){
+  _pnUpStat=null;
+  const st=document.getElementById('pn-upload-stats'); if(st) st.textContent='';
+  const ov=document.getElementById('pn-upload-overlay'); if(ov) ov.classList.remove('show');
+}
 function fkB64ToBlob(b64, mime){
   const bin=atob(b64||''); const len=bin.length; const bytes=new Uint8Array(len);
   for(let i=0;i<len;i++) bytes[i]=bin.charCodeAt(i);
@@ -7536,22 +7617,17 @@ async function fkUploadFile(modul, recordId, file, btn){
   if(file.size > FK_MAX_MB*1048576){ toast(`Ukuran file melebihi batas ${FK_MAX_MB} MB`,'warn'); return; }
   if(btn) btn.classList.add('is-busy');
   pnUploadProgressOpen(file.name);
-  let creep=null;
   try{
     const rec=FK_MODULES[modul].list().find(r=>String(r.id)===String(recordId));
     const meta={
       nama_pekerjaan: rec?(FK_MODULES[modul].nama(rec)||null):null,
       bidang_pelaksana: rec?(FK_MODULES[modul].bidang(rec)||null):null
     };
-    // Progres mengunggah tidak granular; jalankan animasi 5 -> 92% selama proses
-    let p=5; pnUploadProgressSet(p);
-    creep=setInterval(()=>{ p=Math.min(92,p+3); pnUploadProgressSet(p); }, 140);
-    await FileKontrak.saveFile(modul, recordId, file, meta);
+    await FileKontrak.saveFile(modul, recordId, file, meta, pnUploadProgressBytes);
+    pnUploadProgressPhase('Menyimpan data…');
     await fkEnsureMeta(modul, true);
-    clearInterval(creep); creep=null;
     pnUploadProgressDone(()=>{ toast('File diunggah — kontrak dipindahkan ke Lihat Kontrak','ok'); renderFkInput(); });
   }catch(err){
-    if(creep) clearInterval(creep);
     pnUploadProgressClose();
     console.error(err);
     toast('Gagal mengunggah file: '+errMsg(err),'err');
@@ -8676,25 +8752,15 @@ const DPENG_IC_DOC  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor
    Akun DEMO memakai Supabase Storage sandbox (tidak menyentuh R2).
    ================================================================== */
 function dpengIsDemo(){ return currentRole==='demo'; }
-async function dpengStoragePut(path, file){
+async function dpengStoragePut(path, file, onProgress){
   if(dpengIsDemo()){
     const up=await db.storage.from(DPENG_BUCKET).upload(path, file,
       {contentType:file.type||'application/octet-stream', upsert:true});
-    if(up.error) throw up.error; return;
+    if(up.error) throw up.error;
+    if(typeof onProgress==='function') onProgress(file.size, file.size);
+    return;
   }
-  const resp=await fetch(R2_GATEWAY_URL+'/api/file?path='+encodeURIComponent(path),{
-    method:'POST',
-    headers:{'Authorization':'Bearer '+fkAuthToken(),
-             'X-File-Content-Type':file.type||'application/octet-stream'},
-    body:file
-  });
-  if(resp.status===401) throw new Error('Sesi berakhir — silakan login ulang.');
-  /* 413 = berkas melampaui batas body permintaan Cloudflare Worker
-     (Free/Pro 100 MB, Business 200 MB, Enterprise 500 MB). Batas ini milik
-     Cloudflare, bukan aplikasi, jadi pesannya dibuat spesifik agar tidak
-     tertukar dengan kegagalan jaringan biasa. */
-  if(resp.status===413) throw new Error('Berkas terlalu besar untuk gateway Cloudflare. Silakan kompres atau pecah berkasnya.');
-  if(!resp.ok) throw new Error('Unggah gagal ('+resp.status+')');
+  await r2XhrPut(path, file, onProgress);
 }
 async function dpengStorageGet(path){
   if(dpengIsDemo()){
@@ -9326,9 +9392,8 @@ async function dpengFilePicked(ev){
   const oldPath=docs[idx].path||'';
   try{
     if(typeof pnUploadProgressOpen==='function') pnUploadProgressOpen(file.name);
-    if(typeof pnUploadProgressSet==='function') pnUploadProgressSet(30);
-    await dpengStoragePut(path, file);
-    if(typeof pnUploadProgressSet==='function') pnUploadProgressSet(75);
+    await dpengStoragePut(path, file, pnUploadProgressBytes);
+    if(typeof pnUploadProgressPhase==='function') pnUploadProgressPhase('Menyimpan data…');
     docs[idx].path=path; docs[idx].nama_file=file.name;
     docs[idx].ukuran=file.size; docs[idx].mime=file.type||'application/octet-stream';
     docs[idx].uploaded_at=new Date().toISOString();
