@@ -8958,8 +8958,8 @@ function dpengGotoPage(p){
 
 /* ==================================================================
    POP UP "LIHAT" — seluruh dokumen satu pekerjaan secara berurutan.
-   Dokumen yang berkasnya SUDAH ada memiliki tombol Lihat untuk membuka
-   pratinjau; yang belum diunggah tampil redup (tanpa tombol).
+   Nama dokumen yang berkasnya SUDAH ada dapat diklik untuk membuka pratinjau
+   (biru & bergaris bawah saat disorot); yang belum diunggah tampil redup.
    ================================================================== */
 let dpengDocListId=null;
 function dpengOpenDocList(recId){
@@ -8986,7 +8986,7 @@ function renderDpengDocList(){
   if(subEl) subEl.textContent=(dpengBidang(rec)||'—')+' · '+terisi+' dari '+docs.length+' dokumen sudah terunggah';
   if(!docs.length){ body.innerHTML='<div class="dpeng-list-empty">Pekerjaan ini belum memiliki jenis dokumen. Gunakan tombol Ubah untuk memilih dokumen.</div>'; return; }
   const rid=fkEsc(String(rec.id));
-  body.innerHTML='<div class="dpeng-list-hint">Klik ikon Lihat untuk membuka pratinjau berkas.</div>'+
+  body.innerHTML='<div class="dpeng-list-hint">Arahkan kursor ke nama dokumen yang berkasnya sudah ada — klik untuk membuka pratinjau.</div>'+
     '<ol class="dpeng-list-items">'+docs.map((d,i)=>{
       const label=fkEsc(d.label||dpengDocLabel(d.group,d.key));
       const has=!!d.path;
@@ -8994,16 +8994,20 @@ function renderDpengDocList(){
       const meta = has
         ? '<span class="dpeng-list-file" title="'+fkEsc(d.nama_file||'')+'">'+fkEsc(d.nama_file||'Terunggah')+'</span>'
         : '<span class="dpeng-list-none">Belum diunggah</span>';
-      /* Pratinjau kini dibuka lewat tombol Lihat, bukan lewat klik pada baris. */
-      const lihat = has
-        ? '<button class="act act-view" title="Lihat" aria-label="Lihat" onclick="dpengPreview(\''+rid+'\',\''+fkEsc(d.key)+'\')">'+DPENG_IC_VIEW+'</button>'
-        : '';
+      /* Pratinjau dibuka dengan mengklik NAMA DOKUMEN (hanya bila berkas ada).
+         Penanda visualnya: teks berubah biru & bergaris bawah saat disorot. */
+      const buka='dpengPreview(\''+rid+'\',\''+fkEsc(d.key)+'\')';
+      const labelHtml = has
+        ? '<span class="dpeng-list-label is-link" tabindex="0" role="button"'+
+          ' title="Klik untuk membuka pratinjau"'+
+          ' onclick="'+buka+'"'+
+          ' onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();'+buka+';}">'+label+'</span>'
+        : '<span class="dpeng-list-label">'+label+'</span>';
       const attr = has ? ' class="dpeng-list-item has-file"' : ' class="dpeng-list-item no-file"';
       return '<li'+attr+'>'+
         '<span class="dpeng-list-no">'+(i+1)+'</span>'+
         tag+
-        '<span class="dpeng-list-main"><span class="dpeng-list-label">'+label+'</span>'+meta+'</span>'+
-        '<span class="dpeng-list-act">'+lihat+'</span>'+
+        '<span class="dpeng-list-main">'+labelHtml+meta+'</span>'+
       '</li>';
     }).join('')+'</ol>';
 }
