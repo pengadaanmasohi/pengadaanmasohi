@@ -2690,6 +2690,10 @@ tbody tr:hover{background:#dceaed !important}
 .rho-ongkir-bar{display:flex;gap:14px;flex-wrap:wrap;justify-content:flex-end;margin:0 0 14px}
 .rho-ongkir-bar .field{min-width:180px;margin:0}
 input.rho-input-locked{background:#f1f4f6;color:#9aa7ad;cursor:not-allowed;border-style:dashed}
+/* Berlaku juga untuk <select> yang terkunci (mis. Bidang Pelaksana pada
+   Dokumen Pengadaan saat diisi otomatis dari menu Data Pekerjaan). */
+select.rho-input-locked{background:#f1f4f6;color:#9aa7ad;cursor:not-allowed;border-style:dashed}
+input.rho-input-locked[readonly]{color:#5d6b74}
 .rho-item-row{display:flex;align-items:center;gap:12px;background:linear-gradient(180deg,#ffffff,#f6fbfc);border:1px solid #dbe7ea;border-radius:12px;padding:9px 12px}
 .rho-item-row:hover{border-color:#bcd6d9;box-shadow:0 3px 10px rgba(16,40,50,.07)}
 .rho-item-no{flex:0 0 auto;width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--teal),var(--cyan));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12.5px;font-family:'Plus Jakarta Sans'}
@@ -5466,4 +5470,182 @@ table tfoot tr:hover td{ background:inherit !important; color:inherit; }
   .dpeng-list-body{padding:12px 12px 16px;max-height:74vh}
   .dpeng-list-item{align-items:flex-start;flex-wrap:wrap}
   .dpeng-list-label{white-space:normal}
+}
+
+/* =========================================================================
+   EFEK 3D — SELURUH ISI MENU "DOKUMEN"
+   Berlaku pada: Perjanjian/Kontrak (#view-fk-view), Dokumen Pengadaan
+   (#view-dpeng-view & #view-dpeng-unggah), Materi & Peraturan
+   (#view-materi-view), serta pop up milik Dokumen Pengadaan.
+   Pendekatan: perspective pada wadah + bayangan berlapis (ambient + kontak +
+   sorotan dalam) sehingga kartu, baris tabel, dan tombol terasa terangkat;
+   hover mengangkat sedikit, klik menekannya kembali.
+   Tidak ada perubahan tata letak — hanya bayangan, gradien, & transform.
+   ========================================================================= */
+#view-fk-view,#view-dpeng-view,#view-dpeng-unggah,#view-materi-view{
+  perspective:1600px; perspective-origin:50% 0%;
+}
+
+/* ---------- Kartu utama: panel tabel, toolbar, kartu formulir ---------- */
+#view-fk-view .panel,#view-dpeng-view .panel,#view-materi-view .panel,
+#view-fk-view .toolbar,#view-dpeng-view .toolbar,
+#view-dpeng-unggah .form-card{
+  border-radius:16px;
+  transform-style:preserve-3d;
+  transition:transform .3s cubic-bezier(.16,1,.3,1),box-shadow .3s ease;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.92),
+    inset 0 -1px 0 rgba(16,40,50,.05),
+    0 1px 2px rgba(16,40,50,.07),
+    0 6px 12px rgba(16,40,50,.07),
+    0 16px 28px rgba(16,40,50,.09),
+    0 32px 56px rgba(16,40,50,.07);
+}
+#view-fk-view .panel:hover,#view-dpeng-view .panel:hover,#view-materi-view .panel:hover,
+#view-dpeng-unggah .form-card:hover{
+  transform:translateY(-4px) rotateX(.6deg);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.95),
+    inset 0 -1px 0 rgba(16,40,50,.05),
+    0 2px 4px rgba(16,40,50,.08),
+    0 10px 20px rgba(16,40,50,.10),
+    0 24px 44px rgba(16,40,50,.12),
+    0 46px 78px rgba(16,40,50,.09);
+}
+#view-fk-view .toolbar:hover,#view-dpeng-view .toolbar:hover{ transform:translateY(-2px) }
+
+/* ---------- Kepala tabel: terasa menonjol di atas badan tabel ---------- */
+#view-fk-view .panel thead th,#view-dpeng-view .panel thead th{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 3px 8px rgba(16,40,50,.16);
+  text-shadow:0 1px 1px rgba(9,63,69,.35);
+}
+
+/* ---------- Baris tabel: melayang saat disorot ---------- */
+#view-fk-view .panel tbody tr,#view-dpeng-view .panel tbody tr{
+  transition:transform .2s cubic-bezier(.16,1,.3,1),box-shadow .2s ease,background .2s ease;
+}
+#view-fk-view .panel tbody tr:hover,#view-dpeng-view .panel tbody tr:hover{
+  transform:translateY(-2px) scale(1.004);
+  box-shadow:0 6px 16px rgba(16,40,50,.13),0 1px 3px rgba(16,40,50,.08);
+  position:relative; z-index:1;
+}
+
+/* ---------- Tombol aksi: tombol fisik yang bisa ditekan ---------- */
+#view-fk-view .act,#view-dpeng-view .act,#view-dpeng-unggah .act,
+#dpeng-list-overlay .act{
+  transition:transform .16s cubic-bezier(.16,1,.3,1),box-shadow .16s ease,filter .16s ease;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.34),
+    inset 0 -2px 0 rgba(0,0,0,.16),
+    0 3px 6px rgba(16,40,50,.20),
+    0 1px 2px rgba(16,40,50,.14);
+}
+#view-fk-view .act:hover,#view-dpeng-view .act:hover,#view-dpeng-unggah .act:hover,
+#dpeng-list-overlay .act:hover{
+  transform:translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.40),
+    inset 0 -2px 0 rgba(0,0,0,.16),
+    0 7px 14px rgba(16,40,50,.26),
+    0 2px 4px rgba(16,40,50,.16);
+  filter:brightness(1.05);
+}
+#view-fk-view .act:active,#view-dpeng-view .act:active,#view-dpeng-unggah .act:active,
+#dpeng-list-overlay .act:active{
+  transform:translateY(1px);
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.26),0 1px 1px rgba(16,40,50,.14);
+}
+
+/* ---------- Tombol biasa (Unggah Dokumen, Reset, Simpan, dll.) ---------- */
+#view-fk-view .btn,#view-dpeng-view .btn,#view-dpeng-unggah .btn,
+#dpeng-doc-overlay .btn,#dpeng-list-overlay .btn{
+  transition:transform .16s cubic-bezier(.16,1,.3,1),box-shadow .16s ease,filter .16s ease;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.28),
+    inset 0 -2px 0 rgba(0,0,0,.14),
+    0 4px 9px rgba(16,40,50,.18),
+    0 1px 2px rgba(16,40,50,.12);
+}
+#view-fk-view .btn:hover,#view-dpeng-view .btn:hover,#view-dpeng-unggah .btn:hover,
+#dpeng-doc-overlay .btn:hover,#dpeng-list-overlay .btn:hover{
+  transform:translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.34),
+    inset 0 -2px 0 rgba(0,0,0,.14),
+    0 9px 18px rgba(16,40,50,.24),
+    0 2px 5px rgba(16,40,50,.14);
+}
+#view-fk-view .btn:active,#view-dpeng-view .btn:active,#view-dpeng-unggah .btn:active,
+#dpeng-doc-overlay .btn:active,#dpeng-list-overlay .btn:active{
+  transform:translateY(1px);
+  box-shadow:inset 0 3px 7px rgba(0,0,0,.22),0 1px 1px rgba(16,40,50,.12);
+}
+
+/* ---------- Baris "Unggah Berkas" pada halaman unggah ---------- */
+#view-dpeng-unggah .dpeng-uprow{
+  transition:transform .22s cubic-bezier(.16,1,.3,1),box-shadow .22s ease;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 2px 5px rgba(16,40,50,.07),0 8px 16px rgba(16,40,50,.06);
+}
+#view-dpeng-unggah .dpeng-uprow:hover{
+  transform:translateY(-3px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 4px 9px rgba(16,40,50,.10),0 14px 26px rgba(16,40,50,.11);
+}
+
+/* ---------- Nomor & lencana: bulatan timbul ---------- */
+#view-dpeng-unggah .dpeng-uprow-no,#dpeng-list-overlay .dpeng-list-no{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 -2px 0 rgba(0,0,0,.14),0 2px 4px rgba(16,40,50,.20);
+}
+#view-dpeng-view .dpeng-count-chip,#view-dpeng-unggah .dpeng-up-prog{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 1px 2px rgba(16,40,50,.12);
+}
+
+/* ---------- Pop up milik Dokumen Pengadaan ---------- */
+#dpeng-list-overlay .modal,#dpeng-doc-overlay .modal{
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.6),
+    0 4px 10px rgba(9,63,69,.18),
+    0 22px 44px rgba(9,63,69,.26),
+    0 48px 92px rgba(9,63,69,.30);
+}
+#dpeng-list-overlay .dpeng-list-item{
+  transform-style:preserve-3d;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 2px 4px rgba(16,40,50,.07),0 7px 14px rgba(16,40,50,.06);
+}
+#dpeng-list-overlay .dpeng-list-item.has-file:hover{
+  transform:translateY(-3px) scale(1.006);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 5px 10px rgba(37,99,235,.16),0 16px 30px rgba(37,99,235,.20);
+}
+#dpeng-doc-overlay .pn-check-item{
+  transition:transform .18s cubic-bezier(.16,1,.3,1),box-shadow .18s ease,border-color .18s ease;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 1px 2px rgba(16,40,50,.06),0 4px 9px rgba(16,40,50,.05);
+}
+#dpeng-doc-overlay .pn-check-item:hover{
+  transform:translateY(-2px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 3px 6px rgba(16,40,50,.09),0 10px 20px rgba(16,40,50,.09);
+}
+#dpeng-doc-overlay .pn-check-box{ box-shadow:inset 0 1px 2px rgba(16,40,50,.12) }
+#dpeng-doc-overlay input:checked+.pn-check-box{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 2px 5px rgba(14,124,134,.35);
+}
+
+/* ---------- Judul halaman & kartu: sedikit terangkat dari latar ---------- */
+#view-fk-view .page-head h2,#view-dpeng-view .page-head h2,
+#view-dpeng-unggah .page-head h2,#view-materi-view .page-head h2{
+  text-shadow:0 1px 0 rgba(255,255,255,.9),0 2px 4px rgba(16,40,50,.12);
+}
+#view-dpeng-unggah .form-section-title,#view-fk-view .form-section-title{
+  text-shadow:0 1px 0 rgba(255,255,255,.85);
+}
+
+/* ---------- Kolom input: sedikit cekung agar kontras dgn kartu timbul ---------- */
+#view-fk-view .filter-field input,#view-fk-view .filter-field select,
+#view-dpeng-view .filter-field input,#view-dpeng-view .filter-field select,
+#view-dpeng-unggah .field input,#view-dpeng-unggah .field select{
+  box-shadow:inset 0 2px 4px rgba(16,40,50,.07),inset 0 -1px 0 rgba(255,255,255,.9);
+}
+
+/* Hormati preferensi pengguna yang meminimalkan animasi */
+@media (prefers-reduced-motion:reduce){
+  #view-fk-view *,#view-dpeng-view *,#view-dpeng-unggah *,#view-materi-view *,
+  #dpeng-list-overlay *,#dpeng-doc-overlay *{ transition:none!important;transform:none!important }
 }

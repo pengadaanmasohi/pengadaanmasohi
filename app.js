@@ -8608,7 +8608,8 @@ const DPENG_DOCS = {
     'Nota Dinas Usulan Calon Pemenang (eproc)',
     'Surat Penetapan Penyedia Barang/Jasa',
     'Surat Penunjukan Penyedia Barang/Jasa',
-    'Contract Discussion Agreement (CDA)'
+    'Contract Discussion Agreement (CDA)',
+    'Dokumen Penawaran Penyedia'
   ]
 };
 /* Kunci stabil per jenis dokumen (grup + indeks), dipakai untuk mencocokkan
@@ -8956,17 +8957,29 @@ function dpengFormHtml(){
   const nPick=Object.values(u.picks).filter(Boolean).length;
   const tglDis=u.tglLocked?' disabled title="Terisi otomatis dari Kelengkapan Dokumen"':'';
   const tglCls=u.tglLocked?' class="rho-input-locked"':'';
+  /* Terkunci bila diisi dari menu Data Pekerjaan: Nama Pekerjaan readonly,
+     Bidang Pelaksana disabled (nilainya tetap terbaca saat disimpan). */
+  const dpLock = !!u.dpLocked;
+  const namaAtr = dpLock
+    ? ' class="rho-input-locked" readonly title="Terisi otomatis dari Data Pekerjaan"'
+    : '';
+  const bidangAtr = dpLock
+    ? ' class="rho-input-locked" disabled title="Terisi otomatis dari Data Pekerjaan"'
+    : '';
   return '' +
   '<div class="form-card">' +
-    '<div class="form-section-title">'+(typeof KR_SECTION_ICON!=='undefined'?KR_SECTION_ICON:'')+'Data Pekerjaan</div>' +
+    '<div class="form-section-title">'+(typeof KR_SECTION_ICON!=='undefined'?KR_SECTION_ICON:'')+'Data Pekerjaan'+
+      (typeof dpPickBtnHtml==='function'?dpPickBtnHtml('dpeng'):'')+'</div>' +
     /* Satu baris horizontal: Nama Pekerjaan | Bidang Pelaksana | Tgl. Terima Dokumen.
        Bidang & Tgl. selebar isinya (opsi terpanjang atau judul field, mana yang
        lebih lebar); Nama Pekerjaan mengambil seluruh sisa ruang. */
     '<div class="dpeng-frow">' +
       '<div class="field dpeng-f-nama"><label>Nama Pekerjaan <span class="req">*</span></label>' +
-        '<input id="dpeng-f-nama" type="text" value="'+fkEsc(u.nama)+'" oninput="dpengNamaInput()" onchange="dpengSyncTgl()" placeholder="Ketik nama pekerjaan"></div>' +
+        '<input id="dpeng-f-nama" type="text" value="'+fkEsc(u.nama)+'" oninput="dpengNamaInput()" onchange="dpengSyncTgl()" placeholder="Ketik nama pekerjaan atau gunakan Pilih Pekerjaan"'+namaAtr+'>' +
+        (dpLock?'<div class="dpeng-hint">Otomatis dari Data Pekerjaan</div>':'') + '</div>' +
       '<div class="field dpeng-f-bidang"><label>Bidang Pelaksana <span class="req">*</span></label>' +
-        '<select id="dpeng-f-bidang"><option value="">— Pilih —</option>'+bidangOpts+'</select></div>' +
+        '<select id="dpeng-f-bidang"'+bidangAtr+'><option value="">— Pilih —</option>'+bidangOpts+'</select>' +
+        (dpLock?'<div class="dpeng-hint">Otomatis dari Data Pekerjaan</div>':'') + '</div>' +
       '<div class="field dpeng-f-tgl"><label>Tgl. Terima Dokumen <span class="req">*</span></label>' +
         '<input id="dpeng-f-tgl" type="date"'+tglCls+' value="'+fkEsc(u.tgl)+'"'+tglDis+'>' +
         (u.tglLocked?'<div class="dpeng-hint">Otomatis dari Kelengkapan Dokumen (pekerjaan yang sama)</div>':'') + '</div>' +
@@ -8984,6 +8997,48 @@ function dpengFormHtml(){
   '<div class="jp-actions" style="justify-content:flex-end;margin-top:14px;gap:10px">' +
     '<button class="btn btn-red" onclick="dpengUnggahBatal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg> Batal</button>' +
   '</div>';
+}
+/* ---- Tautan ke menu Data Pekerjaan ----
+   Memilih satu Data Pekerjaan akan MENGISI OTOMATIS Nama Pekerjaan & Bidang
+   Pelaksana lalu MENGUNCI keduanya (tidak dapat diketik/diubah), sedangkan
+   Tgl. Terima Dokumen diambil dari menu Kelengkapan Dokumen Pengadaan untuk
+   pekerjaan dengan nama yang sama. Data Pekerjaan yang sudah dipakai arsip
+   dokumen lain ditandai "Sudah digunakan" pada daftar pilihan dan ditolak. */
+function dpengApplyDp(rec){
+  const u=dpengState.unggah; if(!u){ toast('Buka dulu formulir Unggah Dokumen','warn'); return; }
+  const info=(rec.state&&rec.state.info)||{};
+  u.dpId  = String(rec.id);
+  u.nama  = String(rec.nama_pekerjaan || info.nama || '').trim();
+  u.bidang= String(info.bidang_pelaksana || rec.bidang_pelaksana || '').trim();
+  u.dpLocked = true;
+  renderDpengUnggah();
+  /* Tgl. Terima Dokumen diambil dari menu Kelengkapan Dokumen Pengadaan.
+     Datanya dimuat dulu bila cache masih kosong (mis. halaman Kelengkapan
+     belum pernah dibuka pada sesi ini), baru tanggalnya diterapkan. */
+  const terapkanTgl=function(){
+    if(dpengState.unggah!==u) return;   // formulir sudah berganti/ditutup
+    const t=dpengTglFromKelengkapan(u.nama);
+    if(t){ u.tgl=t; u.tglLocked=true; } else { u.tgl=''; u.tglLocked=false; }
+    renderDpengUnggah();
+    if(!u.bidang) toast('Data pekerjaan diterapkan — Bidang Pelaksana belum diisi di Data Pekerjaan','warn');
+    else if(!t)   toast('Data pekerjaan diterapkan — Tgl. Terima belum ada di Kelengkapan Dokumen','warn');
+    else          toast('Data pekerjaan berhasil diterapkan','ok');
+  };
+  const perluMuat = typeof refreshDataKelengkapan==='function' &&
+                    !((typeof records_kelengkapan!=='undefined'?records_kelengkapan:[])||[]).length;
+  if(perluMuat){
+    try{
+      const p=refreshDataKelengkapan();
+      if(p && p.then) p.then(terapkanTgl).catch(terapkanTgl); else terapkanTgl();
+    }catch(e){ terapkanTgl(); }
+  }else terapkanTgl();
+}
+function dpengLepasDp(){
+  const u=dpengState.unggah; if(!u) return;
+  delete u.dpId; u.dpLocked=false;
+  u.nama=''; u.bidang=''; u.tgl=''; u.tglLocked=false;
+  renderDpengUnggah();
+  toast('Pilihan Data Pekerjaan dilepas','ok');
 }
 function dpengNamaInput(){
   const u=dpengState.unggah; if(!u) return;
@@ -13286,7 +13341,8 @@ let _dpPickerTarget=null;   // 'hps' | 'ana'
 const DP_USE_REFRESH = {
   hps:'refreshDataHps', ana:'refreshDataAnalisa', rho:'refreshDataRho',
   pnw:'refreshDataPembukaan', fkl:'refreshDataKelengkapan',
-  jadwal:'refreshDataJadwal', spk:'refreshDataSpk'
+  jadwal:'refreshDataJadwal', spk:'refreshDataSpk',
+  dpeng:'refreshDataDpeng'
 };
 async function dpRefreshTarget(target){
   const fn=DP_USE_REFRESH[target];
@@ -13346,7 +13402,13 @@ const DP_USE_TARGETS = {
   pnw:    { label:'Pembukaan Penawaran',   list:()=>(typeof records_pembukaan!=='undefined'?records_pembukaan:[]),   edit:()=>(typeof pnwEditId!=='undefined'?pnwEditId:null) },
   fkl:    { label:'Kelengkapan Dokumen',   list:()=>(typeof records_kelengkapan!=='undefined'?records_kelengkapan:[]), edit:()=>(typeof fklEditId!=='undefined'?fklEditId:null) },
   jadwal: { label:'Jadwal Pengadaan',      list:()=>(typeof records_jadwal!=='undefined'?records_jadwal:[]),   edit:()=>(typeof jpEditId!=='undefined'?jpEditId:null) },
-  spk:    { label:'Kontrak (SPK)',         list:()=>(typeof records_spk!=='undefined'?records_spk:[]),         edit:()=>(typeof spkEditId!=='undefined'?spkEditId:null) }
+  spk:    { label:'Kontrak (SPK)',         list:()=>(typeof records_spk!=='undefined'?records_spk:[]),         edit:()=>(typeof spkEditId!=='undefined'?spkEditId:null) },
+  /* Dokumen Pengadaan: satu pekerjaan = satu arsip dokumen. Record-nya tidak
+     menyimpan tautan dpId (tabelnya tidak punya kolom itu), sehingga pencocokan
+     jatuh ke cadangan lewat NAMA pekerjaan di dalam dpUsedBy — sudah memadai
+     karena nama pekerjaan disalin apa adanya saat pilihan diterapkan. */
+  dpeng:  { label:'Dokumen Pengadaan',     list:()=>(typeof records_dpeng!=='undefined'?records_dpeng:[]),
+            edit:()=>((typeof dpengState!=='undefined' && dpengState.unggah)?dpengState.unggah.editId:null) }
 };
 /* Ambil tautan Data Pekerjaan dari sebuah record — bentuk penyimpanannya berbeda
    antar modul (state.info.dpId / info.dpId / state.dpId / data.__dpId). */
@@ -13394,6 +13456,7 @@ function dpPickerSelect(id){
   else if(_dpPickerTarget==='jadwal' && typeof jadwalApplyDp==='function') jadwalApplyDp(rec);
   else if(_dpPickerTarget==='pn' && typeof pnApplyDp==='function') pnApplyDp(rec);
   else if(_dpPickerTarget==='spk' && typeof spkApplyDp==='function') spkApplyDp(rec);
+  else if(_dpPickerTarget==='dpeng' && typeof dpengApplyDp==='function') dpengApplyDp(rec);
   closeDpPicker();
 }
 /* Tombol seragam "Pilih Pekerjaan" (pojok kanan atas kartu Data Pekerjaan). */
@@ -13407,6 +13470,7 @@ function dpTargetPicked(target){
     if(target==='jadwal') return !!(jpState&&jpState.dpId);
     if(target==='pn') return !!(typeof pnState!=='undefined'&&pnState.ambil&&pnState.ambil.dpId);
     if(target==='spk') return !!(typeof spkState!=='undefined'&&spkState&&spkState.data&&spkState.data.__dpId);
+    if(target==='dpeng') return !!(typeof dpengState!=='undefined'&&dpengState.unggah&&dpengState.unggah.dpId);
   }catch(e){}
   return false;
 }
@@ -13432,6 +13496,7 @@ function dpCancelPick(target){
   else if(target==='jadwal') jadwalCancelDp();
   else if(target==='pn' && typeof pnLepasDp==='function') pnLepasDp();
   else if(target==='spk' && typeof spkLepasDp==='function') spkLepasDp();
+  else if(target==='dpeng' && typeof dpengLepasDp==='function') dpengLepasDp();
 }
 function pnwCancelDp(){
   const st=pnwState; if(!st.info) return;
