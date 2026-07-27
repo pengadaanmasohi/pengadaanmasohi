@@ -5905,10 +5905,25 @@ table tfoot tr:hover td{ background:inherit !important; color:inherit; }
   box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 2px 5px rgba(14,124,134,.35);
 }
 
-/* ---------- Judul halaman & seksi: sedikit terangkat dari latar ---------- */
-.view .page-head h2{ text-shadow:0 1px 0 rgba(255,255,255,.9),0 2px 4px rgba(16,40,50,.12) }
+/* ---------- Judul halaman & seksi: sedikit terangkat dari latar ----------
+   JANGAN pasang text-shadow pada judul BERGRADASI. Judul Dashboard memakai
+   `background-clip:text` + `-webkit-text-fill-color:transparent` (baris ~207):
+   hurufnya sendiri TRANSPARAN dan warnanya datang dari gradasi latar di
+   belakangnya. Bila diberi text-shadow, yang tampak justru bayangan putih itu
+   MENEMBUS huruf — judul berubah jadi siluet pudar dan tidak terbaca
+   (dilaporkan pada "Dashboard Kontrak Rinci"). Karena itu Dashboard dilewati,
+   dan di bawahnya ada pengaman untuk seluruh teks bergradasi lain. */
+.view:not(#view-dashboard) .page-head h2{ text-shadow:0 1px 0 rgba(255,255,255,.9),0 2px 4px rgba(16,40,50,.12) }
 .view .form-section-title,
 .view .panel-head{ text-shadow:0 1px 0 rgba(255,255,255,.85) }
+
+/* Pengaman teks bergradasi — bobot ID/kelas dibuat lebih tinggi dari aturan di
+   atas supaya tetap aman bila kelak ada judul bergradasi baru di halaman lain. */
+#view-dashboard .page-head h2,
+.view .page-head h2[style*="text-fill"],
+.view .card .v,
+.view .li-title,
+.view .rl-text{ text-shadow:none }
 
 /* ---------- Kolom isian: sedikit cekung agar kontras dgn kartu timbul ---------- */
 .view .filter-field input,
