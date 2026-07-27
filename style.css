@@ -5397,6 +5397,14 @@ table tfoot tr:hover td{ background:inherit !important; color:inherit; }
 .dpeng-frow>.dpeng-f-bidang select,
 .dpeng-frow>.dpeng-f-tgl input{width:100%}
 .dpeng-f-dok{margin-top:16px}
+/* Baris "Dokumen": label di kiri, tombol Pilih/Unggah/Kembali sebaris di kanan */
+.dpeng-f-dok.dpeng-dok-row{display:flex;flex-direction:row;align-items:center;gap:14px;margin-top:20px;padding-top:16px;border-top:1px solid var(--line)}
+.dpeng-f-dok.dpeng-dok-row>label{margin:0;flex:0 0 auto}
+.dpeng-f-dok.dpeng-dok-row>.pn-doc-bar{margin-top:0;padding-top:0;border-top:none;margin-left:auto;flex-wrap:nowrap}
+@media(max-width:720px){
+  .dpeng-f-dok.dpeng-dok-row{flex-direction:column;align-items:stretch;gap:10px}
+  .dpeng-f-dok.dpeng-dok-row>.pn-doc-bar{margin-left:0;flex-wrap:wrap;justify-content:flex-start}
+}
 @media(max-width:820px){
   .dpeng-frow>.field{flex:1 1 100%!important;width:100%!important}
 }
