@@ -5704,3 +5704,274 @@ table tfoot tr:hover td{ background:inherit !important; color:inherit; }
   position:sticky;top:0;z-index:2}
 .dpeng-xls-scroll tr:nth-child(even) td{background:#fbfdfe}
 .dpeng-xls-scroll tr:nth-child(even) td:first-child{background:#f7fafb}
+
+/* =========================================================================
+   EFEK 3D — SELURUH MENU APLIKASI
+   Menyamakan kedalaman seluruh halaman dengan menu "Dokumen → Dokumen
+   Pengadaan". Blok ini adalah versi UMUM dari blok "EFEK 3D — SELURUH ISI
+   MENU DOKUMEN" di atas: yang di sana dikunci ke #view-fk-view/#view-dpeng-*,
+   di sini berlaku untuk SEMUA halaman lewat kelas `.view`.
+
+   TIDAK DISENTUH — pratinjau & cetak/PDF:
+   Seluruh dokumen pratinjau dan cetak (Kelengkapan, HPS, Analisa, Jadwal,
+   RHO, Rekap, SPK/Perjanjian) dibangun sebagai dokumen HTML MANDIRI di dalam
+   <iframe>/jendela baru (lihat fklDocShell/spkDocHtml). Berkas style.css ini
+   tidak pernah dimuat di sana, jadi tampilan cetak & PDF otomatis bebas dari
+   efek ini. Yang perlu dikecualikan secara manual hanyalah:
+     - #pn-preview-overlay  -> pop up "Pratinjau File" (bingkai iframe/PDF)
+     - .dpeng-xls-*         -> pratinjau isi Excel
+     - .spk-narasi-prev     -> pratinjau kerapian di form Susun Kontrak
+   Ditambah @media print di bawah yang mematikan bayangan & transform.
+
+   PENTING — kenapa memakai scale, bukan translate (sama seperti blok Dokumen):
+   translateY MEMINDAHKAN elemen menjauh dari kursor. Bila kursor ada di tepi
+   bawah tombol, elemennya kabur -> hover lepas -> kembali -> hover lagi,
+   puluhan kali per detik: kursor berkedip dan klik bisa gagal karena mousedown
+   & mouseup mendarat di elemen berbeda. scale() membesarkan kotak ke segala
+   arah sehingga titik yang tadinya di dalam TIDAK PERNAH keluar. Karena itu
+   wadah (kartu/panel/toolbar) TIDAK ditransform sama sekali, hanya elemen
+   interaktif yang memakai scale.
+   ========================================================================= */
+
+/* ---------- Ruang 3D tiap halaman ----------
+   Aman: seluruh pop up layar-penuh (.overlay, .spk-ov, .pnw-profil-ov,
+   .spk-we-nfmodal) ditempelkan ke <body>, bukan ke dalam .view, jadi
+   position:fixed miliknya tidak ikut terikat ke halaman ini. */
+.view{ perspective:1600px; perspective-origin:50% 0% }
+
+/* ---------- Kartu utama: kedalaman lewat bayangan berlapis (tanpa transform) ----------
+   Panel daftar memuat kolom beku & kepala tabel position:sticky. Transform pada
+   leluhurnya akan mematahkan sticky, jadi kedalaman di sini murni bayangan.
+
+   KENAPA `.view:not(#view-dashboard)` DAN BUKAN `.view` SAJA — dua tugas sekaligus:
+   (a) PENGUAT SPESIFISITAS. Halaman berbasis tabel (baris ~499) menata panel &
+       toolbar lewat pemilih ber-ID: `#view-list .panel, #view-list-pl .panel,
+       #view-list-tender .panel, #view-fk-input .panel, #view-pn-lihat .panel,
+       #view-fkl-view .panel` dengan bobot (1,1,0). Satu ID selalu menang atas
+       pemilih berbasis kelas, BERAPA PUN banyak kelasnya — jadi `.view .panel`
+       (0,2,0) tidak akan pernah berlaku di enam halaman itu. `:not(#…)` menyumbang
+       bobot ID sehingga pemilih ini jadi (1,2,0) dan menang.
+   (b) PENGECUALIAN DASHBOARD. Dashboard sudah punya rancangan 3D sendiri (kartu
+       KPI miring mengikuti kursor + panel grafik kaca buram, lihat blok "EFEK 3D —
+       DASHBOARD"). Menimpanya dengan bayangan umum ini akan merusak tampilan itu,
+       jadi Dashboard sengaja dilewati. */
+.view:not(#view-dashboard) .panel,
+.view:not(#view-dashboard) .toolbar,
+.view:not(#view-dashboard) .form-card,
+.view:not(#view-dashboard) .hl-tpl-bar{
+  border-radius:16px;
+  transition:box-shadow .3s ease;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.92),
+    inset 0 -1px 0 rgba(16,40,50,.05),
+    0 1px 2px rgba(16,40,50,.07),
+    0 6px 12px rgba(16,40,50,.07),
+    0 16px 28px rgba(16,40,50,.09),
+    0 32px 56px rgba(16,40,50,.07);
+}
+.view:not(#view-dashboard) .panel:hover,
+.view:not(#view-dashboard) .form-card:hover,
+.view:not(#view-dashboard) .hl-tpl-bar:hover{
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.95),
+    inset 0 -1px 0 rgba(16,40,50,.05),
+    0 2px 4px rgba(16,40,50,.08),
+    0 10px 20px rgba(16,40,50,.10),
+    0 24px 44px rgba(16,40,50,.12),
+    0 46px 78px rgba(16,40,50,.09);
+}
+
+/* ---------- Kepala tabel: menonjol di atas badan tabel ---------- */
+.view:not(#view-dashboard) .table-wrap thead th{
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.18),
+    0 3px 8px rgba(16,40,50,.16);
+  text-shadow:0 1px 1px rgba(9,63,69,.35);
+}
+
+/* ---------- Baris tabel: terangkat saat disorot ----------
+   TEMUAN saat pengujian (Chromium 141): blok menu "Dokumen" memakai
+   `transform:scale(1.006)` pada baris tabel, tetapi `transform` TIDAK BEKERJA
+   pada elemen `display:table-row`. Diuji langsung: `transform:scale(1.05)` pada
+   sebuah <tr> menghasilkan computed style `matrix(1,0,0,1,0,9.18)` — komponen
+   skalanya dibuang, tersisa geseran. Jadi di menu Dokumen pun yang benar-benar
+   terlihat adalah BAYANGANNYA, bukan pembesarannya. Karena itu di sini skala
+   sengaja tidak dipakai: hasil akhirnya sama persis, tanpa geseran sisa yang
+   tidak diinginkan. Kolom beku (td.col-nama-freeze, position:sticky) juga
+   dipastikan tetap di tempatnya — diukur 40px dari tepi panel sebelum maupun
+   saat baris disorot. */
+.view:not(#view-dashboard) .table-wrap tbody tr{
+  transition:box-shadow .2s ease,background .2s ease;
+}
+.view:not(#view-dashboard) .table-wrap tbody tr:hover{
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.85),
+    0 6px 16px rgba(16,40,50,.13),
+    0 1px 3px rgba(16,40,50,.08);
+  position:relative;
+  z-index:2;
+}
+
+/* ---------- Tombol aksi (ikon): tombol fisik yang bisa ditekan ---------- */
+.view .act:not([disabled]),
+.overlay:not(#pn-preview-overlay) .act:not([disabled]){
+  transition:transform .16s cubic-bezier(.16,1,.3,1),box-shadow .16s ease,filter .16s ease;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.34),
+    inset 0 -2px 0 rgba(0,0,0,.16),
+    0 3px 6px rgba(16,40,50,.20),
+    0 1px 2px rgba(16,40,50,.14);
+}
+.view .act:not([disabled]):hover,
+.overlay:not(#pn-preview-overlay) .act:not([disabled]):hover{
+  transform:scale(1.10);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.40),
+    inset 0 -2px 0 rgba(0,0,0,.16),
+    0 7px 14px rgba(16,40,50,.26),
+    0 2px 4px rgba(16,40,50,.16);
+  filter:brightness(1.05);
+}
+.view .act:not([disabled]):active,
+.overlay:not(#pn-preview-overlay) .act:not([disabled]):active{
+  transform:scale(.94);
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.26),0 1px 1px rgba(16,40,50,.14);
+}
+
+/* ---------- Tombol biasa ----------
+   scale menggantikan translateY bawaan .btn:hover — inilah yang menghilangkan
+   kursor berkedip & klik yang gagal di tepi bawah tombol. */
+.view .btn,
+.overlay:not(#pn-preview-overlay) .btn{
+  transition:transform .16s cubic-bezier(.16,1,.3,1),box-shadow .16s ease,filter .16s ease;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.28),
+    inset 0 -2px 0 rgba(0,0,0,.14),
+    0 4px 9px rgba(16,40,50,.18),
+    0 1px 2px rgba(16,40,50,.12);
+}
+.view .btn:hover,
+.overlay:not(#pn-preview-overlay) .btn:hover{
+  transform:scale(1.04);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.34),
+    inset 0 -2px 0 rgba(0,0,0,.14),
+    0 9px 18px rgba(16,40,50,.24),
+    0 2px 5px rgba(16,40,50,.14);
+}
+.view .btn:active,
+.overlay:not(#pn-preview-overlay) .btn:active{
+  transform:scale(.97);
+  box-shadow:inset 0 3px 7px rgba(0,0,0,.22),0 1px 1px rgba(16,40,50,.12);
+}
+/* Ikon di dalam tombol: jangan ikut melayang (translateZ bawaan + perspective
+   halaman membuatnya goyang saat tombolnya ikut membesar) */
+.view .btn:hover svg,
+.overlay:not(#pn-preview-overlay) .btn:hover svg{ transform:scale(1.08) }
+
+/* ---------- Pop up: bayangan dalam agar terasa jauh di atas halaman ----------
+   #pn-preview-overlay (Pratinjau File) sengaja dilewati. */
+.overlay:not(#pn-preview-overlay) .modal{
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.6),
+    0 4px 10px rgba(9,63,69,.18),
+    0 22px 44px rgba(9,63,69,.26),
+    0 48px 92px rgba(9,63,69,.30);
+}
+
+/* ---------- Daftar centang dokumen (Penetapan, Kelengkapan, dll.) ---------- */
+.view .pn-check-item,
+.overlay:not(#pn-preview-overlay) .pn-check-item,
+.view .fkl-check{
+  transition:transform .18s cubic-bezier(.16,1,.3,1),box-shadow .18s ease,border-color .18s ease;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.9),
+    0 1px 2px rgba(16,40,50,.06),
+    0 4px 9px rgba(16,40,50,.05);
+}
+.view .pn-check-item:hover,
+.overlay:not(#pn-preview-overlay) .pn-check-item:hover,
+.view .fkl-check:hover{
+  transform:scale(1.02);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.95),
+    0 3px 6px rgba(16,40,50,.09),
+    0 10px 20px rgba(16,40,50,.09);
+}
+.view .pn-check-box,
+.overlay:not(#pn-preview-overlay) .pn-check-box{ box-shadow:inset 0 1px 2px rgba(16,40,50,.12) }
+.view input:checked+.pn-check-box,
+.overlay:not(#pn-preview-overlay) input:checked+.pn-check-box{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 2px 5px rgba(14,124,134,.35);
+}
+
+/* ---------- Judul halaman & seksi: sedikit terangkat dari latar ---------- */
+.view .page-head h2{ text-shadow:0 1px 0 rgba(255,255,255,.9),0 2px 4px rgba(16,40,50,.12) }
+.view .form-section-title,
+.view .panel-head{ text-shadow:0 1px 0 rgba(255,255,255,.85) }
+
+/* ---------- Kolom isian: sedikit cekung agar kontras dgn kartu timbul ---------- */
+.view .filter-field input,
+.view .filter-field select{
+  box-shadow:inset 0 2px 4px rgba(16,40,50,.07),inset 0 -1px 0 rgba(255,255,255,.9);
+}
+.view .filter-field input:focus,
+.view .filter-field select:focus{
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.9),
+    0 0 0 3px rgba(14,124,134,.15),
+    0 4px 10px rgba(16,40,50,.10);
+}
+
+/* ---------- PENGECUALIAN: area pratinjau di dalam halaman ----------
+   Pratinjau isi Excel (Dokumen Pengadaan), pratinjau berkas, dan pratinjau
+   kerapian narasi pada Susun Kontrak harus tampil DATAR seperti dokumen
+   aslinya. Ketiganya berada di luar `.view` (di dalam pop up pratinjau) atau
+   tidak memuat elemen yang disentuh blok ini, jadi aturan di bawah hanyalah
+   pengaman bila kelak dipindah ke dalam halaman. */
+.dpeng-xls-scroll tbody tr:hover,
+.spk-narasi-prev tbody tr:hover,
+.fkl-doc tbody tr:hover{
+  transform:none;
+  box-shadow:none;
+}
+
+/* ---------- Hormati preferensi pengguna yang meminimalkan animasi ---------- */
+@media (prefers-reduced-motion:reduce){
+  .view .act:not([disabled]):hover,
+  .view .act:not([disabled]):active,
+  .view .btn:hover,
+  .view .btn:active,
+  .view .btn:hover svg,
+  .view .pn-check-item:hover,
+  .view .fkl-check:hover,
+  .overlay:not(#pn-preview-overlay) .act:not([disabled]):hover,
+  .overlay:not(#pn-preview-overlay) .act:not([disabled]):active,
+  .overlay:not(#pn-preview-overlay) .btn:hover,
+  .overlay:not(#pn-preview-overlay) .btn:active,
+  .overlay:not(#pn-preview-overlay) .btn:hover svg,
+  .overlay:not(#pn-preview-overlay) .pn-check-item:hover{ transform:none }
+  .view:not(#view-dashboard) .panel,.view:not(#view-dashboard) .toolbar,
+  .view:not(#view-dashboard) .form-card,.view:not(#view-dashboard) .hl-tpl-bar,
+  .view:not(#view-dashboard) .table-wrap tbody tr,
+  .view .act,.view .btn,
+  .view .pn-check-item,.view .fkl-check{ transition:none }
+}
+
+/* ---------- Cetak: seluruh efek dimatikan ----------
+   Dokumen cetak sebenarnya berjalan di iframe terpisah, tetapi bila pengguna
+   menekan Ctrl+P langsung dari halaman aplikasi, bayangan & transform tidak
+   boleh ikut tercetak (boros tinta dan membuat teks buram). */
+@media print{
+  .view{ perspective:none }
+  .view .panel,.view .toolbar,.view .form-card,.view .hl-tpl-bar,
+  .view .table-wrap thead th,.view .table-wrap tbody tr,
+  .view .act,.view .btn,.view .pn-check-item,.view .fkl-check,
+  .view .filter-field input,.view .filter-field select,
+  .overlay .modal,.overlay .btn,.overlay .act{
+    box-shadow:none !important;
+    transform:none !important;
+    text-shadow:none !important;
+    filter:none !important;
+  }
+}
