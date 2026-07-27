@@ -7025,6 +7025,7 @@ function fkStatusOk(modul, r){
 const FK_MODULES = {
   kr: {
     label:'SPBJ / Kontrak Rinci',
+    title:'Daftar Kontrak Rinci',
     noKontrakLabel:'No. SPBJ / Kontrak Rinci',
     stacked:false,
     list: ()=> [...records].filter(r=>fkStatusOk('kr',r)).sort(makeWorkComparator(
@@ -7041,6 +7042,7 @@ const FK_MODULES = {
   },
   pl: {
     label:'Pengadaan Langsung',
+    title:'Daftar Surat Perintah Kerja',
     noKontrakLabel:'No. Kontrak',
     stacked:false,
     list: ()=> [...records_pl].filter(r=>fkStatusOk('pl',r)).sort(makeWorkComparator(
@@ -7057,6 +7059,7 @@ const FK_MODULES = {
   },
   tender: {
     label:'Tender',
+    title:'Daftar Perjanjian/Kontrak',
     noKontrakLabel:'No. Kontrak',
     stacked:true,
     list: ()=> [...records_tender].filter(r=>fkStatusOk('tender',r)).sort(makeWorkComparator(
@@ -7311,6 +7314,8 @@ async function renderFkView(){
   fkMarkActive('view', modul);
   const cfg=FK_MODULES[modul];
   const thNok=document.getElementById('fk-view-th-nok'); if(thNok) thNok.textContent=cfg.noKontrakLabel;
+  /* Judul halaman mengikuti modul yang dipilih pada segmen di kanan atas. */
+  const ttl=document.getElementById('fk-view-title'); if(ttl) ttl.textContent=cfg.title||'Daftar Perjanjian/Kontrak';
   fkSetSearchPlaceholder('view', cfg);
   // Tombol "Tambah Data" hanya untuk yang berhak mengubah modul ini —
   // untuk user di Pengadaan Langsung & Tender tombol dihilangkan sepenuhnya
@@ -9004,7 +9009,7 @@ function dpengFormHtml(){
         '<input id="dpeng-f-tgl" type="date" onchange="dpengFormSync()" oninput="dpengFormSync()"'+tglCls+' value="'+fkEsc(u.tgl)+'"'+tglDis+'>' +
         (u.tglLocked?'<div class="dpeng-hint">Otomatis dari Kelengkapan Dokumen (pekerjaan yang sama)</div>':'') + '</div>' +
     '</div>' +
-    '<div class="field dpeng-f-dok"><label>Dokumen <span class="req">*</span></label>' +
+    '<div class="field dpeng-f-dok dpeng-dok-row"><label>Dokumen <span class="req">*</span></label>' +
       '<div class="pn-doc-bar">' +
         '<button type="button" class="btn btn-teal pn-doc-toggle" onclick="dpengDocModalOpen()">' +
           DPENG_IC_DOC+'<span>Pilih Dokumen</span>' +
@@ -9012,10 +9017,8 @@ function dpengFormHtml(){
           '<svg class="pn-doc-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>' +
         '</button>' +
         '<button type="button" class="btn btn-indigo" onclick="dpengSubmitForm()">'+DPENG_IC_UP+' Unggah Dokumen</button>' +
+        '<button type="button" class="btn btn-red" onclick="dpengUnggahBatal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg> Kembali</button>' +
       '</div></div>' +
-  '</div>' +
-  '<div class="jp-actions" style="justify-content:flex-end;margin-top:14px;gap:10px">' +
-    '<button class="btn btn-red" onclick="dpengUnggahBatal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg> Batal</button>' +
   '</div>';
 }
 /* ---- Tautan ke menu Data Pekerjaan ----
@@ -9230,8 +9233,8 @@ function dpengSelesaiUnggah(){
   refreshDataDpeng().then(()=>{ showView('dpeng-view'); });
 }
 function dpengUnggahBatal(){
-  openConfirm({ icon:'back', title:'Batal',
-    text:'Batalkan pengisian? Isian formulir akan dikosongkan (berkas yang sudah terunggah tetap tersimpan).',
+  openConfirm({ icon:'back', title:'Kembali',
+    text:'Kembali ke daftar? Isian formulir akan dikosongkan (berkas yang sudah terunggah tetap tersimpan).',
     onYes:function(){ dpengState.unggah=null; showView('dpeng-view'); } });
 }
 
