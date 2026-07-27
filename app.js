@@ -7434,9 +7434,12 @@ function fkCloseUploadModal(){
   const ov=document.getElementById('fk-upload-overlay'); if(ov) ov.classList.remove('show');
   const dz=document.getElementById('fk-dropzone'); if(dz) dz.classList.remove('fk-dz-over');
 }
-/* Klik dropzone -> telusuri berkas (buka pemilih file OS). */
+/* Klik dropzone -> telusuri berkas (buka pemilih file OS).
+   accept dipaksa PDF agar dialog "Browse" HANYA menampilkan berkas .pdf —
+   berkas jenis lain tidak akan muncul untuk dipilih. */
 function fkDzBrowse(){
   const inp=document.getElementById('fk-file-input'); if(!inp) return;
+  inp.accept='application/pdf,.pdf';
   inp.value=''; inp.click();
 }
 function fkDzDragOver(ev){
@@ -9182,7 +9185,7 @@ function dpengUploadPanelHtml(){
       '<span class="dpeng-up-sub">'+fkEsc(dpengNama(rec)||'')+'</span>'+
       '<span class="dpeng-up-prog">'+terisi+'/'+docs.length+' terunggah</span>'+
     '</div>'+
-    '<div class="dpeng-uphint">Format: PDF / Excel • maks. '+DPENG_MAX_MB+' MB per berkas (batas gateway Cloudflare).</div>'+
+    '<div class="dpeng-uphint">Seluruh dokumen berupa PDF; khusus Bill of Quantity berupa Excel • maks. '+DPENG_MAX_MB+' MB per berkas (batas gateway Cloudflare).</div>'+
     '<div class="dpeng-uplist">'+rows+'</div>'+
   '</div>'+
   '<div class="jp-actions" style="justify-content:space-between;margin-top:14px">'+
@@ -9203,6 +9206,32 @@ function dpengUnggahBatal(){
 
 /* ---- Unggah / lihat / hapus berkas satu dokumen ---- */
 let dpengFileTarget=null;   // {recId, key}
+/* ---- Jenis berkas yang diizinkan PER DOKUMEN ----
+   Seluruh dokumen pengadaan berupa PDF; hanya "Bill of Quantity (excel)" yang
+   memakai berkas Excel. Pencocokan lewat LABEL (bukan nomor urut) agar tetap
+   benar walau daftar baku bergeser karena penyisipan dokumen baru.
+   Tambahkan pola di DPENG_POLA_EXCEL bila ada dokumen Excel lain. */
+const DPENG_POLA_EXCEL = [/bill of quantity/i];
+const DPENG_TIPE_PDF = {
+  accept:'application/pdf,.pdf',
+  ext:['.pdf'],
+  nama:'PDF',
+  hint:'Hanya berkas PDF (.pdf)'
+};
+const DPENG_TIPE_EXCEL = {
+  accept:'.xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  ext:['.xls','.xlsx'],
+  nama:'Excel',
+  hint:'Hanya berkas Excel (.xls, .xlsx)'
+};
+function dpengTipeBerkas(d){
+  const label=String((d&&(d.label||dpengDocLabel(d.group,d.key)))||'');
+  return DPENG_POLA_EXCEL.some(re=>re.test(label)) ? DPENG_TIPE_EXCEL : DPENG_TIPE_PDF;
+}
+function dpengExtCocok(tipe, file){
+  const nm=String((file&&file.name)||'').toLowerCase();
+  return (tipe.ext||[]).some(e=>nm.endsWith(e));
+}
 /* Klik "Unggah Dokumen" -> buka POPUP seret & lepas (sama seperti Unggah File
    Kontrak dan tombol Upload Template), bukan langsung membuka pemilih berkas
    sistem. Di dalam popup masih bisa klik untuk menelusuri berkas. */
@@ -9212,11 +9241,13 @@ function dpengPickFile(recId, key){
   const d=rec&&(rec.dokumen||[]).find(x=>x.key===key);
   const judul=(d&&(d.label||dpengDocLabel(d.group,d.key)))||'Dokumen';
   const sudahAda=!!(d&&d.path);
+  const tipe=dpengTipeBerkas(d||{key:key, group:String(key).split('-')[0]});
   if(typeof openTplUpload==='function'){
     openTplUpload({
       title:(sudahAda?'Ganti Berkas — ':'Unggah Berkas — ')+judul,
-      accept:'.pdf,.xls,.xlsx',
-      hint:'Format PDF atau Excel (.pdf, .xls, .xlsx) • maks. '+DPENG_MAX_MB+' MB',
+      // accept khusus per dokumen → dialog Browse HANYA menampilkan jenis ini
+      accept:tipe.accept,
+      hint:tipe.hint+' • maks. '+DPENG_MAX_MB+' MB',
       onFile:function(file){
         // target di-set ulang di sini agar tidak bergantung pada state global
         // yang bisa berubah selama popup terbuka
@@ -9227,7 +9258,8 @@ function dpengPickFile(recId, key){
     return;
   }
   // cadangan bila popup tidak tersedia: pemilih berkas sistem
-  const inp=document.getElementById('dpeng-file-input'); if(inp){ inp.value=''; inp.click(); }
+  const inp=document.getElementById('dpeng-file-input');
+  if(inp){ inp.accept=tipe.accept; inp.value=''; inp.click(); }
 }
 async function dpengFilePicked(ev){
   const file=ev&&ev.target&&ev.target.files&&ev.target.files[0];
@@ -9240,6 +9272,15 @@ async function dpengFilePicked(ev){
   }
   const rec=(records_dpeng||[]).find(r=>String(r.id)===String(tgt.recId));
   if(!rec){ toast('Record tidak ditemukan','err'); return; }
+  /* Penjaga terakhir jenis berkas — dialog Browse sudah difilter lewat accept,
+     tetapi seret & lepas maupun pemilih berkas sebagian sistem masih bisa
+     meloloskan jenis lain. */
+  const docCek=(rec.dokumen||[]).find(x=>x.key===tgt.key);
+  const tipe=dpengTipeBerkas(docCek||{key:tgt.key, group:String(tgt.key).split('-')[0]});
+  if(!dpengExtCocok(tipe, file)){
+    toast('Dokumen ini hanya menerima berkas '+tipe.nama+' ('+tipe.ext.join(', ')+')','err');
+    return;
+  }
   /* Path WAJIB diawali prefiks modul yang dikenali Worker R2
      (kr | pl | tender | dpeng); di luar itu Worker menolak 400 invalid_path.
      Titik ganda juga dilarang Worker, jadi ".." dinetralkan lebih dulu. */
