@@ -1342,8 +1342,10 @@ function resetAllFilters(){
    'filter-tender-bidang','filter-tender-tahapan','filter-tender-tahun','filter-tender-search',
    'fk-input-bidang','fk-input-search','fk-view-bidang','fk-view-search',
    'pn-lihat-search','fkl-view-search',
+   'dpeng-view-search','dpeng-view-tahun','dpeng-view-pekerjaan',
    'dash-filter-anggaran','dash-filter-tahun','dash-filter-periode','dash-filter-metode'
   ].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  if(typeof dpengState!=='undefined'){ dpengState.view.page=1; dpengState.view.search=''; dpengState.view.tahun=''; dpengState.view.pekerjaanId=''; }
   // Filter dashboard "Jenis Pekerjaan" kembali ke default (SPBJ / Kontrak Rinci)
   const dj=document.getElementById('dash-filter-jenis'); if(dj) dj.value='kr';
   const dmw=document.getElementById('dash-metode-wrap'); if(dmw) dmw.style.display='none';
@@ -1389,6 +1391,7 @@ function showView(name, loaderMsg, noLoader){
           if(l.dataset.view==='analisa-view' && (name==='analisa-view'||name==='form-analisa')) on=true; // Analisa Harga Satuan induk tetap aktif
           if(l.dataset.view==='hps-view' && (name==='hps-view'||name==='form-hps')) on=true; // Perhitungan HPS induk tetap aktif
           if(l.dataset.view==='pn-lihat' && (name==='pn-lihat'||name==='pn-ambil')) on=true; // Penetapan (menu tunggal) tetap aktif saat Ambil Nomor
+          if(l.dataset.view==='dpeng-view' && (name==='dpeng-view'||name==='dpeng-unggah')) on=true; // Dokumen Pengadaan tetap aktif saat Unggah Dokumen
           if(l.dataset.view==='jadwal-view' && (name==='jadwal-view'||name==='jadwal-kerja'||name==='hari-libur')) on=true; // Jadwal (menu tunggal) tetap aktif saat Tentukan Jadwal / Hari Libur
           if(l.dataset.view==='track-view' && (name==='track-view'||name==='track-kelola')) on=true; // Tracking Pengadaan induk tetap aktif saat Kelola Tracking
           if(l.dataset.view==='spk-view' && (name==='spk-view'||name==='spk-susun'||name==='spk-klausul')) on=true; // Susun Kontrak (menu induk) tetap aktif saat Penyusunan Kontrak / Ubah Klausul
@@ -1406,6 +1409,7 @@ function showView(name, loaderMsg, noLoader){
           if(name==='form-hps') has = has || [...grp.querySelectorAll('.topnav-item')].some(it=>it.dataset.view==='hps-view');
           if(name==='jadwal-kerja'||name==='hari-libur') has = has || [...grp.querySelectorAll('.topnav-item')].some(it=>it.dataset.view==='jadwal-view'); // Jadwal (menu tunggal): grup induk tetap terbuka saat Tentukan Jadwal / Hari Libur
           if(name==='track-kelola') has = has || [...grp.querySelectorAll('.topnav-item')].some(it=>it.dataset.view==='track-view'); // Tracking: grup Monitoring tetap terbuka saat Kelola Tracking
+          if(name==='dpeng-unggah') has = has || [...grp.querySelectorAll('.topnav-item')].some(it=>it.dataset.view==='dpeng-view'); // Dokumen: grup induk tetap terbuka saat Unggah Dokumen
           // Grup Monitoring mencakup Input Pekerjaan (input/-pl/-tender) & Daftar Pekerjaan (list/-pl/-tender)
           if(grp.dataset.group==='monitor' && monitorAll.includes(name)) has=true;
           grp.classList.toggle('has-active', has);
@@ -1443,6 +1447,8 @@ function showView(name, loaderMsg, noLoader){
         if(name==='rekap-hps') renderRekapHps();
         if(name==='track-view') renderTrackView();
         if(name==='track-kelola') renderTrackKelola();
+        if(name==='dpeng-view' && typeof renderDpengView==='function') renderDpengView();
+        if(name==='dpeng-unggah' && typeof renderDpengUnggah==='function') renderDpengUnggah();
         if(typeof fkSegSyncAll==='function') fkSegSyncAll(false);   // reposisi pil segmented setelah halaman baru terlihat
     }catch(err){ console.error('showView error:', err); }
     if(!noLoader){ const wait=Math.max(0, 460-(Date.now()-t0)); setTimeout(hideLoader, wait); }
@@ -1466,7 +1472,8 @@ function rerenderActiveView(){
       'analisa-view':'renderAnalisaView','jadwal-kerja':'renderJadwalKerja','jadwal-view':'renderJadwalView',
       'spk-susun':'renderSpkSusun','spk-view':'renderSpkView','spk-klausul':'renderSpkKlausul',
       'hari-libur':'renderHariLibur','rekap-hps':'renderRekapHps',
-      'track-view':'renderTrackView','track-kelola':'renderTrackKelola'
+      'track-view':'renderTrackView','track-kelola':'renderTrackKelola',
+      'dpeng-view':'renderDpengView','dpeng-unggah':'renderDpengUnggah'
     };
     var fn=R[name];
     if(fn && typeof window[fn]==='function') window[fn]();
@@ -8512,6 +8519,589 @@ function fklDocPool(){
   });
   return pool;
 }
+/* ==================================================================
+   DOKUMEN PENGADAAN — arsip berkas pengadaan per pekerjaan (Cloudflare R2)
+   ------------------------------------------------------------------
+   - Katalog jenis dokumen (DPENG_DOCS) diambil dari berkas Excel acuan,
+     dikelompokkan Pengadaan Langsung (PL) & Tender/Seleksi.
+   - Satu record = satu pekerjaan (dicocokkan berdasarkan Nama Pekerjaan),
+     menampung array `dokumen` (tiap entri = 1 jenis dokumen + berkasnya).
+   - Berkas fisik disimpan di bucket R2 `dokumen-pengadaan` lewat Worker
+     (param ?bucket=), metadata di tabel Supabase `dokumen_pengadaan`.
+   - Tgl. Terima Dokumen otomatis terisi & terkunci bila pekerjaan yang
+     sama sudah ada di menu Kelengkapan Dokumen Pengadaan.
+   ================================================================== */
+const DPENG_TABLE  = 'dokumen_pengadaan';
+const DPENG_BUCKET = 'dokumen-pengadaan';
+const DPENG_MAX_MB = 50;
+const DPENG_PAGE_SIZE = 8;
+
+const DPENG_DOCS = {
+  pl: [
+    'Nota Dinas Pelaksanaan Pengadaan',
+    'Term of Reference / Kerangka Acuan Kerja',
+    'Rencana Anggaran Biaya (RAB)',
+    'Surat Anggaran',
+    'Referensi Harga User',
+    'Bill of Quantity (excel)',
+    'Kajian Kelayakan Proyek (KKP)',
+    'Kajian Risiko (KR)',
+    'Pakta Integritas Pengguna Barang/Jasa',
+    'Pakta Integritas Direksi Pekerjaan',
+    'Pakta Integritas Pejabat Pelaksana Pengadaan',
+    'Form Pemeriksaan Kelengkapan Dokumen Pengadaan',
+    'Inisialisasi Pengadaan (eproc)',
+    'Jadwal Pengadaan (eproc)',
+    'Berita Acara Penjelasan (eproc)',
+    'Form Pembukaan Penawaran',
+    'Berita Acara Pembukaan Penawaran (eproc)',
+    'Berita Acara Evaluasi Penawaran (eproc)',
+    'Berita Acara Klarifikasi dan Negosiasi (eproc)',
+    'Dokumen Penawaran Penyedia'
+  ],
+  tender: [
+    'Nota Dinas Perencanaan Pengadaan',
+    'Nota Dinas Pelaksanaan Pengadaan',
+    'Term of Reference / Kerangka Acuan Kerja',
+    'Dokumen Tender / RKS',
+    'Dokumen Kualifikasi',
+    'Harga Perhitungan Enjiniring (HPE)',
+    'Rencana Anggaran Biaya (RAB)',
+    'Surat Anggaran',
+    'Referensi Harga User',
+    'Bill of Quantity (excel)',
+    'Kajian Kelayakan Proyek (KKP)',
+    'Kajian Risiko (KR)',
+    'Pakta Integritas Pengguna Barang/Jasa',
+    'Pakta Integritas Direksi Pekerjaan',
+    'Pakta Integritas Pejabat Pelaksana Pengadaan',
+    'Form Pemeriksaan Kelengkapan Dokumen Pengadaan',
+    'Inisialisasi Pengadaan (eproc)',
+    'Jadwal Pengadaan (eproc)',
+    'Berita Acara Penjelasan (eproc)',
+    'Form Pembukaan Penawaran',
+    'Form Pembukaan Penawaran Sampul Satu',
+    'Form Pembukaan Penawaran Sampul Dua',
+    'Berita Acara Pembukaan Penawaran (eproc)',
+    'Berita Acara Pembukaan Penawaran Sampul Satu (eproc)',
+    'Berita Acara Pembukaan Penawaran Sampul Dua (eproc)',
+    'Berita Acara Evaluasi Penawaran (eproc)',
+    'Berita Acara Evaluasi Penawaran Sampul Satu (eproc)',
+    'Berita Acara Evaluasi Penawaran Sampul Dua (eproc)',
+    'Berita Acara Evaluasi Kualifikasi (Pasca) (eproc)',
+    'Berita Acara Pembuktian Kualifikasi (Pasca) (eproc)',
+    'Berita Acara Evaluasi Kualifikasi (Pra) (eproc)',
+    'Berita Acara Pembuktian Kualifikasi (Pra) (eproc)',
+    'Berita Acara Klarifikasi dan Negosiasi (eproc)',
+    'Berita Acara Hasil Pengadaan (eproc)',
+    'Nota Dinas Usulan Calon Pemenang (eproc)',
+    'Surat Penetapan Penyedia Barang/Jasa',
+    'Surat Penunjukan Penyedia Barang/Jasa',
+    'Contract Discussion Agreement (CDA)'
+  ]
+};
+/* Kunci stabil per jenis dokumen (grup + indeks), dipakai untuk mencocokkan
+   entri `dokumen` walau label berulang antar grup. */
+function dpengDocKey(group, idx){ return group + '-' + (idx+1); }
+function dpengDocLabel(group, key){
+  const arr = DPENG_DOCS[group] || [];
+  const i = parseInt(String(key).split('-')[1],10) - 1;
+  return arr[i] || key;
+}
+
+let records_dpeng = [];
+const dpengState = {
+  view:   { pekerjaanId:'', tahun:'', search:'', page:1 },
+  unggah: null   // buffer form: {editId, nama, bidang, tgl, tglLocked, picks:{key:true}, recId}
+};
+
+/* ---- Ikon ---- */
+const DPENG_IC_UP   = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v13"/></svg>';
+const DPENG_IC_VIEW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+const DPENG_IC_DL   = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>';
+const DPENG_IC_DEL  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
+const DPENG_IC_DOC  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/></svg>';
+
+/* ==================================================================
+   Penyimpanan berkas di R2 (bucket khusus `dokumen-pengadaan`)
+   Akun DEMO memakai Supabase Storage sandbox (tidak menyentuh R2).
+   ================================================================== */
+function dpengIsDemo(){ return currentRole==='demo'; }
+async function dpengStoragePut(path, file){
+  if(dpengIsDemo()){
+    const up=await db.storage.from(DPENG_BUCKET).upload(path, file,
+      {contentType:file.type||'application/octet-stream', upsert:true});
+    if(up.error) throw up.error; return;
+  }
+  const resp=await fetch(R2_GATEWAY_URL+'/api/file?path='+encodeURIComponent(path)+'&bucket='+encodeURIComponent(DPENG_BUCKET),{
+    method:'POST',
+    headers:{'Authorization':'Bearer '+fkAuthToken(),
+             'X-File-Content-Type':file.type||'application/octet-stream'},
+    body:file
+  });
+  if(resp.status===401) throw new Error('Sesi berakhir — silakan login ulang.');
+  if(!resp.ok) throw new Error('Unggah gagal ('+resp.status+')');
+}
+async function dpengStorageGet(path){
+  if(dpengIsDemo()){
+    const dl=await db.storage.from(DPENG_BUCKET).download(path);
+    if(dl.error) throw dl.error; return dl.data;
+  }
+  const resp=await fetch(R2_GATEWAY_URL+'/api/file?path='+encodeURIComponent(path)+'&bucket='+encodeURIComponent(DPENG_BUCKET),{
+    method:'GET', headers:{'Authorization':'Bearer '+fkAuthToken()}
+  });
+  if(resp.status===401) throw new Error('Sesi berakhir — silakan login ulang.');
+  if(resp.status===404) return null;
+  if(!resp.ok) throw new Error('Unduh gagal ('+resp.status+')');
+  return await resp.blob();
+}
+async function dpengStorageRemove(path){
+  if(dpengIsDemo()){ try{ await db.storage.from(DPENG_BUCKET).remove([path]); }catch(e){} return; }
+  try{
+    await fetch(R2_GATEWAY_URL+'/api/file?path='+encodeURIComponent(path)+'&bucket='+encodeURIComponent(DPENG_BUCKET),{
+      method:'DELETE', headers:{'Authorization':'Bearer '+fkAuthToken()}
+    });
+  }catch(e){}
+}
+
+/* ---- Store Supabase (tabel dokumen_pengadaan) ---- */
+const StoreDpeng = {
+  async list(){
+    if(!(USE_SUPABASE && db)) return [];
+    const {data,error}=await db.from(DPENG_TABLE).select('*').order('created_at',{ascending:false});
+    if(error) throw error; return data||[];
+  },
+  async create(rec){
+    const {data,error}=await db.from(DPENG_TABLE).insert(rec).select();
+    if(error) throw error; return data&&data[0];
+  },
+  async update(id, patch){
+    const {error}=await db.from(DPENG_TABLE).update(patch).eq('id',id);
+    if(error) throw error;
+  },
+  async remove(id){
+    const {error}=await db.from(DPENG_TABLE).delete().eq('id',id);
+    if(error) throw error;
+  }
+};
+async function refreshDataDpeng(){
+  try{ records_dpeng = await StoreDpeng.list(); }
+  catch(err){ console.error(err); records_dpeng = records_dpeng||[]; toast('Gagal memuat Dokumen Pengadaan: '+errMsg(err),'err'); }
+}
+
+/* ---- Utilitas ---- */
+function dpengYear(r){ return String((r&&r.tgl_terima)||'').slice(0,4); }
+function dpengNama(r){ return String((r&&r.nama_pekerjaan)||'').trim(); }
+/* Cari Tgl. Terima Dokumen dari menu Kelengkapan berdasarkan Nama Pekerjaan. */
+function dpengTglFromKelengkapan(nama){
+  const key=String(nama||'').trim().toLowerCase();
+  if(!key) return '';
+  const hit=(records_kelengkapan||[]).find(r=>String(r.nama_pekerjaan||(r.info&&r.info.nama)||'').trim().toLowerCase()===key);
+  if(!hit) return '';
+  return hit.tgl_terima || (hit.info&&hit.info.tgl_terima) || '';
+}
+
+/* ==================================================================
+   HALAMAN DAFTAR
+   ================================================================== */
+function openDpengView(){
+  if(!isAdmin()){ toast('Menu ini hanya untuk akun admin','warn'); return; }
+  refreshDataDpeng().then(()=>{
+    // muat data Kelengkapan agar Tgl. Terima bisa disinkron di form Unggah
+    if(typeof refreshDataKelengkapan==='function'){ try{ refreshDataKelengkapan(); }catch(e){} }
+    showView('dpeng-view');
+  });
+}
+function dpengResetView(){
+  dpengState.view.pekerjaanId=''; dpengState.view.tahun=''; dpengState.view.search=''; dpengState.view.page=1;
+  const s=document.getElementById('dpeng-view-search'); if(s) s.value='';
+  const y=document.getElementById('dpeng-view-tahun'); if(y) y.value='';
+  const p=document.getElementById('dpeng-view-pekerjaan'); if(p) p.value='';
+  renderDpengView();
+}
+function dpengFilterView(){
+  dpengState.view.tahun=(document.getElementById('dpeng-view-tahun')?.value)||'';
+  dpengState.view.search=(document.getElementById('dpeng-view-search')?.value)||'';
+  dpengState.view.pekerjaanId=(document.getElementById('dpeng-view-pekerjaan')?.value)||'';
+  renderDpengView();
+}
+/* Daftar pekerjaan yang lolos filter tahun + cari (untuk isi dropdown) */
+function dpengPekerjaanPool(){
+  const yy=dpengState.view.tahun, fs=String(dpengState.view.search||'').toLowerCase().trim();
+  return (records_dpeng||[]).filter(r=>{
+    if(yy && dpengYear(r)!==yy) return false;
+    if(fs && !dpengNama(r).toLowerCase().includes(fs)) return false;
+    return true;
+  });
+}
+function dpengFillYearFilter(){
+  const sel=document.getElementById('dpeng-view-tahun'); if(!sel) return;
+  const years=Array.from(new Set((records_dpeng||[]).map(dpengYear).filter(Boolean))).sort().reverse();
+  const cur=dpengState.view.tahun;
+  sel.innerHTML='<option value="">Semua Tahun</option>'+years.map(y=>'<option value="'+y+'"'+(y===cur?' selected':'')+'>'+y+'</option>').join('');
+}
+function dpengFillPekerjaanFilter(){
+  const sel=document.getElementById('dpeng-view-pekerjaan'); if(!sel) return;
+  const pool=dpengPekerjaanPool();
+  const cur=dpengState.view.pekerjaanId;
+  const stillThere=pool.some(r=>String(r.id)===String(cur));
+  sel.innerHTML='<option value="">— Pilih Pekerjaan —</option>'+pool.map(r=>{
+    const sel2=String(r.id)===String(cur)?' selected':'';
+    return '<option value="'+fkEsc(String(r.id))+'"'+sel2+'>'+fkEsc(dpengNama(r)||'(tanpa nama)')+'</option>';
+  }).join('');
+  if(!stillThere){ dpengState.view.pekerjaanId=''; sel.value=''; }
+}
+function dpengEmptyRow(msg){
+  return '<tr><td colspan="6"><div class="empty">'+DPENG_IC_DOC+
+    '<div>'+fkEsc(msg||'Data tidak tersedia')+'</div></div></td></tr>';
+}
+function renderDpengView(){
+  dpengFillYearFilter();
+  dpengFillPekerjaanFilter();
+  const tb=document.getElementById('dpeng-view-body'); if(!tb) return;
+  const pg=document.getElementById('dpeng-view-pagination');
+  const cEl=document.getElementById('dpeng-view-count');
+  const pool=dpengPekerjaanPool();
+  if(cEl) cEl.textContent=pool.length;
+  const rec=(records_dpeng||[]).find(r=>String(r.id)===String(dpengState.view.pekerjaanId));
+  if(pg) pg.innerHTML='';
+  if(!rec){
+    tb.innerHTML=dpengEmptyRow(pool.length?'Pilih satu pekerjaan pada dropdown di atas untuk menampilkan dokumennya.':'Belum ada pekerjaan. Klik "Unggah Dokumen" untuk menambah.');
+    return;
+  }
+  const docs=Array.isArray(rec.dokumen)?rec.dokumen:[];
+  if(!docs.length){ tb.innerHTML=dpengEmptyRow('Pekerjaan ini belum memiliki dokumen.'); return; }
+  const nama=fkEsc(dpengNama(rec)||'—');
+  const bidang=fkEsc(rec.bidang_pelaksana||'—');
+  const tgl=rec.tgl_terima?fmtTanggal(rec.tgl_terima):'—';
+  const rid=fkEsc(String(rec.id));
+  tb.innerHTML=docs.map((d,i)=>{
+    const label=fkEsc(d.label||dpengDocLabel(d.group,d.key));
+    const has=!!d.path;
+    const status = has
+      ? '<span class="dpeng-file-ok" title="'+fkEsc(d.nama_file||'')+'">'+fkEsc(d.nama_file||'Terunggah')+'</span>'
+      : '<span class="dpeng-file-no">Belum diunggah</span>';
+    const aksi = has
+      ? '<button class="act act-view" title="Lihat" onclick="dpengPreview(\''+rid+'\',\''+fkEsc(d.key)+'\')">'+DPENG_IC_VIEW+'</button>'+
+        '<button class="act act-dl" title="Unduh" onclick="dpengDownload(\''+rid+'\',\''+fkEsc(d.key)+'\')">'+DPENG_IC_DL+'</button>'
+      : '<button class="act act-up" title="Unggah" onclick="dpengPickFile(\''+rid+'\',\''+fkEsc(d.key)+'\')">'+DPENG_IC_UP+'</button>';
+    const firstCells = i===0
+      ? '<td class="wrap-cell col-nama-freeze" rowspan="'+docs.length+'">'+nama+'</td>'+
+        '<td class="fk-col-bidang" rowspan="'+docs.length+'">'+bidang+'</td>'
+      : '';
+    const tglCell = i===0 ? '<td class="col-date" rowspan="'+docs.length+'">'+tgl+'</td>' : '';
+    return '<tr>'+
+      '<td class="col-no">'+(i+1)+'</td>'+
+      firstCells+
+      '<td class="wrap-cell">'+label+' '+status+'</td>'+
+      tglCell+
+      '<td><div class="action-cell">'+aksi+'</div></td>'+
+    '</tr>';
+  }).join('');
+}
+function fmtTanggal(iso){
+  const p=String(iso||'').split('-'); if(p.length<3) return iso||'—';
+  return p[2]+'/'+p[1]+'/'+p[0];
+}
+
+/* ==================================================================
+   UNGGAH DOKUMEN — formulir (mirip Ambil Nomor)
+   ================================================================== */
+function dpengOpenUnggah(recId){
+  if(!isAdmin()){ toast('Menu ini hanya untuk akun admin','warn'); return; }
+  const rec = recId ? (records_dpeng||[]).find(r=>String(r.id)===String(recId)) : null;
+  if(rec){
+    const picks={}; (rec.dokumen||[]).forEach(d=>{ picks[d.key]=true; });
+    dpengState.unggah={ editId:rec.id, recId:rec.id, nama:dpengNama(rec), bidang:rec.bidang_pelaksana||'',
+                        tgl:rec.tgl_terima||'', tglLocked:false, picks, phase:'upload' };
+  }else{
+    dpengState.unggah={ editId:null, recId:null, nama:'', bidang:'', tgl:'', tglLocked:false, picks:{}, phase:'form' };
+  }
+  showView('dpeng-unggah');
+}
+function renderDpengUnggah(){
+  const cont=document.getElementById('dpeng-unggah-content'); if(!cont) return;
+  const u=dpengState.unggah; if(!u){ cont.innerHTML=''; return; }
+  cont.innerHTML = (u.phase==='upload') ? dpengUploadPanelHtml() : dpengFormHtml();
+  if(u.phase==='form') dpengBuildDocModal();
+}
+function dpengFormHtml(){
+  const u=dpengState.unggah;
+  const bidangOpts=(typeof BIDANG_OPTS!=='undefined'?BIDANG_OPTS:[]).map(o=>'<option'+(o===u.bidang?' selected':'')+'>'+fkEsc(o)+'</option>').join('');
+  const nPick=Object.values(u.picks).filter(Boolean).length;
+  const tglDis=u.tglLocked?' disabled title="Terisi otomatis dari Kelengkapan Dokumen"':'';
+  const tglCls=u.tglLocked?' class="rho-input-locked"':'';
+  return '' +
+  '<div class="form-card">' +
+    '<div class="form-section-title">'+(typeof KR_SECTION_ICON!=='undefined'?KR_SECTION_ICON:'')+'Data Pekerjaan</div>' +
+    '<div class="form-flow" style="--cols:2">' +
+      '<div class="field" style="grid-column:span 2"><label>Nama Pekerjaan <span class="req">*</span></label>' +
+        '<input id="dpeng-f-nama" type="text" value="'+fkEsc(u.nama)+'" oninput="dpengNamaInput()" onchange="dpengSyncTgl()" placeholder="Ketik nama pekerjaan"></div>' +
+      '<div class="field"><label>Bidang Pelaksana <span class="req">*</span></label>' +
+        '<select id="dpeng-f-bidang"><option value="">— Pilih —</option>'+bidangOpts+'</select></div>' +
+      '<div class="field"><label>Tgl. Terima Dokumen <span class="req">*</span></label>' +
+        '<input id="dpeng-f-tgl" type="date"'+tglCls+' value="'+fkEsc(u.tgl)+'"'+tglDis+'>' +
+        (u.tglLocked?'<div class="dpeng-hint">Otomatis dari Kelengkapan Dokumen (pekerjaan yang sama)</div>':'') + '</div>' +
+      '<div class="field" style="grid-column:span 2"><label>Dokumen <span class="req">*</span></label>' +
+        '<div class="pn-doc-bar">' +
+          '<button type="button" class="btn btn-teal pn-doc-toggle" onclick="dpengDocModalOpen()">' +
+            DPENG_IC_DOC+'<span>Pilih Dokumen</span>' +
+            '<span class="pn-doc-count" id="dpeng-doc-count"'+(nPick?'':' style="display:none"')+'>'+nPick+'</span>' +
+            '<svg class="pn-doc-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>' +
+          '</button>' +
+        '</div></div>' +
+    '</div>' +
+  '</div>' +
+  '<div class="jp-actions" style="justify-content:flex-end;margin-top:14px;gap:10px">' +
+    '<button class="btn btn-red" onclick="dpengUnggahBatal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg> Batal</button>' +
+    '<button class="btn btn-indigo" onclick="dpengSubmitForm()">'+DPENG_IC_UP+' Unggah Dokumen</button>' +
+  '</div>';
+}
+function dpengNamaInput(){
+  const u=dpengState.unggah; if(!u) return;
+  u.nama=(document.getElementById('dpeng-f-nama')?.value)||'';
+}
+/* Sinkron Tgl. Terima dari Kelengkapan saat nama diketik/berubah */
+function dpengSyncTgl(){
+  const u=dpengState.unggah; if(!u) return;
+  u.nama=(document.getElementById('dpeng-f-nama')?.value)||'';
+  const t=dpengTglFromKelengkapan(u.nama);
+  if(t){ u.tgl=t; u.tglLocked=true; }
+  else { u.tglLocked=false; }
+  renderDpengUnggah();
+}
+/* ---- Modal pilih dokumen ---- */
+function dpengDocGroupHtml(title, group){
+  const arr=DPENG_DOCS[group]||[]; const u=dpengState.unggah;
+  const items=arr.map((label,i)=>{
+    const key=dpengDocKey(group,i);
+    const ck=(u&&u.picks[key])?' checked':'';
+    return '<label class="pn-check-item">'+
+      '<input type="checkbox" class="dpeng-doc-check" data-key="'+key+'" value="'+key+'"'+ck+' onchange="dpengDocUpdateCount()">'+
+      '<span class="pn-check-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></span>'+
+      '<span class="pn-check-label">'+(i+1)+'. '+fkEsc(label)+'</span>'+
+    '</label>';
+  }).join('');
+  return '<div class="pn-doc-group"><div class="pn-doc-group-title">'+fkEsc(title)+'</div>'+
+    '<div class="pn-check-grid">'+items+'</div></div>';
+}
+function dpengBuildDocModal(){
+  const list=document.getElementById('dpeng-doc-modal-list'); if(!list) return;
+  list.innerHTML=dpengDocGroupHtml('Pengadaan Langsung','pl')+dpengDocGroupHtml('Tender / Seleksi','tender');
+  dpengDocUpdateCount();
+}
+let dpengDocSnapshot=null;
+function dpengDocModalOpen(){
+  dpengDocSnapshot=[...document.querySelectorAll('.dpeng-doc-check')].map(b=>b.checked);
+  const ov=document.getElementById('dpeng-doc-overlay'); if(ov) ov.classList.add('show');
+}
+function dpengDocModalSave(){
+  const checked=document.querySelectorAll('.dpeng-doc-check:checked');
+  if(!checked.length){ toast('Pilih minimal satu dokumen','err'); return; }
+  const u=dpengState.unggah; if(u){ u.picks={}; checked.forEach(b=>{ u.picks[b.dataset.key]=true; }); }
+  const ov=document.getElementById('dpeng-doc-overlay'); if(ov) ov.classList.remove('show');
+  renderDpengUnggah();
+}
+function dpengDocModalCancel(){
+  const boxes=[...document.querySelectorAll('.dpeng-doc-check')];
+  if(dpengDocSnapshot) boxes.forEach((b,i)=>{ if(i<dpengDocSnapshot.length) b.checked=dpengDocSnapshot[i]; });
+  dpengDocUpdateCount();
+  const ov=document.getElementById('dpeng-doc-overlay'); if(ov) ov.classList.remove('show');
+}
+function dpengDocUpdateCount(){
+  const n=document.querySelectorAll('.dpeng-doc-check:checked').length;
+  const c=document.getElementById('dpeng-doc-count');
+  if(c){ c.textContent=n; c.style.display=n>0?'':'none'; }
+}
+/* ---- Submit form → simpan record & tampilkan panel unggah berkas ---- */
+async function dpengSubmitForm(){
+  const u=dpengState.unggah; if(!u) return;
+  u.nama=(document.getElementById('dpeng-f-nama')?.value||'').trim();
+  u.bidang=(document.getElementById('dpeng-f-bidang')?.value||'').trim();
+  if(!u.tglLocked) u.tgl=(document.getElementById('dpeng-f-tgl')?.value||'').trim();
+  const keys=Object.keys(u.picks).filter(k=>u.picks[k]);
+  if(!u.nama){ toast('Nama Pekerjaan wajib diisi','warn'); return; }
+  if(!u.bidang){ toast('Bidang Pelaksana wajib dipilih','warn'); return; }
+  if(!keys.length){ toast('Pilih minimal satu dokumen','warn'); return; }
+  if(!u.tgl){ toast('Tgl. Terima Dokumen wajib diisi','warn'); return; }
+  // Bangun daftar dokumen: pertahankan berkas yang sudah ada bila mengedit
+  const existing = u.editId ? ((records_dpeng.find(r=>String(r.id)===String(u.editId))||{}).dokumen||[]) : [];
+  const exMap={}; existing.forEach(d=>{ exMap[d.key]=d; });
+  const dokumen = keys.map(k=>{
+    const group=k.split('-')[0];
+    if(exMap[k]) return exMap[k];
+    return { key:k, group:group, label:dpengDocLabel(group,k), nama_file:'', ukuran:0, mime:'', path:'' };
+  });
+  const metode = keys.some(k=>k.indexOf('tender-')===0) ? 'tender' : 'pl';
+  const rec={ nama_pekerjaan:u.nama, bidang_pelaksana:u.bidang, metode, tgl_terima:u.tgl, dokumen };
+  try{
+    await withActionLoader(u.editId?'Menyimpan perubahan':'Menyimpan', async()=>{
+      if(u.editId){ await StoreDpeng.update(u.editId, rec); u.recId=u.editId; }
+      else { const created=await StoreDpeng.create(rec); u.recId=created&&created.id; u.editId=u.recId; }
+      await refreshDataDpeng();
+    });
+  }catch(err){ console.error(err); toast('Gagal menyimpan: '+errMsg(err),'err'); return; }
+  toast('Data tersimpan — silakan unggah berkas tiap dokumen','ok');
+  u.phase='upload';
+  renderDpengUnggah();
+}
+/* ---- Panel unggah berkas per dokumen ---- */
+function dpengUploadPanelHtml(){
+  const u=dpengState.unggah; if(!u) return '';
+  const rec=(records_dpeng||[]).find(r=>String(r.id)===String(u.recId));
+  const docs=rec?(rec.dokumen||[]):[];
+  const rows=docs.map((d,i)=>{
+    const label=fkEsc(d.label||dpengDocLabel(d.group,d.key));
+    const has=!!d.path;
+    const grpTag='<span class="dpeng-grp-tag dpeng-grp-'+d.group+'">'+(d.group==='tender'?'Tender':'PL')+'</span>';
+    const right = has
+      ? '<span class="dpeng-file-ok" title="'+fkEsc(d.nama_file||'')+'">'+fkEsc(d.nama_file||'Terunggah')+'</span>'+
+        '<button class="act act-view" title="Lihat" onclick="dpengPreview(\''+fkEsc(String(rec.id))+'\',\''+fkEsc(d.key)+'\')">'+DPENG_IC_VIEW+'</button>'+
+        '<button class="act act-up" title="Ganti" onclick="dpengPickFile(\''+fkEsc(String(rec.id))+'\',\''+fkEsc(d.key)+'\')">'+DPENG_IC_UP+'</button>'+
+        '<button class="act act-del" title="Hapus berkas" onclick="dpengRemoveFile(\''+fkEsc(String(rec.id))+'\',\''+fkEsc(d.key)+'\')">'+DPENG_IC_DEL+'</button>'
+      : '<span class="dpeng-file-no">Belum diunggah</span>'+
+        '<button class="btn btn-teal btn-sm" onclick="dpengPickFile(\''+fkEsc(String(rec.id))+'\',\''+fkEsc(d.key)+'\')">'+DPENG_IC_UP+' Unggah</button>';
+    return '<div class="dpeng-uprow'+(has?' done':'')+'">'+
+      '<div class="dpeng-uprow-l"><span class="dpeng-uprow-no">'+(i+1)+'</span>'+grpTag+'<span class="dpeng-uprow-name">'+label+'</span></div>'+
+      '<div class="dpeng-uprow-r">'+right+'</div>'+
+    '</div>';
+  }).join('');
+  return '<div class="form-card">'+
+    '<div class="form-section-title">'+DPENG_IC_UP+'Unggah Berkas — '+fkEsc(dpengNama(rec)||'')+'</div>'+
+    '<div class="dpeng-uphint">Unggah berkas untuk tiap jenis dokumen yang dipilih. Format: PDF / Excel • maks. '+DPENG_MAX_MB+' MB.</div>'+
+    '<div class="dpeng-uplist">'+rows+'</div>'+
+  '</div>'+
+  '<div class="jp-actions" style="justify-content:space-between;margin-top:14px">'+
+    '<button class="btn btn-ghost" onclick="dpengBackToForm()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Ubah Pilihan</button>'+
+    '<button class="btn btn-green" onclick="dpengSelesaiUnggah()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg> Selesai</button>'+
+  '</div>';
+}
+function dpengBackToForm(){ const u=dpengState.unggah; if(u){ u.phase='form'; renderDpengUnggah(); } }
+function dpengSelesaiUnggah(){
+  dpengState.unggah=null;
+  const rid=(dpengState.view.pekerjaanId);
+  refreshDataDpeng().then(()=>{ showView('dpeng-view'); });
+}
+function dpengUnggahBatal(){
+  openConfirm({ icon:'back', title:'Batal',
+    text:'Batalkan pengisian? Isian formulir akan dikosongkan (berkas yang sudah terunggah tetap tersimpan).',
+    onYes:function(){ dpengState.unggah=null; showView('dpeng-view'); } });
+}
+
+/* ---- Unggah / lihat / hapus berkas satu dokumen ---- */
+let dpengFileTarget=null;   // {recId, key}
+function dpengPickFile(recId, key){
+  dpengFileTarget={recId:String(recId), key:key};
+  const inp=document.getElementById('dpeng-file-input'); if(inp){ inp.value=''; inp.click(); }
+}
+async function dpengFilePicked(ev){
+  const file=ev&&ev.target&&ev.target.files&&ev.target.files[0];
+  if(!file || !dpengFileTarget) return;
+  const tgt=dpengFileTarget; dpengFileTarget=null;
+  if(file.size > DPENG_MAX_MB*1024*1024){ toast('Ukuran berkas melebihi '+DPENG_MAX_MB+' MB','err'); return; }
+  const rec=(records_dpeng||[]).find(r=>String(r.id)===String(tgt.recId));
+  if(!rec){ toast('Record tidak ditemukan','err'); return; }
+  const safe=String(file.name||'file').replace(/[^\w.\-]+/g,'_');
+  const path=String(rec.id)+'/'+tgt.key+'/'+Date.now()+'_'+safe;
+  const docs=Array.isArray(rec.dokumen)?rec.dokumen.map(d=>Object.assign({},d)):[];
+  const idx=docs.findIndex(d=>d.key===tgt.key);
+  if(idx<0){ toast('Jenis dokumen tidak ditemukan','err'); return; }
+  const oldPath=docs[idx].path||'';
+  try{
+    if(typeof pnUploadProgressOpen==='function') pnUploadProgressOpen(file.name);
+    if(typeof pnUploadProgressSet==='function') pnUploadProgressSet(30);
+    await dpengStoragePut(path, file);
+    if(typeof pnUploadProgressSet==='function') pnUploadProgressSet(75);
+    docs[idx].path=path; docs[idx].nama_file=file.name;
+    docs[idx].ukuran=file.size; docs[idx].mime=file.type||'application/octet-stream';
+    docs[idx].uploaded_at=new Date().toISOString();
+    await StoreDpeng.update(rec.id, {dokumen:docs});
+    if(oldPath && oldPath!==path){ await dpengStorageRemove(oldPath); }
+    await refreshDataDpeng();
+    if(typeof pnUploadProgressDone==='function') pnUploadProgressDone(()=>{}); else if(typeof pnUploadProgressClose==='function') pnUploadProgressClose();
+    toast('Berkas berhasil diunggah','ok');
+  }catch(err){
+    console.error(err);
+    if(typeof pnUploadProgressClose==='function') pnUploadProgressClose();
+    toast('Gagal mengunggah: '+errMsg(err),'err');
+    return;
+  }
+  // re-render tampilan aktif
+  if(document.getElementById('view-dpeng-unggah')?.classList.contains('active')) renderDpengUnggah();
+  if(document.getElementById('view-dpeng-view')?.classList.contains('active')) renderDpengView();
+}
+async function dpengBlobFor(recId, key){
+  const rec=(records_dpeng||[]).find(r=>String(r.id)===String(recId));
+  const d=rec&&(rec.dokumen||[]).find(x=>x.key===key);
+  if(!d||!d.path) return null;
+  return await dpengStorageGet(d.path);
+}
+async function dpengPreview(recId, key){
+  try{
+    const blob=await withActionLoader('Memuat berkas', async()=>await dpengBlobFor(recId,key));
+    if(!blob){ toast('Berkas tidak ditemukan','warn'); return; }
+    const url=URL.createObjectURL(blob);
+    window.open(url,'_blank');
+    setTimeout(()=>URL.revokeObjectURL(url), 60000);
+  }catch(err){ console.error(err); toast('Gagal membuka berkas: '+errMsg(err),'err'); }
+}
+async function dpengDownload(recId, key){
+  try{
+    const rec=(records_dpeng||[]).find(r=>String(r.id)===String(recId));
+    const d=rec&&(rec.dokumen||[]).find(x=>x.key===key);
+    const blob=await withActionLoader('Mengunduh', async()=>await dpengBlobFor(recId,key));
+    if(!blob){ toast('Berkas tidak ditemukan','warn'); return; }
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=(d&&d.nama_file)||'dokumen'; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 60000);
+  }catch(err){ console.error(err); toast('Gagal mengunduh: '+errMsg(err),'err'); }
+}
+function dpengRemoveFile(recId, key){
+  openConfirm({ icon:'warn', title:'Hapus Berkas',
+    text:'Hapus berkas untuk dokumen ini? Slot jenis dokumen tetap ada, hanya berkasnya yang dihapus.',
+    onYes:async function(){
+      const rec=(records_dpeng||[]).find(r=>String(r.id)===String(recId));
+      if(!rec) return;
+      const docs=(rec.dokumen||[]).map(d=>Object.assign({},d));
+      const idx=docs.findIndex(d=>d.key===key); if(idx<0) return;
+      const oldPath=docs[idx].path||'';
+      docs[idx].path=''; docs[idx].nama_file=''; docs[idx].ukuran=0; docs[idx].mime='';
+      try{
+        await withActionLoader('Menghapus', async()=>{
+          await StoreDpeng.update(rec.id, {dokumen:docs});
+          if(oldPath) await dpengStorageRemove(oldPath);
+          await refreshDataDpeng();
+        });
+        toast('Berkas dihapus','ok');
+      }catch(err){ console.error(err); toast('Gagal menghapus: '+errMsg(err),'err'); return; }
+      if(document.getElementById('view-dpeng-unggah')?.classList.contains('active')) renderDpengUnggah();
+      if(document.getElementById('view-dpeng-view')?.classList.contains('active')) renderDpengView();
+    }});
+}
+/* ---- Hapus seluruh pekerjaan (opsional dari daftar) ---- */
+function dpengHapusPekerjaan(recId){
+  openConfirm({ icon:'warn', title:'Hapus Pekerjaan',
+    text:'Hapus pekerjaan ini beserta seluruh berkasnya? Tindakan tidak dapat dibatalkan.',
+    onYes:async function(){
+      const rec=(records_dpeng||[]).find(r=>String(r.id)===String(recId)); if(!rec) return;
+      try{
+        await withActionLoader('Menghapus', async()=>{
+          for(const d of (rec.dokumen||[])){ if(d.path) await dpengStorageRemove(d.path); }
+          await StoreDpeng.remove(rec.id);
+          await refreshDataDpeng();
+        });
+        if(String(dpengState.view.pekerjaanId)===String(recId)) dpengState.view.pekerjaanId='';
+        toast('Pekerjaan dihapus','ok');
+      }catch(err){ console.error(err); toast('Gagal menghapus: '+errMsg(err),'err'); return; }
+      renderDpengView();
+    }});
+}
+/* ---- Materi & Peraturan (placeholder) ---- */
+function openMateriView(){
+  if(!isAdmin()){ toast('Menu ini hanya untuk akun admin','warn'); return; }
+  showView('materi-view');
+}
+
 const FKL_INFO_FIELDS=[
   {key:'nama',          label:'Nama Pekerjaan',      type:'text', span:2},
   {key:'lokasi',        label:'Lokasi Pekerjaan',    type:'text', span:2},
@@ -16562,7 +17152,7 @@ resetLoginForm();
   if(hasRole && !tooOldSession && !tooLongIdle){
     currentUsername = uname || null;
     // Refresh: kembali ke halaman terakhir (data di halaman itu di-refresh), bukan ke dashboard.
-    const allowed=['dashboard','list','list-pl','list-tender','pn-lihat','pn-ambil','form-kelengkapan','fkl-view','form-pembukaan','pnw-view','form-rho','rho-view','form-hps','hps-view','form-analisa','analisa-view','spk-susun','spk-view','spk-klausul'];
+    const allowed=['dashboard','list','list-pl','list-tender','pn-lihat','pn-ambil','form-kelengkapan','fkl-view','form-pembukaan','pnw-view','form-rho','rho-view','form-hps','hps-view','form-analisa','analisa-view','spk-susun','spk-view','spk-klausul','dpeng-view','materi-view'];
     const inputViews=['input','input-pl','input-tender'];
     const draft=getDraft();
     if(inputViews.includes(view)){

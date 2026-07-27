@@ -5351,3 +5351,32 @@ table tfoot tr:hover td{ background:inherit !important; color:inherit; }
 .fkl-doc.fkl-doc table tbody tr:hover td{
   background:inherit !important; color:inherit; box-shadow:none;
 }
+
+/* ============ DOKUMEN PENGADAAN ============ */
+.act-up{background:linear-gradient(135deg,var(--teal),var(--cyan))}
+.act-dl{background:linear-gradient(135deg,#3b56c9,#5b73e0)}
+.act-up:hover{box-shadow:0 8px 20px rgba(14,124,134,.5)}
+.act-dl:hover{box-shadow:0 8px 20px rgba(59,86,201,.5)}
+.dpeng-hint{font-size:11.5px;color:var(--muted);margin-top:5px}
+.dpeng-file-ok{display:inline-block;margin-left:8px;font-size:12px;font-weight:600;color:var(--green);
+  max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle}
+.dpeng-file-no{display:inline-block;margin-left:8px;font-size:12px;font-weight:600;color:#b08400}
+.dpeng-uphint{font-size:12.5px;color:var(--muted);margin:-2px 0 12px}
+.dpeng-uplist{display:flex;flex-direction:column;gap:9px}
+.dpeng-uprow{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:11px 14px;border:1px solid var(--line,#e3e8ec);border-radius:12px;background:#fff;
+  transition:border-color .2s,box-shadow .2s}
+.dpeng-uprow.done{border-color:rgba(30,158,90,.35);background:linear-gradient(0deg,rgba(30,158,90,.04),rgba(30,158,90,.04))}
+.dpeng-uprow-l{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
+.dpeng-uprow-no{flex:none;width:24px;height:24px;border-radius:7px;display:grid;place-items:center;
+  font-size:12px;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--teal),var(--cyan))}
+.dpeng-uprow-name{font-size:13.5px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dpeng-uprow-r{display:flex;align-items:center;gap:8px;flex:none;flex-wrap:wrap;justify-content:flex-end}
+.dpeng-grp-tag{flex:none;font-size:10.5px;font-weight:800;letter-spacing:.03em;padding:2px 8px;border-radius:999px;color:#fff}
+.dpeng-grp-pl{background:#0E7C86}
+.dpeng-grp-tender{background:#3b56c9}
+@media (max-width:640px){
+  .dpeng-uprow{flex-direction:column;align-items:stretch;gap:8px}
+  .dpeng-uprow-r{justify-content:flex-start}
+  .dpeng-file-ok{max-width:100%}
+}
