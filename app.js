@@ -638,6 +638,9 @@ const VIEW_KEY = 'mon_view';   // halaman terakhir (untuk dipulihkan saat refres
 const DRAFT_KEY = 'mon_draft'; // draft form input/edit (dipulihkan saat refresh)
 const LOGIN_TIME_KEY = 'mon_login_time';   // timestamp login — dasar batas umur sesi absolut
 const LAST_ACTIVE_KEY = 'mon_last_active'; // timestamp aktivitas terakhir — dasar auto-logout idle
+const TOKEN_KEY = 'mon_file_token';        // token akses dokumen ke Worker (R2 File Gateway)
+/* URL Worker "PLN File Gateway" — penjaga akses dokumen kontrak privat di Cloudflare R2. */
+const R2_GATEWAY_URL = 'https://pln-file-gateway.pln-masohi.workers.dev';
 /* Penyimpanan sesi HANYA di sessionStorage.
    sessionStorage otomatis terhapus saat tab/browser ditutup, sehingga
    pengguna otomatis logout ketika browser ditutup. Sesi tetap dipulihkan
@@ -779,6 +782,11 @@ async function doLogin(){
   currentUsername = uname;
   ssSet(ROLE_KEY, role); ssSet(USER_KEY, uname);
   ssSet(LOGIN_TIME_KEY, String(Date.now())); ssSet(LAST_ACTIVE_KEY, String(Date.now()));
+  // Ambil token akses dokumen dari Worker (untuk baca/tulis file kontrak di R2).
+  // Login tetap dianggap berhasil walau langkah ini gagal; fitur file akan
+  // meminta login ulang bila token tidak tersedia.
+  try{ const tk=await fkFetchToken(uname, p); if(tk) ssSet(TOKEN_KEY, tk); }
+  catch(e){ console.warn('Token file gateway gagal diambil:', e); }
   playLoginAnim(role, ()=>enterApp(role));
 }
 /* Masuk sebagai Tamu (tanpa kata sandi) */
@@ -1139,7 +1147,7 @@ function performLogout(){
   stopIdleTimer();   // hentikan pemantauan idle
   const anim=document.getElementById('logout-anim');
   const finish=()=>{
-    ssDel(ROLE_KEY); ssDel(USER_KEY); ssDel(VIEW_KEY); ssDel(DRAFT_KEY); ssDel(LOGIN_TIME_KEY); ssDel(LAST_ACTIVE_KEY);
+    ssDel(ROLE_KEY); ssDel(USER_KEY); ssDel(VIEW_KEY); ssDel(DRAFT_KEY); ssDel(LOGIN_TIME_KEY); ssDel(LAST_ACTIVE_KEY); ssDel(TOKEN_KEY);
     currentRole=null; currentUsername=null;
     db = realDb; demoDb = null;   // buang sandbox demo & kembalikan koneksi Supabase asli
     try{ resetAllFilters(); }catch(e){}
@@ -6917,6 +6925,75 @@ const FK_TABLE = 'file_kontrak';
 const FK_BUCKET = 'file-kontrak';   // bucket Supabase Storage untuk file fisik
 const FK_MAX_MB = 50;   // batas ukuran file (sesuai batas per-file Storage free tier)
 
+/* ============================================================
+   AKSES DOKUMEN LEWAT WORKER (R2 File Gateway)
+   ------------------------------------------------------------
+   File kontrak privat kini disimpan di Cloudflare R2 dan diakses lewat Worker
+   yang memverifikasi token. Metadata (tabel file_kontrak) TETAP di Supabase.
+   Akun DEMO memakai penyimpanan sandbox di memori (tidak menyentuh R2).
+   ============================================================ */
+function fkIsDemo(){ return currentRole==='demo'; }
+function fkAuthToken(){ return ssGet(TOKEN_KEY)||''; }
+
+/* Minta token akses file ke Worker (dipanggil saat login). Balikan: string token / null. */
+async function fkFetchToken(username, password){
+  const resp=await fetch(R2_GATEWAY_URL+'/api/login',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({username, password})
+  });
+  if(!resp.ok) return null;
+  const j=await resp.json().catch(()=>null);
+  return (j&&j.token)||null;
+}
+
+/* Unggah bytes file ke R2 (via Worker) — atau ke sandbox demo. */
+async function fkStoragePut(path, file){
+  if(fkIsDemo()){
+    const up=await db.storage.from(FK_BUCKET).upload(path, file,
+      {contentType:file.type||'application/octet-stream', upsert:true});
+    if(up.error) throw up.error; return;
+  }
+  const resp=await fetch(R2_GATEWAY_URL+'/api/file?path='+encodeURIComponent(path),{
+    method:'POST',
+    headers:{'Authorization':'Bearer '+fkAuthToken(),
+             'X-File-Content-Type':file.type||'application/octet-stream'},
+    body:file
+  });
+  if(resp.status===401) throw new Error('Sesi berakhir — silakan login ulang.');
+  if(!resp.ok) throw new Error('Unggah gagal ('+resp.status+')');
+}
+
+/* Ambil bytes file dari R2 (via Worker) — atau dari sandbox demo. Balikan: Blob / null. */
+async function fkStorageGet(path){
+  if(fkIsDemo()){
+    const dl=await db.storage.from(FK_BUCKET).download(path);
+    if(dl.error) throw dl.error; return dl.data;
+  }
+  const resp=await fetch(R2_GATEWAY_URL+'/api/file?path='+encodeURIComponent(path),{
+    method:'GET',
+    headers:{'Authorization':'Bearer '+fkAuthToken()}
+  });
+  if(resp.status===401) throw new Error('Sesi berakhir — silakan login ulang.');
+  if(resp.status===404) return null;
+  if(!resp.ok) throw new Error('Unduh gagal ('+resp.status+')');
+  return await resp.blob();
+}
+
+/* Hapus file di R2 (via Worker) — atau di sandbox demo. Diam-diam bila gagal. */
+async function fkStorageRemove(path){
+  if(fkIsDemo()){
+    try{ await db.storage.from(FK_BUCKET).remove([path]); }catch(e){}
+    return;
+  }
+  try{
+    await fetch(R2_GATEWAY_URL+'/api/file?path='+encodeURIComponent(path),{
+      method:'DELETE',
+      headers:{'Authorization':'Bearer '+fkAuthToken()}
+    });
+  }catch(e){}
+}
+
 /* Yang masuk daftar File Kontrak:
    - SPBJ / Kontrak Rinci (kr) : HANYA status "Selesai".
    - Pengadaan Langsung & Tender: tahapan "Terkontrak" atau "Selesai".
@@ -7021,11 +7098,8 @@ const FileKontrak = {
   async saveFile(modul, recordId, file, meta){
     const safe=String(file.name||'file').replace(/[^\w.\-]+/g,'_');
     const path=`${modul}/${String(recordId)}/${Date.now()}_${safe}`;
-    // Unggah file mentah (Blob) ke Storage — TANPA base64, tanpa batas payload DB
-    const up=await db.storage.from(FK_BUCKET).upload(path, file, {
-      contentType:file.type||'application/octet-stream', upsert:true
-    });
-    if(up.error) throw up.error;
+    // Unggah file mentah (Blob) ke R2 lewat Worker — TANPA base64, tanpa batas payload DB
+    await fkStoragePut(path, file);
     // Ambil path lama (bila ada) agar bisa dibersihkan setelah metadata diganti
     let oldPath=null;
     try{
@@ -7040,18 +7114,16 @@ const FileKontrak = {
     }, meta||{});
     const {error}=await db.from(FK_TABLE).upsert(row,{onConflict:'modul,record_id'});
     if(error){ // rollback objek yang sudah terunggah bila metadata gagal
-      try{ await db.storage.from(FK_BUCKET).remove([path]); }catch(e){}
+      await fkStorageRemove(path);
       throw error;
     }
-    if(oldPath && oldPath!==path){ try{ await db.storage.from(FK_BUCKET).remove([oldPath]); }catch(e){} }
+    if(oldPath && oldPath!==path){ await fkStorageRemove(oldPath); }
   },
   /* Blob file: dari Storage (path) atau fallback base64 lama. */
   async getBlob(row){
     if(!row) return null;
     if(row.path){
-      const dl=await db.storage.from(FK_BUCKET).download(row.path);
-      if(dl.error) throw dl.error;
-      return dl.data;               // Blob
+      return await fkStorageGet(row.path);   // Blob (dari Worker/R2, atau sandbox demo)
     }
     if(row.data_base64) return fkB64ToBlob(row.data_base64, row.mime);
     return null;
@@ -7062,7 +7134,7 @@ const FileKontrak = {
       const prev=await db.from(FK_TABLE).select('path')
         .eq('modul',modul).eq('record_id',String(recordId)).limit(1);
       const p=prev.data&&prev.data[0]&&prev.data[0].path;
-      if(p){ try{ await db.storage.from(FK_BUCKET).remove([p]); }catch(e){} }
+      if(p){ await fkStorageRemove(p); }
     }catch(e){}
     const {error}=await db.from(FK_TABLE).delete()
       .eq('modul',modul).eq('record_id',String(recordId));
@@ -16502,7 +16574,7 @@ resetLoginForm();
   }else{
     if(hasRole && (tooOldSession || tooLongIdle)){
       // Sesi lama yang sudah kedaluwarsa → bersihkan & beri tahu, jangan dipulihkan diam-diam
-      ssDel(ROLE_KEY); ssDel(USER_KEY); ssDel(VIEW_KEY); ssDel(DRAFT_KEY); ssDel(LOGIN_TIME_KEY); ssDel(LAST_ACTIVE_KEY);
+      ssDel(ROLE_KEY); ssDel(USER_KEY); ssDel(VIEW_KEY); ssDel(DRAFT_KEY); ssDel(LOGIN_TIME_KEY); ssDel(LAST_ACTIVE_KEY); ssDel(TOKEN_KEY);
       setTimeout(()=>toast('Sesi sebelumnya sudah berakhir, silakan masuk kembali','warn'), 350);
     }
     currentRole=null; currentUsername=null;   // belum ada sesi / sesi kedaluwarsa → tampilkan layar login

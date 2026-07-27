@@ -706,11 +706,11 @@
     {t:'app_profiles',           l:'Profil & Konfigurasi',  grp:'Sistem'}
   ];
   var ST_BUCKETS=[
-    {b:'file-kontrak', l:'File Kontrak (berkas fisik)'},
+    {b:'file-kontrak', l:'File Kontrak (Cloudflare R2)'},
     {b:'rho-foto',     l:'Foto Referensi Harga'}
   ];
-  var ST_DB_QUOTA = 500*1024*1024;   // acuan Free tier Supabase: 0,5 GB database
-  var ST_ST_QUOTA = 1024*1024*1024;  // acuan Free tier Supabase: 1 GB storage
+  var ST_DB_QUOTA = 500*1024*1024;      // acuan Free tier Supabase: 0,5 GB database
+  var ST_ST_QUOTA = 10*1024*1024*1024;  // acuan Cloudflare R2 free tier: 10 GB (file-kontrak kini di R2)
 
   function stFmt(b){
     if(b==null || isNaN(b)) return '—';
@@ -791,6 +791,22 @@
     return {bytes:total, files:files, capped:capped};
   }
 
+  /* Ukuran storage nyata di Cloudflare R2 (bucket dokumen kontrak) via Worker.
+     Balikan: {bytes,files} atau null bila gagal / tidak ada token admin. */
+  async function stR2Usage(){
+    try{
+      if(typeof R2_GATEWAY_URL==='undefined' || !R2_GATEWAY_URL) return null;
+      var tok=(typeof ssGet==='function'?ssGet('mon_file_token'):null)
+              || (function(){ try{ return sessionStorage.getItem('mon_file_token'); }catch(e){ return null; } })();
+      if(!tok) return null;
+      var resp=await fetch(R2_GATEWAY_URL+'/api/usage', { headers:{'Authorization':'Bearer '+tok} });
+      if(!resp.ok) return null;
+      var j=await resp.json();
+      if(j && typeof j.bytes==='number') return { bytes:j.bytes, files:j.files||0 };
+    }catch(e){}
+    return null;
+  }
+
   function stEnsurePanel(){
     if(document.getElementById('st-ov')) return;
     var ov=document.createElement('div');
@@ -799,7 +815,7 @@
       '<div class="ac-panel st-panel">'
       + '<div class="ac-head">'
       +   '<div class="ac-head-t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>'
-      +     '<div><h3>Penyimpanan</h3><p>Pantau pemakaian database &amp; storage file Supabase.</p></div></div>'
+      +     '<div><h3>Penyimpanan</h3><p>Pantau pemakaian database Supabase &amp; storage file (Cloudflare R2).</p></div></div>'
       +   '<button class="ac-x" type="button" onclick="stClose()" aria-label="Tutup">&times;</button>'
       + '</div>'
       + '<div class="ac-body"><div class="ac-pane" id="st-pane"></div></div>'
@@ -861,6 +877,20 @@
           data.totalBytesSt += (r.bytes||0);
         });
       }
+
+      /* --- OVERRIDE: bucket `file-kontrak` kini di Cloudflare R2, bukan Supabase --- */
+      /* Baca ukuran nyata dari Worker (R2). `rho-foto` tetap dibaca dari Supabase. */
+      try{
+        var r2u=await stR2Usage();
+        if(r2u){
+          var fk=null;
+          data.buckets.forEach(function(b){ if(b.b==='file-kontrak') fk=b; });
+          if(!fk){ fk={b:'file-kontrak', l:'File Kontrak (Cloudflare R2)', bytes:0, files:0, capped:false, missing:false}; data.buckets.push(fk); }
+          data.totalBytesSt -= (fk.bytes||0);   // buang angka Supabase lama
+          fk.bytes=r2u.bytes; fk.files=r2u.files; fk.missing=false; fk.r2=true;
+          data.totalBytesSt += r2u.bytes;
+        }
+      }catch(e){ console.error('stR2Usage:',e); }
     }catch(e){ console.error('stScan:',e); }
     stRender(data);
     var btn2=document.getElementById('st-refresh'); if(btn2){ btn2.disabled=false; btn2.textContent='Segarkan'; }
@@ -952,6 +982,7 @@
     data.buckets.forEach(function(b){
       var pct = data.totalBytesSt>0 ? Math.round((b.bytes||0)/data.totalBytesSt*100) : 0;
       var extra=' <code>'+b.b+'</code>'
+        + ' &middot; '+(b.r2?'Cloudflare R2':'Supabase')
         + (b.missing?' <span class="st-na">bucket tidak ada</span>':'')
         + (b.capped?' <span class="st-na">*sebagian</span>':'');
       h+=stItem(b.l, stFmt(b.bytes), stNum(b.files)+' berkas', pct, 'st', extra);
