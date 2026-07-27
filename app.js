@@ -8931,9 +8931,13 @@ function dpengOpenUnggah(recId){
   if(!isAdmin()){ toast('Menu ini hanya untuk akun admin','warn'); return; }
   const rec = recId ? (records_dpeng||[]).find(r=>String(r.id)===String(recId)) : null;
   if(rec){
+    /* Tombol Edit pada daftar masuk ke FORMULIR "Data Pekerjaan" (bukan langsung
+       ke panel unggah berkas), sehingga nama/bidang/tanggal & pilihan jenis
+       dokumen bisa diubah dulu. Panel unggah dibuka setelah menekan tombol
+       "Unggah Dokumen" di formulir. */
     const picks={}; (rec.dokumen||[]).forEach(d=>{ picks[dpengResolveKey(d)]=true; });
     dpengState.unggah={ editId:rec.id, recId:rec.id, nama:dpengNama(rec), bidang:rec.bidang_pelaksana||'',
-                        tgl:rec.tgl_terima||'', tglLocked:false, picks, phase:'upload' };
+                        tgl:rec.tgl_terima||'', tglLocked:false, picks, phase:'form' };
   }else{
     dpengState.unggah={ editId:null, recId:null, nama:'', bidang:'', tgl:'', tglLocked:false, picks:{}, phase:'form' };
   }
