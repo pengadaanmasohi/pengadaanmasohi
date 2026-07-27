@@ -322,8 +322,11 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
             <svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
           </button>
           <div class="topnav-dropdown">
-            <!-- Perjanjian/Kontrak: dahulu "File Kontrak" — halaman & fungsi tak berubah. -->
-            <button class="topnav-item" data-view="fk-view" onclick="openFkView('kr')">
+            <!-- Perjanjian/Kontrak: dahulu "File Kontrak" — halaman & fungsi tak berubah.
+                 Akun TAMU tidak lagi diberi akses: seluruh isi grup "Dokumen" kini
+                 khusus admin/user, sehingga grup ini otomatis tersembunyi bagi Tamu
+                 (applyRole menyembunyikan grup yang seluruh itemnya tidak tampil). -->
+            <button class="topnav-item" data-view="fk-view" data-role="admin user" onclick="openFkView('kr')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/><path d="M12 11v6M9 14h6"/></svg>
               Perjanjian/Kontrak
             </button>
@@ -1067,8 +1070,8 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
     </div>
     <div class="toolbar fk-toolbar">
       <div class="filter-field">
-        <label>Pilih Pekerjaan</label>
-        <select id="dpeng-view-pekerjaan" onchange="dpengFilterView()"><option value="">— Pilih Pekerjaan —</option></select>
+        <label>Bidang Pelaksana</label>
+        <select id="dpeng-view-bidang" onchange="dpengFilterView()"><option value="">Semua Bidang</option></select>
       </div>
       <div class="filter-field">
         <label>Tahun</label>
@@ -1096,8 +1099,7 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
               <th class="col-no">No.</th>
               <th class="col-nama-freeze">Nama Pekerjaan</th>
               <th class="fk-col-bidang">Bidang Pelaksana</th>
-              <th>Dokumen</th>
-              <th class="col-date">Tgl. Terima</th>
+              <th class="col-date">Tgl. Terima Dokumen</th>
               <th style="text-align:center">Aksi</th>
             </tr>
           </thead>
@@ -1935,6 +1937,23 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
     </div>
   </div>
 </div>
+<!-- ====== MODAL LIHAT DOKUMEN (Dokumen Pengadaan) ======
+     Menampilkan SELURUH jenis dokumen milik satu pekerjaan secara berurutan.
+     Dokumen yang berkasnya sudah ada tampil biru & dapat diklik untuk membuka
+     pratinjau; yang belum diunggah tampil redup dan tidak dapat diklik. -->
+<div class="overlay" id="dpeng-list-overlay" onclick="if(event.target===this) dpengCloseDocList()">
+  <div class="modal wide dpeng-list-modal">
+    <div class="detail-head">
+      <div class="dpeng-list-head-txt">
+        <h3 id="dpeng-list-title">Dokumen Pekerjaan</h3>
+        <p class="dpeng-list-sub" id="dpeng-list-sub"></p>
+      </div>
+      <button class="detail-close" onclick="dpengCloseDocList()" title="Tutup" aria-label="Tutup">&times;</button>
+    </div>
+    <div class="dpeng-list-body" id="dpeng-list-body"></div>
+  </div>
+</div>
+
 <!-- Input file tersembunyi untuk unggah berkas Dokumen Pengadaan -->
 <input type="file" id="dpeng-file-input" accept="application/pdf,.pdf,.xls,.xlsx,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="display:none" onchange="dpengFilePicked(event)">
 

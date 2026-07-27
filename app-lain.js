@@ -1439,6 +1439,10 @@ function renderTrackUser(){
 
 /* ---------- Halaman ADMIN (Kelola Tracking) ---------- */
 function openTrackKelola(){
+  /* Kelola Tracking mengubah data → hanya admin. Tombolnya memang sudah
+     data-role="admin", penjaga ini mencegah akses lewat jalur lain (mis. konsol
+     atau pemulihan sesi) oleh akun Tamu/User. */
+  if(typeof isAdmin==='function' && !isAdmin()){ if(typeof toast==='function') toast('Menu ini hanya untuk akun admin','warn'); return; }
   showView('track-kelola');
   const jobs=[];
   if(typeof refreshDataDp==='function') jobs.push(refreshDataDp());
