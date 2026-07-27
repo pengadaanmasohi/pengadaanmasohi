@@ -8541,7 +8541,12 @@ function fklDocPool(){
      sama sudah ada di menu Kelengkapan Dokumen Pengadaan.
    ================================================================== */
 const DPENG_TABLE  = 'dokumen_pengadaan';
-const DPENG_BUCKET = 'dokumen-pengadaan';
+const DPENG_BUCKET = 'dokumen-pengadaan';   // bucket Supabase Storage — HANYA untuk akun demo
+/* Prefiks folder di dalam bucket R2 milik Worker (FILE_BUCKET). Worker hanya
+   menerima path yang diawali kr | pl | tender | dpeng, jadi seluruh berkas
+   Dokumen Pengadaan disimpan di bawah "dpeng/". Worker TIDAK mendukung
+   pemilihan bucket lewat query — hanya ada satu binding R2. */
+const DPENG_PREFIX = 'dpeng/';
 const DPENG_MAX_MB = 50;
 const DPENG_PAGE_SIZE = 10;   // baris pekerjaan per halaman (samakan dgn tabel lain)
 
@@ -8662,7 +8667,7 @@ async function dpengStoragePut(path, file){
       {contentType:file.type||'application/octet-stream', upsert:true});
     if(up.error) throw up.error; return;
   }
-  const resp=await fetch(R2_GATEWAY_URL+'/api/file?path='+encodeURIComponent(path)+'&bucket='+encodeURIComponent(DPENG_BUCKET),{
+  const resp=await fetch(R2_GATEWAY_URL+'/api/file?path='+encodeURIComponent(path),{
     method:'POST',
     headers:{'Authorization':'Bearer '+fkAuthToken(),
              'X-File-Content-Type':file.type||'application/octet-stream'},
@@ -8676,7 +8681,7 @@ async function dpengStorageGet(path){
     const dl=await db.storage.from(DPENG_BUCKET).download(path);
     if(dl.error) throw dl.error; return dl.data;
   }
-  const resp=await fetch(R2_GATEWAY_URL+'/api/file?path='+encodeURIComponent(path)+'&bucket='+encodeURIComponent(DPENG_BUCKET),{
+  const resp=await fetch(R2_GATEWAY_URL+'/api/file?path='+encodeURIComponent(path),{
     method:'GET', headers:{'Authorization':'Bearer '+fkAuthToken()}
   });
   if(resp.status===401) throw new Error('Sesi berakhir — silakan login ulang.');
@@ -8687,7 +8692,7 @@ async function dpengStorageGet(path){
 async function dpengStorageRemove(path){
   if(dpengIsDemo()){ try{ await db.storage.from(DPENG_BUCKET).remove([path]); }catch(e){} return; }
   try{
-    await fetch(R2_GATEWAY_URL+'/api/file?path='+encodeURIComponent(path)+'&bucket='+encodeURIComponent(DPENG_BUCKET),{
+    await fetch(R2_GATEWAY_URL+'/api/file?path='+encodeURIComponent(path),{
       method:'DELETE', headers:{'Authorization':'Bearer '+fkAuthToken()}
     });
   }catch(e){}
@@ -9197,8 +9202,11 @@ async function dpengFilePicked(ev){
   if(file.size > DPENG_MAX_MB*1024*1024){ toast('Ukuran berkas melebihi '+DPENG_MAX_MB+' MB','err'); return; }
   const rec=(records_dpeng||[]).find(r=>String(r.id)===String(tgt.recId));
   if(!rec){ toast('Record tidak ditemukan','err'); return; }
-  const safe=String(file.name||'file').replace(/[^\w.\-]+/g,'_');
-  const path=String(rec.id)+'/'+tgt.key+'/'+Date.now()+'_'+safe;
+  /* Path WAJIB diawali prefiks modul yang dikenali Worker R2
+     (kr | pl | tender | dpeng); di luar itu Worker menolak 400 invalid_path.
+     Titik ganda juga dilarang Worker, jadi ".." dinetralkan lebih dulu. */
+  const safe=String(file.name||'file').replace(/[^\w.\-]+/g,'_').replace(/\.{2,}/g,'.');
+  const path=DPENG_PREFIX+String(rec.id)+'/'+tgt.key+'/'+Date.now()+'_'+safe;
   const docs=Array.isArray(rec.dokumen)?rec.dokumen.map(d=>Object.assign({},d)):[];
   const idx=docs.findIndex(d=>d.key===tgt.key);
   if(idx<0){ toast('Jenis dokumen tidak ditemukan','err'); return; }
