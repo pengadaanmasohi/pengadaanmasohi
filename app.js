@@ -10949,7 +10949,7 @@ function renderPnwView(){
     const lokasi=(r.lokasi||info.lokasi||'').trim();
     const metode=r.metode||info.metode||'';
     const jenis=r.jenis_dokumen||(pnwIsTwoSampul(stt)?'Dua Sampul':'Satu Sampul');
-    const tgl=r.tgl_periksa||'';
+    const tgl=(stt.tgl_pembukaan||r.tgl_periksa||'');
     const two = jenis==='Dua Sampul';
     const rid=fkEsc(String(r.id));
     // Satu baris per data. Tombol Lihat membuka DOKUMEN GABUNGAN (Sampul Satu +
