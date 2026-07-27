@@ -5472,27 +5472,34 @@ table tfoot tr:hover td{ background:inherit !important; color:inherit; }
   .dpeng-list-label{white-space:normal}
 }
 
+
 /* =========================================================================
    EFEK 3D — SELURUH ISI MENU "DOKUMEN"
    Berlaku pada: Perjanjian/Kontrak (#view-fk-view), Dokumen Pengadaan
    (#view-dpeng-view & #view-dpeng-unggah), Materi & Peraturan
    (#view-materi-view), serta pop up milik Dokumen Pengadaan.
-   Pendekatan: perspective pada wadah + bayangan berlapis (ambient + kontak +
-   sorotan dalam) sehingga kartu, baris tabel, dan tombol terasa terangkat;
-   hover mengangkat sedikit, klik menekannya kembali.
-   Tidak ada perubahan tata letak — hanya bayangan, gradien, & transform.
+
+   PENTING — kenapa memakai scale, bukan translate:
+   Efek angkat yang memakai translateY MEMINDAHKAN elemen menjauh dari kursor.
+   Bila kursor berada di tepi bawah tombol, elemennya kabur → hover lepas →
+   elemen kembali → hover lagi, berulang puluhan kali per detik. Akibatnya
+   kursor berkedip antara panah & tangan, dan klik bisa gagal karena mousedown
+   dan mouseup mendarat di elemen yang berbeda. scale() membesarkan kotak ke
+   segala arah, sehingga titik yang tadinya di dalam TIDAK PERNAH keluar.
+   Karena itu: wadah (kartu/panel/toolbar) TIDAK ditransform sama sekali
+   (isinya ikut bergeser & menggeser tombol di dalamnya), sedangkan elemen
+   interaktif memakai scale.
    ========================================================================= */
 #view-fk-view,#view-dpeng-view,#view-dpeng-unggah,#view-materi-view{
   perspective:1600px; perspective-origin:50% 0%;
 }
 
-/* ---------- Kartu utama: panel tabel, toolbar, kartu formulir ---------- */
+/* ---------- Kartu utama: kedalaman lewat bayangan berlapis (tanpa transform) ---------- */
 #view-fk-view .panel,#view-dpeng-view .panel,#view-materi-view .panel,
 #view-fk-view .toolbar,#view-dpeng-view .toolbar,
 #view-dpeng-unggah .form-card{
   border-radius:16px;
-  transform-style:preserve-3d;
-  transition:transform .3s cubic-bezier(.16,1,.3,1),box-shadow .3s ease;
+  transition:box-shadow .3s ease;
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,.92),
     inset 0 -1px 0 rgba(16,40,50,.05),
@@ -5503,7 +5510,6 @@ table tfoot tr:hover td{ background:inherit !important; color:inherit; }
 }
 #view-fk-view .panel:hover,#view-dpeng-view .panel:hover,#view-materi-view .panel:hover,
 #view-dpeng-unggah .form-card:hover{
-  transform:translateY(-4px) rotateX(.6deg);
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,.95),
     inset 0 -1px 0 rgba(16,40,50,.05),
@@ -5512,20 +5518,19 @@ table tfoot tr:hover td{ background:inherit !important; color:inherit; }
     0 24px 44px rgba(16,40,50,.12),
     0 46px 78px rgba(16,40,50,.09);
 }
-#view-fk-view .toolbar:hover,#view-dpeng-view .toolbar:hover{ transform:translateY(-2px) }
 
-/* ---------- Kepala tabel: terasa menonjol di atas badan tabel ---------- */
+/* ---------- Kepala tabel: menonjol di atas badan tabel ---------- */
 #view-fk-view .panel thead th,#view-dpeng-view .panel thead th{
   box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 3px 8px rgba(16,40,50,.16);
   text-shadow:0 1px 1px rgba(9,63,69,.35);
 }
 
-/* ---------- Baris tabel: melayang saat disorot ---------- */
+/* ---------- Baris tabel: membesar tipis (bukan bergeser) saat disorot ---------- */
 #view-fk-view .panel tbody tr,#view-dpeng-view .panel tbody tr{
   transition:transform .2s cubic-bezier(.16,1,.3,1),box-shadow .2s ease,background .2s ease;
 }
 #view-fk-view .panel tbody tr:hover,#view-dpeng-view .panel tbody tr:hover{
-  transform:translateY(-2px) scale(1.004);
+  transform:scale(1.006);
   box-shadow:0 6px 16px rgba(16,40,50,.13),0 1px 3px rgba(16,40,50,.08);
   position:relative; z-index:1;
 }
@@ -5542,7 +5547,7 @@ table tfoot tr:hover td{ background:inherit !important; color:inherit; }
 }
 #view-fk-view .act:hover,#view-dpeng-view .act:hover,#view-dpeng-unggah .act:hover,
 #dpeng-list-overlay .act:hover{
-  transform:translateY(-2px);
+  transform:scale(1.10);
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,.40),
     inset 0 -2px 0 rgba(0,0,0,.16),
@@ -5552,13 +5557,17 @@ table tfoot tr:hover td{ background:inherit !important; color:inherit; }
 }
 #view-fk-view .act:active,#view-dpeng-view .act:active,#view-dpeng-unggah .act:active,
 #dpeng-list-overlay .act:active{
-  transform:translateY(1px);
+  transform:scale(.94);
   box-shadow:inset 0 2px 5px rgba(0,0,0,.26),0 1px 1px rgba(16,40,50,.14);
 }
 
-/* ---------- Tombol biasa (Unggah Dokumen, Reset, Simpan, dll.) ---------- */
+/* ---------- Tombol biasa (Pilih Dokumen, Unggah Dokumen, Reset, dll.) ----------
+   scale menggantikan translateY bawaan .btn:hover — inilah yang menghilangkan
+   kursor berkedip & klik yang gagal di tepi bawah tombol. */
 #view-fk-view .btn,#view-dpeng-view .btn,#view-dpeng-unggah .btn,
-#dpeng-doc-overlay .btn,#dpeng-list-overlay .btn{
+#dpeng-doc-overlay .btn,#dpeng-list-overlay .btn,
+#view-fk-view .dp-pick-btn,#view-dpeng-unggah .dp-pick-btn,
+#view-fk-view .dp-unpick-btn,#view-dpeng-unggah .dp-unpick-btn{
   transition:transform .16s cubic-bezier(.16,1,.3,1),box-shadow .16s ease,filter .16s ease;
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,.28),
@@ -5567,8 +5576,10 @@ table tfoot tr:hover td{ background:inherit !important; color:inherit; }
     0 1px 2px rgba(16,40,50,.12);
 }
 #view-fk-view .btn:hover,#view-dpeng-view .btn:hover,#view-dpeng-unggah .btn:hover,
-#dpeng-doc-overlay .btn:hover,#dpeng-list-overlay .btn:hover{
-  transform:translateY(-2px);
+#dpeng-doc-overlay .btn:hover,#dpeng-list-overlay .btn:hover,
+#view-fk-view .dp-pick-btn:hover,#view-dpeng-unggah .dp-pick-btn:hover,
+#view-fk-view .dp-unpick-btn:hover,#view-dpeng-unggah .dp-unpick-btn:hover{
+  transform:scale(1.04);
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,.34),
     inset 0 -2px 0 rgba(0,0,0,.14),
@@ -5576,8 +5587,10 @@ table tfoot tr:hover td{ background:inherit !important; color:inherit; }
     0 2px 5px rgba(16,40,50,.14);
 }
 #view-fk-view .btn:active,#view-dpeng-view .btn:active,#view-dpeng-unggah .btn:active,
-#dpeng-doc-overlay .btn:active,#dpeng-list-overlay .btn:active{
-  transform:translateY(1px);
+#dpeng-doc-overlay .btn:active,#dpeng-list-overlay .btn:active,
+#view-fk-view .dp-pick-btn:active,#view-dpeng-unggah .dp-pick-btn:active,
+#view-fk-view .dp-unpick-btn:active,#view-dpeng-unggah .dp-unpick-btn:active{
+  transform:scale(.97);
   box-shadow:inset 0 3px 7px rgba(0,0,0,.22),0 1px 1px rgba(16,40,50,.12);
 }
 
@@ -5587,7 +5600,7 @@ table tfoot tr:hover td{ background:inherit !important; color:inherit; }
   box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 2px 5px rgba(16,40,50,.07),0 8px 16px rgba(16,40,50,.06);
 }
 #view-dpeng-unggah .dpeng-uprow:hover{
-  transform:translateY(-3px);
+  transform:scale(1.008);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 4px 9px rgba(16,40,50,.10),0 14px 26px rgba(16,40,50,.11);
 }
 
@@ -5608,11 +5621,10 @@ table tfoot tr:hover td{ background:inherit !important; color:inherit; }
     0 48px 92px rgba(9,63,69,.30);
 }
 #dpeng-list-overlay .dpeng-list-item{
-  transform-style:preserve-3d;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 2px 4px rgba(16,40,50,.07),0 7px 14px rgba(16,40,50,.06);
 }
 #dpeng-list-overlay .dpeng-list-item.has-file:hover{
-  transform:translateY(-3px) scale(1.006);
+  transform:scale(1.012);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 5px 10px rgba(37,99,235,.16),0 16px 30px rgba(37,99,235,.20);
 }
 #dpeng-doc-overlay .pn-check-item{
@@ -5620,7 +5632,7 @@ table tfoot tr:hover td{ background:inherit !important; color:inherit; }
   box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 1px 2px rgba(16,40,50,.06),0 4px 9px rgba(16,40,50,.05);
 }
 #dpeng-doc-overlay .pn-check-item:hover{
-  transform:translateY(-2px);
+  transform:scale(1.02);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 3px 6px rgba(16,40,50,.09),0 10px 20px rgba(16,40,50,.09);
 }
 #dpeng-doc-overlay .pn-check-box{ box-shadow:inset 0 1px 2px rgba(16,40,50,.12) }
@@ -5628,7 +5640,7 @@ table tfoot tr:hover td{ background:inherit !important; color:inherit; }
   box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 2px 5px rgba(14,124,134,.35);
 }
 
-/* ---------- Judul halaman & kartu: sedikit terangkat dari latar ---------- */
+/* ---------- Judul: sedikit terangkat dari latar ---------- */
 #view-fk-view .page-head h2,#view-dpeng-view .page-head h2,
 #view-dpeng-unggah .page-head h2,#view-materi-view .page-head h2{
   text-shadow:0 1px 0 rgba(255,255,255,.9),0 2px 4px rgba(16,40,50,.12);
@@ -5637,12 +5649,17 @@ table tfoot tr:hover td{ background:inherit !important; color:inherit; }
   text-shadow:0 1px 0 rgba(255,255,255,.85);
 }
 
-/* ---------- Kolom input: sedikit cekung agar kontras dgn kartu timbul ---------- */
+/* ---------- Kolom isian: sedikit cekung agar kontras dgn kartu timbul ---------- */
 #view-fk-view .filter-field input,#view-fk-view .filter-field select,
 #view-dpeng-view .filter-field input,#view-dpeng-view .filter-field select,
 #view-dpeng-unggah .field input,#view-dpeng-unggah .field select{
   box-shadow:inset 0 2px 4px rgba(16,40,50,.07),inset 0 -1px 0 rgba(255,255,255,.9);
 }
+
+/* Ikon di dalam tombol: jangan ikut melayang (translateZ bawaan bikin goyang) */
+#view-fk-view .btn:hover svg,#view-dpeng-view .btn:hover svg,
+#view-dpeng-unggah .btn:hover svg,#dpeng-doc-overlay .btn:hover svg,
+#dpeng-list-overlay .btn:hover svg{ transform:scale(1.08) }
 
 /* Hormati preferensi pengguna yang meminimalkan animasi */
 @media (prefers-reduced-motion:reduce){
