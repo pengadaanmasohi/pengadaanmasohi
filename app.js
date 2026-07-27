@@ -8998,10 +8998,10 @@ function dpengFormHtml(){
         '<input id="dpeng-f-nama" type="text" value="'+fkEsc(u.nama)+'" oninput="dpengNamaInput()" onchange="dpengSyncTgl()" placeholder="Ketik nama pekerjaan atau gunakan Pilih Pekerjaan"'+namaAtr+'>' +
         (dpLock?'<div class="dpeng-hint">Otomatis dari Data Pekerjaan</div>':'') + '</div>' +
       '<div class="field dpeng-f-bidang"><label>Bidang Pelaksana <span class="req">*</span></label>' +
-        '<select id="dpeng-f-bidang"'+bidangAtr+'><option value="">— Pilih —</option>'+bidangOpts+'</select>' +
+        '<select id="dpeng-f-bidang" onchange="dpengFormSync()"'+bidangAtr+'><option value="">— Pilih —</option>'+bidangOpts+'</select>' +
         (dpLock?'<div class="dpeng-hint">Otomatis dari Data Pekerjaan</div>':'') + '</div>' +
       '<div class="field dpeng-f-tgl"><label>Tgl. Terima Dokumen <span class="req">*</span></label>' +
-        '<input id="dpeng-f-tgl" type="date"'+tglCls+' value="'+fkEsc(u.tgl)+'"'+tglDis+'>' +
+        '<input id="dpeng-f-tgl" type="date" onchange="dpengFormSync()" oninput="dpengFormSync()"'+tglCls+' value="'+fkEsc(u.tgl)+'"'+tglDis+'>' +
         (u.tglLocked?'<div class="dpeng-hint">Otomatis dari Kelengkapan Dokumen (pekerjaan yang sama)</div>':'') + '</div>' +
     '</div>' +
     '<div class="field dpeng-f-dok"><label>Dokumen <span class="req">*</span></label>' +
@@ -9060,14 +9060,44 @@ function dpengLepasDp(){
   renderDpengUnggah();
   toast('Pilihan Data Pekerjaan dilepas','ok');
 }
+/* ---- Penyelaras formulir DOM -> dpengState.unggah ----
+   WAJIB dipanggil sebelum APA PUN yang menggambar ulang formulir. Formulir ini
+   digambar ulang seluruhnya dari `dpengState.unggah` (lihat dpengFormHtml), jadi
+   nilai yang hanya ada di DOM dan belum masuk ke state akan HILANG saat digambar
+   ulang. Dulu hanya Nama Pekerjaan yang punya penyelaras; Bidang Pelaksana &
+   Tgl. Terima Dokumen baru dibaca saat tombol "Unggah Dokumen" ditekan
+   (dpengSubmitForm), sehingga menekan "Pilih Dokumen" -> Simpan membuat kedua
+   isian itu tampak ter-reset. */
+function dpengFormSync(){
+  const u=dpengState.unggah; if(!u || u.phase==='upload') return;
+  const eNama=document.getElementById('dpeng-f-nama');
+  const eBid =document.getElementById('dpeng-f-bidang');
+  const eTgl =document.getElementById('dpeng-f-tgl');
+  /* ATURAN: isian yang TERKUNCI (disabled/readonly) tidak pernah dibaca balik.
+     Isian terkunci dikemudikan oleh state (Data Pekerjaan / Kelengkapan
+     Dokumen), bukan oleh pengguna — membacanya balik hanya berisiko menimpa
+     nilai yang benar dengan tampilan DOM. */
+  if(eNama && !eNama.disabled && !eNama.readOnly) u.nama=eNama.value||'';
+  if(eBid && !eBid.disabled){
+    const v=eBid.value||'';
+    /* PENGAMAN: <select> hanya bisa menampilkan nilai yang ADA pada daftar
+       opsinya (BIDANG_OPTS). Bila state memuat bidang di luar daftar itu —
+       mis. datang dari Data Pekerjaan dengan penulisan berbeda — select jatuh
+       ke "— Pilih —" (nilai kosong). Menyalinnya balik akan MENGHAPUS bidang
+       yang sebenarnya sudah ada, jadi nilai kosong hanya diterima bila daftar
+       opsinya memang tidak memuat nilai state tersebut. */
+    const adaOpsi=[...eBid.options].some(o=>o.value===(u.bidang||''));
+    if(v || !u.bidang || adaOpsi) u.bidang=v;
+  }
+  if(eTgl && !eTgl.disabled && !u.tglLocked) u.tgl=eTgl.value||'';
+}
 function dpengNamaInput(){
-  const u=dpengState.unggah; if(!u) return;
-  u.nama=(document.getElementById('dpeng-f-nama')?.value)||'';
+  dpengFormSync();
 }
 /* Sinkron Tgl. Terima dari Kelengkapan saat nama diketik/berubah */
 function dpengSyncTgl(){
   const u=dpengState.unggah; if(!u) return;
-  u.nama=(document.getElementById('dpeng-f-nama')?.value)||'';
+  dpengFormSync();                    /* Bidang & Tgl. ikut diamankan sebelum render ulang */
   const t=dpengTglFromKelengkapan(u.nama);
   if(t){ u.tgl=t; u.tglLocked=true; }
   else { u.tglLocked=false; }
@@ -9097,6 +9127,7 @@ function dpengBuildDocModal(){
 }
 let dpengDocSnapshot=null;
 function dpengDocModalOpen(){
+  dpengFormSync();                    /* jaring pengaman bila ada event yang terlewat */
   dpengDocSnapshot=[...document.querySelectorAll('.dpeng-doc-check')].map(b=>b.checked);
   const ov=document.getElementById('dpeng-doc-overlay'); if(ov) ov.classList.add('show');
 }
