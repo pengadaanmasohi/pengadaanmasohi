@@ -8547,7 +8547,14 @@ const DPENG_BUCKET = 'dokumen-pengadaan';   // bucket Supabase Storage — HANYA
    Dokumen Pengadaan disimpan di bawah "dpeng/". Worker TIDAK mendukung
    pemilihan bucket lewat query — hanya ada satu binding R2. */
 const DPENG_PREFIX = 'dpeng/';
-const DPENG_MAX_MB = 50;
+/* Batas ukuran berkas. Angka ini BUKAN batasan aplikasi, melainkan mengikuti
+   batas body permintaan Cloudflare Worker — berkas mengalir lewat Worker
+   sebelum sampai ke R2. Sesuaikan bila paket Cloudflare berubah:
+   Free & Pro 100 MB · Business 200 MB · Enterprise 500 MB.
+   Dicek di sisi aplikasi agar pengguna tahu sebabnya SEBELUM menunggu
+   unggahan panjang yang berakhir gagal; status 413 dari Worker tetap
+   ditangani sebagai jaring pengaman. */
+const DPENG_MAX_MB = 100;
 const DPENG_PAGE_SIZE = 10;   // baris pekerjaan per halaman (samakan dgn tabel lain)
 
 const DPENG_DOCS = {
@@ -8674,6 +8681,11 @@ async function dpengStoragePut(path, file){
     body:file
   });
   if(resp.status===401) throw new Error('Sesi berakhir — silakan login ulang.');
+  /* 413 = berkas melampaui batas body permintaan Cloudflare Worker
+     (Free/Pro 100 MB, Business 200 MB, Enterprise 500 MB). Batas ini milik
+     Cloudflare, bukan aplikasi, jadi pesannya dibuat spesifik agar tidak
+     tertukar dengan kegagalan jaringan biasa. */
+  if(resp.status===413) throw new Error('Berkas terlalu besar untuk gateway Cloudflare. Silakan kompres atau pecah berkasnya.');
   if(!resp.ok) throw new Error('Unggah gagal ('+resp.status+')');
 }
 async function dpengStorageGet(path){
@@ -9170,7 +9182,7 @@ function dpengUploadPanelHtml(){
       '<span class="dpeng-up-sub">'+fkEsc(dpengNama(rec)||'')+'</span>'+
       '<span class="dpeng-up-prog">'+terisi+'/'+docs.length+' terunggah</span>'+
     '</div>'+
-    '<div class="dpeng-uphint">Format: PDF / Excel • maks. '+DPENG_MAX_MB+' MB per berkas.</div>'+
+    '<div class="dpeng-uphint">Format: PDF / Excel • maks. '+DPENG_MAX_MB+' MB per berkas (batas gateway Cloudflare).</div>'+
     '<div class="dpeng-uplist">'+rows+'</div>'+
   '</div>'+
   '<div class="jp-actions" style="justify-content:space-between;margin-top:14px">'+
@@ -9191,15 +9203,41 @@ function dpengUnggahBatal(){
 
 /* ---- Unggah / lihat / hapus berkas satu dokumen ---- */
 let dpengFileTarget=null;   // {recId, key}
+/* Klik "Unggah Dokumen" -> buka POPUP seret & lepas (sama seperti Unggah File
+   Kontrak dan tombol Upload Template), bukan langsung membuka pemilih berkas
+   sistem. Di dalam popup masih bisa klik untuk menelusuri berkas. */
 function dpengPickFile(recId, key){
   dpengFileTarget={recId:String(recId), key:key};
+  const rec=(records_dpeng||[]).find(r=>String(r.id)===String(recId));
+  const d=rec&&(rec.dokumen||[]).find(x=>x.key===key);
+  const judul=(d&&(d.label||dpengDocLabel(d.group,d.key)))||'Dokumen';
+  const sudahAda=!!(d&&d.path);
+  if(typeof openTplUpload==='function'){
+    openTplUpload({
+      title:(sudahAda?'Ganti Berkas — ':'Unggah Berkas — ')+judul,
+      accept:'.pdf,.xls,.xlsx',
+      hint:'Format PDF atau Excel (.pdf, .xls, .xlsx) • maks. '+DPENG_MAX_MB+' MB',
+      onFile:function(file){
+        // target di-set ulang di sini agar tidak bergantung pada state global
+        // yang bisa berubah selama popup terbuka
+        dpengFileTarget={recId:String(recId), key:key};
+        dpengFilePicked({target:{files:[file]}});
+      }
+    });
+    return;
+  }
+  // cadangan bila popup tidak tersedia: pemilih berkas sistem
   const inp=document.getElementById('dpeng-file-input'); if(inp){ inp.value=''; inp.click(); }
 }
 async function dpengFilePicked(ev){
   const file=ev&&ev.target&&ev.target.files&&ev.target.files[0];
   if(!file || !dpengFileTarget) return;
   const tgt=dpengFileTarget; dpengFileTarget=null;
-  if(file.size > DPENG_MAX_MB*1024*1024){ toast('Ukuran berkas melebihi '+DPENG_MAX_MB+' MB','err'); return; }
+  if(DPENG_MAX_MB > 0 && file.size > DPENG_MAX_MB*1024*1024){
+    const mb=(file.size/1048576).toFixed(1);
+    toast('Berkas '+mb+' MB melebihi batas '+DPENG_MAX_MB+' MB dari gateway Cloudflare. Silakan kompres atau pecah berkasnya.','err');
+    return;
+  }
   const rec=(records_dpeng||[]).find(r=>String(r.id)===String(tgt.recId));
   if(!rec){ toast('Record tidak ditemukan','err'); return; }
   /* Path WAJIB diawali prefiks modul yang dikenali Worker R2
