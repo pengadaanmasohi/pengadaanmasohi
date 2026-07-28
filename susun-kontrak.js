@@ -8412,15 +8412,35 @@ function spkClauseDocHtml(data, klausul, opts){
   const _isPkDoc = spkBentukOf(data)==='PK';
   const _all = Array.isArray(klausul)?klausul:[];
   const focusId = (opts.focusId!=null) ? String(opts.focusId) : null;
+  /* ---- KISI DOKUMEN (28 Jul 2026, laporan "di Lihat Klausul spasi & baris
+     sesuai Word, di Pratinjau SPK hilang — lalu Lihat Klausul ikut berubah") ----
+     Klausul yang BELUM masuk daftar dokumen disisipkan ke basis HANYA supaya bisa
+     dirender. Sisipan itu dulu ikut menentukan kisi dua kali:
+       (1) menambah jumlah klausul -> spkClHeadW() -> SPK_JH_OVR -> titik tolak
+           inden isi (opsi `intro` di spkPkTidy) bergeser;
+       (2) ikut dipindai spkKumpulHang() -> SPK_HANG_OVR -> lantai lebar kolom
+           nomor se-dokumen berubah.
+     Akibatnya kolom nomor & kolom teks bergeser, teks membungkus di titik yang
+     berbeda, dan tampilannya tidak sama dengan Pratinjau SPK. Karena kisi juga
+     berubah begitu klausul itu akhirnya masuk dokumen, Lihat Klausul tampak
+     "berubah sendiri" sesudah pratinjau dibuka.
+       opts.gridCount : jumlah klausul DOKUMEN yang sebenarnya (tanpa sisipan)
+       opts.gridSkip  : indeks sisipan yang TIDAK ikut pemindaian lantai lebar
+     Bila kedua opsi tidak diisi, perilakunya persis seperti sebelumnya. */
+  const _gridN    = (opts.gridCount!=null && +opts.gridCount>0) ? +opts.gridCount : _all.length;
+  const _gridSkip = (opts.gridSkip!=null) ? +opts.gridSkip : -1;
   /* Titik tolak inden isi = lebar kotak nomor judul dokumen INI (dinamis) —
      SAMA seperti spkDocHtml, dihitung dari jumlah klausul dokumen. */
-  try{ SPK_JH_OVR = _isPkDoc ? 0 : spkClHeadW(_all.length); }catch(e){ SPK_JH_OVR=0; }
+  try{ SPK_JH_OVR = _isPkDoc ? 0 : spkClHeadW(_gridN); }catch(e){ SPK_JH_OVR=0; }
   /* FASE 1: bangun isi TIAP klausul dokumen (pipeline identik spkDocHtml). */
   const _innersPre = _all.map((k,i)=> spkKvGroup(spkKlItalicAsing(spkBoldPihak(spkNomorToNo(spkNumberFix(spkTidyKeyValue(
         spkStripFontStyle(spkPruneKlausul(spkMerge(spkRenumberKlausul(spkSortDefinisiIf(k.judul, k.isi||''), i+1), ctx), i+1, data))
       )))))));
-  /* Lantai lebar nomor se-dokumen — dari SELURUH klausul, bukan hanya yang tampil. */
-  try{ SPK_HANG_OVR = spkKumpulHang(_innersPre.map(function(x){ try{ return spkPkBoxMark(x); }catch(e2){ return x; } })); }
+  /* Lantai lebar nomor se-dokumen — dari SELURUH klausul DOKUMEN (sisipan
+     non-dokumen dilewati), bukan hanya klausul yang tampil. */
+  try{ SPK_HANG_OVR = spkKumpulHang(_innersPre
+        .filter(function(x,ix){ return ix!==_gridSkip; })
+        .map(function(x){ try{ return spkPkBoxMark(x); }catch(e2){ return x; } })); }
   catch(e){ SPK_HANG_OVR=null; }
   /* FASE 2: rakit blok .spk-clause; bila focusId diisi, hanya klausul itu
      yang dimasukkan (nomornya tetap kedudukan dokumen i+1). */
@@ -10598,13 +10618,20 @@ function spkKlausulView(id){
      dari pustaka), sisipkan di posisi pustakanya agar tetap bisa ditampilkan
      dengan penomoran kedudukannya sendiri. */
   var _ada=false; for(var _b=0;_b<_basis.length;_b++){ if(String(_basis[_b].id)===String(id)){ _ada=true; break; } }
+  /* _dokLen = jumlah klausul DOKUMEN (sebelum sisipan); _sisip = indeks sisipan.
+     Keduanya diteruskan ke spkClauseDocHtml supaya KISI (lebar kotak nomor judul
+     & lantai lebar kolom nomor) dihitung dari daftar dokumen saja — persis seperti
+     Pratinjau SPK. Tanpa ini, klausul yang belum masuk dokumen menggeser kisi
+     sehingga inden & pembungkusan barisnya berbeda dari pratinjau. */
+  var _sisip=-1, _dokLen=_basis.length;
   if(!_ada){
     var _pos=(records_klausul||[]).findIndex(function(x){return String(x.id)===String(id);});
     var _ins={id:String(k.id), judul:k.judul||'', isi:k.isi||''};
-    if(_pos>=0 && _pos<=_basis.length) _basis.splice(_pos,0,_ins); else _basis.push(_ins);
+    if(_pos>=0 && _pos<=_basis.length){ _basis.splice(_pos,0,_ins); _sisip=_pos; }
+    else { _basis.push(_ins); _sisip=_basis.length-1; }
   }
   var _html='';
-  try{ _html=spkClauseDocHtml(data, _basis, { focusId:String(id) }); }
+  try{ _html=spkClauseDocHtml(data, _basis, { focusId:String(id), gridCount:_dokLen, gridSkip:_sisip }); }
   catch(e){ _html='<!DOCTYPE html><meta charset="utf-8"><body style="font:11pt Inter,Arial;padding:16px">Gagal memuat pratinjau klausul.</body>'; }
   let ov=document.getElementById('spk-klausul-view-ov');
   if(!ov){ ov=document.createElement('div'); ov.id='spk-klausul-view-ov'; ov.className='spk-ov'; document.body.appendChild(ov);
