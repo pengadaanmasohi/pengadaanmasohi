@@ -6281,3 +6281,206 @@ body,
   -webkit-font-smoothing:auto !important;
   -moz-osx-font-smoothing:auto !important;
 }
+
+
+/* ============================================================
+   PEMBUKAAN PENAWARAN — LEBAR KOLOM TABEL
+   ============================================================ */
+
+/* --- Kolom AKSI: selebar isinya saja, ikon tetap satu baris ---
+   width:1% + white-space:nowrap pada tabel table-layout:auto membuat kolom
+   menyusut sampai sesempit isinya yang tidak boleh terpotong. Sisa ruangnya
+   jatuh ke kolom Nama Pekerjaan yang memang paling butuh tempat.
+   Aturan lama memakai style="min-width:170px" langsung di <th>, jadi
+   penimpaannya perlu !important. */
+#view-pnw-view .table-wrap th.pnw-col-aksi,
+#view-pnw-view .table-wrap td.pnw-col-aksi{
+  width:1% !important;
+  min-width:0 !important;
+  max-width:none !important;
+  white-space:nowrap !important;
+  text-align:center;
+  padding-left:12px; padding-right:12px;
+}
+/* Tiga tombol berjajar tanpa pernah turun baris */
+#view-pnw-view .table-wrap td.pnw-col-aksi .action-cell{
+  display:inline-flex;
+  flex-wrap:nowrap;
+  justify-content:center;
+  white-space:nowrap;
+}
+
+/* --- Kolom TGL. PEMBUKAAN PENAWARAN ---
+   Muat dua tanggal sekaligus ("27/07/2026 - 28/07/2026") dalam satu baris.
+   .col-date umum memakai !important, jadi di sini juga harus !important. */
+#view-pnw-view .table-wrap th.pnw-col-tgl,
+#view-pnw-view .table-wrap td.pnw-col-tgl{
+  width:1% !important;
+  min-width:0 !important;
+  max-width:none !important;
+  white-space:nowrap !important;
+  text-align:center;
+  padding-left:14px; padding-right:14px;
+}
+
+/* --- Kolom METODE PENYAMPAIAN DOKUMEN ---
+   Nilai terpanjang "1 Tahap 2 Sampul" tetap satu baris; judulnya boleh
+   membungkus jadi dua baris agar kolom tidak melebar berlebihan. */
+#view-pnw-view .table-wrap th.pnw-col-metode{
+  white-space:normal;
+  line-height:1.28;
+  text-align:center;
+  vertical-align:middle;
+}
+#view-pnw-view .table-wrap td.pnw-col-metode{
+  width:1%;
+  min-width:0;
+  white-space:nowrap;
+  text-align:center;
+}
+/* Penanda "Sampul Dua belum diisi" tetap turun ke baris kedua */
+#view-pnw-view .table-wrap td.pnw-col-metode .pnw-s2-tag{
+  display:block;
+  white-space:normal;
+  margin-top:3px;
+}
+
+
+/* ============================================================================
+   TAMBALAN "TAJAM" — LANJUTAN
+   Menghentikan getaran tabel & menghapus sisa efek 3D pada ikon/tombol.
+   ============================================================================ */
+
+/* ------------------------------------------------------------
+   D1. PENYEBAB GETARAN — .act:hover{transform:translateY(-3px)}
+       (style.css baris 1430)
+   Persis yang diperingatkan komentar di baris 5508-5514 file ini:
+   translateY MEMINDAHKAN tombol menjauh dari kursor. Kursor di tepi
+   bawah tombol -> tombol kabur ke atas -> hover lepas -> tombol turun
+   lagi -> hover lagi. Berulang puluhan kali per detik = bergetar.
+   Karena kolom Aksi berisi tiga tombol berjajar dan kursor sering
+   menyapunya naik-turun, getarannya terasa di seluruh baris.
+   ------------------------------------------------------------ */
+.act, .act:hover, .act:focus, .act:focus-visible, .act:active,
+.act::before, .act::after{
+  transform:none !important;
+}
+.act{ transition:box-shadow .2s ease, filter .2s ease !important }
+/* Cincin cahaya yang memancar & membesar saat hover — ikut dimatikan */
+.act::after{ opacity:0 !important }
+.act:hover::before, .act:active::before{ box-shadow:none !important }
+
+/* ------------------------------------------------------------
+   D2. IKON TOMBOL AKSI BERGOYANG SENDIRI
+       (style.css 1439-1452)
+   Tiga animasi: pensil bergoyang (actEdit), mata mengedip (actView),
+   dan tempat sampah BERGETAR (actDel — namanya memang begitu di
+   komentar aslinya baris 1448). Semuanya jalan tiap kali kursor lewat.
+   ------------------------------------------------------------ */
+.act svg,
+.act-edit:hover svg,
+.act-view:hover svg,
+.act-del:hover svg{
+  animation:none !important;
+  transform:none !important;
+  transition:none !important;
+}
+
+/* ------------------------------------------------------------
+   D3. SEMUA IKON BERHENTI MEMBESAR / BERPUTAR / MAJU
+   Menutup: .btn svg (translateZ), .topnav-* svg (scale+rotate),
+   .settings-gear svg (rotate 60deg), .card-ic (scale+rotate),
+   .role-tab svg, .fk-dz-ic, .spk-kldoc-dzic, dan ikon di dalam pop up.
+   ------------------------------------------------------------ */
+.btn svg, .btn:hover svg,
+.act svg,
+.topnav-link svg, .topnav-link:hover svg,
+.topnav-trigger svg, .topnav-trigger:hover svg,
+.topnav-trigger:hover svg:first-of-type,
+.topnav-item svg, .topnav-item:hover svg,
+.topnav-subtrigger svg, .topnav-subtrigger:hover > svg:first-child,
+.settings-gear svg, .settings-gear:hover svg,
+.settings-item svg, .settings-item:hover svg,
+.role-tab svg, .role-tab:hover svg,
+.card-ic, .card:hover .card-ic,
+#view-dashboard .card:hover .card-ic,
+.fk-dz-ic, .fk-dz-ic svg, .fk-dropzone:hover .fk-dz-ic svg,
+.spk-kldoc-dzic, .spk-kldoc-dz:hover .spk-kldoc-dzic,
+#dpeng-list-overlay .btn:hover svg,
+.overlay .btn:hover svg,
+.topbar-brand:hover .logo,
+.topbar-brand .logo svg,
+.brandside-logo svg{
+  transform:none !important;
+  animation:none !important;
+}
+
+/* ------------------------------------------------------------
+   D4. TOMBOL & KARTU TIDAK LAGI MELOMPAT SAAT DISENTUH
+   Daftar ini SENGAJA berisi nama kelas, bukan pemilih universal:
+   elemen yang memang butuh transform untuk berfungsi (toast yang
+   dipusatkan translateX(-50%), penggeser .fk-seg-thumb, knop
+   .ac-toggle-tr, pemutar .lo-spin) tidak ada di daftar ini,
+   jadi tetap bekerja normal.
+   ------------------------------------------------------------ */
+.btn, .btn:hover, .btn:active, .btn:focus-visible,
+.card, .card:hover,
+.panel, .panel:hover,
+.pg-btn, .pg-btn:hover, .pg-btn:active,
+.act, .act:hover, .act:active,
+.logout-btn:hover, .logout-btn:active,
+.login-btn:hover, .login-btn:active,
+.settings-gear:hover,
+.role-tab:hover,
+.nav-link:hover, .nav-item:hover,
+.topnav-link:hover, .topnav-link:active,
+.topnav-trigger:hover, .topnav-trigger:active,
+.topnav-item:hover, .topnav-subtrigger:hover,
+.jp-profil-btn:hover,
+.fk-act:hover, .fk-act:active,
+.fk-dropzone:hover, .fk-dropzone.fk-dz-over,
+.spk-kldoc-dz:hover, .spk-kldoc-dz.drag,
+.dp-pick-btn:hover, .dp-pick-btn:active,
+.dp-unpick-btn:hover, .dp-unpick-btn:active,
+.modal-actions .btn:hover, .modal-actions .btn:active,
+.pn-doc-modal-foot .btn:hover, .pn-doc-modal-foot .btn:active,
+.ana-doc-tab:active,
+.ana-ahsp-add:active, .ana-ahsp-del:active, .ana-ahsp-hapus-analisa:active,
+.st-kpi:hover, .st-item:hover,
+.ac-capgrp:hover, .ac-sum-chip:hover, .ac-live:hover, .ac-mini:hover,
+.pnw-profil-upload:hover, .pnw-profil-upload:active,
+.pnw-profil-item:hover, .pnw-profil-mini:active,
+.pf-ic:hover, .pf-ic:active,
+.trk-btn:active,
+.pn-copy:hover{
+  transform:none !important;
+}
+
+/* ------------------------------------------------------------
+   D5. KILAU YANG MENYAPU MELINTASI TOMBOL
+       (@keyframes btnShine, style.css 2543-2544; .btn-*:hover::after
+       dan .topnav-*:hover::before yang memakai translateX)
+   Sorotan putih yang bergerak melintas juga terbaca sebagai getaran.
+   ------------------------------------------------------------ */
+.btn::after, .btn:hover::after,
+.btn-teal:hover::after, .btn-green:hover::after, .btn-red:hover::after,
+.btn-amber:hover::after, .btn-danger:hover::after,
+.topnav-link:hover::before, .topnav-trigger:hover::before,
+.topbar-brand:hover .logo::after{
+  animation:none !important;
+  transform:none !important;
+  opacity:0 !important;
+}
+
+/* ------------------------------------------------------------
+   D6. BARIS TABEL — pergantian warna dibuat seketika
+   Transisi latar .18s membuat baris memudar masuk-keluar saat kursor
+   menyapu cepat; berderet ke bawah, itu tampak seperti riak/getaran.
+   Penanda baris aktif tetap ada, hanya muncul langsung.
+   ------------------------------------------------------------ */
+tbody tr, tbody tr td,
+#pn-lihat-body tr,
+table.ac-matrix tbody tr,
+.pnw-periksa-table td{
+  transition:none !important;
+}

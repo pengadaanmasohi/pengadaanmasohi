@@ -11092,7 +11092,10 @@ const PNW_INFO_FIELDS = [
    periksa   : { s1:{ penyediaIdx:{ 'kat||baris': {ada:bool, ket:str} } }, s2:{...} }
 */
 function pnwBlankState(){
-  return { info:{}, penyedia:[''], pejabat:'', tgl_pembukaan:'', pilih:{s1:{},s2:{}}, syarat:{s1:{},s2:{}}, periksa:{s1:{},s2:{}}, profilLoaded:false };
+  /* tgl_pembukaan   = Sampul Satu (atau satu-satunya tanggal bila 1 sampul)
+     tgl_pembukaan_s2 = Sampul Dua, hanya dipakai bila metode penyampaian
+     "1 Tahap 2 Sampul" atau "2 Tahap". */
+  return { info:{}, penyedia:[''], pejabat:'', tgl_pembukaan:'', tgl_pembukaan_s2:'', pilih:{s1:{},s2:{}}, syarat:{s1:{},s2:{}}, periksa:{s1:{},s2:{}}, profilLoaded:false };
 }
 let pnwState = pnwBlankState();
 let pnwStep = 1;               // 1..4
@@ -11175,6 +11178,7 @@ function pnwRecordToState(rec){
     penyedia: Array.isArray(s.penyedia)&&s.penyedia.length ? s.penyedia.slice() : [''],
     pejabat: s.pejabat||'',
     tgl_pembukaan: s.tgl_pembukaan||'',
+    tgl_pembukaan_s2: s.tgl_pembukaan_s2||'',
     pilih: { s1:Object.assign({}, (s.pilih&&s.pilih.s1)||{}), s2:Object.assign({}, (s.pilih&&s.pilih.s2)||{}) },
     syarat:{ s1:Object.assign({}, (s.syarat&&s.syarat.s1)||{}), s2:Object.assign({}, (s.syarat&&s.syarat.s2)||{}) },
     periksa:{ s1:Object.assign({}, (s.periksa&&s.periksa.s1)||{}), s2:Object.assign({}, (s.periksa&&s.periksa.s2)||{}) }
@@ -11221,7 +11225,14 @@ function pnwPenyediaFieldsHtml(){
   const pjLocked=!!(st.info && st.info.dpId);
   const pjDis=pjLocked?' disabled':'';
   html+='<div class="field'+(pjLocked?' is-locked':'')+'" style="grid-column:span 2"><label>Nama Pejabat Pelaksana Pengadaan</label><input id="pnw-pejabat" type="text" placeholder="Nama pejabat pelaksana"'+pjDis+' oninput="pnwOnPejabatChange(this)">'+(pjLocked?DP_LOCK_BADGE:'')+'</div>';
-  html+='<div class="field"><label>Tgl. Pembukaan Dokumen</label><input id="pnw-tgl-pembukaan" type="date" onchange="pnwOnTglPembukaanChange(this)"></div>';
+  /* Tanggal pembukaan penawaran. Metode "1 Tahap 2 Sampul" & "2 Tahap" punya dua
+     tanggal terpisah (Sampul Satu & Sampul Dua); metode satu sampul cukup satu. */
+  if(pnwIsTwoSampul(st)){
+    html+='<div class="field"><label>Tgl. Pembukaan Penawaran Sampul Satu</label><input id="pnw-tgl-pembukaan" type="date" onchange="pnwOnTglPembukaanChange(this)"></div>';
+    html+='<div class="field"><label>Tgl. Pembukaan Penawaran Sampul Dua</label><input id="pnw-tgl-pembukaan-s2" type="date" onchange="pnwOnTglPembukaanS2Change(this)"></div>';
+  }else{
+    html+='<div class="field"><label>Tgl. Pembukaan Penawaran</label><input id="pnw-tgl-pembukaan" type="date" onchange="pnwOnTglPembukaanChange(this)"></div>';
+  }
   return html;
 }
 function pnwPenyediaListHtml(){
@@ -11815,6 +11826,7 @@ function renderPnwForm(){
     });
     const pj=document.getElementById('pnw-pejabat'); if(pj) pj.value=st.pejabat||'';
     const tp=document.getElementById('pnw-tgl-pembukaan'); if(tp) tp.value=st.tgl_pembukaan||'';
+    const tp2=document.getElementById('pnw-tgl-pembukaan-s2'); if(tp2) tp2.value=st.tgl_pembukaan_s2||'';
   }
 }
 function pnwPenyampaianNoteText(){
@@ -11844,7 +11856,16 @@ function pnwOnInfoChange(){
   pnwSaveState();
 }
 function pnwOnPenyampaianChange(){
+  const sebelum = pnwIsTwoSampul(pnwState);
   pnwOnInfoChange();
+  const sesudah = pnwIsTwoSampul(pnwState);
+  /* Jumlah sampul berubah -> kolom tanggal ikut berubah (satu <-> dua field),
+     jadi langkah 1 digambar ulang. Bila turun ke satu sampul, tanggal Sampul Dua
+     dikosongkan supaya tidak tersimpan sebagai data siluman. */
+  if(sebelum !== sesudah){
+    if(!sesudah){ pnwState.tgl_pembukaan_s2=''; pnwSaveState(); }
+    if(pnwStep===1) renderPnwForm();
+  }
 }
 function pnwOnJumlahChange(el){
   const n=Math.max(1,Math.min(20,parseInt(el.value,10)||1));
@@ -11857,6 +11878,7 @@ function pnwOnJumlahChange(el){
 function pnwOnPenyediaNama(el){ const i=+el.dataset.pidx; pnwState.penyedia[i]=el.value; pnwSaveState(); }
 function pnwOnPejabatChange(el){ if(pnwState.info && pnwState.info.dpId){ el.value=pnwState.pejabat||''; return; } pnwState.pejabat=el.value; pnwSaveState(); }
 function pnwOnTglPembukaanChange(el){ pnwState.tgl_pembukaan=el.value; pnwSaveState(); }
+function pnwOnTglPembukaanS2Change(el){ pnwState.tgl_pembukaan_s2=el.value; pnwSaveState(); }
 
 /* ---------- Interaksi langkah 2 ---------- */
 function pnwOnPilih(el){
@@ -12045,15 +12067,30 @@ function renderPnwView(){
     const lokasi=(r.lokasi||info.lokasi||'').trim();
     const metode=r.metode||info.metode||'';
     const jenis=r.jenis_dokumen||(pnwIsTwoSampul(stt)?'Dua Sampul':'Satu Sampul');
-    const tgl=(stt.tgl_pembukaan||r.tgl_periksa||'');
     const two = jenis==='Dua Sampul';
+    /* Kolom "Metode Penyampaian Dokumen" menampilkan metode yang sebenarnya
+       dipilih (mis. "1 Tahap 2 Sampul"). Data lama yang belum menyimpan
+       penyampaian tetap jatuh ke label Satu/Dua Sampul. */
+    const penyampaian=(r.penyampaian||info.penyampaian||'').trim();
+    /* Tanggal: satu sampul -> satu tanggal; dua sampul -> "Sampul Satu - Sampul Dua".
+       Bila tanggal Sampul Dua belum diisi, tanda hubung tidak ditampilkan. */
+    const tgl1=(stt.tgl_pembukaan||r.tgl_periksa||'');
+    const tgl2=(stt.tgl_pembukaan_s2||'');
+    let tglCell;
+    if(two){
+      const a=tgl1?pnwDateShort(tgl1):'';
+      const b=tgl2?pnwDateShort(tgl2):'';
+      tglCell = (a&&b) ? (a+' - '+b) : (a||b||'—');
+    }else{
+      tglCell = tgl1?pnwDateShort(tgl1):'—';
+    }
     const rid=fkEsc(String(r.id));
     // Satu baris per data. Tombol Lihat membuka DOKUMEN GABUNGAN (Sampul Satu +
     // Sampul Dua, halaman terpisah). Sampul Dua yang belum diperiksa ditandai.
     const s2Kosong = two ? pnwSampulProgres('s2', stt).kosong : false;
-    const jenisCell = two
-      ? ('Dua Sampul' + (s2Kosong ? '<span class="pnw-s2-tag">Sampul Dua belum diisi</span>' : ''))
-      : 'Satu Sampul';
+    const metodeKirim = penyampaian || (two ? 'Dua Sampul' : 'Satu Sampul');
+    const jenisCell = fkEsc(metodeKirim)
+      + ((two && s2Kosong) ? '<span class="pnw-s2-tag">Sampul Dua belum diisi</span>' : '');
     const actions='<div class="action-cell" style="justify-content:center">'+
         '<button class="act act-edit" title="Ubah" onclick="openPnwInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
         '<button class="act act-view" title="Lihat" onclick="pnwPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
@@ -12064,9 +12101,9 @@ function renderPnwView(){
       '<td class="wrap-cell col-nama-freeze">'+fkEsc(nama)+'</td>'+
       '<td class="fkl-col-lokasi">'+fkEsc(lokasi||'—')+'</td>'+
       '<td>'+fkEsc(metode||'—')+'</td>'+
-      '<td class="pnw-jd-cell">'+jenisCell+'</td>'+
-      '<td class="col-date">'+fkEsc(tgl?pnwDateLong(tgl):'—')+'</td>'+
-      '<td>'+actions+'</td>'+
+      '<td class="pnw-jd-cell pnw-col-metode">'+jenisCell+'</td>'+
+      '<td class="col-date pnw-col-tgl">'+tglCell+'</td>'+
+      '<td class="pnw-col-aksi">'+actions+'</td>'+
     '</tr>';
   }).join('');
   if(pg){
@@ -12099,6 +12136,14 @@ function pnwDeleteRecord(id){
 }
 const PNW_BULAN=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
 function pnwDateLong(s){ if(!s) return ''; const p=String(s).split('-'); if(p.length!==3) return s; const y=p[0],m=parseInt(p[1],10),d=p[2]; return d+' '+(PNW_BULAN[m-1]||'')+' '+y; }
+/* Format ringkas untuk tabel: 2026-07-28 -> 28/07/2026 */
+function pnwDateShort(s){
+  if(!s) return '';
+  const p=String(s).split('-');
+  if(p.length!==3) return String(s);
+  const y=p[0], m=String(p[1]).padStart(2,'0'), d=String(p[2]).padStart(2,'0');
+  return d+'/'+m+'/'+y;
+}
 
 /* Keterangan "Jangka Waktu Pelaksanaan" tampil dengan satuan hari (mis. 60 -> "60 hari") */
 function pnwFmtKet(kat, baris, ket){
@@ -12186,7 +12231,13 @@ function pnwBuildDocHtml(sk){
       infoRow('Tgl. Anggaran', info.tgl_anggaran?pnwDateLong(info.tgl_anggaran):'-')+
       infoRow('Jenis Anggaran', info.jenis_anggaran)+
       infoRow('Metode Pengadaan', info.metode)+
-      infoRow('Tgl. Pembukaan Dokumen', st.tgl_pembukaan?pnwDateLong(st.tgl_pembukaan):'-')+
+      /* Dokumen dibuat per sampul, jadi tanggal yang tampil adalah tanggal
+         sampul yang sedang dicetak. Format panjang dipertahankan di dokumen
+         resmi (mis. "28 Juli 2026"); format 28/07/2026 hanya dipakai di tabel. */
+      infoRow(two ? ('Tgl. Pembukaan Penawaran '+pnwSampulLabel(sk)) : 'Tgl. Pembukaan Penawaran',
+              (two && sk==='s2')
+                ? (st.tgl_pembukaan_s2?pnwDateLong(st.tgl_pembukaan_s2):'-')
+                : (st.tgl_pembukaan?pnwDateLong(st.tgl_pembukaan):'-'))+
     '</tbody></table>'+
 
     '<div class="fkl-sec-h"><span class="rn">B</span>Pemeriksaan Kelengkapan Dokumen Penawaran</div>'+
