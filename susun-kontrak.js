@@ -785,6 +785,15 @@ const SPK_KONTRAK_TABLE='kontrak_spk';
 const SPK_KLAUSUL_TABLE='klausul_spk';
 let records_spk=[];       // daftar kontrak tersimpan
 let records_klausul=[];   // pustaka klausul (aktif & non-aktif)
+/* PENANDA "PUSTAKA DI MEMORI LEBIH BARU" (28 Jul 2026, laporan "Lihat Klausul
+   berubah sendiri sesudah Pratinjau SPK dibuka"). refreshDataKlausul() menimpa
+   records_klausul dengan salinan __klausulLib milik kontrak. Bila klausul baru
+   saja diubah (unggah .docx) TAPI spkState belum ada — Pustaka Klausul boleh
+   dibuka tanpa kontrak yang sedang disusun — spkKlSync() tidak menulis apa pun,
+   sehingga perubahan itu hanya hidup di memori dan langsung hilang begitu
+   halaman klausul dibuka ulang: isi klausul kembali ke snapshot lama, dan
+   tampilannya "menyesuaikan" pratinjau. Penanda ini mencegah penimpaan itu. */
+let spkKlLibDirty=false;
 function spkSupaReady(){ return !!(typeof USE_SUPABASE!=='undefined' && USE_SUPABASE && typeof db!=='undefined' && db); }
 
 const StoreSpkKontrak={
@@ -832,6 +841,9 @@ function spkKlSync(){
 }
 /* Muat pustaka milik sebuah kontrak tersimpan (atau bawaan bila belum ada) */
 function spkKlLoadFor(rec){
+  /* Memuat pustaka milik kontrak lain = penggantian yang DISENGAJA, jadi
+     penanda "lebih baru" dilepas supaya snapshot kontrak itu benar-benar dipakai. */
+  spkKlLibDirty=false;
   let lib=null;
   if(rec){
     const d=(rec.data && typeof rec.data==='object') ? rec.data : {};
@@ -855,6 +867,8 @@ async function refreshDataSpk(){
 }
 /* Tidak lagi membaca tabel klausul_spk — pustaka mengikuti kontrak yang aktif. */
 async function refreshDataKlausul(){
+  /* Pustaka di memori lebih baru daripada snapshot kontrak -> jangan ditimpa. */
+  if(spkKlLibDirty && Array.isArray(records_klausul) && records_klausul.length) return;
   if(spkState && spkState.data && Array.isArray(spkState.data.__klausulLib) && spkState.data.__klausulLib.length){
     try{ records_klausul = JSON.parse(JSON.stringify(spkState.data.__klausulLib)); }catch(e){}
   }else if(!Array.isArray(records_klausul) || !records_klausul.length){
@@ -2530,6 +2544,11 @@ function spkDocCss(){
      tingkat-1. Bentuk Surat Perintah Kerja tidak terpengaruh. */
   '.spk-doc.spk-pk .spk-cl.spk-inlead p.kl1,.spk-doc.spk-pk .spk-cl.spk-inlead p.kl2{padding-left:0}'+
   '.spk-cl p{margin:0 0 6pt;text-align:justify;line-height:'+spkLHCss(1.15)+'}'+
+  /* BARIS KOSONG dari Word (Enter): tinggi dikunci satu baris, tidak boleh
+     ikut perataan/inden apa pun, dan tidak pernah kolaps walau isinya hanya
+     &nbsp;. Lihat _flushBlank() pada spkWordXmlToKlausul. */
+  '.spk-cl p.spk-blank{margin-left:0;padding-left:0;text-indent:0;text-align:left;'+
+    'height:1.15em;min-height:1.15em;line-height:'+spkLHCss(1.15)+'}'+
   /* kl0 = paragraf biasa (sejajar teks judul); kldesc = deskripsi menjorok */
   '.spk-cl p.kl0{margin-left:0;text-indent:0}'+
   /* Contoh pengisian (placeholder): titik-titik sampai batas margin kanan, huruf samar */
@@ -8223,7 +8242,7 @@ function spkPageScript(){
     '   var shells=sheets[i].querySelectorAll("[data-spksh]");',
     '   for(var j=shells.length-1;j>=0;j--){',
     '     var e=shells[j];',
-    '     if(!((e.textContent||"").replace(/[\\s\\u00A0]/g,"")) && !e.querySelector("img,table,td")) e.parentNode.removeChild(e);',
+    '     if(!((e.textContent||"").replace(/[\\s\\u00A0]/g,"")) && !e.querySelector("img,table,td,[data-blank]")) e.parentNode.removeChild(e);',
     '   }',
     ' }',
     ' for(var i=sheets.length-1;i>=0;i--){',
@@ -10055,8 +10074,18 @@ function spkWordXmlToKlausul(xmlText, stylesXml, numberingXml){
   /* Baris kosong (Enter) DITAHAN dulu, baru dikeluarkan saat ada isi berikutnya:
      dengan begitu Enter di TENGAH klausul tetap tampil, sedangkan baris kosong
      sisa template di AWAL/AKHIR klausul tidak ikut menambah ruang kosong. */
+  /* PENGERASAN 28 Jul 2026 — baris kosong (Enter) dari Word hilang di pratinjau.
+     Isinya hanya &nbsp;, sedangkan hampir seluruh penyaring di pipeline menguji
+     "kosong" dengan replace(/[\s\u00A0]/g,'') — sehingga paragraf ini terbaca
+     kosong dan bisa terbuang atau tingginya kolaps. Tinggi baris dipasang
+     SEBARIS (bukan hanya lewat CSS) supaya ruangnya tetap ada apa pun yang
+     terjadi pada isi teksnya. */
   var _flushBlank=function(){
-    while(_blank>0){ html+='<p class="kl0 spk-blank" data-blank="1">&nbsp;</p>'; _blank--; }
+    while(_blank>0){
+      html+='<p class="kl0 spk-blank" data-blank="1" style="margin:0 0 6pt;margin-left:0;text-indent:0;'+
+            'height:1.15em;min-height:1.15em">&nbsp;</p>';
+      _blank--;
+    }
   };
   for(i=0;i<blocks.length;i++){
     if(judulAt>=0 && i<judulAt) continue;                   // apa pun di atas judul -> abaikan
@@ -10593,6 +10622,7 @@ function spkKlDocSave(){
       records_klausul.push(recNew);
       if(spkState) spkState.sel.push(String(recNew.id));   // klausul baru langsung terpilih
     }
+    spkKlLibDirty=true;     /* pustaka di memori kini lebih baru dari snapshot kontrak */
     spkKlSync();
   }catch(err){ console.error(err); toast('Gagal menyimpan: '+errMsg(err),'err'); return; }
   spkKlDoc.dirty=false; spkKlDocClose();
