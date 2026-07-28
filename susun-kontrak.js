@@ -2530,6 +2530,21 @@ function spkDocCss(){
      tingkat-1. Bentuk Surat Perintah Kerja tidak terpengaruh. */
   '.spk-doc.spk-pk .spk-cl.spk-inlead p.kl1,.spk-doc.spk-pk .spk-cl.spk-inlead p.kl2{padding-left:0}'+
   '.spk-cl p{margin:0 0 6pt;text-align:justify;line-height:'+spkLHCss(1.15)+'}'+
+  /* KOTAK NOMOR KEBAL DARI text-align-last WARISAN (28 Jul 2026, laporan
+     "4.3 tidak sejajar dengan 4.2 di Pratinjau SPK").
+     Paginator memecah paragraf yang tidak muat di dasar lembar (splitParaToFit)
+     dan memasang text-align-last:justify pada POTONGAN KEPALA agar baris
+     terakhirnya tetap rata kiri-kanan. Sifat itu DIWARISKAN ke seluruh anaknya,
+     termasuk <span class="n">. Kotak nomor adalah inline-block berisi satu
+     baris, sehingga baris satu-satunya itu juga baris TERAKHIR miliknya:
+     text-align-last:justify mengalahkan text-align:right pada kotak, dan
+     justify atas satu kata = rata kiri. Akibatnya nomor butir yang kebetulan
+     terpotong di batas halaman menjulur ke kiri dan kolom teksnya bergeser —
+     hanya butir itu, hanya di dokumen (di Lihat Klausul tak ada pemotongan
+     halaman, jadi tak pernah terlihat).
+     `auto` mengembalikan baris terakhir kotak agar mengikuti text-align-nya
+     sendiri (kanan untuk deret angka, kiri untuk huruf/bullet). */
+  '.spk-cl p .n,.spk-cl p span.n{text-align-last:auto}'+
   /* BARIS KOSONG dari Word (Enter): tinggi dikunci satu baris, tidak boleh
      ikut perataan/inden apa pun, dan tidak pernah kolaps walau isinya hanya
      &nbsp;. Lihat _flushBlank() pada spkWordXmlToKlausul. */
@@ -8096,7 +8111,14 @@ function spkPageScript(){
     '     ht=_cut(best0);',
     '     if(!((ht.tail.textContent||"").replace(/[\\s\\u00A0]/g,""))) return null;',
     '   }',
-    '   ht.head.style.marginBottom="0"; if((node.style.textAlign||"")==="justify") ht.head.style.textAlignLast="justify";',
+    '   ht.head.style.marginBottom="0"; if((node.style.textAlign||"")==="justify"){ ht.head.style.textAlignLast="justify";',
+    /* text-align-last diwariskan ke <span class="n"> (inline-block satu baris)
+       dan mengalahkan text-align:right miliknya -> nomor butir yang terpotong
+       di batas halaman jadi rata kiri & menjulur keluar kolom. Dinetralkan
+       langsung di potongannya, selain lewat CSS .spk-cl p .n. */
+    '     try{ var _hn=ht.head.querySelectorAll("span.n");',
+    '       for(var _hi=0;_hi<_hn.length;_hi++) _hn[_hi].style.textAlignLast="auto"; }catch(_he){}',
+    '   }',
     '   ht.tail.style.textIndent="0"; ht.tail.style.marginTop="0";',
     '   t.appendChild(ht.head); return ht.tail;',
     ' }',
