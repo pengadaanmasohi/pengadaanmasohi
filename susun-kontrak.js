@@ -2535,6 +2535,9 @@ function spkDocCss(){
      &nbsp;. Lihat _flushBlank() pada spkWordXmlToKlausul. */
   '.spk-cl p.spk-blank{margin-left:0;padding-left:0;text-indent:0;text-align:left;'+
     'height:1.15em;min-height:1.15em;line-height:'+spkLHCss(1.15)+'}'+
+  /* Kotak spasi awal paragraf (lihat spkKeepWS): ATOM bagi mesin justifikasi,
+     jadi lebarnya tidak pernah ikut diregangkan seperti &nbsp; polos. */
+  '.spk-cl .spk-lead{display:inline-block;white-space:pre;letter-spacing:0;word-spacing:0}'+
   /* kl0 = paragraf biasa (sejajar teks judul); kldesc = deskripsi menjorok */
   '.spk-cl p.kl0{margin-left:0;text-indent:0}'+
   /* Contoh pengisian (placeholder): titik-titik sampai batas margin kanan, huruf samar */
@@ -4350,6 +4353,56 @@ function spkPkIndentStd(html, opsi){
         q.p.style.textAlign='justify';
       }
     }
+
+    /* --- Tahap 4c: SAUDARA SENOMOR SELALU SATU KOLOM (28 Jul 2026) ---
+       Jaring pengaman TERAKHIR untuk laporan "4.1 & 4.2 rapi, 4.3 melenceng di
+       Pratinjau SPK padahal di Lihat Klausul lurus". Pada template yang jadi
+       acuan, keenam butir SERAGAM di Word (style KlausulButir1, numId 12,
+       ilvl 0, w:ind left=851 hanging=425) — jadi selisihnya lahir di sini,
+       bukan di berkasnya.
+
+       Tahap 1-4 menentukan kolom lewat rantai panjang: tingkat butir ->
+       keanggotaan deret -> induk deret -> lebar kotak (termasuk LANTAI
+       se-dokumen SPK_HANG_OVR yang HANYA aktif saat dokumen dirangkai, bukan
+       saat satu klausul dilihat sendiri). Cukup satu mata rantai meleset dan
+       sebuah butir mendarat di deret lain: base-nya bergeser ke kiri dan kolom
+       teksnya ke kanan. Karena lantai itu memang berbeda antara kedua jalur
+       render, gejalanya muncul HANYA di pratinjau dokumen.
+
+       Alih-alih menebak mata rantai mana yang meleset, di sini hasil akhirnya
+       yang dikunci: butir yang berbagi AWALAN nomor sama ("4.1.", "4.2.",
+       "4.3." -> awalan "4.") DIPAKSA memakai kolom yang sama persis dengan
+       saudara PERTAMA-nya — margin kiri, gantungan, lebar kotak, perataan, dan
+       jeda ke teks. Berlaku hanya untuk nomor MAJEMUK (>=2 ruas) di dalam satu
+       klausul; nomor tunggal, huruf, dan bullet tidak disentuh. Bila rantai di
+       atas sudah benar, lintasan ini menulis nilai yang identik — jadi tidak
+       mengubah apa pun pada klausul yang selama ini sudah rapi. */
+    try{
+      var _kol={}, _itK, _sgK, _pfK, _spK, _ref;
+      for(i=0;i<item.length;i++){
+        _itK=item[i]; _sgK=spkPkSegs(_itK.tok);
+        if(!_sgK || _sgK.length<2) continue;
+        _pfK=_sgK.slice(0,-1).join('.')+'.';
+        _spK=spkPkNSpan(_itK.p);
+        if(_kol[_pfK]==null){
+          _kol[_pfK]={ ml:_itK.p.style.marginLeft, ti:_itK.p.style.textIndent,
+                       w:_spK?_spK.style.width:'', mw:_spK?_spK.style.minWidth:'',
+                       ta:_spK?_spK.style.textAlign:'', pr:_spK?_spK.style.paddingRight:'' };
+          continue;
+        }
+        _ref=_kol[_pfK];
+        if(_ref.ml) _itK.p.style.marginLeft=_ref.ml;
+        if(_ref.ti) _itK.p.style.textIndent=_ref.ti;
+        _itK.p.style.paddingLeft='0cm';
+        if(_spK){
+          if(_ref.w)  _spK.style.width=_ref.w;
+          if(_ref.mw) _spK.style.minWidth=_ref.mw;
+          if(_ref.ta) _spK.style.textAlign=_ref.ta;
+          if(_ref.pr) _spK.style.paddingRight=_ref.pr;
+          _spK.style.marginLeft='0cm';
+        }
+      }
+    }catch(_eKol){}
 
     /* --- Tahap 4b: BLOK "Label : nilai" DI TENGAH ISI (21 Jul 2026) ---
        Blok kv/kvgrp yang muncul SESUDAH sebuah butir bernomor (mis. Nama
@@ -10045,9 +10098,27 @@ function spkKeepWS(html){
     bag[i]=bag[i].replace(/ {2,}/g, function(m){
       return ' '+new Array(m.length).join('&nbsp;');
     });
-    /* spasi di AWAL paragraf selalu dibuang HTML -> seluruhnya jadi &nbsp; */
+    /* SPASI DI AWAL PARAGRAF (perbaikan 28 Jul 2026, laporan "spasi paragraf
+       harusnya 5x spasi, malah tidak sejajar").
+       Dulu spasi awal diubah menjadi rentetan &nbsp;. Lebarnya di HTML memang
+       sama untuk semua paragraf, TETAPI isi klausul dirender text-align:justify
+       dan Blink ikut MEREGANGKAN &nbsp; saat menjustifikasi baris. Akibatnya
+       inden awal tiap paragraf mengikuti seberapa besar regangan baris
+       pertamanya: baris yang perlu diregangkan lebar (banyak kata pendek)
+       indennya ikut melar, baris yang hampir pas indennya tetap rapat — persis
+       gejala "5 spasi tapi tidak sejajar".
+       Sekarang spasi awal dibungkus inline-block ber-white-space:pre. Kotak
+       inline-block bersifat ATOM bagi mesin justifikasi: lebarnya dihitung
+       sekali dari jumlah spasinya dan tidak pernah diregangkan, jadi seluruh
+       paragraf mulai di kolom yang sama persis berapa pun regangan barisnya.
+       Jumlah spasi TIDAK diubah — tetap sebanyak yang diketik di Word. */
     if(!awalSudah && bag[i]!==''){
-      bag[i]=bag[i].replace(/^ +/, function(m){ return new Array(m.length+1).join('&nbsp;'); });
+      bag[i]=bag[i].replace(/^(?:&nbsp;|[ \u00A0])+/, function(m){
+        var n=(m.match(/&nbsp;|[ \u00A0]/g)||[]).length;
+        if(!n) return m;
+        return '<span class="spk-lead" style="display:inline-block;white-space:pre">'+
+               new Array(n+1).join('&nbsp;')+'</span>';
+      });
       awalSudah=true;
     }
   }
