@@ -785,15 +785,6 @@ const SPK_KONTRAK_TABLE='kontrak_spk';
 const SPK_KLAUSUL_TABLE='klausul_spk';
 let records_spk=[];       // daftar kontrak tersimpan
 let records_klausul=[];   // pustaka klausul (aktif & non-aktif)
-/* PENANDA "PUSTAKA DI MEMORI LEBIH BARU" (28 Jul 2026, laporan "Lihat Klausul
-   berubah sendiri sesudah Pratinjau SPK dibuka"). refreshDataKlausul() menimpa
-   records_klausul dengan salinan __klausulLib milik kontrak. Bila klausul baru
-   saja diubah (unggah .docx) TAPI spkState belum ada — Pustaka Klausul boleh
-   dibuka tanpa kontrak yang sedang disusun — spkKlSync() tidak menulis apa pun,
-   sehingga perubahan itu hanya hidup di memori dan langsung hilang begitu
-   halaman klausul dibuka ulang: isi klausul kembali ke snapshot lama, dan
-   tampilannya "menyesuaikan" pratinjau. Penanda ini mencegah penimpaan itu. */
-let spkKlLibDirty=false;
 function spkSupaReady(){ return !!(typeof USE_SUPABASE!=='undefined' && USE_SUPABASE && typeof db!=='undefined' && db); }
 
 const StoreSpkKontrak={
@@ -841,9 +832,6 @@ function spkKlSync(){
 }
 /* Muat pustaka milik sebuah kontrak tersimpan (atau bawaan bila belum ada) */
 function spkKlLoadFor(rec){
-  /* Memuat pustaka milik kontrak lain = penggantian yang DISENGAJA, jadi
-     penanda "lebih baru" dilepas supaya snapshot kontrak itu benar-benar dipakai. */
-  spkKlLibDirty=false;
   let lib=null;
   if(rec){
     const d=(rec.data && typeof rec.data==='object') ? rec.data : {};
@@ -867,8 +855,6 @@ async function refreshDataSpk(){
 }
 /* Tidak lagi membaca tabel klausul_spk — pustaka mengikuti kontrak yang aktif. */
 async function refreshDataKlausul(){
-  /* Pustaka di memori lebih baru daripada snapshot kontrak -> jangan ditimpa. */
-  if(spkKlLibDirty && Array.isArray(records_klausul) && records_klausul.length) return;
   if(spkState && spkState.data && Array.isArray(spkState.data.__klausulLib) && spkState.data.__klausulLib.length){
     try{ records_klausul = JSON.parse(JSON.stringify(spkState.data.__klausulLib)); }catch(e){}
   }else if(!Array.isArray(records_klausul) || !records_klausul.length){
@@ -3996,6 +3982,46 @@ function spkPkIndentStd(html, opsi){
       if(L>5) L=5;
       item.push({p:p, tok:tok, lvl:L, w:spkPkNumW(spkPkNSpan(p), !(opsi&&opsi.pk))});
     }
+
+    /* --- Tahap 1c: SAUDARA SENOMOR SELALU SETINGKAT (28 Jul 2026) ---
+       Laporan: "4.1 & 4.2 rapi, 4.3 melenceng di Pratinjau SPK" pada template
+       yang di Word SERAGAM (semua butir: style KlausulButir1, numId 12, ilvl 0,
+       w:ind left=851 hanging=425). Jadi penyebabnya bukan berkasnya.
+
+       Peta silsilah _lvlAwalan di Tahap 1 hanya bekerja MAJU: ia menetapkan
+       tingkat sebuah awalan saat awalan itu PERTAMA kali dijumpai, lalu butir
+       berikutnya mengikutinya. Bila satu butir sempat menerima tingkat lain
+       lebih dulu — dari peringkat indent Word (_leftLvl), dari cabang huruf/
+       bullet di atasnya, atau karena kunci ber-numId tidak cocok — tingkat itu
+       TIDAK pernah dikoreksi lagi. Butir itu lalu MEMBUKA DERET SENDIRI di
+       Tahap 2, sehingga punya base & lebar kotak sendiri: nomornya mulai di
+       tepi lain dan kolom teksnya bergeser (persis gejala 4.3).
+
+       Di Lihat Klausul cacat ini nyaris tak terlihat karena hanya satu klausul
+       yang tampil dan tidak ada pembanding; begitu dirangkai jadi dokumen,
+       barulah kelihatan — sama seperti catatan 23-24 Jul di spkPkTidy.
+
+       Lintasan ini menyeragamkan tingkat SELURUH butir yang berbagi AWALAN
+       nomor yang sama ("4.1.", "4.2.", "4.3." -> awalan "4.") ke tingkat
+       KEMUNCULAN PERTAMA awalan itu, tanpa memandang urutan pemrosesan, daftar
+       Word asalnya, maupun indent yang tertulis. Hanya menyentuh butir bernomor
+       MAJEMUK (>=2 ruas); butir nomor tunggal ("1.", "2."), huruf, dan bullet
+       tidak diusik sama sekali, jadi kelaziman lama tetap jalan. */
+    try{
+      var _lvlPfx={}, _sg, _pf;
+      for(i=0;i<item.length;i++){
+        _sg=spkPkSegs(item[i].tok);
+        if(!_sg || _sg.length<2) continue;
+        _pf=_sg.slice(0,-1).join('.')+'.';
+        if(_lvlPfx[_pf]==null) _lvlPfx[_pf]=item[i].lvl;
+      }
+      for(i=0;i<item.length;i++){
+        _sg=spkPkSegs(item[i].tok);
+        if(!_sg || _sg.length<2) continue;
+        _pf=_sg.slice(0,-1).join('.')+'.';
+        if(_lvlPfx[_pf]!=null) item[i].lvl=_lvlPfx[_pf];
+      }
+    }catch(_ePfx){}
 
     /* --- Tahap 1b: titik awal daftar ---
        Bila klausul DIBUKA oleh paragraf pengantar (bukan butir bernomor), maka
@@ -10622,7 +10648,6 @@ function spkKlDocSave(){
       records_klausul.push(recNew);
       if(spkState) spkState.sel.push(String(recNew.id));   // klausul baru langsung terpilih
     }
-    spkKlLibDirty=true;     /* pustaka di memori kini lebih baru dari snapshot kontrak */
     spkKlSync();
   }catch(err){ console.error(err); toast('Gagal menyimpan: '+errMsg(err),'err'); return; }
   spkKlDoc.dirty=false; spkKlDocClose();
