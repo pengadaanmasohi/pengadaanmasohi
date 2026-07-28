@@ -3232,8 +3232,8 @@ function spkNumUniform(html){
     var box=document.createElement('div'); box.innerHTML=s;
     var ps=box.querySelectorAll('p.spk-sl'), grup={}, i, k, ubah=false;
     for(i=0;i<ps.length;i++){
-      var p=ps[i], n=p.firstElementChild;
-      if(!n || n.tagName!=='SPAN' || !n.classList || !n.classList.contains('n')) continue;
+      var p=ps[i], n=spkPkNSpan(p);
+      if(!n) continue;
       var tok=String(n.textContent||'').replace(/[\s\u00A0]+/g,'');
       if(!tok || !/^(?:[0-9]+[.)])+$/.test(tok)) continue;         /* hanya nomor ANGKA */
       var w=spkNumTokWidthCm(tok); if(!(w>0)) continue;
@@ -3323,8 +3323,7 @@ function spkBoxLeadNumDom(html){
     var ps=box.querySelectorAll('p.kl1, p.kl2'), changed=false, i;
     for(i=0;i<ps.length;i++){
       var p=ps[i];
-      var fe=p.firstElementChild;
-      if(fe && fe.tagName==='SPAN' && fe.classList && fe.classList.contains('n')) continue;  /* sudah dikotakkan */
+      if(spkPkNSpan(p)) continue;                                   /* sudah dikotakkan */
       /* text-node pertama yang berisi, DAN harus anak langsung <p> (bukan di dalam <i>/<b>) */
       var w=document.createTreeWalker(p, NodeFilter.SHOW_TEXT, null, false), tn, first=null;
       while((tn=w.nextNode())){ if(tn.nodeValue && tn.nodeValue.replace(/[\s\u00A0]/g,'')){ first=tn; break; } }
@@ -3533,10 +3532,39 @@ function spkPkNumW(sp, kanonHuruf){
   }
   return Math.max(0.4, Math.round((w+SPK_NUM_GAP)*100)/100);
 }
+/* KOTAK NOMOR sebuah paragraf — null bila paragraf tidak bernomor.
+   PERBAIKAN 28 Jul 2026 (laporan "klausul 4 ayat 4.3 tidak sejajar di pratinjau
+   SPK"): penanda butir bisa TERBUNGKUS format tebal/miring/garis bawah, mis.
+   "4.3." yang di Word diketik BOLD. spkNumBox menyisipkan kotaknya DI DALAM
+   <b>/<i>/<u> itu (pola `mm[1] + spkNumBox(...)`), sehingga
+   `p.firstElementChild` bukan lagi span.n melainkan <b>. Akibatnya butir itu
+   TIDAK dikenali sebagai butir bernomor oleh spkPkIndentStd: ia tak ikut deret,
+   tak ikut lebar kotak & perataan bersama, dan tampil dengan geometri bawaan
+   Word — persis gejala 4.3 yang penomorannya melenceng ke kiri dengan jeda
+   lebih lebar, sementara 4.1/4.2/4.4 rapi.
+   Di sini pembungkus format ditelusuri (maksimal beberapa lapis) sampai
+   ketemu kotak nomornya. */
+function spkPkNSpan(p){
+  if(!p || !p.querySelector) return null;
+  var n=p.querySelector('span.n');
+  if(!n) return null;
+  if(n.parentNode===p && p.firstElementChild===n) return n;      /* kasus lazim */
+  /* Kotak nomor boleh terbungkus (mis. <b>/<i>/<u> bila penandanya diketik
+     tebal/miring di Word), ASALKAN tidak ada teks nyata sebelum kotaknya —
+     penanda di TENGAH kalimat tetap tidak dianggap nomor butir. */
+  try{
+    var w=document.createTreeWalker(p, NodeFilter.SHOW_TEXT, null, false), t;
+    while((t=w.nextNode())){
+      if(n.contains(t)) break;
+      if(t.nodeValue && t.nodeValue.replace(/[\s\u00A0\u200B]/g,'')) return null;
+    }
+  }catch(e){ return null; }
+  return n;
+}
 /* Token nomor sebuah paragraf ('' bila paragraf tidak bernomor) */
 function spkPkTok(p){
-  var fe=p.firstElementChild;
-  if(!fe || fe.tagName!=='SPAN' || !fe.classList || !fe.classList.contains('n')) return '';
+  var fe=spkPkNSpan(p);
+  if(!fe) return '';
   return String(fe.textContent||'').replace(/[\s\u00A0]+/g,'');
 }
 /* Identitas DAFTAR asal Word (numId) sebuah paragraf, dari atribut data-wnum yang
@@ -3629,7 +3657,7 @@ function spkPkSubNumberFix(html){
           var jl=jalur.slice(); jl[jl.length-1]=jl[jl.length-1]+1;
           var barH=jl.join('.')+'.';
           jalur=jl;
-          p.firstElementChild.textContent=barH; ubah=true;
+          spkPkNSpan(p).textContent=barH; ubah=true;
           continue;                             /* tetap dianggap butir bernomor */
         }
         numTerakhir=false;                      /* huruf / bullet: jalur tak berubah */
@@ -3650,7 +3678,7 @@ function spkPkSubNumberFix(html){
       var baru=jalur.join('.')+'.';
       if(baru!==tok){
         refMap[tok.replace(/\.$/,'')]=baru.replace(/\.$/,'');
-        p.firstElementChild.textContent=baru; ubah=true;
+        spkPkNSpan(p).textContent=baru; ubah=true;
       }
     }
     /* rujukan di dalam kalimat mengikuti nomor butir yang baru */
@@ -3947,7 +3975,7 @@ function spkPkIndentStd(html, opsi){
       }
       if(L<1) L=1;
       if(L>5) L=5;
-      item.push({p:p, tok:tok, lvl:L, w:spkPkNumW(p.firstElementChild, !(opsi&&opsi.pk))});
+      item.push({p:p, tok:tok, lvl:L, w:spkPkNumW(spkPkNSpan(p), !(opsi&&opsi.pk))});
     }
 
     /* --- Tahap 1b: titik awal daftar ---
@@ -4212,7 +4240,8 @@ function spkPkIndentStd(html, opsi){
       if(g2.base<julur) g2.base=julur;
       g2.base=Math.round(g2.base*100)/100;
       for(var m=0;m<g2.items.length;m++){
-        var q=g2.items[m], sp=q.p.firstElementChild;
+        var q=g2.items[m], sp=spkPkNSpan(q.p);
+        if(!sp) continue;
         sp.style.width=g2.W.toFixed(2)+'cm';
         sp.style.minWidth=g2.W.toFixed(2)+'cm';
         /* Kotak nomor bawaan unggahan Word (spkNumBox) bisa membawa margin-left
@@ -4368,13 +4397,20 @@ function spkPkBoxMark(html){
       if(p.classList && (p.classList.contains('spk-ph')||p.classList.contains('spk-cl-h')||
          p.classList.contains('spk-party-h')||p.classList.contains('spk-bab')||
          p.classList.contains('spk-berdasar')||p.classList.contains('spk-kv'))) continue;
-      var fe=p.firstElementChild;
-      if(fe && fe.tagName==='SPAN' && fe.classList && fe.classList.contains('n')) continue;  /* sudah dikotakkan */
-      /* teks pertama yang berisi HARUS anak langsung <p> agar penanda di dalam
-         <b>/<i> milik kalimat tidak ikut terambil */
+      if(spkPkNSpan(p)) continue;                                   /* sudah dikotakkan */
+      /* Teks pertama yang berisi harus berada DI AWAL paragraf: anak langsung
+         <p>, ATAU di dalam pembungkus format PEMBUKA (<b>/<i>/<u>) — untuk
+         penanda yang diketik tebal di Word (28 Jul 2026). Penanda <b> di TENGAH
+         kalimat tetap tak terambil karena pembungkusnya harus elemen pertama. */
       var w=document.createTreeWalker(p, NodeFilter.SHOW_TEXT, null, false), tn, first=null;
       while((tn=w.nextNode())){ if(tn.nodeValue && tn.nodeValue.replace(/[\s\u00A0]/g,'')){ first=tn; break; } }
-      if(!first || first.parentNode!==p) continue;
+      if(!first) continue;
+      var _induk=first.parentNode, _bungkus=null;
+      if(_induk!==p){
+        if(_induk && /^(?:B|STRONG|I|EM|U|FONT)$/.test(_induk.tagName||'') &&
+           _induk===p.firstElementChild && _induk.firstChild===first) _bungkus=_induk;
+        else continue;
+      }
       var mm=reMark.exec(first.nodeValue);
       if(!mm) continue;
       var tok=mm[2];
@@ -4390,7 +4426,8 @@ function spkPkBoxMark(html){
         'padding-right:'+SPK_NUM_GAP+'cm;text-indent:0;white-space:nowrap;overflow:visible;'+
         'text-align:'+(isNum?'right':'left'));
       span.textContent=tok;
-      p.insertBefore(span, p.firstChild);
+      if(_bungkus) _bungkus.insertBefore(span, _bungkus.firstChild);   /* tetap di dalam <b>/<i> */
+      else p.insertBefore(span, p.firstChild);
       p.classList.add('spk-sl');
       ubah=true;
     }
@@ -10037,10 +10074,18 @@ function spkWordXmlToKlausul(xmlText, stylesXml, numberingXml){
     }else{
       /* nomor yang DIKETIK manual (mis. "2.1." lalu TAB/spasi) di paragraf
          yang punya hanging indent -> perlakukan sama seperti nomor otomatis */
-      var mm=/^((?:<(?:b|i|u)>)*)[\t ]*((?:\d+\.)+|\d+\)|[A-Za-z][.)])[\t\u00a0 ]+/.exec(out);
+      /* PERBAIKAN 28 Jul 2026 — penanda yang DIKETIK TEBAL/MIRING di Word
+         (mis. "4.3." bold lalu TAB): pola lama hanya menerima penanda yang
+         langsung diikuti spasi/TAB, sehingga "<b>4.3.</b>\tTeks" tak pernah
+         cocok → penanda tidak dikotakkan, butirnya tak dikenali mesin perapian,
+         dan tampil memakai geometri bawaan Word (melenceng dari butir lain).
+         Kini tag PENUTUP di antara penanda & spasinya ikut diterima; kotak
+         nomor tetap di DALAM pembungkusnya supaya tebalnya tidak hilang. */
+      var mm=/^((?:<(?:b|i|u)>)*)[\t ]*((?:\d+\.)+|\d+\)|[A-Za-z][.)])((?:[\t\u00a0 ]*<\/(?:b|i|u)>)+[\t\u00a0 ]*|[\t\u00a0 ]+)/.exec(out);
       if(mm && hangCm>=0.2 && !/^(CV|CD|MM|DVD|DIV|MMC|LC|DC|ID|IL|IM)[.)]$/i.test(mm[2])){
         if(cls!=='kl1' && cls!=='kl2') cls=((+eff.ind.left||0)>=1100)?'kl2':'kl1';
-        out=mm[1]+spkNumBox(mm[2], hangCm, (lvlDef2&&lvlDef2.jc)||'left')+out.slice(mm[0].length);
+        var _tutup=String(mm[3]||'').replace(/[\t\u00a0 ]+/g,'');   /* tag penutup, tanpa spasi */
+        out=mm[1]+spkNumBox(mm[2], hangCm, (lvlDef2&&lvlDef2.jc)||'left')+_tutup+out.slice(mm[0].length);
         wrapped=true;
       }else{
         if(cls==='kl0'||cls==='kldesc'){                    // deteksi nomor yang diketik manual
@@ -10048,12 +10093,15 @@ function spkWordXmlToKlausul(xmlText, stylesXml, numberingXml){
           else if(/^[\t ]*[A-Za-z][.)][\s\u00a0]/.test(t.plain)) cls='kl2';
           if(cls==='kl1'||cls==='kl2') plainNumFallback=true;
         }
-        /* Huruf masuk (spasi di awal) tanpa first-line indent dari Word ->
-           jadikan indentasi baris pertama 0,75 cm yang seragam. */
+        /* Spasi di AWAL baris (mis. 5 spasi sebagai inden ketikan).
+           DULU: spasinya dibuang lalu diganti inden baris pertama 0,75 cm yang
+           seragam — akibatnya tampilan web tak pernah sama dengan Word (dan
+           inden itu pun dihapus lagi oleh perapian lanjutan butir).
+           SEKARANG (28 Jul 2026): spasinya DIPERTAHANKAN apa adanya lewat
+           spkKeepWS() di bawah, jadi lebar indennya persis seperti di Word.
+           Yang tetap dilakukan hanya penggolongan kelas paragrafnya. */
         var lead=out.match(/^([ \u00a0]+)/);
         if(lead && !(eff.ind.hanging>0)){
-          if(!(eff.ind.firstLine>0)) eff.ind.firstLine=spkDX().P_FIRST;
-          out=out.slice(lead[1].length);
           if(cls==='kldesc'||cls==='kl0') cls='klp';
         }
       }
