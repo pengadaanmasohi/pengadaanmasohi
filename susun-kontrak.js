@@ -4378,29 +4378,32 @@ function spkPkIndentStd(html, opsi){
        atas sudah benar, lintasan ini menulis nilai yang identik — jadi tidak
        mengubah apa pun pada klausul yang selama ini sudah rapi. */
     try{
-      var _kol={}, _itK, _sgK, _pfK, _spK, _ref;
-      for(i=0;i<item.length;i++){
-        _itK=item[i]; _sgK=spkPkSegs(_itK.tok);
-        if(!_sgK || _sgK.length<2) continue;
-        _pfK=_sgK.slice(0,-1).join('.')+'.';
-        _spK=spkPkNSpan(_itK.p);
-        if(_kol[_pfK]==null){
-          _kol[_pfK]={ ml:_itK.p.style.marginLeft, ti:_itK.p.style.textIndent,
-                       w:_spK?_spK.style.width:'', mw:_spK?_spK.style.minWidth:'',
-                       ta:_spK?_spK.style.textAlign:'', pr:_spK?_spK.style.paddingRight:'' };
+      var _kol={}, _allP=box.querySelectorAll('p'), _z, _pz, _spz, _tokz, _sgz, _pfz, _refz;
+      for(_z=0;_z<_allP.length;_z++){
+        _pz=_allP[_z];
+        /* Sengaja memakai querySelector('span.n') LANGSUNG, bukan spkPkNSpan():
+           spkPkNSpan menolak kotak nomor yang tidak berada tepat di awal atau
+           yang terbungkus tag lain, dan butir yang ditolak itu justru tidak
+           pernah masuk item[] — persis butir yang perlu diluruskan di sini. */
+        _spz=_pz.querySelector('span.n'); if(!_spz) continue;
+        _tokz=String(_spz.textContent||'').replace(/[\s\u00A0]+/g,'');
+        _sgz=spkPkSegs(_tokz); if(!_sgz || _sgz.length<2) continue;
+        _pfz=_sgz.slice(0,-1).join('.')+'.';
+        if(!_kol[_pfz]){
+          _kol[_pfz]={ ml:_pz.style.marginLeft, ti:_pz.style.textIndent,
+                       w:_spz.style.width, mw:_spz.style.minWidth,
+                       ta:_spz.style.textAlign, pr:_spz.style.paddingRight };
           continue;
         }
-        _ref=_kol[_pfK];
-        if(_ref.ml) _itK.p.style.marginLeft=_ref.ml;
-        if(_ref.ti) _itK.p.style.textIndent=_ref.ti;
-        _itK.p.style.paddingLeft='0cm';
-        if(_spK){
-          if(_ref.w)  _spK.style.width=_ref.w;
-          if(_ref.mw) _spK.style.minWidth=_ref.mw;
-          if(_ref.ta) _spK.style.textAlign=_ref.ta;
-          if(_ref.pr) _spK.style.paddingRight=_ref.pr;
-          _spK.style.marginLeft='0cm';
-        }
+        _refz=_kol[_pfz];
+        if(_refz.ml) _pz.style.marginLeft=_refz.ml;
+        if(_refz.ti) _pz.style.textIndent=_refz.ti;
+        _pz.style.paddingLeft='0cm';
+        if(_refz.w)  _spz.style.width=_refz.w;
+        if(_refz.mw) _spz.style.minWidth=_refz.mw;
+        if(_refz.ta) _spz.style.textAlign=_refz.ta;
+        if(_refz.pr) _spz.style.paddingRight=_refz.pr;
+        _spz.style.marginLeft='0cm';
       }
     }catch(_eKol){}
 
@@ -4443,7 +4446,12 @@ function spkPkIndentStd(html, opsi){
     var semua=box.querySelectorAll('p'), z;
     for(z=0;z<semua.length;z++){
       var pz=semua[z];
-      if(spkPkTok(pz)){                       /* butir bernomor: catat kolom teksnya */
+      /* Butir bernomor: catat kolom teksnya. Pemeriksaan span.n ditambahkan
+         28 Jul 2026 — butir yang kotak nomornya ditolak spkPkNSpan() (mis.
+         terbungkus tag lain) dulu lolos ke sini dan diperlakukan sebagai
+         paragraf LANJUTAN, sehingga margin kirinya ditimpa kolom teks butir di
+         atasnya. Itu juga membatalkan penyeragaman Tahap 4c. */
+      if(spkPkTok(pz) || (pz.querySelector && pz.querySelector('span.n'))){
         var ml=parseFloat(pz.style.marginLeft);
         if(ml>0 || ml===0) kolomTeks=ml;
         continue;
