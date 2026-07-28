@@ -6132,17 +6132,19 @@ tr:hover .pn-nomor-val{
 .nav-link:hover, .nav-item:hover{
   transform:none !important;
 }
-/* Penanda hover tetap jelas: latar + garis aksen, bukan gerakan */
-.topnav-link:hover, .topnav-trigger:hover,
-.topnav-item:hover, .topnav-subtrigger:hover{
-  background:rgba(255,255,255,.18);
-  box-shadow:inset 0 -2px 0 rgba(255,255,255,.55);
-}
-/* Ikon menu: translateZ(8px) dibuang, pembesaran halus tetap boleh */
+/* CATATAN: sebelumnya di sini ada tambahan `background` & `box-shadow` untuk
+   penanda hover. Itu SALAH dan sudah dihapus — `.topnav-link:hover` punya
+   bobot yang sama persis dengan `.topnav-link.active` (0,2,0), dan karena
+   ditulis lebih belakang ia menang. Akibatnya pil kuning menu aktif berubah
+   jadi kotak putih transparan saat disentuh. Aturan hover asli (baris 1132,
+   1149, 1172) sudah bagus dan memang tidak pernah bermasalah — yang perlu
+   dibuang hanya transform-nya. */
+
+/* Ikon menu: translateZ(8px) & rotasi dibuang seluruhnya */
 .topnav-link:hover svg,
 .topnav-item:hover svg,
 .topnav-trigger:hover svg{
-  transform:scale(1.1) !important;
+  transform:none !important;
 }
 
 /* ------------------------------------------------------------
@@ -6483,4 +6485,171 @@ tbody tr, tbody tr td,
 table.ac-matrix tbody tr,
 .pnw-periksa-table td{
   transition:none !important;
+}
+
+
+/* ============================================================================
+   TAMBALAN "TAJAM" — BAGIAN E
+   Meratakan efek 3D yang berasal dari BAYANGAN, bukan dari gerakan.
+   Warna, gradasi, dan ukuran tidak diubah — hanya reliefnya yang dihapus.
+   ============================================================================ */
+
+/* ------------------------------------------------------------
+   E1. Kenapa tombol masih terlihat timbul
+   Pola bayangan di baris 5845-5849 (dan kembarannya di 5875-5879,
+   3970-3987) menyusun tombol fisik secara harfiah:
+     inset 0 1px 0 rgba(255,255,255,.34)  -> kilau di tepi ATAS
+     inset 0 -2px 0 rgba(0,0,0,.16)       -> tepi BAWAH gelap = ketebalan
+     0 3px 6px rgba(16,40,50,.20)         -> bayangan jatuh ke permukaan
+   Tiga lapis itulah yang membuat mata membacanya sebagai benda 3D.
+   Diganti satu bayangan datar tipis supaya tombol tetap terpisah dari
+   latar tanpa terlihat menonjol.
+   ------------------------------------------------------------ */
+
+/* --- Tombol ikon aksi (Ubah / Lihat / Hapus) --- */
+.act,
+.view .act:not([disabled]),
+.view .fk-act-icon:not([disabled]),
+.overlay .act:not([disabled]),
+.overlay:not(#pn-preview-overlay) .act:not([disabled]),
+.table-wrap .act{
+  box-shadow:0 1px 2px rgba(16,40,50,.10) !important;
+}
+.act:hover,
+.view .act:not([disabled]):hover,
+.view .fk-act-icon:not([disabled]):hover,
+.overlay:not(#pn-preview-overlay) .act:not([disabled]):hover{
+  box-shadow:0 2px 4px rgba(16,40,50,.16) !important;
+}
+.act:active,
+.view .act:not([disabled]):active,
+.overlay:not(#pn-preview-overlay) .act:not([disabled]):active{
+  box-shadow:0 1px 2px rgba(16,40,50,.10) !important;
+}
+
+/* --- Tombol biasa (Buat Kontrak, Reset, Simpan, dll.) --- */
+.btn,
+.view .btn,
+.overlay .btn,
+.overlay:not(#pn-preview-overlay) .btn,
+.btn-teal, .btn-green, .btn-red, .btn-danger, .btn-amber, .btn-indigo,
+.modal-actions .btn, .pn-doc-modal-foot .btn,
+.head-add-btn, .pg-btn{
+  box-shadow:0 1px 2px rgba(16,40,50,.10) !important;
+}
+.btn:hover,
+.view .btn:hover,
+.overlay:not(#pn-preview-overlay) .btn:hover,
+.btn-teal:hover, .btn-green:hover, .btn-red:hover,
+.btn-danger:hover, .btn-amber:hover, .btn-indigo:hover,
+.pg-btn:hover{
+  box-shadow:0 2px 5px rgba(16,40,50,.14) !important;
+}
+.btn:active,
+.view .btn:active,
+.overlay:not(#pn-preview-overlay) .btn:active{
+  box-shadow:0 1px 2px rgba(16,40,50,.10) !important;
+}
+
+/* --- Gerigi Pengaturan & chip pengguna di topbar --- */
+.settings-gear, .settings-gear:hover,
+.topbar-user .user-chip,
+.topbar-user .logout-btn, .topbar-user .logout-btn:hover,
+.logout-btn, .logout-btn:hover{
+  box-shadow:none !important;
+}
+
+/* --- Daftar centang dokumen --- */
+.view .pn-check-item, .view .fkl-check,
+.overlay:not(#pn-preview-overlay) .pn-check-item,
+.view .pn-check-item:hover, .view .fkl-check:hover,
+.overlay:not(#pn-preview-overlay) .pn-check-item:hover{
+  box-shadow:0 1px 2px rgba(16,40,50,.08) !important;
+}
+
+/* ------------------------------------------------------------
+   E2. Ikon berhenti melayang di atas tombolnya
+   drop-shadow pada SVG membuat ikon seolah mengambang beberapa
+   milimeter di atas permukaan tombol — relief 3D yang paling kentara
+   pada ikon kecil.
+   ------------------------------------------------------------ */
+.btn svg, .act svg, .fk-act-icon svg,
+.logo svg, .topbar-brand .logo svg, .brandside-logo svg,
+.topbar-brand .logo .logo-img,
+.topbar-brand:hover .logo .logo-img,
+.form-section-title svg, .fkl-sec-h svg,
+.pnw-profil-head svg,
+.pnw-profil-upload.pf-ic-up svg,
+.fk-dz-ic svg, .spk-kldoc-dzic{
+  filter:none !important;
+}
+
+/* ------------------------------------------------------------
+   E3. Huruf timbul (embossed) dikembalikan jadi rata
+   .brand h1 memakai empat lapis text-shadow: garis terang di puncak
+   huruf + tiga bayangan gelap di bawahnya. Judul halaman & kepala
+   panel memakai pola yang sama dengan versi lebih tipis.
+   Kalau kamu justru suka judulnya sedikit timbul, hapus blok E3 saja.
+   ------------------------------------------------------------ */
+.brand h1, .topbar-brand:hover .brand h1,
+.brand span,
+.view:not(#view-dashboard) .page-head h2,
+.view .panel-head,
+.form-section-title,
+.fk-dz-title, .spk-kldoc-dz .t,
+.pnw-hero-title, .st-kpi-v,
+.ac-matrix-grp thead th.ac-act-th{
+  text-shadow:none !important;
+}
+
+/* ------------------------------------------------------------
+   E4. Kilau di dalam menu aktif
+   Pil kuning menu aktif memakai `inset 0 1px 0 rgba(255,255,255,.5)`
+   sebagai garis kilau di tepi atas. Halo kuningnya DIPERTAHANKAN —
+   itu penanda halaman mana yang sedang dibuka — hanya kilaunya rata.
+   ------------------------------------------------------------ */
+.topnav-link.active,
+.topnav-group.has-active .topnav-trigger{
+  box-shadow:0 2px 8px rgba(246,180,14,.38) !important;
+  animation:none !important;   /* denyut navGlow ikut dihentikan */
+}
+
+
+/* ============================================================================
+   TAMBALAN "TAJAM" — BAGIAN F
+   Tombol Pengaturan diberi warna sendiri agar terbaca sebagai tombol.
+   ============================================================================ */
+
+/* ------------------------------------------------------------
+   F1. Kenapa tadi nyaris tak terlihat
+   Aturan asli (baris 1191) memberi latar putih transparan .16 di atas
+   topbar yang di ujung kanan berwarna --teal (#0E7C86). Bedanya terlalu
+   tipis; selama ini yang menolongnya justru bayangan timbul — dan itu
+   sudah diratakan di blok E1. Jadi solusinya warna, bukan bayangan.
+   Dipilih --cyan (#16a9b5): sewarna keluarga topbar, jelas lebih terang
+   dari latarnya, dan TIDAK memakai kuning agar tidak tertukar dengan
+   penanda "halaman yang sedang aktif".
+   ------------------------------------------------------------ */
+.settings-gear{
+  background:var(--cyan) !important;
+  border:1px solid rgba(255,255,255,.42) !important;
+  color:#fff !important;
+}
+.settings-gear:hover{
+  background:#1fbecb !important;
+  border-color:rgba(255,255,255,.62) !important;
+}
+/* Menu terbuka: dibalik jadi terang — tidak perlu gerakan untuk terbaca */
+.settings-wrap.open .settings-gear{
+  background:#fff !important;
+  border-color:#fff !important;
+  color:var(--teal-dark) !important;
+  box-shadow:none !important;
+}
+.settings-wrap.open .settings-gear svg{ color:var(--teal-dark) !important }
+
+/* Fokus papan ketik tetap terlihat jelas */
+.settings-gear:focus-visible{
+  outline:2px solid #fff !important;
+  outline-offset:2px !important;
 }

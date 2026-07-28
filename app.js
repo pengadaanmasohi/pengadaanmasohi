@@ -2290,16 +2290,15 @@ function initDashTilt(){
    (kartu statistik & baris bar). Nada DISINTESIS lewat Web Audio API (tanpa
    file audio). AudioContext hanya bisa berbunyi setelah ada interaksi pengguna
    (kebijakan browser), jadi di-"unlock" pada gesture pertama (klik/tekan). */
-let _dashAC=null, _dashSoundPart=null, _dashSoundT=0, _dashMuted=false;
-function dashAC(){
-  if(_dashAC) return _dashAC;
-  try{ var AC=window.AudioContext||window.webkitAudioContext; if(!AC) return null; _dashAC=new AC(); }catch(e){ return null; }
-  return _dashAC;
-}
-function dashAudioUnlock(){ var c=dashAC(); if(c && c.state==='suspended'){ try{ c.resume(); }catch(e){} } }
-['pointerdown','keydown','click','touchstart'].forEach(function(ev){
-  try{ document.addEventListener(ev, dashAudioUnlock, {passive:true}); }catch(e){}
-});
+/* EFEK SUARA DIMATIKAN SELURUHNYA atas permintaan pengguna.
+   _dashMuted=true menutup dashBlip(), dashWhoosh(), dan segSelectSound();
+   dashAC() yang selalu mengembalikan null memastikan AudioContext tidak
+   pernah dibuat sama sekali, jadi tidak ada sisa beban di memori.
+   Untuk mengaktifkan kembali: kembalikan _dashMuted ke false dan pulihkan
+   isi dashAC() serta pendengar dashAudioUnlock di bawahnya. */
+let _dashAC=null, _dashSoundPart=null, _dashSoundT=0, _dashMuted=true;
+function dashAC(){ return null; }
+function dashAudioUnlock(){}
 function dashBlip(freq){
   if(_dashMuted) return;
   var c=dashAC(); if(!c) return;
@@ -4540,10 +4539,15 @@ const TOAST_MS_UPLOAD  = 5000;
    notifikasi visual tetap tampil apa pun yang terjadi pada audio. */
 const SFX_KEY='fkl_sfx_off';
 let _sfxCtx=null;
-function sfxEnabled(){ try{ return localStorage.getItem(SFX_KEY)!=='1'; }catch(e){ return true; } }
+/* EFEK SUARA DIMATIKAN SELURUHNYA atas permintaan pengguna.
+   sfxEnabled() yang selalu false menutup SEMUA pemanggilnya sekaligus:
+   sfxPlay, sfxClick, sfxHover, sfxNav, sfxSession, dan sfxGear — masing-masing
+   sudah memeriksanya di baris pertama, jadi tidak ada AudioContext yang dibuat.
+   Untuk mengaktifkan kembali: pulihkan isi aslinya, yaitu
+     try{ return localStorage.getItem(SFX_KEY)!=='1'; }catch(e){ return true; } */
+function sfxEnabled(){ return false; }
 function sfxSetEnabled(on){
   try{ on ? localStorage.removeItem(SFX_KEY) : localStorage.setItem(SFX_KEY,'1'); }catch(e){}
-  if(on) sfxPlay('ok');   // umpan balik langsung saat dinyalakan
 }
 function sfxToggle(){ const on=!sfxEnabled(); sfxSetEnabled(on); return on; }
 /* Satu nada: osilator + amplop naik-turun agar tidak terdengar "klik" di ujungnya. */

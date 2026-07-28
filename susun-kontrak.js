@@ -3470,7 +3470,19 @@ function spkKumpulHang(daftarHtml){
         var w=0; try{ w=spkPkTextWidthCm(tok.replace(/[0-9]/g,'0')); }catch(e){ w=0; }
         if(!(w>0)) continue;
         var W=Math.max(0.4, Math.round((w+SPK_NUM_GAP)*100)/100);
-        var k2=L+'|'+segs.length;
+        /* KUNCI = JUMLAH RUAS SAJA (perbaikan 28 Jul 2026, "teks ayat pasal 8
+           tidak sejajar dengan pasal 9").
+           Dulu kuncinya 'tingkat|ruas'. Tingkat L di sini diturunkan dari
+           lvlNomor — peta lokal milik fungsi ini — sedangkan Tahap 3 di
+           spkPkIndentStd memakai it.lvl yang dihitung dengan cara lain. Bila
+           keduanya berbeda satu angka saja, pencarian lantai meleset dan deret
+           itu diam-diam kembali memakai lebar alaminya sendiri.
+           Lebar kotak hanya bergantung pada BENTUK nomornya (berapa ruas,
+           berapa digit) — bukan pada seberapa dalam ia bersarang. Jadi ruas
+           saja sudah kunci yang tepat, sekaligus menghapus risiko meleset itu.
+           Hasilnya: semua nomor dua ruas ("8.12.", "9.1.", "12.3.") berbagi
+           satu lebar kotak, persis tab stop Word yang berlaku se-dokumen. */
+        var k2=String(segs.length);
         if(!peta[k2] || W>peta[k2]) peta[k2]=W;
       }
     }
@@ -4064,20 +4076,26 @@ function spkPkIndentStd(html, opsi){
          terlebar sekunci (tingkat|ruas) di seluruh dokumen supaya kolom teks
          antar-pasal lurus. Deret huruf/bullet tidak disentuh. */
       var WSendiri=Math.round(W*100)/100;   /* lebar alami deret ini sendiri */
-      /* PERBAIKAN 24 Jul 2026 ("jarak penomoran single digit terlalu jauh dari
-         teks — samakan rapat spt 9.1"): PELEBARAN LANTAI SE-DOKUMEN (SPK_HANG_OVR)
-         DINONAKTIFKAN. Dulu kotak nomor deret pasal ber-angka satu digit (mis.
-         2.1/3.1) dilebarkan mengikuti nomor terlebar sepola di SELURUH dokumen
-         (mis. 10.1) supaya kolom teks antar-pasal lurus; begitu nomor rata KIRI,
-         kelebihan lebar itu berubah jadi JARAK KOSONG lebar antara nomor & teks.
-         Kerapatan jarak & kelurusan kolom teks antar-pasal tak bisa keduanya untuk
-         nomor yang lebih pendek, jadi kerapatan jarak (permintaan user) dipilih:
-         tiap deret memakai LEBAR ALAMINYA sendiri -> jarak nomor->teks SELALU rapat
-         & seragam (= SPK_NUM_GAP) seperti pada 9.1. Perataan 2-digit DALAM satu
-         deret (mis. 2.9 vs 2.16) tetap terjaga karena W sudah = penanda terlebar
-         deret (Tahap 3 di atas). SPK_HANG_OVR sengaja dibiarkan terhitung di
-         pemanggilnya (idempoten, tak berefek lagi di sini). */
-      g.W=WSendiri;
+      /* LANTAI SE-DOKUMEN DIAKTIFKAN KEMBALI (28 Jul 2026, permintaan
+         "teks ayat pasal 8 tidak sejajar dengan pasal 9 — sejajarkan").
+         Riwayatnya: lantai ini dinonaktifkan 24 Jul 2026 karena nomor pendek
+         (9.1.) jadi berjarak lebar dari teksnya. Sebabnya BUKAN lantainya,
+         melainkan nomor yang dibiarkan rata KIRI di dalam kotak yang melebar —
+         sisa lebarnya berubah jadi ruang kosong.
+         Penawarnya sudah ada di bawah: g.dilebarkan memaksa deret yang
+         kotaknya ikut melebar menjadi rata KANAN, sehingga titik penutup
+         nomor lurus dengan deret terlebar dan jeda ke teks tetap = SPK_NUM_GAP.
+         Dengan begitu kolom teks lurus antar-pasal DAN jaraknya tetap rapat —
+         keduanya bisa, tidak perlu dipilih salah satu. */
+      if(adaAngka && SPK_HANG_OVR){
+        var _segs=null;
+        for(j=0;j<g.items.length;j++){ _segs=spkPkSegs(g.items[j].tok); if(_segs) break; }
+        if(_segs){
+          var _lantai=SPK_HANG_OVR[String(_segs.length)];
+          if(_lantai>W) W=_lantai;
+        }
+      }
+      g.W=Math.round(W*100)/100;
       /* JEDA NOMOR->TEKS SELALU IDEAL (21 Jul 2026, laporan "jauh sekali
          penomoran dan teksnya"): deret yang kotaknya IKUT DILEBARKAN lantai
          se-dokumen (demi kolom teks lurus dgn deret "12.x") tidak boleh
