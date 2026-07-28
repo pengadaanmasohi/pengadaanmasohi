@@ -4411,7 +4411,19 @@ function spkPkBoxMark(html){
            _induk===p.firstElementChild && _induk.firstChild===first) _bungkus=_induk;
         else continue;
       }
-      var mm=reMark.exec(first.nodeValue);
+      var mm=reMark.exec(first.nodeValue), _potongEkor=false;
+      /* PERBAIKAN 28 Jul 2026 (lanjutan) — penanda TEBAL yang spasi/TAB-nya berada
+         DI LUAR </b>, mis. `<b>4.3.</b>\tJangka waktu…`. reMark menuntut spasi
+         berada di simpul teks yang SAMA, padahal di sini simpul teks pembungkus
+         berisi "4.3." saja -> tidak cocok -> penanda tak pernah dikotakkan,
+         butirnya keluar dari deret dan memakai geometri bawaan Word (nomor
+         melenceng, jeda ke teks melebar). Kini penanda yang MENGISI HABIS simpul
+         teks pembungkus ikut diterima; spasi pemisahnya dibuang dari simpul teks
+         SESUDAHNYA. */
+      if(!mm && _bungkus){
+        var _me=/^([\s\u00A0]*)((?:[0-9]+\.)+|[0-9]+\)|[A-Za-z][.)]|[ivxlcdmIVXLCDM]{2,4}[.)])[\s\u00A0]*$/.exec(first.nodeValue);
+        if(_me){ mm=[_me[0], _me[1], _me[2], '']; _potongEkor=true; }
+      }
       if(!mm) continue;
       var tok=mm[2];
       /* lindungi singkatan yang menyerupai angka romawi / huruf berturut */
@@ -4428,6 +4440,17 @@ function spkPkBoxMark(html){
       span.textContent=tok;
       if(_bungkus) _bungkus.insertBefore(span, _bungkus.firstChild);   /* tetap di dalam <b>/<i> */
       else p.insertBefore(span, p.firstChild);
+      if(_potongEkor){
+        /* buang spasi/TAB pemisah yang tertinggal SESUDAH pembungkus penanda */
+        var w2=document.createTreeWalker(p, NodeFilter.SHOW_TEXT, null, false), t2, lewat=false;
+        while((t2=w2.nextNode())){
+          if(t2===first){ lewat=true; continue; }
+          if(!lewat || span.contains(t2)) continue;
+          if(!t2.nodeValue) continue;
+          t2.nodeValue=t2.nodeValue.replace(/^[\s\u00A0]+/,'');
+          if(t2.nodeValue) break;
+        }
+      }
       p.classList.add('spk-sl');
       ubah=true;
     }
