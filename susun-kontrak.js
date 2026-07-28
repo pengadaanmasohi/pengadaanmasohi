@@ -3917,11 +3917,27 @@ function spkPkIndentStd(html, opsi){
       if(segs){
         if(segs.length>1){
           var _kInd=_pfS+segs.slice(0,-1).join('.')+'.';
-          if(_lvlAwalan[_kInd])     L=_lvlAwalan[_kInd];      /* saudara: setingkat */
-          else if(_lvlButir[_kInd]) L=_lvlButir[_kInd]+1;     /* anak: satu tingkat di bawah induk */
-          _lvlAwalan[_kInd]=L;
+          /* CADANGAN TANPA numId (28 Jul 2026, laporan "di pratinjau klausul rapi,
+             di pratinjau SPK butir 4.3 sendirian"). Kunci silsilah di atas diberi
+             awalan numId daftar Word. Bila satu butir saja berada di daftar Word
+             yang BERBEDA — sangat lazim terjadi ketika butir itu diketik ulang,
+             ditempel, atau formatnya diulang di Word — kuncinya tidak pernah
+             cocok, butir itu tidak dikenali sebagai saudara, dan levelnya jatuh
+             kembali ke peringkat indent Word. Beda indent >0,25 cm sudah cukup
+             membuatnya menempati deret sendiri, dengan kolom nomor & teks sendiri.
+             Karena itu kunci tanpa numId dipakai sebagai cadangan: awalan nomor
+             yang sama ("4.") tetap menyatukan 4.1, 4.2 & 4.3 sebagai saudara,
+             apa pun daftar Word asalnya. Kunci ber-numId tetap dicoba lebih dulu
+             sehingga pemisahan antar-daftar yang memang sah tidak berubah. */
+          var _kIndP=segs.slice(0,-1).join('.')+'.';
+          if(_lvlAwalan[_kInd])        L=_lvlAwalan[_kInd];      /* saudara: setingkat */
+          else if(_lvlAwalan[_kIndP])  L=_lvlAwalan[_kIndP];     /* saudara lintas-daftar Word */
+          else if(_lvlButir[_kInd])    L=_lvlButir[_kInd]+1;     /* anak: satu tingkat di bawah induk */
+          else if(_lvlButir[_kIndP])   L=_lvlButir[_kIndP]+1;    /* anak lintas-daftar Word */
+          _lvlAwalan[_kInd]=L; _lvlAwalan[_kIndP]=L;
         }
         _lvlButir[_pfS+segs.join('.')+'.']=L;
+        _lvlButir[segs.join('.')+'.']=L;
         _lvlAngka=L; _lvlAkhir=L;
       } else if(spkPkIsHuruf(tok)){
         if(_lvlAngka>0) L=_lvlAngka+1;
