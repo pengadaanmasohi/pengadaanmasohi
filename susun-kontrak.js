@@ -7186,8 +7186,8 @@ function spkPruneKlausul(html, klNo, data){
   /* Klausul tanpa penomoran butir: cukup buang blok contohnya saja.
      (Bila seluruhnya contoh -> biarkan apa adanya: klausul memang belum diisi.) */
   if(!items.length){
-    var keep=blocks.filter(function(e){ return !spkIsPhBlock(e); });
-    if(!keep.length) return src;
+    var keep=blocks.filter(function(e){ return !spkIsPhBlock(e) || spkIsBlankP(e); });
+    if(!keep.some(function(e){ return !spkIsBlankP(e); })) return src;
     var o0=document.createElement('div');
     keep.forEach(function(e){ o0.appendChild(e); });
     return o0.innerHTML;
@@ -7209,7 +7209,7 @@ function spkPruneKlausul(html, klNo, data){
     });
     var kids=[], placed=false;
     it.kids.forEach(function(k){
-      if(k.t==='blk' && spkIsPhBlock(k.el)){
+      if(k.t==='blk' && spkIsPhBlock(k.el) && !spkIsBlankP(k.el)){
         if(!placed){ news.forEach(function(p){ kids.push({t:'blk', el:p}); }); placed=true; }
         return;                                     // teks contoh dibuang
       }
@@ -7236,11 +7236,15 @@ function spkPruneKlausul(html, klNo, data){
   items.forEach(function(it){
     it.kids.forEach(function(k){
       if(k.t!=='sub') return;
-      var isi=k.s.body.filter(function(e){ return !spkIsPhBlock(e); });
-      k.s.drop = (k.s.body.length>0 && isi.length===0);
-      k.s.body = isi;
+      var _asli=k.s.body.filter(function(e){ return !spkIsBlankP(e); });   /* isi sebelum disaring */
+      var isi=k.s.body.filter(function(e){ return !spkIsPhBlock(e) || spkIsBlankP(e); });
+      var _nyata=isi.filter(function(e){ return !spkIsBlankP(e); });      /* baris kosong bukan isi */
+      k.s.drop = (_asli.length>0 && _nyata.length===0);
+      k.s.body = k.s.drop ? [] : isi;
     });
-    var blkKids=it.kids.filter(function(k){ return k.t==='blk'; });
+    /* baris kosong (Enter) BUKAN isi & bukan pula bukti "butir contoh" —
+       jangan ikut menentukan butir dibuang atau tidak */
+    var blkKids=it.kids.filter(function(k){ return k.t==='blk' && !spkIsBlankP(k.el); });
     var subKept=it.kids.filter(function(k){ return k.t==='sub' && !k.s.drop; });
     var joined=blkKids.map(function(k){ return spkBlkText(k.el); }).join(' ').replace(/\s+/g,' ').trim();
     var everyBlkPh = blkKids.length>0 && blkKids.every(function(k){ return spkIsPhBlock(k.el); });
@@ -7252,14 +7256,14 @@ function spkPruneKlausul(html, klNo, data){
     it.drop = !hasReal && evidence;
     // Sisakan hanya konten nyata (buang paragraf contoh & sub-butir kosong)
     it.kids = it.kids.filter(function(k){
-      return (k.t==='sub') ? !k.s.drop : !spkIsPhBlock(k.el);
+      return (k.t==='sub') ? !k.s.drop : (!spkIsPhBlock(k.el) || spkIsBlankP(k.el));
     });
     // Bila contoh menyatu di judul & butir dibuang, seluruh butir (judul+contoh) hilang.
   });
 
   /* --- 4) Susun ulang & nomori ulang otomatis --- */
   var out=document.createElement('div'), i=0, refMap={};
-  pre.forEach(function(e){ if(!spkIsPhBlock(e)) out.appendChild(e); });
+  pre.forEach(function(e){ if(!spkIsPhBlock(e) || spkIsBlankP(e)) out.appendChild(e); });
   items.forEach(function(it){
     if(it.drop) return;
     i++;
@@ -9372,6 +9376,12 @@ function spkHtmlToWordParas(html){
     flushKv();                                                    // akhiri blok kv sebelum paragraf lain
     var cls='kl0', cl=(el.className||'').split(/\s+/);
     for(j=0;j<cl.length;j++){ if(SPK_CLS2STY[cl[j]]){ cls=cl[j]; break; } }
+    /* baris kosong (Enter) -> paragraf Word kosong, sehingga template yang
+       diunduh ulang memuat baris kosong yang sama seperti yang diketik */
+    if(el.getAttribute && el.getAttribute('data-blank')==='1'){
+      xml += spkPXml2(SPK_CLS2STY[cls]||'KlausulIsi', spkPPrFromCss(el), '');
+      continue;
+    }
     var isPh=!!(el.classList && el.classList.contains('spk-ph'));   // contoh pengisian
     var runs=[]; spkCollectRuns(el, isPh?{c:'BFBFBF'}:{}, runs);
     /* nomor yang masih berupa teks biasa ("1.1. Teks") -> nomor + TAB + teks */
@@ -9874,6 +9884,46 @@ function spkNumberer(numbering){
   };
 }
 /* word/document.xml -> { judul, html } dalam format kelas dokumen SPK (kl0/kl1/kl2/...) */
+/* =========================================================================
+   SPASI GANDA & BARIS KOSONG (ENTER) DARI TEMPLATE WORD DIPERTAHANKAN
+   (28 Jul 2026 — laporan "render tidak membaca adanya spasi dan enter pada
+   template"). Dua sebab yang diperbaiki:
+     (a) HTML MERUNTUHKAN deretan spasi menjadi satu dan mengabaikan spasi di
+         awal baris  -> spkKeepWS() mengubah spasi ke-2 dst. menjadi &nbsp;
+         sehingga jumlah spasi yang diketik tampil apa adanya;
+     (b) paragraf KOSONG (tombol Enter) dulu dilewati begitu saja pada
+         spkWordXmlToKlausul dan dibuang lagi oleh spkPruneKlausul (dianggap
+         blok contoh)  -> kini dipertahankan sebagai <p data-blank="1">.
+   Tata letak TIDAK diubah: margin & inden tetap ditangani spkPkIndentStd
+   seperti biasa; yang dikembalikan hanya isi ketikan pengguna.
+   ========================================================================= */
+/* Deretan spasi -> &nbsp; (hanya pada bagian TEKS; isi tag HTML tak disentuh) */
+function spkKeepWS(html){
+  var s=String(html==null?'':html);
+  if(s.indexOf(' ')<0) return s;
+  var bag=s.split(/(<[^>]*>)/);
+  var i, awalSudah=false;
+  for(i=0;i<bag.length;i++){
+    if(i%2){                                   /* bagian ganjil = tag -> lewati */
+      continue;
+    }
+    /* spasi pertama dibiarkan spasi biasa (tempat pemenggalan baris),
+       spasi ke-2 dan seterusnya jadi &nbsp; supaya tidak diruntuhkan */
+    bag[i]=bag[i].replace(/ {2,}/g, function(m){
+      return ' '+new Array(m.length).join('&nbsp;');
+    });
+    /* spasi di AWAL paragraf selalu dibuang HTML -> seluruhnya jadi &nbsp; */
+    if(!awalSudah && bag[i]!==''){
+      bag[i]=bag[i].replace(/^ +/, function(m){ return new Array(m.length+1).join('&nbsp;'); });
+      awalSudah=true;
+    }
+  }
+  return bag.join('');
+}
+/* Paragraf kosong hasil tombol Enter di template (bukan blok contoh) */
+function spkIsBlankP(el){
+  return !!(el && el.nodeType===1 && el.getAttribute && el.getAttribute('data-blank')==='1');
+}
 function spkWordXmlToKlausul(xmlText, stylesXml, numberingXml){
   var doc=new DOMParser().parseFromString(xmlText,'application/xml');
   if(doc.getElementsByTagName('parsererror').length) throw new Error('Isi dokumen tidak dapat dibaca.');
@@ -9913,11 +9963,17 @@ function spkWordXmlToKlausul(xmlText, stylesXml, numberingXml){
   var judulAt=-1;
   for(i=0;i<blocks.length;i++){ if(blocks[i].t==='p' && blocks[i].key==='klausuljudul'){ judulAt=i; break; } }
   /* --- Lintasan 2: bangun HTML klausul --- */
-  var html='', judul='';
+  var html='', judul='', _blank=0;
+  /* Baris kosong (Enter) DITAHAN dulu, baru dikeluarkan saat ada isi berikutnya:
+     dengan begitu Enter di TENGAH klausul tetap tampil, sedangkan baris kosong
+     sisa template di AWAL/AKHIR klausul tidak ikut menambah ruang kosong. */
+  var _flushBlank=function(){
+    while(_blank>0){ html+='<p class="kl0 spk-blank" data-blank="1">&nbsp;</p>'; _blank--; }
+  };
   for(i=0;i<blocks.length;i++){
     if(judulAt>=0 && i<judulAt) continue;                   // apa pun di atas judul -> abaikan
     var b=blocks[i];
-    if(b.t==='tbl'){ html+=spkWTblToHtml(b.el); continue; } // tabel -> baris spk-kv sejajar
+    if(b.t==='tbl'){ _flushBlank(); html+=spkWTblToHtml(b.el); continue; } // tabel -> baris spk-kv sejajar
     var key=b.key;
     if(key.indexOf('petunjuk')===0) continue;               // baris petunjuk -> abaikan
     /* Baris "PASAL n" pada template Perjanjian/Kontrak hanyalah penomoran
@@ -9943,7 +9999,9 @@ function spkWordXmlToKlausul(xmlText, stylesXml, numberingXml){
     /* nomor OTOMATIS Word (dihitung berurutan, meski teksnya kosong tetap sah) */
     var numStr='';
     if(b.numId && b.numId!=='0'){ numStr=nextNum(b.numId, b.ilvl); }
-    if(!t.plain && !numStr) continue;                       // baris benar-benar kosong -> lewati
+    /* Baris benar-benar kosong = tombol Enter di template. Dulu dibuang; kini
+       ditahan sebagai baris kosong (lihat _flushBlank di atas). */
+    if(!t.plain && !numStr){ if(html) _blank++; continue; }
     /* === properti EFEKTIF paragraf, persis urutan Word:
        docDefaults -> rantai gaya (basedOn) -> definisi penomoran -> pPr langsung === */
     var eff=spkStyleChain(propMap, b.sid);
@@ -10003,6 +10061,8 @@ function spkWordXmlToKlausul(xmlText, stylesXml, numberingXml){
     out=out.replace(/\t/g,' ');
     /* rapikan spasi bekas TAB sesudah nomor menjadi satu spasi */
     out=out.replace(/^(\s*(?:(?:\d+\.)+|\d+\)|[A-Za-z][.)]))[ \u00a0]{2,}/, '$1 ');
+    /* spasi ganda / spasi awal yang diketik pengguna dipertahankan */
+    out=spkKeepWS(out);
     /* Style inline dari Word. Bila nomor dibiarkan polos (fallback), indentasi
        diserahkan ke spkNumberFix agar kotak nomornya tetap rapi. */
     var css=spkParaCss(eff, plainNumFallback);
@@ -10011,6 +10071,7 @@ function spkWordXmlToKlausul(xmlText, stylesXml, numberingXml){
        (2) menetapkan kedalaman butir PERSIS menurut indent Word (mode WORD). */
     var wnAttr=(b.numId?(' data-wnum="'+spkXmlEsc(String(b.numId))+'"'):'');
     var wlAttr=(typeof eff.ind.left==='number'?(' data-wleft="'+Math.round(eff.ind.left)+'"'):'');
+    _flushBlank();                                          /* baris kosong sebelum blok ini */
     if(plainNumFallback){
       html += '<p class="'+cls+'"'+wnAttr+wlAttr+' style="'+css+'">'+out+'</p>';
     }else{
