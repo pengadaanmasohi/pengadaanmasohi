@@ -8371,8 +8371,9 @@ function spkTocScript(){ return spkPageScript(); }
    Dipakai oleh "Lihat Klausul" agar tampilannya IDENTIK dengan Pratinjau SPK:
    memakai <head>, spkDocCss()+spkDocCss2()+spkClHeadCss(), font, paginator
    (spkPageScript) dan penyesuai layar (fklFitScript) YANG SAMA PERSIS dengan
-   spkDocHtml. Bedanya hanya: tanpa sampul, daftar isi, preamble, tanda tangan,
-   dan lampiran — hanya blok .spk-clause. Dengan berbagi jalur render ini,
+   spkDocHtml — TERMASUK kop (thead) & kaki halaman (tfoot) berulang. Bedanya
+   hanya: tanpa sampul, daftar isi, preamble, tanda tangan, dan lampiran — hanya
+   blok .spk-clause di badan halaman. Dengan berbagi jalur render ini,
    perubahan gaya di spkDocCss otomatis tercermin di Lihat Klausul & Pratinjau
    tanpa perlu menyamakan CSS secara manual.
    Param:
@@ -8407,9 +8408,16 @@ function spkClauseDocHtml(data, klausul, opts){
       '<div class="spk-cl'+spkLeadIndentCls(inner)+'">'+inner+'</div></div>';
   }).join('');
   SPK_HANG_OVR=null; SPK_JH_OVR=0;
+  /* KONSISTENSI KOP/KAKI (samakan dgn Pratinjau SPK): pakai struktur tabel
+     .spk-run yang IDENTIK dengan spkDocHtml — thead=kop, tfoot=kaki — sehingga
+     paginator (spkPageScript) mengulang kop & kaki di TIAP lembar A4. Kop yang
+     ditiadakan pada bentuk PK tetap otomatis: diatur oleh CSS lewat wrapper
+     .spk-doc.spk-pk, bukan oleh markup ini. */
   const isi=
     '<section class="spk-page spk-flow" id="spk-flow">'+
-      '<table class="spk-run"><tbody><tr><td>'+clausesHtml+'</td></tr></tbody></table>'+
+      '<table class="spk-run"><thead><tr><td>'+spkRunHeadHtml(data)+'</td></tr></thead>'+
+      '<tbody><tr><td>'+clausesHtml+'</td></tr></tbody>'+
+      '<tfoot><tr><td>'+spkRunFootHtml()+'</td></tr></tfoot></table>'+
     '</section>';
   return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>&#8203;</title>'+
     (typeof fklDocFontLink==='function'?fklDocFontLink():'')+
