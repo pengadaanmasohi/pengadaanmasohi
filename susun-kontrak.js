@@ -3265,6 +3265,28 @@ function spkNumUniform(html){
       var _colU=spkNumCol(_lv2, Math.round((g.max+SPK_NUM_GAP)*100)/100);
       var W=Math.max(0.4, _colU.w, Math.round((g.max+SPK_NUM_GAP)*100)/100);
       W=Math.round(W*100)/100;
+      /* ---- SATU KOLOM UNTUK SATU KELOMPOK (perbaikan butir tidak sejajar) ----
+         Butir yang berasal dari berkas Word (.spk-wx) sebelumnya mempertahankan
+         margin-left masing-masing. Bila satu butir saja diketik dengan indentasi
+         berbeda di Word — mis. 4.3 pada contoh — nomornya melenceng ke kiri
+         sementara teksnya mulai lebih ke kanan daripada 4.1 & 4.2.
+         Sekarang seluruh anggota kelompok memakai SATU margin-left: nilai yang
+         paling banyak dipakai di kelompok itu (modus), sehingga butir menyimpang
+         ditarik mengikuti mayoritas, bukan sebaliknya. Bila tak ada margin asli
+         yang terbaca, kolom kisi template (_colU.ml) yang dipakai. */
+      var _wxAda=false, _tally={}, _terbanyak=null, _nTerbanyak=0;
+      for(i=0;i<g.items.length;i++){
+        var _p=g.items[i].p;
+        if(!(_p.classList && _p.classList.contains('spk-wx'))) continue;
+        _wxAda=true;
+        var _ml=parseFloat(_p.style.marginLeft);
+        if(!isFinite(_ml)) continue;
+        var _key=_ml.toFixed(2);
+        _tally[_key]=(_tally[_key]||0)+1;
+        if(_tally[_key]>_nTerbanyak){ _nTerbanyak=_tally[_key]; _terbanyak=_ml; }
+      }
+      var _mlGrup = (_wxAda && _terbanyak!=null) ? _terbanyak : _colU.ml;
+      var _tiGrup = _wxAda ? W : _colU.w;
       for(i=0;i<g.items.length;i++){
         var it=g.items[i];
         /* PERATAAN & KOLOM MENGIKUTI TEMPLATE .docx
@@ -3274,20 +3296,13 @@ function spkNumUniform(html){
            lurus; bila W melebihi gantungan kisi, nomor mendorong teksnya ke
            kanan — sama seperti tab stop Word yang terdorong ke perhentian
            berikutnya. Baris sambungan tetap di kolom kisi (margin-left). */
-        var isWx=!!(it.p.classList && it.p.classList.contains('spk-wx'));
         it.n.style.width='';
         it.n.style.minWidth=W.toFixed(2)+'cm';
         it.n.style.paddingRight=SPK_NUM_GAP+'cm';        /* jeda tetap nomor->teks */
         it.n.style.textAlign=_colU.al;
         it.n.style.overflow='visible';
-        if(isWx){
-          /* Isi dari template Word: PERTAHANKAN margin-left asli berkas .docx;
-             kotak nomor hanya melebar ke KIRI lewat text-indent. */
-          it.p.style.textIndent='-'+W.toFixed(2)+'cm';
-        }else{
-          it.p.style.marginLeft=_colU.ml.toFixed(2)+'cm';
-          it.p.style.textIndent='-'+_colU.w.toFixed(2)+'cm';
-        }
+        it.p.style.marginLeft=_mlGrup.toFixed(2)+'cm';
+        it.p.style.textIndent='-'+_tiGrup.toFixed(2)+'cm';
       }
       ubah=true;
     }
