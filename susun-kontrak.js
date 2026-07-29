@@ -53,22 +53,38 @@ const SPK_SK_KEYS = ['nama_pengguna','jabatan_pengguna','no_sk','tgl_sk','nama_u
 const SPK_METODE_PK_OPTS = ['Tender Terbatas','Tender Terbuka','Seleksi Umum','Seleksi Terbatas','Penunjukan Langsung','Tender Cepat'];
 const SPK_BENTUK_OPTS = [
   {v:'SPK', l:'Surat Perintah Kerja'},
-  {v:'PK',  l:'Perjanjian/Kontrak'}
+  {v:'PK',  l:'Perjanjian/Kontrak'},
+  {v:'KHS', l:'Perjanjian/Kontrak KHS'}
 ];
 /* Bentuk dari sebuah objek data (dipakai saat membangun dokumen) */
-function spkBentukOf(data){ return (String((data&&data.bentuk_kontrak)||'').toUpperCase()==='PK') ? 'PK' : 'SPK'; }
+function spkBentukOf(data){
+  var b=String((data&&data.bentuk_kontrak)||'').toUpperCase();
+  if(b==='KHS') return 'KHS';
+  return (b==='PK') ? 'PK' : 'SPK';
+}
+/* Perjanjian/Kontrak & Perjanjian/Kontrak KHS adalah SATU KELUARGA dokumen:
+   field yang tampil, preamble, sampul, daftar isi & tata letaknya sama persis.
+   Yang membedakan hanya JUDUL dokumen dan adanya LAPISAN PENYEDIA pada KHS
+   (No. SPPBJ, Informasi Kontrak, Informasi Penyedia & Lampiran dibuat berlapis
+   sebanyak jumlah penyedia yang dipilih). */
+function spkIsPkFam(data){ var b=spkBentukOf(data); return b==='PK'||b==='KHS'; }
+function spkIsKhsOf(data){ return spkBentukOf(data)==='KHS'; }
 /* Bentuk yang sedang aktif pada form Penyusunan Kontrak */
 function spkBentuk(){ return spkBentukOf(spkState&&spkState.data); }
-function spkIsPk(){ return spkBentuk()==='PK'; }
+function spkIsPk(){ return spkIsPkFam(spkState&&spkState.data); }
+function spkIsKhs(){ return spkBentuk()==='KHS'; }
 /* Nama dokumen — dipakai pada judul cover, daftar isi, kop berulang & bab isi */
-function spkDokLabel(data){ return spkBentukOf(data)==='PK' ? 'PERJANJIAN/KONTRAK' : 'SURAT PERINTAH KERJA'; }
-function spkDokTitle(data){ return spkBentukOf(data)==='PK' ? 'Perjanjian/Kontrak' : 'Surat Perintah Kerja'; }
-function spkLampTitle(data){ return spkBentukOf(data)==='PK' ? 'Lampiran Perjanjian/Kontrak' : 'Lampiran Surat Perintah Kerja'; }
+function spkDokLabel(data){ var b=spkBentukOf(data);
+  return b==='KHS' ? 'PERJANJIAN/KONTRAK KHS' : (b==='PK' ? 'PERJANJIAN/KONTRAK' : 'SURAT PERINTAH KERJA'); }
+function spkDokTitle(data){ var b=spkBentukOf(data);
+  return b==='KHS' ? 'Perjanjian/Kontrak KHS' : (b==='PK' ? 'Perjanjian/Kontrak' : 'Surat Perintah Kerja'); }
+function spkLampTitle(data){ var b=spkBentukOf(data);
+  return b==='KHS' ? 'Lampiran Perjanjian/Kontrak KHS' : (b==='PK' ? 'Lampiran Perjanjian/Kontrak' : 'Lampiran Surat Perintah Kerja'); }
 /* Baris kecil di atas judul cover = METODE PENGADAAN (mis. PENGADAAN LANGSUNG,
    TENDER, PENUNJUKAN LANGSUNG). Bila kosong dipakai bawaan sesuai bentuk. */
 function spkMetodeLabel(data){
   var m=String((data&&data.metode_pengadaan)||'').trim();
-  if(!m) m = (spkBentukOf(data)==='PK') ? 'Tender' : 'Pengadaan Langsung';
+  if(!m) m = spkIsPkFam(data) ? 'Tender' : 'Pengadaan Langsung';
   return m.toUpperCase();
 }
 
@@ -176,6 +192,125 @@ const SPK_FIELD_GROUPS = [
 ];
 /* daftar semua field (flat) */
 const SPK_FIELDS_FLAT = SPK_FIELD_GROUPS.reduce((a,g)=>a.concat(g.fields),[]);
+
+/* =========================================================================
+   PERJANJIAN/KONTRAK KHS — LAPISAN (LAYER) PER PENYEDIA
+   -------------------------------------------------------------------------
+   Pada bentuk "Perjanjian/Kontrak KHS" satu berkas kontrak memuat 1..20
+   penyedia. Bagian yang BERLAPIS (punya isian sendiri tiap penyedia):
+     - No. SPPBJ & Tgl. SPPBJ            (dari kartu Informasi Pengadaan)
+     - seluruh kartu "Informasi Kontrak"
+     - seluruh kartu "Informasi Penyedia"
+     - Lampiran (Langkah 4) -> Nilai Pekerjaan ikut lampiran tiap penyedia
+   Bagian lain (Informasi Pengadaan, Informasi PLN Unit, Pengendali Pekerjaan,
+   pilihan klausul) tetap SATU untuk seluruh penyedia.
+
+   PENYIMPANAN — tetap di dalam kolom jsonb `data` (tanpa kolom DB baru):
+     data.jumlah_penyedia : 1..20
+     data.khs             : [slot penyedia ke-2, ke-3, ...]  (penyedia ke-1
+                            memakai field data itu sendiri, sehingga kontrak
+                            lama & bentuk SPK/PK sama sekali tak terpengaruh)
+   ========================================================================= */
+const SPK_KHS_MAX = 20;
+/* Kartu yang seluruh field-nya berlapis */
+const SPK_KHS_SECTIONS = ['Informasi Kontrak','Informasi Penyedia'];
+/* Field berlapis tambahan di luar kartu di atas */
+const SPK_KHS_EXTRA_KEYS = ['no_sppbj','tgl_sppbj'];
+let SPK_KHS_KEYSET = null;
+function spkKhsKeys(){
+  if(SPK_KHS_KEYSET) return SPK_KHS_KEYSET;
+  var s={};
+  SPK_KHS_EXTRA_KEYS.forEach(function(k){ s[k]=1; });
+  SPK_FIELD_GROUPS.forEach(function(g){
+    if(SPK_KHS_SECTIONS.indexOf(g.sec)<0) return;
+    g.fields.forEach(function(f){ s[f.k]=1; });
+  });
+  s['__lampiran']=1;                 /* Lampiran ikut berlapis */
+  SPK_KHS_KEYSET=s;
+  return s;
+}
+function spkIsKhsKey(k){ return !!spkKhsKeys()[k]; }
+/* Jumlah penyedia pada sebuah data (selalu 1..SPK_KHS_MAX) */
+function spkKhsN(data){
+  if(!spkIsKhsOf(data)) return 1;
+  var n=parseInt((data&&data.jumlah_penyedia)||1,10);
+  if(!(n>=1)) n=1;
+  if(n>SPK_KHS_MAX) n=SPK_KHS_MAX;
+  return n;
+}
+/* Lampiran kosong (bentuknya sama dengan yang dibuat spkLamp) */
+function spkKhsBlankLamp(){
+  return { jumlahItem:1, items:[spkLampBlankItem()], hpsId:'', hpsNama:'', _ok:true };
+}
+/* Slot penyedia baru — seluruh field berlapis kembali ke nilai bawaan */
+function spkKhsBlankSlot(){
+  var o={};
+  SPK_FIELDS_FLAT.forEach(function(f){ if(spkIsKhsKey(f.k)) o[f.k]=(f.def!=null?f.def:''); });
+  SPK_KHS_EXTRA_KEYS.forEach(function(k){ if(o[k]==null) o[k]=''; });
+  try{ o.akta_pendirian = spkAktaPendirianSync(o.akta_pendirian, o.ada_akta_perubahan); }catch(e){}
+  o.__lampiran = spkKhsBlankLamp();
+  return o;
+}
+/* Pastikan array slot penyedia ke-2..N tersedia */
+function spkKhsSlots(data){
+  if(!data) return [];
+  if(!Array.isArray(data.khs)) data.khs=[];
+  var n=spkKhsN(data);
+  while(data.khs.length < n-1) data.khs.push(spkKhsBlankSlot());
+  for(var i=0;i<data.khs.length;i++){
+    if(!data.khs[i] || typeof data.khs[i]!=='object') data.khs[i]=spkKhsBlankSlot();
+    if(!data.khs[i].__lampiran) data.khs[i].__lampiran=spkKhsBlankLamp();
+  }
+  return data.khs;
+}
+/* Objek penyimpan field berlapis untuk penyedia ke-(idx+1). idx 0 = data induk. */
+function spkKhsSlot(data, idx){
+  if(!data) return {};
+  if(!spkIsKhsOf(data)) return data;
+  idx=parseInt(idx,10)||0;
+  if(idx<=0) return data;
+  var a=spkKhsSlots(data);
+  if(!a[idx-1]) a[idx-1]=spkKhsBlankSlot();
+  return a[idx-1];
+}
+/* Data "rata" (flat) untuk satu penyedia — dipakai membangun ctx & dokumen */
+function spkKhsData(data, idx){
+  if(!spkIsKhsOf(data) || (parseInt(idx,10)||0)<=0) return data;
+  var out=Object.assign({}, data, spkKhsSlot(data, idx));
+  out.__khsIdx = (parseInt(idx,10)||0)+1;      /* nomor penyedia (1-based) */
+  return out;
+}
+/* ---- Lapisan yang sedang dibuka pada form Penyusunan Kontrak ---- */
+function spkKhsIdx(){
+  if(!spkState) return 0;
+  if(!spkIsKhs()) return 0;
+  var i=parseInt(spkState.khsIdx,10)||0;
+  var n=spkKhsN(spkState.data);
+  if(i<0) i=0; if(i>n-1) i=n-1;
+  spkState.khsIdx=i;
+  return i;
+}
+/* Objek data tempat sebuah field DISIMPAN (mengikuti lapisan yang aktif) */
+function spkFD(k){
+  if(!spkState) return {};
+  var d=spkState.data;
+  if(!spkIsKhs() || !spkIsKhsKey(k)) return d;
+  return spkKhsSlot(d, spkKhsIdx());
+}
+/* Data rata lapisan aktif — dipakai untuk membaca nilai & hitungan otomatis */
+function spkFView(){
+  if(!spkState) return {};
+  return spkIsKhs() ? spkKhsData(spkState.data, spkKhsIdx()) : spkState.data;
+}
+/* Daftar seluruh objek Lampiran (1 untuk SPK/PK, N untuk KHS) */
+function spkLampAll(){
+  if(!spkState) return [];
+  if(!spkIsKhs()) return [spkLamp()];
+  var n=spkKhsN(spkState.data), out=[], simpan=spkState.khsIdx;
+  for(var i=0;i<n;i++){ spkState.khsIdx=i; out.push(spkLamp()); }
+  spkState.khsIdx=simpan;
+  return out;
+}
 
 /* Teks tetap (statis) profil PT PLN (Persero) untuk PIHAK PERTAMA.
    Bukan field mail-merge — hanya bagian bercetak kuning pada dokumen yang
@@ -943,6 +1078,8 @@ function spkBlankState(){
   const data={};
   SPK_FIELDS_FLAT.forEach(f=>{ data[f.k]= (f.def!=null? f.def : ''); });
   data.bentuk_kontrak='SPK';                 // bawaan: Surat Perintah Kerja
+  data.jumlah_penyedia=1;                    // Perjanjian/Kontrak KHS: 1..20 penyedia
+  data.khs=[];                               // lapisan penyedia ke-2 dst (KHS)
   /* Selama "Akta Perubahan?" BELUM dipilih "Ya" (termasuk keadaan bawaan / belum
      dipilih), frasa "beserta akta-akta Perubahannya" beserta spasi sebelumnya
      TIDAK ditampilkan pada Rincian Akta Pendirian. */
@@ -951,7 +1088,7 @@ function spkBlankState(){
   spkApplyLastSk(data);
   // default: semua klausul aktif terpilih
   const sel=records_klausul.filter(k=>k.aktif!==false).map(k=>String(k.id));
-  return { data:data, sel:sel };
+  return { data:data, sel:sel, khsIdx:0 };
 }
 function spkRecordToState(rec){
   const base=spkBlankState();
@@ -971,7 +1108,10 @@ function spkRecordToState(rec){
   let sel;
   if(rec && Array.isArray(rec.klausul) && rec.klausul.length){ sel=rec.klausul.map(k=>String(k.id)); }
   else sel=base.sel;
-  return { data:data, sel:sel };
+  /* Perjanjian/Kontrak KHS: pastikan lapisan penyedia ke-2 dst tersedia & utuh */
+  if(!Array.isArray(data.khs)) data.khs=[];
+  if(spkBentukOf(data)==='KHS'){ try{ spkKhsSlots(data); }catch(e){ console.error(e); } }
+  return { data:data, sel:sel, khsIdx:0 };
 }
 
 /* ================================================================
@@ -997,7 +1137,9 @@ function spkLampNormItem(c){
 /* Ambil (dan pastikan ada) objek lampiran pada state kontrak yang aktif */
 function spkLamp(){
   if(!spkState) spkState=spkBlankState();
-  const d=spkState.data;
+  /* Perjanjian/Kontrak KHS: Lampiran BERLAPIS — yang dikembalikan adalah
+     lampiran milik penyedia yang sedang dibuka (lihat spkFD). */
+  const d=spkFD('__lampiran');
   let L=d.__lampiran;
   if(!L || typeof L!=='object' || !Array.isArray(L.items) || !L.items.length){
     L = { jumlahItem:1, items:[spkLampBlankItem()], hpsId:'', hpsNama:'', _ok:true };
@@ -1175,11 +1317,12 @@ function spkLampRecalcRow(i){
    field terkunci di layar, dan "Terbilang Nilai Pekerjaan". */
 function spkSyncNilaiPekerjaan(){
   if(!spkState) return 0;
+  var _t=spkFD('nilai_pekerjaan');
   var tot=0; try{ tot=spkLampSummary().totT||0; }catch(e){ tot=0; }
-  if(tot>0) spkState.data.nilai_pekerjaan=tot;
+  if(tot>0) _t.nilai_pekerjaan=tot;
   var el=document.getElementById('spk-fld-nilai_pekerjaan');
   if(el){
-    var shown=(tot>0)?tot:spkNum(spkState.data.nilai_pekerjaan);
+    var shown=(tot>0)?tot:spkNum(_t.nilai_pekerjaan);
     el.value=(shown>0)?('Rp '+Number(shown).toLocaleString('id-ID')):'';
   }
   if(typeof spkRefreshAuto==='function') spkRefreshAuto();
@@ -1374,7 +1517,7 @@ const SPK_PN_MAP_PK = [
   {no:'no_ucp',   tgl:'tgl_ucp',   keys:['T_UCP']}
 ];
 /* Pemetaan aktif mengikuti Bentuk Kontrak yang sedang dipilih */
-function spkPnMap(){ return (spkBentuk()==='PK') ? SPK_PN_MAP_PK : SPK_PN_MAP; }
+function spkPnMap(){ return spkIsPk() ? SPK_PN_MAP_PK : SPK_PN_MAP; }
 function spkPnDocs(nama){
   const key=String(nama||'').trim().toLowerCase();
   if(!key) return [];
@@ -1427,7 +1570,10 @@ async function spkApplyDp(rec){
   // Tarik Lampiran dari Perhitungan HPS (tanpa harga)
   try{ await refreshDataHps(); }catch(e){}
   const hpsRec=spkCariHps(d.__dpId, d.__dpNama);
-  const L=spkLamp();
+  /* Perjanjian/Kontrak KHS: struktur Lampiran (Judul/Sub-Judul/Uraian/Sat/Vol)
+     sama untuk seluruh penyedia — yang berbeda hanya HARGA. Karena itu hasil
+     tarikan HPS diterapkan ke lampiran SEMUA lapisan penyedia sekaligus. */
+  const Ls=spkLampAll();
   if(hpsRec){
     const hSt=hpsRecordToState(hpsRec);
     const items=(hSt.items||[]).map(it=>spkLampNormItem({
@@ -1435,19 +1581,21 @@ async function spkApplyDp(rec){
       sat:it.sat||'', vol:(it.vol!=null?it.vol:''),
       hargaMat:'', hargaJasa:''      // harga tidak diambil dari HPS
     }));
-    L.items = items.length?items:[spkLampBlankItem()];
-    L.jumlahItem=L.items.length;
-    L.hpsId=String(hpsRec.id);
-    L.hpsNama=hpsRec.nama_pekerjaan||nama;
-    // Ikuti pengaturan penomoran Judul/Sub-Judul dari HPS agar nomor pada
-    // dokumen Lampiran SPK identik dengan dokumen HPS.
-    L.judulOn    = (hSt.judulOn==='Ya')?'Ya':'Tidak';
-    L.judulNum   = jsNumStyleOk(hSt.judulNum,'');
-    L.subjudulOn = (hSt.subjudulOn==='Ya')?'Ya':'Tidak';
-    L.subjudulNum= jsNumStyleOk(hSt.subjudulNum,'');
+    Ls.forEach(function(L){
+      L.items = items.length? items.map(spkLampNormItem) : [spkLampBlankItem()];
+      L.jumlahItem=L.items.length;
+      L.hpsId=String(hpsRec.id);
+      L.hpsNama=hpsRec.nama_pekerjaan||nama;
+      // Ikuti pengaturan penomoran Judul/Sub-Judul dari HPS agar nomor pada
+      // dokumen Lampiran SPK identik dengan dokumen HPS.
+      L.judulOn    = (hSt.judulOn==='Ya')?'Ya':'Tidak';
+      L.judulNum   = jsNumStyleOk(hSt.judulNum,'');
+      L.subjudulOn = (hSt.subjudulOn==='Ya')?'Ya':'Tidak';
+      L.subjudulNum= jsNumStyleOk(hSt.subjudulNum,'');
+    });
     toast('Data pekerjaan berhasil diterapkan — Lampiran terisi otomatis dari Perhitungan HPS','ok');
   }else{
-    L.hpsId=''; L.hpsNama='';
+    Ls.forEach(function(L){ L.hpsId=''; L.hpsNama=''; });
     toast('Data pekerjaan berhasil diterapkan. Belum ada data HPS untuk pekerjaan ini — isi Lampiran manual.','warn');
   }
   if(pnCount) toast('Nomor & tanggal BA terisi otomatis dari Penetapan Nomor (terkunci)','ok');
@@ -1460,8 +1608,10 @@ function spkLepasDp(){
   const d=spkState.data;
   delete d.__dpId; delete d.__dpNama;
   delete d.__pnLock;                       // field BA dari Penetapan kembali terbuka
-  const L=spkLamp(); L.hpsId=''; L.hpsNama='';
-  delete L.judulOn; delete L.judulNum; delete L.subjudulOn; delete L.subjudulNum;
+  spkLampAll().forEach(function(L){
+    L.hpsId=''; L.hpsNama='';
+    delete L.judulOn; delete L.judulNum; delete L.subjudulOn; delete L.subjudulNum;
+  });
   renderSpkSusun();
   toast('Pilihan pekerjaan dibatalkan (isian tetap dipertahankan)','ok');
 }
@@ -1507,11 +1657,14 @@ function spkAutoVal(kind, data){
 function spkRefreshAuto(){
   if(!spkState) return;
   // Tgl. Akhir Kontrak dihitung otomatis (Tgl. Awal + Jangka Waktu) & disimpan ke state
-  spkState.data.tgl_akhir_kontrak = spkComputeTglAkhir(spkState.data);
+  // (pada Perjanjian/Kontrak KHS: milik lapisan penyedia yang sedang dibuka)
+  var _t=spkFD('tgl_akhir_kontrak'), _v=spkFView();
+  _t.tgl_akhir_kontrak = spkComputeTglAkhir(_v);
+  _v=spkFView();
   SPK_FIELDS_FLAT.forEach(function(f){
     if(!f.auto) return;
     var el=document.getElementById('spk-fld-'+f.k);
-    if(el) el.value=spkAutoVal(f.auto, spkState.data);
+    if(el) el.value=spkAutoVal(f.auto, _v);
   });
 }
 const SPK_LOCK_OVL = '<span class="lock-overlay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Data terkunci</span>';
@@ -1602,7 +1755,7 @@ function spkCheckNoKontrak(){
   var el=document.getElementById('spk-fld-nomor_kontrak');
   var msg=document.getElementById('spk-nokontrak-msg');
   if(!el) return false;
-  var dup=spkNoKontrakDup(spkState?spkState.data.nomor_kontrak:'');
+  var dup=spkNoKontrakDup(spkState?spkFD('nomor_kontrak').nomor_kontrak:'');
   if(dup){ el.classList.add('spk-dup-input'); if(msg) msg.style.display=''; }
   else{ el.classList.remove('spk-dup-input'); if(msg) msg.style.display='none'; }
   return dup;
@@ -1620,7 +1773,11 @@ function spkEnsureDupStyle(){
   (document.head||document.documentElement).appendChild(st);
 }
 function spkFieldInput(f){
-  const v = spkState.data[f.k];
+  /* Perjanjian/Kontrak KHS: field berlapis dibaca/ditulis pada lapisan penyedia
+     yang sedang dibuka. Bentuk lain: spkFD()/spkFView() = spkState.data. */
+  const _fd = spkFD(f.k);
+  const _fv = spkFView();
+  const v = _fd[f.k];
   // 4 field per baris; kecuali Rincian Akta Pendirian & Perubahan yang 2 field per baris
   const span = (f.k==='akta_pendirian'||f.k==='akta_perubahan') ? ' style="flex:1 1 calc(50% - 15px)"'
              : (f.t==='narasi') ? ' style="flex:1 1 100%"' : '';
@@ -1634,8 +1791,8 @@ function spkFieldInput(f){
   // Nilai Pekerjaan (+ PPN): TERKUNCI, otomatis = Total Nilai Lampiran (setelah PPN).
   if(f.k==='nilai_pekerjaan'){
     var _tot=0; try{ _tot=spkLampSummary().totT||0; }catch(e){ _tot=0; }
-    if(_tot>0) spkState.data.nilai_pekerjaan=_tot;
-    var _nv=(_tot>0)?_tot:spkNum(spkState.data.nilai_pekerjaan);
+    if(_tot>0) _fd.nilai_pekerjaan=_tot;
+    var _nv=(_tot>0)?_tot:spkNum(_fd.nilai_pekerjaan);
     var _disp=(_nv>0)?('Rp '+Number(_nv).toLocaleString('id-ID')):'';
     return '<div class="field"'+span+'><label>'+spkLbl(f)+'</label>'+
       '<input type="text" id="spk-fld-'+f.k+'" value="'+fkEsc(_disp)+'" readonly '+
@@ -1656,7 +1813,7 @@ function spkFieldInput(f){
   if(f.auto){
     // Field otomatis: nilai dihitung otomatis di belakang layar; tampil terbaca
     // namun tidak dapat diedit.
-    const av = spkAutoVal(f.auto, spkState.data);
+    const av = spkAutoVal(f.auto, _fv);
     return lockedField(av);
   }
   // Field yang terisi otomatis dari Penetapan Nomor (No./Tgl. BA) -> terkunci
@@ -1688,7 +1845,7 @@ function spkFieldInput(f){
       '<select onchange="'+fn+'"><option value="">— pilih —</option>'+opts+'</select></div>';
   }
   if(f.lockedBy){
-    const locked = String(spkState.data[f.lockedBy]||'')!=='Ya';
+    const locked = String(spkFD(f.lockedBy)[f.lockedBy]||'')!=='Ya';
     if(locked){
       // Tampilkan nilai bawaan (data terakhir disimpan) — terbaca namun terkunci
       return lockedField(f.t==='date'?spkDispDate(v):(v||''));
@@ -1707,7 +1864,7 @@ function spkFieldInput(f){
       // Rincian Akta Perubahan: hanya dapat diisi bila "Akta Perubahan? = Ya".
       // Selain itu -> DIKUNCI dalam keadaan default (readonly, kursor not-allowed,
       // tidak tampil di pratinjau/cetak).
-      if(f.k==='akta_perubahan' && String(spkState.data.ada_akta_perubahan||'')!=='Ya'){
+      if(f.k==='akta_perubahan' && String(_fd.ada_akta_perubahan||'')!=='Ya'){
         spkEnsureHlStyle();
         const dv=SPK_DEF_AKTA_PERUBAHAN;
         return '<div class="field"'+span+'><label>'+spkLbl(f)+'</label>'+
@@ -1766,7 +1923,7 @@ function spkSwitchChange(el){
   if(k==='ada_akta_perubahan'){ spkSetAdaAktaPerubahan(v); return; }
   spkSet(k,v); renderSpkSusun();
 }
-function spkSet(k,v){ if(!spkState) return; spkState.data[k]=v; spkRefreshAuto(); }
+function spkSet(k,v){ if(!spkState) return; spkFD(k)[k]=v; spkRefreshAuto(); }
 /* "Perubahan?" pada SK Pimpinan Unit:
    - Ya    -> field SK dibuka untuk diisi/diubah
    - Tidak -> field SK dikunci & dikembalikan ke data terakhir disimpan (default) */
@@ -1783,13 +1940,14 @@ function spkSetPerubahan(v){
                   otomatis tidak tampil di pratinjau/cetak) */
 function spkSetAdaAktaPerubahan(v){
   if(!spkState) return;
-  spkState.data.ada_akta_perubahan=v;
-  if(String(v)!=='Ya') spkState.data.akta_perubahan = SPK_DEF_AKTA_PERUBAHAN;
+  var _t=spkFD('ada_akta_perubahan');
+  _t.ada_akta_perubahan=v;
+  if(String(v)!=='Ya') _t.akta_perubahan = SPK_DEF_AKTA_PERUBAHAN;
   /* Frasa "beserta akta-akta Perubahannya" pada Rincian Akta Pendirian mengikuti
      pilihan ini — ikut hilang/muncul di ISIAN FORM, bukan hanya di pratinjau.
      Tanpa akta perubahan: frasa beserta spasi sebelumnya dibuang sehingga teks
      berakhir pada tanggal SK Kemenkumham. */
-  spkState.data.akta_pendirian = spkAktaPendirianSync(spkState.data.akta_pendirian, v);
+  _t.akta_pendirian = spkAktaPendirianSync(_t.akta_pendirian, v);
   spkRefreshAuto();
   renderSpkSusun();
 }
@@ -1806,7 +1964,7 @@ function spkAktaPendirianSync(teks, ada){
 }
 function spkSetRupiah(k,el){
   const digits=String(el.value).replace(/[^0-9]/g,'');
-  spkState.data[k]= digits? Number(digits) : '';
+  spkFD(k)[k]= digits? Number(digits) : '';
   const pos=el.selectionStart;
   el.value = digits? Number(digits).toLocaleString('id-ID') : '';
   try{ el.setSelectionRange(el.value.length, el.value.length); }catch(e){}
@@ -1845,6 +2003,29 @@ function spkEnsureBentukStyle(){
     '.spk-bentuk select:hover{border-color:#a9bcc4;box-shadow:none;transform:none}'+
     '.spk-bentuk select:active{box-shadow:none;transform:none}'+
     '.spk-bentuk select:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,124,134,.18)}'+
+    '.spk-bentuk-tag.is-khs{background:#E4ECF7;color:#12304F;border-color:#B7CAE6}'+
+    /* ---- Pemilih JUMLAH PENYEDIA (khusus Perjanjian/Kontrak KHS) ---- */
+    '.spk-bentuk.spk-khs-n select{min-width:150px}'+
+    /* ---- Tab LAPISAN PENYEDIA (Perjanjian/Kontrak KHS) ---- */
+    '.spk-khs-wrap{margin:0 0 14px}'+
+    '.spk-khs-head{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap;'+
+      'margin:0 0 10px;padding:0 2px}'+
+    '.spk-khs-head .ttl{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:800;letter-spacing:.04em;'+
+      'text-transform:uppercase;color:#12304F}'+
+    '.spk-khs-head .ttl svg{width:16px;height:16px}'+
+    '.spk-khs-head .sub{flex:1 1 240px;min-width:0;text-align:right;font-size:11.5px;color:#5b6670;font-weight:600;line-height:1.4}'+
+    '.spk-khs-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}'+
+    '.spk-khs-tab{display:inline-flex;align-items:center;gap:8px;max-width:270px;padding:8px 13px;border-radius:11px;'+
+      'border:1px solid #c3d1d7;background:#fff;color:#31424b;font-size:11.5px;font-weight:700;cursor:pointer;'+
+      'transition:border-color .16s ease,background .16s ease,color .16s ease}'+
+    '.spk-khs-tab:hover{border-color:#93a9b3;background:#f6fafb}'+
+    '.spk-khs-tab .no{display:inline-flex;align-items:center;justify-content:center;min-width:19px;height:19px;'+
+      'border-radius:999px;background:#e7eef3;color:#41535c;font-size:10.5px;font-weight:800;flex:0 0 auto}'+
+    '.spk-khs-tab .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'+
+    '.spk-khs-tab.on{background:#12304F;border-color:#12304F;color:#fff}'+
+    '.spk-khs-tab.on .no{background:rgba(255,255,255,.22);color:#fff}'+
+    '.spk-khs-tab.isi .no{background:#1E9E5A;color:#fff}'+
+    '.spk-khs-tab.on.isi .no{background:rgba(255,255,255,.22);color:#fff}'+
     '@media (max-width:760px){.spk-bentuk-bar.is-inline{margin:8px 0 0;flex:1 1 100%}.spk-bentuk select{min-width:0;flex:1 1 auto}}';
   var st=document.createElement('style'); st.id='spk-bentuk-style'; st.textContent=css;
   (document.head||document.documentElement).appendChild(st);
@@ -1858,17 +2039,83 @@ function spkBentukBarHtml(inline){
   }).join('');
   /* Penanda (chip) nama bentuk DIHAPUS dari form — cukup dropdown-nya saja.
      Label teks "Bentuk Kontrak" juga dihapus; pilihan sudah jelas dari isi dropdown. */
+  /* Perjanjian/Kontrak KHS: TEPAT DI SAMPING pemilih bentuk muncul satu field
+     lagi — dropdown jumlah penyedia (1..20). Jumlah inilah yang menentukan
+     banyaknya lapisan No. SPPBJ, Informasi Kontrak, Informasi Penyedia &
+     Lampiran. */
+  var nHtml='';
+  if(cur==='KHS'){
+    var nSel=spkKhsN(spkState&&spkState.data), nOpt='';
+    for(var i=1;i<=SPK_KHS_MAX;i++) nOpt+='<option value="'+i+'"'+(i===nSel?' selected':'')+'>'+i+' Penyedia</option>';
+    nHtml='<label class="spk-bentuk spk-khs-n">'+
+      '<select aria-label="Jumlah Penyedia" title="Jumlah Penyedia" onchange="spkSetJumlahPenyedia(this.value)">'+nOpt+'</select>'+
+    '</label>';
+  }
   return '<div class="spk-bentuk-bar'+(inline?' is-inline':'')+'">'+
     '<label class="spk-bentuk">'+
       '<select aria-label="Bentuk Kontrak" title="Bentuk Kontrak" onchange="spkSetBentuk(this.value)">'+opts+'</select>'+
-    '</label>'+
+    '</label>'+nHtml+
   '</div>';
+}
+/* Jumlah penyedia pada Perjanjian/Kontrak KHS diubah.
+   Isian penyedia yang sudah diketik TIDAK dihapus saat jumlah dikurangi —
+   datanya tetap tersimpan dan muncul lagi bila jumlahnya dinaikkan kembali. */
+function spkSetJumlahPenyedia(v){
+  if(!spkState) spkState=spkBlankState();
+  var n=parseInt(v,10)||1;
+  if(n<1) n=1; if(n>SPK_KHS_MAX) n=SPK_KHS_MAX;
+  spkState.data.jumlah_penyedia=n;
+  spkKhsSlots(spkState.data);
+  if((parseInt(spkState.khsIdx,10)||0) > n-1) spkState.khsIdx=n-1;
+  renderSpkSusun();
+  toast('Jumlah penyedia: '+n,'ok');
+}
+/* Pindah lapisan (tab) penyedia pada Perjanjian/Kontrak KHS */
+function spkKhsGo(i){
+  if(!spkState) return;
+  var n=spkKhsN(spkState.data);
+  i=parseInt(i,10)||0; if(i<0) i=0; if(i>n-1) i=n-1;
+  spkState.khsIdx=i;
+  renderSpkSusun();
+  try{ window.scrollTo({top:0,left:0,behavior:'smooth'}); }catch(e){}
+}
+/* Baris tab lapisan penyedia — dipakai di Langkah 1 (data) & Langkah 4 (lampiran) */
+function spkKhsTabsHtml(){
+  if(!spkIsKhs()) return '';
+  spkEnsureBentukStyle();
+  var n=spkKhsN(spkState.data), cur=spkKhsIdx(), h='';
+  for(var i=0;i<n;i++){
+    var sl=spkKhsSlot(spkState.data,i);
+    var nm=String((sl&&sl.nama_perusahaan)||'').trim();
+    h+='<button type="button" class="spk-khs-tab'+(i===cur?' on':'')+(nm?' isi':'')+'" '+
+       'title="'+fkEsc(nm||('Penyedia '+(i+1)))+'" onclick="spkKhsGo('+i+')">'+
+       '<span class="no">'+(i+1)+'</span>'+
+       '<span class="nm">'+fkEsc(nm||('Penyedia '+(i+1)))+'</span></button>';
+  }
+  return '<div class="spk-khs-tabs">'+h+'</div>';
+}
+/* Kepala blok lapisan penyedia (judul + keterangan singkat) */
+function spkKhsHeadHtml(ket){
+  var n=spkKhsN(spkState.data), cur=spkKhsIdx();
+  return '<div class="spk-khs-head">'+
+      '<span class="ttl">'+
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>'+
+        'Penyedia '+(cur+1)+' dari '+n+
+      '</span>'+
+      '<span class="sub">'+fkEsc(ket||'')+'</span>'+
+    '</div>';
 }
 function spkSetBentuk(v){
   if(!spkState) spkState=spkBlankState();
-  var nv=(String(v||'').toUpperCase()==='PK')?'PK':'SPK';
+  var _v=String(v||'').toUpperCase();
+  var nv=(_v==='KHS')?'KHS':((_v==='PK')?'PK':'SPK');
   if(spkState.data.bentuk_kontrak===nv) return;
   spkState.data.bentuk_kontrak=nv;
+  if(nv==='KHS'){
+    if(!spkState.data.jumlah_penyedia) spkState.data.jumlah_penyedia=1;
+    spkKhsSlots(spkState.data);
+  }
+  spkState.khsIdx=0;
   /* Pemetaan Penetapan Nomor berbeda antar bentuk — bila sebuah Data Pekerjaan
      tertaut, isian & kunci dihitung ulang agar sesuai bentuk yang baru. */
   try{
@@ -1879,20 +2126,28 @@ function spkSetBentuk(v){
     }
   }catch(e){ console.error(e); }
   renderSpkSusun();
-  toast('Bentuk kontrak: '+(nv==='PK'?'Perjanjian/Kontrak':'Surat Perintah Kerja'),'ok');
+  toast('Bentuk kontrak: '+(SPK_BENTUK_OPTS.filter(function(o){return o.v===nv;})[0]||{l:nv}).l,'ok');
 }
-/* Field yang ditampilkan sesuai Bentuk Kontrak yang dipilih */
+/* Field yang ditampilkan sesuai Bentuk Kontrak yang dipilih.
+   Perjanjian/Kontrak KHS memakai kumpulan field yang SAMA dengan
+   Perjanjian/Kontrak (only:'PK'), karena keduanya satu keluarga dokumen. */
 function spkFieldVisible(f){
   if(!f || !f.only) return true;
-  return String(f.only).toUpperCase()===spkBentuk();
+  var only=String(f.only).toUpperCase();
+  var b=spkBentuk();
+  if(only==='PK') return (b==='PK'||b==='KHS');
+  return only===b;
 }
 function renderSpkSusun(){
   const cont=document.getElementById('spk-susun-content'); if(!cont) return;
   if(!spkState) spkState=spkBlankState();
   // Bagian 1: form mail merge
-  const groupsHtml = SPK_FIELD_GROUPS.map((g,gi)=>{
+  const _khs = spkIsKhs();
+  /* Satu kartu field. `fields` boleh ditimpa (dipakai bentuk KHS untuk
+     memindahkan sebagian field ke dalam lapisan penyedia). */
+  const kartuHtml = (g, gi, fields)=>{
     const cols = 4;
-    const fieldsHtml = g.fields.filter(spkFieldVisible).map(f=>{
+    const fieldsHtml = (fields||g.fields.filter(spkFieldVisible)).map(f=>{
       // paksa Rincian Akta Pendirian & Perubahan mulai baris baru bersama (2 field 1 baris)
       const brk = (f.k==='akta_pendirian') ? '<div style="flex:0 0 100%;height:0;margin:0;padding:0"></div>' : '';
       return brk + spkFieldInput(f);
@@ -1917,7 +2172,40 @@ function renderSpkSusun(){
       titleHtml+
       '<div class="form-flow" style="--cols:'+cols+'">'+fieldsHtml+'</div>'+
     '</div>';
-  }).join('');
+  };
+  let groupsHtml;
+  if(!_khs){
+    groupsHtml = SPK_FIELD_GROUPS.map((g,gi)=>kartuHtml(g,gi,null)).join('');
+  }else{
+    /* ---- PERJANJIAN/KONTRAK KHS ----
+       Susunan kartu:
+         1. Informasi Pengadaan  (No./Tgl. SPPBJ DIKELUARKAN — ikut berlapis)
+         2. LAPISAN PENYEDIA     : tab 1..N -> Informasi Kontrak (diawali
+            No./Tgl. SPPBJ) + Informasi Penyedia milik penyedia terpilih
+         3. Informasi PLN Unit & Pengendali Pekerjaan (satu untuk semua) */
+    const bagian=[];
+    SPK_FIELD_GROUPS.forEach((g,gi)=>{
+      if(SPK_KHS_SECTIONS.indexOf(g.sec)>=0) return;         // masuk lapisan penyedia
+      let ff=g.fields.filter(spkFieldVisible);
+      if(g.sec==='Informasi Pengadaan') ff=ff.filter(f=>!spkIsKhsKey(f.k));
+      bagian.push(kartuHtml(g,gi,ff));
+      if(g.sec==='Informasi Pengadaan'){
+        /* Field SPPBJ (berlapis) diselipkan sebagai pembuka kartu Informasi Kontrak */
+        const sppbj=SPK_FIELD_GROUPS[0].fields.filter(f=>spkFieldVisible(f) && SPK_KHS_EXTRA_KEYS.indexOf(f.k)>=0);
+        const layer=SPK_KHS_SECTIONS.map(sec=>{
+          const gg=SPK_FIELD_GROUPS.filter(x=>x.sec===sec)[0]; if(!gg) return '';
+          let flds=gg.fields.filter(spkFieldVisible);
+          if(sec==='Informasi Kontrak') flds=sppbj.concat(flds);
+          return kartuHtml(gg, 99, flds);
+        }).join('');
+        bagian.push('<div class="spk-khs-wrap">'+
+          spkKhsHeadHtml('No. SPPBJ, Informasi Kontrak, Informasi Penyedia & Lampiran berdiri sendiri untuk tiap penyedia')+
+          spkKhsTabsHtml()+layer+
+        '</div>');
+      }
+    });
+    groupsHtml=bagian.join('');
+  }
   // Bagian 2: pilih klausul
   const aktif = records_klausul.filter(k=>k.aktif!==false);
   const selSet = new Set(spkState.sel.map(String));
@@ -1988,8 +2276,18 @@ function renderSpkSusun(){
   }else{
     // ---------- Langkah 4: Lampiran ----------
     const L=spkLamp();
+    /* Perjanjian/Kontrak KHS: Lampiran juga BERLAPIS — tab penyedia yang sama
+       dengan Langkah 1, sehingga Nilai Pekerjaan tiap penyedia mengikuti
+       lampirannya masing-masing. */
+    const khsLampBar = _khs
+      ? ('<div class="spk-khs-wrap">'+
+           spkKhsHeadHtml('Lampiran & Nilai Pekerjaan berdiri sendiri untuk tiap penyedia')+
+           spkKhsTabsHtml()+
+         '</div>')
+      : '';
     cont.innerHTML =
       stepper+
+      khsLampBar+
       '<div class="form-card">'+
         '<div class="form-section-title">'+FKL_SEC_ICON+' Uraian Pekerjaan <span class="fkl-count-chip">'+L.items.length+' item</span></div>'+
         spkLampTplBarHtml()+
@@ -2043,7 +2341,15 @@ async function spkSaveKontrak(){
   const nama=String(spkState.data.nama_pekerjaan||'').trim();
   if(!nama){ toast('Nama Pekerjaan wajib diisi','warn'); return; }
   // Pastikan Tgl. Akhir Kontrak = Tgl. Awal + Jangka Waktu tersimpan (walau form tak diedit)
-  spkState.data.tgl_akhir_kontrak = spkComputeTglAkhir(spkState.data);
+  // Perjanjian/Kontrak KHS: dihitung untuk SETIAP lapisan penyedia.
+  const _khsSave = spkIsKhs();
+  const _nPy = _khsSave ? spkKhsN(spkState.data) : 1;
+  let _nilaiTot = 0;
+  for(let _i=0;_i<_nPy;_i++){
+    const _sl = spkKhsSlot(spkState.data, _i);
+    _sl.tgl_akhir_kontrak = spkComputeTglAkhir(spkKhsData(spkState.data, _i));
+    _nilaiTot += spkNum(_sl.nilai_pekerjaan);
+  }
   const klausul=spkSelectedClauses();
   if(!klausul.length){ toast('Pilih minimal satu klausul kontrak','warn'); return; }
   spkKlSync();   // pustaka klausul ikut disimpan di dalam kontrak (data.__klausulLib)
@@ -2051,7 +2357,8 @@ async function spkSaveKontrak(){
     nomor_kontrak: String(spkState.data.nomor_kontrak||'').trim(),
     nama_pekerjaan: nama,
     tanggal: spkState.data.tanggal_kontrak || null,
-    nilai: spkNum(spkState.data.nilai_pekerjaan),
+    /* KHS: nilai yang tampil pada Daftar Kontrak = JUMLAH nilai seluruh penyedia */
+    nilai: _khsSave ? _nilaiTot : spkNum(spkState.data.nilai_pekerjaan),
     data: spkState.data,
     klausul: klausul
   };
@@ -2098,9 +2405,11 @@ function spkEmptyRow(){
 /* Penanda kecil bentuk dokumen pada daftar Lihat Kontrak */
 function spkBentukChip(rec){
   spkEnsureBentukStyle();
-  var b=spkBentukOf(rec&&rec.data);
-  return '<span class="spk-bentuk-tag '+(b==='PK'?'is-pk':'is-spk')+'" style="margin-left:8px;padding:3px 9px;font-size:10px">'+
-    (b==='PK'?'Perjanjian/Kontrak':'SPK')+'</span>';
+  var d=rec&&rec.data, b=spkBentukOf(d);
+  var cls=(b==='KHS')?'is-khs':((b==='PK')?'is-pk':'is-spk');
+  var lbl=(b==='KHS')?('KHS \u00b7 '+spkKhsN(d)+' Penyedia'):((b==='PK')?'Perjanjian/Kontrak':'SPK');
+  return '<span class="spk-bentuk-tag '+cls+'" style="margin-left:8px;padding:3px 9px;font-size:10px">'+
+    fkEsc(lbl)+'</span>';
 }
 function renderSpkView(){
   const tb=document.getElementById('spk-view-body'); const pg=document.getElementById('spk-view-pagination'); const cEl=document.getElementById('spk-view-count');
@@ -3187,7 +3496,34 @@ function spkDocCss2(){
     'table.spk-run > tfoot{display:table-footer-group}'+
     '.spk-signpage,.spk-rhd,.spk-rft{break-inside:avoid;page-break-inside:avoid}'+
     '.spk-cl-h{break-after:avoid;page-break-after:avoid}'+
-  '}';
+    /* Berkas KHS memuat beberapa badan dokumen; lembar TERAKHIR tiap penyedia
+       (kecuali penyedia terakhir) tetap harus memaksa ganti halaman, karena
+       aturan .spk-page:last-child di atas berlaku per badan dokumen. */
+    '#spk-docs > .spk-doc:not(:last-child) > .spk-page:last-child{page-break-after:always;break-after:page}'+
+  '}'+
+  /* ==================================================================
+     WARNA JUDUL SAMPUL — PERJANJIAN/KONTRAK & PERJANJIAN/KONTRAK KHS
+     ------------------------------------------------------------------
+     Rancangan lama mewarnai kata terakhir judul sampul dengan EMAS/oranye
+     (#E0A200) dan memberi chip jenis dokumen berlatar emas muda. Untuk
+     bentuk Perjanjian/Kontrak (termasuk KHS) warna itu terlalu mencolok,
+     jadi judul, chip jenis dokumen, dan baris metode pengadaan dibuat
+     BIRU TUA (navy PLN) seluruhnya. Surat Perintah Kerja TIDAK berubah —
+     tetap memakai aksen emas seperti semula.
+     ================================================================== */
+  '.spk-doc.spk-pk .spk-cover .cv-title,'+
+  '.spk-doc.spk-pk .spk-cover .cv-title span,'+
+  '.spk-doc.spk-pk .spk-cover .cv-title span:last-child{color:#12304F;'+
+    '-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  '.spk-doc.spk-pk .spk-cover .cv-eyebrow{color:#12304F}'+
+  '.spk-doc.spk-pk .spk-cover .cv-kind{background:#12304F;color:#ffffff;border:1px solid #12304F;'+
+    '-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  /* ---- Jarak antar badan dokumen pada pratinjau layar (KHS) ---- */
+  '@media screen{'+
+    '#spk-docs > .spk-doc + .spk-doc{margin-top:26px}'+
+    '#spk-docs > .spk-doc.spk-hide{display:none}'+
+  '}'+
+  '@media print{#spk-docs > .spk-doc.spk-hide{display:none}}';
 }
 /* Membungkus penomoran di awal paragraf kl1/kl2 ke dalam <span class="n"> agar
    jarak nomor->teks SERAGAM mengikuti penggaris Word (tab 0,75 cm), baik untuk:
@@ -7548,7 +7884,7 @@ function spkCoverHtml(data, ctx, judulBaris){
        Surat Perintah Kerja : aksen EMAS, chip emas, garis tunggal, label DARI/KEPADA
        Perjanjian/Kontrak   : aksen NAVY (+ garis emas kedua), chip navy, garis ganda,
                               label PIHAK PERTAMA/PIHAK KEDUA */
-  const isPk = spkBentukOf(data)==='PK';
+  const isPk = spkIsPkFam(data);
   const kind = spkDokLabel(data);   /* PERJANJIAN/KONTRAK atau SURAT PERINTAH KERJA */
   const lbl1 = 'DARI';
   const lbl2 = 'KEPADA';
@@ -7608,7 +7944,7 @@ function spkTocDensity(n){
 function spkTocHtml(data, klausul){
   const esc=fkEsc;
   const list=klausul||[];
-  const isPk=spkBentukOf(data)==='PK';
+  const isPk=spkIsPkFam(data);
   /* PENTING: pembungkus .spk-toc2 dan <span class="pg"> WAJIB dipertahankan pada
      KEDUA varian — nomorToc() di spkPageScript() mengisi nomor halaman lewat
      querySelectorAll(".spk-toc2 .pg"). */
@@ -8425,15 +8761,21 @@ function spkPageScript(){
     '}',
     /* nomor halaman Daftar Isi = nomor lembar ISI KONTRAK (SPK) tempat klausul
        dimulai. Lembar Lampiran TIDAK dihitung, agar konsisten dengan footer. */
+    /* Perjanjian/Kontrak KHS memuat BEBERAPA badan dokumen (.spk-doc) dalam satu
+       berkas — satu per penyedia. Penomoran dihitung TERPISAH untuk tiap badan
+       agar daftar isi tiap penyedia selalu mulai dari halaman 1. */
     'function nomorToc(){',
-    ' var sheets=document.querySelectorAll(".spk-doc > .spk-page.spk-sheet");',
-    ' var pgs=document.querySelectorAll(".spk-toc2 .pg");',
-    ' var k=0, n=0;',
-    ' for(var i=0;i<sheets.length;i++){',
+    ' var docs=document.querySelectorAll(".spk-doc");',
+    ' for(var q=0;q<docs.length;q++){',
+    '  var sheets=docs[q].querySelectorAll(":scope > .spk-page.spk-sheet");',
+    '  var pgs=docs[q].querySelectorAll(".spk-toc2 .pg");',
+    '  var k=0, n=0;',
+    '  for(var i=0;i<sheets.length;i++){',
     '   if(hasCls(sheets[i],"spk-lampsheet")) continue;',
     '   n++;',
     '   var cls=sheets[i].querySelectorAll(".spk-clause:not(.spk-cont)");',
     '   for(var j=0;j<cls.length;j++){ if(pgs[k]) pgs[k].textContent=String(n); k++; }',
+    '  }',
     ' }',
     '}',
     /* SUMBER ANGGARAN dijaga 1 baris: perkecil font (dari 13px, step 0,5, min 8px)
@@ -8457,16 +8799,19 @@ function spkPageScript(){
     /* Nomor halaman footer: "N dari M" HANYA untuk lembar isi kontrak (SPK).
        Lembar Lampiran SPK tidak ikut dihitung, dan nomornya dikosongkan. */
     'function nomorFooter(){',
-    ' var sh=document.querySelectorAll(".spk-doc > .spk-page.spk-sheet");',
-    ' var body=[];',
-    ' for(var i=0;i<sh.length;i++){ if(!hasCls(sh[i],"spk-lampsheet")) body.push(sh[i]); }',
-    ' var tot=body.length;',
-    ' for(var i=0;i<tot;i++){',
+    ' var docs=document.querySelectorAll(".spk-doc");',
+    ' for(var q=0;q<docs.length;q++){',
+    '  var sh=docs[q].querySelectorAll(":scope > .spk-page.spk-sheet");',
+    '  var body=[];',
+    '  for(var i=0;i<sh.length;i++){ if(!hasCls(sh[i],"spk-lampsheet")) body.push(sh[i]); }',
+    '  var tot=body.length;',
+    '  for(var i=0;i<tot;i++){',
     '   var t=body[i].querySelector(".ft-pg");',
     '   if(t) t.textContent=(i+1)+" dari "+tot;',
-    ' }',
-    ' for(var i=0;i<sh.length;i++){',
+    '  }',
+    '  for(var i=0;i<sh.length;i++){',
     '   if(hasCls(sh[i],"spk-lampsheet")){ var t2=sh[i].querySelector(".ft-pg"); if(t2) t2.textContent=String.fromCharCode(8203); }',
+    '  }',
     ' }',
     '}',
     'function jalan(){',
@@ -8478,7 +8823,7 @@ function spkPageScript(){
     ' var PHL=mm2px(273);',
     ' if(!PH||PH<200){ if(TRY++<80) setTimeout(jalan,100); return; }',
     ' DONE=true;',
-    ' var doc=document.querySelector(".spk-doc");',
+    ' var doc=document.getElementById("spk-docs")||document.querySelector(".spk-doc");',
     ' var backup=doc?doc.innerHTML:"";',
     ' try{',
     '   var UID={n:0};',
@@ -8537,7 +8882,7 @@ function spkTocScript(){ return spkPageScript(); }
 function spkClauseDocHtml(data, klausul, opts){
   data=data||{}; opts=opts||{};
   const ctx=spkBuildCtx(data);
-  const _isPkDoc = spkBentukOf(data)==='PK';
+  const _isPkDoc = spkIsPkFam(data);
   const _all = Array.isArray(klausul)?klausul:[];
   const focusId = (opts.focusId!=null) ? String(opts.focusId) : null;
   /* ---- KISI DOKUMEN (28 Jul 2026, laporan "di Lihat Klausul spasi & baris
@@ -8602,13 +8947,19 @@ function spkClauseDocHtml(data, klausul, opts){
       spkKlItalicAsing(isi)+
     '</div>'+spkPageScript()+fklFitScript()+'</body></html>';
 }
-function spkDocHtml(data, klausul){
+/* ---------- Badan dokumen SATU PENYEDIA (<div class="spk-doc"> ... </div>) ----------
+   Dipisah dari spkDocHtml() supaya bentuk Perjanjian/Kontrak KHS dapat
+   membangun beberapa badan dokumen (satu per penyedia) dalam SATU berkas.
+   `pyNo` = nomor penyedia (1..N); 0 berarti dokumen tunggal (SPK / PK biasa). */
+function spkDocBodyHtml(data, klausul, pyNo){
   data=data||{};
   const ctx=spkBuildCtx(data);
   const esc=fkEsc;
+  const _py = parseInt(pyNo,10)||0;      /* nomor penyedia (KHS); 0 = dokumen tunggal */
   /* Penanda bentuk dokumen — HARUS dideklarasikan sebelum dipakai (dahulu
-     dideklarasikan di bawah, sehingga pratinjau gagal karena TDZ). */
-  const _isPkDoc = spkBentukOf(data)==='PK';
+     dideklarasikan di bawah, sehingga pratinjau gagal karena TDZ).
+     Perjanjian/Kontrak KHS memakai tata letak yang sama dengan Perjanjian/Kontrak. */
+  const _isPkDoc = spkIsPkFam(data);
   /* 1) Sampul — SATU rancangan untuk kedua bentuk dokumen. Perjanjian/Kontrak
      dahulu memakai sampul tersendiri (spkCoverPkHtml); kini disamakan dengan
      Surat Perintah Kerja, yang berbeda hanya judulnya. */
@@ -8616,7 +8967,7 @@ function spkDocHtml(data, klausul){
   // 2) Daftar Isi
   const toc=spkTocHtml(data, klausul);
   // 3) Isi kontrak (kop + footer berulang tiap halaman)
-  const _tpl = (spkBentukOf(data)==='PK') ? spkPreamblePkTpl(data) : spkDlistAlign(SPK_PREAMBLE_TPL);
+  const _tpl = _isPkDoc ? spkPreamblePkTpl(data) : spkDlistAlign(SPK_PREAMBLE_TPL);
   let preamble = spkNomorToNo(spkNumberFix(spkTidyKeyValue(spkMerge(_tpl, ctx))));
   /* PK: butir daftar "Berdasarkan" (mis. "24. Berita Acara Klarifikasi dan
      Negosiasi") diikat menjadi satu blok utuh dengan baris No./Tanggal miliknya,
@@ -8679,7 +9030,7 @@ function spkDocHtml(data, klausul){
     clausesHtml+
     spkSignBlockHtml(ctx,'1');   /* hanya 1 rangkap */
   const isi=
-    '<section class="spk-page spk-flow" id="spk-flow">'+
+    '<section class="spk-page spk-flow" id="spk-flow'+(_py?('-'+_py):'')+'">'+
       '<table class="spk-run"><thead><tr><td>'+spkRunHeadHtml(data)+'</td></tr></thead>'+
       '<tbody><tr><td>'+isiBody+'</td></tr></tbody>'+
       '<tfoot><tr><td>'+spkRunFootHtml()+'</td></tr></tfoot></table>'+
@@ -8688,6 +9039,39 @@ function spkDocHtml(data, klausul){
   const coverLamp=spkCoverHtml(data, ctx, spkLampTitle(data));
   const lampiran='<section class="spk-page spk-flow spk-lampsheet">'+spkLampiranDocInner(data)+'</section>';
 
+  /* Auto-italic istilah asing diterapkan pada SELURUH konten dokumen Susun
+     Kontrak (cover, daftar isi, kop/footer, preamble, klausul, tanda tangan,
+     cover & isi lampiran) — bukan hanya isi klausul. Hanya menyentuh TEKS
+     (di luar tag); <style> & paginator <script> berada di luar bungkus ini
+     sehingga tidak tersentuh. Istilah yang sudah dibungkus <i> pada tahap
+     klausul otomatis dilewati (tanpa italic bertumpuk). */
+  return '<div class="spk-doc'+(_isPkDoc?' spk-pk':' spk-spk')+(_py?' spk-khs-set':'')+'"'+
+      (_py?(' data-py="'+_py+'" data-py-nama="'+esc(data.nama_perusahaan||('Penyedia '+_py))+'"'):'')+'>'+
+      spkKlItalicAsing(cover+toc+isi+coverLamp+lampiran)+
+    '</div>';
+}
+
+/* Penyedia yang dicetak pada Perjanjian/Kontrak KHS: 0 = SEMUA, 1..N = satu saja.
+   Diisi oleh pemilih "sheet" di kepala pratinjau sebelum dokumen dibangun. */
+let SPK_KHS_ONLY = 0;
+function spkDocHtml(data, klausul){
+  data=data||{};
+  const _isPkDoc = spkIsPkFam(data);
+  let bodies='';
+  if(spkIsKhsOf(data)){
+    /* Perjanjian/Kontrak KHS: satu badan dokumen LENGKAP (sampul, daftar isi,
+       isi kontrak, sampul & isi lampiran) untuk TIAP penyedia, berurutan dalam
+       satu berkas. Penomoran halaman, daftar isi, dan nomor Pasal berdiri
+       sendiri per penyedia karena tiap badan memakai .spk-doc-nya sendiri. */
+    const n=spkKhsN(data), only=parseInt(SPK_KHS_ONLY,10)||0, out=[];
+    for(let i=0;i<n;i++){
+      if(only && only!==(i+1)) continue;
+      out.push(spkDocBodyHtml(spkKhsData(data,i), klausul, i+1));
+    }
+    bodies=out.join('');
+  }else{
+    bodies=spkDocBodyHtml(data, klausul, 0);
+  }
   return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>&#8203;</title>'+
     (typeof fklDocFontLink==='function'?fklDocFontLink():'')+
     /* Font isi kontrak: Inter — sans modern & bersih untuk badan dokumen */
@@ -8697,15 +9081,8 @@ function spkDocHtml(data, klausul){
     (typeof hpsExtraDocCss==='function'?hpsExtraDocCss():'')+
     spkDocCss()+spkDocCss2()+
     spkClHeadCss((klausul||[]).length, _isPkDoc)+
-    '</style></head><body><div class="spk-doc'+(spkBentukOf(data)==='PK'?' spk-pk':' spk-spk')+'">'+
-      /* Auto-italic istilah asing diterapkan pada SELURUH konten dokumen Susun
-         Kontrak (cover, daftar isi, kop/footer, preamble, klausul, tanda tangan,
-         cover & isi lampiran) — bukan hanya isi klausul. Hanya menyentuh TEKS
-         (di luar tag); <style> & paginator <script> berada di luar bungkus ini
-         sehingga tidak tersentuh. Istilah yang sudah dibungkus <i> pada tahap
-         klausul otomatis dilewati (tanpa italic bertumpuk). */
-      spkKlItalicAsing(cover+toc+isi+coverLamp+lampiran)+
-    '</div>'+spkPageScript()+fklFitScript()+'</body></html>';
+    '</style></head><body><div id="spk-docs">'+bodies+'</div>'+
+    spkPageScript()+fklFitScript()+'</body></html>';
 }
 
 /* ---------- Pratinjau & Cetak ----------
@@ -8715,6 +9092,9 @@ let spkPreviewData=null, spkPreviewKlausul=null;
 
 function spkOpenPreview(data, klausul){
   spkPreviewData=data; spkPreviewKlausul=klausul;
+  /* Pratinjau SELALU membangun seluruh penyedia; pemilih "sheet" di kepala
+     modal hanya menyembunyikan/menampilkan badan dokumen yang tidak dipilih. */
+  SPK_KHS_ONLY=0;
   const html=spkDocHtml(data, klausul);
   const ov=document.getElementById('pn-preview-overlay');
   if(!ov){ spkPrint(); return; }   // fallback: langsung cetak bila modal tak ada
@@ -8731,7 +9111,28 @@ function spkOpenPreview(data, klausul){
   }
   // Sisipkan tombol Cetak/PDF khusus SPK ke header modal bersama (hapus tombol modul lain)
   const actions=document.querySelector('#pn-preview-overlay .pn-preview-head-actions');
-  ['fkl-preview-print','pnw-preview-print','rho-preview-print','hps-preview-print','ana-preview-print','hpsc-preview-print','spk-preview-print'].forEach(bid=>{ const b=document.getElementById(bid); if(b) b.remove(); });
+  ['fkl-preview-print','pnw-preview-print','rho-preview-print','hps-preview-print','ana-preview-print','hpsc-preview-print','spk-preview-print','spk-preview-khs'].forEach(bid=>{ const b=document.getElementById(bid); if(b) b.remove(); });
+  /* ---- Pemilih SHEET PENYEDIA (khusus Perjanjian/Kontrak KHS) ----
+     "Semua Penyedia" menampilkan seluruh dokumen berurutan; memilih satu
+     penyedia menyembunyikan sisanya di pratinjau DAN membuat Cetak/PDF hanya
+     mencetak penyedia tersebut. */
+  if(actions && spkIsKhsOf(data)){
+    spkKhsPreviewSel=0;
+    const n=spkKhsN(data);
+    let o='<option value="0">Semua Penyedia ('+n+')</option>';
+    for(let i=0;i<n;i++){
+      const nm=String(spkKhsSlot(data,i).nama_perusahaan||'').trim();
+      o+='<option value="'+(i+1)+'">Penyedia '+(i+1)+(nm?(' \u2014 '+fkEsc(nm)):'')+'</option>';
+    }
+    const wrap=document.createElement('label');
+    wrap.id='spk-preview-khs';
+    wrap.className='spk-khs-sheet';
+    wrap.title='Tampilkan sheet per penyedia';
+    wrap.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>'+
+      '<select onchange="spkKhsPreviewPick(this.value)">'+o+'</select>';
+    spkEnsureKhsSheetStyle();
+    actions.insertBefore(wrap, actions.firstChild);
+  }
   if(actions){
     const btn=document.createElement('button');
     btn.id='spk-preview-print'; btn.className='btn btn-teal';
@@ -8743,8 +9144,39 @@ function spkOpenPreview(data, klausul){
   ov.classList.add('show');
 }
 function spkClosePreview(){ if(typeof closePnPreview==='function') closePnPreview(); }
+/* ===== Sheet per penyedia pada pratinjau Perjanjian/Kontrak KHS ===== */
+let spkKhsPreviewSel = 0;                       /* 0 = semua penyedia */
+function spkEnsureKhsSheetStyle(){
+  if(document.getElementById('spk-khs-sheet-style')) return;
+  var css=
+    '.spk-khs-sheet{display:inline-flex;align-items:center;gap:7px;padding:5px 10px;border-radius:10px;'+
+      'border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff}'+
+    '.spk-khs-sheet svg{width:15px;height:15px;flex:0 0 auto;opacity:.9}'+
+    '.spk-khs-sheet select{border:0;background:transparent;color:inherit;font-size:11px;font-weight:700;'+
+      'cursor:pointer;outline:none;max-width:230px}'+
+    '.spk-khs-sheet select option{color:#12242b}';
+  var st=document.createElement('style'); st.id='spk-khs-sheet-style'; st.textContent=css;
+  (document.head||document.documentElement).appendChild(st);
+}
+/* Tampilkan hanya badan dokumen milik penyedia terpilih (0 = semua) */
+function spkKhsPreviewPick(v){
+  spkKhsPreviewSel = parseInt(v,10)||0;
+  var ifr=document.getElementById('fkl-preview-frame');
+  var doc=null;
+  try{ doc=ifr && ifr.contentWindow && ifr.contentWindow.document; }catch(e){ doc=null; }
+  if(!doc) return;
+  var list=doc.querySelectorAll('#spk-docs > .spk-doc');
+  for(var i=0;i<list.length;i++){
+    var py=parseInt(list[i].getAttribute('data-py'),10)||0;
+    var tampil = (!spkKhsPreviewSel) || (py===spkKhsPreviewSel);
+    if(tampil) list[i].classList.remove('spk-hide'); else list[i].classList.add('spk-hide');
+  }
+  try{ ifr.contentWindow.scrollTo(0,0); }catch(e){}
+}
 function spkPrint(){
   const data=spkPreviewData||{}, klausul=spkPreviewKlausul||[];
+  /* Cetak/PDF mengikuti sheet penyedia yang sedang dipilih di pratinjau. */
+  SPK_KHS_ONLY = spkIsKhsOf(data) ? (parseInt(spkKhsPreviewSel,10)||0) : 0;
   const old=document.getElementById('spk-print-frame'); if(old) old.remove();
   const ifr=document.createElement('iframe'); ifr.id='spk-print-frame'; ifr.setAttribute('aria-hidden','true');
   ifr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
@@ -8956,14 +9388,15 @@ function spkPyProfilFields(){
 }
 function spkPyProfilAll(){ return profilesGet(SPK_PY_PROFIL_KIND); }
 function spkPyProfilSnapshot(){
-  const d=(spkState&&spkState.data)||{}; const out={};
+  /* Perjanjian/Kontrak KHS: profil diambil dari lapisan penyedia yang dibuka */
+  const d=(spkState? spkFView() : {})||{}; const out={};
   spkPyProfilFields().forEach(k=>{ out[k]=(d[k]!=null? d[k] : ''); });
   return out;
 }
 /* Isi field penyedia dari sebuah objek nilai lalu segarkan tampilan & field otomatis. */
 function spkPyProfilApply(vals){
   if(!spkState || !vals) return;
-  spkPyProfilFields().forEach(k=>{ if(Object.prototype.hasOwnProperty.call(vals,k)) spkState.data[k]=vals[k]; });
+  spkPyProfilFields().forEach(k=>{ if(Object.prototype.hasOwnProperty.call(vals,k)) spkFD(k)[k]=vals[k]; });
   spkRefreshAuto();
   renderSpkSusun();
 }
