@@ -2046,11 +2046,20 @@ function spkEnsureBentukStyle(){
        menempati satu baris (1., 2., 3., ...) sehingga ketiganya sebaris lurus. */
     '.spk-mlist{display:flex;flex-direction:column;gap:4px}'+
     '.spk-mlist .spk-mrow{display:flex;align-items:baseline;gap:7px;line-height:1.45;min-height:1.45em}'+
-    '.spk-mlist .spk-mrow > .i{flex:0 0 auto;min-width:15px;color:#8794a0;font-weight:800;font-size:11px}'+
+    /* Nomor urut dicetak sama hitamnya dengan teks di sebelahnya */
+    '.spk-mlist .spk-mrow > .i{flex:0 0 auto;min-width:15px;color:inherit;font-weight:700}'+
     '.spk-mlist .spk-mrow > .v{flex:1 1 auto;min-width:0;word-break:break-word}'+
     '.spk-mlist .spk-mrow > .v.kosong{color:#b6bec6}'+
-    '.spk-mlist.is-rt .spk-mrow{justify-content:flex-end;text-align:right}'+
-    '.spk-mlist.is-rt .spk-mrow > .v{flex:0 1 auto;white-space:nowrap}'+
+    /* Kolom Nilai Pekerjaan: NOMOR tetap lurus di kiri sel (satu kolom),
+       nominalnya yang dirata-KANAN ke tepi kolom. */
+    '.spk-mlist.is-rt .spk-mrow{justify-content:flex-start}'+
+    '.spk-mlist.is-rt .spk-mrow > .v{flex:1 1 auto;text-align:right;white-space:nowrap}'+
+    /* Lebar kolom Daftar Kontrak: No. Kontrak diberi ruang lebih lega (nomornya
+       panjang), Nama Penyedia dipersempit karena isinya pendek. */
+    '#view-spk-view .table-wrap th.col-spk-nokon,#view-spk-view .table-wrap td.col-spk-nokon'+
+      '{min-width:250px;width:24%}'+
+    '#view-spk-view .table-wrap th.col-spk-penyedia,#view-spk-view .table-wrap td.col-spk-penyedia'+
+      '{min-width:130px;width:15%}'+
     /* Beri jarak antara judul kartu dan penanda "Profil: ..." di sebelahnya */
     '.form-section-title .spk-klprof-tag{margin-left:10px}'+
     /* Penanda langkah (1..4) DIBENTANGKAN penuh: garis penghubung tidak lagi
@@ -2529,9 +2538,9 @@ function renderSpkView(){
     if(_thr && _thr.getAttribute('data-spk-head')!=='2'){
       _thr.innerHTML=
         '<th class="col-no">No.</th>'+
-        '<th>No. Kontrak</th>'+
+        '<th class="col-spk-nokon">No. Kontrak</th>'+
         '<th class="col-nama-freeze">Nama Pekerjaan</th>'+
-        '<th>Nama Penyedia</th>'+
+        '<th class="col-spk-penyedia">Nama Penyedia</th>'+
         '<th class="col-date">Tanggal</th>'+
         '<th class="col-nilai">Nilai Pekerjaan</th>'+
         '<th style="text-align:center;min-width:150px">Aksi</th>';
@@ -2564,9 +2573,9 @@ function renderSpkView(){
     }
     return '<tr>'+
       '<td class="col-no">'+(start+i+1)+'</td>'+
-      '<td class="wrap-cell">'+spkBentukChip(r)+_tdNo+'</td>'+
+      '<td class="wrap-cell col-spk-nokon">'+_tdNo+'</td>'+
       '<td class="wrap-cell col-nama-freeze">'+fkEsc(r.nama_pekerjaan||'—')+'</td>'+
-      '<td class="wrap-cell">'+_tdPy+'</td>'+
+      '<td class="wrap-cell col-spk-penyedia">'+_tdPy+'</td>'+
       /* Tanggal ringkas dd/mm/yyyy (fmtDate) — spkDateLong() tetap dipakai di
          dalam dokumen SPK/Perjanjian yang memang menuntut format panjang. */
       '<td class="col-date">'+fkEsc(r.tanggal?fmtDate(r.tanggal):'—')+'</td>'+
@@ -9390,6 +9399,9 @@ function renderSpkKlausul(){
           '<button type="button" class="jp-profil-btn is-load" title="Muat Profil" onclick="spkKlProfilOpenLoad()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg><span>Profil</span></button>'+
           btnBatal+
           '<button class="btn btn-green" title="Tambah Klausul" onclick="spkKlausulNew()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Klausul</button>'+
+          /* Kembalikan pustaka klausul ke keadaan bawaan (3 klausul kosong).
+             Selalu meminta konfirmasi lebih dulu — lihat spkKlausulResetDefault. */
+          '<button class="btn btn-red" title="Kembalikan pustaka klausul ke bawaan (3 klausul kosong)" onclick="spkKlausulResetDefault()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg> Reset Klausul</button>'+
         '</span>'+
       '</div>'+
       '<div class="hps-hint" style="margin:0 0 12px">Pustaka klausul ini <b>milik kontrak yang sedang disusun</b>. Menyunting, menambah, atau menghapus klausul di sini <b>tidak mengubah kontrak lain</b>. Kontrak baru selalu dimulai dari 3 klausul kosong — pakai <b>Muat Profil</b> untuk memanggil set klausul yang sudah jadi.</div>'+
