@@ -278,6 +278,14 @@ function spkKhsSlot(data, idx){
   if(!a[idx-1]) a[idx-1]=spkKhsBlankSlot();
   return a[idx-1];
 }
+/* Baca slot penyedia TANPA membuat/mengubah apa pun — dipakai saat merender
+   daftar kontrak, agar record hasil fetch tidak ikut termodifikasi. */
+function spkKhsSlotRO(data, idx){
+  idx=parseInt(idx,10)||0;
+  if(idx<=0) return data||{};
+  var a=(data && Array.isArray(data.khs)) ? data.khs : [];
+  return a[idx-1] || {};
+}
 /* Data "rata" (flat) untuk satu penyedia — dipakai membangun ctx & dokumen */
 function spkKhsData(data, idx){
   if(!spkIsKhsOf(data) || (parseInt(idx,10)||0)<=0) return data;
@@ -346,21 +354,18 @@ const SPK_PREAMBLE_TPL =
      - "berpedoman pada" : dasar peraturan (tetap) + dokumen proses pengadaan
        (dinamis — butir yang datanya kosong otomatis dilewati & nomor dirapatkan)
      - kalimat penutup pembuka (memulai halaman baru, class spk-menugaskan) */
+/* Butir "berpedoman pada" (dasar peraturan) — BAWAAN berupa TEMPLATE KOSONG.
+   Teks di atasnya ("PIHAK PERTAMA telah melaksanakan proses Pengadaan
+   {{nama_pekerjaan}}. Bahwa proses pengadaan tersebut berpedoman pada :")
+   bersifat baku & memakai mail merge nama pekerjaan; daftar peraturannya
+   sendiri diisi sendiri lewat template Word (.docx), sama seperti isi klausul.
+   Butir ditulis sebagai contoh pengisian bertitik-titik sampai batas margin
+   kanan (kelas spk-ph), jadi jelas mana yang masih perlu diisi. */
+const SPK_PK_DASAR_TITIK = ' ..........................................................................................................................................................................';
 const SPK_PK_DASAR_TETAP = [
- 'Undang-Undang No. 30 Tahun 2009 tanggal 23 September 2009 tentang Ketenagalistrikan.',
- 'Peraturan Direksi PT PLN (Persero) No. 0018.P/DIR/2023 tanggal 07 Juli 2023 tentang Kebijakan Strategis Pengadaan Barang/Jasa PT PLN (Persero).',
- 'Peraturan Direksi PT PLN (Persero) No. 0012.E/DIR/2023 tanggal 07 Juli 2023 tentang Standar Prosedur Pengadaan Barang/Jasa Lainnya.',
- 'Peraturan Direksi PT PLN (Persero) No. 0254.P/DIR/2016 tentang (SPLN U1.006: 2015) Sistem manajemen Keselamatan Kontraktor (Contractor Safety Management System/CSMS) PT PLN (Persero).',
- 'Peraturan Pelaksana PT PLN (Persero) No. 0033.E/DIR/2024 tanggal 31 Oktober 2024 tentang Standar Prosedur Pengelolaan Penyedia Barang/Jasa.',
- 'Edaran Direksi PT PLN (Persero) No. 0001.E/DIR/2021 tanggal 02 Maret 2021 tentang Petunjuk Pelaksanaan Penggunaan Aplikasi e-Procurement PLN Dalam Pengadaan Barang/Jasa PT PLN (Persero).',
- 'Peraturan Direksi PT PLN (Persero) No. 0121.P/DIR/2019 tentang Kebijakan Anti Fraud di PT PLN (Persero).',
- 'Peraturan Direksi PT PLN (Persero) No. 0122.P/DIR/2019 tanggal 19 Agustus 2019 tentang Pengelolaan Konflik Kepentingan di Lingkungan PT PLN (Persero).',
- 'Peraturan Direksi PT PLN (Persero) No. 004.P/DIR/2021 tanggal 19 Februari 2021 tentang Pedoman Jaminan di Lingkungan PT PLN (Persero).',
- 'Peraturan Direksi PT PLN (Persero) No. 0002.P/DIR/2022 tanggal 20 Januari 2022 tentang Kebijakan Strategis Pedoman Penggunaan Produk Dalam Negeri di Lingkungan PT PLN (Persero).',
- 'Edaran Direksi PT PLN (Persero) No. 0031.E/DIR/2022 tanggal 04 November 2022 tentang Standar Prosedur Pelaksanaan Penggunaan Produk Dalam Negeri di Lingkungan PT PLN (Persero).',
- 'Edaran Direksi PT PLN (Persero) No. 0113/KEU.00.01/DIRKEU/2019 tanggal 08 Januari 2019 tentang Daftar Penerbit Jaminan Terseleksi.',
- 'Peraturan Direksi PT PLN (Persero) No. 0048.P/DIR/2020 tanggal 01 Juli 2020 tentang Tata Kelola Anti Penyuapan di Lingkungan PT PLN (Persero).',
- 'Edaran Direksi PT PLN (Persero) No. 0013.E/DIR/2020 tanggal 03 Juli 2020 tentang Pedoman Pelaksanaan Integrity Due Diligence di Lingkungan PT PLN (Persero).'
+ 'Peraturan 1'+SPK_PK_DASAR_TITIK,
+ 'Peraturan 2'+SPK_PK_DASAR_TITIK,
+ 'Peraturan 3'+SPK_PK_DASAR_TITIK
 ];
 /* Dokumen proses pengadaan — pasangan (label, key nomor, key tanggal).
    Butir yang nomor & tanggalnya kosong tidak dicetak. */
@@ -461,7 +466,10 @@ function spkPreamblePkTpl(data){
   /* --- dasar peraturan (tetap) --- */
   for(i=0;i<SPK_PK_DASAR_TETAP.length;i++){
     n++;
-    out += '<p class="spk-dlist"><span class="n">'+n+'.</span>'+esc(SPK_PK_DASAR_TETAP[i])+'</p>';
+    /* spk-ph = contoh pengisian: titik-titik dipotong tepat di batas margin
+       kanan (lihat CSS .spk-cl p.spk-ph) sehingga barisnya tidak pernah
+       melipat ke baris berikutnya. */
+    out += '<p class="spk-dlist spk-ph"><span class="n">'+n+'.</span>'+esc(SPK_PK_DASAR_TETAP[i])+'</p>';
   }
   /* --- dokumen proses pengadaan (dinamis) ---
      Semua butir ditulis dengan bentuk yang SAMA: baris judul, lalu rincian
@@ -2033,6 +2041,16 @@ function spkEnsureBentukStyle(){
       'border-image:linear-gradient(90deg,#12304F,#5B8CC0,transparent) 1}'+
     '@media (max-width:760px){.spk-khs-wrap{padding:12px 10px 12px}}'+
     /* ---- Pemilih lapisan penyedia: dropdown di kanan-atas judul kartu ---- */
+    /* ---- Daftar bernomor di dalam SATU sel tabel (Daftar Kontrak KHS) ----
+       Dipakai kolom No. Kontrak, Nama Penyedia & Nilai Pekerjaan: tiap penyedia
+       menempati satu baris (1., 2., 3., ...) sehingga ketiganya sebaris lurus. */
+    '.spk-mlist{display:flex;flex-direction:column;gap:4px}'+
+    '.spk-mlist .spk-mrow{display:flex;align-items:baseline;gap:7px;line-height:1.45;min-height:1.45em}'+
+    '.spk-mlist .spk-mrow > .i{flex:0 0 auto;min-width:15px;color:#8794a0;font-weight:800;font-size:11px}'+
+    '.spk-mlist .spk-mrow > .v{flex:1 1 auto;min-width:0;word-break:break-word}'+
+    '.spk-mlist .spk-mrow > .v.kosong{color:#b6bec6}'+
+    '.spk-mlist.is-rt .spk-mrow{justify-content:flex-end;text-align:right}'+
+    '.spk-mlist.is-rt .spk-mrow > .v{flex:0 1 auto;white-space:nowrap}'+
     /* Beri jarak antara judul kartu dan penanda "Profil: ..." di sebelahnya */
     '.form-section-title .spk-klprof-tag{margin-left:10px}'+
     /* Penanda langkah (1..4) DIBENTANGKAN penuh: garis penghubung tidak lagi
@@ -2471,9 +2489,21 @@ function spkViewRows(){
   return rows;
 }
 function spkEmptyRow(){
-  return '<tr><td colspan="6"><div class="empty">'+
+  return '<tr><td colspan="7"><div class="empty">'+
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>'+
     '<div>Belum ada kontrak tersimpan</div></div></td></tr>';
+}
+/* Sel berisi daftar bernomor (1., 2., 3., ...) — satu baris per penyedia.
+   `rt` = rata kanan (dipakai kolom Nilai Pekerjaan). */
+function spkKhsCellHtml(vals, rt){
+  spkEnsureBentukStyle();
+  return '<div class="spk-mlist'+(rt?' is-rt':'')+'">'+
+    (vals||[]).map(function(v,i){
+      var kosong=!(v!=null && String(v).trim()!=='');
+      return '<div class="spk-mrow"><span class="i">'+(i+1)+'.</span>'+
+             '<span class="v'+(kosong?' kosong':'')+'">'+(kosong?'\u2014':fkEsc(v))+'</span></div>';
+    }).join('')+
+  '</div>';
 }
 /* Penanda kecil bentuk dokumen pada daftar Lihat Kontrak */
 function spkBentukChip(rec){
@@ -2481,14 +2511,33 @@ function spkBentukChip(rec){
   var d=rec&&rec.data, b=spkBentukOf(d);
   var cls=(b==='KHS')?'is-khs':((b==='PK')?'is-pk':'is-spk');
   var lbl=(b==='KHS')?('KHS \u00b7 '+spkKhsN(d)+' Penyedia'):((b==='PK')?'Perjanjian/Kontrak':'SPK');
-  return '<span class="spk-bentuk-tag '+cls+'" style="margin-left:8px;padding:3px 9px;font-size:10px">'+
-    fkEsc(lbl)+'</span>';
+  /* Penanda diletakkan di ATAS nomor kontrak: pada KHS kolom itu berisi daftar
+     bernomor, sehingga penanda di samping akan berdesakan. */
+  return '<span class="spk-bentuk-tag '+cls+'" style="display:inline-flex;margin:0 0 6px;padding:3px 9px;font-size:10px">'+
+    fkEsc(lbl)+'</span><br>';
 }
 function renderSpkView(){
   const tb=document.getElementById('spk-view-body'); const pg=document.getElementById('spk-view-pagination'); const cEl=document.getElementById('spk-view-count');
   if(!tb) return;
   const rows=spkViewRows();
   if(cEl) cEl.textContent=rows.length;
+  /* Kepala tabel disusun dari sini (bukan index.html) agar penambahan kolom
+     "Nama Penyedia" & penggantian nama "Nilai" -> "Nilai Pekerjaan" cukup
+     lewat berkas ini. */
+  try{
+    const _thr=tb.parentElement && tb.parentElement.querySelector('thead tr');
+    if(_thr && _thr.getAttribute('data-spk-head')!=='2'){
+      _thr.innerHTML=
+        '<th class="col-no">No.</th>'+
+        '<th>No. Kontrak</th>'+
+        '<th class="col-nama-freeze">Nama Pekerjaan</th>'+
+        '<th>Nama Penyedia</th>'+
+        '<th class="col-date">Tanggal</th>'+
+        '<th class="col-nilai">Nilai Pekerjaan</th>'+
+        '<th style="text-align:center;min-width:150px">Aksi</th>';
+      _thr.setAttribute('data-spk-head','2');
+    }
+  }catch(e){ console.error(e); }
   if(!rows.length){ tb.innerHTML=spkEmptyRow(); if(pg) pg.innerHTML=''; return; }
   const totalPages=Math.max(1,Math.ceil(rows.length/SPK_VIEW_PAGE_SIZE));
   if(spkViewPage>totalPages) spkViewPage=totalPages; if(spkViewPage<1) spkViewPage=1;
@@ -2497,14 +2546,31 @@ function renderSpkView(){
   tb.innerHTML=pageRows.map((r,i)=>{
     const rid=fkEsc(String(r.id));
     const nklausul = Array.isArray(r.klausul)? r.klausul.length : 0;
+    /* Perjanjian/Kontrak KHS: satu record memuat banyak penyedia. Kolom
+       No. Kontrak, Nama Penyedia & Nilai Pekerjaan ditulis sebagai daftar
+       bernomor (1., 2., 3., ...) pada baris tabel yang sama. */
+    const _khsRow = spkIsKhsOf(r.data);
+    let _tdNo, _tdPy, _tdNilai;
+    if(_khsRow){
+      const _n=spkKhsN(r.data);
+      const _sl=[]; for(let _k=0;_k<_n;_k++) _sl.push(spkKhsSlotRO(r.data,_k));
+      _tdNo   = spkKhsCellHtml(_sl.map(x=>x.nomor_kontrak||''), false);
+      _tdPy   = spkKhsCellHtml(_sl.map(x=>x.nama_perusahaan||''), false);
+      _tdNilai= spkKhsCellHtml(_sl.map(x=>{ const v=spkNum(x.nilai_pekerjaan); return v>0?spkRupiah(v):''; }), true);
+    }else{
+      _tdNo   = fkEsc(r.nomor_kontrak||'—');
+      _tdPy   = fkEsc((r.data&&r.data.nama_perusahaan)||'—');
+      _tdNilai= fkEsc(r.nilai!=null?spkRupiah(r.nilai):'—');
+    }
     return '<tr>'+
       '<td class="col-no">'+(start+i+1)+'</td>'+
-      '<td class="wrap-cell">'+fkEsc(r.nomor_kontrak||'—')+spkBentukChip(r)+'</td>'+
+      '<td class="wrap-cell">'+spkBentukChip(r)+_tdNo+'</td>'+
       '<td class="wrap-cell col-nama-freeze">'+fkEsc(r.nama_pekerjaan||'—')+'</td>'+
+      '<td class="wrap-cell">'+_tdPy+'</td>'+
       /* Tanggal ringkas dd/mm/yyyy (fmtDate) — spkDateLong() tetap dipakai di
          dalam dokumen SPK/Perjanjian yang memang menuntut format panjang. */
       '<td class="col-date">'+fkEsc(r.tanggal?fmtDate(r.tanggal):'—')+'</td>'+
-      '<td class="col-nilai">'+fkEsc(r.nilai!=null?spkRupiah(r.nilai):'—')+'</td>'+
+      '<td class="col-nilai">'+_tdNilai+'</td>'+
       '<td><div class="action-cell" style="justify-content:center">'+
         '<button class="act act-edit" title="Ubah" onclick="spkEditRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
         '<button class="act act-view" title="Lihat" onclick="spkPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
@@ -2941,6 +3007,9 @@ function spkDocCss(){
   /* Placeholder klausul kosong: huruf HITAM (dulu samar/transparan). Blok ini tetap
      disaring keluar sebelum dicetak (spkIsPhBlock), jadi tidak muncul di PDF. */
   '.spk-cl p.spk-ph{color:#000;white-space:nowrap;overflow:hidden;text-align:left}'+
+  /* Butir "berpedoman pada" yang masih berupa contoh pengisian: titik-titik
+     berhenti tepat di batas margin kanan, tidak melipat ke baris berikutnya. */
+  '.spk-cl p.spk-dlist.spk-ph{white-space:nowrap;overflow:hidden;text-align:left}'+
   '.spk-cl p.kldesc{margin-left:'+D.desc+';text-indent:0}'+
   /* Fallback bila nomor TIDAK ter-wrap (jarang): tetap hanging bertingkat */
   '.spk-cl p.kl1{margin-left:'+D.l1+';text-indent:-'+D.h1+'}'+
@@ -9165,10 +9234,12 @@ let spkPreviewData=null, spkPreviewKlausul=null;
 
 function spkOpenPreview(data, klausul){
   spkPreviewData=data; spkPreviewKlausul=klausul;
-  /* Pratinjau SELALU membangun seluruh penyedia; pemilih "sheet" di kepala
-     modal hanya menyembunyikan/menampilkan badan dokumen yang tidak dipilih. */
-  SPK_KHS_ONLY=0;
-  const html=spkDocHtml(data, klausul);
+  /* Perjanjian/Kontrak KHS: pratinjau LANGSUNG membuka Penyedia 1 (bukan
+     seluruh penyedia sekaligus), supaya tidak berat & langsung terbaca.
+     Penyedia lain dipilih lewat "sheet" di kepala modal; dokumennya dibangun
+     ulang sesuai pilihan. Opsi "Semua Penyedia" tetap tersedia untuk mencetak
+     seluruhnya dalam satu berkas. */
+  spkKhsPreviewSel = spkIsKhsOf(data) ? 1 : 0;
   const ov=document.getElementById('pn-preview-overlay');
   if(!ov){ spkPrint(); return; }   // fallback: langsung cetak bila modal tak ada
   const _mdl=ov.querySelector('.pn-preview-modal'); if(_mdl) _mdl.classList.remove('is-max');
@@ -9179,8 +9250,7 @@ function spkOpenPreview(data, klausul){
   if(body){
     body.classList.add('fkl-preview-body');
     body.innerHTML='<iframe id="fkl-preview-frame" title="Pratinjau SPK"></iframe>';
-    const ifr=document.getElementById('fkl-preview-frame');
-    const doc=ifr.contentWindow.document; doc.open(); doc.write(html); doc.close();
+    spkPreviewRender();
   }
   // Sisipkan tombol Cetak/PDF khusus SPK ke header modal bersama (hapus tombol modul lain)
   const actions=document.querySelector('#pn-preview-overlay .pn-preview-head-actions');
@@ -9190,13 +9260,15 @@ function spkOpenPreview(data, klausul){
      penyedia menyembunyikan sisanya di pratinjau DAN membuat Cetak/PDF hanya
      mencetak penyedia tersebut. */
   if(actions && spkIsKhsOf(data)){
-    spkKhsPreviewSel=0;
     const n=spkKhsN(data);
-    let o='<option value="0">Semua Penyedia ('+n+')</option>';
+    let o='';
     for(let i=0;i<n;i++){
-      const nm=String(spkKhsSlot(data,i).nama_perusahaan||'').trim();
-      o+='<option value="'+(i+1)+'">Penyedia '+(i+1)+(nm?(' \u2014 '+fkEsc(nm)):'')+'</option>';
+      const nm=String(spkKhsSlotRO(data,i).nama_perusahaan||'').trim();
+      /* Nama perusahaan LANGSUNG dipakai bila sudah diisi */
+      o+='<option value="'+(i+1)+'"'+((i+1)===spkKhsPreviewSel?' selected':'')+'>'+
+         fkEsc(nm || ('Penyedia '+(i+1)))+'</option>';
     }
+    o+='<option value="0">Semua Penyedia ('+n+')</option>';
     const wrap=document.createElement('label');
     wrap.id='spk-preview-khs';
     wrap.className='spk-khs-sheet';
@@ -9231,20 +9303,20 @@ function spkEnsureKhsSheetStyle(){
   var st=document.createElement('style'); st.id='spk-khs-sheet-style'; st.textContent=css;
   (document.head||document.documentElement).appendChild(st);
 }
-/* Tampilkan hanya badan dokumen milik penyedia terpilih (0 = semua) */
+/* Tulis ulang isi iframe pratinjau sesuai penyedia yang dipilih (0 = semua) */
+function spkPreviewRender(){
+  var ifr=document.getElementById('fkl-preview-frame'); if(!ifr) return;
+  var data=spkPreviewData||{}, klausul=spkPreviewKlausul||[];
+  SPK_KHS_ONLY = spkIsKhsOf(data) ? (parseInt(spkKhsPreviewSel,10)||0) : 0;
+  var html=spkDocHtml(data, klausul);
+  SPK_KHS_ONLY=0;
+  var doc=ifr.contentWindow.document; doc.open(); doc.write(html); doc.close();
+}
+/* Ganti "sheet" penyedia pada pratinjau — dokumen dibangun ulang untuk penyedia
+   terpilih saja (0 = seluruh penyedia berurutan). */
 function spkKhsPreviewPick(v){
   spkKhsPreviewSel = parseInt(v,10)||0;
-  var ifr=document.getElementById('fkl-preview-frame');
-  var doc=null;
-  try{ doc=ifr && ifr.contentWindow && ifr.contentWindow.document; }catch(e){ doc=null; }
-  if(!doc) return;
-  var list=doc.querySelectorAll('#spk-docs > .spk-doc');
-  for(var i=0;i<list.length;i++){
-    var py=parseInt(list[i].getAttribute('data-py'),10)||0;
-    var tampil = (!spkKhsPreviewSel) || (py===spkKhsPreviewSel);
-    if(tampil) list[i].classList.remove('spk-hide'); else list[i].classList.add('spk-hide');
-  }
-  try{ ifr.contentWindow.scrollTo(0,0); }catch(e){}
+  spkPreviewRender();
 }
 function spkPrint(){
   const data=spkPreviewData||{}, klausul=spkPreviewKlausul||[];
