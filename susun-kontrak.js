@@ -2033,6 +2033,13 @@ function spkEnsureBentukStyle(){
       'border-image:linear-gradient(90deg,#12304F,#5B8CC0,transparent) 1}'+
     '@media (max-width:760px){.spk-khs-wrap{padding:12px 10px 12px}}'+
     /* ---- Pemilih lapisan penyedia: dropdown di kanan-atas judul kartu ---- */
+    /* Beri jarak antara judul kartu dan penanda "Profil: ..." di sebelahnya */
+    '.form-section-title .spk-klprof-tag{margin-left:10px}'+
+    /* Penanda langkah (1..4) DIBENTANGKAN penuh: garis penghubung tidak lagi
+       dibatasi 120px, sehingga langkah pertama menempel tepi kiri dan langkah
+       terakhir tepi kanan — lurus dengan kartu data di bawahnya. */
+    '.spk-stepper{justify-content:space-between;margin-left:0;margin-right:0}'+
+    '.spk-stepper .spk-stp-line{flex:1 1 auto;max-width:none;min-width:16px}'+
     '.spk-khs-pick{display:inline-flex;align-items:center;gap:9px;margin-left:auto;text-transform:none}'+
     '.spk-khs-pick .lbl{font-size:11px;font-weight:800;letter-spacing:.04em;color:#12304F;white-space:nowrap}'+
     '.spk-khs-pick select{min-width:210px;max-width:300px;font-family:inherit;font-size:12px;font-weight:700;'+
@@ -2119,8 +2126,10 @@ function spkKhsPickHtml(){
   for(var i=0;i<n;i++){
     var sl=spkKhsSlot(spkState.data,i);
     var nm=String((sl&&sl.nama_perusahaan)||'').trim();
+    /* Begitu Nama Perusahaan diisi, yang tampil CUKUP nama perusahaannya;
+       "Penyedia N" hanya dipakai selama namanya masih kosong. */
     o+='<option value="'+i+'"'+(i===cur?' selected':'')+'>'+
-       fkEsc('Penyedia '+(i+1)+(nm?(' \u2014 '+nm):''))+'</option>';
+       fkEsc(nm || ('Penyedia '+(i+1)))+'</option>';
   }
   return '<label class="spk-khs-pick">'+
       '<span class="lbl">Pilih Penyedia</span>'+
@@ -2145,14 +2154,8 @@ function spkKhsSppbjFieldsHtml(){
       '</div>';
   }
   /* SATU sel kisi saja: baris No. SPPBJ bertambah ke BAWAH di dalam kolomnya
-     sendiri. Bersama Tgl. SPPBJ dibungkus satu baris penuh yang dirata-ATAS,
-     supaya bertambahnya baris tidak menggeser atau mengosongkan field lain. */
-  var fTgl=null;
-  try{ fTgl=SPK_FIELD_GROUPS[0].fields.filter(function(x){ return x.k==='tgl_sppbj'; })[0]||null; }catch(e){}
-  return '<div class="spk-sppbj-blk">'+
-      '<div class="field spk-sppbj-stack"><label>No. SPPBJ</label>'+h+'</div>'+
-      (fTgl? spkFieldInput(fTgl) : '')+
-    '</div>';
+     sendiri, jadi field lain tetap pada kolomnya masing-masing. */
+  return '<div class="field spk-sppbj-stack"><label>No. SPPBJ</label>'+h+'</div>';
 }
 function spkKhsSetSppbj(i,v){
   if(!spkState) return;
@@ -2198,17 +2201,24 @@ function renderSpkSusun(){
   const _khs = spkIsKhs();
   /* Satu kartu field. `fields` boleh ditimpa (dipakai bentuk KHS untuk
      memindahkan sebagian field ke dalam lapisan penyedia). */
-  const kartuHtml = (g, gi, fields)=>{
+  const kartuHtml = (g, gi, fields, tailFrom)=>{
     const cols = 4;
-    const fieldsHtml = (fields||g.fields.filter(spkFieldVisible)).map(f=>{
+    /* `tailFrom` = indeks awal "ekor" yang dibungkus satu blok rata-ATAS.
+       Dipakai bentuk KHS pada baris terakhir kartu Informasi Pengadaan: karena
+       tumpukan No. SPPBJ jauh lebih tinggi dari field biasa, field setingkatnya
+       harus ikut dirata-atas agar tidak melorot ke dasar baris — sekaligus
+       menutup kolom kosong di sebelah No./Tgl. Penetapan Penyedia Barang/Jasa. */
+    const _tf = (tailFrom==null) ? -1 : tailFrom;
+    let _head='', _tail='';
+    (fields||g.fields.filter(spkFieldVisible)).forEach((f,ix)=>{
       // paksa Rincian Akta Pendirian & Perubahan mulai baris baru bersama (2 field 1 baris)
       const brk = (f.k==='akta_pendirian') ? '<div style="flex:0 0 100%;height:0;margin:0;padding:0"></div>' : '';
       /* Perjanjian/Kontrak KHS: satu isian No. SPPBJ diganti sebanyak jumlah
          penyedia (baris baru di bawahnya), Tgl. SPPBJ tetap satu. */
-      if(_khs && f.k==='no_sppbj') return brk + spkKhsSppbjFieldsHtml();
-      if(_khs && f.k==='tgl_sppbj') return '';        /* sudah ikut blok No. SPPBJ */
-      return brk + spkFieldInput(f);
-    }).join('');
+      const html = (_khs && f.k==='no_sppbj') ? (brk + spkKhsSppbjFieldsHtml()) : (brk + spkFieldInput(f));
+      if(_tf>=0 && ix>=_tf) _tail+=html; else _head+=html;
+    });
+    const fieldsHtml = _head + (_tail ? ('<div class="spk-sppbj-blk">'+_tail+'</div>') : '');
     // Tombol "Pilih Pekerjaan" (pojok kanan atas kartu pertama) — sama seperti pada
     // menu Harga Perkiraan Sendiri. Mengisi field mail merge & Lampiran dari HPS.
     /* Kartu pertama: tombol Pilih Pekerjaan, lalu pemilih Bentuk Kontrak
@@ -2249,7 +2259,14 @@ function renderSpkSusun(){
     SPK_FIELD_GROUPS.forEach((g,gi)=>{
       if(SPK_KHS_SECTIONS.indexOf(g.sec)>=0) return;         // masuk lapisan penyedia
       let ff=g.fields.filter(spkFieldVisible);
-      bagian.push(kartuHtml(g,gi,ff));
+      let tf=-1;
+      if(g.sec==='Informasi Pengadaan'){
+        /* Ekor dimulai tepat di AWAL BARIS tempat No. SPPBJ berada (kelipatan
+           jumlah kolom), sehingga blok rata-atas tidak memotong baris di atasnya. */
+        const _ix=ff.map(function(x){ return x.k; }).indexOf('no_sppbj');
+        if(_ix>=0) tf=Math.floor(_ix/4)*4;
+      }
+      bagian.push(kartuHtml(g,gi,ff,tf));
       if(g.sec==='Informasi Pengadaan'){
         const layer=SPK_KHS_SECTIONS.map(sec=>{
           const gg=SPK_FIELD_GROUPS.filter(x=>x.sec===sec)[0]; if(!gg) return '';
@@ -9335,14 +9352,12 @@ function spkKlProfilOpenSave(){
   const snap=spkKlProfilSnapshot();
   if(!snap.length){ toast('Belum ada klausul untuk disimpan','warn'); return; }
   const list=spkKlProfilAll();
-  const existing = list.length ? ('<div class="pnw-profil-existing">Profil tersimpan: '+list.map(p=>fkEsc(p.name)).join(' &middot; ')+'</div>') : '';
   spkKlProfilOverlay(
     '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Simpan Profil Klausul</div>'+
     '<div class="pnw-profil-sub">Menyimpan <b>'+snap.length+'</b> klausul (judul, isi, urutan, status aktif) sebagai satu profil yang dapat dimuat kembali kapan saja.</div>'+
-    '<input id="spk-klprofil-name" class="pnw-profil-input" type="text" placeholder="Nama profil (mis. SPK Konstruksi Standar)" maxlength="60" onkeydown="if(event.key===\'Enter\')spkKlProfilDoSave()">'+
-    existing+
+    profilSaveBoxHtml('klausul','spk-klprofil-name','spkKlProfilDoSave()','Nama profil (mis. SPK Konstruksi Standar)')+
     '<div class="pnw-profil-actions"><button type="button" class="btn btn-ghost" onclick="spkKlProfilClose()">Batal</button>'+
-    '<button type="button" class="btn btn-teal" onclick="spkKlProfilDoSave()">Simpan Profil</button></div>'
+    '<button type="button" class="btn btn-teal" id="spk-klprofil-name-btn" onclick="spkKlProfilDoSave()">Simpan Profil</button></div>'
   );
   setTimeout(function(){ const el=document.getElementById('spk-klprofil-name'); if(el) el.focus(); },60);
 }
@@ -9485,14 +9500,12 @@ function spkPyProfilOpenSave(){
   const adaIsi=Object.keys(snap).some(k=>String(snap[k]||'').trim()!=='');
   if(!adaIsi){ toast('Isi data penyedia dulu sebelum menyimpan profil','warn'); return; }
   const list=spkPyProfilAll();
-  const existing = list.length ? ('<div class="pnw-profil-existing">Profil tersimpan: '+list.map(p=>fkEsc(p.name)).join(' &middot; ')+'</div>') : '';
   spkPyProfilOverlay(
     '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Simpan Profil Penyedia</div>'+
     '<div class="pnw-profil-sub">Menyimpan seluruh data <b>Informasi Penyedia</b> (nama perusahaan, lokasi, pimpinan, rekening, penawaran, akta) sebagai satu profil yang dapat dimuat kembali kapan saja.</div>'+
-    '<input id="spk-pyprofil-name" class="pnw-profil-input" type="text" placeholder="Nama profil (mis. PT Seram Indo Pratama)" maxlength="60" onkeydown="if(event.key===\'Enter\')spkPyProfilDoSave()">'+
-    existing+
+    profilSaveBoxHtml(SPK_PY_PROFIL_KIND,'spk-pyprofil-name','spkPyProfilDoSave()','Nama profil (mis. PT Seram Indo Pratama)')+
     '<div class="pnw-profil-actions"><button type="button" class="btn btn-ghost" onclick="spkPyProfilClose()">Batal</button>'+
-    '<button type="button" class="btn btn-teal" onclick="spkPyProfilDoSave()">Simpan Profil</button></div>'
+    '<button type="button" class="btn btn-teal" id="spk-pyprofil-name-btn" onclick="spkPyProfilDoSave()">Simpan Profil</button></div>'
   );
   setTimeout(function(){ const el=document.getElementById('spk-pyprofil-name'); if(el) el.focus(); },60);
 }

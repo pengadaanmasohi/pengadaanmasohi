@@ -506,6 +506,78 @@ async function profilesUpsert(kind, obj){
   }
   return true;
 }
+/* =========================================================================
+   SIMPAN PROFIL — "simpan dengan nama baru" ATAU "timpa yang sudah ada"
+   -------------------------------------------------------------------------
+   Dipakai SELURUH dialog Simpan Profil (Jadwal, Persyaratan, Klausul,
+   Penyedia). Isinya: dropdown daftar profil tersimpan (memilih salah satu
+   mengisi kolom nama = menimpa), kolom nama bebas untuk profil baru, dan
+   peringatan otomatis bila nama yang diketik sudah dipakai. Tombol simpan
+   berganti tulisan menjadi "Timpa Profil" pada keadaan itu.
+   ========================================================================= */
+function profilSaveEnsureStyle(){
+  if(document.getElementById('profil-save-style')) return;
+  var css=
+    '.pnw-profil-ow{display:flex;align-items:center;gap:10px;margin:0 0 10px;flex-wrap:wrap}'+
+    '.pnw-profil-ow > label{font-size:11.5px;font-weight:800;letter-spacing:.03em;color:#41535c;white-space:nowrap}'+
+    '.pnw-profil-ow > select{flex:1 1 200px;min-width:0;height:38px;border:1px solid #cdd9de;border-radius:10px;'+
+      'padding:0 11px;font-size:12.5px;font-family:inherit;color:var(--ink);background:#fff;cursor:pointer}'+
+    '.pnw-profil-ow > select:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,124,134,.15)}'+
+    '.pnw-profil-warn{display:flex;align-items:flex-start;gap:7px;margin-top:10px;font-size:11.5px;line-height:1.5;'+
+      'color:#B7791F;background:#FDF6E3;border:1px solid #F0DFAF;border-radius:9px;padding:8px 10px}'+
+    '.pnw-profil-warn svg{width:14px;height:14px;flex:0 0 auto;margin-top:1px}';
+  var st=document.createElement('style'); st.id='profil-save-style'; st.textContent=css;
+  (document.head||document.documentElement).appendChild(st);
+}
+/* Apakah sebuah nama profil sudah ada pada jenis (kind) tertentu? */
+function profilSaveExists(kind, name){
+  var v=String(name==null?'':name).trim().toLowerCase(); if(!v) return false;
+  return (profilesGet(kind)||[]).some(function(p){ return String(p&&p.name||'').trim().toLowerCase()===v; });
+}
+/* Blok isian nama + pemilih "timpa profil yang ada" */
+function profilSaveBoxHtml(kind, inputId, doSaveCall, placeholder){
+  profilSaveEnsureStyle();
+  var list=(profilesGet(kind)||[]).slice().sort(function(a,b){ return (b.savedAt||0)-(a.savedAt||0); });
+  var pick='';
+  if(list.length){
+    var opt='<option value="">\u2014 Simpan sebagai profil baru \u2014</option>'+
+      list.map(function(p){ return '<option value="'+fkEsc(p.name)+'">'+fkEsc(p.name)+'</option>'; }).join('');
+    pick='<div class="pnw-profil-ow">'+
+        '<label for="'+inputId+'-ow">Timpa profil yang ada</label>'+
+        '<select id="'+inputId+'-ow" onchange="profilSavePick(\''+kind+'\',\''+inputId+'\',this.value)">'+opt+'</select>'+
+      '</div>';
+  }
+  return pick+
+    '<input id="'+inputId+'" class="pnw-profil-input" type="text" placeholder="'+fkEsc(placeholder||'Nama profil')+'" '+
+      'maxlength="60" oninput="profilSaveSync(\''+kind+'\',\''+inputId+'\')" '+
+      'onkeydown="if(event.key===\'Enter\')'+doSaveCall+'">'+
+    '<div class="pnw-profil-warn" id="'+inputId+'-warn" style="display:none">'+
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg>'+
+      '<span>Nama ini sudah dipakai \u2014 menyimpan akan <b>menimpa</b> profil tersebut.</span></div>';
+}
+/* Selaraskan peringatan, dropdown, & tulisan tombol dengan nama yang diketik */
+function profilSaveSync(kind, inputId){
+  var el=document.getElementById(inputId); if(!el) return;
+  var v=String(el.value||'').trim(), ada=profilSaveExists(kind, v);
+  var w=document.getElementById(inputId+'-warn'); if(w) w.style.display=ada?'':'none';
+  var sel=document.getElementById(inputId+'-ow');
+  if(sel){
+    var cocok='';
+    for(var i=0;i<sel.options.length;i++){
+      if(sel.options[i].value && sel.options[i].value.trim().toLowerCase()===v.toLowerCase()){ cocok=sel.options[i].value; break; }
+    }
+    sel.value=cocok;
+  }
+  var btn=document.getElementById(inputId+'-btn');
+  if(btn) btn.textContent = ada ? 'Timpa Profil' : 'Simpan Profil';
+}
+/* Memilih profil pada dropdown = menyiapkan penimpaan profil tersebut */
+function profilSavePick(kind, inputId, name){
+  var el=document.getElementById(inputId); if(!el) return;
+  el.value=name||'';
+  profilSaveSync(kind, inputId);
+  try{ el.focus(); }catch(e){}
+}
 /* Hapus SATU profil dari Supabase + cache. */
 async function profilesDelete(kind, name){
   const arr=profileCache[kind]||[];
@@ -6457,15 +6529,12 @@ function jpProfilClose(){ const ov=document.getElementById('pnw-profil-ov'); if(
 function jpProfilOpenSave(){
   if(!jpState || !jpState.tahapan.length){ toast('Belum ada tahapan untuk disimpan','warn'); return; }
   const snap=jpProfilSnapshot(); const cnt=snap.tahapan.length;
-  const list=jpProfilAll();
-  const existing = list.length ? ('<div class="pnw-profil-existing">Profil tersimpan: '+list.map(p=>fkEsc(p.name)).join(' &middot; ')+'</div>') : '';
   jpProfilOverlay(
     '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Simpan Profil Jadwal</div>'+
     '<div class="pnw-profil-sub">Menyimpan <b>'+cnt+'</b> Tahapan Pengadaan dan membaca <b>semua</b> sifat jadwalnya: durasi Awal\u2192Akhir tiap tahapan (dalam <b>hari kerja</b>), jarak tanggal antar tahapan (menyambung / mulai bersamaan / berjarak N hari kerja, termasuk tumpang tindih), serta <b>Jam Awal</b> dan <b>Jam Akhir</b> setiap tahapan. Tanggal mati tidak ikut tersimpan \u2014 saat dimuat, semuanya dihitung ulang dari Titik Mulai.</div>'+
-    '<input id="jp-profil-name" class="pnw-profil-input" type="text" placeholder="Nama profil (mis. Pengadaan Langsung Standar)" maxlength="60" onkeydown="if(event.key===\'Enter\')jpProfilDoSave()">'+
-    existing+
+    profilSaveBoxHtml('jadwal','jp-profil-name','jpProfilDoSave()','Nama profil (mis. Pengadaan Langsung Standar)')+
     '<div class="pnw-profil-actions"><button type="button" class="btn btn-ghost" onclick="jpProfilClose()">Batal</button>'+
-    '<button type="button" class="btn btn-teal" onclick="jpProfilDoSave()">Simpan Profil</button></div>'
+    '<button type="button" class="btn btn-teal" id="jp-profil-name-btn" onclick="jpProfilDoSave()">Simpan Profil</button></div>'
   );
   setTimeout(()=>{ const el=document.getElementById('jp-profil-name'); if(el) el.focus(); },60);
 }
@@ -11538,15 +11607,12 @@ function pnwProfilClose(){ const ov=document.getElementById('pnw-profil-ov'); if
 function pnwProfilOpenSave(){
   const cnt=pnwProfilCount(pnwProfilSnapshot());
   if(!cnt){ toast('Belum ada uraian persyaratan untuk disimpan','warn'); return; }
-  const list=pnwProfilAll();
-  const existing = list.length ? ('<div class="pnw-profil-existing">Profil tersimpan: '+list.map(p=>fkEsc(p.name)).join(' &middot; ')+'</div>') : '';
   pnwProfilOverlay(
     '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Simpan Profil Persyaratan</div>'+
     '<div class="pnw-profil-sub">Menyimpan <b>'+cnt+'</b> uraian persyaratan (beserta kategori terpilih) agar bisa dipakai lagi tanpa mengetik ulang.</div>'+
-    '<input id="pnw-profil-name" class="pnw-profil-input" type="text" placeholder="Nama profil (mis. Pengadaan Barang Standar)" maxlength="60" onkeydown="if(event.key===\'Enter\')pnwProfilDoSave()">'+
-    existing+
+    profilSaveBoxHtml('syarat','pnw-profil-name','pnwProfilDoSave()','Nama profil (mis. Pengadaan Barang Standar)')+
     '<div class="pnw-profil-actions"><button type="button" class="btn btn-ghost" onclick="pnwProfilClose()">Batal</button>'+
-    '<button type="button" class="btn btn-teal" onclick="pnwProfilDoSave()">Simpan Profil</button></div>'
+    '<button type="button" class="btn btn-teal" id="pnw-profil-name-btn" onclick="pnwProfilDoSave()">Simpan Profil</button></div>'
   );
   setTimeout(()=>{ const el=document.getElementById('pnw-profil-name'); if(el) el.focus(); },60);
 }
