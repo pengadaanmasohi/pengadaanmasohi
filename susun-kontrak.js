@@ -2016,19 +2016,42 @@ function spkEnsureBentukStyle(){
     /* ---- Pemilih JUMLAH PENYEDIA (khusus Perjanjian/Kontrak KHS) ---- */
     '.spk-bentuk.spk-khs-n select{min-width:150px}'+
     /* ---- Tab LAPISAN PENYEDIA (Perjanjian/Kontrak KHS) ---- */
-    '.spk-khs-wrap{margin:0 0 14px}'+
-    '.spk-khs-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}'+
-    '.spk-khs-tab{display:inline-flex;align-items:center;gap:8px;max-width:270px;padding:8px 13px;border-radius:11px;'+
-      'border:1px solid #c3d1d7;background:#fff;color:#31424b;font-size:11.5px;font-weight:700;cursor:pointer;'+
-      'transition:border-color .16s ease,background .16s ease,color .16s ease}'+
-    '.spk-khs-tab:hover{border-color:#93a9b3;background:#f6fafb}'+
-    '.spk-khs-tab .no{display:inline-flex;align-items:center;justify-content:center;min-width:19px;height:19px;'+
-      'border-radius:999px;background:#e7eef3;color:#41535c;font-size:10.5px;font-weight:800;flex:0 0 auto}'+
-    '.spk-khs-tab .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'+
-    '.spk-khs-tab.on{background:#12304F;border-color:#12304F;color:#fff}'+
-    '.spk-khs-tab.on .no{background:rgba(255,255,255,.22);color:#fff}'+
-    '.spk-khs-tab.isi .no{background:#1E9E5A;color:#fff}'+
-    '.spk-khs-tab.on.isi .no{background:rgba(255,255,255,.22);color:#fff}'+
+    /* ---- PEMBUNGKUS LAPISAN PENYEDIA ----
+       Kartu Informasi Kontrak & Informasi Penyedia dikurung satu kotak bersama
+       deretan tab di atasnya, supaya terlihat jelas bahwa memilih tab Penyedia
+       1..N mengganti isi KEDUA kartu tersebut (dan bukan kartu lain). */
+    '.spk-khs-wrap{position:relative;margin:0 0 20px;padding:14px 16px 16px;border:1.5px solid #C6D6E4;'+
+      'border-radius:20px;background:linear-gradient(180deg,#EEF4FA,#F8FBFD 140px);'+
+      'box-shadow:inset 0 1px 0 #fff}'+
+    '.spk-khs-wrap::before{content:"";position:absolute;left:-1.5px;top:22px;bottom:22px;width:5px;'+
+      'border-radius:0 5px 5px 0;background:linear-gradient(180deg,#12304F,#2C5C8F)}'+
+    '.spk-khs-wrap > .form-card{margin-bottom:14px;border-color:#D5E2EC}'+
+    '.spk-khs-wrap > .form-card:last-child{margin-bottom:0}'+
+    '.spk-khs-wrap > .form-card::before{background:linear-gradient(180deg,#12304F,#2C5C8F);'+
+      'box-shadow:2px 0 10px rgba(18,48,79,.22)}'+
+    '.spk-khs-wrap > .form-card .form-section-title{color:#12304F;'+
+      'border-image:linear-gradient(90deg,#12304F,#5B8CC0,transparent) 1}'+
+    '@media (max-width:760px){.spk-khs-wrap{padding:12px 10px 12px}}'+
+    /* ---- Pemilih lapisan penyedia: dropdown di kanan-atas judul kartu ---- */
+    '.spk-khs-pick{display:inline-flex;align-items:center;gap:9px;margin-left:auto;text-transform:none}'+
+    '.spk-khs-pick .lbl{font-size:11px;font-weight:800;letter-spacing:.04em;color:#12304F;white-space:nowrap}'+
+    '.spk-khs-pick select{min-width:210px;max-width:300px;font-family:inherit;font-size:12px;font-weight:700;'+
+      'color:#12242b;padding:8px 12px;border-radius:11px;border:1px solid #B9CCDE;background:#fff;cursor:pointer;'+
+      'text-transform:none;letter-spacing:0;transition:border-color .16s ease,box-shadow .16s ease}'+
+    '.spk-khs-pick select:hover{border-color:#8FAAC6}'+
+    '.spk-khs-pick select:focus{outline:none;border-color:#12304F;box-shadow:0 0 0 3px rgba(18,48,79,.16)}'+
+    '@media (max-width:760px){.spk-khs-pick{width:100%;margin:8px 0 0}.spk-khs-pick select{flex:1 1 auto;min-width:0}}'+
+    /* ---- Tumpukan isian No. SPPBJ (satu sel kisi, bertambah ke bawah) ---- */
+    '.form-flow > .spk-sppbj-blk{flex:1 1 100%;display:flex;flex-wrap:wrap;gap:10px 30px;align-items:flex-start}'+
+    '.form-flow > .spk-sppbj-blk > .field{flex:0 1 calc((100% - (var(--cols) - 1) * 30px) / var(--cols));min-width:0}'+
+    '.form-flow > .spk-sppbj-blk > .field input,.form-flow > .spk-sppbj-blk > .field select{width:100%}'+
+    '@media(max-width:640px){.form-flow > .spk-sppbj-blk > .field{flex:1 1 100%}}'+
+    '.spk-sppbj-blk > .field.spk-sppbj-stack{display:flex;flex-direction:column;align-items:stretch}'+
+    '.spk-sppbj-stack .spk-sppbj-row{display:flex;align-items:center;gap:8px}'+
+    '.spk-sppbj-stack .spk-sppbj-row + .spk-sppbj-row{margin-top:8px}'+
+    '.spk-sppbj-stack .spk-sppbj-row .n{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;'+
+      'min-width:22px;height:22px;border-radius:999px;background:#e7eef3;color:#41535c;font-size:10.5px;font-weight:800}'+
+    '.spk-sppbj-blk .field.spk-sppbj-stack .spk-sppbj-row input{flex:1 1 auto;width:auto;min-width:0}'+
     '@media (max-width:760px){.spk-bentuk-bar.is-inline{margin:8px 0 0;flex:1 1 100%}.spk-bentuk select{min-width:0;flex:1 1 auto}}';
   var st=document.createElement('style'); st.id='spk-bentuk-style'; st.textContent=css;
   (document.head||document.documentElement).appendChild(st);
@@ -2085,34 +2108,51 @@ function spkKhsGo(i){
   renderSpkSusun();
   try{ window.scrollTo(0,_y); }catch(e){}
 }
-/* Baris tab lapisan penyedia — dipakai di Langkah 1 (data) & Langkah 4 (lampiran) */
-function spkKhsTabsHtml(){
+/* Pemilih lapisan penyedia — dipakai di Langkah 1 (Informasi Kontrak) & Langkah 4
+   (Lampiran), diletakkan di kanan-atas sejajar judul kartu.
+   Dahulu berupa deretan tab; dengan 20 penyedia deretan itu memakan beberapa
+   baris dan terlihat berantakan, jadi diringkas menjadi satu dropdown. */
+function spkKhsPickHtml(){
   if(!spkIsKhs()) return '';
   spkEnsureBentukStyle();
-  var n=spkKhsN(spkState.data), cur=spkKhsIdx(), h='';
+  var n=spkKhsN(spkState.data), cur=spkKhsIdx(), o='';
   for(var i=0;i<n;i++){
     var sl=spkKhsSlot(spkState.data,i);
     var nm=String((sl&&sl.nama_perusahaan)||'').trim();
-    h+='<button type="button" class="spk-khs-tab'+(i===cur?' on':'')+(nm?' isi':'')+'" '+
-       'title="'+fkEsc(nm||('Penyedia '+(i+1)))+'" onclick="spkKhsGo('+i+')">'+
-       '<span class="no">'+(i+1)+'</span>'+
-       '<span class="nm">'+fkEsc(nm||('Penyedia '+(i+1)))+'</span></button>';
+    o+='<option value="'+i+'"'+(i===cur?' selected':'')+'>'+
+       fkEsc('Penyedia '+(i+1)+(nm?(' \u2014 '+nm):''))+'</option>';
   }
-  return '<div class="spk-khs-tabs">'+h+'</div>';
+  return '<label class="spk-khs-pick">'+
+      '<span class="lbl">Pilih Penyedia</span>'+
+      '<select aria-label="Pilih Penyedia" onchange="spkKhsGo(this.value)">'+o+'</select>'+
+    '</label>';
 }
+/* Nama lama dipertahankan agar pemanggilan lain (bila ada) tidak rusak */
+function spkKhsTabsHtml(){ return spkKhsPickHtml(); }
 /* Baris isian No. SPPBJ pada kartu Informasi Pengadaan (Perjanjian/Kontrak KHS).
    Tgl. SPPBJ tetap SATU (tanggalnya sama), sedangkan No. SPPBJ menambah baris
    baru di bawahnya sebanyak jumlah penyedia yang dipilih. */
 function spkKhsSppbjFieldsHtml(){
+  spkEnsureBentukStyle();
   var n=spkKhsN(spkState.data), h='';
   for(var i=0;i<n;i++){
     var sl=spkKhsSlot(spkState.data,i);
-    var lbl=(n>1) ? ('No. SPPBJ Penyedia '+(i+1)) : 'No. SPPBJ';
-    h+='<div class="field"><label>'+fkEsc(lbl)+'</label>'+
-       '<input type="text" id="spk-fld-no_sppbj-'+i+'" value="'+fkEsc(sl.no_sppbj||'')+'" '+
-       'oninput="spkKhsSetSppbj('+i+',this.value)"></div>';
+    h+='<div class="spk-sppbj-row">'+
+        (n>1 ? ('<span class="n">'+(i+1)+'</span>') : '')+
+        '<input type="text" id="spk-fld-no_sppbj-'+i+'" value="'+fkEsc(sl.no_sppbj||'')+'"'+
+          (n>1 ? (' placeholder="Penyedia '+(i+1)+'"') : '')+
+          ' oninput="spkKhsSetSppbj('+i+',this.value)">'+
+      '</div>';
   }
-  return h;
+  /* SATU sel kisi saja: baris No. SPPBJ bertambah ke BAWAH di dalam kolomnya
+     sendiri. Bersama Tgl. SPPBJ dibungkus satu baris penuh yang dirata-ATAS,
+     supaya bertambahnya baris tidak menggeser atau mengosongkan field lain. */
+  var fTgl=null;
+  try{ fTgl=SPK_FIELD_GROUPS[0].fields.filter(function(x){ return x.k==='tgl_sppbj'; })[0]||null; }catch(e){}
+  return '<div class="spk-sppbj-blk">'+
+      '<div class="field spk-sppbj-stack"><label>No. SPPBJ</label>'+h+'</div>'+
+      (fTgl? spkFieldInput(fTgl) : '')+
+    '</div>';
 }
 function spkKhsSetSppbj(i,v){
   if(!spkState) return;
@@ -2166,6 +2206,7 @@ function renderSpkSusun(){
       /* Perjanjian/Kontrak KHS: satu isian No. SPPBJ diganti sebanyak jumlah
          penyedia (baris baru di bawahnya), Tgl. SPPBJ tetap satu. */
       if(_khs && f.k==='no_sppbj') return brk + spkKhsSppbjFieldsHtml();
+      if(_khs && f.k==='tgl_sppbj') return '';        /* sudah ikut blok No. SPPBJ */
       return brk + spkFieldInput(f);
     }).join('');
     // Tombol "Pilih Pekerjaan" (pojok kanan atas kartu pertama) — sama seperti pada
@@ -2178,11 +2219,16 @@ function renderSpkSusun(){
     /* Judul bagian dapat berbeda pada Perjanjian/Kontrak (mis. "SK Pimpinan Unit"
        menjadi "Informasi PLN Unit") lewat properti secPk. */
     const secNama = (spkIsPk() && g.secPk) ? g.secPk : g.sec;
+    /* Perjanjian/Kontrak KHS: dropdown "Pilih Penyedia" duduk di kanan-atas,
+       sejajar judul kartu Informasi Kontrak. */
+    const khsPick = (_khs && g.sec==='Informasi Kontrak') ? spkKhsPickHtml() : '';
     const titleHtml = (g.sec==='Informasi Penyedia')
       ? '<div class="form-section-title" style="justify-content:space-between">'+
           '<span>'+secIcon+' '+fkEsc(secNama)+spkPyProfilTagHtml()+'</span>'+
           spkPyProfilBarHtml()+
         '</div>'
+      : khsPick
+      ? '<div class="form-section-title"><span>'+secIcon+' '+fkEsc(secNama)+'</span>'+khsPick+'</div>'
       : '<div class="form-section-title">'+secIcon+' '+fkEsc(secNama)+pickBtn+'</div>';
     return '<div class="form-card">'+
       titleHtml+
@@ -2209,7 +2255,7 @@ function renderSpkSusun(){
           const gg=SPK_FIELD_GROUPS.filter(x=>x.sec===sec)[0]; if(!gg) return '';
           return kartuHtml(gg, 99, gg.fields.filter(spkFieldVisible));
         }).join('');
-        bagian.push('<div class="spk-khs-wrap">'+spkKhsTabsHtml()+layer+'</div>');
+        bagian.push('<div class="spk-khs-wrap">'+layer+'</div>');
       }
     });
     groupsHtml=bagian.join('');
@@ -2287,16 +2333,23 @@ function renderSpkSusun(){
     /* Perjanjian/Kontrak KHS: Lampiran juga BERLAPIS — tab penyedia yang sama
        dengan Langkah 1, sehingga Nilai Pekerjaan tiap penyedia mengikuti
        lampirannya masing-masing. */
-    const khsLampBar = _khs ? ('<div class="spk-khs-wrap">'+spkKhsTabsHtml()+'</div>') : '';
-    cont.innerHTML =
-      stepper+
-      khsLampBar+
+    /* Perjanjian/Kontrak KHS: Lampiran juga berlapis — dropdown "Pilih Penyedia"
+       diletakkan di kanan-atas sejajar judul kartu, dan kartunya dikurung
+       pembungkus yang sama dengan Langkah 1. */
+    const lampTitle = '<div class="form-section-title">'+
+        '<span>'+FKL_SEC_ICON+' Uraian Pekerjaan <span class="fkl-count-chip">'+L.items.length+' item</span></span>'+
+        (_khs? spkKhsPickHtml() : '')+
+      '</div>';
+    const lampCard =
       '<div class="form-card">'+
-        '<div class="form-section-title">'+FKL_SEC_ICON+' Uraian Pekerjaan <span class="fkl-count-chip">'+L.items.length+' item</span></div>'+
+        lampTitle+
         spkLampTplBarHtml()+
         spkLampTableHtml()+
         spkLampSummaryPanelHtml()+
-      '</div>'+
+      '</div>';
+    cont.innerHTML =
+      stepper+
+      (_khs ? ('<div class="spk-khs-wrap">'+lampCard+'</div>') : lampCard)+
       '<div class="jp-actions" style="justify-content:space-between;margin-top:4px">'+
         '<button class="btn btn-ghost" onclick="spkGoStep(3)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 12H5M11 6l-6 6 6 6"/></svg> Kembali</button>'+
         '<span style="display:flex;gap:10px">'+
