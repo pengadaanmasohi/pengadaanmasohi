@@ -8,12 +8,46 @@
 /* Pustaka Klausul bawaan: 3 klausul kosong (KLAUSUL 1 s.d. 3).
    Isi tiap klausul berupa contoh pengisian (titik-titik sampai batas margin kanan,
    huruf samar/transparan) yang tinggal diganti lewat template Word. */
+const SPK_KL_TITIK = ' ..........................................................................................................................................................................';
 const SPK_KL_PLACEHOLDER = '<p class="kl0 spk-ph">Isi Klausul ................................................................................................................................................................................................</p>';
+/* ---------- Entri SISTEM: "Uraian Peraturan" ----------
+   Berisi butir daftar "berpedoman pada" yang tercetak pada preamble
+   Perjanjian/Kontrak (& KHS) TEPAT SEBELUM Pasal 1. Disimpan di Pustaka Klausul
+   supaya bisa disunting / diunggah dari Word persis seperti klausul biasa,
+   namun ditandai sys:'peraturan' sehingga:
+     - TIDAK ikut menjadi Pasal & tidak masuk Daftar Isi,
+     - selalu berada di urutan paling atas, tidak bisa dipindah/dihapus,
+     - hanya tampil pada bentuk Perjanjian/Kontrak (SPK tidak memakainya).
+   Tiap paragraf di dalamnya = satu butir bernomor pada daftar tersebut. */
+const SPK_PERATURAN_PLACEHOLDER =
+  '<p class="kl0 spk-ph">Peraturan 1'+SPK_KL_TITIK+'</p>'+
+  '<p class="kl0 spk-ph">Peraturan 2'+SPK_KL_TITIK+'</p>'+
+  '<p class="kl0 spk-ph">Peraturan 3'+SPK_KL_TITIK+'</p>';
+const SPK_PERATURAN_SEED = {urutan:5, judul:"URAIAN PERATURAN", isi:SPK_PERATURAN_PLACEHOLDER, aktif:true, sys:'peraturan'};
 const SPK_KLAUSUL_SEED=[
+  Object.assign({}, SPK_PERATURAN_SEED),
   {urutan:10, judul:"KLAUSUL 1", isi:SPK_KL_PLACEHOLDER, aktif:true},
   {urutan:20, judul:"KLAUSUL 2", isi:SPK_KL_PLACEHOLDER, aktif:true},
   {urutan:30, judul:"KLAUSUL 3", isi:SPK_KL_PLACEHOLDER, aktif:true}
 ];
+/* Entri sistem? (bukan Pasal) */
+function spkKlIsSys(k){ return !!(k && k.sys); }
+/* Hanya klausul yang benar-benar menjadi Pasal */
+function spkKlPasalOnly(list){ return (list||[]).filter(function(k){ return !spkKlIsSys(k); }); }
+/* Ambil entri "Uraian Peraturan" dari sebuah pustaka klausul */
+function spkKlPeraturanOf(list){
+  return (list||[]).filter(function(k){ return k && k.sys==='peraturan'; })[0] || null;
+}
+/* Pastikan entri "Uraian Peraturan" ada & berada di urutan teratas */
+function spkKlEnsurePeraturan(){
+  if(!Array.isArray(records_klausul)) records_klausul=[];
+  var i=-1;
+  for(var j=0;j<records_klausul.length;j++){ if(records_klausul[j] && records_klausul[j].sys==='peraturan'){ i=j; break; } }
+  if(i<0) records_klausul.unshift(Object.assign({id:spkKlUid()}, SPK_PERATURAN_SEED));
+  else if(i>0) records_klausul.unshift(records_klausul.splice(i,1)[0]);
+  records_klausul.forEach(function(k,n){ k.urutan=(n+1)*10; });
+  return records_klausul;
+}
 /* =========================================================================
    PEMBUATAN KONTRAK — SURAT PERINTAH KERJA (SPK)
    Menu: Pembuatan Kontrak > Surat Perintah Kerja
@@ -361,7 +395,7 @@ const SPK_PREAMBLE_TPL =
    sendiri diisi sendiri lewat template Word (.docx), sama seperti isi klausul.
    Butir ditulis sebagai contoh pengisian bertitik-titik sampai batas margin
    kanan (kelas spk-ph), jadi jelas mana yang masih perlu diisi. */
-const SPK_PK_DASAR_TITIK = ' ..........................................................................................................................................................................';
+const SPK_PK_DASAR_TITIK = SPK_KL_TITIK;
 const SPK_PK_DASAR_TETAP = [
  'Peraturan 1'+SPK_PK_DASAR_TITIK,
  'Peraturan 2'+SPK_PK_DASAR_TITIK,
@@ -388,6 +422,34 @@ const SPK_PK_DASAR_DOK = [
  {l:'Surat Penetapan Penyedia Barang/Jasa',         no:'no_penetapan',  tg:'tgl_penetapan'},
  {l:'Surat Penunjukan Penyedia Barang/Jasa (SPPBJ)',no:'no_sppbj',      tg:'tgl_sppbj'}
 ];
+/* Butir daftar "berpedoman pada" — diambil dari entri "Uraian Peraturan" pada
+   Pustaka Klausul kontrak ini (tiap paragraf = satu butir). Bila entri itu tidak
+   ada (kontrak lama), dipakai contoh pengisian bawaan. */
+function spkPeraturanItems(data){
+  var isi='';
+  try{
+    var lib=(data && Array.isArray(data.__klausulLib) && data.__klausulLib.length)
+              ? data.__klausulLib
+              : ((typeof records_klausul!=='undefined' && Array.isArray(records_klausul)) ? records_klausul : []);
+    var e=spkKlPeraturanOf(lib);
+    if(e) isi=String(e.isi||'');
+  }catch(err){ console.error(err); }
+  var bawaan=function(){
+    return SPK_PK_DASAR_TETAP.map(function(t){ return {html:fkEsc(t), ph:true}; });
+  };
+  if(!isi) return bawaan();
+  var out=[];
+  try{
+    var box=document.createElement('div'); box.innerHTML=isi;
+    var kids=box.children;
+    for(var i=0;i<kids.length;i++){
+      var el=kids[i];
+      if(!(el.textContent||'').replace(/[\s\u00A0]/g,'')) continue;   // paragraf kosong dilewati
+      out.push({ html: el.innerHTML, ph: !!(el.classList && el.classList.contains('spk-ph')) });
+    }
+  }catch(err){ console.error(err); }
+  return out.length ? out : bawaan();
+}
 /* Susun template preamble Perjanjian/Kontrak sesuai data yang terisi */
 /* SELARASKAN DAFTAR "Berdasarkan" (p.spk-dlist) — dipakai KEDUA bentuk
    (SPK & Perjanjian/Kontrak), ketentuan 21 Jul 2026: teks butir 1./2. harus
@@ -464,12 +526,13 @@ function spkPreamblePkTpl(data){
   var _pgd = /^\s*pengadaan\b/i.test(String(data.nama_pekerjaan||'')) ? '' : 'Pengadaan ';
   out += '<p class="kl0 spk-berdasar"><b>PIHAK PERTAMA</b> telah melaksanakan proses <b>'+_pgd+'{{nama_pekerjaan}}</b>. Bahwa proses pengadaan tersebut berpedoman pada :</p>';
   /* --- dasar peraturan (tetap) --- */
-  for(i=0;i<SPK_PK_DASAR_TETAP.length;i++){
+  var _dasar=spkPeraturanItems(data);
+  for(i=0;i<_dasar.length;i++){
     n++;
     /* spk-ph = contoh pengisian: titik-titik dipotong tepat di batas margin
        kanan (lihat CSS .spk-cl p.spk-ph) sehingga barisnya tidak pernah
        melipat ke baris berikutnya. */
-    out += '<p class="spk-dlist spk-ph"><span class="n">'+n+'.</span>'+esc(SPK_PK_DASAR_TETAP[i])+'</p>';
+    out += '<p class="spk-dlist'+(_dasar[i].ph?' spk-ph':'')+'"><span class="n">'+n+'.</span>'+_dasar[i].html+'</p>';
   }
   /* --- dokumen proses pengadaan (dinamis) ---
      Semua butir ditulis dengan bentuk yang SAMA: baris judul, lalu rincian
@@ -975,6 +1038,7 @@ function spkSeedInMemory(){ records_klausul = spkKlDefault(); }
 /* Simpan pustaka yang sedang tampil KE DALAM kontrak yang sedang disusun */
 function spkKlSync(){
   if(!spkState) return;
+  spkKlEnsurePeraturan();
   spkState.data = spkState.data || {};
   try{ spkState.data.__klausulLib = JSON.parse(JSON.stringify(records_klausul||[])); }catch(e){}
 }
@@ -996,6 +1060,7 @@ function spkKlLoadFor(rec){
   }else{
     records_klausul = spkKlDefault();
   }
+  spkKlEnsurePeraturan();
 }
 async function refreshDataSpk(){
   try{ records_spk=await StoreSpkKontrak.list(); }
@@ -1100,7 +1165,7 @@ function spkBlankState(){
   // SK Pimpinan Unit: default = data terakhir disimpan
   spkApplyLastSk(data);
   // default: semua klausul aktif terpilih
-  const sel=records_klausul.filter(k=>k.aktif!==false).map(k=>String(k.id));
+  const sel=spkKlPasalOnly(records_klausul).filter(k=>k.aktif!==false).map(k=>String(k.id));
   return { data:data, sel:sel, khsIdx:0 };
 }
 function spkRecordToState(rec){
@@ -1992,7 +2057,7 @@ function spkToggleSel(id){
   if(i>=0) spkState.sel.splice(i,1); else spkState.sel.push(id);
 }
 function spkSelAll(on){
-  spkState.sel = on ? records_klausul.filter(k=>k.aktif!==false).map(k=>String(k.id)) : [];
+  spkState.sel = on ? spkKlPasalOnly(records_klausul).filter(k=>k.aktif!==false).map(k=>String(k.id)) : [];
   renderSpkSusun();
 }
 /* ===== Pemilih BENTUK KONTRAK (pojok kanan atas Penyusunan Kontrak) =====
@@ -2044,10 +2109,20 @@ function spkEnsureBentukStyle(){
     /* ---- Daftar bernomor di dalam SATU sel tabel (Daftar Kontrak KHS) ----
        Dipakai kolom No. Kontrak, Nama Penyedia & Nilai Pekerjaan: tiap penyedia
        menempati satu baris (1., 2., 3., ...) sehingga ketiganya sebaris lurus. */
+    /* Pratinjau isi klausul pada Pustaka: dicetak hitam seperti teks lain,
+       bukan abu-abu, supaya contoh pengisiannya terbaca jelas. */
+    '.spk-klx-prev{color:#12242b !important}'+
+    /* Entri sistem "Uraian Peraturan" dibedakan tipis dari klausul biasa */
+    '.spk-klx.is-sys{background:linear-gradient(180deg,#F4F8FC,#FFFFFF);border-color:#C6D6E4}'+
+    '.spk-klx.is-sys .spk-klx-no{background:#12304F;color:#fff}'+
     '.spk-mlist{display:flex;flex-direction:column;gap:4px}'+
-    '.spk-mlist .spk-mrow{display:flex;align-items:baseline;gap:7px;line-height:1.45;min-height:1.45em}'+
-    /* Nomor urut dicetak sama hitamnya dengan teks di sebelahnya */
-    '.spk-mlist .spk-mrow > .i{flex:0 0 auto;min-width:15px;color:inherit;font-weight:700}'+
+    '.spk-mlist .spk-mrow{display:flex;align-items:baseline;gap:5px;line-height:1.45;min-height:1.45em}'+
+    /* Nomor urut: warna & ketebalan SAMA dengan teks di sebelahnya (tidak tebal),
+       memakai angka berlebar seragam (tabular-nums) dan dirata-KANAN supaya
+       titik "1." sejajar dengan "2.", "3.", ... maupun "10.". Lebar kolomnya
+       (--iw) dipasang seperlunya dari jumlah baris, jadi tidak makan tempat. */
+    '.spk-mlist .spk-mrow > .i{flex:0 0 auto;min-width:var(--iw,1.3em);color:inherit;font-weight:400;'+
+      'text-align:right;font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}'+
     '.spk-mlist .spk-mrow > .v{flex:1 1 auto;min-width:0;word-break:break-word}'+
     '.spk-mlist .spk-mrow > .v.kosong{color:#b6bec6}'+
     /* Kolom Nilai Pekerjaan: NOMOR tetap lurus di kiri sel (satu kolom),
@@ -2305,7 +2380,7 @@ function renderSpkSusun(){
     groupsHtml=bagian.join('');
   }
   // Bagian 2: pilih klausul
-  const aktif = records_klausul.filter(k=>k.aktif!==false);
+  const aktif = spkKlPasalOnly(records_klausul).filter(k=>k.aktif!==false);
   const selSet = new Set(spkState.sel.map(String));
   const klausulRows = aktif.length ? aktif.map((k,i)=>{
     const on = selSet.has(String(k.id));
@@ -2431,7 +2506,9 @@ function spkBatalClick(){
 /* Kumpulkan klausul terpilih (snapshot judul+isi, sesuai urutan pustaka) */
 function spkSelectedClauses(){
   const selSet=new Set((spkState.sel||[]).map(String));
-  return records_klausul.filter(k=>k.aktif!==false && selSet.has(String(k.id)))
+  /* Entri sistem "Uraian Peraturan" TIDAK ikut jadi Pasal — isinya dipakai pada
+     preamble lewat spkPeraturanItems(), dibaca dari data.__klausulLib. */
+  return spkKlPasalOnly(records_klausul).filter(k=>k.aktif!==false && selSet.has(String(k.id)))
     .map(k=>({id:String(k.id), judul:k.judul||'', isi:k.isi||''}));
 }
 
@@ -2506,7 +2583,10 @@ function spkEmptyRow(){
    `rt` = rata kanan (dipakai kolom Nilai Pekerjaan). */
 function spkKhsCellHtml(vals, rt){
   spkEnsureBentukStyle();
-  return '<div class="spk-mlist'+(rt?' is-rt':'')+'">'+
+  /* Lebar kolom nomor secukupnya: 1 digit -> sempit, 2 digit -> sedikit lebih
+     lebar, supaya kolom teks tetap lurus tanpa jeda berlebihan. */
+  var iw=((vals||[]).length>=10) ? '1.75em' : '1.3em';
+  return '<div class="spk-mlist'+(rt?' is-rt':'')+'" style="--iw:'+iw+'">'+
     (vals||[]).map(function(v,i){
       var kosong=!(v!=null && String(v).trim()!=='');
       return '<div class="spk-mrow"><span class="i">'+(i+1)+'.</span>'+
@@ -9360,22 +9440,31 @@ function spkPrint(){
 function openSpkKlausul(){ refreshDataKlausul().then(()=>{ renderSpkKlausul(); showView('spk-klausul'); }); }
 function renderSpkKlausul(){
   const cont=document.getElementById('spk-klausul-content'); if(!cont) return;
-  const list=records_klausul.slice();
+  spkKlEnsurePeraturan();
+  /* Entri "Uraian Peraturan" hanya berlaku pada Perjanjian/Kontrak & KHS —
+     pada Surat Perintah Kerja preamble-nya tidak memuat daftar peraturan,
+     jadi entri itu disembunyikan (datanya tetap tersimpan). */
+  const list=records_klausul.filter(k=>!spkKlIsSys(k) || spkIsPk());
   const last=list.length-1;
+  let _noPasal=0;
   const rows = list.length ? list.map((k,i)=>{
     const kid=fkEscJs(String(k.id));
     const off = (k.aktif===false);
+    const sys = spkKlIsSys(k);
+    if(!sys) _noPasal++;
     const preview = String(k.isi||'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim().slice(0,150);
-    return '<div class="spk-klx'+(off?' off':'')+'">'+
-      '<div class="spk-klx-no">'+(i+1)+'</div>'+
+    return '<div class="spk-klx'+(off?' off':'')+(sys?' is-sys':'')+'">'+
+      '<div class="spk-klx-no">'+(sys?'&sect;':_noPasal)+'</div>'+
       '<div class="spk-klx-main"><div class="spk-klx-judul">'+(k.judul?spkJudulSan(k.judul):'(Tanpa judul)')+(off?' <span class="spk-badge-off">non-aktif</span>':'')+'</div>'+
         '<div class="spk-klx-prev">'+fkEsc(preview)+(preview.length>=150?'…':'')+'</div></div>'+
       '<div class="spk-klx-act">'+
-        '<button class="act act-mv" title="Naikkan" '+(i===0?'disabled':'')+' onclick="spkKlausulMove(\''+kid+'\',-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>'+
-        '<button class="act act-mv" title="Turunkan" '+(i===last?'disabled':'')+' onclick="spkKlausulMove(\''+kid+'\',1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12l7 7 7-7"/></svg></button>'+
+        (sys ? '' :
+          '<button class="act act-mv" title="Naikkan" '+(i<=1?'disabled':'')+' onclick="spkKlausulMove(\''+kid+'\',-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>'+
+          '<button class="act act-mv" title="Turunkan" '+(i===last?'disabled':'')+' onclick="spkKlausulMove(\''+kid+'\',1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12l7 7 7-7"/></svg></button>')+
         '<button class="act act-edit" title="Ubah" onclick="spkKlausulEdit(\''+kid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
         '<button class="act act-view" title="Lihat" onclick="spkKlausulView(\''+kid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
-        '<button class="act act-del" title="Hapus" onclick="spkKlausulDelete(\''+kid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>'+
+        (sys ? '' :
+          '<button class="act act-del" title="Hapus" onclick="spkKlausulDelete(\''+kid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>')+
       '</div>'+
     '</div>';
   }).join('') : '<div class="empty" style="padding:26px"><div>Belum ada klausul.</div></div>';
@@ -9474,12 +9563,13 @@ async function spkKlProfilWrite(items){
   records_klausul = (items||[]).map((it,i)=>{
     const recW={ id:spkKlUid(), judul:it.judul||'', isi:it.isi||'',
                  urutan:(Number(it.urutan)||((i+1)*10)), aktif:(it.aktif!==false) };
+    if(it.sys) recW.sys=String(it.sys);        // penanda entri sistem dipertahankan
     if(it.isi_docx) recW.isi_docx=String(it.isi_docx);
     return recW;
   });
   spkKlSync();
   // pilihan klausul pada kontrak yang sedang disusun mengikuti pustaka yang baru
-  if(spkState) spkState.sel = records_klausul.filter(k=>k.aktif!==false).map(k=>String(k.id));
+  if(spkState) spkState.sel = spkKlPasalOnly(records_klausul).filter(k=>k.aktif!==false).map(k=>String(k.id));
 }
 function spkKlProfilDoLoad(name){
   if(typeof requireInput==='function' && !requireInput()) return;
@@ -9637,7 +9727,9 @@ function spkPyProfilCancel(){
 function spkKlausulMove(id, dir){
   if(typeof requireInput==='function' && !requireInput()) return;
   const i=records_klausul.findIndex(k=>String(k.id)===String(id)); if(i<0) return;
+  if(spkKlIsSys(records_klausul[i])) return;                 // entri sistem terkunci di atas
   const j=i+dir; if(j<0||j>=records_klausul.length) return;
+  if(spkKlIsSys(records_klausul[j])) return;                 // tidak boleh melompati entri sistem
   // Tukar posisi lalu tulis ulang urutan (10,20,30, ...) agar selalu konsisten
   const arr=records_klausul.slice();
   const tmp=arr[i]; arr[i]=arr[j]; arr[j]=tmp;
@@ -9661,6 +9753,7 @@ function spkKlausulToggle(id){
 function spkKlausulDelete(id){
   if(typeof requireInput==='function' && !requireInput()) return;
   const k=records_klausul.find(x=>String(x.id)===String(id)); if(!k) return;
+  if(spkKlIsSys(k)){ toast('Uraian Peraturan tidak dapat dihapus — kosongkan isinya bila tidak dipakai','warn'); return; }
   openConfirm({ icon:'del', title:'Hapus Klausul', text:'Hapus klausul "'+spkJudulPlain(k.judul)+'"? (hanya pada kontrak ini)',
     onYes:()=>{
       records_klausul = records_klausul.filter(x=>String(x.id)!==String(id));
@@ -9678,7 +9771,8 @@ function spkKlausulNew(){
   if(typeof requireInput==='function' && !requireInput()) return;
   try{
     var maxU=(records_klausul||[]).reduce(function(m,x){ return Math.max(m, Number(x.urutan)||0); },0);
-    var recNew={ id:spkKlUid(), judul:'KLAUSUL', isi:SPK_KL_PLACEHOLDER, urutan:maxU+10, aktif:true };
+    var _nP=spkKlPasalOnly(records_klausul).length+1;
+    var recNew={ id:spkKlUid(), judul:'KLAUSUL '+_nP, isi:SPK_KL_PLACEHOLDER, urutan:maxU+10, aktif:true };
     records_klausul.push(recNew);
     if(spkState && Array.isArray(spkState.sel)) spkState.sel.push(String(recNew.id));   // langsung terpilih
     spkKlSync();
