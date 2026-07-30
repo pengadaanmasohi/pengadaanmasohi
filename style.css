@@ -6849,16 +6849,20 @@ table.ac-matrix tbody tr,
 .materi-sec-txt{ display:flex; align-items:center; gap:9px; min-width:0 }
 
 /* --- Bilah kategori (kanan atas) --- */
-.materi-kat-bar{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-left:auto }
+/* SATU BARIS: label + dropdown + ikon tidak boleh membungkus. Karena bilah ini
+   rata KANAN (margin-left:auto), munculnya ikon Ubah/Hapus menggeser dropdown
+   Kategori ke kiri — bukan menurunkannya ke baris kedua. */
+.materi-kat-bar{ display:flex; align-items:center; gap:8px; flex-wrap:nowrap; margin-left:auto; min-width:0 }
 .materi-kat-lbl{
   font-family:'Plus Jakarta Sans',sans-serif; font-weight:700; font-size:11px; letter-spacing:.2px;
-  color:#2b3f48; white-space:nowrap; text-shadow:none;
+  color:#2b3f48; white-space:nowrap; text-shadow:none; flex:0 0 auto;
 }
 .materi-kat-lbl .req{ color:var(--red); font-weight:800; margin-left:3px }
 .materi-kat-sel{
   font-family:'Plus Jakarta Sans',sans-serif; font-weight:600; font-size:12.5px; letter-spacing:0;
   color:var(--ink); text-shadow:none;
-  min-width:250px; max-width:320px; height:38px; box-sizing:border-box;
+  /* boleh menyusut bila ruang menyempit, supaya barisnya tetap utuh */
+  flex:0 1 auto; width:250px; min-width:150px; max-width:320px; height:38px; box-sizing:border-box;
   border:1px solid #cdd9de; border-radius:11px; padding:0 11px;
   background:linear-gradient(180deg,#ffffff,#fafdfe);
   box-shadow:0 1px 2px rgba(16,40,50,.06),inset 0 1px 0 rgba(255,255,255,.6);
@@ -6866,8 +6870,9 @@ table.ac-matrix tbody tr,
 }
 .materi-kat-sel:hover{ border-color:#a7bec5; box-shadow:0 2px 7px rgba(16,40,50,.09),inset 0 1px 0 rgba(255,255,255,.6) }
 .materi-kat-sel:focus{ outline:none; border-color:var(--teal); box-shadow:0 0 0 3px rgba(14,124,134,.16),0 4px 12px rgba(14,124,134,.16); background:#fff }
-.materi-kat-bar .act{ width:34px; height:34px; flex:0 0 auto }
-.materi-kat-bar .act svg{ width:16px; height:16px }
+/* Ikon dibuat lebih ramping tapi SETINGGI dropdown-nya (38px) supaya rata atas-bawah. */
+.materi-kat-bar .act{ width:31px; height:38px; border-radius:10px; flex:0 0 auto }
+.materi-kat-bar .act svg{ width:14px; height:14px }
 /* Ikon di bilah ini pakai warna tombolnya sendiri, jangan diwarnai teal oleh
    aturan .form-section-title svg. */
 .form-section-title .materi-kat-bar .act svg{ color:inherit; stroke:currentColor; opacity:1 }
@@ -6883,7 +6888,7 @@ table.ac-matrix tbody tr,
 .materi-frow>.materi-f-file .materi-file-ok{ max-width:320px }
 @media (max-width:900px){
   .materi-kat-bar{ margin-left:0; width:100% }
-  .materi-kat-sel{ flex:1 1 auto; min-width:0; max-width:none }
+  .materi-kat-sel{ flex:1 1 auto; width:auto; min-width:0; max-width:none }
   .materi-frow>.materi-f-file{ width:100%; max-width:none }
   .materi-frow>.materi-f-file .materi-file-ok{ max-width:100% }
 }

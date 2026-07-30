@@ -9561,8 +9561,13 @@ const MATERI_KATEGORI = [
   'Materi Pelatihan / Sosialisasi',
   'Lain-Lain'
 ];
-const MATERI_ACCEPT = '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.png,.jpg,.jpeg';
-const MATERI_ACCEPT_HINT = 'PDF, Word, Excel, PowerPoint, atau gambar';
+/* Materi & Peraturan HANYA menerima PDF (permintaan pengguna 30 Jul 2026).
+   Daftar ini dipakai oleh atribut accept pop up unggah SEKALIGUS oleh penyaring
+   `tplUpExtOk`, jadi berlaku baik untuk Browse maupun seret & lepas. Record lama
+   yang berkasnya bukan PDF tetap bisa dilihat/diunduh — pratinjau sengaja masih
+   mengenali gambar supaya data terdahulu tidak jadi mati. */
+const MATERI_ACCEPT = '.pdf';
+const MATERI_ACCEPT_HINT = 'Hanya berkas PDF';
 
 let records_materi = [];
 let materiLoaded   = false;   // penanda: data sudah pernah dimuat pada sesi ini
@@ -9960,6 +9965,14 @@ function materiGotoPage(p){
   renderMateriView();
   document.querySelector('#view-materi-view .panel')?.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
+/* PDF dikenali dari akhiran nama ATAU mime-nya (beberapa peramban mengirim
+   application/pdf tanpa akhiran, dan sebaliknya). */
+function materiPdfOk(file){
+  if(!file) return false;
+  const nm=String(file.name||'').toLowerCase();
+  const mm=String(file.type||'').toLowerCase();
+  return nm.endsWith('.pdf') || mm==='application/pdf' || mm==='application/x-pdf';
+}
 function materiExtLabel(b){
   const nm=String((b&&b.nama_file)||'').toLowerCase();
   const m=/\.([a-z0-9]{2,5})$/.exec(nm);
@@ -10088,6 +10101,12 @@ function materiPickFile(){
 }
 function materiStageFile(file){
   const f=materiState.form; if(!f || !file) return;
+  /* Penjaga kedua: pop up unggah sudah menyaring lewat MATERI_ACCEPT, tapi
+     fungsi ini bisa dipanggil dari jalur lain, jadi PDF diperiksa lagi. */
+  if(!materiPdfOk(file)){
+    toast('Materi & Peraturan hanya menerima berkas PDF','err');
+    return;
+  }
   if(MATERI_MAX_MB>0 && file.size>MATERI_MAX_MB*1024*1024){
     const mb=(file.size/1048576).toFixed(1);
     toast('Berkas '+mb+' MB melebihi batas '+MATERI_MAX_MB+' MB dari gateway Cloudflare. Silakan kompres berkasnya.','err');
