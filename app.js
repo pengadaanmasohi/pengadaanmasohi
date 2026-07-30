@@ -785,6 +785,7 @@ function reloadAllDataForRole(){
   /* Materi & Peraturan dimuat malas (saat menunya dibuka). Penandanya dilepas
      di sini supaya data sesi sebelumnya tidak tertinggal saat peran berganti. */
   try{ if(typeof materiLoaded!=='undefined'){ materiLoaded=false; records_materi=[]; } }catch(e){}
+  try{ if(typeof materiKatLoaded!=='undefined'){ materiKatLoaded=false; materiKatSiap=false; materiKatSeeded=false; records_materi_kat=[]; } }catch(e){}
   [ refreshData, refreshDataPl, refreshDataTender, refreshDataPenetapan,
     refreshDataKelengkapan, refreshDataPembukaan, refreshDataRho,
     refreshDataHps, refreshDataAnalisa, refreshDataJadwal
@@ -9617,11 +9618,239 @@ function materiCariDuplikat(nama, kecualiId){
 }
 
 /* ==================================================================
+   KATEGORI — daftar yang dapat dikelola langsung dari formulir
+   ------------------------------------------------------------------
+   Dulu daftar kategori PATEN di MATERI_KATEGORI. Sekarang tersimpan di tabel
+   Supabase `materi_kategori` supaya bisa dibuat / diubah nama / dihapus dari
+   dropdown di sudut kanan atas kartu formulir.
+   - MATERI_KATEGORI tetap dipakai sebagai BENIH: bila tabelnya masih kosong,
+     isinya disemai sekali supaya pilihan yang sudah biasa dipakai tidak hilang
+     dan tetap bisa diubah/dihapus.
+   - Bila tabelnya BELUM dibuat di Supabase, modul tetap jalan (mode baca saja)
+     memakai MATERI_KATEGORI + kategori yang sudah terpakai di data; tombol
+     Buat/Ubah/Hapus memberi tahu bahwa tabelnya perlu dibuat dulu.
+   - Nama kategori disimpan APA ADANYA di tiap record (kolom `kategori`), jadi
+     saat namanya diubah, seluruh record yang memakainya ikut diperbarui.
+   ================================================================== */
+const MATERI_KAT_TABLE = 'materi_kategori';
+const MATERI_KAT_BARU  = '__materi_kat_baru__';   /* nilai penanda opsi "Buat Kategori" */
+let records_materi_kat = [];      /* [{id, nama}] */
+let materiKatLoaded    = false;   /* sudah pernah dimuat pada sesi ini */
+let materiKatSiap      = false;   /* tabelnya ada & bisa ditulis */
+let materiKatSeeded    = false;   /* benih hanya sekali per sesi */
+let materiKatEditId    = null;    /* id kategori yang sedang diubah namanya */
+
+const StoreMateriKat = {
+  async list(){
+    if(!(USE_SUPABASE && db)) return [];
+    /* Urut created_at supaya urutan benih (UU -> PP -> Perpres -> ...) terjaga
+       dan kategori baru menempel di bawah. Bila kolomnya tidak ada, ambil apa adanya. */
+    let r = await db.from(MATERI_KAT_TABLE).select('*').order('created_at',{ascending:true});
+    if(r.error) r = await db.from(MATERI_KAT_TABLE).select('*');
+    if(r.error) throw r.error;
+    return r.data||[];
+  },
+  async create(nama){
+    const {data,error}=await db.from(MATERI_KAT_TABLE).insert({nama:nama}).select();
+    if(error) throw error; return data&&data[0];
+  },
+  async rename(id, nama){
+    const {error}=await db.from(MATERI_KAT_TABLE).update({nama:nama}).eq('id',id);
+    if(error) throw error;
+  },
+  async remove(id){
+    const {error}=await db.from(MATERI_KAT_TABLE).delete().eq('id',id);
+    if(error) throw error;
+  }
+};
+async function refreshDataMateriKat(){
+  materiKatLoaded=true;
+  try{
+    records_materi_kat = await StoreMateriKat.list();
+    materiKatSiap = !!(USE_SUPABASE && db);
+    /* Benih sekali: tabel ada tapi masih kosong -> tanam daftar bawaan + kategori
+       yang sudah terpakai di data, supaya tidak ada pilihan yang hilang. */
+    if(materiKatSiap && !materiKatSeeded && !records_materi_kat.length){
+      materiKatSeeded=true;
+      const benih=[].concat(MATERI_KATEGORI, (records_materi||[]).map(materiKategori).filter(Boolean));
+      const unik=[], seen={};
+      benih.forEach(n=>{ const k=materiNamaKey(n); if(k && !seen[k]){ seen[k]=1; unik.push(String(n).trim()); } });
+      if(unik.length){
+        try{
+          const {error}=await db.from(MATERI_KAT_TABLE).insert(unik.map(n=>({nama:n})));
+          if(error) throw error;
+          records_materi_kat = await StoreMateriKat.list();
+        }catch(err){ console.error('semai kategori:',err); }
+      }
+    }
+  }catch(err){
+    /* Tabel belum dibuat -> jangan ganggu pengguna dengan toast; cukup mode baca saja. */
+    console.error('materi_kategori:',err);
+    records_materi_kat=[]; materiKatSiap=false;
+  }
+}
+/* Daftar nama kategori untuk dropdown formulir & filter daftar. */
+function materiKatList(){
+  const out=[], seen={};
+  const push=n=>{
+    const s=String(n||'').trim(), k=materiNamaKey(s);
+    if(s && k && !seen[k]){ seen[k]=1; out.push(s); }
+  };
+  if(materiKatSiap && records_materi_kat.length) records_materi_kat.forEach(r=>push(r.nama));
+  else MATERI_KATEGORI.forEach(push);
+  /* Kategori yang sudah terpakai di data tetap tampil walau tak ada di daftar. */
+  (records_materi||[]).forEach(r=>push(materiKategori(r)));
+  return out;
+}
+function materiKatFind(nama){
+  const k=materiNamaKey(nama); if(!k) return null;
+  return (records_materi_kat||[]).find(r=>materiNamaKey(r.nama)===k) || null;
+}
+function materiKatPakai(nama){
+  const k=materiNamaKey(nama); if(!k) return 0;
+  return (records_materi||[]).filter(r=>materiNamaKey(materiKategori(r))===k).length;
+}
+function materiKatIzin(){
+  if(!isAdmin()){ toast('Hanya akun admin yang dapat mengelola kategori','warn'); return false; }
+  if(!materiKatSiap){
+    toast('Tabel "materi_kategori" belum tersedia di Supabase. Jalankan skrip SQL-nya dulu agar kategori bisa dikelola.','err');
+    return false;
+  }
+  return true;
+}
+
+/* ---- Pop up Buat / Ubah Nama Kategori ---- */
+const MATERI_IC_KAT_ADD  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1h-7.6L10.5 4H4a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1z"/><path d="M12 11v6M9 14h6"/></svg>';
+const MATERI_IC_KAT_EDIT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
+function materiKatOverlay(inner){
+  let ov=document.getElementById('materi-kat-ov');
+  if(!ov){
+    ov=document.createElement('div'); ov.id='materi-kat-ov'; ov.className='materi-kat-ov';
+    document.body.appendChild(ov);
+    ov.onclick=function(e){ if(e.target===ov) materiKatClose(); };
+  }
+  ov.innerHTML='<div class="materi-kat-modal" role="dialog" aria-modal="true">'+inner+'</div>';
+  ov.style.display='flex';
+  setTimeout(function(){ const el=document.getElementById('materi-kat-input'); if(el){ el.focus(); el.select(); } },60);
+}
+function materiKatClose(){
+  const ov=document.getElementById('materi-kat-ov'); if(ov) ov.style.display='none';
+  materiKatEditId=null;
+}
+function materiKatModalHtml(ikon, judul, sub, nilai){
+  return '<div class="materi-kat-head">'+ikon+judul+'</div>'+
+    '<div class="materi-kat-sub">'+sub+'</div>'+
+    '<label class="materi-kat-flabel" for="materi-kat-input">Nama Kategori</label>'+
+    '<input id="materi-kat-input" class="materi-kat-input" type="text" value="'+fkEsc(nilai||'')+'" '+
+      'placeholder="cth. Peraturan Direksi" '+
+      'onkeydown="if(event.key===&quot;Enter&quot;){event.preventDefault();materiKatSimpan();}">'+
+    '<div class="materi-kat-actions">'+
+      '<button type="button" class="btn btn-ghost" onclick="materiKatClose()">Batal</button>'+
+      '<button type="button" class="btn btn-teal" onclick="materiKatSimpan()">'+
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Simpan</button>'+
+    '</div>';
+}
+function materiKatBuatOpen(){
+  if(!materiKatIzin()) return;
+  materiKatEditId=null;
+  materiKatOverlay(materiKatModalHtml(MATERI_IC_KAT_ADD,'Buat Kategori',
+    'Kategori baru langsung tersedia di dropdown Kategori pada formulir maupun filter daftar.',''));
+}
+function materiKatRenameOpen(){
+  const f=materiState.form, nama=String((f&&f.kategori)||'').trim();
+  if(!nama){ toast('Pilih kategori dulu','warn'); return; }
+  if(!materiKatIzin()) return;
+  const row=materiKatFind(nama);
+  if(!row){ toast('Kategori "'+nama+'" belum terdaftar di daftar kategori — buat dulu lewat "Buat Kategori".','warn'); return; }
+  materiKatEditId=row.id;
+  const n=materiKatPakai(nama);
+  materiKatOverlay(materiKatModalHtml(MATERI_IC_KAT_EDIT,'Ubah Nama Kategori',
+    n ? 'Nama baru ikut diterapkan pada <b>'+n+'</b> data yang memakai kategori ini.'
+      : 'Kategori ini belum dipakai data mana pun.',
+    row.nama));
+}
+async function materiKatSimpan(){
+  const el=document.getElementById('materi-kat-input');
+  const nama=String((el&&el.value)||'').trim();
+  if(!nama){ toast('Nama kategori wajib diisi','warn'); if(el) el.focus(); return; }
+  const editId=materiKatEditId;
+  const kembar=materiKatFind(nama);
+  if(kembar && String(kembar.id)!==String(editId||'')){
+    toast('Kategori "'+String(kembar.nama)+'" sudah ada','err'); if(el){ el.focus(); el.select(); } return;
+  }
+  const lama = editId
+    ? String(((records_materi_kat||[]).find(r=>String(r.id)===String(editId))||{}).nama||'')
+    : '';
+  if(editId && lama===nama){ materiKatClose(); return; }   /* tak ada yang berubah */
+  materiKatClose();   /* tutup dulu supaya animasi "Memuat" tidak tertutup pop up */
+  try{
+    await withActionLoader(editId?'Menyimpan perubahan':'Menyimpan', async function(){
+      if(editId){
+        await StoreMateriKat.rename(editId, nama);
+        /* Nama kategori tersimpan apa adanya di tiap record -> ikut diperbarui. */
+        if(lama && lama!==nama){
+          const {error}=await db.from(MATERI_TABLE).update({kategori:nama}).eq('kategori',lama);
+          if(error) throw error;
+        }
+      }else{
+        await StoreMateriKat.create(nama);
+      }
+    });
+  }catch(err){ console.error(err); toast('Gagal menyimpan kategori: '+errMsg(err),'err'); return; }
+  await refreshDataMateriKat();
+  if(editId && lama) await refreshDataMateri();
+  /* Kategori yang baru dibuat / diubah namanya langsung terpilih di formulir. */
+  const f=materiState.form;
+  if(f && (!editId || materiNamaKey(f.kategori)===materiNamaKey(lama))) f.kategori=nama;
+  if(editId && materiNamaKey(materiState.view.kategori)===materiNamaKey(lama)) materiState.view.kategori=nama;
+  if(f) renderMateriForm();
+  renderMateriView();
+  toast(editId?'Nama kategori diperbarui':'Kategori "'+nama+'" dibuat','ok');
+}
+function materiKatHapus(){
+  const f=materiState.form, nama=String((f&&f.kategori)||'').trim();
+  if(!nama){ toast('Pilih kategori dulu','warn'); return; }
+  if(!materiKatIzin()) return;
+  const row=materiKatFind(nama);
+  if(!row){ toast('Kategori "'+nama+'" tidak ada di daftar kategori','warn'); return; }
+  const n=materiKatPakai(nama);
+  if(n){
+    toast('Kategori "'+nama+'" masih dipakai '+n+' data. Pindahkan atau hapus data itu dulu.','err');
+    return;
+  }
+  openConfirm({ icon:'del', title:'Hapus Kategori?',
+    text:'Kategori "'+nama+'" akan dihapus dari daftar pilihan. Data yang sudah tersimpan tidak terpengaruh.',
+    onYes:async function(){
+      try{ await withActionLoader('Menghapus', async function(){ await StoreMateriKat.remove(row.id); }); }
+      catch(err){ console.error(err); toast('Gagal menghapus kategori: '+errMsg(err),'err'); return; }
+      await refreshDataMateriKat();
+      const ff=materiState.form;
+      if(ff && materiNamaKey(ff.kategori)===materiNamaKey(nama)) ff.kategori='';
+      if(materiNamaKey(materiState.view.kategori)===materiNamaKey(nama)) materiState.view.kategori='';
+      if(ff) renderMateriForm();
+      renderMateriView();
+      toast('Kategori "'+nama+'" dihapus','ok');
+    }});
+}
+/* Dropdown Kategori pada formulir. Opsi terakhir "Buat Kategori" bukan nilai
+   sebenarnya: pilihan dikembalikan ke semula lalu pop up dibuka. */
+function materiKatSelect(el){
+  const f=materiState.form; if(!f) return;
+  if(el && el.value===MATERI_KAT_BARU){
+    el.value=f.kategori||'';
+    materiKatBuatOpen();
+    return;
+  }
+  materiFormSync();
+  renderMateriForm();   /* ikon Ubah Nama & Hapus muncul/hilang mengikuti pilihan */
+}
+
+/* ==================================================================
    HALAMAN DAFTAR
    ================================================================== */
 function openMateriView(){
   if(!isAdmin()){ toast('Menu ini hanya untuk akun admin','warn'); return; }
-  refreshDataMateri().then(()=>{ showView('materi-view'); });
+  Promise.all([refreshDataMateri(), refreshDataMateriKat()]).then(()=>{ showView('materi-view'); });
 }
 function materiResetView(){
   materiState.view.kategori=''; materiState.view.tahun=''; materiState.view.search=''; materiState.view.page=1;
@@ -9650,8 +9879,7 @@ function materiPool(){
 }
 function materiFillKategoriFilter(){
   const sel=document.getElementById('materi-view-kategori'); if(!sel) return;
-  const dari=(records_materi||[]).map(materiKategori).filter(Boolean);
-  const list=Array.from(new Set([].concat(MATERI_KATEGORI, dari)));
+  const list=materiKatList();
   const cur=materiState.view.kategori;
   if(cur && !list.includes(cur)) materiState.view.kategori='';
   sel.innerHTML='<option value="">Semua Kategori</option>'+list.map(k=>
@@ -9673,6 +9901,7 @@ function renderMateriView(){
   /* Pemuatan malas: setelah refresh peramban halaman ini bisa dipulihkan
      langsung tanpa lewat openMateriView, jadi datanya diambil di sini. */
   if(!materiLoaded){ materiLoaded=true; refreshDataMateri().then(renderMateriView); }
+  if(!materiKatLoaded){ refreshDataMateriKat().then(renderMateriView); }
   materiFillKategoriFilter();
   materiFillYearFilter();
   const tb=document.getElementById('materi-view-body'); if(!tb) return;
@@ -9753,15 +9982,17 @@ function materiOpenForm(recId){
 function renderMateriForm(){
   const cont=document.getElementById('materi-form-content'); if(!cont) return;
   const f=materiState.form; if(!f){ cont.innerHTML=''; return; }
+  /* Daftar kategori dimuat malas — formulir bisa dibuka langsung setelah refresh. */
+  if(!materiKatLoaded){ refreshDataMateriKat().then(function(){ if(materiState.form) renderMateriForm(); }); }
   const tt=document.getElementById('materi-form-title');
   if(tt) tt.textContent='Materi & Peraturan — '+(f.editId?'Ubah Peraturan':'Tambah Peraturan');
   cont.innerHTML=materiFormHtml();
 }
 function materiFormHtml(){
   const f=materiState.form;
-  const katOpts=MATERI_KATEGORI.concat(
-    (f.kategori && !MATERI_KATEGORI.includes(f.kategori)) ? [f.kategori] : []
-  ).map(o=>'<option'+(o===f.kategori?' selected':'')+'>'+fkEsc(o)+'</option>').join('');
+  /* Kategori: daftar dinamis (tabel materi_kategori). Opsi terakhir = Buat Kategori. */
+  const katOpts=materiKatList()
+    .map(o=>'<option'+(o===f.kategori?' selected':'')+'>'+fkEsc(o)+'</option>').join('');
   /* Info berkas: berkas baru (staged, belum diunggah) diutamakan tampil. */
   let berkasHtml;
   if(f.staged){
@@ -9781,12 +10012,25 @@ function materiFormHtml(){
       '<button type="button" class="btn btn-teal btn-sm" onclick="materiPickFile()">'+DPENG_IC_UP+' Unggah Berkas</button>'+
       '<span class="materi-file-no">Belum ada berkas</span>';
   }
+  /* Ikon Ubah Nama & Hapus kategori HANYA tampil setelah ada kategori terpilih. */
+  const katAksi = f.kategori
+    ? '<button type="button" class="act act-edit" title="Ubah nama kategori" onclick="materiKatRenameOpen()">'+MATERI_IC_KAT_EDIT+'</button>'+
+      '<button type="button" class="act act-del" title="Hapus kategori" onclick="materiKatHapus()">'+DPENG_IC_DEL+'</button>'
+    : '';
   return '' +
   '<div class="form-card">' +
-    '<div class="form-section-title">'+(typeof KR_SECTION_ICON!=='undefined'?KR_SECTION_ICON:'')+'Data Materi / Peraturan</div>' +
+    /* Kategori duduk di sudut kanan atas kartu, menyatu dengan judul section. */
+    '<div class="form-section-title materi-sec-title">' +
+      '<span class="materi-sec-txt">'+(typeof KR_SECTION_ICON!=='undefined'?KR_SECTION_ICON:'')+'Data Materi / Peraturan</span>' +
+      '<span class="materi-kat-bar">' +
+        '<span class="materi-kat-lbl">Kategori <span class="req">*</span></span>' +
+        '<select id="materi-f-kategori" class="materi-kat-sel" onchange="materiKatSelect(this)">' +
+          '<option value="">— Pilih Kategori —</option>' + katOpts +
+          '<option value="'+MATERI_KAT_BARU+'">+ Buat Kategori&hellip;</option>' +
+        '</select>' + katAksi +
+      '</span>' +
+    '</div>' +
     '<div class="materi-frow">' +
-      '<div class="field materi-f-kat"><label>Kategori <span class="req">*</span></label>' +
-        '<select id="materi-f-kategori" onchange="materiFormSync()"><option value="">— Pilih —</option>'+katOpts+'</select></div>' +
       '<div class="field materi-f-nama"><label>Nama Materi / Peraturan <span class="req">*</span></label>' +
         '<input id="materi-f-nama" type="text" value="'+fkEsc(f.nama)+'" oninput="materiNamaInput()" placeholder="cth. Peraturan Direksi No. 0022.P/DIR/2023 tentang Pengadaan Barang/Jasa">' +
         '<div class="dpeng-dupe" id="materi-dupe-warn"'+(materiCariDuplikat(f.nama,f.editId)?'':' style="display:none"')+'>'+
@@ -9795,9 +10039,9 @@ function materiFormHtml(){
         '</div></div>' +
       '<div class="field materi-f-tgl"><label>Tgl. Terbit <span class="req">*</span></label>' +
         '<input id="materi-f-tgl" type="date" value="'+fkEsc(f.tgl)+'" onchange="materiFormSync()" oninput="materiFormSync()"></div>' +
-    '</div>' +
-    '<div class="field materi-f-file materi-file-row"><label>Berkas <span class="req">*</span></label>' +
-      '<div class="materi-file-bar">'+berkasHtml+'</div>' +
+      /* Berkas ikut sebaris dengan Nama & Tgl. Terbit (permintaan pengguna). */
+      '<div class="field materi-f-file"><label>Berkas <span class="req">*</span></label>' +
+        '<div class="materi-file-bar">'+berkasHtml+'</div></div>' +
     '</div>' +
     '<div class="dpeng-uphint">'+MATERI_ACCEPT_HINT+' • maks. '+MATERI_MAX_MB+' MB per berkas (batas gateway Cloudflare).</div>' +
     '<div class="pn-doc-bar materi-act-bar">' +
