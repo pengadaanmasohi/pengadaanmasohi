@@ -6870,8 +6870,11 @@ table.ac-matrix tbody tr,
 }
 .materi-kat-sel:hover{ border-color:#a7bec5; box-shadow:0 2px 7px rgba(16,40,50,.09),inset 0 1px 0 rgba(255,255,255,.6) }
 .materi-kat-sel:focus{ outline:none; border-color:var(--teal); box-shadow:0 0 0 3px rgba(14,124,134,.16),0 4px 12px rgba(14,124,134,.16); background:#fff }
-/* Ikon dibuat lebih ramping tapi SETINGGI dropdown-nya (38px) supaya rata atas-bawah. */
-.materi-kat-bar .act{ width:31px; height:38px; border-radius:10px; flex:0 0 auto }
+/* Ikon dibuat PERSEGI (31x31). Sebelumnya tingginya dipatok setinggi dropdown
+   (38px) sehingga kotaknya memanjang & tampak gepeng; kini tingginya dikurangi
+   agar sama dengan lebarnya, lalu diratakan tengah terhadap dropdown lewat
+   align-items:center pada .materi-kat-bar. */
+.materi-kat-bar .act{ width:31px; height:31px; border-radius:9px; flex:0 0 auto }
 .materi-kat-bar .act svg{ width:14px; height:14px }
 /* Ikon di bilah ini pakai warna tombolnya sendiri, jangan diwarnai teal oleh
    aturan .form-section-title svg. */
