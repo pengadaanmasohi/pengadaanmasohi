@@ -196,167 +196,15 @@ if (USE_SUPABASE && window.supabase) {
 }
 
 /* ============================================================================
-   AKUN DUMMY / MODE UJI COBA (SANDBOX)  — ditambahkan untuk pengetesan aman.
+   CATATAN PEMBERSIHAN — akun DUMMY & peran USER sudah DIHAPUS TOTAL.
    ---------------------------------------------------------------------------
-   Tujuan: menyediakan satu akun "dummy" dengan AKSES PENUH (seperti admin)
-   namun DIJAMIN TIDAK BISA MENGUBAH DATA yang sudah ada milik admin/user/tamu.
-
-   Cara kerja:
-   - Login akun dummy TIDAK menyentuh server sama sekali (tidak memanggil
-     verify_login). Kredensial dicek murni di sisi klien (lihat doLogin).
-   - Saat peran aktif = 'demo', variabel global `db` ditukar ke `demoDb`,
-     sebuah TIRUAN client Supabase yang seluruhnya bekerja di MEMORI (RAM).
-     demoDb tidak pernah membuka koneksi jaringan untuk operasi apa pun,
-     sehingga MUSTAHIL menulis/menghapus/mengubah baris di database nyata.
-   - Sandbox dimulai KOSONG setiap sesi. Semua tambah/ubah/hapus hanya
-     tersimpan di memori sesi ini; hilang saat logout / refresh / tab ditutup.
-   - Karena sandbox kosong, seluruh penomoran otomatis (mis. Penetapan Nomor)
-     ikut dimulai dari 1 (diperkuat override pnBase/pnBaseFor untuk mode demo).
+   Sebelumnya di sini terdapat sandbox in-memory (makeDemoDb) beserta
+   realDb / demoDb / DEMO_USER / DEMO_PASS / isDemo() / setDbForRole(), yang
+   dipakai akun "dummy" agar bisa menguji aplikasi tanpa menyentuh database.
+   Semuanya dibuang: `db` kini SELALU client Supabase asli, tidak pernah
+   ditukar, sehingga tidak ada lagi jalur tulis-data yang berjalan di memori.
+   Peran yang tersisa di aplikasi HANYA: 'admin' dan 'guest' (Tamu).
    ============================================================================ */
-const realDb = db;                       // client Supabase asli (untuk admin/user/tamu)
-let   demoDb = null;                      // tiruan in-memory untuk akun dummy
-const DEMO_USER = 'dummy';               // username akun dummy
-const DEMO_PASS = 'dummy2026';           // kata sandi akun dummy
-function isDemo(){ return currentRole==='demo'; }
-
-/* Bangun tiruan client Supabase yang bekerja penuh di memori.
-   Mendukung pola rantai yang dipakai aplikasi:
-     .from(t).select(cols).eq().not().order().limit()
-     .from(t).insert(v).select()
-     .from(t).update(v).eq()
-     .from(t).delete().eq() / .delete().not('id','is',null)
-     .from(t).upsert(v,{onConflict})
-   Setiap objek yang dikembalikan bersifat "thenable" (bisa di-await) dan
-   selalu resolve ke bentuk { data, error } seperti Supabase. */
-function makeDemoDb(){
-  const store = Object.create(null);                 // nama_tabel -> array baris (di memori)
-  const tbl = (t)=> (store[t] || (store[t] = []));
-  const genId = ()=> 'demo-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,8);
-  const nowISO = ()=> new Date().toISOString();
-
-  function from(table){
-    const q = { mode:'read', payload:null, opts:null, filters:[], nots:[], ins:[], order:null, limitN:null };
-    const rows = tbl(table);
-
-    const passEq  = (r)=> q.filters.every(([c,v])=> String(r[c]) === String(v));
-    const passNot = (r)=> q.nots.every(([c,op,v])=> (op==='is' && v===null) ? (r[c]!=null) : true);
-    const passIn  = (r)=> q.ins.every(([c,arr])=> (arr||[]).map(String).includes(String(r[c])));
-    const matches = (r)=> passEq(r) && passNot(r) && passIn(r);
-
-    function run(){
-      try{
-        if(q.mode==='insert'){
-          const arr = Array.isArray(q.payload) ? q.payload : [q.payload];
-          const created = arr.map(x=>{
-            const row = Object.assign({}, x);
-            if(row.id==null) row.id = genId();
-            if(row.created_at==null) row.created_at = nowISO();
-            if(row.updated_at==null) row.updated_at = nowISO();
-            return row;
-          });
-          created.forEach(r=> rows.push(r));
-          return { data: created.map(r=>Object.assign({}, r)), error:null };
-        }
-        if(q.mode==='update'){
-          for(let i=0;i<rows.length;i++){ if(matches(rows[i])) rows[i] = Object.assign({}, rows[i], q.payload); }
-          return { data:null, error:null };
-        }
-        if(q.mode==='upsert'){
-          const arr = Array.isArray(q.payload) ? q.payload : [q.payload];
-          const oc = (q.opts && q.opts.onConflict)
-            ? String(q.opts.onConflict).split(',').map(s=>s.trim())
-            : ['id'];
-          arr.forEach(x=>{
-            const idx = rows.findIndex(r=> oc.every(k=> String(r[k]) === String(x[k])));
-            if(idx>=0) rows[idx] = Object.assign({}, rows[idx], x);
-            else { const row = Object.assign({}, x); if(row.id==null) row.id = genId(); rows.push(row); }
-          });
-          return { data: arr.map(r=>Object.assign({}, r)), error:null };
-        }
-        if(q.mode==='delete'){
-          for(let i=rows.length-1;i>=0;i--){ if(matches(rows[i])) rows.splice(i,1); }
-          return { data:null, error:null };
-        }
-        // mode === 'read'
-        let out = rows.filter(matches);
-        if(q.order){
-          const [c,o] = q.order; const asc = !(o && o.ascending===false);
-          out = out.slice().sort((a,b)=>{
-            let x=a[c], y=b[c]; if(x==null)x=''; if(y==null)y='';
-            if(x<y) return asc?-1:1; if(x>y) return asc?1:-1; return 0;
-          });
-        }
-        if(q.limitN!=null) out = out.slice(0, q.limitN);
-        return { data: out.map(r=>Object.assign({}, r)), error:null };
-      }catch(err){ return { data:null, error:err }; }
-    }
-
-    const api = {
-      select(){ /* kolom diabaikan: kembalikan baris utuh, aman diakses per-nama */ return api; },
-      insert(v){ q.mode='insert'; q.payload=v; return api; },
-      update(v){ q.mode='update'; q.payload=v; return api; },
-      upsert(v,opts){ q.mode='upsert'; q.payload=v; q.opts=opts; return api; },
-      delete(){ q.mode='delete'; return api; },
-      eq(c,v){ q.filters.push([c,v]); return api; },
-      in(c,arr){ q.ins.push([c,arr]); return api; },
-      not(c,op,v){ q.nots.push([c,op,v]); return api; },
-      order(c,o){ q.order=[c,o]; return api; },
-      limit(n){ q.limitN=n; return api; },
-      then(res,rej){ return Promise.resolve(run()).then(res,rej); },
-      catch(fn){ return Promise.resolve(run()).catch(fn); },
-      finally(fn){ return Promise.resolve(run()).finally(fn); }
-    };
-    return api;
-  }
-
-  // ---- Tiruan Supabase Storage (unggah berkas & foto) di memori ----
-  // Berkas yang diunggah akun dummy hanya disimpan di memori sesi & di-serve
-  // via blob URL; TIDAK pernah diunggah ke bucket penyimpanan asli.
-  const PLACEHOLDER_IMG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
-  const storageMem = Object.create(null);            // bucket -> { path -> {blob,url} }
-  function bucket(name){
-    const b = storageMem[name] || (storageMem[name] = Object.create(null));
-    return {
-      async upload(path, file){
-        let url=null;
-        try{ if(typeof URL!=='undefined' && URL.createObjectURL) url=URL.createObjectURL(file); }catch(e){}
-        b[path] = { blob:file, url };
-        return { data:{ path }, error:null };
-      },
-      async remove(paths){
-        (paths||[]).forEach(p=>{ const o=b[p]; if(o&&o.url){ try{ URL.revokeObjectURL(o.url); }catch(e){} } delete b[p]; });
-        return { data:{}, error:null };
-      },
-      async download(path){
-        const o=b[path];
-        return o ? { data:o.blob, error:null } : { data:null, error:{ message:'Berkas tidak ada di sandbox demo' } };
-      },
-      getPublicUrl(path){
-        const o=b[path];
-        return { data:{ publicUrl: (o && o.url) || PLACEHOLDER_IMG } };
-      },
-      async list(prefix){
-        const pre = prefix ? String(prefix) : '';
-        const names = Object.keys(b)
-          .filter(p=> p.indexOf(pre)===0)
-          .map(p=> ({ name: p.slice(pre.length).replace(/^\/+/,'') }));
-        return { data:names, error:null };
-      }
-    };
-  }
-  const storage = { from: bucket };
-
-  // RPC apa pun (verify_login/change_password) dinetralkan — tidak menyentuh server.
-  const rpc = async ()=> ({ data:null, error:null });
-  return { from, rpc, storage, __isDemo:true };
-}
-
-/* Tukar `db` sesuai peran: demo -> sandbox memori; lainnya -> Supabase asli.
-   Sandbox selalu dibuat baru (kosong) setiap kali masuk sebagai demo. */
-function setDbForRole(role){
-  if(role==='demo'){ demoDb = makeDemoDb(); db = demoDb; }
-  else { db = realDb; }
-}
 
 /* ============ STATE ============ */
 let records = [];
@@ -786,30 +634,28 @@ const ACCT_NODEC = '_(* #,##0_);_(* (#,##0);_(* "-"_);_(@_)';
    tampil sebagai "-". Padding "_(" dan "_)" khas Accounting sengaja TIDAK dipakai:
    spasi semu itu membuat isi sel tidak pernah benar-benar berada di tengah. */
 const ACCT_VOL = '#,##0.00;-#,##0.00;"-";@';
-/* Akun dummy (demo) memperoleh AKSES PENUH setara admin di seluruh UI,
-   namun setiap tulis-data hanya mengenai sandbox memori (lihat makeDemoDb). */
-function isAdmin(){ return currentRole==='admin' || currentRole==='demo'; }
-function canInput(){ return currentRole==='admin' || currentRole==='user' || currentRole==='demo'; }
+/* Peran yang ada hanya 'admin' & 'guest' (Tamu). Tamu murni pembaca, jadi
+   seluruh hak tambah/ubah/hapus otomatis identik dengan hak admin. */
+function isAdmin(){ return currentRole==='admin'; }
+function canInput(){ return currentRole==='admin'; }
 function requireAdmin(){ if(!isAdmin()){ toast('Hanya admin yang dapat melakukan tindakan ini','warn'); return false; } return true; }
 function requireInput(){ if(!canInput()){ toast('Anda tidak memiliki akses untuk menambah data','warn'); return false; } return true; }
 
 /* Hak ubah File Kontrak per-modul (unggah / hapus file):
-   - admin & demo : kontrol penuh di semua modul (kr / pl / tender)
-   - user         : kontrol penuh HANYA di SPBJ / Kontrak Rinci (kr);
-                    di Pengadaan Langsung & Tender hanya boleh melihat
-   - lainnya (tamu): tidak boleh mengubah */
+   - admin : kontrol penuh di semua modul (kr / pl / tender)
+   - tamu  : tidak boleh mengubah apa pun
+   Parameter `modul` dipertahankan agar tanda tangan fungsi tidak berubah bagi
+   ±belasan pemanggil yang sudah ada. */
 function fkCanModify(modul){
-  if(currentRole==='admin' || currentRole==='demo') return true;
-  if(currentRole==='user') return modul==='kr';
-  return false;
+  return currentRole==='admin';
 }
 function fkRequireModify(modul){
   if(!fkCanModify(modul)){ toast('Anda hanya dapat melihat file kontrak pada bagian ini','warn'); return false; }
   return true;
 }
 
-/* #12: Login satu halaman — username + kata sandi. Dua akun: Admin & User.
-   Peran ditentukan otomatis dari kombinasi username + kata sandi yang cocok. */
+/* Login satu halaman — username + kata sandi. Hanya peran ADMIN yang punya
+   kredensial; Tamu masuk tanpa kata sandi lewat doLoginGuest(). */
 function resetLoginForm(){
   ['login-user','login-pass'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   const e=document.getElementById('login-error'); if(e) e.textContent='';
@@ -826,19 +672,8 @@ async function doLogin(){
   if(!u || !p){ showLoginError('Username dan kata sandi wajib diisi.'); return; }
   const uname=u.toLowerCase();
   showLoginError('');
-  // === AKUN DUMMY (MODE UJI COBA) ===
-  // Dicek murni di sisi klien; TIDAK menghubungi server sama sekali. Masuk sebagai
-  // peran 'demo' dengan akses penuh, tetapi seluruh datanya berjalan di sandbox
-  // memori sehingga tidak dapat mempengaruhi data admin/user/tamu yang sudah ada.
-  if(uname===DEMO_USER && p===DEMO_PASS){
-    currentUsername = DEMO_USER;
-    ssSet(ROLE_KEY, 'demo'); ssSet(USER_KEY, DEMO_USER);
-    ssSet(LOGIN_TIME_KEY, String(Date.now())); ssSet(LAST_ACTIVE_KEY, String(Date.now()));
-    playLoginAnim('demo', ()=>enterApp('demo'));
-    return;
-  }
   if(!(USE_SUPABASE && db)){ showLoginError('Koneksi Supabase belum siap. Coba lagi sesaat.'); return; }
-  // Verifikasi ke Supabase: function verify_login mengembalikan 'admin'/'user' atau NULL.
+  // Verifikasi ke Supabase: function verify_login mengembalikan peran atau NULL.
   // Kata sandi TIDAK pernah diunduh ke browser & tidak ada kredensial di file HTML.
   let role=null;
   try{
@@ -851,6 +686,13 @@ async function doLogin(){
     return;
   }
   if(!role){ showLoginError('Username atau kata sandi salah.'); return; }
+  /* PENJAGA PASCA-PEMBERSIHAN: peran 'user' & 'demo' sudah tidak ada di aplikasi.
+     Bila database masih menyimpan baris lama bertipe itu, login DITOLAK di sini
+     supaya tidak ada sesi berperan hantu yang lolos ke dalam aplikasi. */
+  if(role!=='admin'){
+    showLoginError('Akun ini sudah tidak berlaku. Hubungi admin.');
+    return;
+  }
   currentUsername = uname;
   ssSet(ROLE_KEY, role); ssSet(USER_KEY, uname);
   ssSet(LOGIN_TIME_KEY, String(Date.now())); ssSet(LAST_ACTIVE_KEY, String(Date.now()));
@@ -871,7 +713,7 @@ function doLoginGuest(){
 }
 /* ====== GANTI KATA SANDI (via Supabase) ====== */
 function openChangePass(){
-  if(currentRole==='guest' || currentRole==='demo' || !currentUsername){ toast('Fitur ini hanya untuk akun admin/user','warn'); return; }
+  if(currentRole!=='admin' || !currentUsername){ toast('Fitur ini hanya untuk akun admin','warn'); return; }
   ['cp-old','cp-new','cp-new2'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   const err=document.getElementById('cp-error'); if(err) err.textContent='';
   const sub=document.getElementById('cp-sub'); if(sub) sub.textContent='Perbarui kata sandi untuk akun "'+currentUsername+'".';
@@ -915,7 +757,7 @@ function playLoginAnim(role, done){
   const loginScreen=document.getElementById('login-screen');
   if(loginScreen) loginScreen.style.display='none';
   // Subteks sesuai peran
-  const subs={admin:'Masuk sebagai Admin',user:'Masuk sebagai User',guest:'Masuk sebagai Tamu',demo:'Masuk sebagai Dummy (Uji Coba)'};
+  const subs={admin:'Masuk sebagai Admin',guest:'Masuk sebagai Tamu'};
   const sub=document.getElementById('login-anim-sub');
   if(sub) sub.textContent=subs[role]||'';
   const finish=()=>{
@@ -934,15 +776,15 @@ function playLoginAnim(role, done){
     finish();
   }
 }
-/* Muat ulang SELURUH data sesuai koneksi peran yang aktif.
-   Penting untuk akun dummy: saat halaman pertama dimuat, aplikasi sudah mengisi
-   array data dengan DATA ASLI (memakai koneksi Supabase asli, sebelum login).
-   Tanpa muat-ulang ini, dummy akan menampilkan sisa data asli tersebut. Dengan
-   memanggil ini setelah `db` ditukar ke sandbox, seluruh array dibaca ulang dari
-   sandbox kosong sehingga dummy benar-benar bersih. Untuk admin/user/tamu, ini
-   memastikan data asli kembali termuat (mis. setelah keluar dari sesi dummy). */
+/* Muat ulang SELURUH data saat sesi baru dimulai.
+   Dulu fungsi ini juga bertugas menukar isi array saat `db` berpindah ke sandbox
+   akun dummy; sandbox itu sudah dihapus, jadi sekarang perannya murni menyegarkan
+   data dari Supabase begitu pengguna masuk (admin maupun Tamu). */
 function reloadAllDataForRole(){
   try{ if(typeof pnLoadConfig==='function') pnLoadConfig(); }catch(e){}
+  /* Materi & Peraturan dimuat malas (saat menunya dibuka). Penandanya dilepas
+     di sini supaya data sesi sebelumnya tidak tertinggal saat peran berganti. */
+  try{ if(typeof materiLoaded!=='undefined'){ materiLoaded=false; records_materi=[]; } }catch(e){}
   [ refreshData, refreshDataPl, refreshDataTender, refreshDataPenetapan,
     refreshDataKelengkapan, refreshDataPembukaan, refreshDataRho,
     refreshDataHps, refreshDataAnalisa, refreshDataJadwal
@@ -952,8 +794,7 @@ function reloadAllDataForRole(){
 }
 function enterApp(role, view){
   currentRole=role;
-  setDbForRole(role);   // demo -> sandbox memori (kosong); lainnya -> Supabase asli
-  reloadAllDataForRole();   // baca ulang data agar sesuai koneksi peran (dummy = kosong)
+  reloadAllDataForRole();   // baca ulang data dari Supabase untuk sesi baru
   if(typeof fkResetCache==='function') fkResetCache();
   applyRole(role);
   document.getElementById('login-screen').style.display='none';
@@ -966,8 +807,7 @@ function enterApp(role, view){
   try{ profilesLoadAll(); }catch(e){ console.error(e); }
 }
 function applyRole(role){
-  // Peran 'demo' memperoleh set menu yang sama persis dengan admin (akses penuh).
-  const navRole = (role==='demo') ? 'admin' : role;
+  const navRole = role;
   document.querySelectorAll('.topnav-link[data-role], .topnav-item[data-role], .topnav-sub[data-role], .btn[data-role], .fk-seg-btn[data-role], .mod-seg[data-role]').forEach(l=>{
     const roles=l.getAttribute('data-role').split(' ');
     const ok=roles.includes(navRole);
@@ -985,24 +825,20 @@ function applyRole(role){
     const anyVisible=[...items].some(it=>it.style.display!=='none');
     g.style.display = anyVisible ? '' : 'none';
   });
-  const labels={admin:'Admin',user:'User',guest:'Tamu',demo:'Dummy (Uji Coba)'};
+  const labels={admin:'Admin',guest:'Tamu'};
   document.getElementById('user-label').textContent = labels[role]||'—';
   const ROLE_ICONS={
     admin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
-    user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>',
-    guest:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>',
-    demo:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>'
+    guest:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>'
   };
   const ic=document.getElementById('user-role-ic');
   if(ic){ ic.className='user-role-ic '+(role||''); ic.innerHTML=ROLE_ICONS[role]||''; }
-  // Tombol Ganti Kata Sandi hanya untuk admin/user (punya akun) & saat Supabase aktif.
-  // Akun dummy (demo) tidak punya akun server → sembunyikan.
+  // Ganti Kata Sandi: hanya admin (satu-satunya peran yang punya akun server).
   const cpBtn=document.getElementById('btn-change-pass');
-  if(cpBtn) cpBtn.style.display = (role!=='guest' && role!=='demo' && USE_SUPABASE) ? '' : 'none';
-  // "Bersihkan Daftar Kontrak" HANYA untuk admin (akun dummy/demo diperlakukan
-  // sama seperti admin agar bisa diuji di sandbox tanpa menyentuh data nyata).
+  if(cpBtn) cpBtn.style.display = (role==='admin' && USE_SUPABASE) ? '' : 'none';
+  // "Bersihkan Daftar Kontrak": hanya admin.
   const bkBtn=document.getElementById('btn-bersih-kontrak');
-  if(bkBtn) bkBtn.style.display = (role==='admin' || role==='demo') ? '' : 'none';
+  if(bkBtn) bkBtn.style.display = (role==='admin') ? '' : 'none';
   renderTable();
   renderTablePl();
   renderTableTender();
@@ -1230,7 +1066,6 @@ function performLogout(){
   const finish=()=>{
     ssDel(ROLE_KEY); ssDel(USER_KEY); ssDel(VIEW_KEY); ssDel(DRAFT_KEY); ssDel(LOGIN_TIME_KEY); ssDel(LAST_ACTIVE_KEY); ssDel(TOKEN_KEY);
     currentRole=null; currentUsername=null;
-    db = realDb; demoDb = null;   // buang sandbox demo & kembalikan koneksi Supabase asli
     try{ resetAllFilters(); }catch(e){}
     document.getElementById('topbar-user').style.display='none';
     document.getElementById('login-screen').style.display='flex';
@@ -1424,9 +1259,11 @@ function resetAllFilters(){
    'fk-input-bidang','fk-input-search','fk-view-bidang','fk-view-search',
    'pn-lihat-search','fkl-view-search',
    'dpeng-view-search','dpeng-view-tahun','dpeng-view-bidang',
+   'materi-view-search','materi-view-tahun','materi-view-kategori',
    'dash-filter-anggaran','dash-filter-tahun','dash-filter-periode','dash-filter-metode'
   ].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   if(typeof dpengState!=='undefined'){ dpengState.view.page=1; dpengState.view.search=''; dpengState.view.tahun=''; dpengState.view.bidang=''; }
+  if(typeof materiState!=='undefined'){ materiState.view.page=1; materiState.view.search=''; materiState.view.tahun=''; materiState.view.kategori=''; }
   // Filter dashboard "Jenis Pekerjaan" kembali ke default (SPBJ / Kontrak Rinci)
   const dj=document.getElementById('dash-filter-jenis'); if(dj) dj.value='kr';
   const dmw=document.getElementById('dash-metode-wrap'); if(dmw) dmw.style.display='none';
@@ -1473,6 +1310,7 @@ function showView(name, loaderMsg, noLoader){
           if(l.dataset.view==='hps-view' && (name==='hps-view'||name==='form-hps')) on=true; // Perhitungan HPS induk tetap aktif
           if(l.dataset.view==='pn-lihat' && (name==='pn-lihat'||name==='pn-ambil')) on=true; // Penetapan (menu tunggal) tetap aktif saat Ambil Nomor
           if(l.dataset.view==='dpeng-view' && (name==='dpeng-view'||name==='dpeng-unggah')) on=true; // Dokumen Pengadaan tetap aktif saat Unggah Dokumen
+          if(l.dataset.view==='materi-view' && (name==='materi-view'||name==='materi-form')) on=true; // Materi & Peraturan tetap aktif saat Tambah/Ubah Peraturan
           if(l.dataset.view==='jadwal-view' && (name==='jadwal-view'||name==='jadwal-kerja'||name==='hari-libur')) on=true; // Jadwal (menu tunggal) tetap aktif saat Tentukan Jadwal / Hari Libur
           if(l.dataset.view==='track-view' && (name==='track-view'||name==='track-kelola')) on=true; // Tracking Pengadaan induk tetap aktif saat Kelola Tracking
           if(l.dataset.view==='spk-view' && (name==='spk-view'||name==='spk-susun'||name==='spk-klausul')) on=true; // Susun Kontrak (menu induk) tetap aktif saat Penyusunan Kontrak / Ubah Klausul
@@ -1491,6 +1329,7 @@ function showView(name, loaderMsg, noLoader){
           if(name==='jadwal-kerja'||name==='hari-libur') has = has || [...grp.querySelectorAll('.topnav-item')].some(it=>it.dataset.view==='jadwal-view'); // Jadwal (menu tunggal): grup induk tetap terbuka saat Tentukan Jadwal / Hari Libur
           if(name==='track-kelola') has = has || [...grp.querySelectorAll('.topnav-item')].some(it=>it.dataset.view==='track-view'); // Tracking: grup Monitoring tetap terbuka saat Kelola Tracking
           if(name==='dpeng-unggah') has = has || [...grp.querySelectorAll('.topnav-item')].some(it=>it.dataset.view==='dpeng-view'); // Dokumen: grup induk tetap terbuka saat Unggah Dokumen
+          if(name==='materi-form') has = has || [...grp.querySelectorAll('.topnav-item')].some(it=>it.dataset.view==='materi-view'); // Dokumen: grup induk tetap terbuka saat Tambah/Ubah Peraturan
           // Grup Monitoring mencakup Input Pekerjaan (input/-pl/-tender) & Daftar Pekerjaan (list/-pl/-tender)
           if(grp.dataset.group==='monitor' && monitorAll.includes(name)) has=true;
           grp.classList.toggle('has-active', has);
@@ -1530,6 +1369,8 @@ function showView(name, loaderMsg, noLoader){
         if(name==='track-kelola') renderTrackKelola();
         if(name==='dpeng-view' && typeof renderDpengView==='function') renderDpengView();
         if(name==='dpeng-unggah' && typeof renderDpengUnggah==='function') renderDpengUnggah();
+        if(name==='materi-view' && typeof renderMateriView==='function') renderMateriView();
+        if(name==='materi-form' && typeof renderMateriForm==='function') renderMateriForm();
         if(typeof fkSegSyncAll==='function') fkSegSyncAll(false);   // reposisi pil segmented setelah halaman baru terlihat
     }catch(err){ console.error('showView error:', err); }
     if(!noLoader){ const wait=Math.max(0, 460-(Date.now()-t0)); setTimeout(hideLoader, wait); }
@@ -1554,7 +1395,8 @@ function rerenderActiveView(){
       'spk-susun':'renderSpkSusun','spk-view':'renderSpkView','spk-klausul':'renderSpkKlausul',
       'hari-libur':'renderHariLibur','rekap-hps':'renderRekapHps',
       'track-view':'renderTrackView','track-kelola':'renderTrackKelola',
-      'dpeng-view':'renderDpengView','dpeng-unggah':'renderDpengUnggah'
+      'dpeng-view':'renderDpengView','dpeng-unggah':'renderDpengUnggah',
+      'materi-view':'renderMateriView','materi-form':'renderMateriForm'
     };
     var fn=R[name];
     if(fn && typeof window[fn]==='function') window[fn]();
@@ -7020,7 +6862,6 @@ renderTableTender();
    Jalankan skrip: file_kontrak_supabase_up3masohi.sql
    ============================================================ */
 const FK_TABLE = 'file_kontrak';
-const FK_BUCKET = 'file-kontrak';   // bucket Supabase Storage untuk file fisik
 const FK_MAX_MB = 50;   // batas ukuran file (sesuai batas per-file Storage free tier)
 
 /* ============================================================
@@ -7028,9 +6869,7 @@ const FK_MAX_MB = 50;   // batas ukuran file (sesuai batas per-file Storage free
    ------------------------------------------------------------
    File kontrak privat kini disimpan di Cloudflare R2 dan diakses lewat Worker
    yang memverifikasi token. Metadata (tabel file_kontrak) TETAP di Supabase.
-   Akun DEMO memakai penyimpanan sandbox di memori (tidak menyentuh R2).
    ============================================================ */
-function fkIsDemo(){ return currentRole==='demo'; }
 function fkAuthToken(){ return ssGet(TOKEN_KEY)||''; }
 
 /* Minta token akses file ke Worker (dipanggil saat login). Balikan: string token / null. */
@@ -7045,7 +6884,6 @@ async function fkFetchToken(username, password){
   return (j&&j.token)||null;
 }
 
-/* Unggah bytes file ke R2 (via Worker) — atau ke sandbox demo. */
 /* Unggah bytes ke Worker R2 memakai XMLHttpRequest, BUKAN fetch.
    fetch() tidak menyediakan event progres unggah sama sekali, sehingga bar
    progres sebelumnya hanya angka tetap. XHR memberi loaded/total sungguhan
@@ -7075,22 +6913,11 @@ function r2XhrPut(path, file, onProgress){
   });
 }
 async function fkStoragePut(path, file, onProgress){
-  if(fkIsDemo()){
-    const up=await db.storage.from(FK_BUCKET).upload(path, file,
-      {contentType:file.type||'application/octet-stream', upsert:true});
-    if(up.error) throw up.error;
-    if(typeof onProgress==='function') onProgress(file.size, file.size);
-    return;
-  }
   await r2XhrPut(path, file, onProgress);
 }
 
-/* Ambil bytes file dari R2 (via Worker) — atau dari sandbox demo. Balikan: Blob / null. */
+/* Ambil bytes file dari R2 (via Worker). Balikan: Blob / null. */
 async function fkStorageGet(path){
-  if(fkIsDemo()){
-    const dl=await db.storage.from(FK_BUCKET).download(path);
-    if(dl.error) throw dl.error; return dl.data;
-  }
   const resp=await fetch(R2_GATEWAY_URL+'/api/file?path='+encodeURIComponent(path),{
     method:'GET',
     headers:{'Authorization':'Bearer '+fkAuthToken()}
@@ -7101,12 +6928,8 @@ async function fkStorageGet(path){
   return await resp.blob();
 }
 
-/* Hapus file di R2 (via Worker) — atau di sandbox demo. Diam-diam bila gagal. */
+/* Hapus file di R2 (via Worker). Diam-diam bila gagal. */
 async function fkStorageRemove(path){
-  if(fkIsDemo()){
-    try{ await db.storage.from(FK_BUCKET).remove([path]); }catch(e){}
-    return;
-  }
   try{
     await fetch(R2_GATEWAY_URL+'/api/file?path='+encodeURIComponent(path),{
       method:'DELETE',
@@ -7247,7 +7070,7 @@ const FileKontrak = {
   async getBlob(row){
     if(!row) return null;
     if(row.path){
-      return await fkStorageGet(row.path);   // Blob (dari Worker/R2, atau sandbox demo)
+      return await fkStorageGet(row.path);   // Blob (dari Worker/R2)
     }
     if(row.data_base64) return fkB64ToBlob(row.data_base64, row.mime);
     return null;
@@ -7378,14 +7201,12 @@ function fkEsc(s){ return String(s==null?'':s).replace(/[&<>"']/g,m=>({'&':'&amp
 /* ---- Navigasi ---- */
 function openFkInput(modul){
   if(!FK_MODULES[modul]) modul='kr';
-  // Akun user hanya boleh Input Kontrak untuk SPBJ / Kontrak Rinci (kr)
-  if(currentRole==='user' && modul!=='kr') modul='kr';
   if(fkState.input.modul!==modul){ fkState.input.page=1; fkClearFilters('input'); }
   fkState.input.modul=modul; showView('fk-input');
 }
 function openFkView(modul){
   // Akun TAMU tidak berhak membuka menu Dokumen (termasuk Perjanjian/Kontrak).
-  if(!canInput()){ toast('Menu ini hanya untuk akun admin/user','warn'); return; }
+  if(!canInput()){ toast('Menu ini hanya untuk akun admin','warn'); return; }
   if(!FK_MODULES[modul]) modul='kr';
   if(fkState.view.modul!==modul){ fkState.view.page=1; fkClearFilters('view'); }
   fkState.view.modul=modul; showView('fk-view');
@@ -7963,7 +7784,6 @@ function pnTodayISO(){ const d=new Date(); const m=String(d.getMonth()+1).padSta
 function pnPad4(n){ return String(n).padStart(4,'0'); }
 function pnFormatNo(seq, code, klas, unit, year){ return pnPad4(seq)+'.'+code+'/'+klas+'/'+unit+'/'+year; }
 function pnBase(modul, counter, year){
-  if(isDemo()) return 0;   // Akun dummy: penomoran selalu dimulai dari 1
   const c = pnConfig[modul+'|'+year];
   if(c && c[counter]!=null && !isNaN(c[counter])) return parseInt(c[counter],10);
   return PN_BASE_DEFAULT[counter]!=null ? PN_BASE_DEFAULT[counter] : 0;
@@ -8013,7 +7833,6 @@ function pnUsedSeqs(modul, counter, year){
    - 'k:<key>' Tender -> setiap dokumen Tender mulai dari 1 (base 0).
    Semua dapat di-override manual lewat pnConfig, dan reset per tahun otomatis. */
 function pnBaseFor(modul, counter, year){
-  if(isDemo()) return 0;   // Akun dummy: seluruh jenis nomor dimulai dari 1
   if(counter==='hps'){
     const cPl=pnConfig['pl|'+year], cTn=pnConfig['tender|'+year];
     if(cPl && cPl.hps!=null && !isNaN(cPl.hps)) return parseInt(cPl.hps,10);
@@ -8706,7 +8525,6 @@ function fklDocPool(){
      sama sudah ada di menu Kelengkapan Dokumen Pengadaan.
    ================================================================== */
 const DPENG_TABLE  = 'dokumen_pengadaan';
-const DPENG_BUCKET = 'dokumen-pengadaan';   // bucket Supabase Storage — HANYA untuk akun demo
 /* Prefiks folder di dalam bucket R2 milik Worker (FILE_BUCKET). Worker hanya
    menerima path yang diawali kr | pl | tender | dpeng, jadi seluruh berkas
    Dokumen Pengadaan disimpan di bawah "dpeng/". Worker TIDAK mendukung
@@ -8827,25 +8645,12 @@ const DPENG_IC_DEL  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor
 const DPENG_IC_DOC  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/></svg>';
 
 /* ==================================================================
-   Penyimpanan berkas di R2 (bucket khusus `dokumen-pengadaan`)
-   Akun DEMO memakai Supabase Storage sandbox (tidak menyentuh R2).
+   Penyimpanan berkas di R2 (lewat Worker, prefiks `dpeng/`)
    ================================================================== */
-function dpengIsDemo(){ return currentRole==='demo'; }
 async function dpengStoragePut(path, file, onProgress){
-  if(dpengIsDemo()){
-    const up=await db.storage.from(DPENG_BUCKET).upload(path, file,
-      {contentType:file.type||'application/octet-stream', upsert:true});
-    if(up.error) throw up.error;
-    if(typeof onProgress==='function') onProgress(file.size, file.size);
-    return;
-  }
   await r2XhrPut(path, file, onProgress);
 }
 async function dpengStorageGet(path){
-  if(dpengIsDemo()){
-    const dl=await db.storage.from(DPENG_BUCKET).download(path);
-    if(dl.error) throw dl.error; return dl.data;
-  }
   const resp=await fetch(R2_GATEWAY_URL+'/api/file?path='+encodeURIComponent(path),{
     method:'GET', headers:{'Authorization':'Bearer '+fkAuthToken()}
   });
@@ -8855,7 +8660,6 @@ async function dpengStorageGet(path){
   return await resp.blob();
 }
 async function dpengStorageRemove(path){
-  if(dpengIsDemo()){ try{ await db.storage.from(DPENG_BUCKET).remove([path]); }catch(e){} return; }
   try{
     await fetch(R2_GATEWAY_URL+'/api/file?path='+encodeURIComponent(path),{
       method:'DELETE', headers:{'Authorization':'Bearer '+fkAuthToken()}
@@ -8891,6 +8695,25 @@ async function refreshDataDpeng(){
 /* ---- Utilitas ---- */
 function dpengYear(r){ return String((r&&r.tgl_terima)||'').slice(0,4); }
 function dpengNama(r){ return String((r&&r.nama_pekerjaan)||'').trim(); }
+/* ---- PENYARING DUPLIKAT NAMA PEKERJAAN ----
+   Satu pekerjaan = satu arsip dokumen. Sebelumnya nama yang sama bisa diinput
+   berulang sehingga muncul beberapa baris untuk pekerjaan yang sama. Pembanding
+   dinormalkan (huruf kecil + spasi/tanda baca dirapatkan) agar "Pengadaan  ABC"
+   dan "pengadaan abc" dianggap sama.
+   `kecualiId` dipakai saat MENGUBAH record agar dirinya sendiri tidak dihitung
+   sebagai duplikat. */
+function dpengNamaKey(nama){
+  return String(nama||'').toLowerCase()
+    .replace(/[\s\u00a0]+/g,' ')
+    .replace(/[.,;:()"'`]+/g,'')
+    .trim();
+}
+function dpengCariDuplikat(nama, kecualiId){
+  const key=dpengNamaKey(nama); if(!key) return null;
+  return (records_dpeng||[]).find(r=>
+    String(r.id)!==String(kecualiId||'') && dpengNamaKey(dpengNama(r))===key
+  ) || null;
+}
 /* Cari Tgl. Terima Dokumen dari menu Kelengkapan berdasarkan Nama Pekerjaan. */
 function dpengTglFromKelengkapan(nama){
   const key=String(nama||'').trim().toLowerCase();
@@ -8991,7 +8814,7 @@ function renderDpengView(){
     const adaData=(records_dpeng||[]).length>0;
     tb.innerHTML=dpengEmptyRow(adaData
       ? 'Tidak ada pekerjaan yang cocok dengan filter. Klik "Reset" untuk menampilkan semua.'
-      : 'Belum ada pekerjaan. Klik "Unggah Dokumen" untuk menambah.');
+      : 'Belum ada pekerjaan. Klik "Tambah Dokumen" untuk menambah.');
     return;
   }
   const totalPages=Math.max(1,Math.ceil(rows.length/DPENG_PAGE_SIZE));
@@ -9147,7 +8970,11 @@ function dpengFormHtml(){
     '<div class="dpeng-frow">' +
       '<div class="field dpeng-f-nama"><label>Nama Pekerjaan <span class="req">*</span></label>' +
         '<input id="dpeng-f-nama" type="text" value="'+fkEsc(u.nama)+'" oninput="dpengNamaInput()" onchange="dpengSyncTgl()" placeholder="Ketik nama pekerjaan atau gunakan Pilih Pekerjaan"'+namaAtr+'>' +
-        (dpLock?'<div class="dpeng-hint">Otomatis dari Data Pekerjaan</div>':'') + '</div>' +
+        (dpLock?'<div class="dpeng-hint">Otomatis dari Data Pekerjaan</div>':'') +
+        '<div class="dpeng-dupe" id="dpeng-dupe-warn"'+(dpengCariDuplikat(u.nama,u.editId)?'':' style="display:none"')+'>'+
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 9v5"/><path d="M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg>'+
+          '<span>Nama pekerjaan ini sudah ada di Dokumen Pengadaan — data tidak dapat disimpan ganda.</span>'+
+        '</div>' + '</div>' +
       '<div class="field dpeng-f-bidang"><label>Bidang Pelaksana <span class="req">*</span></label>' +
         '<select id="dpeng-f-bidang" onchange="dpengFormSync()"'+bidangAtr+'><option value="">— Pilih —</option>'+bidangOpts+'</select>' +
         (dpLock?'<div class="dpeng-hint">Otomatis dari Data Pekerjaan</div>':'') + '</div>' +
@@ -9242,6 +9069,16 @@ function dpengFormSync(){
 }
 function dpengNamaInput(){
   dpengFormSync();
+  dpengDupeCek();
+}
+/* Peringatan duplikat diperbarui LANGSUNG di DOM (tanpa render ulang formulir)
+   supaya kursor & posisi ketikan pada kolom Nama Pekerjaan tidak hilang. */
+function dpengDupeCek(){
+  const u=dpengState.unggah; if(!u) return false;
+  const el=document.getElementById('dpeng-dupe-warn');
+  const kembar=dpengCariDuplikat(u.nama, u.editId);
+  if(el) el.style.display = kembar ? '' : 'none';
+  return !!kembar;
 }
 /* Sinkron Tgl. Terima dari Kelengkapan saat nama diketik/berubah */
 function dpengSyncTgl(){
@@ -9306,6 +9143,14 @@ async function dpengSubmitForm(){
   if(!u.tglLocked) u.tgl=(document.getElementById('dpeng-f-tgl')?.value||'').trim();
   const keys=Object.keys(u.picks).filter(k=>u.picks[k]);
   if(!u.nama){ toast('Nama Pekerjaan wajib diisi','warn'); return; }
+  /* PENYARING DUPLIKAT: tolak bila nama pekerjaan sudah dipakai arsip lain.
+     Diperiksa di sini (bukan hanya di UI) karena inilah satu-satunya pintu
+     masuk penyimpanan record Dokumen Pengadaan. */
+  const kembar=dpengCariDuplikat(u.nama, u.editId);
+  if(kembar){
+    toast('Nama pekerjaan "'+dpengNama(kembar)+'" sudah ada di Dokumen Pengadaan. Gunakan tombol Edit pada baris tersebut untuk menambah/mengubah dokumennya.','err');
+    return;
+  }
   if(!u.bidang){ toast('Bidang Pelaksana wajib dipilih','warn'); return; }
   if(!keys.length){ toast('Pilih minimal satu dokumen','warn'); return; }
   if(!u.tgl){ toast('Tgl. Terima Dokumen wajib diisi','warn'); return; }
@@ -9683,10 +9528,474 @@ function dpengHapusPekerjaan(recId){
       renderDpengView();
     }});
 }
-/* ---- Materi & Peraturan (placeholder) ---- */
+/* ==================================================================
+   MATERI & PERATURAN — pustaka materi & regulasi pengadaan
+   ------------------------------------------------------------------
+   Strukturnya mengikuti Dokumen Pengadaan: satu halaman DAFTAR (filter +
+   tabel + paginasi) dan satu halaman FORMULIR untuk tambah/ubah.
+   - Satu record = satu materi/peraturan + SATU berkas.
+   - Metadata di tabel Supabase `materi_peraturan`; berkas fisik di bucket R2
+     lewat Worker yang sama dengan Dokumen Pengadaan.
+   - PENTING: Worker R2 hanya menerima path berawalan kr | pl | tender | dpeng,
+     karena itu berkas materi ditaruh di bawah "dpeng/materi/" (bukan prefiks
+     baru "materi/", yang akan ditolak 400 invalid_path).
+   - Nama materi/peraturan disaring agar tidak bisa diinput ganda.
+   ================================================================== */
+const MATERI_TABLE  = 'materi_peraturan';
+const MATERI_PREFIX = DPENG_PREFIX + 'materi/';   // -> "dpeng/materi/"
+const MATERI_MAX_MB = DPENG_MAX_MB;               // batas body Cloudflare Worker
+const MATERI_PAGE_SIZE = 10;                      // samakan dengan tabel lain
+/* Daftar kategori — silakan tambah/kurangi sesuai kebutuhan. Nilai lama yang
+   sudah tersimpan tetap muncul di dropdown filter walau tidak ada di daftar. */
+const MATERI_KATEGORI = [
+  'Undang-Undang',
+  'Peraturan Pemerintah',
+  'Peraturan Presiden',
+  'Peraturan Menteri',
+  'Peraturan Direksi',
+  'Keputusan Direksi',
+  'Surat Edaran / Instruksi',
+  'Pedoman / Petunjuk Teknis',
+  'Standar Operasional Prosedur (SOP)',
+  'Materi Pelatihan / Sosialisasi',
+  'Lain-Lain'
+];
+const MATERI_ACCEPT = '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.png,.jpg,.jpeg';
+const MATERI_ACCEPT_HINT = 'PDF, Word, Excel, PowerPoint, atau gambar';
+
+let records_materi = [];
+let materiLoaded   = false;   // penanda: data sudah pernah dimuat pada sesi ini
+const materiState = {
+  view: { kategori:'', tahun:'', search:'', page:1 },
+  form: null   // {editId, kategori, nama, tgl, berkas, staged}
+};
+
+/* ---- Store Supabase (tabel materi_peraturan) ---- */
+const StoreMateri = {
+  async list(){
+    if(!(USE_SUPABASE && db)) return [];
+    const {data,error}=await db.from(MATERI_TABLE).select('*').order('created_at',{ascending:false});
+    if(error) throw error; return data||[];
+  },
+  async create(rec){
+    const {data,error}=await db.from(MATERI_TABLE).insert(rec).select();
+    if(error) throw error; return data&&data[0];
+  },
+  async update(id, patch){
+    const {error}=await db.from(MATERI_TABLE).update(patch).eq('id',id);
+    if(error) throw error;
+  },
+  async remove(id){
+    const {error}=await db.from(MATERI_TABLE).delete().eq('id',id);
+    if(error) throw error;
+  }
+};
+async function refreshDataMateri(){
+  try{ records_materi = await StoreMateri.list(); materiLoaded=true; }
+  catch(err){ console.error(err); records_materi = records_materi||[]; toast('Gagal memuat Materi & Peraturan: '+errMsg(err),'err'); }
+}
+
+/* ---- Utilitas ---- */
+function materiNama(r){ return String((r&&r.nama)||'').trim(); }
+function materiKategori(r){ return String((r&&r.kategori)||'').trim(); }
+function materiTgl(r){ return String((r&&r.tgl_terbit)||''); }
+function materiYear(r){ return materiTgl(r).slice(0,4); }
+function materiBerkas(r){ const b=r&&r.berkas; return (b&&typeof b==='object')?b:null; }
+/* Penyaring duplikat: nama dinormalkan (huruf kecil, spasi dirapatkan,
+   tanda baca diabaikan) supaya penulisan berbeda tetap terdeteksi sama. */
+function materiNamaKey(nama){
+  return String(nama||'').toLowerCase()
+    .replace(/[\s\u00a0]+/g,' ')
+    .replace(/[.,;:()"'`]+/g,'')
+    .trim();
+}
+function materiCariDuplikat(nama, kecualiId){
+  const key=materiNamaKey(nama); if(!key) return null;
+  return (records_materi||[]).find(r=>
+    String(r.id)!==String(kecualiId||'') && materiNamaKey(materiNama(r))===key
+  ) || null;
+}
+
+/* ==================================================================
+   HALAMAN DAFTAR
+   ================================================================== */
 function openMateriView(){
   if(!isAdmin()){ toast('Menu ini hanya untuk akun admin','warn'); return; }
+  refreshDataMateri().then(()=>{ showView('materi-view'); });
+}
+function materiResetView(){
+  materiState.view.kategori=''; materiState.view.tahun=''; materiState.view.search=''; materiState.view.page=1;
+  const s=document.getElementById('materi-view-search');   if(s) s.value='';
+  const y=document.getElementById('materi-view-tahun');    if(y) y.value='';
+  const k=document.getElementById('materi-view-kategori'); if(k) k.value='';
+  renderMateriView();
+}
+function materiFilterView(){
+  materiState.view.kategori=(document.getElementById('materi-view-kategori')?.value)||'';
+  materiState.view.tahun   =(document.getElementById('materi-view-tahun')?.value)||'';
+  materiState.view.search  =(document.getElementById('materi-view-search')?.value)||'';
+  materiState.view.page=1;
+  renderMateriView();
+}
+function materiPool(){
+  const kt=String(materiState.view.kategori||'').trim();
+  const yy=materiState.view.tahun;
+  const fs=String(materiState.view.search||'').toLowerCase().trim();
+  return (records_materi||[]).filter(r=>{
+    if(kt && materiKategori(r)!==kt) return false;
+    if(yy && materiYear(r)!==yy) return false;
+    if(fs && !materiNama(r).toLowerCase().includes(fs)) return false;
+    return true;
+  });
+}
+function materiFillKategoriFilter(){
+  const sel=document.getElementById('materi-view-kategori'); if(!sel) return;
+  const dari=(records_materi||[]).map(materiKategori).filter(Boolean);
+  const list=Array.from(new Set([].concat(MATERI_KATEGORI, dari)));
+  const cur=materiState.view.kategori;
+  if(cur && !list.includes(cur)) materiState.view.kategori='';
+  sel.innerHTML='<option value="">Semua Kategori</option>'+list.map(k=>
+    '<option value="'+fkEsc(k)+'"'+(k===materiState.view.kategori?' selected':'')+'>'+fkEsc(k)+'</option>'
+  ).join('');
+  sel.value=materiState.view.kategori||'';
+}
+function materiFillYearFilter(){
+  const sel=document.getElementById('materi-view-tahun'); if(!sel) return;
+  const years=Array.from(new Set((records_materi||[]).map(materiYear).filter(Boolean))).sort().reverse();
+  const cur=materiState.view.tahun;
+  sel.innerHTML='<option value="">Semua Tahun</option>'+years.map(y=>'<option value="'+y+'"'+(y===cur?' selected':'')+'>'+y+'</option>').join('');
+}
+function materiEmptyRow(msg){
+  return '<tr><td colspan="5"><div class="empty">'+DPENG_IC_DOC+
+    '<div>'+fkEsc(msg||'Data tidak tersedia')+'</div></div></td></tr>';
+}
+function renderMateriView(){
+  /* Pemuatan malas: setelah refresh peramban halaman ini bisa dipulihkan
+     langsung tanpa lewat openMateriView, jadi datanya diambil di sini. */
+  if(!materiLoaded){ materiLoaded=true; refreshDataMateri().then(renderMateriView); }
+  materiFillKategoriFilter();
+  materiFillYearFilter();
+  const tb=document.getElementById('materi-view-body'); if(!tb) return;
+  const pg=document.getElementById('materi-view-pagination');
+  const cEl=document.getElementById('materi-view-count');
+  const rows=materiPool();
+  if(cEl) cEl.textContent=rows.length;
+  if(pg) pg.innerHTML='';
+  if(!rows.length){
+    const adaData=(records_materi||[]).length>0;
+    tb.innerHTML=materiEmptyRow(adaData
+      ? 'Tidak ada data yang cocok dengan filter. Klik "Reset" untuk menampilkan semua.'
+      : 'Belum ada materi/peraturan. Klik "Tambah Peraturan" untuk menambah.');
+    return;
+  }
+  const totalPages=Math.max(1,Math.ceil(rows.length/MATERI_PAGE_SIZE));
+  if(materiState.view.page>totalPages) materiState.view.page=totalPages;
+  if(materiState.view.page<1) materiState.view.page=1;
+  const start=(materiState.view.page-1)*MATERI_PAGE_SIZE;
+  const pageRows=rows.slice(start,start+MATERI_PAGE_SIZE);
+  tb.innerHTML=pageRows.map((r,i)=>{
+    const rid=fkEsc(String(r.id));
+    const b=materiBerkas(r);
+    const chip=b&&b.path
+      ? '<span class="materi-file-chip ok" title="'+fkEsc(b.nama_file||'')+'">'+fkEsc(materiExtLabel(b))+'</span>'
+      : '<span class="materi-file-chip" title="Belum ada berkas">—</span>';
+    return '<tr>'+
+      '<td class="col-no">'+(start+i+1)+'</td>'+
+      '<td class="materi-col-kat">'+fkEsc(materiKategori(r)||'—')+'</td>'+
+      '<td class="wrap-cell col-nama-freeze">'+fkEsc(materiNama(r)||'—')+chip+'</td>'+
+      '<td class="col-date">'+(materiTgl(r)?fmtTanggal(materiTgl(r)):'—')+'</td>'+
+      '<td><div class="action-cell" style="justify-content:center">'+
+        '<button class="act act-edit" title="Ubah Data" onclick="materiOpenForm(\''+rid+'\')">'+DPENG_IC_EDIT+'</button>'+
+        '<button class="act act-view" title="Lihat Berkas" onclick="materiPreview(\''+rid+'\')">'+DPENG_IC_VIEW+'</button>'+
+        '<button class="act act-del" title="Hapus Data" onclick="materiHapus(\''+rid+'\')">'+DPENG_IC_DEL+'</button>'+
+      '</div></td>'+
+    '</tr>';
+  }).join('');
+  if(pg && totalPages>1){
+    const page=materiState.view.page;
+    const want=new Set([1,totalPages,page-1,page,page+1]);
+    const list=[...want].filter(p=>p>=1&&p<=totalPages).sort((a,b)=>a-b);
+    let h='<button class="pg-btn" '+(page===1?'disabled':'')+' onclick="materiGotoPage('+(page-1)+')">‹ Sebelumnya</button>';
+    let prev=0;
+    list.forEach(p=>{
+      if(p-prev>1) h+='<span class="pg-ellipsis">…</span>';
+      h+='<button class="pg-btn pg-num '+(p===page?'active':'')+'" onclick="materiGotoPage('+p+')">'+p+'</button>';
+      prev=p;
+    });
+    h+='<button class="pg-btn" '+(page===totalPages?'disabled':'')+' onclick="materiGotoPage('+(page+1)+')">Berikutnya ›</button>';
+    pg.innerHTML=h;
+  }
+}
+function materiGotoPage(p){
+  materiState.view.page=p;
+  renderMateriView();
+  document.querySelector('#view-materi-view .panel')?.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function materiExtLabel(b){
+  const nm=String((b&&b.nama_file)||'').toLowerCase();
+  const m=/\.([a-z0-9]{2,5})$/.exec(nm);
+  return m ? m[1].toUpperCase() : 'FILE';
+}
+
+/* ==================================================================
+   FORMULIR TAMBAH / UBAH
+   ================================================================== */
+function materiOpenForm(recId){
+  if(!isAdmin()){ toast('Menu ini hanya untuk akun admin','warn'); return; }
+  const rec = recId ? (records_materi||[]).find(r=>String(r.id)===String(recId)) : null;
+  if(recId && !rec){ toast('Data tidak ditemukan','warn'); return; }
+  materiState.form = rec
+    ? { editId:rec.id, kategori:materiKategori(rec), nama:materiNama(rec), tgl:materiTgl(rec),
+        berkas:materiBerkas(rec), staged:null }
+    : { editId:null, kategori:'', nama:'', tgl:'', berkas:null, staged:null };
+  showView('materi-form');
+}
+function renderMateriForm(){
+  const cont=document.getElementById('materi-form-content'); if(!cont) return;
+  const f=materiState.form; if(!f){ cont.innerHTML=''; return; }
+  const tt=document.getElementById('materi-form-title');
+  if(tt) tt.textContent='Materi & Peraturan — '+(f.editId?'Ubah Peraturan':'Tambah Peraturan');
+  cont.innerHTML=materiFormHtml();
+}
+function materiFormHtml(){
+  const f=materiState.form;
+  const katOpts=MATERI_KATEGORI.concat(
+    (f.kategori && !MATERI_KATEGORI.includes(f.kategori)) ? [f.kategori] : []
+  ).map(o=>'<option'+(o===f.kategori?' selected':'')+'>'+fkEsc(o)+'</option>').join('');
+  /* Info berkas: berkas baru (staged, belum diunggah) diutamakan tampil. */
+  let berkasHtml;
+  if(f.staged){
+    berkasHtml =
+      '<span class="materi-file-ok" title="'+fkEsc(f.staged.name)+'">'+fkEsc(f.staged.name)+
+        ' <em>('+fkFmtSize(f.staged.size)+' — baru, disimpan saat Simpan)</em></span>'+
+      '<button type="button" class="btn btn-teal btn-sm" onclick="materiPickFile()">'+DPENG_IC_UP+' Ganti</button>'+
+      '<button type="button" class="act act-del" title="Batalkan berkas baru" onclick="materiUnstageFile()">'+DPENG_IC_DEL+'</button>';
+  }else if(f.berkas && f.berkas.path){
+    berkasHtml =
+      '<span class="materi-file-ok" title="'+fkEsc(f.berkas.nama_file||'')+'">'+fkEsc(f.berkas.nama_file||'Terunggah')+
+        ' <em>('+fkFmtSize(f.berkas.ukuran||0)+')</em></span>'+
+      '<button type="button" class="act act-view" title="Lihat berkas" onclick="materiPreview(\''+fkEsc(String(f.editId||''))+'\')">'+DPENG_IC_VIEW+'</button>'+
+      '<button type="button" class="btn btn-teal btn-sm" onclick="materiPickFile()">'+DPENG_IC_UP+' Ganti Berkas</button>';
+  }else{
+    berkasHtml =
+      '<button type="button" class="btn btn-teal btn-sm" onclick="materiPickFile()">'+DPENG_IC_UP+' Unggah Berkas</button>'+
+      '<span class="materi-file-no">Belum ada berkas</span>';
+  }
+  return '' +
+  '<div class="form-card">' +
+    '<div class="form-section-title">'+(typeof KR_SECTION_ICON!=='undefined'?KR_SECTION_ICON:'')+'Data Materi / Peraturan</div>' +
+    '<div class="materi-frow">' +
+      '<div class="field materi-f-kat"><label>Kategori <span class="req">*</span></label>' +
+        '<select id="materi-f-kategori" onchange="materiFormSync()"><option value="">— Pilih —</option>'+katOpts+'</select></div>' +
+      '<div class="field materi-f-nama"><label>Nama Materi / Peraturan <span class="req">*</span></label>' +
+        '<input id="materi-f-nama" type="text" value="'+fkEsc(f.nama)+'" oninput="materiNamaInput()" placeholder="cth. Peraturan Direksi No. 0022.P/DIR/2023 tentang Pengadaan Barang/Jasa">' +
+        '<div class="dpeng-dupe" id="materi-dupe-warn"'+(materiCariDuplikat(f.nama,f.editId)?'':' style="display:none"')+'>'+
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 9v5"/><path d="M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg>'+
+          '<span>Nama materi/peraturan ini sudah ada — data tidak dapat disimpan ganda.</span>'+
+        '</div></div>' +
+      '<div class="field materi-f-tgl"><label>Tgl. Terbit <span class="req">*</span></label>' +
+        '<input id="materi-f-tgl" type="date" value="'+fkEsc(f.tgl)+'" onchange="materiFormSync()" oninput="materiFormSync()"></div>' +
+    '</div>' +
+    '<div class="field materi-f-file materi-file-row"><label>Berkas <span class="req">*</span></label>' +
+      '<div class="materi-file-bar">'+berkasHtml+'</div>' +
+    '</div>' +
+    '<div class="dpeng-uphint">'+MATERI_ACCEPT_HINT+' • maks. '+MATERI_MAX_MB+' MB per berkas (batas gateway Cloudflare).</div>' +
+    '<div class="pn-doc-bar materi-act-bar">' +
+      '<button type="button" class="btn btn-indigo" onclick="materiSubmitForm()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> Simpan</button>' +
+      '<button type="button" class="btn btn-red" onclick="materiFormBatal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg> Kembali</button>' +
+    '</div>' +
+  '</div>';
+}
+/* Penyelaras DOM -> state (formulir digambar ulang dari state, jadi nilai yang
+   hanya ada di DOM akan hilang bila tidak disalin lebih dulu). */
+function materiFormSync(){
+  const f=materiState.form; if(!f) return;
+  const eKat=document.getElementById('materi-f-kategori');
+  const eNam=document.getElementById('materi-f-nama');
+  const eTgl=document.getElementById('materi-f-tgl');
+  if(eKat) f.kategori=eKat.value||'';
+  if(eNam) f.nama=eNam.value||'';
+  if(eTgl) f.tgl=eTgl.value||'';
+}
+function materiNamaInput(){ materiFormSync(); materiDupeCek(); }
+function materiDupeCek(){
+  const f=materiState.form; if(!f) return false;
+  const el=document.getElementById('materi-dupe-warn');
+  const kembar=materiCariDuplikat(f.nama, f.editId);
+  if(el) el.style.display = kembar ? '' : 'none';
+  return !!kembar;
+}
+/* Pilih berkas lewat pop up seret & lepas (sama seperti Dokumen Pengadaan).
+   Berkas HANYA disiapkan (staged); unggahannya dilakukan saat "Simpan" agar
+   path-nya bisa memakai id record yang sudah pasti. */
+function materiPickFile(){
+  materiFormSync();
+  const f=materiState.form; if(!f) return;
+  if(typeof openTplUpload==='function'){
+    openTplUpload({
+      title:(f.berkas&&f.berkas.path?'Ganti Berkas — ':'Unggah Berkas — ')+(f.nama||'Materi / Peraturan'),
+      accept:MATERI_ACCEPT,
+      hint:MATERI_ACCEPT_HINT+' • maks. '+MATERI_MAX_MB+' MB',
+      onFile:function(file){ materiStageFile(file); }
+    });
+    return;
+  }
+  toast('Pop up unggah tidak tersedia','err');
+}
+function materiStageFile(file){
+  const f=materiState.form; if(!f || !file) return;
+  if(MATERI_MAX_MB>0 && file.size>MATERI_MAX_MB*1024*1024){
+    const mb=(file.size/1048576).toFixed(1);
+    toast('Berkas '+mb+' MB melebihi batas '+MATERI_MAX_MB+' MB dari gateway Cloudflare. Silakan kompres berkasnya.','err');
+    return;
+  }
+  f.staged=file;
+  renderMateriForm();
+  toast('Berkas siap — tekan Simpan untuk mengunggah','ok');
+}
+function materiUnstageFile(){
+  const f=materiState.form; if(!f) return;
+  materiFormSync(); f.staged=null; renderMateriForm();
+}
+function materiFormBatal(){
+  openConfirm({ icon:'back', title:'Kembali',
+    text:'Kembali ke daftar? Isian formulir akan dikosongkan (berkas yang sudah tersimpan tetap ada).',
+    onYes:function(){ materiState.form=null; showView('materi-view'); } });
+}
+/* ---- Simpan: record dulu, lalu unggah berkas (bila ada yang baru) ---- */
+async function materiSubmitForm(){
+  const f=materiState.form; if(!f) return;
+  materiFormSync();
+  if(!f.kategori){ toast('Kategori wajib dipilih','warn'); return; }
+  if(!f.nama){ toast('Nama Materi / Peraturan wajib diisi','warn'); return; }
+  if(!f.tgl){ toast('Tgl. Terbit wajib diisi','warn'); return; }
+  const kembar=materiCariDuplikat(f.nama, f.editId);
+  if(kembar){
+    materiDupeCek();
+    toast('"'+materiNama(kembar)+'" sudah ada di Materi & Peraturan. Gunakan tombol Edit pada baris tersebut.','err');
+    return;
+  }
+  if(!f.staged && !(f.berkas && f.berkas.path)){ toast('Berkas materi/peraturan wajib diunggah','warn'); return; }
+
+  const rec={ kategori:f.kategori, nama:f.nama, tgl_terbit:f.tgl };
+  let recId=f.editId;
+  try{
+    await withActionLoader(f.editId?'Menyimpan perubahan':'Menyimpan', async()=>{
+      if(f.editId){ await StoreMateri.update(f.editId, rec); }
+      else{ const created=await StoreMateri.create(rec); recId=created&&created.id; }
+    });
+  }catch(err){ console.error(err); toast('Gagal menyimpan: '+errMsg(err),'err'); return; }
+  if(!recId){ toast('Gagal menyimpan: id record tidak diperoleh','err'); return; }
+
+  /* Unggah berkas baru bila ada. Path WAJIB berawalan "dpeng/" agar diterima
+     Worker R2; titik ganda dinetralkan karena Worker menolaknya. */
+  if(f.staged){
+    const file=f.staged;
+    const safe=String(file.name||'file').replace(/[^\w.\-]+/g,'_').replace(/\.{2,}/g,'.');
+    const path=MATERI_PREFIX+String(recId)+'/'+Date.now()+'_'+safe;
+    const oldPath=(f.berkas&&f.berkas.path)||'';
+    try{
+      if(typeof pnUploadProgressOpen==='function') pnUploadProgressOpen(file.name);
+      await dpengStoragePut(path, file, pnUploadProgressBytes);
+      if(typeof pnUploadProgressPhase==='function') pnUploadProgressPhase('Menyimpan data…');
+      const berkas={ nama_file:file.name, path:path, ukuran:file.size,
+                     mime:file.type||'application/octet-stream', uploaded_at:new Date().toISOString() };
+      await StoreMateri.update(recId, {berkas});
+      if(oldPath && oldPath!==path) await dpengStorageRemove(oldPath);
+      if(typeof pnUploadProgressDone==='function') pnUploadProgressDone(()=>{});
+      else if(typeof pnUploadProgressClose==='function') pnUploadProgressClose();
+    }catch(err){
+      console.error(err);
+      if(typeof pnUploadProgressClose==='function') pnUploadProgressClose();
+      /* Record sudah tersimpan; hanya berkasnya yang gagal → beri tahu apa
+         adanya supaya pengguna tinggal mengulang unggahannya lewat Edit. */
+      toast('Data tersimpan, tetapi berkas gagal diunggah: '+errMsg(err),'err');
+      await refreshDataMateri();
+      materiState.form=null; showView('materi-view');
+      return;
+    }
+  }
+  await refreshDataMateri();
+  toast(f.editId?'Perubahan tersimpan':'Materi/Peraturan tersimpan','ok');
+  materiState.form=null;
   showView('materi-view');
+}
+
+/* ==================================================================
+   LIHAT & HAPUS
+   ================================================================== */
+async function materiPreview(recId){
+  const rec=(records_materi||[]).find(r=>String(r.id)===String(recId));
+  const b=materiBerkas(rec);
+  if(!rec){ toast('Data tidak ditemukan','warn'); return; }
+  if(!b || !b.path){ toast('Materi/peraturan ini belum memiliki berkas','warn'); return; }
+  const titleEl=document.getElementById('pn-preview-title');
+  const bodyEl =document.getElementById('pn-preview-body');
+  const ov     =document.getElementById('pn-preview-overlay');
+  if(titleEl) titleEl.textContent=b.nama_file||materiNama(rec);
+  if(typeof pnCleanupPreview==='function') pnCleanupPreview();
+  const mdl=document.querySelector('#pn-preview-overlay .pn-preview-modal'); if(mdl) mdl.classList.remove('is-max');
+  if(typeof pnPreviewResetMaxBtn==='function') pnPreviewResetMaxBtn();
+  if(bodyEl){ bodyEl.classList.remove('fkl-preview-body','has-tabs'); bodyEl.innerHTML='<div class="pn-preview-nofile">Memuat pratinjau…</div>'; }
+  if(ov) ov.classList.add('show');
+  try{
+    const raw=await dpengStorageGet(b.path);
+    if(!raw){ if(bodyEl) bodyEl.innerHTML=materiPreviewFallbackHtml(recId,b,'Berkas tidak ditemukan di penyimpanan.'); return; }
+    const mime=b.mime||raw.type||'application/octet-stream';
+    const blob=(raw.type===mime)?raw:new Blob([raw],{type:mime});
+    const url=URL.createObjectURL(blob);
+    pnPreviewCtx={url, name:b.nama_file||'file'};
+    const nm=String(b.nama_file||'').toLowerCase();
+    const isPdf=mime.includes('pdf')||nm.endsWith('.pdf');
+    const isImg=mime.indexOf('image/')===0||/\.(png|jpe?g|gif|webp|bmp)$/.test(nm);
+    if(!bodyEl) return;
+    if(isPdf){ bodyEl.innerHTML='<iframe title="Pratinjau PDF"></iframe>'; bodyEl.querySelector('iframe').src=url; }
+    else if(isImg){ bodyEl.innerHTML='<img alt="Pratinjau gambar">'; bodyEl.querySelector('img').src=url; }
+    else{ bodyEl.innerHTML=materiPreviewFallbackHtml(recId,b,'Jenis berkas ini tidak dapat dipratinjau di peramban. Silakan unduh untuk membukanya.'); }
+  }catch(err){
+    console.error('materiPreview:',err);
+    if(bodyEl) bodyEl.innerHTML=materiPreviewFallbackHtml(recId,b,'Gagal memuat berkas: '+errMsg(err));
+  }
+}
+function materiPreviewFallbackHtml(recId, b, msg){
+  return '<div class="pn-preview-nofile">'+
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>'+
+    '<div class="fn">'+fkEsc((b&&b.nama_file)||'')+'</div>'+
+    '<div style="margin-top:6px;font-size:11.5px">'+fkEsc(msg||'')+'</div>'+
+    '<div style="margin-top:14px"><button class="btn btn-teal" onclick="materiDownload(\''+fkEsc(String(recId))+'\')">'+DPENG_IC_DL+' Unduh Berkas</button></div>'+
+  '</div>';
+}
+async function materiDownload(recId){
+  try{
+    const rec=(records_materi||[]).find(r=>String(r.id)===String(recId));
+    const b=materiBerkas(rec);
+    if(!b||!b.path){ toast('Berkas tidak ditemukan','warn'); return; }
+    const blob=await withActionLoader('Mengunduh', async()=>await dpengStorageGet(b.path));
+    if(!blob){ toast('Berkas tidak ditemukan','warn'); return; }
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=b.nama_file||'materi';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 60000);
+  }catch(err){ console.error(err); toast('Gagal mengunduh: '+errMsg(err),'err'); }
+}
+function materiHapus(recId){
+  if(!isAdmin()){ toast('Menu ini hanya untuk akun admin','warn'); return; }
+  const target=(records_materi||[]).find(r=>String(r.id)===String(recId));
+  if(!target){ toast('Data tidak ditemukan','warn'); return; }
+  const b=materiBerkas(target);
+  openConfirm({ icon:'warn', title:'Hapus Materi / Peraturan',
+    text:'Hapus "'+(materiNama(target)||'(tanpa nama)')+'"'+(b&&b.path?' beserta berkasnya':'')+'? Tindakan tidak dapat dibatalkan.',
+    onYes:async function(){
+      try{
+        await withActionLoader('Menghapus', async()=>{
+          if(b&&b.path) await dpengStorageRemove(b.path);
+          await StoreMateri.remove(target.id);
+          await refreshDataMateri();
+        });
+        toast('Data dihapus','ok');
+      }catch(err){ console.error(err); toast('Gagal menghapus: '+errMsg(err),'err'); return; }
+      renderMateriView();
+    }});
 }
 
 const FKL_INFO_FIELDS=[
@@ -17793,7 +18102,7 @@ resetLoginForm();
   const lastActiveAt=parseInt(ssGet(LAST_ACTIVE_KEY)||'0',10);
   const tooOldSession = loginAt>0 && (now-loginAt) > SESSION_MAX_MS;
   const tooLongIdle = IDLE_LOGOUT_ENABLED && lastActiveAt>0 && (now-lastActiveAt) > IDLE_LIMIT_MS;
-  const hasRole = (role==='admin' || role==='user' || role==='guest' || role==='demo');
+  const hasRole = (role==='admin' || role==='guest');
   if(hasRole && !tooOldSession && !tooLongIdle){
     currentUsername = uname || null;
     // Refresh: kembali ke halaman terakhir (data di halaman itu di-refresh), bukan ke dashboard.
@@ -17804,7 +18113,7 @@ resetLoginForm();
       // Masuk aplikasi dulu (tanpa pindah halaman), lalu pulihkan form dari draft
       // sehingga data yang sedang diketik / diubah TIDAK hilang saat refresh.
       enterApp(role, 'dashboard');
-      const canInput = (role==='admin' || role==='user' || role==='demo');
+      const canInput = (role==='admin');
       if(canInput && draft && draft.kind===view && restoreDraft(draft)){
         // berhasil dipulihkan (termasuk mode Ubah Data)
       }else{

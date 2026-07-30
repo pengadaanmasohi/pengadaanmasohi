@@ -1179,9 +1179,7 @@ tbody.tbody-reveal>tr:nth-child(10){animation-delay:.29s}
 .user-role-ic{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.18);box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)}
 .user-role-ic svg{width:14px;height:14px;color:#fff;display:block}
 .user-role-ic.admin{background:linear-gradient(135deg,rgba(246,180,14,.5),rgba(246,180,14,.22))}.user-role-ic.admin svg{color:#ffe08a}
-.user-role-ic.user{background:linear-gradient(135deg,rgba(92,195,255,.5),rgba(92,195,255,.22))}.user-role-ic.user svg{color:#d4efff}
 .user-role-ic.guest{background:linear-gradient(135deg,rgba(255,209,102,.46),rgba(255,209,102,.2))}.user-role-ic.guest svg{color:#ffe9bc}
-.user-role-ic.demo{background:linear-gradient(135deg,rgba(167,139,250,.5),rgba(167,139,250,.22))}.user-role-ic.demo svg{color:#e6ddff}
 .topbar-user .logout-btn{display:inline-flex;align-items:center;gap:7px;background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.06));color:#fff;border:1px solid rgba(255,255,255,.22);padding:8px 15px;border-radius:11px;font-family:'Plus Jakarta Sans';font-size:11.5px;font-weight:700;cursor:pointer;transition:background .18s ease,border-color .18s ease,transform .16s cubic-bezier(.16,1,.3,1),box-shadow .2s ease;box-shadow:inset 0 1px 0 rgba(255,255,255,.2)}
 .topbar-user .logout-btn:hover{background:linear-gradient(135deg,var(--red),#e25151);border-color:transparent;transform:translateY(-2px);box-shadow:0 6px 18px rgba(211,58,58,.4)}
 .topbar-user .logout-btn:active{transform:translateY(0) scale(.98)}
@@ -1201,7 +1199,7 @@ tbody.tbody-reveal>tr:nth-child(10){animation-delay:.29s}
 .settings-account .user-chip{background:linear-gradient(135deg,var(--teal),var(--cyan));border:none;color:#fff;padding:5px 12px 5px 6px;font-size:11.5px;box-shadow:0 3px 10px rgba(14,124,134,.28)}
 .settings-account .user-role-ic{width:22px;height:22px;background:rgba(255,255,255,.22);box-shadow:inset 0 0 0 1px rgba(255,255,255,.3)}
 .settings-account .user-role-ic svg{color:#fff}
-.settings-account .user-role-ic.admin svg,.settings-account .user-role-ic.user svg,.settings-account .user-role-ic.guest svg{color:#fff}
+.settings-account .user-role-ic.admin svg,.settings-account .user-role-ic.guest svg{color:#fff}
 .settings-sep{height:1px;background:linear-gradient(90deg,transparent,rgba(20,50,60,.1),transparent);margin:7px 4px}
 .settings-item{display:flex;align-items:center;gap:11px;width:100%;padding:10px 11px;border:none;background:none;border-radius:10px;font-family:'Plus Jakarta Sans';font-size:12.5px;font-weight:700;color:#22343a;cursor:pointer;text-align:left;transition:background .15s ease,color .15s ease}
 .settings-item svg{width:17px;height:17px;flex:0 0 auto;color:#54666c;transition:color .15s ease}
@@ -6652,4 +6650,179 @@ table.ac-matrix tbody tr,
 .settings-gear:focus-visible{
   outline:2px solid #fff !important;
   outline-offset:2px !important;
+}
+
+/* =========================================================================
+   MATERI & PERATURAN
+   Struktur & rasa visualnya mengikuti Dokumen Pengadaan: toolbar filter +
+   tabel berpaginasi pada halaman daftar (#view-materi-view), dan satu
+   form-card pada halaman tambah/ubah (#view-materi-form).
+   ========================================================================= */
+
+/* ---------- Peringatan nama ganda (dipakai Dokumen Pengadaan & Materi) ----------
+   Tampil di bawah kolom nama saat nama yang diketik sudah dipakai record lain.
+   display diatur dari JS (none/'') sehingga di sini TIDAK boleh ada display
+   pada state normal selain flex. */
+.dpeng-dupe{
+  display:flex;align-items:flex-start;gap:6px;margin-top:6px;
+  padding:6px 9px;border-radius:9px;
+  font-size:11.5px;font-weight:700;line-height:1.35;
+  color:#9a2b2b;background:rgba(211,58,58,.08);
+  border:1px solid rgba(211,58,58,.26);
+}
+.dpeng-dupe svg{flex:0 0 auto;width:14px;height:14px;margin-top:1px}
+
+/* ---------- Kolom tabel ---------- */
+.materi-col-kat{min-width:150px;max-width:220px}
+/* Lencana jenis berkas di belakang Nama Materi / Peraturan */
+.materi-file-chip{
+  display:inline-block;margin-left:8px;padding:1px 8px;border-radius:999px;
+  font-size:10.5px;font-weight:800;letter-spacing:.03em;vertical-align:middle;
+  background:rgba(120,132,140,.14);color:#5d6b74;border:1px solid rgba(120,132,140,.22);
+}
+.materi-file-chip.ok{background:rgba(37,99,235,.10);color:#1d4ed8;border-color:rgba(37,99,235,.28)}
+
+/* ---------- Formulir: satu baris horizontal ----------
+   Kategori | Nama Materi / Peraturan | Tgl. Terbit. Kategori & Tgl. selebar
+   isinya (opsi/judul terpanjang), Nama mengambil seluruh sisa ruang. */
+.materi-frow{display:flex;flex-wrap:wrap;gap:14px 22px;align-items:flex-start}
+.materi-frow>.field{min-width:0;margin:0}
+.materi-frow>.materi-f-nama{flex:1 1 260px;min-width:220px}
+.materi-frow>.materi-f-nama input{width:100%}
+.materi-frow>.materi-f-kat,
+.materi-frow>.materi-f-tgl{flex:0 0 auto;width:max-content;max-width:100%}
+.materi-frow>.materi-f-tgl{min-width:168px}
+.materi-frow>.materi-f-kat select,
+.materi-frow>.materi-f-tgl input{width:100%}
+@media(max-width:820px){
+  .materi-frow>.field{flex:1 1 100%!important;width:100%!important}
+}
+
+/* ---------- Baris "Berkas": label di kiri, kontrol sebaris di kanan ---------- */
+.materi-f-file.materi-file-row{
+  display:flex;flex-direction:row;align-items:center;gap:14px;
+  margin-top:20px;padding-top:16px;border-top:1px solid var(--line);
+}
+.materi-f-file.materi-file-row>label{margin:0;flex:0 0 auto}
+.materi-file-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-left:auto;justify-content:flex-end}
+.materi-file-ok{
+  font-size:12px;font-weight:700;color:var(--green);
+  max-width:420px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.materi-file-ok em{font-style:normal;font-weight:600;color:var(--muted)}
+.materi-file-no{font-size:12px;font-weight:600;color:#b08400}
+@media(max-width:720px){
+  .materi-f-file.materi-file-row{flex-direction:column;align-items:stretch;gap:10px}
+  .materi-file-bar{margin-left:0;justify-content:flex-start}
+  .materi-file-ok{max-width:100%}
+}
+
+/* ---------- Baris tombol Simpan / Kembali ---------- */
+.pn-doc-bar.materi-act-bar{margin-top:18px;padding-top:16px;border-top:1px solid var(--line);
+  display:flex;gap:10px;flex-wrap:wrap}
+
+/* =========================================================================
+   EFEK 3D — menyamakan Materi & Peraturan dengan isi menu "Dokumen" lainnya.
+   Catatan yang sama berlaku: wadah TIDAK ditransform (isinya ikut bergeser),
+   elemen interaktif memakai scale() — bukan translateY — agar kursor tidak
+   berkedip & klik tidak gagal di tepi bawah tombol.
+   ========================================================================= */
+#view-materi-form{ perspective:1600px; perspective-origin:50% 0% }
+
+#view-materi-view .toolbar,#view-materi-form .form-card{
+  border-radius:16px;
+  transition:box-shadow .3s ease;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.92),
+    inset 0 -1px 0 rgba(16,40,50,.05),
+    0 1px 2px rgba(16,40,50,.07),
+    0 6px 12px rgba(16,40,50,.07),
+    0 16px 28px rgba(16,40,50,.09),
+    0 32px 56px rgba(16,40,50,.07);
+}
+#view-materi-form .form-card:hover{
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.95),
+    inset 0 -1px 0 rgba(16,40,50,.05),
+    0 2px 4px rgba(16,40,50,.08),
+    0 10px 20px rgba(16,40,50,.10),
+    0 24px 44px rgba(16,40,50,.12),
+    0 46px 78px rgba(16,40,50,.09);
+}
+
+/* Kepala & baris tabel */
+#view-materi-view .panel thead th{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 3px 8px rgba(16,40,50,.16);
+  text-shadow:0 1px 1px rgba(9,63,69,.35);
+}
+#view-materi-view .panel tbody tr{
+  transition:transform .2s cubic-bezier(.16,1,.3,1),box-shadow .2s ease,background .2s ease;
+}
+#view-materi-view .panel tbody tr:hover{
+  transform:scale(1.006);
+  box-shadow:0 6px 16px rgba(16,40,50,.13),0 1px 3px rgba(16,40,50,.08);
+  position:relative; z-index:1;
+}
+
+/* Tombol aksi (ikon) */
+#view-materi-view .act,#view-materi-form .act{
+  transition:transform .16s cubic-bezier(.16,1,.3,1),box-shadow .16s ease,filter .16s ease;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.34),
+    inset 0 -2px 0 rgba(0,0,0,.16),
+    0 3px 6px rgba(16,40,50,.20),
+    0 1px 2px rgba(16,40,50,.14);
+}
+#view-materi-view .act:hover,#view-materi-form .act:hover{
+  transform:scale(1.10);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.40),
+    inset 0 -2px 0 rgba(0,0,0,.16),
+    0 7px 14px rgba(16,40,50,.26),
+    0 2px 4px rgba(16,40,50,.16);
+  filter:brightness(1.05);
+}
+#view-materi-view .act:active,#view-materi-form .act:active{
+  transform:scale(.94);
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.26),0 1px 1px rgba(16,40,50,.14);
+}
+
+/* Tombol biasa (Reset, Tambah Peraturan, Unggah Berkas, Simpan, Kembali) */
+#view-materi-view .btn,#view-materi-form .btn{
+  transition:transform .16s cubic-bezier(.16,1,.3,1),box-shadow .16s ease,filter .16s ease;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.28),
+    inset 0 -2px 0 rgba(0,0,0,.14),
+    0 4px 9px rgba(16,40,50,.18),
+    0 1px 2px rgba(16,40,50,.12);
+}
+#view-materi-view .btn:hover,#view-materi-form .btn:hover{
+  transform:scale(1.04);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.34),
+    inset 0 -2px 0 rgba(0,0,0,.14),
+    0 9px 18px rgba(16,40,50,.24),
+    0 2px 5px rgba(16,40,50,.14);
+}
+#view-materi-view .btn:active,#view-materi-form .btn:active{
+  transform:scale(.97);
+  box-shadow:inset 0 3px 7px rgba(0,0,0,.22),0 1px 1px rgba(16,40,50,.12);
+}
+#view-materi-view .btn:hover svg,#view-materi-form .btn:hover svg{ transform:scale(1.08) }
+
+/* Judul & isian */
+#view-materi-form .page-head h2{
+  text-shadow:0 1px 0 rgba(255,255,255,.9),0 2px 4px rgba(16,40,50,.12);
+}
+#view-materi-form .form-section-title{ text-shadow:0 1px 0 rgba(255,255,255,.85) }
+#view-materi-view .filter-field input,#view-materi-view .filter-field select,
+#view-materi-form .field input,#view-materi-form .field select{
+  box-shadow:inset 0 2px 4px rgba(16,40,50,.07),inset 0 -1px 0 rgba(255,255,255,.9);
+}
+#view-materi-view .materi-file-chip{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 1px 2px rgba(16,40,50,.12);
+}
+
+@media (prefers-reduced-motion:reduce){
+  #view-materi-form *{ transition:none!important;transform:none!important }
 }

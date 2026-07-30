@@ -323,10 +323,10 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
           </button>
           <div class="topnav-dropdown">
             <!-- Perjanjian/Kontrak: dahulu "File Kontrak" — halaman & fungsi tak berubah.
-                 Akun TAMU tidak lagi diberi akses: seluruh isi grup "Dokumen" kini
-                 khusus admin/user, sehingga grup ini otomatis tersembunyi bagi Tamu
+                 Akun TAMU tidak diberi akses: seluruh isi grup "Dokumen" kini khusus
+                 admin, sehingga grup ini otomatis tersembunyi bagi Tamu
                  (applyRole menyembunyikan grup yang seluruh itemnya tidak tampil). -->
-            <button class="topnav-item" data-view="fk-view" data-role="admin user" onclick="openFkView('kr')">
+            <button class="topnav-item" data-view="fk-view" data-role="admin" onclick="openFkView('kr')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/><path d="M12 11v6M9 14h6"/></svg>
               Perjanjian/Kontrak
             </button>
@@ -481,7 +481,7 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
         </div>
         <div class="head-right-tools">
           <div class="fk-seg mod-seg">
-            <button class="fk-seg-btn active" data-role="admin user guest" onclick="newRecord()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 5c0 1.66 4 3 9 3s9-1.34 9-3-4-3-9-3-9 1.34-9 3"/></svg>SPBJ / Kontrak Rinci</button>
+            <button class="fk-seg-btn active" data-role="admin guest" onclick="newRecord()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 5c0 1.66 4 3 9 3s9-1.34 9-3-4-3-9-3-9 1.34-9 3"/></svg>SPBJ / Kontrak Rinci</button>
             <button class="fk-seg-btn" data-role="admin" onclick="newRecordPl()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>Pengadaan Langsung</button>
             <button class="fk-seg-btn" data-role="admin" onclick="newRecordTender()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>Tender</button>
           </div>
@@ -542,10 +542,10 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
           </button>
         </div>
         <div class="head-right-tools">
-          <div class="fk-seg mod-seg" data-role="admin user guest">
-            <button class="fk-seg-btn active" data-role="admin user guest" onclick="showView('list')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 5c0 1.66 4 3 9 3s9-1.34 9-3-4-3-9-3-9 1.34-9 3"/></svg>SPBJ / Kontrak Rinci</button>
-            <button class="fk-seg-btn" data-role="admin user guest" onclick="showView('list-pl')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>Pengadaan Langsung</button>
-            <button class="fk-seg-btn" data-role="admin user guest" onclick="showView('list-tender')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>Tender</button>
+          <div class="fk-seg mod-seg" data-role="admin guest">
+            <button class="fk-seg-btn active" data-role="admin guest" onclick="showView('list')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 5c0 1.66 4 3 9 3s9-1.34 9-3-4-3-9-3-9 1.34-9 3"/></svg>SPBJ / Kontrak Rinci</button>
+            <button class="fk-seg-btn" data-role="admin guest" onclick="showView('list-pl')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>Pengadaan Langsung</button>
+            <button class="fk-seg-btn" data-role="admin guest" onclick="showView('list-tender')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>Tender</button>
           </div>
         </div>
       </div>
@@ -590,7 +590,7 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
           Reset
         </button>
-        <button class="btn btn-teal role-keepspace" data-role="admin user" onclick="newRecord()">
+        <button class="btn btn-teal role-keepspace" data-role="admin" onclick="newRecord()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
           Input Data
         </button>
@@ -631,7 +631,7 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
         </div>
         <div class="head-right-tools">
           <div class="fk-seg mod-seg">
-            <button class="fk-seg-btn" data-role="admin user guest" onclick="newRecord()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 5c0 1.66 4 3 9 3s9-1.34 9-3-4-3-9-3-9 1.34-9 3"/></svg>SPBJ / Kontrak Rinci</button>
+            <button class="fk-seg-btn" data-role="admin guest" onclick="newRecord()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 5c0 1.66 4 3 9 3s9-1.34 9-3-4-3-9-3-9 1.34-9 3"/></svg>SPBJ / Kontrak Rinci</button>
             <button class="fk-seg-btn active" data-role="admin" onclick="newRecordPl()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>Pengadaan Langsung</button>
             <button class="fk-seg-btn" data-role="admin" onclick="newRecordTender()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>Tender</button>
           </div>
@@ -692,10 +692,10 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
           </button>
         </div>
         <div class="head-right-tools">
-          <div class="fk-seg mod-seg" data-role="admin user guest">
-            <button class="fk-seg-btn" data-role="admin user guest" onclick="showView('list')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 5c0 1.66 4 3 9 3s9-1.34 9-3-4-3-9-3-9 1.34-9 3"/></svg>SPBJ / Kontrak Rinci</button>
-            <button class="fk-seg-btn active" data-role="admin user guest" onclick="showView('list-pl')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>Pengadaan Langsung</button>
-            <button class="fk-seg-btn" data-role="admin user guest" onclick="showView('list-tender')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>Tender</button>
+          <div class="fk-seg mod-seg" data-role="admin guest">
+            <button class="fk-seg-btn" data-role="admin guest" onclick="showView('list')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 5c0 1.66 4 3 9 3s9-1.34 9-3-4-3-9-3-9 1.34-9 3"/></svg>SPBJ / Kontrak Rinci</button>
+            <button class="fk-seg-btn active" data-role="admin guest" onclick="showView('list-pl')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>Pengadaan Langsung</button>
+            <button class="fk-seg-btn" data-role="admin guest" onclick="showView('list-tender')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>Tender</button>
           </div>
         </div>
       </div>
@@ -783,7 +783,7 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
         </div>
         <div class="head-right-tools">
           <div class="fk-seg mod-seg">
-            <button class="fk-seg-btn" data-role="admin user guest" onclick="newRecord()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 5c0 1.66 4 3 9 3s9-1.34 9-3-4-3-9-3-9 1.34-9 3"/></svg>SPBJ / Kontrak Rinci</button>
+            <button class="fk-seg-btn" data-role="admin guest" onclick="newRecord()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 5c0 1.66 4 3 9 3s9-1.34 9-3-4-3-9-3-9 1.34-9 3"/></svg>SPBJ / Kontrak Rinci</button>
             <button class="fk-seg-btn" data-role="admin" onclick="newRecordPl()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>Pengadaan Langsung</button>
             <button class="fk-seg-btn active" data-role="admin" onclick="newRecordTender()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>Tender</button>
           </div>
@@ -844,10 +844,10 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
           </button>
         </div>
         <div class="head-right-tools">
-          <div class="fk-seg mod-seg" data-role="admin user guest">
-            <button class="fk-seg-btn" data-role="admin user guest" onclick="showView('list')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 5c0 1.66 4 3 9 3s9-1.34 9-3-4-3-9-3-9 1.34-9 3"/></svg>SPBJ / Kontrak Rinci</button>
-            <button class="fk-seg-btn" data-role="admin user guest" onclick="showView('list-pl')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>Pengadaan Langsung</button>
-            <button class="fk-seg-btn active" data-role="admin user guest" onclick="showView('list-tender')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>Tender</button>
+          <div class="fk-seg mod-seg" data-role="admin guest">
+            <button class="fk-seg-btn" data-role="admin guest" onclick="showView('list')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 5c0 1.66 4 3 9 3s9-1.34 9-3-4-3-9-3-9 1.34-9 3"/></svg>SPBJ / Kontrak Rinci</button>
+            <button class="fk-seg-btn" data-role="admin guest" onclick="showView('list-pl')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>Pengadaan Langsung</button>
+            <button class="fk-seg-btn active" data-role="admin guest" onclick="showView('list-tender')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>Tender</button>
           </div>
         </div>
       </div>
@@ -933,7 +933,7 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
       </div>
       <div class="head-right-tools">
         <div class="fk-seg mod-seg" id="fk-input-seg">
-          <button class="fk-seg-btn" data-role="admin user guest" data-modul="kr" onclick="openFkInput('kr')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 5c0 1.66 4 3 9 3s9-1.34 9-3-4-3-9-3-9 1.34-9 3"/></svg>SPBJ / Kontrak Rinci</button>
+          <button class="fk-seg-btn" data-role="admin guest" data-modul="kr" onclick="openFkInput('kr')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 5c0 1.66 4 3 9 3s9-1.34 9-3-4-3-9-3-9 1.34-9 3"/></svg>SPBJ / Kontrak Rinci</button>
           <button class="fk-seg-btn" data-role="admin" data-modul="pl" onclick="openFkInput('pl')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 4.6A1 1 0 0 0 5.6 19H17"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>Pengadaan Langsung</button>
           <button class="fk-seg-btn" data-role="admin" data-modul="tender" onclick="openFkInput('tender')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4M9 9h1"/></svg>Tender</button>
         </div>
@@ -1036,7 +1036,7 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
           Reset
         </button>
-        <button class="btn btn-teal role-keepspace fk-corner-btn" id="fk-view-tambah" data-role="admin user" onclick="fkTambahData()">
+        <button class="btn btn-teal role-keepspace fk-corner-btn" id="fk-view-tambah" data-role="admin" onclick="fkTambahData()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
           Tambah Data
         </button>
@@ -1092,8 +1092,8 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
           Reset
         </button>
         <button class="btn btn-teal role-keepspace head-add-btn dpeng-corner-btn" id="dpeng-view-unggah" data-role="admin" onclick="dpengOpenUnggah()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v13"/></svg>
-          Unggah Dokumen
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          Tambah Dokumen
         </button>
       </div>
     </div>
@@ -1127,21 +1127,69 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
     <div id="dpeng-unggah-content"></div>
   </section>
 
-  <!-- ============ MATERI & PERATURAN (placeholder) ============ -->
+  <!-- ============ MATERI & PERATURAN — DAFTAR ============ -->
   <section id="view-materi-view" class="view">
     <div class="page-head">
       <div>
-        <h2>Materi &amp; Peraturan</h2>
-        <p>Pustaka materi &amp; regulasi pengadaan</p>
+        <h2>Materi &amp; Peraturan <span class="count-badge" id="materi-view-count">0</span></h2>
+        <p>Pustaka materi &amp; regulasi pengadaan — berkas tersimpan di Cloudflare R2</p>
+      </div>
+    </div>
+    <div class="toolbar fk-toolbar">
+      <div class="filter-field">
+        <label>Kategori</label>
+        <select id="materi-view-kategori" onchange="materiFilterView()"><option value="">Semua Kategori</option></select>
+      </div>
+      <div class="filter-field">
+        <label>Tahun Terbit</label>
+        <select id="materi-view-tahun" onchange="materiFilterView()"><option value="">Semua Tahun</option></select>
+      </div>
+      <div class="filter-field toolbar-search fk-search search-elegant">
+        <label>Cari</label>
+        <div class="search-elegant-box">
+          <svg class="search-elegant-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input id="materi-view-search" type="text" placeholder="Cari Nama Materi / Peraturan" oninput="materiFilterView()">
+        </div>
+      </div>
+      <div class="toolbar-actions fk-actions-inline">
+        <button class="btn btn-red" onclick="materiResetView()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          Reset
+        </button>
+        <button class="btn btn-teal role-keepspace head-add-btn materi-corner-btn" id="materi-view-tambah" data-role="admin" onclick="materiOpenForm()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          Tambah Peraturan
+        </button>
       </div>
     </div>
     <div class="panel">
-      <div class="empty" style="padding:60px 20px">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" style="width:56px;height:56px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>
-        <div style="margin-top:10px;font-weight:700">Menu ini sedang disiapkan</div>
-        <div style="margin-top:4px;color:var(--muted,#6b7280);font-size:13px">Beri tahu isi &amp; struktur yang diinginkan untuk Materi &amp; Peraturan.</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="col-no">No.</th>
+              <th class="materi-col-kat">Kategori</th>
+              <th class="col-nama-freeze">Nama Materi / Peraturan</th>
+              <th class="col-date">Tgl. Terbit</th>
+              <th style="text-align:center">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="materi-view-body"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="materi-view-pagination"></div>
+    </div>
+  </section>
+
+  <!-- ============ MATERI & PERATURAN — TAMBAH / UBAH ============ -->
+  <section id="view-materi-form" class="view">
+    <div class="page-head">
+      <div>
+        <h2 id="materi-form-title">Materi &amp; Peraturan — Tambah Peraturan</h2>
+        <p>Isi kategori, nama materi/peraturan, &amp; tanggal terbit, lalu unggah berkasnya</p>
       </div>
     </div>
+    <div id="materi-form-content"></div>
   </section>
 
   <!-- ============ PENETAPAN NOMOR — AMBIL NOMOR ============ -->
@@ -2064,7 +2112,7 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
 
       <button class="login-btn" onclick="doLogin()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5M15 12H3"/></svg>
-        Masuk Sebagai Admin / User
+        Masuk Sebagai Admin
       </button>
 
       <button class="login-btn guest" style="margin-top:12px" onclick="doLoginGuest()">
