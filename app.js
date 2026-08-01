@@ -1461,7 +1461,11 @@ function navAdjustFlyout(subEl){
    di atasnya, dan submenu berikutnya selalu terbuka di sebelah kanan submenu induk,
    berlaku untuk seluruh tingkat kedalaman menu. */
 (function initNavHover(){
-  const canHover=()=>window.matchMedia('(hover:hover) and (pointer:fine)').matches;
+  /* TATA LETAK SIDEBAR: menu dibuka dengan KLIK, bukan hover.
+     Pada menu-atas, hover memang enak; pada daftar menu vertikal, hover
+     membuat grup buka-tutup sendiri saat kursor sekadar lewat. Kembalikan
+     ke matchMedia('(hover:hover) and (pointer:fine)') bila menu-atas dipakai lagi. */
+  const canHover=()=>false;
   const timers=new WeakMap();
   function clearT(el){ const t=timers.get(el); if(t){ clearTimeout(t); timers.delete(el); } }
   document.querySelectorAll('.topnav-group').forEach(group=>{

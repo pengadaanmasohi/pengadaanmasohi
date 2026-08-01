@@ -6926,3 +6926,260 @@ table.ac-matrix tbody tr,
 @media (prefers-reduced-motion:reduce){
   .materi-kat-modal{ animation:none }
 }
+
+
+/* ============================================================
+   6. LAYOUT SIDEBAR (modern)
+   ------------------------------------------------------------
+   Menu dipindah dari atas ke samping kiri. Nama kelas .topnav-*
+   SENGAJA dipertahankan agar seluruh logika lama di app.js tetap
+   berjalan; blok ini hanya mengubah TATA LETAK & tampilannya:
+
+     .topnav-group   -> akordeon (dulu dropdown melayang)
+     .topnav-sub     -> akordeon tingkat 2 (dulu flyout ke kanan)
+     .topbar-user    -> pindah ke bilah atas ramping (.appbar)
+
+   Ada 2 keadaan sidebar:
+     (bawaan)          lebar penuh 268px
+     body.side-rail    menciut jadi 76px (hanya ikon + tooltip)
+   ============================================================ */
+:root{
+  --side-w:268px;         /* lebar sidebar terbuka */
+  --side-rail:76px;       /* lebar sidebar menciut */
+  --appbar-h:58px;        /* tinggi bilah atas ramping */
+  --side-1:#052a2f; --side-2:#073f45; --side-3:#0a6067;
+}
+
+/* ---------- kerangka ---------- */
+.app-shell{display:flex;min-height:100vh;align-items:stretch}
+.app-main{flex:1 1 auto;min-width:0;display:flex;flex-direction:column}
+/* Ruang isi dilebarkan (dulu 1180px) — sisa ruang dari menu-atas dipakai tabel */
+.wrap{max-width:1320px}
+
+/* ---------- SIDEBAR ---------- */
+.sidebar-shell{
+  position:sticky;top:0;align-self:flex-start;
+  flex:0 0 var(--side-w);width:var(--side-w);height:100vh;
+  display:flex;flex-direction:column;color:#fff;z-index:60;
+  background:
+    radial-gradient(420px 220px at 20% 0%, rgba(22,169,181,.30), transparent 62%),
+    linear-gradient(168deg,var(--side-1) 0%,var(--side-2) 42%,var(--teal-dark) 76%,var(--side-3) 100%);
+  box-shadow:10px 0 34px rgba(5,32,36,.20);
+  transition:flex-basis .3s cubic-bezier(.16,1,.3,1),width .3s cubic-bezier(.16,1,.3,1);
+}
+/* Garis aksen beranimasi di tepi kanan (memakai keyframes sheenV yang sudah ada) */
+.sidebar-shell::after{
+  content:"";position:absolute;top:0;bottom:0;right:0;width:3px;
+  background:linear-gradient(180deg,var(--yellow),var(--cyan),var(--yellow));
+  background-size:100% 200%;animation:sheenV 7s linear infinite;opacity:.85}
+.sidebar-shell .topbar-inner{
+  display:flex;flex-direction:column;align-items:stretch;
+  gap:0;height:100%;max-width:none;margin:0;padding:0;min-width:0;overflow:hidden}
+
+/* --- kepala: logo + nama --- */
+.sidebar-shell .topbar-brand{
+  display:flex;align-items:center;gap:12px;flex:0 0 auto;
+  padding:18px 18px 16px;border-bottom:1px solid rgba(255,255,255,.10)}
+.sidebar-shell .topbar-brand .logo{width:42px;height:42px;flex:0 0 42px;border-radius:12px}
+.sidebar-shell .brand{min-width:0;overflow:hidden}
+.sidebar-shell .brand h1{font-size:12.5px;line-height:1.25;white-space:normal}
+.sidebar-shell .brand span{font-size:8.5px;letter-spacing:1.4px;display:block;margin-top:2px}
+
+/* --- daftar menu --- */
+#topnav{
+  display:flex;flex:1 1 auto;flex-direction:column;align-items:stretch;gap:2px;
+  padding:14px 12px 18px;min-height:0;overflow-y:auto;overflow-x:hidden;
+  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.28) transparent}
+#topnav::-webkit-scrollbar{width:6px}
+#topnav::-webkit-scrollbar-thumb{background:rgba(255,255,255,.24);border-radius:6px}
+#topnav::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.4)}
+
+/* Efek menu-atas yang tak relevan di sidebar dimatikan:
+   miring 3D (transform inline dari app.js), garis bawah, dan denyut kuning. */
+#topnav .topnav-link,#topnav .topnav-trigger,#topnav .topnav-item,#topnav .topnav-subtrigger{transform:none!important}
+#topnav .topnav-link::after,#topnav .topnav-trigger::after,
+#topnav .topnav-group.has-active .topnav-trigger::after{display:none}
+#topnav .topnav-link.active,#topnav .topnav-group.has-active .topnav-trigger{animation:none}
+
+#topnav .topnav-link,#topnav .topnav-trigger{
+  width:100%;justify-content:flex-start;padding:10px 12px;border-radius:12px;
+  font-size:12.5px;gap:12px;overflow:hidden}
+#topnav .topnav-link svg,#topnav .topnav-trigger svg:first-of-type{width:18px;height:18px}
+#topnav .topnav-link:hover,#topnav .topnav-trigger:hover{background:rgba(255,255,255,.10);box-shadow:none}
+#topnav .topnav-link:hover svg,#topnav .topnav-trigger:hover svg:first-of-type{transform:none}
+#topnav .topnav-trigger .caret{margin-left:auto;width:14px;height:14px}
+#topnav .topnav-link.active,#topnav .topnav-group.has-active .topnav-trigger{
+  background:linear-gradient(135deg,var(--yellow),#ffd35a);color:#073f45;
+  box-shadow:0 5px 16px rgba(246,180,14,.34)}
+
+/* --- akordeon tingkat 1 (dulu dropdown melayang) --- */
+#topnav .topnav-group{position:static}
+#topnav .topnav-dropdown{
+  position:static;top:auto;left:auto;min-width:0;width:auto;z-index:auto;
+  background:none;border:none;box-shadow:none;border-radius:0;
+  padding:3px 0 7px 10px;margin:0;animation:sideOpen .22s cubic-bezier(.16,1,.3,1)}
+#topnav .topnav-dropdown::before{display:none}
+@keyframes sideOpen{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
+#topnav .topnav-item,#topnav .topnav-subtrigger{
+  width:100%;text-align:left;padding:9px 12px;margin-left:8px;font-size:11.5px;gap:10px;
+  color:rgba(255,255,255,.74);background:none;
+  border-left:2px solid rgba(255,255,255,.16);border-radius:0 10px 10px 0}
+#topnav .topnav-item svg,#topnav .topnav-subtrigger svg:first-of-type{width:15px;height:15px;color:rgba(255,255,255,.55)}
+#topnav .topnav-item:hover,#topnav .topnav-subtrigger:hover{background:rgba(255,255,255,.10);color:#fff}
+#topnav .topnav-item:hover svg{transform:none}
+#topnav .topnav-item.active{
+  background:rgba(255,255,255,.15);color:#fff;border-left-color:var(--yellow);
+  font-weight:700;box-shadow:none}
+#topnav .topnav-item.active svg{color:var(--yellow)}
+
+/* --- akordeon tingkat 2: Harga Perkiraan Sendiri (dulu flyout ke kanan) --- */
+#topnav .topnav-sub{position:static;display:flex;flex-direction:column}
+#topnav .topnav-subtrigger .caret2{margin-left:auto;width:13px;height:13px;transition:transform .25s}
+#topnav .topnav-sub.open>.topnav-subtrigger{color:#fff;background:rgba(255,255,255,.08)}
+#topnav .topnav-sub.open>.topnav-subtrigger .caret2{transform:rotate(180deg)}
+#topnav .topnav-subdrop{
+  position:static!important;top:auto!important;left:auto!important;right:auto!important;
+  min-width:0;width:auto;z-index:auto;background:none;border:none;box-shadow:none;
+  border-radius:0;padding:2px 0 4px 12px;margin:0;
+  animation:sideOpen .2s cubic-bezier(.16,1,.3,1)}
+#topnav .topnav-subdrop .topnav-item{font-size:11px;margin-left:12px;color:rgba(255,255,255,.68)}
+
+/* --- kaki sidebar --- */
+/* Label pemisah bagian */
+.side-sec{font-size:9px;font-weight:800;letter-spacing:1.3px;text-transform:uppercase;
+  color:rgba(255,255,255,.40);padding:15px 14px 5px}
+.side-sec:first-child{padding-top:4px}
+
+.side-foot{flex:0 0 auto;padding:10px 12px 14px;border-top:1px solid rgba(255,255,255,.10)}
+.side-collapse{
+  display:flex;align-items:center;gap:11px;width:100%;padding:9px 12px;border:none;
+  background:rgba(255,255,255,.07);color:rgba(255,255,255,.8);border-radius:11px;
+  font-family:'Plus Jakarta Sans';font-size:11.5px;font-weight:700;cursor:pointer;
+  transition:background .16s,color .16s}
+.side-collapse svg{width:17px;height:17px;flex:0 0 auto}
+.side-collapse:hover{background:rgba(255,255,255,.14);color:#fff}
+.side-ver{font-size:9px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;
+  color:rgba(255,255,255,.34);text-align:center;padding-top:9px}
+
+/* ---------- BILAH ATAS RAMPING ---------- */
+.appbar{
+  position:sticky;top:0;z-index:55;flex:0 0 auto;min-height:var(--appbar-h);
+  display:flex;align-items:center;gap:14px;padding:9px 22px;
+  background:rgba(255,255,255,.86);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);box-shadow:0 1px 3px rgba(16,40,50,.05)}
+.appbar .nav-burger{
+  display:inline-flex;flex:0 0 auto;width:36px;height:36px;border-radius:11px;
+  background:#f4f9fa;border:1px solid var(--line);color:var(--teal-dark);
+  transition:background .16s,color .16s,border-color .16s}
+.appbar .nav-burger:hover{background:var(--teal-soft);border-color:#bfe0e3}
+.appbar .nav-burger svg{width:18px;height:18px}
+.appbar-crumb{min-width:0;display:flex;flex-direction:column;justify-content:center;line-height:1.25}
+.crumb-path{font-size:10.5px;font-weight:600;color:var(--muted);letter-spacing:.2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crumb-now{font-size:14px;font-weight:800;color:var(--ink);letter-spacing:-.2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.appbar .topbar-user{margin-left:auto;flex:0 0 auto;display:flex;align-items:center;gap:10px}
+/* Ikon gear semula putih di atas latar teal — di bilah putih dibalik warnanya */
+/* Gear tetap cyan (pilihan warna yang sudah ada), hanya ukurannya disesuaikan.
+   Keadaan "menu terbuka" dulu dibalik jadi PUTIH agar kontras di bilah teal —
+   di bilah putih itu jadi tak terlihat, maka di sini dibalik ke teal gelap. */
+.appbar .settings-gear{width:36px;height:36px;border-radius:11px;box-shadow:none}
+.appbar .settings-gear:hover{transform:none}
+.appbar .settings-wrap.open .settings-gear{
+  background:var(--teal-dark)!important;border-color:var(--teal-dark)!important;color:#fff!important}
+.appbar .settings-wrap.open .settings-gear svg{color:#fff!important}
+.appbar .settings-gear svg{width:18px;height:18px}
+
+/* ---------- SIDEBAR MENCIUT (rail ikon) ---------- */
+body.side-rail .sidebar-shell{flex-basis:var(--side-rail);width:var(--side-rail)}
+body.side-rail .sidebar-shell .brand,
+body.side-rail .side-collapse-lbl,
+body.side-rail .side-ver{display:none}
+body.side-rail .sidebar-shell .topbar-brand{justify-content:center;padding:18px 0 16px}
+body.side-rail #topnav{padding:14px 0;align-items:center;gap:5px}
+body.side-rail #topnav .topnav-link,
+body.side-rail #topnav .topnav-trigger{
+  width:46px;height:44px;padding:0;justify-content:center;border-radius:13px;gap:0;
+  font-size:0;letter-spacing:0;background:rgba(255,255,255,.07)}
+body.side-rail #topnav .topnav-link:hover,
+body.side-rail #topnav .topnav-trigger:hover{background:rgba(255,255,255,.16)}
+body.side-rail #topnav .topnav-link.active,
+body.side-rail #topnav .topnav-group.has-active .topnav-trigger{
+  background:linear-gradient(135deg,var(--yellow),#ffd35a)}
+body.side-rail #topnav .topnav-trigger .caret{display:none}
+body.side-rail #topnav .topnav-dropdown,
+body.side-rail #topnav .side-sec{display:none}
+body.side-rail .side-collapse{justify-content:center;padding:9px 0}
+/* Tooltip nama menu saat menciut (judul diisi oleh ui-sidebar.js) */
+body.side-rail #topnav .topnav-link,
+body.side-rail #topnav .topnav-trigger{position:relative}
+body.side-rail #topnav .topnav-link::after,
+body.side-rail #topnav .topnav-trigger::after{
+  content:attr(data-tip);position:absolute;left:calc(100% + 12px);top:50%;
+  transform:translateY(-50%);display:block;background:#062a2f;color:#fff;
+  font-size:11.5px;font-weight:700;letter-spacing:.2px;padding:7px 12px;border-radius:9px;
+  white-space:nowrap;opacity:0;visibility:hidden;pointer-events:none;z-index:120;
+  box-shadow:0 8px 22px rgba(5,32,36,.34);transition:opacity .15s,visibility .15s;
+  left:calc(100% + 12px);right:auto;height:auto;background-image:none}
+body.side-rail #topnav .topnav-link:hover::after,
+body.side-rail #topnav .topnav-trigger:hover::after{opacity:1;visibility:visible}
+
+/* ---------- LAYAR KECIL: sidebar jadi laci geser ---------- */
+@media (max-width:1024px){
+  .sidebar-shell{
+    position:fixed;top:0;left:0;bottom:0;height:100vh;width:284px;max-width:86vw;
+    flex-basis:284px;transform:translateX(-100%);transition:transform .28s cubic-bezier(.16,1,.3,1);
+    z-index:90}
+  body.nav-open .sidebar-shell{transform:none}
+  body.side-rail .sidebar-shell{width:284px;flex-basis:284px}
+  body.side-rail .sidebar-shell .brand,
+  body.side-rail .side-collapse-lbl,
+  body.side-rail .side-ver,
+  body.side-rail #topnav .topnav-dropdown{display:revert}
+  body.side-rail #topnav{padding:14px 12px;align-items:stretch;gap:2px}
+  body.side-rail #topnav .topnav-link,
+  body.side-rail #topnav .topnav-trigger{width:100%;height:auto;padding:10px 12px;
+    justify-content:flex-start;gap:12px;font-size:12.5px}
+  body.side-rail #topnav .topnav-trigger .caret{display:block}
+  body.side-rail #topnav .topnav-link::after,
+  body.side-rail #topnav .topnav-trigger::after{display:none}
+  .app-main{width:100%;min-width:0}
+  /* kembalikan #topnav ke aliran normal (aturan laci lama menargetkan .topnav) */
+  #topnav{position:static;transform:none;background:none;box-shadow:none;
+    padding:14px 12px 18px;width:auto;max-width:none}
+  .topnav-backdrop{z-index:80}
+  .appbar{padding:9px 14px}
+  /* Ciutkan menu tak berarti pada laci geser */
+  .side-collapse{display:none}
+  .side-foot{padding:8px 12px 12px}
+}
+@media (max-width:640px){
+  .wrap{padding:16px}
+  .crumb-path{display:none}
+}
+
+/* ---------- PRATINJAU FILE: LAYAR PENUH ---------- */
+.pn-preview-head-actions .pn-fs-btn{
+  background:linear-gradient(135deg,var(--teal),var(--cyan));color:#fff;border:none;
+  box-shadow:0 4px 12px rgba(14,124,134,.28)}
+.pn-preview-head-actions .pn-fs-btn:hover{filter:brightness(1.06)}
+.pn-preview-head-actions .pn-fs-btn.is-on{
+  background:linear-gradient(135deg,#0b5b63,#0e7c86);box-shadow:0 4px 12px rgba(11,91,99,.34)}
+/* Saat benar-benar layar penuh: modal mengisi seluruh layar, isi ikut memanjang */
+.pn-preview-modal:fullscreen,
+.pn-preview-modal:-webkit-full-screen{
+  width:100vw;max-width:100vw;height:100vh;max-height:100vh;border-radius:0;
+  background:#fff;margin:0;animation:none}
+.pn-preview-modal:fullscreen .pn-preview-body iframe,
+.pn-preview-modal:-webkit-full-screen .pn-preview-body iframe{height:calc(100vh - 62px)}
+.pn-preview-modal:fullscreen .pn-preview-body.has-tabs iframe,
+.pn-preview-modal:-webkit-full-screen .pn-preview-body.has-tabs iframe{height:calc(100vh - 62px - 46px)}
+.pn-preview-modal:fullscreen .pn-preview-body img,
+.pn-preview-modal:-webkit-full-screen .pn-preview-body img{max-height:calc(100vh - 62px)}
+@media(max-width:640px){
+  .pn-preview-head-actions .btn{padding:7px 10px}
+  .pn-preview-head-actions .pn-fs-btn span{display:none}
+}
+/* tooltip rail: batalkan sisa posisi dari indikator garis-bawah lama */
+body.side-rail #topnav .topnav-link::after,
+body.side-rail #topnav .topnav-trigger::after{bottom:auto;width:auto}
