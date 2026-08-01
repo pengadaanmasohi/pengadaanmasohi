@@ -7433,3 +7433,45 @@ body.pratinjau-terbuka{overflow:hidden}
 /* Dokumen selalu di tengah bidang pratinjau */
 .pn-preview-body.fkl-preview-body{text-align:center}
 .pn-preview-body>img{margin-left:auto;margin-right:auto}
+
+
+/* ============================================================
+   13. PENANDA HALAMAN AKTIF — kuning menandai ITEM YANG DIPILIH
+   ------------------------------------------------------------
+   Sebelumnya kuning jatuh ke grup induk (mis. "Form"), padahal yang
+   sedang dibuka adalah salah satu isinya. Sekarang kuning menandai
+   sub menu / sub-sub menu yang benar-benar dipilih; induknya cukup
+   diberi latar putih transparan sebagai petunjuk jalur.
+   Halo kuning (box-shadow) dibuang — halo itulah yang membuat
+   tulisan tampak berbayang / buram.
+   ============================================================ */
+#topnav .topnav-link.active,
+#topnav .topnav-group.has-active .topnav-trigger,
+#topnav .topnav-item.active{box-shadow:none !important; animation:none !important; text-shadow:none}
+
+/* Induk dari halaman aktif: penanda jalur, bukan penanda halaman */
+#topnav .topnav-group.has-active .topnav-trigger{
+  background:rgba(255,255,255,.12);
+  color:#fff;
+  font-weight:700;
+}
+#topnav .topnav-group.has-active .topnav-trigger svg:first-of-type{color:#ffd76a}
+
+/* Sub menu & sub-sub menu yang dipilih -> KUNING */
+#topnav .topnav-item.active{
+  background:linear-gradient(135deg,var(--yellow),#ffd35a);
+  color:#073f45;
+  font-weight:800;
+  border-left-color:#ffe08a;
+}
+#topnav .topnav-item.active svg{color:#073f45}
+#topnav .topnav-item.active:hover{background:linear-gradient(135deg,#ffc22b,#ffdc74);color:#073f45}
+
+/* Induk sub-sub menu (mis. "Harga Perkiraan Sendiri") */
+#topnav .topnav-sub.open>.topnav-subtrigger{
+  background:rgba(255,255,255,.12); color:#fff; font-weight:700}
+#topnav .topnav-sub.open>.topnav-subtrigger svg:first-of-type{color:#ffd76a}
+
+/* Menu tunggal (Dashboard, Penetapan, Susun Kontrak) memang halamannya
+   sendiri, jadi tetap kuning — hanya halonya yang dihapus. */
+#topnav .topnav-link.active{background:linear-gradient(135deg,var(--yellow),#ffd35a);color:#073f45}
