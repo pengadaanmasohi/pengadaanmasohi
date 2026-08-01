@@ -529,12 +529,25 @@ function spkDlistAlign(html){
   var _pc=0.75; try{ _pc=spkPartyColCm(); }catch(e){ _pc=0.75; }
   var dlT=Math.max(_pc, dlW);                      /* kolom teks daftar = kolom teks pihak */
   var dlMl=Math.round((dlT-dlW)*100)/100;          /* posisi kiri kotak nomor */
-  return s.replace(RE_PUT, function(_m, xtra){
+  s = s.replace(RE_PUT, function(_m, xtra){
     return '<p class="spk-dlist'+(xtra||'')+'" style="margin-left:'+dlMl.toFixed(2)+'cm;padding-left:'+dlW.toFixed(2)+'cm;text-indent:-'+dlW.toFixed(2)+'cm">'+
       '<span class="n" style="width:'+dlW.toFixed(2)+'cm;min-width:'+dlW.toFixed(2)+'cm;'+
       'display:inline-block;box-sizing:border-box;padding-right:'+SPK_NUM_GAP+'cm;text-indent:0;'+
       'white-space:nowrap;overflow:visible;text-align:'+dlRata+'">';
   });
+  /* BARIS RINCIAN "No. Dokumen : ..." & "Tanggal : ..." IKUT KOLOM YANG SAMA.
+     Baris ini (.spk-kv.spk-dkv) dahulu memakai margin kiri TETAP dari CSS —
+     0,7cm untuk SPK dan 0,95cm untuk Perjanjian/Kontrak — padahal kolom teks
+     daftar di atasnya (dlT) DIHITUNG dari lebar penanda nomor, jadi keduanya
+     hanya sejajar secara kebetulan. Pada dokumen PK selisihnya 0,08cm:
+     "Sumber Anggaran" jatuh di 0,87cm sedangkan "No. SKKO/SKKI" di 0,95cm,
+     terlihat sebagai rincian yang menjorok sedikit lebih dalam dari judul
+     butirnya. Di sini margin kirinya dipatok ke dlT yang sama, sehingga
+     rincian selalu menggantung tepat di bawah teks nama dokumennya —
+     termasuk saat daftar mencapai 10+ butir dan kotak nomornya melebar. */
+  s = s.replace(/<div class="spk-kv spk-dkv">/g,
+    '<div class="spk-kv spk-dkv" style="margin-left:'+dlT.toFixed(2)+'cm">');
+  return s;
 }
 function spkPreamblePkTpl(data){
   data=data||{};
@@ -4198,7 +4211,17 @@ function spkPkNumW(sp, kanonHuruf){
      yang berhenti di "c.". Dengan kanonisasi ini semua deret huruf memakai
      lebar yang sama: jeda penanda->teks selalu SPK_NUM_GAP, kolom teks tetap
      sejajar, dan huruf lebar seperti "m." memakan sedikit jedanya sendiri. */
-  if(kanonHuruf) tc=tc.replace(/[A-Za-z]/g,'a');   /* SPK saja; PK tidak diubah */
+  /* DIBERLAKUKAN JUGA UNTUK PERJANJIAN/KONTRAK (permintaan "jarak dari
+     penomoran huruf ke teks sesuaikan dengan Surat Perintah Kerja").
+     Sebelumnya kanonisasi ini hanya untuk SPK, sehingga pada PK lebar kotak
+     deret huruf tetap diambil dari penanda TERLEBAR: daftar yang berjalan
+     sampai "m." memberi kotak selebar "m." kepada SELURUH butirnya, lalu
+     penanda sempit seperti "f." tampak berjeda jauh dari teksnya sementara
+     "a."/"b." lebih rapat — jeda terukur 34-41 px, padahal deret ANGKA di
+     dokumen yang sama tetap 19 px. Dengan huruf selalu diukur sebagai 'a',
+     seluruh deret memakai satu lebar kotak sehingga jeda penanda->teks
+     SELALU = SPK_NUM_GAP, sama persis dengan Surat Perintah Kerja. */
+  tc=tc.replace(/[A-Za-z]/g,'a');
   var w=0;
   try{ w=spkPkTextWidthCm(tc); }catch(e){ w=0; }
   if(!(w>0)){                                  /* pengukuran gagal: perkiraan kasar */
@@ -4651,7 +4674,9 @@ function spkPkIndentStd(html, opsi){
       }
       if(L<1) L=1;
       if(L>5) L=5;
-      item.push({p:p, tok:tok, lvl:L, w:spkPkNumW(spkPkNSpan(p), !(opsi&&opsi.pk))});
+      /* Argumen kedua (kanonisasi huruf) kini SELALU aktif — dahulu dimatikan
+         untuk Perjanjian/Kontrak lewat !(opsi&&opsi.pk). Lihat spkPkNumW(). */
+      item.push({p:p, tok:tok, lvl:L, w:spkPkNumW(spkPkNSpan(p), true)});
     }
 
     /* --- Tahap 1c: SAUDARA SENOMOR SELALU SETINGKAT (28 Jul 2026) ---
