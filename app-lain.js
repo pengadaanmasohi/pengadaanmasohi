@@ -705,12 +705,30 @@
     {t:'klausul_spk',            l:'Klausul SPK',           grp:'Kontrak'},
     {t:'app_profiles',           l:'Profil & Konfigurasi',  grp:'Sistem'}
   ];
-  var ST_BUCKETS=[
-    {b:'file-kontrak', l:'File Kontrak (Cloudflare R2)'},
-    {b:'rho-foto',     l:'Foto Referensi Harga'}
+  /* Bagian penyimpanan R2, mengikuti tabel ROUTES di Worker.
+     `p` = prefiks path (segmen pertama) = kunci pada objek `rincian` yang
+     dikirim Worker lewat /api/usage. `bk` = bucket R2 tempatnya bermuara —
+     perhatikan tiga prefiks pertama berbagi satu bucket `file-kontrak`,
+     jadi rincian ini LEBIH HALUS daripada daftar bucket di dashboard R2.
+     Urutan di sini menentukan urutan tampil pada panel. */
+  var ST_R2_PARTS=[
+    {p:'kontrak-rinci',      bk:'file-kontrak',       l:'SPBJ / Kontrak Rinci'},
+    {p:'pengadaan-langsung', bk:'file-kontrak',       l:'Pengadaan Langsung'},
+    {p:'tender',             bk:'file-kontrak',       l:'Tender'},
+    {p:'dokumen-pengadaan',  bk:'dokumen-pengadaan',  l:'Dokumen Pengadaan'},
+    {p:'materi-peraturan',   bk:'materi-peraturan',   l:'Materi & Peraturan'},
+    {p:'foto-referensi',     bk:'foto-referensi',     l:'Foto Referensi Harga'}
   ];
+  /* Bucket Supabase Storage — WARISAN. Aplikasi tidak lagi menulis ke sini
+     (tidak ada satu pun pemanggilan supabase.storage). Barisnya hanya muncul
+     bila katalog storage.objects MASIH berisi objek, sebagai pengingat bahwa
+     cadangan lama belum dihapus. Ukurannya TIDAK ikut dihitung ke kuota R2. */
+  var ST_LEGACY_LABEL={
+    'file-kontrak':'File Kontrak (cadangan lama)',
+    'rho-foto':'Foto Referensi Harga (cadangan lama)'
+  };
   var ST_DB_QUOTA = 500*1024*1024;      // acuan Free tier Supabase: 0,5 GB database
-  var ST_ST_QUOTA = 10*1024*1024*1024;  // acuan Cloudflare R2 free tier: 10 GB (file-kontrak kini di R2)
+  var ST_ST_QUOTA = 10*1024*1024*1024;  // acuan Cloudflare R2 free tier: 10 GB
 
   function stFmt(b){
     if(b==null || isNaN(b)) return '—';
@@ -765,6 +783,8 @@
     return null;
   }
 
+  /* WARISAN: pemindaian list() Supabase Storage. Tidak lagi dipanggil sejak
+     seluruh berkas pindah ke R2; dipertahankan sebagai cadangan diagnostik. */
   async function stBucketScan(bucket){
     var total=0, files=0, folders=[''], guard=0, capped=false;
     if(!_useSupa()) return {bytes:0,files:0,capped:false,missing:true};
@@ -791,8 +811,14 @@
     return {bytes:total, files:files, capped:capped};
   }
 
-  /* Ukuran storage nyata di Cloudflare R2 (bucket dokumen kontrak) via Worker.
-     Balikan: {bytes,files} atau null bila gagal / tidak ada token admin. */
+  /* Ukuran storage nyata di Cloudflare R2 via Worker (/api/usage).
+     TIGA bentuk balasan didukung supaya panel tetap jalan apa pun versi Worker:
+       (a) { files, bytes, rincian:{ <prefiks>:{files,bytes} } }  ← Worker v2
+       (b) { buckets:[{bucket,bytes,files}, ...] }                ← cadangan
+       (c) { bytes, files }                                       ← Worker lama
+     Pada bentuk (c) angkanya GABUNGAN semua bucket, jadi TIDAK boleh dilabeli
+     sebagai milik satu bucket saja — itulah asal salah label 689 berkas dulu.
+     Balikan: {mode:'rinci',map} | {mode:'agregat',bytes,files} | null */
   async function stR2Usage(){
     try{
       if(typeof R2_GATEWAY_URL==='undefined' || !R2_GATEWAY_URL) return null;
@@ -802,7 +828,28 @@
       var resp=await fetch(R2_GATEWAY_URL+'/api/usage', { headers:{'Authorization':'Bearer '+tok} });
       if(!resp.ok) return null;
       var j=await resp.json();
-      if(j && typeof j.bytes==='number') return { bytes:j.bytes, files:j.files||0 };
+      /* (a) bentuk utama Worker v2 */
+      if(j && j.rincian && typeof j.rincian==='object'){
+        var map={};
+        Object.keys(j.rincian).forEach(function(k){
+          var r=j.rincian[k]||{};
+          map[k]={ bytes:Number(r.bytes||0)||0, files:Number(r.files||0)||0, err:r.error||null };
+        });
+        if(Object.keys(map).length) return { mode:'rinci', map:map };
+      }
+      /* (b) bentuk cadangan */
+      if(j && Array.isArray(j.buckets)){
+        var map2={};
+        j.buckets.forEach(function(r){
+          if(!r) return;
+          var nama=String(r.bucket||r.b||r.name||r.id||'');
+          if(!nama) return;
+          map2[nama]={ bytes:Number(r.bytes||r.size||0)||0, files:Number(r.files||r.objects||r.count||0)||0, err:null };
+        });
+        if(Object.keys(map2).length) return { mode:'rinci', map:map2 };
+      }
+      /* (c) Worker lama */
+      if(j && typeof j.bytes==='number') return { mode:'agregat', bytes:j.bytes, files:Number(j.files||0)||0 };
     }catch(e){}
     return null;
   }
@@ -855,42 +902,51 @@
       if(dbTotal!=null){ data.totalBytesDb=dbTotal; data.dbExact=true; }
       else { data.totalBytesDb=data.totalBytesTbl; data.dbExact=false; }
 
-      /* --- STORAGE: utamakan RPC storage_size(), fallback ke pemindaian list() --- */
-      var known={}; ST_BUCKETS.forEach(function(x){ known[x.b]=x.l; });
-      var srows=await stStorageSizes();
-      if(srows){
-        data.stExact=true;
-        var seen={};
-        srows.forEach(function(r){
-          seen[r.b]=true;
-          data.buckets.push({b:r.b, l:known[r.b]||r.b, bytes:r.bytes, files:r.files, capped:false, missing:false});
-          data.totalBytesSt += r.bytes;
+      /* --- STORAGE ---
+         Sumber UTAMA kini Cloudflare R2 lewat Worker; Supabase Storage sudah
+         tidak dipakai aplikasi dan hanya tampil sebagai baris warisan. */
+      var r2u=null;
+      try{ r2u=await stR2Usage(); }catch(e){ console.error('stR2Usage:',e); }
+
+      if(r2u && r2u.mode==='rinci'){
+        data.stExact=true; data.r2Mode='rinci';
+        ST_R2_PARTS.forEach(function(x){
+          var v=r2u.map[x.p]||{bytes:0,files:0,err:null};
+          data.buckets.push({b:x.p, bk:x.bk, l:x.l, bytes:v.bytes, files:v.files, r2:true, unbound:(v.err==='bucket_not_bound')});
+          data.totalBytesSt += v.bytes;
         });
-        ST_BUCKETS.forEach(function(x){
-          if(!seen[x.b]) data.buckets.push({b:x.b, l:x.l, bytes:0, files:0, capped:false, missing:false});
+        /* prefiks di luar daftar (bila ROUTES di Worker bertambah) */
+        Object.keys(r2u.map).forEach(function(nama){
+          if(ST_R2_PARTS.some(function(x){ return x.p===nama; })) return;
+          var v=r2u.map[nama];
+          data.buckets.push({b:nama, bk:nama, l:nama, bytes:v.bytes, files:v.files, r2:true, unbound:(v.err==='bucket_not_bound')});
+          data.totalBytesSt += v.bytes;
         });
+      } else if(r2u && r2u.mode==='agregat'){
+        /* Worker lama: hanya tahu total. Ditampilkan sebagai SATU baris
+           gabungan — jangan dilabeli file-kontrak, karena angkanya mencakup
+           seluruh binding bucket. */
+        data.stExact=true; data.r2Mode='agregat';
+        data.buckets.push({b:'(gabungan)', l:'Cloudflare R2 — semua bucket', bytes:r2u.bytes, files:r2u.files, r2:true, agg:true});
+        data.totalBytesSt += r2u.bytes;
       } else {
-        var bkt=await Promise.all(ST_BUCKETS.map(function(x){ return stBucketScan(x.b); }));
-        ST_BUCKETS.forEach(function(x,i){
-          var r=bkt[i]||{};
-          data.buckets.push({b:x.b,l:x.l,bytes:r.bytes||0,files:r.files||0,capped:!!r.capped,missing:!!r.missing});
-          data.totalBytesSt += (r.bytes||0);
+        data.r2Mode='gagal';
+        ST_R2_PARTS.forEach(function(x){
+          data.buckets.push({b:x.p, bk:x.bk, l:x.l, bytes:0, files:0, r2:true, missing:true});
         });
       }
 
-      /* --- OVERRIDE: bucket `file-kontrak` kini di Cloudflare R2, bukan Supabase --- */
-      /* Baca ukuran nyata dari Worker (R2). `rho-foto` tetap dibaca dari Supabase. */
-      try{
-        var r2u=await stR2Usage();
-        if(r2u){
-          var fk=null;
-          data.buckets.forEach(function(b){ if(b.b==='file-kontrak') fk=b; });
-          if(!fk){ fk={b:'file-kontrak', l:'File Kontrak (Cloudflare R2)', bytes:0, files:0, capped:false, missing:false}; data.buckets.push(fk); }
-          data.totalBytesSt -= (fk.bytes||0);   // buang angka Supabase lama
-          fk.bytes=r2u.bytes; fk.files=r2u.files; fk.missing=false; fk.r2=true;
-          data.totalBytesSt += r2u.bytes;
-        }
-      }catch(e){ console.error('stR2Usage:',e); }
+      /* --- WARISAN: sisa objek di Supabase Storage (kalau ada) ---
+         Tidak ditambahkan ke totalBytesSt agar gauge tetap murni kuota R2. */
+      data.totalBytesLegacy=0;
+      var srows=await stStorageSizes();
+      if(srows){
+        srows.forEach(function(r){
+          if(!r || !r.files) return;   // bucket kosong tak perlu ditampilkan
+          data.buckets.push({b:r.b, l:(ST_LEGACY_LABEL[r.b]||r.b), bytes:r.bytes, files:r.files, r2:false, legacy:true});
+          data.totalBytesLegacy += r.bytes;
+        });
+      }
     }catch(e){ console.error('stScan:',e); }
     stRender(data);
     var btn2=document.getElementById('st-refresh'); if(btn2){ btn2.disabled=false; btn2.textContent='Segarkan'; }
@@ -921,7 +977,10 @@
       return;
     }
     var maxRows=0; data.tables.forEach(function(r){ if(typeof r.rows==='number' && r.rows>maxRows) maxRows=r.rows; });
-    var totalFiles=data.buckets.reduce(function(a,b){return a+(b.files||0);},0);
+    /* Hitungan berkas untuk KPI hanya mencakup R2 (baris warisan dikecualikan
+       supaya konsisten dengan totalBytesSt yang juga R2 saja). */
+    var totalFiles=data.buckets.reduce(function(a,b){return a+(b.legacy?0:(b.files||0));},0);
+    var stDenom=(data.totalBytesSt||0)+(data.totalBytesLegacy||0);
     var dbPct = (data.totalBytesDb!=null && ST_DB_QUOTA>0) ? Math.min(100, Math.round(data.totalBytesDb/ST_DB_QUOTA*1000)/10) : null;
     var stPct = ST_ST_QUOTA>0 ? Math.min(100, Math.round(data.totalBytesSt/ST_ST_QUOTA*1000)/10) : 0;
     var h='<div class="st-wrap">';
@@ -971,19 +1030,34 @@
     h+='</div></div>';
 
     // Kartu Storage
-    h+='<div class="st-card st-card-st"><div class="st-card-h"><span class="st-card-ic st"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></span><b>Storage File</b> <span class="st-muted">ukuran per bucket</span></div>';
+    h+='<div class="st-card st-card-st"><div class="st-card-h"><span class="st-card-ic st"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></span><b>Storage File</b> <span class="st-muted">ukuran per bagian</span></div>';
     h+=stBar(data.totalBytesSt, ST_ST_QUOTA, 'st');
-    h+='<div class="st-hint">'
-      + (data.stExact
-          ? 'Dihitung langsung dari katalog <code>storage.objects</code> (mencakup semua bucket).'
-          : 'RPC <code>storage_size()</code> belum tersedia \u2014 angka ini hasil pemindaian <code>list()</code> dan hanya mencakup bucket yang terdaftar.')
-      + ' Catatan: halaman <i>Usage</i> Supabase <b>tidak real-time</b> (disegarkan berkala &amp; sebagian berupa rata-rata siklus tagihan), jadi wajar bila angkanya tertinggal dari panel ini.</div>';
+    var stKet;
+    if(data.r2Mode==='rinci'){
+      stKet='Dibaca langsung dari Cloudflare R2 lewat Worker <code>/api/usage</code>, dirinci per prefiks. '
+           +'Tiga baris pertama berbagi bucket <code>file-kontrak</code>, jadi rincian ini lebih halus daripada daftar bucket di dashboard R2.';
+    } else if(data.r2Mode==='agregat'){
+      stKet='Worker <code>/api/usage</code> hanya mengembalikan <b>angka gabungan</b>, '
+           +'sehingga rinciannya belum bisa dipisah. Perbarui Worker agar menyertakan objek '
+           +'<code>rincian</code> untuk melihat angka per prefiks.';
+    } else {
+      stKet='Angka R2 tidak terbaca \u2014 Worker <code>/api/usage</code> tidak menjawab atau sesi berkas sudah berakhir. Coba login ulang lalu Segarkan.';
+    }
+    h+='<div class="st-hint">'+stKet
+      + ' Dashboard R2 di Cloudflare <b>tidak real-time</b> (metrik bucket dihitung ulang sekali sehari), jadi wajar bila angkanya tertinggal dari panel ini.'
+      + ((data.totalBytesLegacy>0)
+          ? ' <b>Baris bertanda <i>cadangan lama</i></b> masih tersimpan di Supabase Storage dan sudah tidak dipakai aplikasi; ukurannya sengaja tidak dihitung ke kuota R2. Hapus setelah migrasi dipastikan aman.'
+          : '')
+      + '</div>';
     h+='<div class="st-list">';
     data.buckets.forEach(function(b){
-      var pct = data.totalBytesSt>0 ? Math.round((b.bytes||0)/data.totalBytesSt*100) : 0;
+      var pct = stDenom>0 ? Math.round((b.bytes||0)/stDenom*100) : 0;
       var extra=' <code>'+b.b+'</code>'
-        + ' &middot; '+(b.r2?'Cloudflare R2':'Supabase')
-        + (b.missing?' <span class="st-na">bucket tidak ada</span>':'')
+        + ' &middot; '+(b.r2?('R2 \u00b7 '+(b.bk||b.b)):'Supabase')
+        + (b.agg?' <span class="st-na">gabungan</span>':'')
+        + (b.legacy?' <span class="st-na">cadangan lama</span>':'')
+        + (b.unbound?' <span class="st-na">binding belum dipasang</span>':'')
+        + (b.missing?' <span class="st-na">tak terbaca</span>':'')
         + (b.capped?' <span class="st-na">*sebagian</span>':'');
       h+=stItem(b.l, stFmt(b.bytes), stNum(b.files)+' berkas', pct, 'st', extra);
     });
