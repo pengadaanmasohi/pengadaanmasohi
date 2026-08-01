@@ -561,11 +561,23 @@ const LAST_ACTIVE_KEY = 'mon_last_active'; // timestamp aktivitas terakhir — d
 const TOKEN_KEY = 'mon_file_token';        // token akses dokumen ke Worker (R2 File Gateway)
 /* URL Worker "PLN File Gateway" — penjaga akses dokumen kontrak privat di Cloudflare R2. */
 const R2_GATEWAY_URL = 'https://pln-file-gateway.pln-masohi.workers.dev';
-/* Basis URL PUBLIK bucket R2 `foto-referensi` (custom domain Cloudflare).
+/* Basis URL PUBLIK bucket R2 `foto-referensi`.
    Foto Referensi Harga Online dibaca langsung dari sini — tidak lewat Worker —
    karena sifatnya publik. Unggah & hapusnya TETAP lewat Worker (bertoken).
-   Ganti bila nama domainnya berbeda; tanpa garis miring di ujung. */
-const RHO_PUBLIC_BASE = 'https://foto.pengadaan-masohi.com';
+   Tanpa garis miring di ujung.
+
+   Saat ini memakai "Public Development URL" bawaan R2 (pub-*.r2.dev), karena
+   domain pengadaan-masohi.com belum berada di akun Cloudflare ini sehingga
+   Custom Domain tidak dapat dipasang.
+
+   ⚠ r2.dev punya batas laju (rate limit) dan TIDAK dianjurkan Cloudflare untuk
+     lalu lintas produksi. Begitu domainnya tersedia di Cloudflare:
+       1. R2 -> bucket foto-referensi -> Settings -> Custom Domains -> Add
+       2. ganti nilai di bawah menjadi 'https://foto.pengadaan-masohi.com'
+       3. jalankan ulang UPDATE penyelarasan URL pada referensi_harga_online
+          (lihat 02_database.sql Bagian 18.4)
+     Kunci objeknya tidak berubah, jadi pindah basis URL cukup 3 langkah itu. */
+const RHO_PUBLIC_BASE = 'https://pub-7d5c3b22968d409d866e7ca7469e877f.r2.dev';
 /* Penyimpanan sesi HANYA di sessionStorage.
    sessionStorage otomatis terhapus saat tab/browser ditutup, sehingga
    pengguna otomatis logout ketika browser ditutup. Sesi tetap dipulihkan
@@ -9356,8 +9368,14 @@ async function dpengFilePicked(ev){
     toast('Dokumen ini hanya menerima berkas '+tipe.nama+' ('+tipe.ext.join(', ')+')','err');
     return;
   }
-  /* Path WAJIB diawali prefiks modul yang dikenali Worker R2
-     (kr | pl | tender | dpeng); di luar itu Worker menolak 400 invalid_path.
+  /* Path WAJIB diawali prefiks yang dikenali Worker R2 — sejak Worker v2
+     segmen pertama itulah yang MEMILIH BUCKET, dan ia ikut tersimpan sebagai
+     bagian kunci objek:
+       kontrak-rinci | pengadaan-langsung | tender -> bucket file-kontrak
+       dokumen-pengadaan                           -> bucket dokumen-pengadaan
+       materi-peraturan                            -> bucket materi-peraturan
+       foto-referensi                              -> bucket foto-referensi
+     Di luar daftar itu Worker menolak dengan 400 invalid_path.
      Titik ganda juga dilarang Worker, jadi ".." dinetralkan lebih dulu. */
   const safe=String(file.name||'file').replace(/[^\w.\-]+/g,'_').replace(/\.{2,}/g,'.');
   const path=DPENG_PREFIX+String(rec.id)+'/'+tgt.key+'/'+Date.now()+'_'+safe;
