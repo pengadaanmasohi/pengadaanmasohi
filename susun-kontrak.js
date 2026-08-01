@@ -2180,9 +2180,10 @@ function spkEnsureBentukStyle(){
          - No. Kontrak: selebar TEKS TERPANJANG-nya saja. Caranya white-space:nowrap
            (teks tidak boleh patah) + width:1% — trik CSS agar kolom menyusut pas
            mengikuti isi terpanjang, tidak lebih.
-         - Nama Penyedia: dipersempit 30% (15% -> 10,5%). Dari ruang yang dilepas,
-           20% (dari lebar semula) beralih ke Nama Pekerjaan; sisanya ikut terserap
-           kolom Nama Pekerjaan juga karena kolom itulah yang lentur.
+         - Nama Penyedia: 15,75% lebar tabel. Riwayatnya: 15% -> 10,5% (dipersempit
+           30%), lalu DILEBARKAN 50% kembali (10,5% x 1,5 = 15,75%) karena nama
+           penyedia seperti "PT. Sapta Manunggal Karya" patah sampai tiga baris.
+           Tambahan 5,25% itu diambil dari Nama Pekerjaan.
          - No., Tanggal, Nilai Pekerjaan & Aksi: menyusut mengikuti isinya.
          - Nama Pekerjaan: satu-satunya kolom lentur — menyerap SEMUA sisa ruang,
            sehingga lebar tabel selalu terisi penuh. */
@@ -2200,7 +2201,7 @@ function spkEnsureBentukStyle(){
     '#view-spk-view .table-wrap th.col-spk-aksi,#view-spk-view .table-wrap td.col-spk-aksi'+
       '{width:1% !important;min-width:0 !important;white-space:nowrap;text-align:center}'+
     '#view-spk-view .table-wrap th.col-spk-penyedia,#view-spk-view .table-wrap td.col-spk-penyedia'+
-      '{width:10.5% !important;min-width:92px !important}'+
+      '{width:15.75% !important;min-width:138px !important}'+
     '#view-spk-view .table-wrap th.col-nama-freeze,#view-spk-view .table-wrap td.col-nama-freeze'+
       '{width:auto !important;min-width:180px !important}'+
     /* Layar sempit (tablet/ponsel): nomor kontrak boleh patah & gulir mendatar
