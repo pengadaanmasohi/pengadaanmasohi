@@ -7010,7 +7010,7 @@ table.ac-matrix tbody tr,
 
 #topnav .topnav-link,#topnav .topnav-trigger{
   width:100%;justify-content:flex-start;padding:10px 12px;border-radius:12px;
-  font-size:12.5px;gap:12px;overflow:hidden}
+  font-size:12.5px;gap:12px;overflow:hidden;color:rgba(255,255,255,.96)}
 #topnav .topnav-link svg,#topnav .topnav-trigger svg:first-of-type{width:18px;height:18px}
 #topnav .topnav-link:hover,#topnav .topnav-trigger:hover{background:rgba(255,255,255,.10);box-shadow:none}
 #topnav .topnav-link:hover svg,#topnav .topnav-trigger:hover svg:first-of-type{transform:none}
@@ -7029,9 +7029,9 @@ table.ac-matrix tbody tr,
 @keyframes sideOpen{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
 #topnav .topnav-item,#topnav .topnav-subtrigger{
   width:100%;text-align:left;padding:9px 12px;margin-left:8px;font-size:11.5px;gap:10px;
-  color:rgba(255,255,255,.74);background:none;
+  color:rgba(255,255,255,.95);background:none;
   border-left:2px solid rgba(255,255,255,.16);border-radius:0 10px 10px 0}
-#topnav .topnav-item svg,#topnav .topnav-subtrigger svg:first-of-type{width:15px;height:15px;color:rgba(255,255,255,.55)}
+#topnav .topnav-item svg,#topnav .topnav-subtrigger svg:first-of-type{width:15px;height:15px;color:rgba(255,255,255,.8)}
 #topnav .topnav-item:hover,#topnav .topnav-subtrigger:hover{background:rgba(255,255,255,.10);color:#fff}
 #topnav .topnav-item:hover svg{transform:none}
 #topnav .topnav-item.active{
@@ -7049,19 +7049,19 @@ table.ac-matrix tbody tr,
   min-width:0;width:auto;z-index:auto;background:none;border:none;box-shadow:none;
   border-radius:0;padding:2px 0 4px 12px;margin:0;
   animation:sideOpen .2s cubic-bezier(.16,1,.3,1)}
-#topnav .topnav-subdrop .topnav-item{font-size:11px;margin-left:12px;color:rgba(255,255,255,.68)}
+#topnav .topnav-subdrop .topnav-item{font-size:11px;margin-left:12px;color:rgba(255,255,255,.92)}
 
 /* --- kaki sidebar --- */
 /* Label pemisah bagian */
-.side-sec{font-size:9px;font-weight:800;letter-spacing:1.3px;text-transform:uppercase;
-  color:rgba(255,255,255,.40);padding:15px 14px 5px}
+.side-sec{font-size:9px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;
+  color:rgba(255,255,255,.62);padding:15px 14px 5px}
 .side-sec:first-child{padding-top:4px}
 
 .side-foot{flex:0 0 auto;padding:10px 12px 12px;border-top:1px solid rgba(255,255,255,.10)}
 .side-foot .topbar-user{flex-direction:column;align-items:stretch;gap:8px;margin:0}
 .side-acct{display:flex;align-items:center;justify-content:space-between;gap:10px;
   background:rgba(255,255,255,.08);border-radius:11px;padding:7px 9px 7px 12px}
-.side-acct-lbl{font-size:10px;font-weight:700;letter-spacing:.3px;color:rgba(255,255,255,.62);white-space:nowrap}
+.side-acct-lbl{font-size:10.5px;font-weight:700;letter-spacing:.3px;color:rgba(255,255,255,.92);white-space:nowrap}
 /* Lencana peran: PUTIH PEKAT + teks teal gelap. Kuning sengaja dihindari
    karena kuning sudah dipakai sebagai penanda "menu yang sedang aktif";
    memakainya di sini membuat dua hal berbeda terlihat sama. */
@@ -7092,7 +7092,7 @@ table.ac-matrix tbody tr,
 .side-collapse svg{width:17px;height:17px;flex:0 0 auto}
 .side-collapse:hover{background:rgba(255,255,255,.14);color:#fff}
 .side-ver{font-size:9px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;
-  color:rgba(255,255,255,.34);text-align:center;padding-top:9px}
+  color:rgba(255,255,255,.5);text-align:center;padding-top:9px}
 
 /* ---------- BILAH ATAS RAMPING ---------- */
 .appbar{
@@ -7309,3 +7309,9 @@ table.ac-matrix tbody tr,
   .appbar{display:flex}
   .crumb-now{font-size:13px}
 }
+
+/* Kontras teks sidebar: putih pudar sulit dibaca di atas gradien teal,
+   terutama pada isi grup (mis. Pengaturan). Ditegaskan di sini. */
+.sidebar-shell{-webkit-font-smoothing:antialiased}
+#topnav .topnav-item,#topnav .topnav-subtrigger{font-weight:650}
+#topnav .topnav-item{border-left-color:rgba(255,255,255,.28)}
