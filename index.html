@@ -380,14 +380,54 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></svg>
           Susun Kontrak
         </button>
+        <div class="side-sec">Sistem</div>
+        <!-- ===== Pengaturan (dulu menu gear di kanan atas) =====
+             ID tiap tombol DIPERTAHANKAN (btn-change-pass, btn-akun-kontrol,
+             btn-storage, btn-sfx, btn-bersih-kontrak) karena applyRole() di
+             app.js dan acUnrestricted() di app-lain.js mengatur tampil/
+             sembunyinya lewat ID tersebut. -->
+        <div class="topnav-group" data-group="setelan">
+          <button class="topnav-trigger" type="button" onclick="toggleTopGroup(event,'setelan')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+            Pengaturan
+            <svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="topnav-dropdown">
+            <button class="topnav-item" id="btn-change-pass" onclick="openChangePass()" style="display:none">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/><circle cx="12" cy="16" r="1"/></svg>Ganti Kata Sandi
+            </button>
+            <button class="topnav-item" id="btn-akun-kontrol" onclick="openAkunKontrol()" style="display:none">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Akun &amp; Kontrol
+            </button>
+            <button class="topnav-item" id="btn-storage" onclick="openStoragePanel()" style="display:none">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>Penyimpanan
+            </button>
+            <!-- Sakelar bunyi tetap ada (tersembunyi) karena syncSfxBtn() mengisi #sfx-ic -->
+            <button class="topnav-item" id="btn-sfx" onclick="onToggleSfx()" style="display:none">
+              <span id="sfx-ic"></span><span id="sfx-lbl">Bunyi Notifikasi</span>
+            </button>
+            <button class="topnav-item" id="btn-bersih-kontrak" onclick="openBersihKontrak()" style="display:none">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>Bersihkan Daftar Kontrak
+            </button>
+          </div>
+        </div>
 
       </nav>
 
       <div class="side-foot">
-        <button class="side-collapse" type="button" onclick="toggleSidebar()" title="Ciutkan / lebarkan menu">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg>
-          <span class="side-collapse-lbl">Ciutkan menu</span>
-        </button>
+        <!-- Keterangan jenis akun & tombol Keluar: statis, selalu di dasar sidebar -->
+        <div class="topbar-user" id="topbar-user" style="display:none">
+          <div class="side-acct">
+            <span class="side-acct-lbl">Jenis Akun</span>
+            <span class="user-chip">
+              <span class="user-role-ic" id="user-role-ic"></span>
+              <span id="user-label">&mdash;</span>
+            </span>
+          </div>
+          <button class="side-logout" type="button" onclick="logout()" title="Keluar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg><span class="side-logout-lbl">Keluar</span>
+          </button>
+        </div>
         <div class="side-ver">UP3 Masohi &middot; v2026</div>
       </div>
     </div>
@@ -406,54 +446,7 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
       <b class="crumb-now" id="crumb-now">Dashboard</b>
     </div>
 
-          <div class="topbar-user" id="topbar-user" style="display:none">
-            <div class="settings-wrap" id="settings-wrap">
-              <button class="settings-gear" id="settings-gear" type="button" title="Pengaturan" aria-haspopup="true" aria-expanded="false" onclick="toggleSettingsMenu(event)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
-              </button>
-              <div class="settings-menu" id="settings-menu" role="menu" aria-hidden="true">
-                <div class="settings-account">
-                  <span class="settings-account-lbl">Jenis Akun</span>
-                  <span class="user-chip">
-                    <span class="user-role-ic" id="user-role-ic"></span>
-                    <span id="user-label">—</span>
-                  </span>
-                </div>
-                <div class="settings-sep"></div>
-                <button class="settings-item" id="btn-change-pass" role="menuitem" onclick="closeSettingsMenu();openChangePass()" style="display:none">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/><circle cx="12" cy="16" r="1"/></svg>
-                  Ganti Kata Sandi
-                </button>
-                <button class="settings-item" id="btn-akun-kontrol" role="menuitem" onclick="closeSettingsMenu();openAkunKontrol()" style="display:none">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                  Akun &amp; Kontrol
-                </button>
-                <button class="settings-item" id="btn-storage" role="menuitem" onclick="closeSettingsMenu();openStoragePanel()" style="display:none">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
-                  Penyimpanan
-                </button>
-                <!-- Sakelar "Bunyi Notifikasi" disembunyikan: efek suara sudah
-                     dimatikan seluruhnya di app.js (sfxEnabled & _dashMuted), jadi
-                     tombol ini tidak lagi berpengaruh. Markup-nya dipertahankan
-                     karena syncSfxBtn() masih mengisi #sfx-ic saat menu dibuka —
-                     menghapusnya sama sekali akan membuat fungsi itu gagal.
-                     Untuk memunculkan lagi: buang style display:none di bawah. -->
-                <button class="settings-item" id="btn-sfx" role="menuitem" onclick="onToggleSfx()" style="display:none">
-                  <span id="sfx-ic"></span>
-                  <span id="sfx-lbl">Bunyi Notifikasi</span>
-                </button>
-                <button class="settings-item" id="btn-bersih-kontrak" role="menuitem" onclick="closeSettingsMenu();openBersihKontrak()" style="display:none">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>
-                  Bersihkan Daftar Kontrak
-                </button>
-                <button class="settings-item danger settings-logout" role="menuitem" onclick="closeSettingsMenu();logout()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></svg>
-                  <span class="lo-word">Keluar</span>
-                </button>
-              </div>
-            </div>
-          </div>
-  </header>
+        </header>
 
 
 <main class="wrap">
@@ -1381,7 +1374,7 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
               <th class="col-no">No.</th>
               <th class="col-nama-freeze">Nama Pekerjaan</th>
               <th class="fkl-col-lokasi">Lokasi Pekerjaan</th>
-              <th>Metode Pengadaan</th>
+              <th class="pnw-col-jenis">Metode Pengadaan</th>
               <th class="pnw-col-metode">Metode Penyampaian Dokumen</th>
               <th class="col-date pnw-col-tgl">Tgl. Pembukaan Penawaran</th>
               <th class="pnw-col-aksi">Aksi</th>
@@ -1969,10 +1962,8 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
     <div class="detail-head">
       <h3 id="pn-preview-title">Pratinjau File</h3>
       <div class="pn-preview-head-actions">
-        <button class="btn btn-green" id="pn-preview-max" onclick="pnPreviewToggleMax()">
-          <svg id="pn-preview-max-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
-          <span id="pn-preview-max-label">Perbesar</span>
-        </button>
+        <!-- Tombol "Perbesar/Perkecil" dihapus: pratinjau kini hanya punya
+             satu mode pembesaran, yaitu Layar Penuh. -->
         <!-- Layar penuh sebenarnya (Fullscreen API) — berlaku untuk SELURUH pratinjau
              file, karena semua modul memakai modal bersama ini. -->
         <button class="btn pn-fs-btn" id="pn-preview-fs" type="button" title="Layar Penuh (F)" onclick="pnPreviewToggleFullscreen()">

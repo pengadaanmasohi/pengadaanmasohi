@@ -14,37 +14,42 @@
 (function(){
 'use strict';
 
-/* ---------- 1. Ciutkan / lebarkan sidebar ---------- */
-var RAIL_KEY='ui.sidebarRail';
+/* ---------- 1. Sidebar melebar mengikuti kursor ----------
+   Keadaan diam = rail ikon. Kursor menyentuh sidebar -> melebar penuh
+   (melayang di atas isi halaman, konten tidak bergeser). Kursor pergi ->
+   menciut sendiri setelah jeda singkat supaya tidak berkedip saat kursor
+   sekadar melintas. Tidak ada lagi tombol ciutkan manual. */
+var HOVER_OUT_MS=260;
 function isSmall(){ return window.matchMedia('(max-width:1024px)').matches; }
+function noHover(){ return window.matchMedia('(hover:none)').matches; }
 
+/* Tombol ☰ di bilah atas hanya dipakai layar kecil (laci geser). */
 window.toggleSidebar=function(){
-  /* Layar kecil: sidebar berperilaku sebagai laci geser (pakai fungsi lama). */
-  if(isSmall()){ if(typeof toggleMobileNav==='function') toggleMobileNav(); return; }
-  var on=document.body.classList.toggle('side-rail');
-  try{ localStorage.setItem(RAIL_KEY, on?'1':'0'); }catch(e){}
-  var lbl=document.querySelector('.side-collapse-lbl');
-  if(lbl) lbl.textContent = on ? 'Lebarkan menu' : 'Ciutkan menu';
+  if(typeof toggleMobileNav==='function') toggleMobileNav();
 };
 
-function restoreRail(){
-  var v=null; try{ v=localStorage.getItem(RAIL_KEY); }catch(e){}
-  if(v==='1' && !isSmall()){
-    document.body.classList.add('side-rail');
-    var lbl=document.querySelector('.side-collapse-lbl');
-    if(lbl) lbl.textContent='Lebarkan menu';
+function initHoverSidebar(){
+  var el=document.getElementById('sidebar-shell'); if(!el) return;
+  var t=null;
+  function open(){ if(isSmall()||noHover()) return; clearTimeout(t); el.classList.add('is-open'); }
+  function close(now){
+    clearTimeout(t);
+    t=setTimeout(function(){
+      el.classList.remove('is-open');
+      /* grup yang terlanjur terbuka ikut ditutup supaya rapi saat menciut */
+      el.querySelectorAll('.topnav-group.open').forEach(function(g){ g.classList.remove('open'); });
+      el.querySelectorAll('.topnav-sub.open').forEach(function(s){ s.classList.remove('open'); });
+      if(typeof openActiveBranch==='function') openActiveBranch();
+    }, now?0:HOVER_OUT_MS);
   }
-}
-
-/* Saat menciut, klik menu bergrup otomatis melebarkan dulu sidebar-nya
-   supaya isi grup dapat dibaca (kalau tidak, grup terbuka tapi tersembunyi). */
-function railAutoExpand(){
-  var nav=document.getElementById('topnav'); if(!nav) return;
-  nav.addEventListener('click', function(e){
-    if(!document.body.classList.contains('side-rail')) return;
-    if(isSmall()) return;
-    if(e.target.closest('.topnav-trigger')) window.toggleSidebar();
-  }, true);
+  el.addEventListener('mouseenter',open);
+  el.addEventListener('mouseleave',function(){ close(false); });
+  /* Navigasi papan ketik (Tab) juga harus bisa membukanya */
+  el.addEventListener('focusin',open);
+  el.addEventListener('focusout',function(e){
+    if(!el.contains(e.relatedTarget)) close(false);
+  });
+  window.addEventListener('resize',function(){ if(isSmall()) el.classList.remove('is-open'); });
 }
 
 /* ---------- 2. Tooltip nama menu (dipakai CSS lewat data-tip) ---------- */
@@ -59,13 +64,32 @@ function labelOf(btn){
   }
   return t.replace(/\s+/g,' ').trim();
 }
+/* Judul menu tetap dipasang sebagai title -> berguna saat rail masih menciut
+   dan pengguna berhenti sejenak di atas sebuah ikon. */
 function setTips(){
   document.querySelectorAll('#topnav .topnav-link, #topnav .topnav-trigger').forEach(function(b){
-    var t=labelOf(b); if(t){ b.setAttribute('data-tip',t); if(!b.title) b.title=t; }
+    var t=labelOf(b); if(t && !b.title) b.title=t;
   });
 }
 
 /* ---------- 3. Jejak halaman di bilah atas ---------- */
+/* Nama halaman yang ditampilkan di bilah atas bila judul di dalam halaman
+   kurang cocok dijadikan jejak (mis. tiga daftar dokumen yang dibedakan lewat
+   tab SPBJ / Pengadaan Langsung / Tender, bukan lewat menu). */
+var VIEW_TITLE={
+  'view-list'       :'Dokumen Kontrak Rinci',
+  'view-list-pl'    :'Dokumen Pengadaan Langsung',
+  'view-list-tender':'Dokumen Tender'
+};
+/* Judul halaman tanpa angka lencana jumlah data ("Daftar Kontrak Rinci 2"
+   -> "Daftar Kontrak Rinci"). */
+function headingText(h){
+  if(!h) return '';
+  var c=h.cloneNode(true);
+  c.querySelectorAll('.count-badge').forEach(function(b){ b.remove(); });
+  return c.textContent.replace(/\s+/g,' ').trim();
+}
+
 function updateCrumb(){
   var now=document.getElementById('crumb-now'), path=document.getElementById('crumb-path');
   if(!now) return;
@@ -89,10 +113,10 @@ function updateCrumb(){
       node=node.parentElement;
     }
   }
-  if(!label){
-    var h=document.querySelector('.view.active h2');
-    label=h?h.textContent.trim():'Dashboard';
-  }
+  /* Nama khusus per halaman menang atas nama menu */
+  var vw=document.querySelector('.view.active');
+  if(vw && VIEW_TITLE[vw.id]) label=VIEW_TITLE[vw.id];
+  if(!label) label=headingText(document.querySelector('.view.active h2'))||'Dashboard';
   now.textContent=label||'Dashboard';
   if(path) path.textContent=trail.join(' › ');
   document.title=(label?label+' · ':'')+'Monitoring Pengadaan Masohi';
@@ -124,12 +148,25 @@ function syncSections(){
     el.style.display = visible ? '' : 'none';
   });
 }
+/* applyRole() menyembunyikan grup menu SEBELUM menyetel tombol Ganti Kata Sandi
+   & Bersihkan Daftar Kontrak, jadi grup "Pengaturan" bisa tertinggal tampil
+   walau seluruh isinya sudah disembunyikan. Dihitung ulang di sini, sesudahnya. */
+function syncGroups(){
+  document.querySelectorAll('#topnav .topnav-group').forEach(function(g){
+    var items=g.querySelectorAll('.topnav-item');
+    if(!items.length) return;
+    var any=Array.prototype.some.call(items,function(it){
+      return getComputedStyle(it).display!=='none';
+    });
+    g.style.display = any ? '' : 'none';
+  });
+}
 function hookRole(){
   var orig=window.applyRole;
   if(typeof orig!=='function') return;
   window.applyRole=function(){
     var r=orig.apply(this,arguments);
-    try{ syncSections(); }catch(e){}
+    try{ syncGroups(); syncSections(); }catch(e){}
     return r;
   };
 }
@@ -181,6 +218,38 @@ window.pnPreviewToggleFullscreen=function(){
     if(typeof toast==='function') toast('Layar penuh tidak dapat dibuka','warn');
   });
 };
+/* --- Kepala modal menyembunyikan diri saat layar penuh ---
+   Muncul saat kursor bergerak (atau berada di pita atas), lalu pergi lagi
+   setelah diam beberapa detik. Papan ketik & tab tetap memunculkannya. */
+var HEAD_IDLE_MS=2200;
+var headTimer=null, headBound=false;
+function headEl(){ return document.querySelector('#pn-preview-overlay .pn-preview-modal'); }
+function headShow(sticky){
+  var m=headEl(); if(!m) return;
+  m.classList.add('head-show');
+  clearTimeout(headTimer);
+  if(!sticky) headTimer=setTimeout(function(){ var x=headEl(); if(x) x.classList.remove('head-show'); }, HEAD_IDLE_MS);
+}
+function onFsMove(e){
+  var near = e.clientY <= 72;              // kursor di pita atas -> kepala menetap
+  headShow(near);
+}
+function bindHeadAutohide(on){
+  var m=headEl(); if(!m) return;
+  if(on){
+    if(headBound) return;
+    headBound=true;
+    m.addEventListener('mousemove',onFsMove);
+    m.addEventListener('focusin',function(){ headShow(true); });
+    headShow(false);                        // tampil sebentar saat masuk layar penuh
+  }else{
+    headBound=false;
+    clearTimeout(headTimer);
+    m.removeEventListener('mousemove',onFsMove);
+    m.classList.remove('head-show');
+  }
+}
+
 function syncFsBtn(){
   var on=!!fsEl();
   var btn=document.getElementById('pn-preview-fs');
@@ -189,6 +258,7 @@ function syncFsBtn(){
   if(btn){ btn.classList.toggle('is-on',on); btn.title=(on?'Keluar dari layar penuh':'Layar Penuh')+' (F)'; }
   if(lbl) lbl.textContent = on ? 'Keluar Layar Penuh' : 'Layar Penuh';
   if(ic) ic.innerHTML = on ? IC_EXIT : IC_ENTER;
+  bindHeadAutohide(on);
 }
 function initFs(){
   if(!fsSupported()){
@@ -223,20 +293,16 @@ function initFs(){
 
 /* ---------- start ---------- */
 function init(){
-  restoreRail();
   setTips();
-  railAutoExpand();
+  initHoverSidebar();
   watchActive();
   hookRole();
   hookShowView();
+  syncGroups();
   openActiveBranch();
   syncSections();
   updateCrumb();
   initFs();
-  window.addEventListener('resize',function(){
-    if(isSmall()) document.body.classList.remove('side-rail');
-    else restoreRail();
-  });
 }
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init);
 else init();

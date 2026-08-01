@@ -12823,7 +12823,7 @@ function renderPnwView(){
       '<td class="col-no">'+(start+i+1)+'</td>'+
       '<td class="wrap-cell col-nama-freeze">'+fkEsc(nama)+'</td>'+
       '<td class="fkl-col-lokasi">'+fkEsc(lokasi||'—')+'</td>'+
-      '<td>'+fkEsc(metode||'—')+'</td>'+
+      '<td class="pnw-col-jenis">'+fkEsc(metode||'—')+'</td>'+
       '<td class="pnw-jd-cell pnw-col-metode">'+jenisCell+'</td>'+
       '<td class="col-date pnw-col-tgl">'+tglCell+'</td>'+
       '<td class="pnw-col-aksi">'+actions+'</td>'+

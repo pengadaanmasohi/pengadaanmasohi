@@ -6940,8 +6940,8 @@ table.ac-matrix tbody tr,
      .topbar-user    -> pindah ke bilah atas ramping (.appbar)
 
    Ada 2 keadaan sidebar:
-     (bawaan)          lebar penuh 268px
-     body.side-rail    menciut jadi 76px (hanya ikon + tooltip)
+     diam              rail ikon 76px
+     kursor di atasnya melebar 268px (kelas .is-open), melayang di atas isi
    ============================================================ */
 :root{
   --side-w:268px;         /* lebar sidebar terbuka */
@@ -6952,21 +6952,25 @@ table.ac-matrix tbody tr,
 
 /* ---------- kerangka ---------- */
 .app-shell{display:flex;min-height:100vh;align-items:stretch}
-.app-main{flex:1 1 auto;min-width:0;display:flex;flex-direction:column}
+.app-main{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;margin-left:var(--side-rail)}
 /* Ruang isi dilebarkan (dulu 1180px) — sisa ruang dari menu-atas dipakai tabel */
 .wrap{max-width:1320px}
 
 /* ---------- SIDEBAR ---------- */
+/* Sidebar MELAYANG di atas isi halaman: lebarnya berubah tanpa menggeser
+   konten sedikit pun. Keadaan diam = rail ikon; saat kursor menyentuhnya
+   (kelas .is-open dari ui-sidebar.js) melebar penuh, lalu menciut sendiri. */
 .sidebar-shell{
-  position:sticky;top:0;align-self:flex-start;
-  flex:0 0 var(--side-w);width:var(--side-w);height:100vh;
-  display:flex;flex-direction:column;color:#fff;z-index:60;
+  position:fixed;top:0;left:0;bottom:0;
+  width:var(--side-rail);height:100vh;
+  display:flex;flex-direction:column;color:#fff;z-index:70;
   background:
     radial-gradient(420px 220px at 20% 0%, rgba(22,169,181,.30), transparent 62%),
     linear-gradient(168deg,var(--side-1) 0%,var(--side-2) 42%,var(--teal-dark) 76%,var(--side-3) 100%);
-  box-shadow:10px 0 34px rgba(5,32,36,.20);
-  transition:flex-basis .3s cubic-bezier(.16,1,.3,1),width .3s cubic-bezier(.16,1,.3,1);
+  box-shadow:6px 0 20px rgba(5,32,36,.16);
+  transition:width .26s cubic-bezier(.16,1,.3,1),box-shadow .26s ease;
 }
+.sidebar-shell.is-open{width:var(--side-w);box-shadow:14px 0 44px rgba(5,32,36,.34)}
 /* Garis aksen beranimasi di tepi kanan (memakai keyframes sheenV yang sudah ada) */
 .sidebar-shell::after{
   content:"";position:absolute;top:0;bottom:0;right:0;width:3px;
@@ -7050,7 +7054,23 @@ table.ac-matrix tbody tr,
   color:rgba(255,255,255,.40);padding:15px 14px 5px}
 .side-sec:first-child{padding-top:4px}
 
-.side-foot{flex:0 0 auto;padding:10px 12px 14px;border-top:1px solid rgba(255,255,255,.10)}
+.side-foot{flex:0 0 auto;padding:10px 12px 12px;border-top:1px solid rgba(255,255,255,.10)}
+.side-foot .topbar-user{flex-direction:column;align-items:stretch;gap:8px;margin:0}
+.side-acct{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  background:rgba(255,255,255,.08);border-radius:11px;padding:7px 9px 7px 12px}
+.side-acct-lbl{font-size:10px;font-weight:700;letter-spacing:.3px;color:rgba(255,255,255,.62);white-space:nowrap}
+.side-foot .user-chip{display:inline-flex;align-items:center;gap:7px;padding:4px 11px 4px 5px;
+  border-radius:30px;font-size:11px;font-weight:800;color:#073f45;border:none;
+  background:linear-gradient(135deg,var(--yellow),#ffd35a);box-shadow:none}
+.side-foot .user-role-ic{width:20px;height:20px;background:rgba(7,63,69,.16);box-shadow:none}
+.side-foot .user-role-ic svg{width:12px;height:12px;color:#073f45}
+.side-logout{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;
+  padding:9px 12px;border:1px solid rgba(255,120,120,.34);border-radius:11px;
+  background:rgba(211,58,58,.16);color:#ffd9d9;cursor:pointer;
+  font-family:'Plus Jakarta Sans';font-size:11.5px;font-weight:800;letter-spacing:.2px;
+  transition:background .16s,color .16s,border-color .16s}
+.side-logout svg{width:16px;height:16px;flex:0 0 auto}
+.side-logout:hover{background:var(--red);border-color:transparent;color:#fff}
 .side-collapse{
   display:flex;align-items:center;gap:11px;width:100%;padding:9px 12px;border:none;
   background:rgba(255,255,255,.07);color:rgba(255,255,255,.8);border-radius:11px;
@@ -7080,79 +7100,79 @@ table.ac-matrix tbody tr,
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .appbar .topbar-user{margin-left:auto;flex:0 0 auto;display:flex;align-items:center;gap:10px}
 /* Ikon gear semula putih di atas latar teal — di bilah putih dibalik warnanya */
-/* Gear tetap cyan (pilihan warna yang sudah ada), hanya ukurannya disesuaikan.
-   Keadaan "menu terbuka" dulu dibalik jadi PUTIH agar kontras di bilah teal —
-   di bilah putih itu jadi tak terlihat, maka di sini dibalik ke teal gelap. */
-.appbar .settings-gear{width:36px;height:36px;border-radius:11px;box-shadow:none}
-.appbar .settings-gear:hover{transform:none}
-.appbar .settings-wrap.open .settings-gear{
-  background:var(--teal-dark)!important;border-color:var(--teal-dark)!important;color:#fff!important}
-.appbar .settings-wrap.open .settings-gear svg{color:#fff!important}
-.appbar .settings-gear svg{width:18px;height:18px}
-
-/* ---------- SIDEBAR MENCIUT (rail ikon) ---------- */
-body.side-rail .sidebar-shell{flex-basis:var(--side-rail);width:var(--side-rail)}
-body.side-rail .sidebar-shell .brand,
-body.side-rail .side-collapse-lbl,
-body.side-rail .side-ver{display:none}
-body.side-rail .sidebar-shell .topbar-brand{justify-content:center;padding:18px 0 16px}
-body.side-rail #topnav{padding:14px 0;align-items:center;gap:5px}
-body.side-rail #topnav .topnav-link,
-body.side-rail #topnav .topnav-trigger{
+/* ---------- KEADAAN MENCIUT (rail ikon) ----------
+   Berlaku selama kursor TIDAK berada di atas sidebar. Tidak ada lagi tombol
+   "Ciutkan menu": melebar & menciut sepenuhnya mengikuti kursor. */
+.sidebar-shell:not(.is-open) .brand,
+.sidebar-shell:not(.is-open) .side-sec,
+.sidebar-shell:not(.is-open) .side-ver{opacity:0;pointer-events:none}
+.sidebar-shell:not(.is-open) .brand,
+.sidebar-shell:not(.is-open) .side-ver{display:none}
+.sidebar-shell:not(.is-open) .side-sec{height:9px;padding:6px 0 0;overflow:hidden}
+.sidebar-shell:not(.is-open) .topbar-brand{justify-content:center;padding:18px 0 16px}
+.sidebar-shell:not(.is-open) #topnav{padding:14px 0;align-items:center;gap:5px;overflow:hidden}
+.sidebar-shell:not(.is-open) #topnav .topnav-link,
+.sidebar-shell:not(.is-open) #topnav .topnav-trigger{
   width:46px;height:44px;padding:0;justify-content:center;border-radius:13px;gap:0;
   font-size:0;letter-spacing:0;background:rgba(255,255,255,.07)}
-body.side-rail #topnav .topnav-link:hover,
-body.side-rail #topnav .topnav-trigger:hover{background:rgba(255,255,255,.16)}
-body.side-rail #topnav .topnav-link.active,
-body.side-rail #topnav .topnav-group.has-active .topnav-trigger{
+.sidebar-shell:not(.is-open) #topnav .topnav-link:hover,
+.sidebar-shell:not(.is-open) #topnav .topnav-trigger:hover{background:rgba(255,255,255,.16)}
+.sidebar-shell:not(.is-open) #topnav .topnav-link.active,
+.sidebar-shell:not(.is-open) #topnav .topnav-group.has-active .topnav-trigger{
   background:linear-gradient(135deg,var(--yellow),#ffd35a)}
-body.side-rail #topnav .topnav-trigger .caret{display:none}
-body.side-rail #topnav .topnav-dropdown,
-body.side-rail #topnav .side-sec{display:none}
-body.side-rail .side-collapse{justify-content:center;padding:9px 0}
-/* Tooltip nama menu saat menciut (judul diisi oleh ui-sidebar.js) */
-body.side-rail #topnav .topnav-link,
-body.side-rail #topnav .topnav-trigger{position:relative}
-body.side-rail #topnav .topnav-link::after,
-body.side-rail #topnav .topnav-trigger::after{
-  content:attr(data-tip);position:absolute;left:calc(100% + 12px);top:50%;
-  transform:translateY(-50%);display:block;background:#062a2f;color:#fff;
-  font-size:11.5px;font-weight:700;letter-spacing:.2px;padding:7px 12px;border-radius:9px;
-  white-space:nowrap;opacity:0;visibility:hidden;pointer-events:none;z-index:120;
-  box-shadow:0 8px 22px rgba(5,32,36,.34);transition:opacity .15s,visibility .15s;
-  left:calc(100% + 12px);right:auto;height:auto;background-image:none}
-body.side-rail #topnav .topnav-link:hover::after,
-body.side-rail #topnav .topnav-trigger:hover::after{opacity:1;visibility:visible}
+.sidebar-shell:not(.is-open) #topnav .topnav-trigger .caret{display:none}
+.sidebar-shell:not(.is-open) #topnav .topnav-dropdown{display:none}
+.sidebar-shell:not(.is-open) .side-foot{padding:8px 0 10px}
+.sidebar-shell:not(.is-open) .side-acct{display:none}
+.sidebar-shell:not(.is-open) .side-logout-lbl{display:none}
+.sidebar-shell:not(.is-open) .side-logout{width:46px;height:44px;padding:0;margin:0 auto;border-radius:13px}
+
+/* Nama menu memudar masuk saat melebar — bukan muncul mendadak */
+.sidebar-shell #topnav .topnav-link,
+.sidebar-shell #topnav .topnav-trigger{transition:background .16s,color .16s,width .24s cubic-bezier(.16,1,.3,1)}
+
+/* Perangkat tanpa kursor (layar sentuh) di lebar desktop: biarkan terbuka,
+   karena tidak ada "hover" yang bisa melebarkannya. */
+@media (hover:none) and (min-width:1025px){
+  .sidebar-shell{width:var(--side-w)}
+  .sidebar-shell .brand,.sidebar-shell .side-ver{display:revert}
+  .sidebar-shell #topnav{padding:14px 12px 18px;align-items:stretch;gap:2px}
+  .sidebar-shell #topnav .topnav-link,
+  .sidebar-shell #topnav .topnav-trigger{width:100%;height:auto;padding:10px 12px;
+    justify-content:flex-start;gap:12px;font-size:12.5px;background:none}
+  .sidebar-shell #topnav .topnav-trigger .caret{display:block}
+  .sidebar-shell #topnav .topnav-dropdown{display:none}
+  .sidebar-shell .topnav-group.open .topnav-dropdown{display:flex}
+  .app-main{margin-left:var(--side-w)}
+}
 
 /* ---------- LAYAR KECIL: sidebar jadi laci geser ---------- */
 @media (max-width:1024px){
-  .sidebar-shell{
-    position:fixed;top:0;left:0;bottom:0;height:100vh;width:284px;max-width:86vw;
-    flex-basis:284px;transform:translateX(-100%);transition:transform .28s cubic-bezier(.16,1,.3,1);
-    z-index:90}
-  body.nav-open .sidebar-shell{transform:none}
-  body.side-rail .sidebar-shell{width:284px;flex-basis:284px}
-  body.side-rail .sidebar-shell .brand,
-  body.side-rail .side-collapse-lbl,
-  body.side-rail .side-ver,
-  body.side-rail #topnav .topnav-dropdown{display:revert}
-  body.side-rail #topnav{padding:14px 12px;align-items:stretch;gap:2px}
-  body.side-rail #topnav .topnav-link,
-  body.side-rail #topnav .topnav-trigger{width:100%;height:auto;padding:10px 12px;
-    justify-content:flex-start;gap:12px;font-size:12.5px}
-  body.side-rail #topnav .topnav-trigger .caret{display:block}
-  body.side-rail #topnav .topnav-link::after,
-  body.side-rail #topnav .topnav-trigger::after{display:none}
-  .app-main{width:100%;min-width:0}
-  /* kembalikan #topnav ke aliran normal (aturan laci lama menargetkan .topnav) */
-  #topnav{position:static;transform:none;background:none;box-shadow:none;
-    padding:14px 12px 18px;width:auto;max-width:none}
+  .sidebar-shell,.sidebar-shell.is-open{
+    width:284px;max-width:86vw;transform:translateX(-100%);
+    transition:transform .28s cubic-bezier(.16,1,.3,1);z-index:90;box-shadow:none}
+  body.nav-open .sidebar-shell{transform:none;box-shadow:0 0 50px rgba(0,0,0,.45)}
+  /* laci selalu tampil penuh (bukan rail) */
+  .sidebar-shell:not(.is-open) .brand,
+  .sidebar-shell:not(.is-open) .side-ver{display:revert}
+  .sidebar-shell:not(.is-open) .side-sec{height:auto;padding:15px 14px 5px;opacity:1}
+  .sidebar-shell:not(.is-open) .topbar-brand{justify-content:flex-start;padding:18px 18px 16px}
+  .sidebar-shell:not(.is-open) #topnav{padding:14px 12px 18px;align-items:stretch;gap:2px;overflow-y:auto}
+  .sidebar-shell:not(.is-open) #topnav .topnav-link,
+  .sidebar-shell:not(.is-open) #topnav .topnav-trigger{width:100%;height:auto;padding:10px 12px;
+    justify-content:flex-start;gap:12px;font-size:12.5px;background:none}
+  .sidebar-shell:not(.is-open) #topnav .topnav-trigger .caret{display:block}
+  .sidebar-shell:not(.is-open) #topnav .topnav-dropdown{display:none}
+  .sidebar-shell .topnav-group.open .topnav-dropdown{display:flex}
+  .sidebar-shell:not(.is-open) .side-foot{height:auto;padding:8px 12px 12px;border-top:1px solid rgba(255,255,255,.10)}
+  .app-main{margin-left:0;width:100%;min-width:0}
+  #topnav{position:static;transform:none;background:none;box-shadow:none;width:auto;max-width:none}
   .topnav-backdrop{z-index:80}
   .appbar{padding:9px 14px}
-  /* Ciutkan menu tak berarti pada laci geser */
-  .side-collapse{display:none}
-  .side-foot{padding:8px 12px 12px}
 }
+/* Tombol ☰ hanya untuk layar kecil — di desktop sidebar melebar sendiri */
+.appbar .nav-burger{display:none}
+@media (max-width:1024px){ .appbar .nav-burger{display:inline-flex} }
 @media (max-width:640px){
   .wrap{padding:16px}
   .crumb-path{display:none}
@@ -7180,6 +7200,84 @@ body.side-rail #topnav .topnav-trigger:hover::after{opacity:1;visibility:visible
   .pn-preview-head-actions .btn{padding:7px 10px}
   .pn-preview-head-actions .pn-fs-btn span{display:none}
 }
-/* tooltip rail: batalkan sisa posisi dari indikator garis-bawah lama */
-body.side-rail #topnav .topnav-link::after,
-body.side-rail #topnav .topnav-trigger::after{bottom:auto;width:auto}
+
+
+/* ============================================================
+   7. TABEL "PEMBUKAAN PENAWARAN" — pembagian lebar kolom
+   ------------------------------------------------------------
+   Tujuan: seluruh kolom muat tanpa geser kiri-kanan.
+     Lokasi Pekerjaan   : lebarnya dipangkas 20%, jatahnya
+                          diberikan ke Nama Pekerjaan
+     Tgl. Pembukaan     : selebar teks tanggalnya, judul boleh
+                          membungkus sampai 2 baris
+     Metode Penyampaian : judul dijaga 2 baris (bukan 3)
+   ============================================================ */
+/* Nama Pekerjaan: 240/300 + 20% jatah Lokasi (48px) */
+#view-pnw-view .table-wrap th.col-nama-freeze,
+#view-pnw-view .table-wrap td.col-nama-freeze{
+  min-width:256px; max-width:348px;
+}
+/* Lokasi Pekerjaan: 170/240 dikurangi 20% -> 136/192, isinya boleh membungkus */
+#view-pnw-view .table-wrap th.fkl-col-lokasi,
+#view-pnw-view .table-wrap td.fkl-col-lokasi{
+  white-space:normal;
+  min-width:124px; max-width:192px;
+  word-break:break-word; overflow-wrap:break-word; line-height:1.3;
+}
+/* Metode Pengadaan: secukupnya isi */
+#view-pnw-view .table-wrap th.pnw-col-jenis,
+#view-pnw-view .table-wrap td.pnw-col-jenis{width:1%; white-space:nowrap;}
+/* Metode Penyampaian Dokumen: judul 2 baris ("METODE PENYAMPAIAN" / "DOKUMEN") */
+#view-pnw-view .table-wrap th.pnw-col-metode,
+#view-pnw-view .table-wrap td.pnw-col-metode{
+  min-width:150px; width:1%;
+}
+/* Tgl. Pembukaan Penawaran: judul 2 baris, kolom menyusut mengikuti isinya.
+   Aturan .col-date umum memakai !important, jadi di sini juga. */
+#view-pnw-view .table-wrap th.pnw-col-tgl{
+  white-space:normal !important;
+  width:1% !important;
+  min-width:96px !important;
+  max-width:none !important;
+}
+#view-pnw-view .table-wrap td.pnw-col-tgl{ min-width:96px !important; }
+/* Tabel mengikuti lebar panel, bukan lebar minimum global 980px */
+#view-pnw-view .table-wrap table{ min-width:0; width:100%; }
+
+
+/* ============================================================
+   8. PRATINJAU LAYAR PENUH — kepala modal menyembunyikan diri
+   ------------------------------------------------------------
+   Saat layar penuh, bilah judul melayang di atas isi dan pergi
+   sendiri setelah kursor diam. Digerakkan ui-sidebar.js lewat
+   kelas .head-show pada modal.
+   ============================================================ */
+.pn-preview-modal:fullscreen .detail-head,
+.pn-preview-modal:-webkit-full-screen .detail-head{
+  position:absolute; top:0; left:0; right:0; z-index:5;
+  padding:12px 22px;
+  background:linear-gradient(180deg,rgba(6,42,47,.94),rgba(9,94,102,.86));
+  backdrop-filter:blur(8px);
+  box-shadow:0 8px 26px rgba(4,28,32,.32);
+  transform:translateY(-100%); opacity:0;
+  transition:transform .26s cubic-bezier(.16,1,.3,1),opacity .2s ease;
+}
+.pn-preview-modal:fullscreen.head-show .detail-head,
+.pn-preview-modal:-webkit-full-screen.head-show .detail-head{transform:none; opacity:1}
+/* Isi memakai seluruh tinggi layar karena kepala kini melayang */
+.pn-preview-modal:fullscreen .pn-preview-body,
+.pn-preview-modal:-webkit-full-screen .pn-preview-body{height:100vh}
+.pn-preview-modal:fullscreen .pn-preview-body iframe,
+.pn-preview-modal:-webkit-full-screen .pn-preview-body iframe{height:100vh}
+.pn-preview-modal:fullscreen .pn-preview-body.has-tabs iframe,
+.pn-preview-modal:-webkit-full-screen .pn-preview-body.has-tabs iframe{height:calc(100vh - 46px)}
+.pn-preview-modal:fullscreen .pn-preview-body img,
+.pn-preview-modal:-webkit-full-screen .pn-preview-body img{max-height:100vh}
+/* Pita tipis di tepi atas sebagai petunjuk "arahkan kursor ke sini" */
+.pn-preview-modal:fullscreen::before,
+.pn-preview-modal:-webkit-full-screen::before{
+  content:""; position:absolute; top:0; left:0; right:0; height:4px; z-index:4;
+  background:linear-gradient(90deg,var(--yellow),var(--cyan),var(--yellow));
+  opacity:.55; transition:opacity .2s}
+.pn-preview-modal:fullscreen.head-show::before,
+.pn-preview-modal:-webkit-full-screen.head-show::before{opacity:0}
