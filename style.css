@@ -7390,3 +7390,46 @@ table.ac-matrix tbody tr,
 #topnav .topnav-dropdown>*,#topnav .topnav-subdrop>*{flex:0 0 auto}
 .sidebar-shell .topbar-brand,.sidebar-shell .side-foot{flex:0 0 auto}
 .side-foot .topbar-user>*{flex:0 0 auto}
+
+
+/* ============================================================
+   12. PRATINJAU DI PERANGKAT SENTUH (iPad / iPhone / Android)
+   ------------------------------------------------------------
+   Fullscreen API di Safari iPad mudah terlepas: sedikit gulir ke
+   atas sudah menutup mode layar penuh. Karena itu di perangkat
+   sentuh dipakai "layar penuh semu" — modal dibuat menutupi
+   seluruh viewport lewat CSS, bukan lewat Fullscreen API.
+   ============================================================ */
+.pn-preview-modal.pn-fs-semu{
+  position:fixed; inset:0; z-index:200;
+  width:100vw; max-width:100vw;
+  height:100vh; max-height:100vh;
+  margin:0; border-radius:0;
+  display:flex; flex-direction:column;
+}
+@supports (height:100dvh){
+  .pn-preview-modal.pn-fs-semu{height:100dvh; max-height:100dvh}
+}
+.pn-preview-modal.pn-fs-semu .detail-head{
+  flex:0 0 auto;
+  padding-top:calc(12px + env(safe-area-inset-top));
+  padding-left:calc(14px + env(safe-area-inset-left));
+  padding-right:calc(14px + env(safe-area-inset-right));
+}
+.pn-preview-modal.pn-fs-semu .pn-preview-body{flex:1 1 auto; min-height:0; height:auto}
+.pn-preview-modal.pn-fs-semu .pn-preview-body iframe{height:100% !important; width:100%; border:none}
+.pn-preview-modal.pn-fs-semu .pn-preview-body.has-tabs iframe{height:calc(100% - 46px) !important}
+.pn-preview-modal.pn-fs-semu .pn-preview-body img{max-height:100%; max-width:100%; margin:auto}
+
+/* Gulir tidak merembet ke halaman di belakangnya — inilah yang membuat
+   pratinjau terasa "bisa ditarik ke bawah" dan layar penuh ikut terlepas. */
+.overlay,
+.pn-preview-body,
+.pn-preview-body.fkl-preview-body{overscroll-behavior:contain}
+.pn-preview-body{-webkit-overflow-scrolling:touch}
+/* Halaman di belakang dikunci selama pratinjau terbuka */
+body.pratinjau-terbuka{overflow:hidden}
+
+/* Dokumen selalu di tengah bidang pratinjau */
+.pn-preview-body.fkl-preview-body{text-align:center}
+.pn-preview-body>img{margin-left:auto;margin-right:auto}

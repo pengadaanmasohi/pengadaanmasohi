@@ -31,6 +31,22 @@ window.toggleSidebar=function(){
 function initHoverSidebar(){
   var el=document.getElementById('sidebar-shell'); if(!el) return;
   var t=null;
+
+  /* Kursor benar-benar berada di atas sidebar? Diperiksa lewat KOORDINAT,
+     bukan sekadar percaya pada peristiwa mouseleave.
+     Alasannya: mengklik menu memunculkan lapisan "Memuat" yang menutupi
+     seluruh layar. Lapisan itu muncul TEPAT DI BAWAH kursor, sehingga
+     peramban mengirim mouseleave ke sidebar walau kursor tidak bergerak
+     sedikit pun — sidebar menciut sekejap lalu terbuka lagi begitu lapisan
+     hilang. Itulah kedipan yang terasa mengganggu. */
+  var lastX=-1, lastY=-1;
+  function diAtas(x,y){
+    if(x<0) return false;
+    var r=el.getBoundingClientRect();
+    return x>=r.left-1 && x<=r.right+1 && y>=r.top-1 && y<=r.bottom+1;
+  }
+  function pointerDiAtas(e){ return diAtas(e.clientX,e.clientY); }
+  function pointerTerakhirDiAtas(){ return diAtas(lastX,lastY); }
   function open(){ if(isSmall()||noHover()) return; clearTimeout(t); el.classList.add('is-open'); }
   function close(now){
     clearTimeout(t);
@@ -43,10 +59,26 @@ function initHoverSidebar(){
     }, now?0:HOVER_OUT_MS);
   }
   el.addEventListener('mouseenter',open);
-  el.addEventListener('mouseleave',function(){ close(false); });
+  el.addEventListener('mouseleave',function(e){
+    if(pointerDiAtas(e)) return;      // kursor masih di sidebar -> jangan menciut
+    close(false);
+  });
+  /* Jaring pengaman: bila peristiwa "keluar" tidak pernah datang (mis. kursor
+     melompat karena lapisan lain), menciut begitu kursor benar-benar menjauh. */
+  document.addEventListener('mousemove',function(e){
+    lastX=e.clientX; lastY=e.clientY;
+    if(!el.classList.contains('is-open')) return;
+    if(isSmall()||noHover()) return;
+    var r=el.getBoundingClientRect();
+    if(e.clientX > r.right+28) close(false);
+    else if(pointerDiAtas(e)) open();
+  },{passive:true});
   /* Navigasi papan ketik (Tab) juga harus bisa membukanya */
   el.addEventListener('focusin',open);
   el.addEventListener('focusout',function(e){
+    /* Mengklik menu memindahkan fokus, dan lapisan "Memuat" merebutnya lagi —
+       tanpa penjagaan ini sidebar ikut menciut padahal kursor belum ke mana-mana. */
+    if(pointerTerakhirDiAtas()) return;
     if(!el.contains(e.relatedTarget)) close(false);
   });
   window.addEventListener('resize',function(){ if(isSmall()) el.classList.remove('is-open'); });
@@ -204,8 +236,26 @@ function fsSupported(){
   var e=document.documentElement;
   return !!(e.requestFullscreen || e.webkitRequestFullscreen);
 }
+/* Perangkat sentuh memakai layar penuh SEMU (kelas CSS), bukan Fullscreen API.
+   Di Safari iPad, gulir sedikit saja sudah melepas Fullscreen API sehingga
+   pratinjau tiba-tiba mengecil; versi semu tidak bisa terlepas sendiri. */
+function pakaiFsSemu(){
+  return window.matchMedia('(hover:none)').matches ||
+         window.matchMedia('(max-width:1024px)').matches ||
+         !fsSupported();
+}
+function fsSemuAktif(){
+  var m=document.querySelector('#pn-preview-overlay .pn-preview-modal');
+  return !!(m && m.classList.contains('pn-fs-semu'));
+}
 window.pnPreviewToggleFullscreen=function(){
   var m=document.querySelector('#pn-preview-overlay .pn-preview-modal'); if(!m) return;
+  if(pakaiFsSemu()){
+    m.classList.toggle('pn-fs-semu');
+    syncFsBtn();
+    setTimeout(fitDokumen,60);
+    return;
+  }
   if(fsEl()){
     var ex=document.exitFullscreen||document.webkitExitFullscreen;
     if(ex) ex.call(document);
@@ -215,11 +265,12 @@ window.pnPreviewToggleFullscreen=function(){
   if(!req){ if(typeof toast==='function') toast('Peramban ini tidak mendukung layar penuh','warn'); return; }
   var p=req.call(m);
   if(p && p.catch) p.catch(function(){
-    if(typeof toast==='function') toast('Layar penuh tidak dapat dibuka','warn');
+    /* Ditolak peramban -> jatuh ke layar penuh semu, bukan gagal diam-diam */
+    m.classList.add('pn-fs-semu'); syncFsBtn();
   });
 };
 function syncFsBtn(){
-  var on=!!fsEl();
+  var on=!!fsEl() || fsSemuAktif();
   var btn=document.getElementById('pn-preview-fs');
   var lbl=document.getElementById('pn-preview-fs-label');
   var ic=document.getElementById('pn-preview-fs-icon');
@@ -258,6 +309,80 @@ function initFs(){
   syncFsBtn();
 }
 
+/* ---------- 5. Alamat (#hash) ikut bersih saat keluar ----------
+   Modul riwayat di app-lain.js menulis "#list", "#hps-view", dst. ke alamat
+   supaya tombol Back peramban berfungsi. Tetapi saat pengguna keluar, alamat
+   itu tidak pernah dibersihkan — halaman login jadi tampil dengan alamat
+   ".../#list", seolah masih di halaman daftar. Dibersihkan di sini. */
+function clearViewHash(){
+  try{
+    if(location.hash) history.replaceState({}, '', location.pathname+location.search);
+  }catch(e){}
+}
+function hookLogout(){
+  var orig=window.logout;
+  if(typeof orig!=='function') return;
+  window.logout=function(){
+    var r=orig.apply(this,arguments);
+    clearViewHash();
+    return r;
+  };
+}
+/* Layar login dipantau: setiap kali ia muncul — saat memuat halaman tanpa sesi,
+   sesi kedaluwarsa, atau keluar otomatis karena menganggur — alamatnya ikut
+   dibersihkan. Memakai pemantau karena app.js baru memutuskan tampil/tidaknya
+   layar login beberapa saat sesudah halaman dimuat. */
+function watchLoginScreen(){
+  var ls=document.getElementById('login-screen'); if(!ls) return;
+  var cek=function(){ if(getComputedStyle(ls).display!=='none') clearViewHash(); };
+  try{ new MutationObserver(cek).observe(ls,{attributes:true,attributeFilter:['style','class']}); }catch(e){}
+  setTimeout(cek,300); setTimeout(cek,1200);
+}
+
+/* --- Dokumen pratinjau dipaskan ke lebar layar ---
+   Dokumen dibangun dalam ukuran kertas A4 (210mm ≈ 794px). Di iPad potret,
+   apalagi ponsel, itu lebih lebar dari layar sehingga dokumen tampak
+   menempel ke kiri dan terpotong. Isi iframe diperkecil secukupnya (zoom)
+   supaya muat dan otomatis berada di tengah. Jalur Cetak/PDF memakai iframe
+   tersendiri, jadi tidak ikut terpengaruh. */
+function fitDokumen(){
+  if(!window.matchMedia('(max-width:1024px)').matches &&
+     !window.matchMedia('(hover:none)').matches) return;
+  var body=document.getElementById('pn-preview-body'); if(!body) return;
+  var fr=body.querySelector('iframe'); if(!fr) return;
+  try{
+    var d=fr.contentDocument; if(!d || !d.body) return;
+    d.body.style.zoom='';
+    var isi=Math.max(d.body.scrollWidth, d.documentElement.scrollWidth||0);
+    var muat=fr.clientWidth - 10;      // sisakan sedikit napas supaya benar-benar muat
+    if(muat>0 && isi>muat){
+      d.body.style.zoom=Math.max(0.34, muat/isi);
+    }
+  }catch(e){ /* iframe beda-asal: dilewati */ }
+}
+
+/* Halaman di belakang dikunci saat pratinjau terbuka, supaya tidak ikut
+   tergeser saat jari menggulir dokumen. */
+function watchPreviewOverlay(){
+  var ov=document.getElementById('pn-preview-overlay'); if(!ov) return;
+  var terapkan=function(){
+    var buka=ov.classList.contains('show');
+    document.body.classList.toggle('pratinjau-terbuka', buka);
+    if(buka){ setTimeout(fitDokumen,120); setTimeout(fitDokumen,600); setTimeout(fitDokumen,1400); }
+    else{
+      var m=ov.querySelector('.pn-preview-modal');
+      if(m) m.classList.remove('pn-fs-semu');
+    }
+  };
+  try{ new MutationObserver(terapkan).observe(ov,{attributes:true,attributeFilter:['class']}); }catch(e){}
+  var b=document.getElementById('pn-preview-body');
+  if(b){ try{ new MutationObserver(function(){ setTimeout(fitDokumen,150); })
+      .observe(b,{childList:true}); }catch(e){} }
+  window.addEventListener('resize',function(){ setTimeout(fitDokumen,200); });
+  window.addEventListener('orientationchange',function(){ setTimeout(fitDokumen,400); });
+  terapkan();
+}
+
 /* ---------- start ---------- */
 function init(){
   setTips();
@@ -270,6 +395,9 @@ function init(){
   syncSections();
   updateCrumb();
   initFs();
+  hookLogout();
+  watchPreviewOverlay();
+  watchLoginScreen();
 }
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init);
 else init();
