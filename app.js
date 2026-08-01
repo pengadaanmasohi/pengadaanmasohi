@@ -8008,6 +8008,10 @@ function pnAmbilUnifiedFormHtml(){
   '<div id="pn-ambil-result"></div>' +
   '<div class="jp-actions" style="justify-content:flex-end;margin-top:14px">' +
     '<button class="btn btn-red" onclick="pnAmbilBatalClick()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg> Batal</button>' +
+    /* Simpan: menutup formulir & kembali ke Daftar Nomor Dokumen. Bila masih ada
+       dokumen tercentang yang belum diterbitkan, nomornya diterbitkan dulu supaya
+       tidak ada pilihan yang hilang tanpa disadari (lihat pnAmbilSimpanClick). */
+    '<button class="btn btn-green" onclick="pnAmbilSimpanClick()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> Simpan</button>' +
   '</div>';
 }
 /* Tombol Batal pada Ambil Nomor — minta konfirmasi, kosongkan isian formulir,
@@ -8027,6 +8031,40 @@ function pnAmbilBatalClick(){
       openPnLihat('pl');
     }
   });
+}
+/* Tombol SIMPAN pada Ambil Nomor.
+   Nomor sebenarnya sudah tersimpan ke basis data begitu tombol "Ambil Nomor"
+   ditekan (lihat pnIssueForModul), jadi tugas tombol ini adalah MENUTUP formulir
+   dengan rapi:
+     - masih ada dokumen tercentang yang belum diterbitkan -> terbitkan dulu,
+       supaya pilihan yang sudah dibuat tidak hilang diam-diam;
+     - penetapan gagal -> tetap di halaman ini (pesan galat sudah tampil);
+     - belum ada nomor sama sekali -> ingatkan, jangan pindah halaman;
+     - selebihnya -> kosongkan isian lalu buka Daftar Nomor Dokumen. */
+async function pnAmbilSimpanClick(){
+  const el = id => document.getElementById(id);
+  const nama = (el('pn-uni-nama') ? el('pn-uni-nama').value : '').trim();
+  const klas = el('pn-uni-klas') ? el('pn-uni-klas').value : '';
+  const nCk  = document.querySelectorAll('.pn-doc-check:checked').length;
+  const adaTertunda = !!(nama && klas && nCk);
+  const adaHasil    = !!(pnState.lastResult && pnState.lastResult.length);
+  if(adaTertunda){
+    const ok = await pnAmbil();
+    if(!ok) return;                       // gagal: pesan sudah ditampilkan pnAmbil()
+  }else if(!adaHasil){
+    toast('Belum ada nomor yang diterbitkan. Pilih dokumen lalu tekan Ambil Nomor.','warn');
+    return;
+  }
+  // Selesai: kosongkan isian agar formulir siap dipakai lagi berikutnya.
+  delete pnState.ambil.dpId; delete pnState.ambil.dpNama;
+  pnState.lastResult=null;
+  if(el('pn-uni-nama')) el('pn-uni-nama').value='';
+  if(el('pn-uni-klas')) el('pn-uni-klas').value='';
+  document.querySelectorAll('.pn-doc-check').forEach(function(c){ c.checked=false; });
+  const allBtn=document.querySelector('.pn-check-all'); if(allBtn) allBtn.textContent='Pilih Semua';
+  if(typeof pnDocUpdateCount==='function'){ try{ pnDocUpdateCount(); }catch(e){} }
+  toast('Nomor tersimpan','ok');
+  openPnLihat('pl');
 }
 function pnPendingHtml(label){
   return '<div class="panel pn-pending"><div class="empty">' + PN_WARN_ICON +
@@ -8113,11 +8151,13 @@ async function pnAmbil(){
     });
     ok=true;
   }catch(err){
-    if(err && err.pnKlas){ toast('Gagal menetapkan nomor; kode klasifikasi','err'); return; }
-    if(err && err.pnDup){ toast('Gagal menetapkan nomor; data sudah ada','err'); return; }
-    console.error(err); toast('Gagal menetapkan nomor: '+errMsg(err),'err'); return;
+    /* Mengembalikan false (bukan undefined) supaya pemanggil — mis. tombol Simpan —
+       tahu penetapan gagal dan tidak ikut berpindah halaman. */
+    if(err && err.pnKlas){ toast('Gagal menetapkan nomor; kode klasifikasi','err'); return false; }
+    if(err && err.pnDup){ toast('Gagal menetapkan nomor; data sudah ada','err'); return false; }
+    console.error(err); toast('Gagal menetapkan nomor: '+errMsg(err),'err'); return false;
   }
-  if(!ok) return;
+  if(!ok) return false;
   toast('Nomor berhasil ditetapkan','ok');
   // kosongkan isian agar siap penetapan berikutnya (nama dipertahankan bila
   // sedang tertaut ke Data Pekerjaan agar tautan ke Rekap HPS tetap konsisten)
@@ -8130,6 +8170,7 @@ async function pnAmbil(){
   pnDocModalHide();
   pnState.lastResult = results;
   pnRenderResult(results);
+  return true;
 }
 function pnRenderResult(res){
   const box=document.getElementById('pn-ambil-result'); if(!box || !res) return;

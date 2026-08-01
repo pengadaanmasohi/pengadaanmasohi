@@ -85,6 +85,14 @@ const SPK_SK_KEYS = ['nama_pengguna','jabatan_pengguna','no_sk','tgl_sk','nama_u
    ========================================================================= */
 /* Pilihan Metode Pengadaan untuk Perjanjian/Kontrak (tender) */
 const SPK_METODE_PK_OPTS = ['Tender Terbatas','Tender Terbuka','Seleksi Umum','Seleksi Terbatas','Penunjukan Langsung','Tender Cepat'];
+/* ---- METODE PENYAMPAIAN DOKUMEN PENAWARAN (khusus keluarga Perjanjian/Kontrak) ----
+   Menentukan apakah proses pengadaan memakai SATU atau DUA sampul:
+     - "1 Tahap 1 Sampul" -> hanya ada satu kali pembukaan & evaluasi penawaran.
+       Field/butir "Sampul 2" ditiadakan, dan label "Sampul 1" ditulis polos
+       (mis. "No. BA Pembukaan Penawaran"), karena tidak ada sampul pembanding.
+     - "1 Tahap 2 Sampul" & "2 Tahap" -> tetap dua sampul seperti semula. */
+const SPK_PENYAMPAIAN_1S   = '1 Tahap 1 Sampul';
+const SPK_PENYAMPAIAN_OPTS = ['1 Tahap 1 Sampul','1 Tahap 2 Sampul','2 Tahap'];
 const SPK_BENTUK_OPTS = [
   {v:'SPK', l:'Surat Perintah Kerja'},
   {v:'PK',  l:'Perjanjian/Kontrak'},
@@ -102,6 +110,16 @@ function spkBentukOf(data){
    (No. SPPBJ, Informasi Kontrak, Informasi Penyedia & Lampiran dibuat berlapis
    sebanyak jumlah penyedia yang dipilih). */
 function spkIsPkFam(data){ var b=spkBentukOf(data); return b==='PK'||b==='KHS'; }
+/* Metode Penyampaian yang sedang dipilih (hanya bermakna pada keluarga PK) */
+function spkPenyampaianOf(data){ return String((data&&data.metode_penyampaian)||'').trim(); }
+/* Benar bila pengadaan memakai SATU sampul. Dipakai di dua tempat:
+     (a) form  -> field Sampul 2 disembunyikan, label Sampul 1 jadi polos
+     (b) dokumen -> butir "Sampul Dua" pada daftar "berpedoman pada" dilewati,
+         sehingga nomor urut butir sesudahnya otomatis maju. */
+function spkSatuSampulOf(data){
+  return spkIsPkFam(data) && spkPenyampaianOf(data)===SPK_PENYAMPAIAN_1S;
+}
+function spkSatuSampul(){ return spkSatuSampulOf(spkState&&spkState.data); }
 function spkIsKhsOf(data){ return spkBentukOf(data)==='KHS'; }
 /* Bentuk yang sedang aktif pada form Penyusunan Kontrak */
 function spkBentuk(){ return spkBentukOf(spkState&&spkState.data); }
@@ -139,6 +157,9 @@ const SPK_FIELD_GROUPS = [
        memakai dropdown metode tender — opsi sama dengan Monitoring Tender. */
     {k:'metode_pengadaan', l:'Metode Pengadaan', t:'text', dpLock:true, only:'SPK', def:''},
     {k:'metode_pengadaan', l:'Metode Pengadaan', t:'select', opts:SPK_METODE_PK_OPTS, dpLock:true, only:'PK', def:''},
+    /* Metode Penyampaian: hanya Perjanjian/Kontrak & Perjanjian/Kontrak KHS.
+       Pilihan "1 Tahap 1 Sampul" meniadakan seluruh field Sampul 2 di bawah. */
+    {k:'metode_penyampaian', l:'Metode Penyampaian', t:'select', opts:SPK_PENYAMPAIAN_OPTS, only:'PK', def:''},
     {k:'no_rks', l:'No. RKS', t:'text', span:2, only:'PK', def:''},
     {k:'tgl_rks', l:'Tgl. RKS', t:'date', only:'PK', def:''},
     {k:'no_eproc', l:'No. Eproc', t:'text', span:2, def:''},
@@ -146,14 +167,17 @@ const SPK_FIELD_GROUPS = [
     {k:'pengumuman_akhir', l:'Tgl. Pengumuman (akhir)', t:'date', def:''},
     {k:'no_bapj', l:'No. BA Penjelasan', t:'text', span:2, only:'PK', def:''},
     {k:'tgl_bapj', l:'Tgl. BA Penjelasan', t:'date', only:'PK', def:''},
-    {k:'no_bapp', l:'No. BA Pembukaan Penawaran', lPk:'No. BA Pembukaan Penawaran Sampul 1', t:'text', span:2, def:''},
-    {k:'tgl_bapp', l:'Tgl. BA Pembukaan Penawaran', lPk:'Tgl. BA Pembukaan Penawaran Sampul 1', t:'date', def:''},
-    {k:'no_bae', l:'No. BA Evaluasi Penawaran', lPk:'No. BA Evaluasi Penawaran Sampul 1', t:'text', span:2, def:''},
-    {k:'tgl_bae', l:'Tgl. BA Evaluasi Penawaran', lPk:'Tgl. BA Evaluasi Penawaran Sampul 1', t:'date', def:''},
-    {k:'no_bapp2', l:'No. BA Pembukaan Penawaran Sampul 2', t:'text', span:2, only:'PK', def:''},
-    {k:'tgl_bapp2', l:'Tgl. BA Pembukaan Penawaran Sampul 2', t:'date', only:'PK', def:''},
-    {k:'no_bae2', l:'No. BA Evaluasi Penawaran Sampul 2', t:'text', span:2, only:'PK', def:''},
-    {k:'tgl_bae2', l:'Tgl. BA Evaluasi Penawaran Sampul 2', t:'date', only:'PK', def:''},
+    /* l1s = label saat Metode Penyampaian "1 Tahap 1 Sampul": kata "Sampul 1"
+       dilepas karena tidak ada sampul kedua sebagai pembanding. */
+    {k:'no_bapp', l:'No. BA Pembukaan Penawaran', lPk:'No. BA Pembukaan Penawaran Sampul 1', l1s:'No. BA Pembukaan Penawaran', t:'text', span:2, def:''},
+    {k:'tgl_bapp', l:'Tgl. BA Pembukaan Penawaran', lPk:'Tgl. BA Pembukaan Penawaran Sampul 1', l1s:'Tgl. BA Pembukaan Penawaran', t:'date', def:''},
+    {k:'no_bae', l:'No. BA Evaluasi Penawaran', lPk:'No. BA Evaluasi Penawaran Sampul 1', l1s:'No. BA Evaluasi Penawaran', t:'text', span:2, def:''},
+    {k:'tgl_bae', l:'Tgl. BA Evaluasi Penawaran', lPk:'Tgl. BA Evaluasi Penawaran Sampul 1', l1s:'Tgl. BA Evaluasi Penawaran', t:'date', def:''},
+    /* hide1s = field ditiadakan saat Metode Penyampaian "1 Tahap 1 Sampul". */
+    {k:'no_bapp2', l:'No. BA Pembukaan Penawaran Sampul 2', t:'text', span:2, only:'PK', hide1s:true, def:''},
+    {k:'tgl_bapp2', l:'Tgl. BA Pembukaan Penawaran Sampul 2', t:'date', only:'PK', hide1s:true, def:''},
+    {k:'no_bae2', l:'No. BA Evaluasi Penawaran Sampul 2', t:'text', span:2, only:'PK', hide1s:true, def:''},
+    {k:'tgl_bae2', l:'Tgl. BA Evaluasi Penawaran Sampul 2', t:'date', only:'PK', hide1s:true, def:''},
     {k:'no_bakn', l:'No. BA Klarifikasi dan Negosiasi', t:'text', span:2, def:''},
     {k:'tgl_bakn', l:'Tgl. BA Klarifikasi dan Negosiasi', t:'date', def:''},
     {k:'no_bahp', l:'No. BA Hasil Pengadaan', t:'text', span:2, only:'PK', def:''},
@@ -411,11 +435,14 @@ const SPK_PK_DASAR_DOK = [
  {l:'Dokumen Rencana Kerja dan Syarat-syarat (RKS)', no:'no_rks',       tg:'tgl_rks'},
  {l:'__EPROC__',                                    no:'no_eproc',      tg:''},
  {l:'Berita Acara Penjelasan',                      no:'no_bapj',       tg:'tgl_bapj'},
- {l:'Berita Acara Pembukaan Penawaran Sampul Satu', no:'no_bapp',       tg:'tgl_bapp'},
- {l:'Berita Acara Evaluasi Penawaran Sampul Satu',  no:'no_bae',        tg:'tgl_bae'},
+ /* l1s = judul butir saat Metode Penyampaian "1 Tahap 1 Sampul" (tanpa "Sampul Satu"). */
+ {l:'Berita Acara Pembukaan Penawaran Sampul Satu', l1s:'Berita Acara Pembukaan Penawaran', no:'no_bapp', tg:'tgl_bapp'},
+ {l:'Berita Acara Evaluasi Penawaran Sampul Satu',  l1s:'Berita Acara Evaluasi Penawaran',  no:'no_bae',  tg:'tgl_bae'},
  {l:'Surat Penawaran Harga <b>PIHAK KEDUA</b>',     no:'no_penawaran_penyedia', tg:'tgl_penawaran'},
- {l:'Berita Acara Pembukaan Penawaran Sampul Dua',  no:'no_bapp2',      tg:'tgl_bapp2'},
- {l:'Berita Acara Evaluasi Penawaran Sampul Dua',   no:'no_bae2',       tg:'tgl_bae2'},
+ /* s2 = butir Sampul Dua: DILEWATI saat "1 Tahap 1 Sampul", sehingga nomor urut
+    butir-butir sesudahnya otomatis maju (rapat, tanpa lompatan). */
+ {l:'Berita Acara Pembukaan Penawaran Sampul Dua',  s2:true, no:'no_bapp2', tg:'tgl_bapp2'},
+ {l:'Berita Acara Evaluasi Penawaran Sampul Dua',   s2:true, no:'no_bae2',  tg:'tgl_bae2'},
  {l:'Berita Acara Klarifikasi dan Negosiasi',       no:'no_bakn',       tg:'tgl_bakn'},
  {l:'Berita Acara Hasil Pengadaan',                 no:'no_bahp',       tg:'tgl_bahp'},
  {l:'Nota Dinas Usulan Calon Pemenang',             no:'no_ucp',        tg:'tgl_ucp'},
@@ -475,7 +502,17 @@ function spkPartyColCm(){
 }
 function spkDlistAlign(html){
   var s=String(html==null?'':html);
-  var m=s.match(/<p class="spk-dlist"><span class="n">/g);
+  /* POLA HARUS MENERIMA KELAS TAMBAHAN. Sebelumnya polanya menuntut
+     class="spk-dlist" PERSIS, sehingga butir daftar peraturan yang masih berupa
+     contoh pengisian (class="spk-dlist spk-ph") luput dirapikan: butir itu tetap
+     memakai margin CSS 0,35cm + padding 0,6cm (teks jatuh di 0,95cm), sedangkan
+     butir Sumber Anggaran / RKS / dst. yang dirapikan jatuh di 0,75cm — selisih
+     0,2cm itulah yang terlihat sebagai daftar "bertingkat". Dengan menangkap
+     kelas tambahan, SELURUH butir daftar "berpedoman pada" (peraturan maupun
+     dokumen) berbagi satu kolom teks. */
+  var RE_SCAN=/<p class="spk-dlist([^"]*)"><span class="n">/g;
+  var RE_PUT =/<p class="spk-dlist([^"]*)"><span class="n">/g;
+  var m=s.match(RE_SCAN);
   if(!m || !m.length) return s;
   var n=m.length;
   /* lantai 0,45 (bukan 0,6 warisan CSS) supaya kotak daftar 1 digit tidak
@@ -492,11 +529,12 @@ function spkDlistAlign(html){
   var _pc=0.75; try{ _pc=spkPartyColCm(); }catch(e){ _pc=0.75; }
   var dlT=Math.max(_pc, dlW);                      /* kolom teks daftar = kolom teks pihak */
   var dlMl=Math.round((dlT-dlW)*100)/100;          /* posisi kiri kotak nomor */
-  return s.replace(/<p class="spk-dlist"><span class="n">/g,
-    '<p class="spk-dlist" style="margin-left:'+dlMl.toFixed(2)+'cm;padding-left:'+dlW.toFixed(2)+'cm;text-indent:-'+dlW.toFixed(2)+'cm">'+
-    '<span class="n" style="width:'+dlW.toFixed(2)+'cm;min-width:'+dlW.toFixed(2)+'cm;'+
-    'display:inline-block;box-sizing:border-box;padding-right:'+SPK_NUM_GAP+'cm;text-indent:0;'+
-    'white-space:nowrap;overflow:visible;text-align:'+dlRata+'">');
+  return s.replace(RE_PUT, function(_m, xtra){
+    return '<p class="spk-dlist'+(xtra||'')+'" style="margin-left:'+dlMl.toFixed(2)+'cm;padding-left:'+dlW.toFixed(2)+'cm;text-indent:-'+dlW.toFixed(2)+'cm">'+
+      '<span class="n" style="width:'+dlW.toFixed(2)+'cm;min-width:'+dlW.toFixed(2)+'cm;'+
+      'display:inline-block;box-sizing:border-box;padding-right:'+SPK_NUM_GAP+'cm;text-indent:0;'+
+      'white-space:nowrap;overflow:visible;text-align:'+dlRata+'">';
+  });
 }
 function spkPreamblePkTpl(data){
   data=data||{};
@@ -540,8 +578,11 @@ function spkPreamblePkTpl(data){
      label TERPANJANG yang benar-benar dipakai, sehingga seluruh tanda ":" pada
      daftar ini sejajar pada satu garis. */
   var dokItems=[];
+  /* Satu sampul -> butir Sampul Dua dilewati & judul Sampul Satu ditulis polos. */
+  var _1s=spkSatuSampulOf(data);
   for(i=0;i<SPK_PK_DASAR_DOK.length;i++){
     var it=SPK_PK_DASAR_DOK[i];
+    if(_1s && it.s2) continue;
     if(it.l==='__EPROC__'){                          // Pengumuman melalui portal e-Procurement
       var aw=String(data.pengumuman_awal||'').trim(), ak=String(data.pengumuman_akhir||'').trim();
       var vEp=String(data.no_eproc||'').trim();
@@ -554,8 +595,8 @@ function spkPreamblePkTpl(data){
     var vNo=String(data[it.no]==null?'':data[it.no]).trim();
     var vTg=it.tg?String(data[it.tg]==null?'':data[it.tg]).trim():'';
     if(!vNo && !vTg) continue;                       // butir tanpa data dilewati
-    dokItems.push({ t:it.l, nl:(it.nl||'No. Dokumen'), np:(vNo?'{{'+it.no+'}}':''),
-                    tp:(vTg?'{{'+it.tg+'}}':'') });
+    dokItems.push({ t:((_1s && it.l1s) ? it.l1s : it.l), nl:(it.nl||'No. Dokumen'),
+                    np:(vNo?'{{'+it.no+'}}':''), tp:(vTg?'{{'+it.tg+'}}':'') });
   }
   /* Lebar kolom label = label terpanjang + jeda 0,3 cm (jatuh ke 2,3 cm bila
      pengukuran tak tersedia, mis. saat dijalankan di luar peramban). */
@@ -1751,6 +1792,9 @@ const SPK_LOCK_OVL = '<span class="lock-overlay"><svg viewBox="0 0 24 24" fill="
    layar (tidak berubah); daftar lengkap nama field & kodenya ada di berkas Excel
    "Daftar Field & Chip Code Mail Merge SPK". */
 function spkLbl(f){
+  /* Metode Penyampaian "1 Tahap 1 Sampul" memakai nama polos tanpa "Sampul 1"
+     (f.l1s) — didahulukan di atas f.lPk. */
+  if(f && f.l1s && spkSatuSampul()) return fkEsc(f.l1s);
   /* Sebagian field memakai nama berbeda pada Perjanjian/Kontrak (mis. "No. Kontrak"
      menjadi "No. Kontrak PIHAK PERTAMA"). Nama alternatif ditulis pada f.lPk. */
   return fkEsc((spkIsPk() && f.lPk) ? f.lPk : f.l);
@@ -2129,12 +2173,43 @@ function spkEnsureBentukStyle(){
        nominalnya yang dirata-KANAN ke tepi kolom. */
     '.spk-mlist.is-rt .spk-mrow{justify-content:flex-start}'+
     '.spk-mlist.is-rt .spk-mrow > .v{flex:1 1 auto;text-align:right;white-space:nowrap}'+
-    /* Lebar kolom Daftar Kontrak: No. Kontrak diberi ruang lebih lega (nomornya
-       panjang), Nama Penyedia dipersempit karena isinya pendek. */
+    /* ---- LEBAR KOLOM DAFTAR KONTRAK PEKERJAAN ----
+       Sasaran: tabel tampil PENUH dalam satu layar, tanpa geser kiri-kanan.
+         - Tabel dikunci selebar wadahnya (width:100%, min-width dilepas) supaya
+           tidak ada lagi batang gulir mendatar.
+         - No. Kontrak: selebar TEKS TERPANJANG-nya saja. Caranya white-space:nowrap
+           (teks tidak boleh patah) + width:1% — trik CSS agar kolom menyusut pas
+           mengikuti isi terpanjang, tidak lebih.
+         - Nama Penyedia: dipersempit 30% (15% -> 10,5%). Dari ruang yang dilepas,
+           20% (dari lebar semula) beralih ke Nama Pekerjaan; sisanya ikut terserap
+           kolom Nama Pekerjaan juga karena kolom itulah yang lentur.
+         - No., Tanggal, Nilai Pekerjaan & Aksi: menyusut mengikuti isinya.
+         - Nama Pekerjaan: satu-satunya kolom lentur — menyerap SEMUA sisa ruang,
+           sehingga lebar tabel selalu terisi penuh. */
+    '#view-spk-view .table-wrap table{width:100% !important;min-width:0 !important;table-layout:auto}'+
+    '#view-spk-view .table-wrap th,#view-spk-view .table-wrap td{min-width:0}'+
+    '#view-spk-view .table-wrap th.col-no,#view-spk-view .table-wrap td.col-no'+
+      '{width:1% !important;min-width:0 !important;white-space:nowrap}'+
     '#view-spk-view .table-wrap th.col-spk-nokon,#view-spk-view .table-wrap td.col-spk-nokon'+
-      '{min-width:250px;width:24%}'+
+      '{width:1% !important;min-width:0 !important;white-space:nowrap !important;'+
+      'word-break:normal !important;overflow-wrap:normal !important}'+
+    '#view-spk-view .table-wrap th.col-date,#view-spk-view .table-wrap td.col-date'+
+      '{width:1% !important;min-width:0 !important;white-space:nowrap}'+
+    '#view-spk-view .table-wrap th.col-nilai,#view-spk-view .table-wrap td.col-nilai'+
+      '{width:1% !important;min-width:0 !important;white-space:nowrap}'+
+    '#view-spk-view .table-wrap th.col-spk-aksi,#view-spk-view .table-wrap td.col-spk-aksi'+
+      '{width:1% !important;min-width:0 !important;white-space:nowrap;text-align:center}'+
     '#view-spk-view .table-wrap th.col-spk-penyedia,#view-spk-view .table-wrap td.col-spk-penyedia'+
-      '{min-width:130px;width:15%}'+
+      '{width:10.5% !important;min-width:92px !important}'+
+    '#view-spk-view .table-wrap th.col-nama-freeze,#view-spk-view .table-wrap td.col-nama-freeze'+
+      '{width:auto !important;min-width:180px !important}'+
+    /* Layar sempit (tablet/ponsel): nomor kontrak boleh patah & gulir mendatar
+       diaktifkan lagi, karena memaksa satu layar di sana justru merusak tampilan. */
+    '@media (max-width:1100px){'+
+      '#view-spk-view .table-wrap{overflow-x:auto}'+
+      '#view-spk-view .table-wrap th.col-spk-nokon,#view-spk-view .table-wrap td.col-spk-nokon'+
+        '{white-space:normal !important;word-break:break-word !important;min-width:190px !important}'+
+    '}'+
     /* Beri jarak antara judul kartu dan penanda "Profil: ..." di sebelahnya */
     '.form-section-title .spk-klprof-tag{margin-left:10px}'+
     /* Penanda langkah (1..4) DIBENTANGKAN penuh: garis penghubung tidak lagi
@@ -2290,6 +2365,8 @@ function spkSetBentuk(v){
    Perjanjian/Kontrak KHS memakai kumpulan field yang SAMA dengan
    Perjanjian/Kontrak (only:'PK'), karena keduanya satu keluarga dokumen. */
 function spkFieldVisible(f){
+  /* Field Sampul 2 ditiadakan bila Metode Penyampaian = "1 Tahap 1 Sampul". */
+  if(f && f.hide1s && spkSatuSampul()) return false;
   if(!f || !f.only) return true;
   var only=String(f.only).toUpperCase();
   var b=spkBentuk();
@@ -2608,14 +2685,20 @@ function spkBentukChip(rec){
 function renderSpkView(){
   const tb=document.getElementById('spk-view-body'); const pg=document.getElementById('spk-view-pagination'); const cEl=document.getElementById('spk-view-count');
   if(!tb) return;
+  /* Aturan lebar kolom ikut dipasang di sini: daftar non-KHS tidak memanggil
+     spkKhsCellHtml/spkBentukChip, jadi tanpa baris ini gaya tabelnya bisa
+     belum termuat saat halaman pertama kali dibuka. */
+  spkEnsureBentukStyle();
   const rows=spkViewRows();
   if(cEl) cEl.textContent=rows.length;
   /* Kepala tabel disusun dari sini (bukan index.html) agar penambahan kolom
      "Nama Penyedia" & penggantian nama "Nilai" -> "Nilai Pekerjaan" cukup
-     lewat berkas ini. */
+     lewat berkas ini.
+     Penanda dinaikkan ke '3': kolom Aksi kini memakai kelas col-spk-aksi
+     (min-width 150px dilepas) supaya tabel muat satu layar penuh. */
   try{
     const _thr=tb.parentElement && tb.parentElement.querySelector('thead tr');
-    if(_thr && _thr.getAttribute('data-spk-head')!=='2'){
+    if(_thr && _thr.getAttribute('data-spk-head')!=='3'){
       _thr.innerHTML=
         '<th class="col-no">No.</th>'+
         '<th class="col-spk-nokon">No. Kontrak</th>'+
@@ -2623,8 +2706,8 @@ function renderSpkView(){
         '<th class="col-spk-penyedia">Nama Penyedia</th>'+
         '<th class="col-date">Tanggal</th>'+
         '<th class="col-nilai">Nilai Pekerjaan</th>'+
-        '<th style="text-align:center;min-width:150px">Aksi</th>';
-      _thr.setAttribute('data-spk-head','2');
+        '<th class="col-spk-aksi">Aksi</th>';
+      _thr.setAttribute('data-spk-head','3');
     }
   }catch(e){ console.error(e); }
   if(!rows.length){ tb.innerHTML=spkEmptyRow(); if(pg) pg.innerHTML=''; return; }
@@ -2653,14 +2736,16 @@ function renderSpkView(){
     }
     return '<tr>'+
       '<td class="col-no">'+(start+i+1)+'</td>'+
-      '<td class="wrap-cell col-spk-nokon">'+_tdNo+'</td>'+
+      /* Tanpa "wrap-cell": nomor kontrak sengaja TIDAK dipatahkan supaya lebar
+         kolomnya pas mengikuti nomor terpanjang. */
+      '<td class="col-spk-nokon">'+_tdNo+'</td>'+
       '<td class="wrap-cell col-nama-freeze">'+fkEsc(r.nama_pekerjaan||'—')+'</td>'+
       '<td class="wrap-cell col-spk-penyedia">'+_tdPy+'</td>'+
       /* Tanggal ringkas dd/mm/yyyy (fmtDate) — spkDateLong() tetap dipakai di
          dalam dokumen SPK/Perjanjian yang memang menuntut format panjang. */
       '<td class="col-date">'+fkEsc(r.tanggal?fmtDate(r.tanggal):'—')+'</td>'+
       '<td class="col-nilai">'+_tdNilai+'</td>'+
-      '<td><div class="action-cell" style="justify-content:center">'+
+      '<td class="col-spk-aksi"><div class="action-cell" style="justify-content:center">'+
         '<button class="act act-edit" title="Ubah" onclick="spkEditRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
         '<button class="act act-view" title="Lihat" onclick="spkPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
         '<button class="act act-del" title="Hapus" onclick="spkDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>'+
