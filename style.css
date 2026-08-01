@@ -7259,24 +7259,41 @@ table.ac-matrix tbody tr,
 
 
 /* ============================================================
-   8. PRATINJAU LAYAR PENUH — kepala modal TETAP TAMPIL
+   8. PRATINJAU LAYAR PENUH — kepala tetap tampil, isi penuh layar
    ------------------------------------------------------------
-   Bilah judul tidak menyembunyikan diri: judul berkas & tombol
-   keluar harus selalu terjangkau. Kepala tetap berada di alur
-   normal, isi dokumen mengisi sisa tinggi layar.
+   Modal bawaan dibatasi max-height:92vh & lebar 980px. Batas itu
+   harus dilepas saat benar-benar layar penuh, kalau tidak isinya
+   berhenti di tengah layar dan sisanya kosong.
    ============================================================ */
+.pn-preview-modal:fullscreen,
+.pn-preview-modal:-webkit-full-screen{
+  width:100vw; max-width:100vw;
+  height:100vh; max-height:100vh;
+  margin:0; border-radius:0; background:#fff;
+  display:flex; flex-direction:column; animation:none;
+}
 .pn-preview-modal:fullscreen .detail-head,
 .pn-preview-modal:-webkit-full-screen .detail-head{
-  padding:12px 22px;
+  flex:0 0 auto; padding:12px 22px;
   background:linear-gradient(100deg,var(--teal-dark),var(--teal));
 }
+/* Sisa tinggi layar sepenuhnya milik isi dokumen */
+.pn-preview-modal:fullscreen .pn-preview-body,
+.pn-preview-modal:-webkit-full-screen .pn-preview-body{
+  flex:1 1 auto; min-height:0; height:auto;
+}
 .pn-preview-modal:fullscreen .pn-preview-body iframe,
-.pn-preview-modal:-webkit-full-screen .pn-preview-body iframe{height:calc(100vh - 54px)}
+.pn-preview-modal:-webkit-full-screen .pn-preview-body iframe{
+  height:100% !important; width:100%; border:none;
+}
 .pn-preview-modal:fullscreen .pn-preview-body.has-tabs iframe,
-.pn-preview-modal:-webkit-full-screen .pn-preview-body.has-tabs iframe{height:calc(100vh - 54px - 46px)}
+.pn-preview-modal:-webkit-full-screen .pn-preview-body.has-tabs iframe{
+  height:calc(100% - 46px) !important;
+}
 .pn-preview-modal:fullscreen .pn-preview-body img,
-.pn-preview-modal:-webkit-full-screen .pn-preview-body img{max-height:calc(100vh - 54px)}
-
+.pn-preview-modal:-webkit-full-screen .pn-preview-body img{
+  max-height:100%; max-width:100%; margin:auto;
+}
 
 /* ============================================================
    9. BILAH FILTER (.toolbar) — kotak penuh selebar halaman
