@@ -1679,3 +1679,77 @@ function renderTrackKelola(keep){
   trkPvRender();
   trkAdmPill();
 }
+
+
+/* ============================================================================
+   RIWAYAT NAVIGASI — tombol Back/Forward Chrome mengikuti perpindahan menu
+   Ditambahkan 1 Agustus 2026. Blok ini berdiri sendiri dan tidak mengubah
+   fungsi mana pun di atasnya; ia hanya membungkus showView() milik app.js.
+   ============================================================================ */
+(function () {
+  'use strict';
+
+  if (typeof window.showView !== 'function') {
+    console.warn('nav-history: showView belum ada, modul dilewati');
+    return;
+  }
+
+  /* Halaman yang layak masuk riwayat. Halaman form / input sengaja
+     TIDAK didaftarkan: saat pengguna menekan Back dari sebuah form,
+     yang diharapkan adalah kembali ke daftar/menu sebelumnya, bukan
+     ke form kosong tanpa konteks data. */
+  var MENU_VIEWS = [
+    'dashboard',
+    'list', 'list-pl', 'list-tender',
+    'pn-lihat',
+    'fk-view', 'fkl-view', 'pnw-view', 'rho-view', 'dp-view',
+    'hps-view', 'analisa-view', 'rekap-hps',
+    'jadwal-view', 'track-view',
+    'spk-view', 'dpeng-view', 'materi-view'
+  ];
+
+  var _showView = window.showView;
+  var replaying = false;   // true saat perpindahan dipicu tombol Back/Forward
+
+  window.showView = function (name) {
+    _showView.apply(this, arguments);
+
+    if (replaying) return;
+    if (MENU_VIEWS.indexOf(name) === -1) return;
+
+    var st = history.state;
+    if (st && st.monView === name) return;   // sudah di entri yang sama
+
+    try {
+      if (st && st.monView) {
+        history.pushState({ monView: name }, '', '#' + name);
+      } else {
+        /* Entri pertama setelah masuk aplikasi: pakai replaceState supaya
+           Back dari Dashboard langsung keluar situs seperti biasa, tidak
+           tersangkut di entri kosong. */
+        history.replaceState({ monView: name }, '', '#' + name);
+      }
+    } catch (err) {
+      console.warn('nav-history: gagal menulis riwayat', err);
+    }
+  };
+
+  window.addEventListener('popstate', function (e) {
+    var v = e.state && e.state.monView;
+    if (!v) return;                                   // biarkan browser keluar
+    if (!document.getElementById('view-' + v)) return;
+
+    replaying = true;
+    try {
+      _showView(v, null, true);                       // noLoader: tanpa animasi
+    } catch (err) {
+      console.error('nav-history: gagal memulihkan halaman', err);
+    } finally {
+      replaying = false;
+    }
+  });
+
+  /* Saat aplikasi dimuat ulang, sesi dipulihkan dari sessionStorage.
+     Hash sisa dari kunjungan sebelumnya dibiarkan — showView pertama
+     akan menimpanya lewat replaceState di atas. */
+})();
