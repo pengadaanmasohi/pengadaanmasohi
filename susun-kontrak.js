@@ -3881,7 +3881,19 @@ function spkDocCss2(){
    menjorok keluar & jarak nomor->teks jadi jauh. CATATAN: kisi .docx SPK_DX_PK
    (GAP:227) sengaja TIDAK disentuh di sini — bentuk Perjanjian/Kontrak dibiarkan
    seperti apa adanya sampai ada konfirmasi terpisah. */
-const SPK_NUM_GAP = 0.18;
+/* JEDA PENANDA -> TEKS (cm).
+   DITURUNKAN 0,18 -> 0,12 pada 1 Agu 2026 (laporan "jarak dari penomoran ke
+   teks terlalu jauh ya", gambar daftar bertingkat 2. / a. / dash).
+   Terukur di dokumen sebelum perubahan: jeda tinta penanda ke tinta teks
+   0,26cm ("2."), 0,34cm ("a.") dan 0,29cm (dash) — semuanya LEBIH BESAR dari
+   nilai 0,18 di sini, karena jarak yang terlihat mata = padding kotak DITAMBAH
+   ruang sisi glif (side bearing) penanda dan huruf pertama teks. Menurunkan
+   padding ke 0,12 membawa jeda terlihat ke kisaran 0,20-0,28cm.
+   Berlaku menyeluruh: seluruh deret angka, huruf, dan bullet di SPK maupun
+   Perjanjian/Kontrak (SPK_PK_GAP_HURUF mengikuti nilai ini), serta daftar
+   "berpedoman pada" di preamble — jadi tidak ada deret yang tertinggal rapat
+   atau renggang sendiri. */
+const SPK_NUM_GAP = 0.12;
 
 /* =====================================================================
    KOLOM PENOMORAN BUTIR = KISI TEMPLATE .docx
@@ -5099,6 +5111,56 @@ function spkPkIndentStd(html, opsi){
         _spz.style.marginLeft='0cm';
       }
     }catch(_eKol){}
+
+    /* --- Tahap 4d: JOROKAN ANTAR-TINGKAT DIBATASI (1 Agu 2026) ---
+       Laporan: "dari penomoran 2 ke butir 2.1 terlalu jauh indennya, sesuaikan
+       juga pada yang lain".
+
+       Terukur di dokumen: butir HURUF menjorok 0,15cm dari kolom teks induknya
+       (sesuai SPK_PK_LEAD_ANGKA), tetapi butir ANGKA MAJEMUK ("2.1." di bawah
+       "2.") menjorok 0,75cm — lima kali lipat. Tahap 1-4 sendiri selalu
+       menghitung 0,15cm; artinya butir semacam itu tidak melewati rantai
+       perhitungan tersebut (mis. penandanya tidak lolos spkPkNSpan sehingga
+       tidak pernah masuk item[], lalu margin bawaannya bertahan).
+
+       Alih-alih menebak mata rantai mana yang meleset — dua tebakan sebelumnya
+       (isi asal Word, dan lantai se-dokumen) sudah diuji dan keduanya bukan
+       penyebabnya — di sini HASIL AKHIRNYA yang dikunci, persis pendekatan
+       Tahap 4c di atas.
+
+       Cara kerja: paragraf ditelusuri berurutan sambil mengingat kolom teks
+       tiap tingkat. Begitu sebuah butir menjorok LEBIH JAUH dari kolom teks
+       butir di atasnya + SPK_PK_LEAD_ANGKA, kelebihannya dipangkas — penanda
+       dan kolom teksnya digeser kiri bersamaan, sehingga gantungan (text-indent)
+       dan lebar kotak nomornya tidak berubah sama sekali.
+
+       Yang TIDAK disentuh: butir yang jorokannya sudah <= batas (klausul yang
+       selama ini rapi ditulis ulang dengan nilai identik), butir tingkat-1,
+       dan paragraf tanpa penanda. Berlaku untuk SELURUH klausul PK & SPK
+       ("sesuaikan juga pada yang lain, butir turun dari klausul"). */
+    try{
+      var _bts=SPK_PK_LEAD_ANGKA, _pAll=box.querySelectorAll('p');
+      var _tum=[];                     /* tumpukan {kolom teks, jorokan induk} */
+      for(var _y=0;_y<_pAll.length;_y++){
+        var _py=_pAll[_y], _spy=_py.querySelector('span.n');
+        if(!_spy) continue;            /* paragraf tanpa penanda: dilewati */
+        var _mly=parseFloat(_py.style.marginLeft)||0;      /* kolom teks butir */
+        var _tiy=parseFloat(_py.style.textIndent)||0;      /* gantungan (negatif) */
+        var _peny=_mly+_tiy;                               /* tepi kiri penanda */
+        /* Naikkan tumpukan sampai ketemu induk: butir terakhir yang penandanya
+           mulai lebih kiri daripada penanda butir ini. */
+        while(_tum.length && _tum[_tum.length-1].pen>=_peny-0.001) _tum.pop();
+        if(_tum.length){
+          var _ind=_tum[_tum.length-1], _lebih=_peny-(_ind.kol+_bts);
+          if(_lebih>0.005){            /* menjorok melebihi batas -> rapatkan */
+            _mly=Math.round((_mly-_lebih)*100)/100;
+            _py.style.marginLeft=_mly.toFixed(2)+'cm';
+            _peny=_mly+_tiy;
+          }
+        }
+        _tum.push({pen:_peny, kol:_mly});
+      }
+    }catch(_eRapat){}
 
     /* --- Tahap 4b: BLOK "Label : nilai" DI TENGAH ISI (21 Jul 2026) ---
        Blok kv/kvgrp yang muncul SESUDAH sebuah butir bernomor (mis. Nama
