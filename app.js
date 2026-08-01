@@ -561,6 +561,11 @@ const LAST_ACTIVE_KEY = 'mon_last_active'; // timestamp aktivitas terakhir — d
 const TOKEN_KEY = 'mon_file_token';        // token akses dokumen ke Worker (R2 File Gateway)
 /* URL Worker "PLN File Gateway" — penjaga akses dokumen kontrak privat di Cloudflare R2. */
 const R2_GATEWAY_URL = 'https://pln-file-gateway.pln-masohi.workers.dev';
+/* Basis URL PUBLIK bucket R2 `foto-referensi` (custom domain Cloudflare).
+   Foto Referensi Harga Online dibaca langsung dari sini — tidak lewat Worker —
+   karena sifatnya publik. Unggah & hapusnya TETAP lewat Worker (bertoken).
+   Ganti bila nama domainnya berbeda; tanpa garis miring di ujung. */
+const RHO_PUBLIC_BASE = 'https://foto.pengadaan-masohi.com';
 /* Penyimpanan sesi HANYA di sessionStorage.
    sessionStorage otomatis terhapus saat tab/browser ditutup, sehingga
    pengguna otomatis logout ketika browser ditutup. Sesi tetap dipulihkan
@@ -6864,6 +6869,10 @@ renderTableTender();
    ============================================================ */
 const FK_TABLE = 'file_kontrak';
 const FK_MAX_MB = 50;   // batas ukuran file (sesuai batas per-file Storage free tier)
+/* Kunci modul (kr/pl/tender) dipakai di SELURUH aplikasi sebagai identitas
+   internal — JANGAN diganti. Peta ini hanya menerjemahkannya menjadi nama
+   folder di bucket R2 `file-kontrak`, dipakai satu kali saat menyusun path. */
+const FK_PATH = { kr:'kontrak-rinci', pl:'pengadaan-langsung', tender:'tender' };
 
 /* ============================================================
    AKSES DOKUMEN LEWAT WORKER (R2 File Gateway)
@@ -7045,7 +7054,7 @@ const FileKontrak = {
      tidak melaporkan progres granular, jadi diteruskan oleh pemanggil. */
   async saveFile(modul, recordId, file, meta, onProgress){
     const safe=String(file.name||'file').replace(/[^\w.\-]+/g,'_');
-    const path=`${modul}/${String(recordId)}/${Date.now()}_${safe}`;
+    const path=`${FK_PATH[modul]||modul}/${String(recordId)}/${Date.now()}_${safe}`;
     // Unggah file mentah (Blob) ke R2 lewat Worker — TANPA base64, tanpa batas payload DB
     await fkStoragePut(path, file, onProgress);
     // Ambil path lama (bila ada) agar bisa dibersihkan setelah metadata diganti
@@ -8567,11 +8576,10 @@ function fklDocPool(){
      sama sudah ada di menu Kelengkapan Dokumen Pengadaan.
    ================================================================== */
 const DPENG_TABLE  = 'dokumen_pengadaan';
-/* Prefiks folder di dalam bucket R2 milik Worker (FILE_BUCKET). Worker hanya
-   menerima path yang diawali kr | pl | tender | dpeng, jadi seluruh berkas
-   Dokumen Pengadaan disimpan di bawah "dpeng/". Worker TIDAK mendukung
-   pemilihan bucket lewat query — hanya ada satu binding R2. */
-const DPENG_PREFIX = 'dpeng/';
+/* Prefiks path Dokumen Pengadaan. Sejak Worker v2, prefiks inilah yang
+   MENENTUKAN BUCKET tujuan di R2 (dokumen-pengadaan), bukan sekadar nama
+   folder. Kunci objek di R2 = path ini, persis sama. */
+const DPENG_PREFIX = 'dokumen-pengadaan/';
 /* Batas ukuran berkas. Angka ini BUKAN batasan aplikasi, melainkan mengikuti
    batas body permintaan Cloudflare Worker — berkas mengalir lewat Worker
    sebelum sampai ke R2. Sesuaikan bila paket Cloudflare berubah:
@@ -8687,7 +8695,7 @@ const DPENG_IC_DEL  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor
 const DPENG_IC_DOC  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/></svg>';
 
 /* ==================================================================
-   Penyimpanan berkas di R2 (lewat Worker, prefiks `dpeng/`)
+   Penyimpanan berkas di R2 (lewat Worker, prefiks `dokumen-pengadaan/`)
    ================================================================== */
 async function dpengStoragePut(path, file, onProgress){
   await r2XhrPut(path, file, onProgress);
@@ -9578,13 +9586,14 @@ function dpengHapusPekerjaan(recId){
    - Satu record = satu materi/peraturan + SATU berkas.
    - Metadata di tabel Supabase `materi_peraturan`; berkas fisik di bucket R2
      lewat Worker yang sama dengan Dokumen Pengadaan.
-   - PENTING: Worker R2 hanya menerima path berawalan kr | pl | tender | dpeng,
-     karena itu berkas materi ditaruh di bawah "dpeng/materi/" (bukan prefiks
-     baru "materi/", yang akan ditolak 400 invalid_path).
+   - Sejak Worker v2, Materi & Peraturan punya BUCKET SENDIRI di R2
+     (materi-peraturan) dengan prefiks path "materi-peraturan/". Dulu ia
+     menumpang di bawah "dpeng/materi/" karena Worker lama hanya punya satu
+     binding bucket.
    - Nama materi/peraturan disaring agar tidak bisa diinput ganda.
    ================================================================== */
 const MATERI_TABLE  = 'materi_peraturan';
-const MATERI_PREFIX = DPENG_PREFIX + 'materi/';   // -> "dpeng/materi/"
+const MATERI_PREFIX = 'materi-peraturan/';   // bucket R2 tersendiri
 const MATERI_MAX_MB = DPENG_MAX_MB;               // batas body Cloudflare Worker
 const MATERI_PAGE_SIZE = 10;                      // samakan dengan tabel lain
 /* Daftar kategori — silakan tambah/kurangi sesuai kebutuhan. Nilai lama yang
@@ -10191,8 +10200,9 @@ async function materiSubmitForm(){
   }catch(err){ console.error(err); toast('Gagal menyimpan: '+errMsg(err),'err'); return; }
   if(!recId){ toast('Gagal menyimpan: id record tidak diperoleh','err'); return; }
 
-  /* Unggah berkas baru bila ada. Path WAJIB berawalan "dpeng/" agar diterima
-     Worker R2; titik ganda dinetralkan karena Worker menolaknya. */
+  /* Unggah berkas baru bila ada. Path WAJIB berawalan "materi-peraturan/" agar
+     diterima Worker R2 dan diarahkan ke bucket yang benar; titik ganda
+     dinetralkan karena Worker menolaknya. */
   if(f.staged){
     const file=f.staged;
     const safe=String(file.name||'file').replace(/[^\w.\-]+/g,'_').replace(/\.{2,}/g,'.');
@@ -13157,11 +13167,13 @@ async function refreshDataRho(){
   catch(err){ console.error(err); records_rho = records_rho||[]; }
 }
 
-/* ---- Foto produk di Supabase Storage (bukan base64 di kolom state) ----
-   Solusi permanen agar baris DB ringan: foto diunggah ke bucket publik lalu
-   yang disimpan di state hanya URL-nya. Aman mundur: bila bucket belum dibuat
-   / upload gagal, pemanggil mempertahankan base64 sebagai cadangan. */
-const RHO_BUCKET = 'rho-foto';   // WAJIB dibuat sebagai bucket PUBLIC di Supabase Storage
+/* ---- Foto produk di Cloudflare R2 (bukan base64 di kolom state) ----
+   Agar baris DB ringan: foto diunggah ke bucket PUBLIK lalu yang disimpan di
+   state hanya URL-nya. Aman mundur: bila unggahan gagal, pemanggil
+   mempertahankan base64 sebagai cadangan.
+   Unggah & hapus lewat Worker (bertoken); BACA langsung dari custom domain
+   publik RHO_PUBLIC_BASE. */
+const RHO_PREFIX = 'foto-referensi/';   // prefiks path = penentu bucket di Worker
 function rhoUid(){ try{ if(window.crypto&&crypto.randomUUID) return 'rho_'+crypto.randomUUID(); }catch(e){} return 'rho_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,10); }
 function rhoIsDataUrl(s){ return typeof s==='string' && s.indexOf('data:image')===0; }
 function rhoIsHttpUrl(s){ return typeof s==='string' && /^https?:\/\//i.test(s); }
@@ -13173,22 +13185,22 @@ function rhoDataUrlToBlob(dataUrl){
 }
 const StoreRhoFoto = {
   async uploadDataUrl(dataUrl, path){
-    if(!rhoSupaReady()) throw new Error('Koneksi Supabase tidak tersedia');
+    if(!fkAuthToken()) throw new Error('Sesi berkas tidak tersedia — silakan login ulang.');
     const blob=rhoDataUrlToBlob(dataUrl);
-    const up=await db.storage.from(RHO_BUCKET).upload(path, blob, {contentType:blob.type||'image/jpeg', upsert:true});
-    if(up.error) throw up.error;
-    const pub=db.storage.from(RHO_BUCKET).getPublicUrl(path);
-    const url=pub&&pub.data&&pub.data.publicUrl;
-    if(!url) throw new Error('URL publik tidak tersedia');
-    return {url, path};
+    await r2XhrPut(path, blob);
+    /* URL baca = custom domain publik + kunci objek (kunci = path, persis). */
+    return { url: String(RHO_PUBLIC_BASE).replace(/\/+$/,'')+'/'+path, path };
   },
+  /* Hapus seluruh folder foto milik satu record.
+     R2 tidak punya padanan list()+remove() milik Supabase Storage, jadi
+     dipakai endpoint /api/prefix di Worker (admin saja). */
   async removeFolder(key){
-    if(!rhoSupaReady()||!key) return;
+    if(!key) return;
+    const prefix=RHO_PREFIX+String(key).replace(/^\/+|\/+$/g,'')+'/';
     try{
-      const ls=await db.storage.from(RHO_BUCKET).list(key,{limit:1000});
-      if(ls&&!ls.error&&Array.isArray(ls.data)&&ls.data.length){
-        await db.storage.from(RHO_BUCKET).remove(ls.data.map(o=>key+'/'+o.name));
-      }
+      await fetch(R2_GATEWAY_URL+'/api/prefix?prefix='+encodeURIComponent(prefix),{
+        method:'DELETE', headers:{'Authorization':'Bearer '+fkAuthToken()}
+      });
     }catch(e){ console.error('Bersihkan folder foto gagal',e); }
   }
 };
@@ -13689,7 +13701,7 @@ async function rhoSimpan(){
       showLoader('Menyiapkan unggah foto…');
       for(const job of jobs){
         done++; showLoader('Mengunggah foto '+done+' / '+jobs.length+'…');
-        const path=key+'/r'+job.r+'_i'+job.i+'.jpg';
+        const path=RHO_PREFIX+key+'/r'+job.r+'_i'+job.i+'.jpg';
         try{
           const res=await StoreRhoFoto.uploadDataUrl(job.c.foto, path);
           job.c.foto=res.url+'?v='+Date.now();   // cache-bust saat foto ditimpa
@@ -13698,7 +13710,7 @@ async function rhoSimpan(){
         await new Promise(r=>setTimeout(r,0));
       }
       hideLoader();
-      if(failed>0) toast(failed+' foto gagal diunggah — disimpan sebagai gambar tertanam (cadangan). Pastikan bucket "'+RHO_BUCKET+'" ada & publik.','warn');
+      if(failed>0) toast(failed+' foto gagal diunggah — disimpan sebagai gambar tertanam (cadangan). Periksa sesi login & bucket R2 "foto-referensi".','warn');
     }
   }
   const rec={
@@ -13829,7 +13841,7 @@ async function rhoMigrasiFotoStorage(){
               if(!c||!rhoIsDataUrl(c.foto)) continue;
               done++; showLoader('Mengunggah foto '+done+' / '+totalFoto+'…');
               const before=rhoDataUrlBytes(c.foto); bytesBefore+=before;
-              const path=key+'/r'+r+'_i'+k+'.jpg';
+              const path=RHO_PREFIX+key+'/r'+r+'_i'+k+'.jpg';
               try{
                 const res=await StoreRhoFoto.uploadDataUrl(c.foto, path);
                 c.foto=res.url+'?v='+Date.now(); c.fotoPath=path;
