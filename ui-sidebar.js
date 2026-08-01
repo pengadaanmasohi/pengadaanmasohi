@@ -218,38 +218,6 @@ window.pnPreviewToggleFullscreen=function(){
     if(typeof toast==='function') toast('Layar penuh tidak dapat dibuka','warn');
   });
 };
-/* --- Kepala modal menyembunyikan diri saat layar penuh ---
-   Muncul saat kursor bergerak (atau berada di pita atas), lalu pergi lagi
-   setelah diam beberapa detik. Papan ketik & tab tetap memunculkannya. */
-var HEAD_IDLE_MS=2200;
-var headTimer=null, headBound=false;
-function headEl(){ return document.querySelector('#pn-preview-overlay .pn-preview-modal'); }
-function headShow(sticky){
-  var m=headEl(); if(!m) return;
-  m.classList.add('head-show');
-  clearTimeout(headTimer);
-  if(!sticky) headTimer=setTimeout(function(){ var x=headEl(); if(x) x.classList.remove('head-show'); }, HEAD_IDLE_MS);
-}
-function onFsMove(e){
-  var near = e.clientY <= 72;              // kursor di pita atas -> kepala menetap
-  headShow(near);
-}
-function bindHeadAutohide(on){
-  var m=headEl(); if(!m) return;
-  if(on){
-    if(headBound) return;
-    headBound=true;
-    m.addEventListener('mousemove',onFsMove);
-    m.addEventListener('focusin',function(){ headShow(true); });
-    headShow(false);                        // tampil sebentar saat masuk layar penuh
-  }else{
-    headBound=false;
-    clearTimeout(headTimer);
-    m.removeEventListener('mousemove',onFsMove);
-    m.classList.remove('head-show');
-  }
-}
-
 function syncFsBtn(){
   var on=!!fsEl();
   var btn=document.getElementById('pn-preview-fs');
@@ -258,7 +226,6 @@ function syncFsBtn(){
   if(btn){ btn.classList.toggle('is-on',on); btn.title=(on?'Keluar dari layar penuh':'Layar Penuh')+' (F)'; }
   if(lbl) lbl.textContent = on ? 'Keluar Layar Penuh' : 'Layar Penuh';
   if(ic) ic.innerHTML = on ? IC_EXIT : IC_ENTER;
-  bindHeadAutohide(on);
 }
 function initFs(){
   if(!fsSupported()){
