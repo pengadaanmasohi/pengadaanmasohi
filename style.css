@@ -7699,3 +7699,87 @@ body.pratinjau-terbuka{overflow:hidden}
 @media (max-width:1024px){
   #view-jadwal-view .table-wrap table{min-width:1040px}
 }
+
+
+/* ============================================================
+   18. IKON MENU AKTIF DI SIDEBAR MENCIUT (RAIL) — JANGAN MENYAMAR
+   ------------------------------------------------------------
+   Gejala: saat sidebar masih berupa deretan ikon, menu bergrup
+   (Monitoring, Form, Dokumen, Pengaturan) yang sedang dibuka
+   memang mendapat kapsul KUNING — tetapi ikonnya tetap memakai
+   warna kuning #ffd76a dari aturan "penanda jalur" di bagian 13.
+   Kuning di atas kuning = ikonnya seolah menghilang. Hanya
+   Dashboard yang terlihat benar karena ia .topnav-link.active
+   yang warnanya sudah disetel gelap.
+
+   Perbaikan: di dalam rail, SEMUA menu aktif — baik menu tunggal
+   maupun menu bergrup — memakai kapsul kuning dengan ikon & teks
+   biru-tua, persis seperti Dashboard.
+   ============================================================ */
+@media (hover:hover) and (min-width:1025px){
+  .sidebar-shell:not(.is-open) #topnav .topnav-link.active,
+  .sidebar-shell:not(.is-open) #topnav .topnav-group.has-active .topnav-trigger{
+    background:linear-gradient(135deg,var(--yellow),#ffd35a);
+    color:#073f45
+  }
+  /* Ikon mengikuti warna teks (currentColor) — dipaksa gelap supaya
+     kontrasnya sama dengan Dashboard. */
+  .sidebar-shell:not(.is-open) #topnav .topnav-link.active svg,
+  .sidebar-shell:not(.is-open) #topnav .topnav-link.active svg:first-of-type,
+  .sidebar-shell:not(.is-open) #topnav .topnav-group.has-active .topnav-trigger svg,
+  .sidebar-shell:not(.is-open) #topnav .topnav-group.has-active .topnav-trigger svg:first-of-type{
+    color:#073f45
+  }
+  /* Menyentuh ikon yang sedang aktif tidak boleh mengembalikannya jadi
+     kapsul putih transparan. */
+  .sidebar-shell:not(.is-open) #topnav .topnav-link.active:hover,
+  .sidebar-shell:not(.is-open) #topnav .topnav-group.has-active .topnav-trigger:hover{
+    background:linear-gradient(135deg,#ffc22b,#ffdc74);
+    color:#073f45
+  }
+}
+
+
+/* ============================================================
+   19. JUDUL KOLOM 2 BARIS — UTUH, TIDAK DIPOTONG ELIPSIS
+   ------------------------------------------------------------
+   Cara lama (-webkit-line-clamp:2) memotong baris ketiga menjadi
+   "RENCANA ANGGARAN…". Sekarang pemenggalannya ditentukan sendiri
+   lewat <br> dan tiap barisnya dilarang membungkus (nowrap),
+   sehingga:
+     - judulnya PASTI 2 baris dan PASTI utuh;
+     - kolomnya otomatis minimal selebar baris terpanjang judul.
+   Bila datanya lebih lebar dari judul, data yang menentukan lebar.
+   ============================================================ */
+.table-wrap thead th.th-2b{
+  white-space:nowrap;line-height:1.25;text-align:center;
+  padding-left:10px;padding-right:10px
+}
+/* Kalibrasi ulang: lebar kolom = MAX(isian terpanjang, judul 2 baris) */
+#view-dp-view .table-wrap th.col-rab,
+#view-fkl-view .table-wrap th.col-rab,
+#view-jadwal-view .table-wrap th.col-durasi{
+  width:1%;min-width:0;white-space:nowrap
+}
+
+/* ============================================================
+   20. PEMBAGIAN LEBAR: NAMA PEKERJAAN -> BIDANG PELAKSANA
+   ------------------------------------------------------------
+   Kolom Nama Pekerjaan menyerap hampir semua sisa ruang tabel,
+   sementara Bidang Pelaksana yang isinya panjang (mis. "Keselamatan,
+   Kesehatan Kerja, Lingkungan dan Keamanan") terjepit sampai 3 baris.
+   Seperlima (20%) jatah Nama Pekerjaan dialihkan ke Bidang Pelaksana.
+   ============================================================ */
+#view-dp-view .table-wrap th.col-bidang-pel,
+#view-dp-view .table-wrap td.col-bidang-pel{
+  width:20%;min-width:200px;max-width:none
+}
+#view-dp-view .table-wrap th.col-nama-freeze,
+#view-dp-view .table-wrap td.col-nama-freeze{
+  max-width:none                /* sisa ruang tetap diserap Nama Pekerjaan */
+}
+
+/* Pengalihan 20% di atas harus diambil dari Nama Pekerjaan saja — kolom
+   Lokasi Pekerjaan jangan ikut menyusut sampai isinya pecah dua baris. */
+#view-dp-view .table-wrap th.fkl-col-lokasi,
+#view-dp-view .table-wrap td.fkl-col-lokasi{min-width:210px;max-width:260px}
