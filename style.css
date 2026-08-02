@@ -8059,3 +8059,34 @@ html.mode-rail .pn-preview-modal:not(.pn-fs-semu) .pn-preview-body img{max-heigh
 @media (max-width:360px){
   #view-dashboard .filter-field{flex:1 1 100%}
 }
+
+
+/* ============================================================
+   25. GARIS TABEL PUTIH & TEGAS UNTUK SEMUA HALAMAN DAFTAR
+   ------------------------------------------------------------
+   Aturan umum `td{border-color:#e4edef}` (bagian "Tabel Monitoring")
+   membuat garis antar sel jadi abu-abu tipis. Perlakuan putih hanya
+   pernah dipasang satu per satu untuk 7 halaman — sisanya tertinggal:
+     Data Pekerjaan, Jadwal, Pembukaan Penawaran, Perhitungan HPS,
+     Analisa Harga Satuan, SPK, Dokumen Pengadaan, Materi & Peraturan,
+     dan Realisasi Harga Optimal.
+   Karena itu warnanya tidak seragam antar halaman.
+
+   Sekarang aturannya dipasang SATU KALI untuk semua tabel daftar
+   sekaligus, sehingga halaman baru pun otomatis ikut seragam.
+   Sasarannya `.table-wrap>table:not([class])` — hanya tabel daftar.
+   Tabel khusus yang punya kelas sendiri (hps-uraian, ana-uraian,
+   jp-table, pnw-periksa-table, fkl-info) sengaja tidak diikutkan
+   karena gaya garisnya memang dirancang berbeda.
+   ============================================================ */
+.table-wrap>table:not([class]){border-collapse:collapse}
+.table-wrap>table:not([class]) th,
+.table-wrap>table:not([class]) td{
+  border-left:1px solid #fff;border-right:1px solid #fff
+}
+.table-wrap>table:not([class]) thead th{
+  border-left-color:#fff;border-right-color:#fff
+}
+.table-wrap>table:not([class]) tbody td{
+  border-top:1px solid #fff;border-bottom:1px solid #fff
+}
