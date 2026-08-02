@@ -2355,6 +2355,17 @@ function initTopnavFx(){
   var root=document.getElementById('topnav');
   if(!root || root.__fxReady) return;
   root.__fxReady=true;
+  /* ==== KEHALUSAN 120 Hz ====
+     Efek miring 3D ini dibuat untuk tata letak MENU ATAS yang lama. Pada tata
+     letak SIDEBAR sekarang, style.css mematikannya lewat
+        #topnav .topnav-link,... { transform:none !important }
+     Artinya: setiap gerakan kursor tetap memanggil getBoundingClientRect()
+     (memaksa hitung ulang tata letak secara sinkron) lalu menulis `transform`
+     yang langsung dibuang browser. Dengan mouse 1000 Hz itu ribuan hitung
+     ulang per detik — persis yang membuat perpindahan kursor antar menu
+     terasa tersendat. Karena hasilnya memang tidak pernah terlihat,
+     pendengarnya tidak dipasang sama sekali di tata letak sidebar. */
+  var diSidebar = !!(root.closest && root.closest('.sidebar-shell'));
   /* Suara saat masuk item menu baru */
   root.addEventListener('pointerover', function(ev){
     if(ev.pointerType && ev.pointerType!=='mouse') return;
@@ -2367,7 +2378,8 @@ function initTopnavFx(){
     var to=ev.relatedTarget;
     if(!to || !(to.closest && to.closest(TN_SEL))) _tnSoundEl=null;
   }, {passive:true});
-  /* Tilt 3D mengikuti kursor */
+  /* Tilt 3D mengikuti kursor — hanya untuk tata letak menu atas (lihat di atas) */
+  if(diSidebar) return;
   root.addEventListener('pointermove', function(ev){
     if(!topnavFxSupported()) return;
     if(ev.pointerType && ev.pointerType!=='mouse') return;

@@ -19,7 +19,18 @@
    (melayang di atas isi halaman, konten tidak bergeser). Kursor pergi ->
    menciut sendiri setelah jeda singkat supaya tidak berkedip saat kursor
    sekadar melintas. Tidak ada lagi tombol ciutkan manual. */
-var HOVER_OUT_MS=260;
+/* Jeda sebelum sidebar menciut sesudah kursor pergi. Dulu 260 ms; ditambah
+   animasi lebar 260 ms, totalnya lebih dari setengah detik sejak kursor
+   menjauh sampai sidebar benar-benar rapat — itulah yang terasa "menggantung".
+   110 ms masih cukup untuk mencegah kedipan saat kursor sekadar melintasi
+   tepi, tetapi terasa langsung menanggapi. */
+var HOVER_OUT_MS=110;
+/* Sidebar mulai melebar SEBELUM kursor menyentuhnya — cukup mendekat sejauh
+   ini dari tepi rail. Hanya berlaku bila kursor memang sedang bergerak KE ARAH
+   sidebar, supaya tidak terbuka sendiri saat pengguna bekerja di dekat tepi
+   kiri tabel. */
+var HOVER_IN_PX=24;   /* rail 76px + padding isi 24px -> zona ini jatuh tepat
+                         di ruang kosong sebelum kolom pertama tabel */
 function isSmall(){ return window.matchMedia('(max-width:1024px)').matches; }
 function noHover(){ return window.matchMedia('(hover:none)').matches; }
 
@@ -40,18 +51,53 @@ function initHoverSidebar(){
      sedikit pun — sidebar menciut sekejap lalu terbuka lagi begitu lapisan
      hilang. Itulah kedipan yang terasa mengganggu. */
   var lastX=-1, lastY=-1;
+  /* ==== KEHALUSAN 120 Hz ====
+     getBoundingClientRect() memaksa browser menghitung ulang tata letak SAAT
+     ITU JUGA. Dulu dipanggil sampai dua kali pada SETIAP mousemove; dengan
+     mouse 1000 Hz itu ribuan hitung ulang paksa per detik, tepat saat sidebar
+     sedang menganimasikan lebarnya — inilah yang membuat animasinya patah.
+     Ukuran sidebar disimpan (cache) dan hanya diperbarui saat benar-benar
+     berubah: selesai transisi, ukuran jendela berubah, atau halaman digulir. */
+  var rc=null;
+  function segarkanRect(){ rc=el.getBoundingClientRect(); }
+  function rect(){ if(!rc) segarkanRect(); return rc; }
+  /* Lebar sidebar saat menciut & melebar dibaca sekali dari variabel CSS.
+     Dipakai untuk MEMPERBARUI cache seketika begitu kelas .is-open berubah —
+     tanpa ini ada jendela ±170 ms (selama animasi berjalan) ketika cache masih
+     menyimpan lebar lama, sehingga pemeriksaan "kursor sudah jauh?" memakai
+     angka yang salah dan sidebar bisa menutup sendiri tepat setelah dibuka. */
+  var lebarRail=76, lebarBuka=268;
+  try{
+    var cs=getComputedStyle(document.documentElement);
+    lebarRail=parseFloat(cs.getPropertyValue('--side-rail'))||76;
+    lebarBuka=parseFloat(cs.getPropertyValue('--side-w'))||268;
+  }catch(e){}
+  function tebakRect(lebar){
+    var r=rect(); if(!r) return;
+    rc={left:r.left, top:r.top, bottom:r.bottom, right:r.left+lebar, width:lebar, height:r.height};
+  }
+  el.addEventListener('transitionend', function(e){ if(e.propertyName==='width') segarkanRect(); });
+  window.addEventListener('resize', segarkanRect, {passive:true});
+  window.addEventListener('scroll', segarkanRect, {passive:true});
   function diAtas(x,y){
     if(x<0) return false;
-    var r=el.getBoundingClientRect();
+    var r=rect();
     return x>=r.left-1 && x<=r.right+1 && y>=r.top-1 && y<=r.bottom+1;
   }
   function pointerDiAtas(e){ return diAtas(e.clientX,e.clientY); }
   function pointerTerakhirDiAtas(){ return diAtas(lastX,lastY); }
-  function open(){ if(isSmall()||noHover()) return; clearTimeout(t); el.classList.add('is-open'); }
+  function open(){
+    if(isSmall()||noHover()) return;
+    clearTimeout(t);
+    if(el.classList.contains('is-open')) return;   /* jangan menulis kelas yang sudah ada */
+    el.classList.add('is-open');
+    tebakRect(lebarBuka);                          /* cache langsung dipakai lebar barunya */
+  }
   function close(now){
     clearTimeout(t);
     t=setTimeout(function(){
       el.classList.remove('is-open');
+      tebakRect(lebarRail);
       /* grup yang terlanjur terbuka ikut ditutup supaya rapi saat menciut */
       el.querySelectorAll('.topnav-group.open').forEach(function(g){ g.classList.remove('open'); });
       el.querySelectorAll('.topnav-sub.open').forEach(function(s){ s.classList.remove('open'); });
@@ -65,13 +111,36 @@ function initHoverSidebar(){
   });
   /* Jaring pengaman: bila peristiwa "keluar" tidak pernah datang (mis. kursor
      melompat karena lapisan lain), menciut begitu kursor benar-benar menjauh. */
-  document.addEventListener('mousemove',function(e){
-    lastX=e.clientX; lastY=e.clientY;
-    if(!el.classList.contains('is-open')) return;
+  /* Pemeriksaan posisi kursor dibatasi SATU KALI PER FRAME (rAF). Tanpa ini,
+     mouse 1000 Hz memicu ratusan pemeriksaan di antara dua frame — semuanya
+     terbuang karena layar hanya menggambar sekali. */
+  var mmRaf=0, prevX=-1;
+  function periksaKursor(){
+    mmRaf=0;
     if(isSmall()||noHover()) return;
-    var r=el.getBoundingClientRect();
-    if(e.clientX > r.right+28) close(false);
-    else if(pointerDiAtas(e)) open();
+    var r=rect(); if(!r) return;
+    var dalamTinggi = lastY>=r.top-1 && lastY<=r.bottom+1;
+
+    if(!el.classList.contains('is-open')){
+      /* NIAT HOVER: mulai melebar begitu kursor MENDEKAT (bukan menunggu
+         sampai benar-benar menyentuh), asalkan arah geraknya memang menuju
+         sidebar. Ini yang menghilangkan rasa "telat membuka". */
+      /* Harus benar-benar bergerak ke kiri. Kalau dipakai "<=", kursor yang
+         sekadar bergerak naik-turun di x yang sama (mis. menyusuri kolom No.)
+         akan membuka sidebar sendiri. */
+      var menujuKiri = (prevX<0) || (lastX < prevX);
+      if(dalamTinggi && menujuKiri && lastX>=0 && lastX <= r.right + HOVER_IN_PX) open();
+      return;
+    }
+    /* Sudah terbuka: menciut begitu kursor jelas meninggalkan area sidebar.
+       Ambangnya dipersempit (dulu 28px) agar responsnya terasa langsung. */
+    if(lastX > r.right + 14 || !dalamTinggi) close(false);
+    else if(diAtas(lastX,lastY)) open();
+  }
+  document.addEventListener('mousemove',function(e){
+    prevX=lastX;
+    lastX=e.clientX; lastY=e.clientY;
+    if(!mmRaf) mmRaf=requestAnimationFrame(periksaKursor);
   },{passive:true});
   /* Navigasi papan ketik (Tab) juga harus bisa membukanya */
   el.addEventListener('focusin',open);
@@ -210,29 +279,47 @@ function initRailSentuh(){
    Dipasang pada .panel (bukan .table-wrap) karena .table-wrap adalah wadah
    gulir — anak absolut di dalamnya ikut tergeser dan tertutup sel tabel.
    Geometri kotak tabel dikirim ke CSS lewat variabel --tw-top/--tw-h. */
-function segarkanIsyaratGeser(tw){
-  if(!tw) return;
-  var panel=tw.closest ? tw.closest('.panel') : null; if(!panel) return;
+/* Pengukuran BERAT (memaksa hitung ulang tata letak) dipisah dari pembaruan
+   RINGAN. Ukuran kotak tabel hanya berubah saat isinya/ukuran jendela berubah,
+   jadi cukup diukur sekali lalu disimpan; ketika digulir, yang dibaca hanya
+   scrollLeft. Dulu keduanya digabung sehingga setiap peristiwa gulir memicu
+   getComputedStyle + scrollWidth — yaitu satu hitung ulang tata letak paksa
+   per peristiwa, tepat saat gulir sedang berlangsung. */
+function ukurTabel(tw){
+  if(!tw) return null;
+  var panel=tw.closest ? tw.closest('.panel') : null; if(!panel) return null;
   panel.classList.add('panel-tabel');   /* hanya panel bertabel yang jadi acuan posisi */
-  var sisa = tw.scrollWidth - tw.clientWidth;
-  var kiri = sisa > 2 && tw.scrollLeft > 2;
-  var kanan = sisa > 2 && tw.scrollLeft < sisa - 2;
-  /* .table-wrap punya bingkai putih 6px — bayangan diletakkan DI DALAM bingkai
-     itu supaya tidak menimpa sudut membulatnya. */
   var cs=getComputedStyle(tw);
   var bt=parseFloat(cs.borderTopWidth)||0, bl=parseFloat(cs.borderLeftWidth)||0;
+  var geo={ panel:panel, sisa: tw.scrollWidth - tw.clientWidth };
   panel.style.setProperty('--tw-top', (tw.offsetTop + bt) + 'px');
   panel.style.setProperty('--tw-h', tw.clientHeight + 'px');
   panel.style.setProperty('--tw-inset', ((tw.offsetLeft || 0) + bl) + 'px');
-  panel.classList.toggle('x-kiri', kiri);
-  panel.classList.toggle('x-kanan', kanan);
+  tw.__geo=geo;
+  return geo;
 }
+function perbaruiIsyarat(tw){
+  var geo=tw && tw.__geo; if(!geo) geo=ukurTabel(tw);
+  if(!geo) return;
+  var sl=tw.scrollLeft;                       /* satu-satunya pembacaan saat gulir */
+  var kiri  = geo.sisa > 2 && sl > 2;
+  var kanan = geo.sisa > 2 && sl < geo.sisa - 2;
+  if(geo.kiri!==kiri){ geo.kiri=kiri; geo.panel.classList.toggle('x-kiri', kiri); }
+  if(geo.kanan!==kanan){ geo.kanan=kanan; geo.panel.classList.toggle('x-kanan', kanan); }
+}
+function segarkanIsyaratGeser(tw){ if(ukurTabel(tw)) perbaruiIsyarat(tw); }
 function initIsyaratGeser(){
   function pasang(){
     document.querySelectorAll('.table-wrap').forEach(function(tw){
       if(!tw.__isyarat){
         tw.__isyarat=true;
-        tw.addEventListener('scroll', function(){ segarkanIsyaratGeser(tw); }, {passive:true});
+        /* Gulir dibatasi satu pembaruan per frame; isinya pun hanya membaca
+           scrollLeft, jadi tidak ada hitung ulang tata letak paksa. */
+        var raf=0;
+        tw.addEventListener('scroll', function(){
+          if(raf) return;
+          raf=requestAnimationFrame(function(){ raf=0; perbaruiIsyarat(tw); });
+        }, {passive:true});
       }
       segarkanIsyaratGeser(tw);
     });
@@ -240,11 +327,20 @@ function initIsyaratGeser(){
   pasang();
   window.addEventListener('resize', pasang);
   window.addEventListener('orientationchange', function(){ setTimeout(pasang,180); });
-  /* Isi tabel diganti dari banyak tempat di app.js -> cukup pantau perubahan DOM */
+  /* Isi tabel diganti dari banyak tempat di app.js -> pantau perubahan DOM.
+     Pemantauan dipersempit: hanya penambahan/penghapusan baris di dalam
+     <tbody>. Dulu seluruh <body> dipantau, sehingga perubahan sekecil apa pun
+     di halaman ikut memicu pengukuran ulang semua tabel. */
   try{
     var t=null;
-    new MutationObserver(function(){ clearTimeout(t); t=setTimeout(pasang,120); })
-      .observe(document.body,{childList:true,subtree:true});
+    new MutationObserver(function(muts){
+      for(var i=0;i<muts.length;i++){
+        var p=muts[i].target;
+        if(p && (p.tagName==='TBODY' || (p.closest && p.closest('.table-wrap')))){
+          clearTimeout(t); t=setTimeout(pasang,120); return;
+        }
+      }
+    }).observe(document.body,{childList:true,subtree:true});
   }catch(e){}
   /* Berpindah halaman: hitung ulang sesudah tampilan baru selesai digambar */
   var orig=window.showView;

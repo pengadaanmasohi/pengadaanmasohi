@@ -8090,3 +8090,177 @@ html.mode-rail .pn-preview-modal:not(.pn-fs-semu) .pn-preview-body img{max-heigh
 .table-wrap>table:not([class]) tbody td{
   border-top:1px solid #fff;border-bottom:1px solid #fff
 }
+
+
+/* ============================================================
+   26. KEHALUSAN RENDER (LAYAR 120 Hz)
+   ------------------------------------------------------------
+   Layar 120 Hz hanya punya 8,3 ms per frame (bukan 16,7 ms seperti
+   60 Hz), jadi pekerjaan yang dulu "masih sempat" kini melewati
+   tenggat dan terasa patah-patah. Empat sumber beban dibereskan:
+
+   26a. Animasi tak terbatas yang MEMAKSA CAT ULANG
+   ------------------------------------------------------------
+   Garis aksen di tepi sidebar menganimasikan `background-position`.
+   Properti itu tidak bisa ditangani compositor, jadi seluruh strip
+   dicat ulang di thread utama setiap frame — selamanya, bahkan saat
+   tidak ada interaksi. Diganti `transform:translate3d` yang murni
+   berjalan di compositor (nol pekerjaan thread utama).
+   ============================================================ */
+.sidebar-shell{overflow:hidden}
+.sidebar-shell::after{
+  top:0;bottom:auto;height:200%;
+  background:linear-gradient(180deg,var(--yellow),var(--cyan),var(--yellow),var(--cyan),var(--yellow));
+  background-size:100% 100%;
+  animation:sheenVT 7s linear infinite;
+  will-change:transform;
+  transform:translate3d(0,0,0)
+}
+@keyframes sheenVT{
+  from{transform:translate3d(0,0,0)}
+  to  {transform:translate3d(0,-50%,0)}
+}
+
+/* 26b. Lapisan "Memuat" yang tersembunyi TETAP menganimasi
+   ------------------------------------------------------------
+   .route-loader disembunyikan dengan opacity:0 + visibility:hidden.
+   Keduanya TIDAK menghentikan animasi CSS — 10 animasi tak terbatas
+   (3 orbit, 3 titik, denyut, cahaya, sheen, elipsis) terus berdetak
+   sepanjang sesi walau tidak terlihat sama sekali. Dijeda saat
+   tersembunyi; transisi pudar-keluarnya tetap utuh karena yang
+   dijeda hanya animasi, bukan transisi. */
+.route-loader:not(.show),
+.route-loader:not(.show) *,
+.route-loader:not(.show) *::before,
+.route-loader:not(.show) *::after{
+  animation-play-state:paused!important
+}
+
+/* 26c. Transisi lebar sidebar
+   ------------------------------------------------------------
+   Menganimasikan `width` memaksa hitung ulang tata letak seluruh isi
+   sidebar tiap frame. Itu tidak bisa dihindari tanpa merombak
+   strukturnya, tetapi biayanya bisa dikurung:
+     - contain:layout style  -> perubahan di dalam sidebar tidak
+       merembet ke perhitungan tata letak halaman.
+     - scrollbar-gutter      -> batang gulir daftar menu tidak
+       muncul/hilang di tengah animasi (memicu reflow tambahan).
+     - transisi `width` pada TIAP tombol menu dilepas: tombolnya
+       sudah width:100%, jadi otomatis mengikuti lebar induknya.
+       Dulu 1 animasi induk + 10 animasi anak berjalan berbarengan. */
+.sidebar-shell{contain:layout style}
+.sidebar-shell #topnav{scrollbar-gutter:stable}
+.sidebar-shell #topnav .topnav-link,
+.sidebar-shell #topnav .topnav-trigger{
+  transition:background .16s ease,color .16s ease
+}
+
+/* 26d. Bayangan berat saat hover
+   ------------------------------------------------------------
+   Transisi box-shadow memicu cat ulang; dipasangkan dengan transform
+   agar bagian geraknya tetap ditangani compositor. */
+.act,.btn{will-change:auto}
+.act:hover,.btn:hover{will-change:transform}
+
+/* 26e. Bayangan sidebar tidak ikut dianimasikan
+   ------------------------------------------------------------
+   Sidebar mentransisikan `width` DAN `box-shadow` bersamaan. Bayangan
+   kabur setinggi layar penuh harus dicat ulang setiap frame selama
+   260 ms — persis saat animasi lebar sedang berjalan, sehingga dua
+   pekerjaan berat menumpuk di frame yang sama. Bayangannya kini
+   berubah seketika (mata hampir tidak bisa membedakan), sementara
+   lebarnya tetap beranimasi halus. */
+.sidebar-shell,
+.sidebar-shell.is-open,
+html.mode-rail .sidebar-shell,
+html.mode-rail .sidebar-shell.is-open{
+  /* 260 ms dengan easing berekor panjang (.16,1,.3,1) membuat sidebar terasa
+     "masih menata diri" beberapa saat sesudah kursor sampai. Dipercepat jadi
+     170 ms dengan ease-out kubik biasa: gerakannya selesai tegas, tanpa ekor. */
+  transition:width .17s cubic-bezier(.22,.61,.36,1)
+}
+/* Di ponsel/tablet kecil sidebar bergeser (transform) — itu sudah
+   ditangani compositor, jadi tetap dipertahankan. */
+@media (max-width:1024px), (hover:none){
+  html:not(.mode-rail) .sidebar-shell,
+  html:not(.mode-rail) .sidebar-shell.is-open{
+    transition:transform .28s cubic-bezier(.16,1,.3,1)
+  }
+}
+
+
+/* ============================================================
+   27. TEKS SIDEBAR — PUTIH PENUH, LEBIH TAJAM
+   ------------------------------------------------------------
+   Semua tulisan di sidebar memakai putih SEMI-TRANSPARAN
+   (rgba(255,255,255,.85) sampai .96). Dua akibatnya:
+     1) kontrasnya turun — putih pudar di atas gradien teal;
+     2) teks transparan TIDAK BISA dirender dengan subpixel
+        anti-aliasing, browser terpaksa memakai grayscale AA,
+        sehingga hurufnya terlihat lembek/berkabut.
+   Sekarang seluruhnya opak (#fff), jadi kontras penuh dan
+   rendering huruf kembali setajam mungkin.
+
+   `-webkit-font-smoothing:antialiased` juga dilepas — setelan itu
+   MEMAKSA grayscale AA (huruf jadi lebih tipis), padahal tujuan
+   kita justru sebaliknya.
+   ============================================================ */
+.sidebar-shell{-webkit-font-smoothing:auto;-moz-osx-font-smoothing:auto}
+
+/* Menu utama & grup */
+#topnav .topnav-link,
+#topnav .topnav-trigger,
+#topnav .topnav-item,
+#topnav .topnav-subtrigger,
+#topnav .topnav-subdrop .topnav-item{color:#fff}
+/* Ikon menu ikut penuh agar setara dengan tulisannya */
+#topnav .topnav-item svg,
+#topnav .topnav-subtrigger svg:first-of-type,
+#topnav .topnav-link svg,
+#topnav .topnav-trigger svg:first-of-type{color:#fff}
+/* Menu aktif yang latarnya KAPSUL KUNING tetap biru-tua (jangan ikut putih). */
+#topnav .topnav-link.active,
+#topnav .topnav-link.active svg,
+#topnav .topnav-item.active,
+#topnav .topnav-item.active svg{color:#073f45}
+/* CATATAN: induk grup yang sedang aktif (mis. "Form") TIDAK boleh dibuat
+   biru-tua di sini. Saat sidebar melebar, latarnya hanya putih transparan
+   12% di atas gradien teal — teks biru-tua di atasnya nyaris tak terbaca.
+   Kapsul kuningnya hanya muncul saat sidebar menciut jadi rail, dan kasus
+   itu sudah ditangani bagian 18 dengan syarat .sidebar-shell:not(.is-open). */
+/* Nama aplikasi & unit di kepala sidebar */
+.sidebar-shell .brand h1,
+.sidebar-shell .brand span{color:#fff}
+/* Label akun */
+.side-acct-lbl{color:#fff}
+/* Label bagian & versi: tetap sekunder, TAPI warnanya dibuat OPAK
+   (bukan putih transparan) supaya hurufnya ikut tajam. Kalau ingin
+   ikut putih penuh juga, tinggal ganti kedua warna di bawah ke #fff. */
+.side-sec{color:#bcd9dc}
+.side-ver{color:#a6c6ca}
+
+
+/* ============================================================
+   28. GERAK KURSOR DI ATAS TABEL LEBIH RINGAN
+   ------------------------------------------------------------
+   Setiap kali kursor berpindah baris, DUA baris ikut menganimasikan
+   latarnya (yang ditinggalkan & yang dimasuki) selama 150 ms. Tiap
+   baris selebar tabel — pada tabel yang lebarnya >1000 px itu cat
+   ulang yang lumayan besar, dan karena kotak tabel bukan lapisan
+   tersendiri, pembatalan cat-nya merembet ke panel berikut bayangan
+   besarnya.
+     - contain:layout paint  -> perubahan di dalam kotak tabel tidak
+       lagi membatalkan tata letak/cat di luarnya.
+     - will-change:scroll-position -> kotak tabel dijadikan lapisan
+       gulir tersendiri, jadi gulir mendatar/menegak ditangani
+       compositor.
+     - transisi disempitkan ke `background-color` saja (dulu
+       `background` yang mencakup gambar, posisi, ukuran, dsb.).
+   ============================================================ */
+.table-wrap{contain:layout paint;will-change:scroll-position}
+tbody tr{transition:background-color .14s linear}
+
+/* Batalkan petunjuk will-change yang dipasang SAAT hover — memasang
+   will-change tepat ketika animasi dimulai justru memaksa browser
+   membuat lapisan baru di tengah gerakan, dan itu terasa tersendat. */
+.act:hover,.btn:hover{will-change:auto}
