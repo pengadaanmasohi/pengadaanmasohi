@@ -94,7 +94,9 @@ function initHoverSidebar(){
    / klik mana pun di luar #sidebar-shell akan menutupnya, tak peduli ada
    tidaknya scrim. Tombol ☰ dikecualikan supaya tidak "tutup lalu buka lagi"
    dalam satu ketukan. */
-function modeLaci(){ return isSmall() || noHover(); }
+/* Laci geser dipakai HANYA bila tampilan sedang tidak memakai rail
+   (lihat modeRail di bagian 1c) — jadi iPad tidak lagi ikut aturan laci. */
+function modeLaci(){ return !modeRail(); }
 function laciTerbuka(){
   var nav=document.getElementById('topnav');
   return !!(document.body.classList.contains('nav-open') ||
@@ -138,6 +140,126 @@ function initTutupDiLuar(){
   window.addEventListener('resize', function(){
     if(!modeLaci() && laciTerbuka()) tutupLaci();
   });
+}
+
+/* ---------- 1c. MODE RAIL: tablet sentuh mengikuti tampilan desktop ----------
+   Desktop memakai rail ikon 76px yang melebar saat disentuh kursor. Tablet
+   sentuh (iPad potret 834px, lanskap 1194/1366px) dulu jatuh ke aturan
+   "layar sentuh" sehingga sidebarnya berubah jadi laci tersembunyi —
+   tampilannya jauh berbeda dari desktop.
+
+   Sekarang keduanya memakai susunan yang sama. Penanda <html class="mode-rail">
+   dibaca style.css bagian 23. Ponsel (dan ponsel lanskap yang tingginya
+   pendek) tetap memakai laci geser. */
+var RAIL_MIN_W = 700;    /* iPad Mini potret = 744px */
+var RAIL_MIN_H = 600;    /* ponsel lanskap ±400px -> tetap laci */
+function modeRail(){
+  if(!noHover()) return !isSmall();                 /* perangkat berkursor: seperti dulu */
+  return window.innerWidth  >= RAIL_MIN_W
+      && window.innerHeight >= RAIL_MIN_H;          /* tablet sentuh */
+}
+function terapkanModeRail(){
+  var html=document.documentElement;
+  var rail=modeRail();
+  html.classList.toggle('mode-rail', rail);
+  html.classList.toggle('sentuh', noHover());
+  if(rail && laciTerbuka()) tutupLaci();            /* sisa keadaan laci dibersihkan */
+  if(!rail){
+    var el=document.getElementById('sidebar-shell');
+    if(el) el.classList.remove('is-open');
+  }
+}
+/* Rail di layar sentuh tidak punya kursor: ketukan pada rail yang menciut
+   melebarkannya dulu (bukan langsung berpindah halaman), supaya nama menu
+   terbaca. Ketukan berikutnya berjalan normal. */
+function initRailSentuh(){
+  var el=document.getElementById('sidebar-shell'); if(!el) return;
+  el.addEventListener('pointerdown', function(e){
+    if(!document.documentElement.classList.contains('mode-rail')) return;
+    if(!noHover()) return;                          /* perangkat berkursor: biarkan hover */
+    if(el.classList.contains('is-open')) return;    /* sudah lebar -> lanjut seperti biasa */
+    e.preventDefault(); e.stopPropagation();
+    el.classList.add('is-open');
+    if(typeof openActiveBranch==='function') openActiveBranch();
+  }, true);
+  /* Ketukan di luar sidebar menciutkannya kembali */
+  document.addEventListener('pointerdown', function(e){
+    if(!document.documentElement.classList.contains('mode-rail')) return;
+    if(!noHover()) return;
+    if(!el.classList.contains('is-open')) return;
+    var t=e.target;
+    if(t && t.nodeType===1 && (t===el || el.contains(t))) return;
+    el.classList.remove('is-open');
+  }, true);
+  /* Memilih menu juga menciutkan rail kembali */
+  el.addEventListener('click', function(e){
+    if(!document.documentElement.classList.contains('mode-rail')) return;
+    if(!noHover()) return;
+    var t=e.target;
+    if(t && t.closest && t.closest('.topnav-link,.topnav-item')){
+      setTimeout(function(){ el.classList.remove('is-open'); }, 180);
+    }
+  });
+  window.addEventListener('resize', terapkanModeRail);
+  window.addEventListener('orientationchange', function(){ setTimeout(terapkanModeRail,120); });
+  terapkanModeRail();
+}
+
+/* ---------- 1d. ISYARAT GESER MENDATAR PADA TABEL ----------
+   Bayangan tipis di tepi kotak tabel yang masih menyimpan kolom tersembunyi.
+   Dipasang pada .panel (bukan .table-wrap) karena .table-wrap adalah wadah
+   gulir — anak absolut di dalamnya ikut tergeser dan tertutup sel tabel.
+   Geometri kotak tabel dikirim ke CSS lewat variabel --tw-top/--tw-h. */
+function segarkanIsyaratGeser(tw){
+  if(!tw) return;
+  var panel=tw.closest ? tw.closest('.panel') : null; if(!panel) return;
+  panel.classList.add('panel-tabel');   /* hanya panel bertabel yang jadi acuan posisi */
+  var sisa = tw.scrollWidth - tw.clientWidth;
+  var kiri = sisa > 2 && tw.scrollLeft > 2;
+  var kanan = sisa > 2 && tw.scrollLeft < sisa - 2;
+  /* .table-wrap punya bingkai putih 6px — bayangan diletakkan DI DALAM bingkai
+     itu supaya tidak menimpa sudut membulatnya. */
+  var cs=getComputedStyle(tw);
+  var bt=parseFloat(cs.borderTopWidth)||0, bl=parseFloat(cs.borderLeftWidth)||0;
+  panel.style.setProperty('--tw-top', (tw.offsetTop + bt) + 'px');
+  panel.style.setProperty('--tw-h', tw.clientHeight + 'px');
+  panel.style.setProperty('--tw-inset', ((tw.offsetLeft || 0) + bl) + 'px');
+  panel.classList.toggle('x-kiri', kiri);
+  panel.classList.toggle('x-kanan', kanan);
+}
+function initIsyaratGeser(){
+  function pasang(){
+    document.querySelectorAll('.table-wrap').forEach(function(tw){
+      if(!tw.__isyarat){
+        tw.__isyarat=true;
+        tw.addEventListener('scroll', function(){ segarkanIsyaratGeser(tw); }, {passive:true});
+      }
+      segarkanIsyaratGeser(tw);
+    });
+  }
+  pasang();
+  window.addEventListener('resize', pasang);
+  window.addEventListener('orientationchange', function(){ setTimeout(pasang,180); });
+  /* Isi tabel diganti dari banyak tempat di app.js -> cukup pantau perubahan DOM */
+  try{
+    var t=null;
+    new MutationObserver(function(){ clearTimeout(t); t=setTimeout(pasang,120); })
+      .observe(document.body,{childList:true,subtree:true});
+  }catch(e){}
+  /* Berpindah halaman: hitung ulang sesudah tampilan baru selesai digambar */
+  var orig=window.showView;
+  if(typeof orig==='function'){
+    window.showView=function(){ var r=orig.apply(this,arguments); setTimeout(pasang,320); return r; };
+  }
+}
+
+/* ---------- 1e. Logo bilah atas mengikuti logo sidebar ----------
+   Base64 logonya besar; daripada ditulis dua kali di index.html, gambarnya
+   disalin dari sidebar saat halaman dimuat. */
+function isiLogoAppbar(){
+  var src=document.querySelector('.sidebar-shell .logo-img');
+  var dst=document.getElementById('appbar-logo-img');
+  if(src && dst && src.getAttribute('src')) dst.src=src.getAttribute('src');
 }
 
 /* ---------- 2. Tooltip nama menu (dipakai CSS lewat data-tip) ---------- */
@@ -473,8 +595,11 @@ function watchPreviewOverlay(){
 /* ---------- start ---------- */
 function init(){
   setTips();
+  isiLogoAppbar();
   initHoverSidebar();
   initTutupDiLuar();
+  initRailSentuh();
+  initIsyaratGeser();
   watchActive();
   hookRole();
   hookShowView();

@@ -473,6 +473,16 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
     <button class="nav-burger" id="nav-burger" type="button" onclick="toggleSidebar()" aria-label="Buka atau ciutkan menu">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
     </button>
+    <!-- Identitas aplikasi di bilah atas layar sentuh/kecil. Di desktop bilah ini
+         tidak tampil karena identitas sudah ada di sidebar. Gambar logonya disalin
+         dari sidebar oleh ui-sidebar.js supaya base64-nya tidak ditulis dua kali. -->
+    <div class="appbar-brand" id="appbar-brand">
+      <span class="appbar-logo"><img id="appbar-logo-img" alt="Logo PT PLN (Persero)"></span>
+      <span class="appbar-brand-txt">
+        <b>MONITORING PENGADAAN</b>
+        <span>PT PLN (Persero) UP3 Masohi</span>
+      </span>
+    </div>
     <div class="appbar-crumb">
       <span class="crumb-path" id="crumb-path"></span>
       <b class="crumb-now" id="crumb-now">Dashboard</b>
@@ -1410,8 +1420,9 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
               <th class="col-nama-freeze">Nama Pekerjaan</th>
               <th class="fkl-col-lokasi">Lokasi Pekerjaan</th>
               <th class="pnw-col-jenis">Metode Pengadaan</th>
-              <th class="pnw-col-metode">Metode Penyampaian Dokumen</th>
-              <th class="col-date pnw-col-tgl">Tgl. Pembukaan Penawaran</th>
+              <!-- Pemenggalan judul ditentukan sendiri agar PASTI 2 baris & utuh -->
+              <th class="pnw-col-metode th-2b">Metode Penyampaian<br>Dokumen</th>
+              <th class="col-date pnw-col-tgl th-2b">Tgl. Pembukaan<br>Penawaran</th>
               <th class="pnw-col-aksi">Aksi</th>
             </tr>
           </thead>

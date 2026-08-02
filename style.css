@@ -7783,3 +7783,279 @@ body.pratinjau-terbuka{overflow:hidden}
    Lokasi Pekerjaan jangan ikut menyusut sampai isinya pecah dua baris. */
 #view-dp-view .table-wrap th.fkl-col-lokasi,
 #view-dp-view .table-wrap td.fkl-col-lokasi{min-width:210px;max-width:260px}
+
+
+/* ============================================================
+   21. PEMBUKAAN PENAWARAN — JUDUL KOLOM TEPAT 2 BARIS
+   ------------------------------------------------------------
+   "METODE PENYAMPAIAN DOKUMEN" dan "TGL. PEMBUKAAN PENAWARAN"
+   sebelumnya pecah jadi 3 baris karena membungkus sendiri di kolom
+   yang sempit. Pemenggalannya kini ditentukan lewat <br> dan tiap
+   barisnya nowrap, jadi tepat 2 baris dan tidak pernah terpotong.
+   Aturan lama di kedua kolom ini memakai !important, sehingga
+   penimpaannya juga harus !important.
+   ============================================================ */
+#view-pnw-view .table-wrap th.pnw-col-metode.th-2b,
+#view-pnw-view .table-wrap th.pnw-col-tgl.th-2b{
+  white-space:nowrap !important;
+  line-height:1.28;
+  text-align:center;
+  vertical-align:middle;
+  padding-left:12px;padding-right:12px
+}
+/* Lebar kolom mengikuti MAX(isian, baris judul terpanjang) */
+#view-pnw-view .table-wrap th.pnw-col-metode.th-2b{min-width:0;width:1%}
+#view-pnw-view .table-wrap th.pnw-col-tgl.th-2b{min-width:0 !important;width:1% !important}
+
+
+/* ============================================================
+   22. KONSISTENSI TAMPILAN DESKTOP <-> MOBILE
+   ============================================================
+   22a. IDENTITAS DI BILAH ATAS (layar sentuh / kecil)
+   ------------------------------------------------------------
+   Di desktop logo & nama aplikasi selalu terlihat di sidebar. Di
+   HP/tablet sidebar berupa laci tersembunyi, sehingga bilah atas
+   hanya berisi tombol ☰ — terasa kosong dan tidak seragam.
+   ============================================================ */
+.appbar-brand{display:none}
+@media (max-width:1024px), (hover:none){
+  .appbar-brand{
+    display:flex;align-items:center;gap:10px;min-width:0;flex:1 1 auto
+  }
+  .appbar-logo{
+    flex:0 0 auto;width:30px;height:30px;border-radius:9px;overflow:hidden;
+    display:grid;place-items:center;background:#fff;
+    box-shadow:0 2px 8px rgba(16,40,50,.14)
+  }
+  .appbar-logo img{width:100%;height:100%;object-fit:contain;display:block}
+  .appbar-brand-txt{display:flex;flex-direction:column;min-width:0;line-height:1.2}
+  .appbar-brand-txt b{
+    font-size:11px;font-weight:800;color:var(--teal-dark);letter-spacing:.2px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+  }
+  .appbar-brand-txt>span{
+    font-size:8.5px;font-weight:700;letter-spacing:1px;color:var(--muted);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+  }
+  /* Jejak halaman menepi ke kanan agar tidak berebut ruang dengan identitas */
+  .appbar-crumb{margin-left:auto;flex:0 0 auto;align-items:flex-end;text-align:right}
+}
+/* Layar sangat sempit: cukup logo + nama, anak judulnya disembunyikan */
+@media (max-width:430px){
+  .appbar-brand-txt>span{display:none}
+  .appbar-crumb{display:none}
+}
+
+/* ============================================================
+   22b. KARTU DASHBOARD — 2 KOLOM DI HP (dulu 1 kolom)
+   ------------------------------------------------------------
+   Satu kartu per baris membuat halaman jadi sangat panjang dan
+   iramanya jauh berbeda dari desktop yang bergrid.
+   ============================================================ */
+@media (max-width:640px){
+  .cards,.cards-5,.dash-nilai{grid-template-columns:repeat(2,1fr)!important}
+  #view-dashboard .cards{gap:10px}
+  #view-dashboard .card .v{font-size:22px}
+  #view-dashboard .card .k{font-size:10px}
+  #view-dashboard .card .sub{font-size:9.5px}
+}
+@media (max-width:360px){
+  .cards,.cards-5,.dash-nilai{grid-template-columns:1fr!important}
+}
+
+/* ============================================================
+   22c. "CARI" & "TAMBAH DATA" TETAP SEBARIS DI HP
+   ------------------------------------------------------------
+   Di layar <=640px .page-head dipaksa flex-direction:column,
+   sehingga judul, kotak Cari, dan tombol Tambah Data menumpuk
+   ke bawah dan melebar penuh — iramanya jauh berbeda dari
+   desktop yang menaruh keduanya sebaris di kanan.
+   Sekarang: judul di baris sendiri, Cari + Tambah Data sebaris.
+   Dashboard dikecualikan karena memang dirancang bertumpuk
+   (judul di atas, deretan filter di bawahnya).
+   ============================================================ */
+@media (max-width:640px){
+  .view:not(#view-dashboard)>.page-head{
+    flex-direction:row;flex-wrap:wrap;align-items:center;
+    justify-content:flex-start;gap:10px
+  }
+  /* Judul memakai satu baris penuh */
+  .view:not(#view-dashboard)>.page-head>div:first-child{flex:1 1 100%;min-width:0}
+  .page-head .pn-head-search{flex:1 1 auto;margin-left:0;min-width:0;width:auto}
+  .page-head .pn-head-search input{min-width:0;max-width:none;width:100%}
+  .page-head .head-add-btn{
+    flex:0 0 auto;margin-left:0;width:auto;justify-content:center;
+    padding:9px 13px;white-space:nowrap
+  }
+}
+/* Di bawah 400px label tombol disembunyikan, sisakan ikon + agar tetap sebaris */
+@media (max-width:400px){
+  .page-head .head-add-btn{padding:9px 11px;font-size:0;gap:0}
+  .page-head .head-add-btn svg{width:17px;height:17px}
+}
+
+/* ============================================================
+   22d. ISYARAT GESER MENDATAR PADA TABEL
+   ------------------------------------------------------------
+   Di iPad potret & HP kolom kanan tabel terpotong tanpa tanda apa
+   pun. Bayangan tipis muncul di sisi yang masih menyimpan kolom
+   tersembunyi dan hilang begitu digeser sampai ujung.
+
+   Bayangannya TIDAK boleh dipasang di dalam .table-wrap: elemen
+   itu wadah gulir, sehingga anak absolut-nya ikut tergeser dan
+   sel tabel yang berlatar solid menutupi bayangan inset. Karena
+   itu bayangan dipasang pada .panel dan geometrinya (posisi &
+   tinggi kotak tabel) dikirim ui-sidebar.js lewat variabel CSS.
+   ============================================================ */
+/* Hanya panel yang MEMUAT tabel yang dijadikan acuan posisi — kelas
+   .panel-tabel dipasang ui-sidebar.js. Dengan begitu panel lain tidak
+   berubah perilakunya sedikit pun. */
+.panel.panel-tabel{position:relative}
+.panel.panel-tabel::before,.panel.panel-tabel::after{
+  content:"";position:absolute;pointer-events:none;z-index:9;
+  top:var(--tw-top,0px);height:var(--tw-h,0px);width:26px;
+  opacity:0;transition:opacity .18s ease
+}
+.panel.panel-tabel::before{
+  left:var(--tw-inset,0px);
+  background:linear-gradient(to right,rgba(16,40,50,.17),rgba(16,40,50,0))
+}
+.panel.panel-tabel::after{
+  right:var(--tw-inset,0px);
+  background:linear-gradient(to left,rgba(16,40,50,.17),rgba(16,40,50,0))
+}
+.panel.panel-tabel.x-kiri::before{opacity:1}
+.panel.panel-tabel.x-kanan::after{opacity:1}
+@media (prefers-reduced-motion:reduce){
+  .panel.panel-tabel::before,.panel.panel-tabel::after{transition:none}
+}
+
+
+/* ============================================================
+   23. TABLET SENTUH = TAMPILAN DESKTOP (SIDEBAR RAIL PERMANEN)
+   ------------------------------------------------------------
+   iPad (potret 834 px & lanskap 1194/1366 px) sebelumnya ikut
+   aturan "layar sentuh" sehingga sidebar berubah jadi laci
+   tersembunyi — tampilannya jauh berbeda dari desktop.
+
+   Sekarang perangkat sentuh yang layarnya cukup besar memakai
+   susunan yang persis sama dengan desktop: rail ikon 76 px yang
+   selalu terlihat, isi halaman bergeser ke kanan, dan bilah atas
+   ☰ disembunyikan. Karena layar sentuh tidak punya kursor,
+   pelebaran rail dipicu KETUKAN (ui-sidebar.js memasang kelas
+   .is-open), lalu menciut lagi saat mengetuk di luar.
+
+   Penanda mode dipasang ui-sidebar.js: <html class="mode-rail">.
+   Ambang batasnya: lebar >= 700px DAN tinggi >= 600px — supaya
+   ponsel dalam posisi lanskap (tinggi ~400px) tetap memakai laci.
+   ============================================================ */
+html.mode-rail .sidebar-shell,
+html.mode-rail .sidebar-shell.is-open{
+  position:fixed;top:0;left:0;bottom:0;height:100vh;
+  transform:none!important;max-width:none;
+  width:var(--side-rail);z-index:70;
+  box-shadow:6px 0 20px rgba(5,32,36,.16);
+  transition:width .26s cubic-bezier(.16,1,.3,1),box-shadow .26s ease
+}
+@supports (height:100dvh){ html.mode-rail .sidebar-shell{height:100dvh} }
+html.mode-rail .sidebar-shell.is-open{
+  width:var(--side-w);box-shadow:14px 0 44px rgba(5,32,36,.34)
+}
+html.mode-rail .app-main{margin-left:var(--side-rail);width:auto}
+html.mode-rail .appbar{display:none}
+html.mode-rail .topnav-backdrop,
+html.mode-rail .topnav-backdrop.show{display:none!important}
+html.mode-rail body.nav-open{overflow:auto}
+
+/* --- Salinan aturan RAIL (aslinya hanya untuk (hover:hover) & >=1025px) --- */
+html.mode-rail .sidebar-shell:not(.is-open) .brand,
+html.mode-rail .sidebar-shell:not(.is-open) .side-sec,
+html.mode-rail .sidebar-shell:not(.is-open) .side-ver{opacity:0;pointer-events:none}
+html.mode-rail .sidebar-shell:not(.is-open) .brand,
+html.mode-rail .sidebar-shell:not(.is-open) .side-ver{display:none}
+html.mode-rail .sidebar-shell:not(.is-open) .side-sec{height:9px;padding:6px 0 0;overflow:hidden}
+html.mode-rail .sidebar-shell:not(.is-open) .topbar-brand{justify-content:center;padding:18px 0 16px}
+html.mode-rail .sidebar-shell:not(.is-open) #topnav{padding:14px 0;align-items:center;gap:5px;overflow:hidden}
+html.mode-rail .sidebar-shell:not(.is-open) #topnav .topnav-link,
+html.mode-rail .sidebar-shell:not(.is-open) #topnav .topnav-trigger{
+  width:46px;height:44px;padding:0;justify-content:center;border-radius:13px;gap:0;
+  font-size:0;letter-spacing:0;background:rgba(255,255,255,.07)}
+html.mode-rail .sidebar-shell:not(.is-open) #topnav .topnav-link.active,
+html.mode-rail .sidebar-shell:not(.is-open) #topnav .topnav-group.has-active .topnav-trigger{
+  background:linear-gradient(135deg,var(--yellow),#ffd35a);color:#073f45}
+html.mode-rail .sidebar-shell:not(.is-open) #topnav .topnav-link.active svg,
+html.mode-rail .sidebar-shell:not(.is-open) #topnav .topnav-link.active svg:first-of-type,
+html.mode-rail .sidebar-shell:not(.is-open) #topnav .topnav-group.has-active .topnav-trigger svg,
+html.mode-rail .sidebar-shell:not(.is-open) #topnav .topnav-group.has-active .topnav-trigger svg:first-of-type{color:#073f45}
+html.mode-rail .sidebar-shell:not(.is-open) #topnav .topnav-trigger .caret{display:none}
+html.mode-rail .sidebar-shell:not(.is-open) #topnav .topnav-dropdown{display:none}
+html.mode-rail .sidebar-shell:not(.is-open) .side-foot{padding:8px 0 10px}
+html.mode-rail .sidebar-shell:not(.is-open) .side-acct{display:none}
+html.mode-rail .sidebar-shell:not(.is-open) .side-logout-lbl{display:none}
+html.mode-rail .sidebar-shell:not(.is-open) .side-logout{
+  width:46px;height:44px;padding:0;margin:0 auto;border-radius:13px}
+
+/* Sasaran sentuh tetap nyaman walau memakai tata letak desktop */
+html.mode-rail #topnav .topnav-link,
+html.mode-rail #topnav .topnav-trigger{min-height:44px}
+html.mode-rail.sentuh #topnav .topnav-item,
+html.mode-rail.sentuh #topnav .topnav-subtrigger{padding:10px 12px}
+
+/* Isi halaman: lebar & jarak sama persis dengan desktop */
+html.mode-rail .wrap{
+  max-width:1320px;
+  padding-left:calc(24px + env(safe-area-inset-left));
+  padding-right:calc(24px + env(safe-area-inset-right))
+}
+html.mode-rail .crumb-path{display:none}
+
+
+/* ============================================================
+   24. PRATINJAU DI TABLET = PERSIS DESKTOP
+   ------------------------------------------------------------
+   Aturan bagian 16 membuat pratinjau menutupi seluruh layar di
+   SEMUA perangkat sentuh. Karena tablet kini memakai susunan
+   desktop (bagian 23), pratinjaunya pun dikembalikan ke jendela
+   melayang 980px seperti desktop. Ponsel tetap layar penuh.
+   Mode "Layar Penuh Semu" (.pn-fs-semu) dikecualikan supaya
+   tombol Layar Penuh tetap berfungsi.
+   ============================================================ */
+html.mode-rail #pn-preview-overlay{padding:20px}
+html.mode-rail .pn-preview-modal:not(.pn-fs-semu){
+  width:min(980px,95vw);max-width:980px;
+  height:auto;max-height:92vh;margin:auto;border-radius:18px
+}
+html.mode-rail .pn-preview-modal:not(.pn-fs-semu) .detail-head{
+  padding:16px 20px;
+  padding-top:calc(16px + env(safe-area-inset-top))
+}
+html.mode-rail .pn-preview-modal:not(.pn-fs-semu) .detail-head h3{
+  font-size:14px;-webkit-line-clamp:2
+}
+html.mode-rail .pn-preview-modal:not(.pn-fs-semu) .pn-preview-body{
+  display:flex;height:auto;flex:1 1 auto;min-height:0
+}
+html.mode-rail .pn-preview-modal:not(.pn-fs-semu) .pn-preview-body iframe,
+html.mode-rail .pn-preview-modal:not(.pn-fs-semu) .pn-preview-body.fkl-preview-body #fkl-preview-frame{
+  height:74vh;max-height:none
+}
+html.mode-rail .pn-preview-modal:not(.pn-fs-semu) .pn-preview-body.has-tabs iframe{height:calc(74vh - 46px)}
+html.mode-rail .pn-preview-modal:not(.pn-fs-semu) .pn-preview-body img{max-height:74vh}
+@supports (height:100dvh){
+  html.mode-rail .pn-preview-modal:not(.pn-fs-semu){max-height:92dvh;height:auto}
+  html.mode-rail .pn-preview-modal:not(.pn-fs-semu) .pn-preview-body iframe,
+  html.mode-rail .pn-preview-modal:not(.pn-fs-semu) .pn-preview-body.fkl-preview-body #fkl-preview-frame{height:74dvh}
+  html.mode-rail .pn-preview-modal:not(.pn-fs-semu) .pn-preview-body.has-tabs iframe{height:calc(74dvh - 46px)}
+  html.mode-rail .pn-preview-modal:not(.pn-fs-semu) .pn-preview-body img{max-height:74dvh}
+}
+
+/* Filter dashboard: 2 per baris di HP (dulu 1 per baris) — iramanya jadi
+   sejalan dengan kartu ringkasan yang juga 2 kolom. */
+@media (max-width:640px){
+  #view-dashboard .dash-filter-bar{flex-wrap:wrap;gap:10px}
+  #view-dashboard .filter-field{flex:1 1 calc(50% - 5px);min-width:0}
+  #view-dashboard .filter-field select{width:100%;min-width:0;font-size:12px}
+}
+@media (max-width:360px){
+  #view-dashboard .filter-field{flex:1 1 100%}
+}
