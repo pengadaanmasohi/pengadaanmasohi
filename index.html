@@ -492,11 +492,12 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
       <div class="dash-filter-bar">
         <div class="filter-field">
           <label>Jenis Pekerjaan</label>
+          <!-- Bawaan (default) dashboard = PL & Tender -->
           <select id="dash-filter-jenis" onchange="changeDashJenis()">
+            <option value="pl_tender" selected>PL &amp; Tender</option>
             <option value="kr">SPBJ / Kontrak Rinci</option>
             <option value="pl">Pengadaan Langsung</option>
             <option value="tender">Tender</option>
-            <option value="pl_tender">PL &amp; Tender</option>
           </select>
         </div>
         <div class="filter-field">
@@ -1357,8 +1358,10 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
               <th class="col-nama-freeze">Nama Pekerjaan</th>
               <th class="fkl-col-lokasi">Lokasi Pekerjaan</th>
               <th class="col-date">Tgl. Terima Dokumen</th>
-              <th>Metode Pengadaan</th>
-              <th style="text-align:center;min-width:170px">Aksi</th>
+              <th class="col-metode">Metode Pengadaan</th>
+              <!-- Lebar kolom = data terpanjang; judul boleh turun maksimal 2 baris -->
+              <th class="col-rab"><span class="th-2l">Rencana Anggaran Biaya</span></th>
+              <th class="col-aksi">Aksi</th>
             </tr>
           </thead>
           <tbody id="fkl-view-body"></tbody>
@@ -1509,9 +1512,11 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
               <th class="col-no">No.</th>
               <th class="col-nama-freeze">Nama Pekerjaan</th>
               <th class="fkl-col-lokasi">Lokasi Pekerjaan</th>
-              <th>Metode Pengadaan</th>
-              <th class="col-num" style="text-align:right">Rencana Anggaran Biaya (Rp)</th>
-              <th style="text-align:center;min-width:120px">Aksi</th>
+              <th class="col-metode">Metode Pengadaan</th>
+              <th class="col-bidang-pel">Bidang Pelaksana</th>
+              <!-- Lebar kolom = data terpanjang; judul boleh turun maksimal 2 baris -->
+              <th class="col-rab"><span class="th-2l">Rencana Anggaran Biaya</span></th>
+              <th class="col-aksi">Aksi</th>
             </tr>
           </thead>
           <tbody id="dp-view-body"></tbody>
@@ -1661,10 +1666,12 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
             <tr>
               <th class="col-no">No.</th>
               <th class="col-nama-freeze">Nama Pekerjaan</th>
-              <th style="text-align:center">Durasi Pengadaan</th>
+              <th class="fkl-col-lokasi">Lokasi Pekerjaan</th>
+              <!-- Lebar kolom = isian terpanjang; judul boleh turun maksimal 2 baris -->
+              <th class="col-durasi"><span class="th-2l">Durasi Pengadaan</span></th>
               <th class="col-date">Tgl. Mulai<br>Pengadaan</th>
               <th class="col-date">Rencana Terkontrak</th>
-              <th style="text-align:center;min-width:170px">Aksi</th>
+              <th class="col-aksi">Aksi</th>
             </tr>
           </thead>
           <tbody id="jadwal-view-body"></tbody>

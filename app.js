@@ -1282,8 +1282,8 @@ function resetAllFilters(){
   ].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   if(typeof dpengState!=='undefined'){ dpengState.view.page=1; dpengState.view.search=''; dpengState.view.tahun=''; dpengState.view.bidang=''; }
   if(typeof materiState!=='undefined'){ materiState.view.page=1; materiState.view.search=''; materiState.view.tahun=''; materiState.view.kategori=''; }
-  // Filter dashboard "Jenis Pekerjaan" kembali ke default (SPBJ / Kontrak Rinci)
-  const dj=document.getElementById('dash-filter-jenis'); if(dj) dj.value='kr';
+  // Filter dashboard "Jenis Pekerjaan" kembali ke BAWAAN = PL & Tender
+  const dj=document.getElementById('dash-filter-jenis'); if(dj) dj.value='pl_tender';
   const dmw=document.getElementById('dash-metode-wrap'); if(dmw) dmw.style.display='none';
   // Reset nomor halaman setiap tabel ke 1
   if(typeof currentPage!=='undefined') currentPage=1;
@@ -2441,7 +2441,8 @@ function renderDashboard(){
   initDashTilt();
   initDashSound();
   const jEl=document.getElementById('dash-filter-jenis');
-  const jenis = jEl ? jEl.value : 'kr';
+  /* Bawaan dashboard = PL & Tender (dipakai juga bila select belum siap) */
+  const jenis = (jEl && jEl.value) ? jEl.value : 'pl_tender';
   const ftEl=document.getElementById('dash-filter-tahun');
   const ft=ftEl?ftEl.value:'';
   const faEl=document.getElementById('dash-filter-anggaran');
@@ -6722,8 +6723,21 @@ function jadwalViewRows(){
   if(fs) rows=rows.filter(r=>String(r.nama_pekerjaan||'').toLowerCase().includes(fs));
   return rows;
 }
+/* Lokasi Pekerjaan tersimpan di dalam state jadwal (jpState.lokasi), bukan
+   sebagai kolom tabel tersendiri — diambil bertingkat agar aman. */
+function jadwalLokasi(r){
+  if(!r) return '';
+  if(r.lokasi_pekerjaan) return String(r.lokasi_pekerjaan);
+  if(r.lokasi) return String(r.lokasi);
+  const s=r.state;
+  if(s && typeof s==='object'){
+    if(s.lokasi) return String(s.lokasi);
+    if(s.info && s.info.lokasi) return String(s.info.lokasi);
+  }
+  return '';
+}
 function jadwalEmptyRow(){
-  return '<tr><td colspan="6"><div class="empty">'+
+  return '<tr><td colspan="7"><div class="empty">'+
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>'+
     '<div>Data tidak tersedia</div></div></td></tr>';
 }
@@ -6775,10 +6789,11 @@ function renderJadwalView(){
     return '<tr>'+
       '<td class="col-no">'+(start+i+1)+'</td>'+
       '<td class="wrap-cell col-nama-freeze">'+fkEsc(r.nama_pekerjaan||'—')+'</td>'+
-      '<td style="text-align:center">'+jadwalDurasiFull(r)+'</td>'+
+      '<td class="fkl-col-lokasi">'+fkEsc(jadwalLokasi(r)||'—')+'</td>'+
+      '<td class="col-durasi">'+jadwalDurasiFull(r)+'</td>'+
       '<td class="col-date">'+fkEsc(r.tgl_mulai?pnwDateLong(r.tgl_mulai):'—')+'</td>'+
       '<td class="col-date">'+fkEsc(r.tgl_selesai?pnwDateLong(r.tgl_selesai):'—')+'</td>'+
-      '<td><div class="action-cell" style="justify-content:center">'+
+      '<td class="col-aksi"><div class="action-cell">'+
         '<button class="act act-edit" title="Ubah" onclick="openJadwalKerja(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
         '<button class="act act-view" title="Lihat" onclick="jadwalPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
         '<button class="act act-del" title="Hapus" onclick="jadwalDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>'+
@@ -10337,7 +10352,7 @@ function materiHapus(recId){
 const FKL_INFO_FIELDS=[
   {key:'nama',          label:'Nama Pekerjaan',      type:'text', span:2},
   {key:'lokasi',        label:'Lokasi Pekerjaan',    type:'text', span:2},
-  {key:'nilai',         label:'Nilai Pekerjaan',     type:'num'},
+  {key:'nilai',         label:'Rencana Anggaran Biaya', type:'num'},
   {key:'no_anggaran',   label:'No. Anggaran',        type:'text'},
   {key:'tgl_anggaran',  label:'Tgl. Anggaran',       type:'date'},
   {key:'jenis_anggaran',label:'Jenis Anggaran',      type:'select', options:FKL_JENIS_ANGGARAN},
@@ -10793,7 +10808,7 @@ function fklViewRows(){
   return rows;
 }
 function fklEmptyRow(){
-  return '<tr><td colspan="6"><div class="empty">'+
+  return '<tr><td colspan="7"><div class="empty">'+
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>'+
     '<div>Data tidak tersedia</div></div></td></tr>';
 }
@@ -10816,14 +10831,17 @@ function renderFklView(){
     const lokasi=(info.lokasi!=null?String(info.lokasi):'').trim();
     const tgl=r.tgl_terima||info.tgl_terima||'';
     const metode=r.metode||info.metode||'';
+    /* Rencana Anggaran Biaya (dulu bernama "Nilai Pekerjaan") */
+    const rab=(r.nilai!=null&&r.nilai!=='')?r.nilai:info.nilai;
     const rid=fkEsc(String(r.id));
     return '<tr>'+
       '<td class="col-no">'+(start+i+1)+'</td>'+
       '<td class="wrap-cell col-nama-freeze">'+fkEsc(nama)+'</td>'+
       '<td class="fkl-col-lokasi">'+fkEsc(lokasi||'—')+'</td>'+
       '<td class="col-date">'+fkEsc(tgl?fklDateLong(tgl):'—')+'</td>'+
-      '<td>'+fkEsc(fklMetodeShort(metode))+'</td>'+
-      '<td><div class="action-cell" style="justify-content:center">'+
+      '<td class="col-metode">'+fkEsc(fklMetodeShort(metode))+'</td>'+
+      '<td class="col-rab">'+hpsRp(rab)+'</td>'+
+      '<td class="col-aksi"><div class="action-cell">'+
         '<button class="act act-edit" title="Ubah" onclick="openFklInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
         '<button class="act act-view" title="Lihat" onclick="fklPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
         '<button class="act act-del" title="Hapus" onclick="fklDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>'+
@@ -10939,7 +10957,7 @@ function fklBuildDocHtml(){
     '<table class="fkl-info"><tbody>'+
       infoRow('Nama Pekerjaan', info.nama)+
       infoRow('Lokasi Pekerjaan', info.lokasi)+
-      infoRow('Nilai Pekerjaan', fmtNilai)+
+      infoRow('Rencana Anggaran Biaya', fmtNilai)+
       infoRow('No. Anggaran', info.no_anggaran)+
       infoRow('Tgl. Anggaran', info.tgl_anggaran?pnwDateLong(info.tgl_anggaran):'-')+
       infoRow('Jenis Anggaran', info.jenis_anggaran)+
@@ -14321,8 +14339,18 @@ function dpViewRows(){
   if(fs) rows=rows.filter(r=>String(r.nama_pekerjaan||'').toLowerCase().includes(fs));
   return rows;
 }
+/* Bidang Pelaksana disimpan di dalam state.info (bukan kolom tabel tersendiri),
+   jadi diambil bertingkat: kolom tabel -> state.info -> info. */
+function dpBidangPelaksana(r){
+  if(!r) return '';
+  if(r.bidang_pelaksana) return String(r.bidang_pelaksana);
+  const s=r.state;
+  if(s && typeof s==='object' && s.info && s.info.bidang_pelaksana) return String(s.info.bidang_pelaksana);
+  if(r.info && r.info.bidang_pelaksana) return String(r.info.bidang_pelaksana);
+  return '';
+}
 function dpEmptyRow(){
-  return '<tr><td colspan="6"><div class="empty">'+
+  return '<tr><td colspan="7"><div class="empty">'+
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>'+
     '<div>Data tidak tersedia</div></div></td></tr>';
 }
@@ -14345,9 +14373,10 @@ function renderDpView(){
       '<td class="col-no">'+(start+i+1)+'</td>'+
       '<td class="wrap-cell col-nama-freeze">'+fkEsc(r.nama_pekerjaan||'—')+'</td>'+
       '<td class="fkl-col-lokasi">'+fkEsc(r.lokasi||'—')+'</td>'+
-      '<td>'+fkEsc(r.metode||'—')+'</td>'+
-      '<td class="col-num" style="text-align:right;font-weight:700">'+hpsRp(r.nilai)+'</td>'+
-      '<td><div class="action-cell" style="justify-content:center">'+
+      '<td class="col-metode">'+fkEsc(r.metode||'—')+'</td>'+
+      '<td class="col-bidang-pel">'+fkEsc(dpBidangPelaksana(r)||'—')+'</td>'+
+      '<td class="col-rab">'+hpsRp(r.nilai)+'</td>'+
+      '<td class="col-aksi"><div class="action-cell">'+
         '<button class="act act-edit" title="Ubah" onclick="openDpInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
         '<button class="act act-del" title="Hapus" onclick="dpDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>'+
       '</div></td>'+

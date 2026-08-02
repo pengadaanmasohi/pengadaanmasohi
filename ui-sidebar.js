@@ -84,6 +84,62 @@ function initHoverSidebar(){
   window.addEventListener('resize',function(){ if(isSmall()) el.classList.remove('is-open'); });
 }
 
+/* ---------- 1b. Laci navigasi tertutup saat diketuk DI LUAR ----------
+   Sebelumnya laci hanya bisa ditutup lewat scrim (.topnav-backdrop) atau
+   dengan memilih salah satu menu. Di iPad LANSKAP scrim itu tidak pernah
+   tampil (lebarnya > 1024 px) sehingga ketukan di luar navigasi tidak
+   berpengaruh apa-apa — laci baru menutup setelah menu dipilih.
+
+   Penjaga di bawah ini berdiri sendiri: selama laci sedang terbuka, ketukan
+   / klik mana pun di luar #sidebar-shell akan menutupnya, tak peduli ada
+   tidaknya scrim. Tombol ☰ dikecualikan supaya tidak "tutup lalu buka lagi"
+   dalam satu ketukan. */
+function modeLaci(){ return isSmall() || noHover(); }
+function laciTerbuka(){
+  var nav=document.getElementById('topnav');
+  return !!(document.body.classList.contains('nav-open') ||
+            (nav && nav.classList.contains('open')));
+}
+function tutupLaci(){
+  if(typeof closeMobileNav==='function'){ closeMobileNav(); return; }
+  /* Cadangan bila app.js belum siap */
+  var nav=document.getElementById('topnav'), bd=document.getElementById('topnav-backdrop');
+  if(nav) nav.classList.remove('open');
+  if(bd) bd.classList.remove('show');
+  document.body.classList.remove('nav-open');
+}
+function initTutupDiLuar(){
+  var sisi=document.getElementById('sidebar-shell');
+  /* Ditangkap pada fase CAPTURE supaya tetap jalan walau elemen di bawah
+     jari menghentikan penyebaran peristiwa (mis. tabel yang bisa digulir). */
+  function periksa(e){
+    if(!modeLaci() || !laciTerbuka()) return;
+    var t=e.target;
+    if(!t || t.nodeType!==1) return;
+    if(sisi && (t===sisi || sisi.contains(t))) return;             // di dalam navigasi
+    if(t.closest('#nav-burger,.nav-burger')) return;               // tombol ☰
+    /* Jendela pop-up (pratinjau, konfirmasi, dsb.) tampil di atas laci —
+       ketukan di sana tidak boleh dianggap "di luar navigasi". */
+    if(t.closest('.overlay.show,.modal')) return;
+    tutupLaci();
+  }
+  document.addEventListener('pointerdown', periksa, true);
+  /* Peramban lama tanpa Pointer Events */
+  if(!window.PointerEvent) document.addEventListener('touchstart', periksa, true);
+  document.addEventListener('click', periksa, true);
+  /* Tombol Esc & perubahan orientasi ikut menutup laci */
+  document.addEventListener('keydown', function(e){
+    if(e.key==='Escape' && modeLaci() && laciTerbuka()) tutupLaci();
+  });
+  window.addEventListener('orientationchange', function(){
+    setTimeout(function(){ if(laciTerbuka()) tutupLaci(); }, 60);
+  });
+  /* Kembali ke layar lebar non-sentuh: sisa keadaan laci dibersihkan */
+  window.addEventListener('resize', function(){
+    if(!modeLaci() && laciTerbuka()) tutupLaci();
+  });
+}
+
 /* ---------- 2. Tooltip nama menu (dipakai CSS lewat data-tip) ---------- */
 function labelOf(btn){
   if(!btn) return '';
@@ -345,6 +401,9 @@ function watchLoginScreen(){
    menempel ke kiri dan terpotong. Isi iframe diperkecil secukupnya (zoom)
    supaya muat dan otomatis berada di tengah. Jalur Cetak/PDF memakai iframe
    tersendiri, jadi tidak ikut terpengaruh. */
+var ZOOM_DIDUKUNG = (function(){
+  try{ return 'zoom' in document.documentElement.style; }catch(e){ return false; }
+})();
 function fitDokumen(){
   if(!window.matchMedia('(max-width:1024px)').matches &&
      !window.matchMedia('(hover:none)').matches) return;
@@ -352,13 +411,41 @@ function fitDokumen(){
   var fr=body.querySelector('iframe'); if(!fr) return;
   try{
     var d=fr.contentDocument; if(!d || !d.body) return;
+    /* Dikembalikan dulu ke ukuran asli supaya pengukuran tidak menumpuk
+       hasil penyusutan sebelumnya (mis. sesudah layar diputar). */
     d.body.style.zoom='';
+    d.body.style.transform='';
+    d.body.style.transformOrigin='';
+    d.body.style.width='';
     var isi=Math.max(d.body.scrollWidth, d.documentElement.scrollWidth||0);
     var muat=fr.clientWidth - 10;      // sisakan sedikit napas supaya benar-benar muat
-    if(muat>0 && isi>muat){
-      d.body.style.zoom=Math.max(0.34, muat/isi);
+    if(!(muat>0) || !(isi>muat)) return;
+    var skala=Math.max(0.34, muat/isi);
+    if(ZOOM_DIDUKUNG){
+      d.body.style.zoom=skala;
+    }else{
+      /* Firefox Android tidak mengenal `zoom`. transform:scale() memberi hasil
+         yang sama, asalkan lebar badan dikoreksi agar tidak menyisakan ruang
+         kosong di kanan dan halaman tetap rata kiri-atas. */
+      d.body.style.transformOrigin='top left';
+      d.body.style.transform='scale('+skala+')';
+      d.body.style.width=(100/skala)+'%';
     }
   }catch(e){ /* iframe beda-asal: dilewati */ }
+}
+/* Dokumen baru selesai dimuat -> pas-kan ulang. Tanpa ini, pratinjau pertama
+   sering tampil dalam ukuran A4 penuh (terpotong) sampai layar diputar. */
+function pantauMuatIframe(){
+  var body=document.getElementById('pn-preview-body'); if(!body) return;
+  var pasang=function(){
+    body.querySelectorAll('iframe').forEach(function(fr){
+      if(fr.__fitTerpasang) return;
+      fr.__fitTerpasang=true;
+      fr.addEventListener('load', function(){ setTimeout(fitDokumen,80); setTimeout(fitDokumen,420); });
+    });
+  };
+  pasang();
+  try{ new MutationObserver(pasang).observe(body,{childList:true,subtree:true}); }catch(e){}
 }
 
 /* Halaman di belakang dikunci saat pratinjau terbuka, supaya tidak ikut
@@ -387,6 +474,7 @@ function watchPreviewOverlay(){
 function init(){
   setTips();
   initHoverSidebar();
+  initTutupDiLuar();
   watchActive();
   hookRole();
   hookShowView();
@@ -397,6 +485,7 @@ function init(){
   initFs();
   hookLogout();
   watchPreviewOverlay();
+  pantauMuatIframe();
   watchLoginScreen();
 }
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init);
