@@ -7006,7 +7006,6 @@ function jpOpenPreview(html, nama){
     actions.insertBefore(btn, actions.firstChild);
   }
   ov.classList.add('show');
-  pnNavAttach('jp-preview-frame');
 }
 function jadwalPreviewRecord(id){
   const rec=(records_jadwal||[]).find(r=>String(r.id)===String(id)); if(!rec) return;
@@ -8783,7 +8782,7 @@ function pnPreviewResetMaxBtn(){
   const icon=document.getElementById('pn-preview-max-icon');
   if(icon) icon.innerHTML='<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>';  // maximize
 }
-function closePnPreview(){ const ov=document.getElementById('pn-preview-overlay'); if(ov) ov.classList.remove('show'); const modal=ov&&ov.querySelector('.pn-preview-modal'); if(modal) modal.classList.remove('is-max'); pnPreviewResetMaxBtn(); pnNavDetach(); const b=document.getElementById('pn-preview-body'); if(b){ b.innerHTML=''; b.classList.remove('fkl-preview-body'); b.classList.remove('has-tabs'); } const fp=document.getElementById('fkl-preview-print'); if(fp) fp.remove(); const pp=document.getElementById('pnw-preview-print'); if(pp) pp.remove(); const rp=document.getElementById('rho-preview-print'); if(rp) rp.remove(); const hp=document.getElementById('hps-preview-print'); if(hp) hp.remove(); const cp=document.getElementById('hpsc-preview-print'); if(cp) cp.remove(); const ap=document.getElementById('ana-preview-print'); if(ap) ap.remove(); const jpb=document.getElementById('jp-preview-print'); if(jpb) jpb.remove(); const sp=document.getElementById('spk-preview-print'); if(sp) sp.remove(); if(typeof fklPreviewState!=='undefined') fklPreviewState=null; if(typeof pnwPreviewState!=='undefined') pnwPreviewState=null; if(typeof rhoPreviewState!=='undefined') rhoPreviewState=null; if(typeof hpsPreviewState!=='undefined') hpsPreviewState=null; if(typeof anaPreviewState!=='undefined') anaPreviewState=null; pnCleanupPreview(); }
+function closePnPreview(){ const ov=document.getElementById('pn-preview-overlay'); if(ov) ov.classList.remove('show'); const modal=ov&&ov.querySelector('.pn-preview-modal'); if(modal) modal.classList.remove('is-max'); pnPreviewResetMaxBtn(); const b=document.getElementById('pn-preview-body'); if(b){ b.innerHTML=''; b.classList.remove('fkl-preview-body'); b.classList.remove('has-tabs'); } const fp=document.getElementById('fkl-preview-print'); if(fp) fp.remove(); const pp=document.getElementById('pnw-preview-print'); if(pp) pp.remove(); const rp=document.getElementById('rho-preview-print'); if(rp) rp.remove(); const hp=document.getElementById('hps-preview-print'); if(hp) hp.remove(); const cp=document.getElementById('hpsc-preview-print'); if(cp) cp.remove(); const ap=document.getElementById('ana-preview-print'); if(ap) ap.remove(); const jpb=document.getElementById('jp-preview-print'); if(jpb) jpb.remove(); const sp=document.getElementById('spk-preview-print'); if(sp) sp.remove(); if(typeof fklPreviewState!=='undefined') fklPreviewState=null; if(typeof pnwPreviewState!=='undefined') pnwPreviewState=null; if(typeof rhoPreviewState!=='undefined') rhoPreviewState=null; if(typeof hpsPreviewState!=='undefined') hpsPreviewState=null; if(typeof anaPreviewState!=='undefined') anaPreviewState=null; pnCleanupPreview(); }
 
 /* ---- Upload / Download / Hapus lampiran (per masing-masing nomor dokumen) ---- */
 let pnUploadCtx=null;
@@ -12243,7 +12242,6 @@ function fklOpenPreview(){
     actions.insertBefore(btn, actions.firstChild);
   }
   ov.classList.add('show');
-  pnNavAttach('fkl-preview-frame');
 }
 
 /* Bantu cetak: browser (Chrome/Edge) memakai judul TAB UTAMA (bukan judul
@@ -13596,7 +13594,6 @@ function pnwOpenPreview(){
     actions.insertBefore(btn, actions.firstChild);
   }
   ov.classList.add('show');
-  pnNavAttach('pnw-preview-frame');
 }
 function pnwPrint(){
   const old=document.getElementById('pnw-print-frame'); if(old) old.remove();
@@ -14617,7 +14614,6 @@ function rhoOpenPreview(){
     actions.insertBefore(btn, actions.firstChild);
   }
   ov.classList.add('show');
-  pnNavAttach('rho-preview-frame');
 }
 function rhoPrint(){
   const old=document.getElementById('rho-print-frame'); if(old) old.remove();
@@ -16554,7 +16550,6 @@ function hpsOpenPreview(){
     actions.insertBefore(btn, actions.firstChild);
   }
   ov.classList.add('show');
-  pnNavAttach('hps-preview-frame');
 }
 function hpsPrint(){
   const old=document.getElementById('hps-print-frame'); if(old) old.remove();
@@ -18230,7 +18225,6 @@ function anaOpenPreview(section){
     actions.insertBefore(btn, actions.firstChild);
   }
   ov.classList.add('show');
-  pnNavAttach('ana-preview-frame');
 }
 function anaPrint(){
   const old=document.getElementById('ana-print-frame'); if(old) old.remove();
@@ -18759,7 +18753,6 @@ function hpscOpenPreview(html, nama){
     actions.insertBefore(btn, actions.firstChild);
   }
   ov.classList.add('show');
-  pnNavAttach('hpsc-preview-frame');
 }
 /* Cetak Rekap HPS gabungan lewat iframe terisolasi.
    Iframe TIDAK dibuang lewat timer: dialog "Simpan sebagai PDF" masih memakainya,
@@ -19048,354 +19041,3 @@ document.getElementById('dp-picker-overlay').addEventListener('click',e=>{ if(e.
 document.getElementById('pn-preview-overlay').addEventListener('click',e=>{ if(e.target.id==='pn-preview-overlay')closePnPreview(); });
 
 
-
-
-/* ==================================================================
-   NAVIGATOR HALAMAN PRATINJAU DOKUMEN  (rel mini + perbesaran)
-   ------------------------------------------------------------------
-   Dipasang pada MODAL PRATINJAU BERSAMA (#pn-preview-overlay) sehingga
-   SEMUA pratinjau dokumen HTML memakainya: Kelengkapan Dokumen, Jadwal
-   Pelaksanaan, Pembukaan Penawaran, Evaluasi, HPS, Analisa Harga,
-   Rekap HPS, dan Susun Kontrak (SPK/PK/KHS).
-
-   Dua bagian:
-     1) REL KIRI  — tampilan MINI tiap lembar. Diklik = dokumen utama
-        melompat ke lembar itu; lembar yang sedang dibaca disorot.
-     2) BILAH PERBESARAN (kanan-bawah) — persentase tampilan dokumen
-        (50%-300%), tombol -/+, dan "Muat" (sesuaikan lebar lembar).
-
-   Kenapa rel mini dibuat dari SATU iframe, bukan gambar:
-   dokumen pratinjau sudah dipecah menjadi lembar A4 sungguhan oleh
-   paginator (spkPageScript/fklPageScript). Lembar-lembar itu tinggal
-   DISALIN (importNode) ke satu iframe lain bersama seluruh <style>
-   dokumen — TANPA <script>, jadi paginator tidak jalan dua kali — lalu
-   dikecilkan dengan transform:scale. Hasilnya mini yang PERSIS sama
-   dengan halaman aslinya, tanpa pustaka tangkap-layar & tanpa render
-   ulang dokumen.
-
-   Pratinjau BERKAS (PDF/gambar) dan dokumen yang sudah ditingkatkan
-   jadi PDF (doc-pdf-mode) TIDAK memakai navigator ini — penampil PDF
-   bawaan peramban sudah punya rel halaman & pengatur perbesaran. */
-const PN_NAV_SEL   = '.spk-page,.fkl-sheet,.hpsc-page,.fkl-print-page';
-const PN_NAV_ZOOMS = [0.5,0.75,1,1.25,1.5,2,3];
-var PN_NAV = { id:null, zoom:1, tick:0, n:0, aktif:-1, diam:0, ro:null, mo:null, onScroll:null };
-
-function pnNavEnsureStyle(){
-  if(document.getElementById('pn-nav-style')) return;
-  var css=
-  /* Bilah isi modal jadi DUA kolom: rel mini + panggung dokumen. Dipakai
-     !important karena gaya dasar .pn-preview-body ada di style.css. */
-  '.pn-preview-body.pn-hasnav{display:flex!important;flex-direction:row!important;align-items:stretch!important;'+
-    'padding:0!important;gap:0!important;overflow:hidden!important}'+
-  '.pn-preview-body.pn-hasnav > .pn-navrail{flex:0 0 172px;width:172px;min-width:172px;display:flex;'+
-    'flex-direction:column;background:#eef3f5;border-right:1px solid #d7e1e5;overflow:hidden}'+
-  '.pn-navrail .pn-navhead{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:6px;'+
-    "padding:9px 12px;font:800 10px/1.2 'Plus Jakarta Sans','Segoe UI',sans-serif;letter-spacing:.09em;"+
-    'text-transform:uppercase;color:#54666c;background:#e4ecef;border-bottom:1px solid #d7e1e5}'+
-  '.pn-navrail .pn-navhead b{font-weight:800;color:#0E7C86;letter-spacing:.02em}'+
-  '.pn-navrail .pn-navlist{flex:1 1 auto;min-height:0;overflow:hidden}'+
-  '.pn-navrail iframe{width:100%;height:100%;border:0;display:block;background:transparent}'+
-  '.pn-preview-body.pn-hasnav > .pn-navmain{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;'+
-    'overflow:hidden;background:#e9eef1}'+
-  '.pn-navmain > .pn-navstage{flex:1 1 auto;min-height:0;position:relative;overflow:hidden;background:#e9eef1}'+
-  '.pn-navmain > .pn-navstage > iframe{position:absolute;left:0;top:0;border:0;display:block;'+
-    'background:transparent;transform-origin:top left}'+
-  /* Bilah perbesaran */
-  '.pn-zoombar{position:absolute;right:16px;bottom:16px;z-index:9;display:inline-flex;align-items:center;gap:3px;'+
-    'padding:5px 7px;border-radius:13px;background:rgba(13,42,48,.93);color:#fff;'+
-    'box-shadow:0 8px 22px rgba(10,25,30,.32)}'+
-  '.pn-zoombar button{appearance:none;border:0;background:transparent;color:#fff;cursor:pointer;'+
-    "font:800 12px/1 'Plus Jakarta Sans','Segoe UI',sans-serif;padding:5px 8px;border-radius:8px;display:inline-flex;"+
-    'align-items:center;gap:5px}'+
-  '.pn-zoombar button:hover{background:rgba(255,255,255,.16)}'+
-  '.pn-zoombar button:disabled{opacity:.35;cursor:default;background:transparent}'+
-  '.pn-zoombar button svg{width:14px;height:14px}'+
-  ".pn-zoombar .pn-zval{min-width:50px;text-align:center;font:800 11px/1 'Plus Jakarta Sans','Segoe UI',sans-serif;"+
-    'letter-spacing:.02em}'+
-  '.pn-zoombar .sep{width:1px;height:17px;background:rgba(255,255,255,.24);margin:0 3px}'+
-  ".pn-zoombar .pn-pg{padding:0 7px;font:700 11px/1 'Plus Jakarta Sans','Segoe UI',sans-serif;opacity:.92;white-space:nowrap}"+
-  '@media (max-width:820px){'+
-    '.pn-preview-body.pn-hasnav > .pn-navrail{display:none}'+
-    '.pn-zoombar{right:10px;bottom:10px}'+
-  '}';
-  var st=document.createElement('style'); st.id='pn-nav-style'; st.textContent=css;
-  (document.head||document.documentElement).appendChild(st);
-}
-
-/* Gaya yang DISUNTIKKAN ke dokumen pratinjau: mematikan penskalaan otomatis
-   fklFitScript (.fkl-fit-wrap) supaya perbesaran sepenuhnya dikendalikan
-   bilah persentase. Aturan ber-!important menang atas gaya inline tanpa
-   !important yang dipasang skrip itu. */
-function pnNavNoFit(sdoc){
-  try{
-    if(!sdoc || sdoc.getElementById('pn-nav-nofit')) return;
-    var st=sdoc.createElement('style'); st.id='pn-nav-nofit';
-    st.textContent='.fkl-fit-wrap{transform:none!important;width:auto!important;height:auto!important;'+
-      'margin-left:0!important;margin-right:0!important}'+
-      'html{overflow-x:auto!important}';
-    (sdoc.head||sdoc.documentElement).appendChild(st);
-  }catch(e){}
-}
-
-function pnNavIco(d){
-  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">'+d+'</svg>';
-}
-/* Rangka rel + panggung + bilah perbesaran (idempotent) */
-function pnNavBuild(ifr){
-  var body=document.getElementById('pn-preview-body'); if(!body||!ifr) return null;
-  var main=body.querySelector(':scope > .pn-navmain');
-  if(main && main.contains(ifr)) return main;
-  pnNavEnsureStyle();
-  var rail=document.createElement('aside'); rail.className='pn-navrail';
-  rail.innerHTML='<div class="pn-navhead"><span>Halaman</span><b id="pn-nav-count">–</b></div>'+
-                 '<div class="pn-navlist"></div>';
-  main=document.createElement('div'); main.className='pn-navmain';
-  /* SELURUH isi lama dipindah ke panggung apa adanya — termasuk bilah tab
-     (pratinjau Analisa Harga memakai `has-tabs`) — supaya urutannya tidak
-     berubah; hanya iframe yang dibungkus wadah tersendiri agar bisa
-     diperbesar/diperkecil tanpa mengganggu bilah di atasnya. */
-  var stage=document.createElement('div'); stage.className='pn-navstage';
-  while(body.firstChild) main.appendChild(body.firstChild);
-  ifr.parentNode.insertBefore(stage, ifr);
-  stage.appendChild(ifr);
-  body.appendChild(rail);
-  body.appendChild(main);
-  /* Bila dokumen kemudian ditingkatkan jadi PDF sungguhan (doc-pdf-mode),
-     navigator dilepas: penampil PDF bawaan peramban punya rel & zoom sendiri. */
-  try{
-    if(typeof MutationObserver!=='undefined'){
-      PN_NAV.mo=new MutationObserver(function(){
-        var bb=document.getElementById('pn-preview-body');
-        if(bb && bb.classList.contains('doc-pdf-mode')) pnNavDetach();
-      });
-      PN_NAV.mo.observe(body,{attributes:true, attributeFilter:['class']});
-    }
-  }catch(e){}
-  var bar=document.createElement('div'); bar.className='pn-zoombar';
-  bar.innerHTML=
-    '<span class="pn-pg" id="pn-nav-pg">Hal. 1</span>'+
-    '<span class="sep"></span>'+
-    '<button type="button" id="pn-zoom-out" title="Perkecil (Ctrl -)">'+pnNavIco('<path d="M5 12h14"/>')+'</button>'+
-    '<span class="pn-zval" id="pn-zoom-val">100%</span>'+
-    '<button type="button" id="pn-zoom-in" title="Perbesar (Ctrl +)">'+pnNavIco('<path d="M12 5v14M5 12h14"/>')+'</button>'+
-    '<span class="sep"></span>'+
-    '<button type="button" id="pn-zoom-fit" title="Sesuaikan lebar lembar">'+
-      pnNavIco('<path d="M3 8V5a2 2 0 0 1 2-2h3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M21 16v3a2 2 0 0 1-2 2h-3"/>')+'Muat</button>';
-  stage.appendChild(bar);
-  bar.querySelector('#pn-zoom-out').onclick=function(){ pnNavZoomStep(-1); };
-  bar.querySelector('#pn-zoom-in').onclick =function(){ pnNavZoomStep(1); };
-  bar.querySelector('#pn-zoom-fit').onclick=function(){ pnNavZoomFit(); };
-  /* Ukuran panggung berubah saat modal dibesarkan/Layar Penuh -> perbesaran
-     dihitung ulang supaya lembar tetap pas. */
-  try{
-    if(typeof ResizeObserver!=='undefined'){
-      PN_NAV.ro=new ResizeObserver(function(){ pnNavApplyZoom(); });
-      PN_NAV.ro.observe(stage);
-    }
-  }catch(e){}
-  return main;
-}
-
-/* Lebar lembar dokumen (px CSS di dalam iframe) */
-function pnNavPageW(){
-  try{
-    var ifr=document.getElementById(PN_NAV.id); if(!ifr) return 0;
-    var p=ifr.contentWindow.document.querySelector(PN_NAV_SEL);
-    return p ? (p.offsetWidth||0) : 0;
-  }catch(e){ return 0; }
-}
-function pnNavApplyZoom(){
-  var ifr=document.getElementById(PN_NAV.id); if(!ifr) return;
-  var main=ifr.parentElement; if(!main||!main.classList.contains('pn-navstage')) return;
-  var z=PN_NAV.zoom||1;
-  var w=main.clientWidth, h=main.clientHeight;
-  if(!w||!h) return;
-  /* Bidang iframe DILEBARKAN 1/z lalu diperkecil kembali dengan scale(z):
-     isi dokumen tidak pernah ditata ulang (tata letak A4 tetap), hanya
-     tampilannya yang membesar/mengecil — persis penampil PDF. */
-  ifr.style.width =(w/z)+'px';
-  ifr.style.height=(h/z)+'px';
-  ifr.style.transform='scale('+z+')';
-  var v=document.getElementById('pn-zoom-val');
-  if(v) v.textContent=Math.round(z*100)+'%';
-  var bo=document.getElementById('pn-zoom-out'), bi=document.getElementById('pn-zoom-in');
-  if(bo) bo.disabled=(z<=PN_NAV_ZOOMS[0]+0.001);
-  if(bi) bi.disabled=(z>=PN_NAV_ZOOMS[PN_NAV_ZOOMS.length-1]-0.001);
-}
-function pnNavZoomStep(arah){
-  var z=PN_NAV.zoom||1, i;
-  if(arah>0){ for(i=0;i<PN_NAV_ZOOMS.length;i++) if(PN_NAV_ZOOMS[i]>z+0.001){ z=PN_NAV_ZOOMS[i]; break; } }
-  else      { for(i=PN_NAV_ZOOMS.length-1;i>=0;i--) if(PN_NAV_ZOOMS[i]<z-0.001){ z=PN_NAV_ZOOMS[i]; break; } }
-  PN_NAV.zoom=z; pnNavApplyZoom();
-}
-function pnNavZoomFit(){
-  var ifr=document.getElementById(PN_NAV.id); if(!ifr) return;
-  var main=ifr.parentElement; if(!main) return;
-  var pw=pnNavPageW(); if(!pw) return;
-  var z=(main.clientWidth-30)/pw;
-  z=Math.max(0.25, Math.min(3, Math.round(z*100)/100));
-  PN_NAV.zoom=z; pnNavApplyZoom();
-}
-
-/* ---- Rel mini: salin lembar + seluruh <style> dokumen ke satu iframe ---- */
-function pnNavThumbs(sdoc, pages){
-  var list=document.querySelector('.pn-navrail .pn-navlist'); if(!list) return;
-  var f=list.querySelector('iframe');
-  if(!f){ f=document.createElement('iframe'); f.id='pn-nav-thumbs'; f.setAttribute('title','Daftar halaman'); list.appendChild(f); }
-  var td=f.contentWindow.document;
-  td.open(); td.write('<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"></head><body></body></html>'); td.close();
-  var i, n=pages.length;
-  /* <style> & <link> dokumen ikut disalin -> mini identik dgn halaman asli.
-     <script> SENGAJA tidak disalin: paginator tak boleh jalan lagi di sini. */
-  var st=sdoc.querySelectorAll('style,link[rel="stylesheet"]');
-  for(i=0;i<st.length;i++){ try{ td.head.appendChild(td.importNode(st[i],true)); }catch(e){} }
-  var W=pages[0].offsetWidth||794, H=pages[0].offsetHeight||1123;
-  var K=Math.round((138/W)*1000)/1000;
-  var extra=td.createElement('style');
-  extra.textContent=
-    'html,body{margin:0!important;padding:10px 0 14px!important;background:transparent!important}'+
-    '.pn-th{position:relative;width:'+Math.round(W*K)+'px;height:'+Math.round(H*K)+'px;margin:0 auto 11px;'+
-      'background:#fff;border:1px solid #cfdade;border-radius:3px;overflow:hidden;cursor:pointer;'+
-      'box-shadow:0 2px 7px rgba(20,50,60,.20)}'+
-    '.pn-th:hover{border-color:#0E7C86}'+
-    '.pn-th.on{outline:2px solid #0E7C86;outline-offset:1px;border-color:#0E7C86;box-shadow:0 3px 12px rgba(14,124,134,.35)}'+
-    '.pn-th > *{position:absolute!important;left:0!important;top:0!important;margin:0!important;'+
-      'box-shadow:none!important;transform:scale('+K+')!important;transform-origin:top left!important}'+
-    '.pn-th .pn-thno{position:absolute!important;right:3px;bottom:3px;left:auto;top:auto;transform:none!important;'+
-      "font:800 9px/1 'Plus Jakarta Sans',Arial,sans-serif;color:#0d2a30;background:rgba(255,255,255,.88);"+
-      'border-radius:4px;padding:2px 4px;z-index:4}'+
-    '.spk-guide{display:none!important}';
-  td.head.appendChild(extra);
-  for(i=0;i<n;i++){
-    var box=td.createElement('div'); box.className='pn-th'; box.setAttribute('data-i', String(i));
-    try{ box.appendChild(td.importNode(pages[i], true)); }catch(e){}
-    var no=td.createElement('span'); no.className='pn-thno'; no.textContent=String(i+1);
-    box.appendChild(no);
-    td.body.appendChild(box);
-  }
-  td.body.addEventListener('click', function(ev){
-    var t=ev.target;
-    while(t && t!==td.body && !(t.classList&&t.classList.contains('pn-th'))) t=t.parentNode;
-    if(t && t.getAttribute) pnNavGoto(parseInt(t.getAttribute('data-i'),10)||0);
-  });
-  var c=document.getElementById('pn-nav-count'); if(c) c.textContent=String(n);
-  PN_NAV.n=n; PN_NAV.aktif=-1;
-  pnNavSorot(0);
-}
-/* Lompat ke lembar ke-i pada dokumen utama */
-function pnNavGoto(i){
-  try{
-    var ifr=document.getElementById(PN_NAV.id); if(!ifr) return;
-    var w=ifr.contentWindow, pages=w.document.querySelectorAll(PN_NAV_SEL);
-    if(!pages.length) return;
-    if(i<0) i=0; if(i>=pages.length) i=pages.length-1;
-    var y=0, el=pages[i];
-    while(el){ y+=el.offsetTop||0; el=el.offsetParent; }
-    w.scrollTo({ top:Math.max(0, y-10), behavior:'smooth' });
-    pnNavSorot(i);
-  }catch(e){}
-}
-function pnNavSorot(i){
-  if(i===PN_NAV.aktif) return;
-  PN_NAV.aktif=i;
-  var pg=document.getElementById('pn-nav-pg');
-  if(pg) pg.textContent='Hal. '+(i+1)+(PN_NAV.n?(' / '+PN_NAV.n):'');
-  try{
-    var f=document.getElementById('pn-nav-thumbs'); if(!f) return;
-    var td=f.contentWindow.document, th=td.querySelectorAll('.pn-th'), k;
-    for(k=0;k<th.length;k++) th[k].classList.toggle('on', k===i);
-    if(th[i] && th[i].scrollIntoView) th[i].scrollIntoView({ block:'nearest' });
-  }catch(e){}
-}
-/* Lembar yang sedang dibaca = lembar terakhir yang bagian atasnya sudah
-   melewati sepertiga atas panggung. */
-function pnNavSync(){
-  try{
-    var ifr=document.getElementById(PN_NAV.id); if(!ifr) return;
-    var w=ifr.contentWindow, d=w.document, pages=d.querySelectorAll(PN_NAV_SEL);
-    if(!pages.length) return;
-    var batas=(w.innerHeight||600)/3, i, cur=0;
-    for(i=0;i<pages.length;i++){
-      var r=pages[i].getBoundingClientRect();
-      if(r.top<=batas) cur=i; else break;
-    }
-    pnNavSorot(cur);
-  }catch(e){}
-}
-
-/* ---- Pemasangan: menunggu paginator selesai, lalu membangun rel ---- */
-function pnNavAttach(frameId){
-  var body=document.getElementById('pn-preview-body');
-  if(!body || !frameId) return;
-  if(body.classList.contains('doc-pdf-mode')){ pnNavDetach(); return; }
-  var ifr=document.getElementById(frameId); if(!ifr) return;
-  if(PN_NAV.id && PN_NAV.id!==frameId) pnNavDetach();
-  PN_NAV.id=frameId; PN_NAV.diam=0;
-  if(PN_NAV.tick){ clearTimeout(PN_NAV.tick); PN_NAV.tick=0; }
-  var sisa=32, lalu=-1, pertama=true;
-  (function cek(){
-    PN_NAV.tick=0;
-    var b=document.getElementById('pn-preview-body');
-    var f=document.getElementById(frameId);
-    var ov=document.getElementById('pn-preview-overlay');
-    if(!b||!f||!ov||!ov.classList.contains('show')) return;
-    /* Dokumen sudah jadi PDF sungguhan -> navigasi diserahkan ke penampil PDF */
-    if(b.classList.contains('doc-pdf-mode')){ pnNavDetach(); return; }
-    var sdoc=null;
-    try{ sdoc=f.contentWindow.document; }catch(e){ sdoc=null; }
-    var pages = sdoc ? sdoc.querySelectorAll(PN_NAV_SEL) : [];
-    if(pages.length){
-      pnNavNoFit(sdoc);
-      if(pages.length!==lalu){ lalu=pages.length; PN_NAV.diam=0; }
-      else PN_NAV.diam++;
-      /* Jumlah lembar berhenti berubah 2 giliran = paginasi selesai */
-      if(PN_NAV.diam>=2){
-        var main=pnNavBuild(f);
-        if(main){
-          b.classList.add('pn-hasnav');
-          var rail=b.querySelector(':scope > .pn-navrail');
-          if(rail) rail.style.display=(pages.length>1?'':'none');
-          if(pertama){ pertama=false; pnNavZoomFit(); } else pnNavApplyZoom();
-          pnNavThumbs(sdoc, pages);
-          try{
-            if(PN_NAV.onScroll) f.contentWindow.removeEventListener('scroll', PN_NAV.onScroll);
-            PN_NAV.onScroll=function(){
-              if(PN_NAV._r) return;
-              PN_NAV._r=requestAnimationFrame(function(){ PN_NAV._r=0; pnNavSync(); });
-            };
-            f.contentWindow.addEventListener('scroll', PN_NAV.onScroll, { passive:true });
-          }catch(e){}
-          pnNavSync();
-        }
-        return;   /* selesai */
-      }
-    }
-    if(--sisa>0) PN_NAV.tick=setTimeout(cek, 220);
-  })();
-}
-function pnNavDetach(){
-  if(PN_NAV.tick){ clearTimeout(PN_NAV.tick); PN_NAV.tick=0; }
-  try{ if(PN_NAV.ro){ PN_NAV.ro.disconnect(); PN_NAV.ro=null; } }catch(e){}
-  var body=document.getElementById('pn-preview-body');
-  var ifr=PN_NAV.id ? document.getElementById(PN_NAV.id) : null;
-  try{ if(ifr && PN_NAV.onScroll) ifr.contentWindow.removeEventListener('scroll', PN_NAV.onScroll); }catch(e){}
-  PN_NAV.onScroll=null;
-  try{ if(PN_NAV.mo){ PN_NAV.mo.disconnect(); PN_NAV.mo=null; } }catch(e){}
-  if(body){
-    var main=body.querySelector(':scope > .pn-navmain');
-    if(main){
-      var bar=main.querySelector('.pn-zoombar'); if(bar) bar.remove();
-      var stage=main.querySelector('.pn-navstage');
-      if(stage){
-        var f=stage.querySelector('iframe');
-        if(f){ f.style.width=''; f.style.height=''; f.style.transform=''; stage.parentNode.insertBefore(f, stage); }
-        stage.remove();
-      }
-      while(main.firstChild) body.appendChild(main.firstChild);   /* isi lama dikembalikan utuh */
-      main.remove();
-    }
-    var rail=body.querySelector(':scope > .pn-navrail'); if(rail) rail.remove();
-    body.classList.remove('pn-hasnav');
-  }
-  PN_NAV.id=null; PN_NAV.n=0; PN_NAV.aktif=-1; PN_NAV.diam=0;
-}

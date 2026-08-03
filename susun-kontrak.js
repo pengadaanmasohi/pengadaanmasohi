@@ -9575,7 +9575,6 @@ function spkOpenPreview(data, klausul){
     actions.insertBefore(btn, actions.firstChild);
   }
   ov.classList.add('show');
-  pnNavAttach('fkl-preview-frame');
 }
 function spkClosePreview(){ if(typeof closePnPreview==='function') closePnPreview(); }
 /* ===== Sheet per penyedia pada pratinjau Perjanjian/Kontrak KHS ===== */
@@ -9616,8 +9615,6 @@ function spkPreviewRender(){
 function spkKhsPreviewPick(v){
   spkKhsPreviewSel = parseInt(v,10)||0;
   spkPreviewRender();
-  /* Dokumen ditulis ulang -> rel mini & perbesaran dipasang ulang */
-  try{ if(typeof pnNavAttach==='function') pnNavAttach('fkl-preview-frame'); }catch(e){}
 }
 function spkPrint(){
   const data=spkPreviewData||{}, klausul=spkPreviewKlausul||[];
