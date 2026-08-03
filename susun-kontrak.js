@@ -3714,15 +3714,18 @@ function spkDocCss2(){
   /* Blok tanda tangan pada Lampiran: dua pihak (PIHAK KEDUA & PIHAK PERTAMA),
      tanggal di atas kolom PIHAK PERTAMA, nama bergaris bawah. */
   /* ---- UKURAN TANDA TANGAN LAMPIRAN: SATU TOMBOL PUTAR ----
-     Blok ini sengaja TIDAK boleh mewarisi ukuran badan SPK/PK (11pt). Ia harus
-     mengikuti isi Lampiran itu sendiri, yaitu sel tabel rincian pekerjaan:
-         table.hps-doc-tbl th,td{font-size:8.7px;line-height:1.3}   (app.js)
-     Familinya sudah sama sejak awal ('Plus Jakarta Sans' dari .fkl-doc); yang
-     dulu meleset hanyalah ukurannya — 12,5px mengikuti baris "Nama Pekerjaan"
-     pada kepala Lampiran, bukan nama pekerjaan pada tabel rinciannya.
-     Ubah dua variabel di bawah bila sewaktu-waktu perlu digeser; seluruh baris
-     tanda tangan ikut menyesuaikan. */
-  '.spk-lampsign{--spk-lamp-fs:8.7px;--spk-lamp-lh:1.3;'+
+     Blok ini sengaja TIDAK boleh mewarisi ukuran badan SPK/PK (11pt ≈ 14,7px
+     Inter) — itulah yang membuatnya tampak jauh lebih besar dan beda jenis huruf
+     daripada isi Lampiran. Acuannya adalah KEPALA Lampiran, yaitu baris
+     "Nama Pekerjaan / Lokasi Pekerjaan / No. Anggaran / Tgl. Anggaran"
+     ('Plus Jakarta Sans' 12,5px dari .fkl-doc), sehingga tanda tangan terbaca
+     menyatu dengan dokumen Lampiran.
+     CATATAN PENTING: nilai di sini hanya berlaku bila pengecualian !important
+     di bawah ('.spk-lampsign.spk-signpage .spk-sign *') ikut ada — tanpa itu
+     aturan penyeragaman Inter 11pt akan menimpanya kembali.
+     Ubah dua variabel di bawah bila sewaktu-waktu perlu digeser (mis. 8,7px bila
+     ingin sama dengan sel tabel rincian); seluruh baris tanda tangan menyesuaikan. */
+  '.spk-lampsign{--spk-lamp-fs:12.5px;--spk-lamp-lh:1.35;'+
     'page-break-before:auto;break-before:auto;padding-top:0;margin-top:13px;break-inside:avoid;page-break-inside:avoid}'+
   '.spk-lampsign .spk-sign{margin-top:0}'+
   '.spk-lampsign .spk-sign td{width:50%;text-align:center;vertical-align:top;padding:4px 6px;'+
@@ -3781,6 +3784,21 @@ function spkDocCss2(){
   /* klausul yang bersambung ke lembar berikutnya TIDAK menambah nomor klausul */
   '.spk-clause.spk-cont{counter-increment:none}'+
   '.spk-sheet .spk-cl,.spk-sheet .spk-cl *,.spk-sheet .spk-clause,.spk-sheet .spk-clause *,.spk-sheet .spk-cl-h,.spk-sheet .spk-cl-h *,.spk-sheet .spk-sign,.spk-sheet .spk-sign *{font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif !important;font-size:11pt !important}'+
+  /* ---- PENGECUALIAN: TANDA TANGAN LAMPIRAN ----
+     Dua aturan penyeragaman di atas ('.spk-flow .spk-sign *' dan
+     '.spk-sheet .spk-sign *') memakai !important, sehingga blok tanda tangan
+     Lampiran ikut dipaksa menjadi Inter 11pt — itulah sebab tulisannya tampak
+     JAUH LEBIH BESAR dan berbeda jenis huruf dibanding isi Lampiran.
+     Blok Lampiran harus mengikuti dokumen Lampiran (Plus Jakarta Sans, seukuran
+     baris "Nama Pekerjaan" pada kepalanya), bukan badan SPK/PK.
+     Kekhususan (0,3,0) — memakai dua kelas pada elemen yang sama
+     (.spk-lampsign.spk-signpage) — plus letaknya SESUDAH kedua aturan itu,
+     membuat pengecualian ini selalu menang. Ukurannya tetap satu tombol putar:
+     variabel --spk-lamp-fs / --spk-lamp-lh pada '.spk-lampsign'. */
+  '.spk-lampsign.spk-signpage .spk-sign,'+
+  '.spk-lampsign.spk-signpage .spk-sign *{'+
+    "font-family:'Plus Jakarta Sans','Segoe UI',Arial,sans-serif !important;"+
+    'font-size:var(--spk-lamp-fs) !important;line-height:var(--spk-lamp-lh) !important}'+
   /* ---------- PRATINJAU DI LAYAR (lembar A4) ---------- */
   '@media screen{'+
     'html,body{background:#54585c;margin:0;padding:24px 0}'+
