@@ -95,6 +95,8 @@ function initHoverSidebar(){
   }
   function close(now){
     clearTimeout(t);
+    /* Dikunci lewat gagang anak panah -> abaikan semua permintaan menciut */
+    if(el.classList.contains('is-pinned')) return;
     t=setTimeout(function(){
       el.classList.remove('is-open');
       tebakRect(lebarRail);
@@ -150,7 +152,7 @@ function initHoverSidebar(){
     if(pointerTerakhirDiAtas()) return;
     if(!el.contains(e.relatedTarget)) close(false);
   });
-  window.addEventListener('resize',function(){ if(isSmall()) el.classList.remove('is-open'); });
+  window.addEventListener('resize',function(){ if(isSmall()) el.classList.remove('is-open','is-pinned'); });
 }
 
 /* ---------- 1b. Laci navigasi tertutup saat diketuk DI LUAR ----------
@@ -235,7 +237,7 @@ function terapkanModeRail(){
   if(rail && laciTerbuka()) tutupLaci();            /* sisa keadaan laci dibersihkan */
   if(!rail){
     var el=document.getElementById('sidebar-shell');
-    if(el) el.classList.remove('is-open');
+    if(el) el.classList.remove('is-open','is-pinned');
   }
 }
 /* Rail di layar sentuh tidak punya kursor: ketukan pada rail yang menciut
@@ -256,6 +258,7 @@ function initRailSentuh(){
     if(!document.documentElement.classList.contains('mode-rail')) return;
     if(!noHover()) return;
     if(!el.classList.contains('is-open')) return;
+    if(el.classList.contains('is-pinned')) return;
     var t=e.target;
     if(t && t.nodeType===1 && (t===el || el.contains(t))) return;
     el.classList.remove('is-open');
@@ -266,12 +269,70 @@ function initRailSentuh(){
     if(!noHover()) return;
     var t=e.target;
     if(t && t.closest && t.closest('.topnav-link,.topnav-item')){
-      setTimeout(function(){ el.classList.remove('is-open'); }, 180);
+      setTimeout(function(){
+        if(!el.classList.contains('is-pinned')) el.classList.remove('is-open');
+      }, 180);
     }
   });
   window.addEventListener('resize', terapkanModeRail);
   window.addEventListener('orientationchange', function(){ setTimeout(terapkanModeRail,120); });
   terapkanModeRail();
+}
+
+/* ---------- 1f. GAGANG ANAK PANAH DI TEPI KANAN RAIL ----------
+   Rail ikon yang menciut tidak memberi petunjuk apa pun bahwa ia
+   masih bisa dibuka penuh — persis seperti laci ikon tersembunyi di
+   Android/iOS yang selalu menyisakan gagang kecil di tepinya.
+
+   Gagang ini ditambahkan dari JS (bukan index.html) supaya markup
+   sidebar tidak perlu disentuh. Dua perannya:
+     - PETUNJUK: anak panah "›" memberi tahu arah membukanya, dan
+       berbalik jadi "‹" begitu sidebar melebar.
+     - PENGUNCI: diklik -> sidebar dikunci terbuka (.is-pinned) dan
+       tidak lagi menciut sendiri saat kursor pergi; diklik lagi ->
+       kembali menjadi rail ikon.
+   Gaya tampilannya ada di style.css bagian 30. */
+var IC_PEEK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" '+
+            'stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">'+
+            '<polyline points="9 18 15 12 9 6"/></svg>';
+function initPeekHandle(){
+  var el=document.getElementById('sidebar-shell'); if(!el) return;
+  if(document.getElementById('side-peek')) return;
+
+  var b=document.createElement('button');
+  b.type='button'; b.id='side-peek'; b.className='side-peek';
+  b.innerHTML=IC_PEEK;
+
+  function sync(){
+    var buka=el.classList.contains('is-open');
+    var kunci=el.classList.contains('is-pinned');
+    var judul = kunci ? 'Kembalikan menu menjadi ikon'
+                      : (buka ? 'Kunci menu tetap terbuka'
+                              : 'Tampilkan menu lengkap');
+    b.title=judul;
+    b.setAttribute('aria-label',judul);
+    b.setAttribute('aria-expanded', buka ? 'true' : 'false');
+  }
+
+  b.addEventListener('click', function(e){
+    e.preventDefault(); e.stopPropagation();
+    if(el.classList.contains('is-pinned')){
+      el.classList.remove('is-pinned','is-open');
+    }else{
+      el.classList.add('is-pinned','is-open');
+      if(typeof openActiveBranch==='function') openActiveBranch();
+    }
+    sync();
+  });
+  /* Penjaga "ketukan di luar" pada layar sentuh menangkap pointerdown
+     di fase capture; tanpa penghenti ini, ketukan pada gagang bisa
+     dianggap ketukan pada rail sehingga klik-nya tidak pernah sampai. */
+  b.addEventListener('pointerdown', function(e){ e.stopPropagation(); }, true);
+
+  el.appendChild(b);
+  /* .is-open juga diubah oleh hover/ketukan, bukan hanya oleh tombol ini */
+  try{ new MutationObserver(sync).observe(el,{attributes:true,attributeFilter:['class']}); }catch(e){}
+  sync();
 }
 
 /* ---------- 1d. ISYARAT GESER MENDATAR PADA TABEL ----------
@@ -695,6 +756,7 @@ function init(){
   initHoverSidebar();
   initTutupDiLuar();
   initRailSentuh();
+  initPeekHandle();
   initIsyaratGeser();
   watchActive();
   hookRole();

@@ -8264,3 +8264,323 @@ tbody tr{transition:background-color .14s linear}
    will-change tepat ketika animasi dimulai justru memaksa browser
    membuat lapisan baru di tengah gerakan, dan itu terasa tersendat. */
 .act:hover,.btn:hover{will-change:auto}
+
+
+/* ============================================================
+   29. SISA EFEK 3D PADA IKON & TULISAN — DIHAPUS SELURUHNYA
+   ------------------------------------------------------------
+   Tambalan "TAJAM" (28 Jul) sudah membuang sebagian besar efek 3D,
+   tetapi tiga sumber masih tertinggal dan kembali terlihat:
+
+     a) HURUF TIMBUL (text-shadow). Bagian E3 hanya mematikan
+        sebagian daftar; yang tersisa: kepala tabel (baris 3735,
+        5557, 5820, 6767), tulisan menu sidebar (4131, 4160),
+        matriks kontrol akses (4581), serta judul & label pada
+        "Materi & Peraturan" (6826, 6828). Karena itu sebagian
+        menu masih terlihat berhuruf timbul, sebagian rata.
+
+     b) EFEK GETAR SAAT KURSOR MENGENAI TULISAN. Judul aplikasi di
+        kepala sidebar memakai
+           .topbar-brand:hover .brand h1{ transform:translateY(-1px) }
+        dengan easing memantul cubic-bezier(.34,1.56,.64,1) — judul
+        melompat lalu memantul balik setiap kali kursor menyentuhnya.
+        Logonya pun ikut membesar (scale 1.05) & disapu kilau.
+
+     c) MENU "MATERI & PERATURAN" (blok 30 Jul) ditulis SESUDAH
+        tambalan tajam, jadi efek 3D-nya tidak tertimpa: baris tabel
+        menskala saat disorot, tombol & ikon membesar/mengecil.
+
+   Blok ini menutup ketiganya. Bayangan kotak pada wadah (panel,
+   form-card, kepala tabel) SENGAJA dibiarkan — yang diminta dibuang
+   hanya efek pada IKON dan TULISAN.
+   ============================================================ */
+
+/* --- 29a. Tidak ada lagi huruf timbul di mana pun --- */
+*, *::before, *::after{ text-shadow:none !important }
+
+/* --- 29b. Kepala sidebar: judul & logo diam total saat disorot --- */
+.brand h1, .brand span,
+.topbar-brand:hover .brand h1,
+.topbar-brand:hover .brand span,
+.topbar-brand .logo, .topbar-brand:hover .logo,
+.topbar-brand .logo .logo-img,
+.topbar-brand:hover .logo .logo-img,
+.brandside-logo, .brandside-logo svg{
+  transform:none !important;
+  animation:none !important;
+  transition:none !important;
+}
+/* Kilau diagonal yang menyapu logo ikut dimatikan */
+.topbar-brand .logo::after,
+.topbar-brand:hover .logo::after{ display:none !important }
+.topbar-brand{ perspective:none !important; cursor:default }
+
+/* --- 29c. Ikon & lencana berhenti melayang --- */
+.table-wrap .pill, .pill,
+.settings-gear svg, .settings-gear:hover svg,
+.side-logout svg, .side-logout:hover svg,
+.appbar .nav-burger svg, .appbar .nav-burger:hover svg{
+  filter:none !important;
+  transform:none !important;
+  animation:none !important;
+}
+
+/* --- 29d. "Materi & Peraturan": baris, tombol, dan ikon tidak bergerak --- */
+#view-materi-form{ perspective:none !important }
+#view-materi-view .panel tbody tr,
+#view-materi-view .panel tbody tr:hover,
+#view-materi-view .act, #view-materi-view .act:hover, #view-materi-view .act:active,
+#view-materi-form .act, #view-materi-form .act:hover, #view-materi-form .act:active,
+#view-materi-view .btn, #view-materi-view .btn:hover, #view-materi-view .btn:active,
+#view-materi-form .btn, #view-materi-form .btn:hover, #view-materi-form .btn:active,
+#view-materi-view .act svg, #view-materi-form .act svg,
+#view-materi-view .btn svg, #view-materi-view .btn:hover svg,
+#view-materi-form .btn svg, #view-materi-form .btn:hover svg{
+  transform:none !important;
+  animation:none !important;
+}
+#view-materi-view .panel tbody tr{ transition:background-color .14s linear !important }
+#view-materi-view .panel tbody tr:hover{ box-shadow:none !important }
+
+/* --- 29e. Panah arah grup menu DIKEMBALIKAN ---
+   Bagian D3 menutup `.topnav-subtrigger svg` dengan transform:none
+   !important, sehingga panah kecil penunjuk "grup terbuka/tertutup"
+   ikut berhenti berputar. Panah itu bukan hiasan 3D melainkan
+   PENANDA KEADAAN, jadi dikembalikan di sini. */
+#topnav .topnav-sub.open > .topnav-subtrigger .caret2{
+  transform:rotate(180deg) !important;
+  transition:transform .25s ease !important;
+}
+
+
+/* ============================================================
+   30. RAIL SIDEBAR: IKON LEBIH KECIL + ANAK PANAH "BUKA PENUH"
+   ------------------------------------------------------------
+   Meniru laci ikon tersembunyi di Android/iOS:
+
+     - Rail menyempit 76px -> 70px, kotak ikon 46x44 -> 34x34, dan
+       gambar ikonnya sendiri 18px -> 15px. Kepala (logo) & tombol
+       Keluar ikut mengecil supaya iramanya sama.
+
+     - Di TEPI KANAN rail ada gagang ramping berisi anak panah "›".
+       Fungsinya dua: (1) memberi tahu bahwa sidebar masih bisa
+       dibuka penuh — tanpa itu rail ikon terlihat seperti tembok
+       mati; (2) diklik untuk MENGUNCI sidebar tetap terbuka
+       (kelas .is-pinned), diklik lagi untuk mengembalikannya jadi
+       rail. Saat terbuka, panahnya berputar jadi "‹".
+
+   Catatan teknis: `.sidebar-shell` ber-`overflow:hidden` (bagian 26,
+   demi garis aksen beranimasi), jadi gagang ini WAJIB berada di
+   DALAM tepi rail — bukan menonjol keluar seperti tab. Lebar 12px
+   pada x = 53..65 sehingga tidak pernah bertabrakan dengan kotak
+   ikon (x = 18..52) maupun garis aksen 3px di x = 67..70.
+   ============================================================ */
+:root{ --side-rail:70px }
+
+/* ---------- gagang anak panah ---------- */
+.side-peek{
+  position:absolute; right:5px; top:50%; margin-top:-23px;
+  width:12px; height:46px; padding:0; border:none; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  border-radius:7px; z-index:4;
+  background:rgba(255,255,255,.14);
+  color:rgba(255,255,255,.92);
+  font:inherit;
+  transition:background .16s ease, color .16s ease, width .16s ease;
+}
+.side-peek svg{ width:11px; height:11px; display:block; transition:transform .2s ease }
+.side-peek:hover{ background:rgba(255,255,255,.30); color:#fff }
+.side-peek:active{ background:rgba(255,255,255,.38) }
+.side-peek:focus-visible{ outline:2px solid #fff; outline-offset:2px }
+/* Terbuka -> panah berbalik arah */
+.sidebar-shell.is-open .side-peek svg{ transform:rotate(180deg) }
+/* Terkunci -> ditandai kuning, senada penanda menu aktif */
+.sidebar-shell.is-pinned .side-peek{
+  background:var(--yellow); color:#073f45;
+}
+.sidebar-shell.is-pinned .side-peek:hover{ background:#ffd35a }
+/* Sidebar terkunci tidak boleh menciut walau kursor pergi */
+.sidebar-shell.is-pinned{ width:var(--side-w) !important }
+/* Laci geser (ponsel) tidak memakai gagang ini */
+html:not(.mode-rail) .side-peek{ display:none }
+
+/* ---------- ukuran isi rail saat menciut ---------- */
+@media (hover:hover) and (min-width:1025px){
+  .sidebar-shell:not(.is-open) #topnav{ padding:12px 0 14px; gap:4px }
+  .sidebar-shell:not(.is-open) #topnav .topnav-link,
+  .sidebar-shell:not(.is-open) #topnav .topnav-trigger{
+    width:34px; height:34px; border-radius:10px }
+  .sidebar-shell:not(.is-open) #topnav .topnav-link svg,
+  .sidebar-shell:not(.is-open) #topnav .topnav-trigger svg:first-of-type{
+    width:15px; height:15px }
+  .sidebar-shell:not(.is-open) .topbar-brand{ padding:14px 0 12px }
+  .sidebar-shell:not(.is-open) .topbar-brand .logo{
+    width:30px; height:30px; flex:0 0 30px; border-radius:9px }
+  .sidebar-shell:not(.is-open) .side-foot{ padding:6px 0 8px }
+  .sidebar-shell:not(.is-open) .side-logout{
+    width:34px; height:34px; border-radius:10px }
+  .sidebar-shell:not(.is-open) .side-logout svg{ width:14px; height:14px }
+}
+/* Salinan yang sama untuk mode-rail (dipakai desktop & tablet) */
+html.mode-rail .sidebar-shell:not(.is-open) #topnav{ padding:12px 0 14px; gap:4px }
+html.mode-rail .sidebar-shell:not(.is-open) #topnav .topnav-link,
+html.mode-rail .sidebar-shell:not(.is-open) #topnav .topnav-trigger{
+  width:34px; height:34px; border-radius:10px }
+html.mode-rail .sidebar-shell:not(.is-open) #topnav .topnav-link svg,
+html.mode-rail .sidebar-shell:not(.is-open) #topnav .topnav-trigger svg:first-of-type{
+  width:15px; height:15px }
+html.mode-rail .sidebar-shell:not(.is-open) .topbar-brand{ padding:14px 0 12px }
+html.mode-rail .sidebar-shell:not(.is-open) .topbar-brand .logo{
+  width:30px; height:30px; flex:0 0 30px; border-radius:9px }
+html.mode-rail .sidebar-shell:not(.is-open) .side-foot{ padding:6px 0 8px }
+html.mode-rail .sidebar-shell:not(.is-open) .side-logout{
+  width:34px; height:34px; border-radius:10px }
+html.mode-rail .sidebar-shell:not(.is-open) .side-logout svg{ width:14px; height:14px }
+
+/* Sasaran sentuh 44px (bagian 23) SENGAJA dilepas pada perangkat
+   berkursor — di sana tinggi 34px sudah nyaman & itulah yang
+   membuat ikon terlihat mengecil. Layar sentuh tetap 44px. */
+html.mode-rail:not(.sentuh) .sidebar-shell:not(.is-open) #topnav .topnav-link,
+html.mode-rail:not(.sentuh) .sidebar-shell:not(.is-open) #topnav .topnav-trigger{
+  min-height:0
+}
+
+
+/* ============================================================
+   31. TIDAK ADA LAGI YANG MENONJOL SAAT KURSOR MENGENAINYA
+   ------------------------------------------------------------
+   Blok 29 membuang huruf timbul (text-shadow) & efek memantul,
+   tetapi masih tersisa sumber ketiga: elemen berisi TULISAN yang
+   MEMBESAR / TERANGKAT saat disorot. Tambalan "TAJAM" bagian D4
+   dulu menutupnya lewat DAFTAR NAMA KELAS, dan daftar itu tidak
+   pernah lengkap — setiap kelas baru yang dibuat sesudahnya lolos:
+
+     .pn-check-item        scale(1.02)   baris 5664 & 5925
+     .fkl-check            scale(1.02)   baris 5925
+     .dpeng-uprow          scale(1.008)  baris 5636
+     .fk-act-icon          scale(1.10)   baris 5580 & 5856
+                           (D4 hanya menyebut `.fk-act`, bukan
+                            `.fk-act-icon` — kelas yang berbeda)
+     .filter-field select  translateY(-1px) baris 1542
+
+   Karena itu pendekatannya DIBALIK: bukan lagi daftar nama kelas
+   yang harus terus ditambah, melainkan aturan menyeluruh di dalam
+   wadah isi halaman. Kelas baru apa pun otomatis ikut, tanpa perlu
+   menambal lagi di kemudian hari.
+
+   Yang SENGAJA tidak tersentuh (transform-nya memang fungsional,
+   bukan hiasan):
+     - .toast          -> ditempel ke <body>, di luar jangkauan
+     - .fk-seg-thumb   -> pointer-events:none, tak pernah disorot
+     - .ac-toggle-tr   -> geser knop ada di ::before (pseudo tidak
+                          ikut terpilih oleh `*:hover`)
+     - .login-screen   -> bukan `.view`, jadi di luar jangkauan
+     - #pn-preview-overlay -> pratinjau & cetak tetap dikecualikan
+     - .caret2 & panah gagang sidebar -> penanda keadaan, dikuatkan
+       ulang di bawah supaya tidak ikut terhenti
+   ============================================================ */
+/* PENGUAT BOBOT `:not(#_a):not(#_b)` — pola yang sudah dipakai di
+   file ini (lihat `.view:not(#view-dashboard)` pada blok EFEK 3D).
+   Alasannya: sejumlah aturan lawan memakai ID, mis.
+      #view-dashboard .card:hover          -> bobot (1,2,0)
+      #view-dashboard .card:hover .card-ic -> bobot (1,3,0)
+      #view-dpeng-unggah .dpeng-uprow:hover-> bobot (1,2,0)
+   dan `!important` TIDAK membatalkan perhitungan bobot — ia hanya
+   menaikkan lapisan. Tanpa penguat ini, `.view *:hover` yang cuma
+   (0,2,0) tetap kalah dan kartu Dashboard masih terangkat 2px saat
+   disorot (terbukti saat diuji: matrix(1,0,0,1,0,-1.98)). Dua
+   `:not()` ber-ID palsu menaikkannya ke (2,2,0) sehingga menang
+   atas semuanya, tanpa mengubah elemen mana pun yang terpilih. */
+.view:not(#_a):not(#_b) *:hover,
+.modal:not(#_a):not(#_b) *:hover,
+.overlay:not(#pn-preview-overlay):not(#_b) *:hover,
+.sidebar-shell:not(#_a):not(#_b) *:hover,
+.appbar:not(#_a):not(#_b) *:hover,
+.view:not(#_a):not(#_b) .card:hover,
+#view-dashboard:not(#_b) .card:hover{
+  transform:none !important;
+}
+
+/* Baris & item bertulisan: bayangannya ikut diratakan supaya tidak
+   terlihat "terangkat" walau sudah tidak membesar lagi. */
+.view .pn-check-item:hover, .view .fkl-check:hover,
+.overlay:not(#pn-preview-overlay) .pn-check-item:hover,
+#dpeng-doc-overlay .pn-check-item:hover,
+#view-dpeng-unggah .dpeng-uprow:hover,
+#dpeng-list-overlay .dpeng-list-item:hover,
+.view .table-wrap tbody tr:hover,
+.view .panel tbody tr:hover{
+  box-shadow:0 1px 2px rgba(16,40,50,.08) !important;
+}
+
+/* --- Penanda keadaan dikuatkan ulang ---
+   Aturan menyeluruh di atas memakai !important, jadi dua penanda
+   arah ini harus ikut !important agar tetap berputar saat kursor
+   kebetulan berada tepat di atasnya. */
+#topnav .topnav-sub.open > .topnav-subtrigger .caret2{
+  transform:rotate(180deg) !important;
+}
+.sidebar-shell.is-open .side-peek svg{
+  transform:rotate(180deg) !important;
+}
+
+
+/* ============================================================
+   32. RAIL: LOGO, IKON MENU, & TOMBOL KELUAR SATU GARIS
+   ------------------------------------------------------------
+   Diukur di Chromium, rail 70px:
+       logo          x=20  lebar=30  titik tengah 35
+       ikon menu     x=13  lebar=34  titik tengah 30   <-- meleset
+       tombol Keluar x=18  lebar=34  titik tengah 35
+   Jadi yang meleset justru IKON MENU-nya, bukan logo & Keluar.
+
+   SEBABNYA `scrollbar-gutter:stable` pada #topnav (dipasang bagian
+   26c supaya batang gulir tidak muncul-hilang di tengah animasi
+   lebar). Gutter itu MEREBUT 10px di tepi kanan — terukur:
+   #topnav lebar 70px tetapi clientWidth hanya 60px. Isinya lalu
+   dipusatkan pada 60px itu, bukan pada 70px, sehingga seluruh ikon
+   menu bergeser 5px ke kiri. `.topbar-brand` dan `.side-foot` tidak
+   menggulir, jadi keduanya tetap terpusat pada 70px penuh.
+
+   PERBAIKAN: saat menciut, rail TIDAK PERLU gutter sama sekali —
+   isinya cuma ikon, dan batang gulirnya sendiri tidak pantas tampil
+   di jalur selebar itu. Batang gulir disembunyikan (rodanya tetap
+   bisa menggulir), gutter dilepas, sehingga ketiganya terpusat pada
+   lebar rail penuh. Saat melebar, gutter kembali seperti semula.
+   Cara ini juga lebih tahan banting daripada mengimbangi dengan
+   padding: lebar gutter berbeda-beda antar peramban, jadi angka
+   tetap apa pun pasti meleset di salah satunya.
+
+   Kotak logo ikut disamakan 30px -> 34px supaya lebarnya sebaris
+   dengan ikon menu & tombol Keluar.
+
+   Rail 70px -> 72px. Alasannya: begitu ikon menu bergeser ke tengah
+   yang benar, ujung kanannya jatuh di x=52 sedangkan gagang panah
+   mulai di x=53 — hanya bersisa 1px. Dengan 72px ikon berhenti di
+   x=53 dan gagang mulai di x=57, kembali berjarak 4px.
+   ============================================================ */
+:root{ --side-rail:72px }
+
+/* Gagang panah digeser mengikuti rail baru (72 - 3 - 12 = x 57..69,
+   tepat bersambung dengan garis aksen 3px di x 69..72) */
+.side-peek{ right:3px }
+
+/* ---------- rail menciut: tanpa gutter, tanpa batang gulir ---------- */
+.sidebar-shell:not(.is-open) #topnav,
+html.mode-rail .sidebar-shell:not(.is-open) #topnav{
+  scrollbar-gutter:auto;
+  scrollbar-width:none;          /* Firefox */
+  -ms-overflow-style:none;       /* Edge lama */
+}
+.sidebar-shell:not(.is-open) #topnav::-webkit-scrollbar,
+html.mode-rail .sidebar-shell:not(.is-open) #topnav::-webkit-scrollbar{
+  width:0; height:0;
+}
+
+/* ---------- kotak logo disamakan dengan kotak ikon ---------- */
+@media (hover:hover) and (min-width:1025px){
+  .sidebar-shell:not(.is-open) .topbar-brand .logo{
+    width:34px; height:34px; flex:0 0 34px; border-radius:10px }
+}
+html.mode-rail .sidebar-shell:not(.is-open) .topbar-brand .logo{
+  width:34px; height:34px; flex:0 0 34px; border-radius:10px }

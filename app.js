@@ -2200,6 +2200,13 @@ function dashTiltReset(el){
   el.style.removeProperty('--gx'); el.style.removeProperty('--gy');
 }
 function initDashTilt(){
+  /* EFEK MIRING 3D KARTU DASHBOARD DIMATIKAN atas permintaan pengguna.
+     style.css sudah menimpanya dengan `transform:none !important`, jadi
+     hasilnya memang tidak pernah terlihat — tetapi pendengarnya tetap
+     memanggil getBoundingClientRect() pada SETIAP gerakan kursor
+     (hitung ulang tata letak paksa). Dilepas sekalian agar tidak ada
+     beban sisa. Untuk mengembalikannya: hapus baris `return;` ini. */
+  return;
   const root=document.getElementById('view-dashboard');
   if(!root || root.__tiltReady) return;
   root.__tiltReady=true;
