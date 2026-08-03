@@ -559,6 +559,7 @@ const DRAFT_KEY = 'mon_draft'; // draft form input/edit (dipulihkan saat refresh
 const LOGIN_TIME_KEY = 'mon_login_time';   // timestamp login — dasar batas umur sesi absolut
 const LAST_ACTIVE_KEY = 'mon_last_active'; // timestamp aktivitas terakhir — dasar auto-logout idle
 const TOKEN_KEY = 'mon_file_token';        // token akses dokumen ke Worker (R2 File Gateway)
+const BIDANG_KEY = 'mon_bidang';           // cakupan bidang akun user ('*' = semua bidang)
 /* URL Worker "PLN File Gateway" — penjaga akses dokumen kontrak privat di Cloudflare R2. */
 const R2_GATEWAY_URL = 'https://pln-file-gateway.pln-masohi.workers.dev';
 /* Basis URL PUBLIK bucket R2 `foto-referensi`.
@@ -651,24 +652,130 @@ const ACCT_NODEC = '_(* #,##0_);_(* (#,##0);_(* "-"_);_(@_)';
    tampil sebagai "-". Padding "_(" dan "_)" khas Accounting sengaja TIDAK dipakai:
    spasi semu itu membuat isi sel tidak pernah benar-benar berada di tengah. */
 const ACCT_VOL = '#,##0.00;-#,##0.00;"-";@';
-/* Peran yang ada hanya 'admin' & 'guest' (Tamu). Tamu murni pembaca, jadi
-   seluruh hak tambah/ubah/hapus otomatis identik dengan hak admin. */
-function isAdmin(){ return currentRole==='admin'; }
-function canInput(){ return currentRole==='admin'; }
+/* ============================================================================
+   PERAN & CAKUPAN BIDANG
+   ----------------------------------------------------------------------------
+   Peran yang berlaku:
+     admin : pengelola sistem. Akses penuh tanpa batas bidang, PLUS menu sistem
+             (Akun & Kontrol, Penyimpanan, Bersihkan Kontrak, Ganti Kata Sandi,
+             Penyesuaian Form).
+     user  : akun operasional yang dibuat Admin lewat menu "Akun & Kontrol".
+             Menunya sama dengan admin KECUALI menu sistem di atas, tetapi hak
+             ubah/hapusnya dibatasi oleh BIDANG yang dipilih saat akun dibuat.
+     guest : Tamu — murni pembaca (Dashboard & Monitoring saja).
+
+   Seluruh aturan akun USER dikumpulkan di USER_RULES supaya cukup diubah di
+   SATU tempat bila kebijakan berubah:
+     'bidang' = boleh, HANYA untuk data yang Bidang Pelaksana-nya sama
+     true     = boleh untuk semua data
+     false    = tidak boleh sama sekali (lihat saja)
+   ============================================================================ */
+let currentBidang = '*';          // cakupan bidang akun yang sedang masuk
+const BIDANG_ALL = '*';           // penanda "semua bidang"
+
+const USER_RULES = {
+  /* Monitoring — ubah & hapus hanya pada bidang sendiri; bidang lain lihat saja */
+  mon_kr:     { edit:'bidang', del:'bidang' },
+  mon_pl:     { edit:'bidang', del:'bidang' },
+  mon_tender: { edit:'bidang', del:'bidang' },
+  /* Dokumen > Perjanjian/Kontrak — SPBJ boleh diurus (bidang sendiri saja),
+     Pengadaan Langsung & Tender HANYA BISA DILIHAT. */
+  dok_kr:     { edit:'bidang', del:'bidang' },
+  dok_pl:     { edit:false,    del:false },
+  dok_tender: { edit:false,    del:false }
+};
+
+function isAdminMurni(){ return currentRole==='admin'; }   // hak kelola sistem
+function isUser(){ return currentRole==='user'; }
+/* isAdmin()/canInput() dipakai ±80 tempat sebagai penjaga PEMBUKA menu, jadi
+   akun user ikut lolos di sini; pembatasan sesungguhnya dilakukan per-baris
+   data lewat canEditRec()/canDelRec() di bawah. */
+function isAdmin(){ return currentRole==='admin' || currentRole==='user'; }
+function canInput(){ return isAdmin(); }
 function requireAdmin(){ if(!isAdmin()){ toast('Hanya admin yang dapat melakukan tindakan ini','warn'); return false; } return true; }
 function requireInput(){ if(!canInput()){ toast('Anda tidak memiliki akses untuk menambah data','warn'); return false; } return true; }
+function requireAdminMurni(){ if(!isAdminMurni()){ toast('Hanya akun Admin yang dapat melakukan tindakan ini','warn'); return false; } return true; }
 
-/* Hak ubah File Kontrak per-modul (unggah / hapus file):
-   - admin : kontrol penuh di semua modul (kr / pl / tender)
-   - tamu  : tidak boleh mengubah apa pun
-   Parameter `modul` dipertahankan agar tanda tangan fungsi tidak berubah bagi
-   ±belasan pemanggil yang sudah ada. */
-function fkCanModify(modul){
-  return currentRole==='admin';
+/* ---- Cakupan bidang ---- */
+function normBidang(s){ return String(s==null?'':s).trim().toLowerCase().replace(/\s+/g,' '); }
+function bidangSemua(){ return !currentBidang || currentBidang===BIDANG_ALL; }
+function bidangLabel(){ return bidangSemua() ? 'Semua Bidang' : String(currentBidang); }
+function recBidang(rec){ return (rec && (rec.bidang_pelaksana || rec.bidang)) || ''; }
+function inBidang(rec){
+  if(!isUser() || bidangSemua()) return true;
+  return normBidang(recBidang(rec))===normBidang(currentBidang);
 }
-function fkRequireModify(modul){
-  if(!fkCanModify(modul)){ toast('Anda hanya dapat melihat file kontrak pada bagian ini','warn'); return false; }
-  return true;
+
+/* ---- Penilai izin tunggal: area = kunci USER_RULES, act = 'edit' | 'del' ---- */
+function areaTerkunci(area, act){ const r=USER_RULES[area]; return !!(r && r[act]===false); }
+function userCan(area, act, rec){
+  if(!isUser()) return true;                       // admin penuh; tamu tersaring di canInput()
+  const rule=USER_RULES[area]; if(!rule) return true;
+  const v=rule[act];
+  if(v===false) return false;
+  if(v==='bidang') return inBidang(rec);
+  return v===undefined ? true : !!v;
+}
+function canEditRec(area, rec){ return canInput() && userCan(area,'edit',rec); }
+function canDelRec(area, rec){ return canInput() && userCan(area,'del',rec); }
+function requireEditRec(area, rec){
+  if(canEditRec(area, rec)) return true;
+  toast(areaTerkunci(area,'edit')
+    ? 'Bagian ini hanya dapat dilihat oleh akun Anda'
+    : 'Anda hanya dapat mengubah data pada bidang: '+bidangLabel(),'warn');
+  return false;
+}
+function requireDelRec(area, rec){
+  if(canDelRec(area, rec)) return true;
+  toast(areaTerkunci(area,'del')
+    ? 'Bagian ini hanya dapat dilihat oleh akun Anda'
+    : 'Anda hanya dapat menghapus data pada bidang: '+bidangLabel(),'warn');
+  return false;
+}
+/* Akun user berbidang tidak boleh menyimpan data atas nama bidang lain. */
+function requireBidangSimpan(rec){
+  if(!isUser() || bidangSemua()) return true;
+  if(inBidang(rec)) return true;
+  toast('Akun Anda hanya dapat menyimpan data untuk bidang: '+bidangLabel(),'warn');
+  return false;
+}
+
+/* ---- Hak ubah/hapus dokumen Perjanjian/Kontrak per-modul ----
+   Dipanggil dengan `rec` (baris data) untuk keputusan per-baris, atau TANPA
+   argumen kedua untuk pertanyaan tingkat modul ("modul ini bisa diubah sama
+   sekali atau tidak?", mis. menampilkan tombol Tambah Data). */
+const FK_AREA = { kr:'dok_kr', pl:'dok_pl', tender:'dok_tender' };
+function fkRecOf(modul, recordId){
+  const arr = modul==='pl' ? records_pl : (modul==='tender' ? records_tender : records);
+  return (arr||[]).find(r=>String(r.id)===String(recordId)) || null;
+}
+function fkCanModify(modul, rec){
+  if(!canInput()) return false;
+  const area=FK_AREA[modul]||'dok_kr';
+  if(rec===undefined) return !isUser() || !areaTerkunci(area,'edit');   // pertanyaan tingkat modul
+  return userCan(area,'edit',rec);
+}
+function fkCanDelete(modul, rec){
+  if(!canInput()) return false;
+  const area=FK_AREA[modul]||'dok_kr';
+  if(rec===undefined) return !isUser() || !areaTerkunci(area,'del');    // pertanyaan tingkat modul
+  return userCan(area,'del',rec);
+}
+function fkRequireModify(modul, recordId){
+  const rec = (recordId===undefined) ? undefined : fkRecOf(modul, recordId);
+  if(fkCanModify(modul, rec)) return true;
+  toast(areaTerkunci(FK_AREA[modul]||'dok_kr','edit')
+    ? 'Anda hanya dapat melihat dokumen pada bagian ini'
+    : 'Anda hanya dapat mengelola dokumen pada bidang: '+bidangLabel(),'warn');
+  return false;
+}
+function fkRequireDelete(modul, recordId){
+  const rec = (recordId===undefined) ? undefined : fkRecOf(modul, recordId);
+  if(fkCanDelete(modul, rec)) return true;
+  toast(areaTerkunci(FK_AREA[modul]||'dok_kr','del')
+    ? 'Anda hanya dapat melihat dokumen pada bagian ini'
+    : 'Anda hanya dapat menghapus dokumen pada bidang: '+bidangLabel(),'warn');
+  return false;
 }
 
 /* Login satu halaman — username + kata sandi. Hanya peran ADMIN yang punya
@@ -774,7 +881,7 @@ function playLoginAnim(role, done){
   const loginScreen=document.getElementById('login-screen');
   if(loginScreen) loginScreen.style.display='none';
   // Subteks sesuai peran
-  const subs={admin:'Masuk sebagai Admin',guest:'Masuk sebagai Tamu'};
+  const subs={admin:'Masuk sebagai Admin',user:'Masuk sebagai User',guest:'Masuk sebagai Tamu'};
   const sub=document.getElementById('login-anim-sub');
   if(sub) sub.textContent=subs[role]||'';
   const finish=()=>{
@@ -812,6 +919,9 @@ function reloadAllDataForRole(){
 }
 function enterApp(role, view){
   currentRole=role;
+  /* Cakupan bidang dipulihkan dari sessionStorage supaya tetap benar baik saat
+     login biasa maupun saat halaman di-refresh (restoreSession juga lewat sini). */
+  currentBidang = (role==='user' ? (ssGet(BIDANG_KEY)||BIDANG_ALL) : BIDANG_ALL);
   reloadAllDataForRole();   // baca ulang data dari Supabase untuk sesi baru
   if(typeof fkResetCache==='function') fkResetCache();
   applyRole(role);
@@ -825,7 +935,9 @@ function enterApp(role, view){
   try{ profilesLoadAll(); }catch(e){ console.error(e); }
 }
 function applyRole(role){
-  const navRole = role;
+  /* Akun user memakai susunan menu yang sama dengan admin (atribut data-role
+     di index.html tidak perlu diubah); pembatasannya dilakukan per-aksi. */
+  const navRole = (role==='user') ? 'admin' : role;
   document.querySelectorAll('.topnav-link[data-role], .topnav-item[data-role], .topnav-sub[data-role], .btn[data-role], .fk-seg-btn[data-role], .mod-seg[data-role]').forEach(l=>{
     const roles=l.getAttribute('data-role').split(' ');
     const ok=roles.includes(navRole);
@@ -843,10 +955,16 @@ function applyRole(role){
     const anyVisible=[...items].some(it=>it.style.display!=='none');
     g.style.display = anyVisible ? '' : 'none';
   });
-  const labels={admin:'Admin',guest:'Tamu'};
-  document.getElementById('user-label').textContent = labels[role]||'—';
+  const labels={admin:'Admin',user:'User',guest:'Tamu'};
+  const ul=document.getElementById('user-label');
+  if(ul){
+    ul.textContent = labels[role]||'—';
+    /* Akun user: tampilkan cakupan bidangnya saat kursor menyentuh label. */
+    ul.title = (role==='user') ? ('Bidang: '+bidangLabel()) : '';
+  }
   const ROLE_ICONS={
     admin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+    user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
     guest:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>'
   };
   const ic=document.getElementById('user-role-ic');
@@ -1082,7 +1200,7 @@ function performLogout(){
   stopIdleTimer();   // hentikan pemantauan idle
   const anim=document.getElementById('logout-anim');
   const finish=()=>{
-    ssDel(ROLE_KEY); ssDel(USER_KEY); ssDel(VIEW_KEY); ssDel(DRAFT_KEY); ssDel(LOGIN_TIME_KEY); ssDel(LAST_ACTIVE_KEY); ssDel(TOKEN_KEY);
+    ssDel(ROLE_KEY); ssDel(USER_KEY); ssDel(VIEW_KEY); ssDel(DRAFT_KEY); ssDel(LOGIN_TIME_KEY); ssDel(LAST_ACTIVE_KEY); ssDel(TOKEN_KEY); ssDel(BIDANG_KEY);
     currentRole=null; currentUsername=null;
     try{ resetAllFilters(); }catch(e){}
     document.getElementById('topbar-user').style.display='none';
@@ -1599,6 +1717,7 @@ function editRecord(rid){
   if(!requireInput()) return;
   if(PYN_REG.kr.active) exitPenyesuaianKr();
   const rec=records.find(r=>r.id===rid); if(!rec) return;
+  if(!requireEditRec('mon_kr',rec)) return;
   editingId=rid; krReturnView='list'; buildFormKr(); fillForm(rec);
   document.getElementById('input-title').textContent='Ubah Data Pekerjaan';
   const b=document.getElementById('edit-banner'); b.style.display='flex';
@@ -1723,6 +1842,7 @@ function validateRequiredKr(rec){
 function askSave(){
   if(!requireInput()) return;
   const rec=readForm();
+  if(!requireBidangSimpan(rec)) return;
   clearFormErrorsKr();
   const missing=validateRequiredKr(rec);
   if(missing.length){
@@ -1776,6 +1896,7 @@ function askCancel(){
 function askDelete(rid){
   if(!requireInput()) return;
   const rec=records.find(r=>r.id===rid);
+  if(!requireDelRec('mon_kr',rec)) return;
   openConfirm({
     icon:'del', title:'Hapus Data',
     text:'Apakah anda yakin ingin menghapus data pekerjaan?',
@@ -1791,7 +1912,7 @@ function askDelete(rid){
 /* HAPUS SEMUA (KR) — menghapus seluruh data pada tabel monitoring Kontrak Rinci.
    #1: akun user punya kontrol penuh di modul SPBJ/Kontrak, termasuk Hapus Semua. */
 function askDeleteAll(){
-  if(!requireInput()) return;
+  if(!requireAdminMurni()) return;   // hapus massal: khusus Admin, bukan akun user
   if(!records || records.length===0){ toast('Tidak ada data untuk dihapus','warn'); return; }
   openConfirm({
     icon:'del', title:'Hapus Semua Data',
@@ -2011,13 +2132,13 @@ function renderTable(){
       <td class="cell-center">${statusPill(r.status)}</td>
       <td>
         <div class="action-cell">
-          ${canInput()?`<button class="act act-edit" title="Ubah" onclick="editRecord('${r.id}')">
+          ${canEditRec('mon_kr',r)?`<button class="act act-edit" title="Ubah" onclick="editRecord('${r.id}')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z"/></svg>
           </button>`:''}
           <button class="act act-view" title="Lihat" onclick="viewRecord('${r.id}')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
           </button>
-          ${canInput()?`<button class="act act-del" title="Hapus" onclick="askDelete('${r.id}')">
+          ${canDelRec('mon_kr',r)?`<button class="act act-del" title="Hapus" onclick="askDelete('${r.id}')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
           </button>`:''}
         </div>
@@ -3749,6 +3870,7 @@ function editRecordPl(rid){
   if(!requireAdmin()) return;
   if(PYN_REG.pl.active) exitPenyesuaianPl();
   const rec=records_pl.find(r=>r.id===rid); if(!rec) return;
+  if(!requireEditRec('mon_pl',rec)) return;
   editingIdPl=rid; plReturnView='list-pl'; fillFormPl(rec);
   document.getElementById('input-pl-title').textContent='Ubah Data Pekerjaan';
   const b=document.getElementById('edit-banner-pl'); b.style.display='flex';
@@ -3778,6 +3900,7 @@ function missingRequiredPl(rec){
 function askSavePl(){
   if(!requireInput()) return;
   const rec=readFormPl();
+  if(!requireBidangSimpan(rec)) return;
   clearFormErrorsPl();
   const missing=missingRequiredPl(rec);
   if(missing.length){
@@ -3812,6 +3935,7 @@ function askCancelPl(){
 }
 function askDeletePl(rid){
   if(!requireAdmin()) return;
+  if(!requireDelRec('mon_pl', records_pl.find(r=>r.id===rid))) return;
   openConfirm({icon:'del',title:'Hapus Data',text:'Apakah anda yakin ingin menghapus data pekerjaan?',
     onYes:async()=>{
       try{ await withActionLoader('Menghapus', async()=>{ await Store_PL.remove(rid); await refreshDataPl(); }); }
@@ -3821,7 +3945,7 @@ function askDeletePl(rid){
 }
 /* HAPUS SEMUA (Pengadaan Langsung) */
 function askDeleteAllPl(){
-  if(!requireAdmin()) return;
+  if(!requireAdminMurni()) return;   // hapus massal: khusus Admin, bukan akun user
   if(!records_pl || records_pl.length===0){ toast('Tidak ada data untuk dihapus','warn'); return; }
   openConfirm({icon:'del',title:'Hapus Semua Data',
     text:'Apakah anda yakin ingin menghapus semua data pekerjaan?',
@@ -3892,7 +4016,7 @@ function pynSetButtons(reg){
 }
 function pynStart(id){
   const reg=PYN_REG[id]; if(!reg) return;
-  if(!requireAdmin()) return;
+  if(!requireAdminMurni()) return;   // skema form berlaku global -> khusus Admin
   reg.active=true;
   reg.work=pynBuildWork(pynCurrentSchema(reg));
   document.getElementById(reg.titleId).textContent='Penyesuaian Form — '+reg.label;
@@ -4262,13 +4386,13 @@ function renderTablePl(){
       <td class="cell-center">${tahapanPill(r.tahapan)}</td>
       <td>
         <div class="action-cell">
-          ${isAdmin()?`<button class="act act-edit" title="Ubah" onclick="editRecordPl('${r.id}')">
+          ${canEditRec('mon_pl',r)?`<button class="act act-edit" title="Ubah" onclick="editRecordPl('${r.id}')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z"/></svg>
           </button>`:''}
           <button class="act act-view" title="Lihat" onclick="viewRecordPl('${r.id}')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
           </button>
-          ${isAdmin()?`<button class="act act-del" title="Hapus" onclick="askDeletePl('${r.id}')">
+          ${canDelRec('mon_pl',r)?`<button class="act act-del" title="Hapus" onclick="askDeletePl('${r.id}')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
           </button>`:''}
         </div>
@@ -5389,6 +5513,7 @@ function editRecordTender(rid){
   if(!requireAdmin()) return;
   if(PYN_REG.tender.active) exitPenyesuaianTender();
   const rec=records_tender.find(r=>r.id===rid); if(!rec) return;
+  if(!requireEditRec('mon_tender',rec)) return;
   editingIdTender=rid; tenderReturnView='list-tender'; fillFormTender(rec);
   document.getElementById('input-tender-title').textContent='Ubah Data Pekerjaan';
   const b=document.getElementById('edit-banner-tender'); b.style.display='flex';
@@ -5418,6 +5543,7 @@ function missingRequiredTender(rec){
 function askSaveTender(){
   if(!requireInput()) return;
   const rec=readFormTender();
+  if(!requireBidangSimpan(rec)) return;
   clearFormErrorsTender();
   const missing=missingRequiredTender(rec);
   if(missing.length){
@@ -5452,6 +5578,7 @@ function askCancelTender(){
 }
 function askDeleteTender(rid){
   if(!requireAdmin()) return;
+  if(!requireDelRec('mon_tender', records_tender.find(r=>r.id===rid))) return;
   openConfirm({icon:'del',title:'Hapus Data',text:'Apakah anda yakin ingin menghapus data pekerjaan Tender?',
     onYes:async()=>{
       try{ await withActionLoader('Menghapus', async()=>{ await Store_TENDER.remove(rid); await refreshDataTender(); }); }
@@ -5461,7 +5588,7 @@ function askDeleteTender(rid){
 }
 /* HAPUS SEMUA (Tender) */
 function askDeleteAllTender(){
-  if(!requireAdmin()) return;
+  if(!requireAdminMurni()) return;   // hapus massal: khusus Admin, bukan akun user
   if(!records_tender || records_tender.length===0){ toast('Tidak ada data untuk dihapus','warn'); return; }
   openConfirm({icon:'del',title:'Hapus Semua Data',
     text:'Apakah anda yakin ingin menghapus semua data pekerjaan?',
@@ -5575,13 +5702,13 @@ function renderTableTender(){
       <td class="cell-center">${tahapanPill(r.tahapan)}</td>
       <td>
         <div class="action-cell">
-          ${isAdmin()?`<button class="act act-edit" title="Ubah" onclick="editRecordTender('${r.id}')">
+          ${canEditRec('mon_tender',r)?`<button class="act act-edit" title="Ubah" onclick="editRecordTender('${r.id}')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z"/></svg>
           </button>`:''}
           <button class="act act-view" title="Lihat" onclick="viewRecordTender('${r.id}')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
           </button>
-          ${isAdmin()?`<button class="act act-del" title="Hapus" onclick="askDeleteTender('${r.id}')">
+          ${canDelRec('mon_tender',r)?`<button class="act act-del" title="Hapus" onclick="askDeleteTender('${r.id}')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
           </button>`:''}
         </div>
@@ -7130,9 +7257,15 @@ const FileKontrak = {
   async getBlob(row){
     if(!row) return null;
     if(row.path){
-      return await fkStorageGet(row.path);   // Blob (dari Worker/R2)
+      const raw=await fkStorageGet(row.path);   // Blob (dari Worker/R2)
+      if(!raw) return null;
+      /* Samakan dengan Dokumen Pengadaan & Materi: tipe dari metadata selalu
+         dipasang ulang, supaya PDF benar-benar dibuka oleh penampil bawaan
+         peramban berikut bilah menunya. */
+      const mime=fkNormMime(row.nama_file, row.mime || raw.type);
+      return (raw.type===mime) ? raw : new Blob([raw],{type:mime});
     }
-    if(row.data_base64) return fkB64ToBlob(row.data_base64, row.mime);
+    if(row.data_base64) return fkB64ToBlob(row.data_base64, fkNormMime(row.nama_file, row.mime));
     return null;
   },
   async remove(modul, recordId){
@@ -7245,6 +7378,29 @@ function pnUploadProgressClose(){
   const st=document.getElementById('pn-upload-stats'); if(st) st.textContent='';
   const ov=document.getElementById('pn-upload-overlay'); if(ov) ov.classList.remove('show');
 }
+/* Tipe MIME yang benar-benar dipakai peramban.
+   Objek hasil migrasi rclone di R2 kerap berlabel application/octet-stream;
+   dengan label itu peramban TIDAK memakai penampil PDF bawaannya (sehingga
+   bilah menu PDF — halaman, zoom, unduh, cetak — tidak muncul). Karena itu
+   tipe selalu ditebak ulang dari nama berkas bila labelnya generik. */
+function fkNormMime(nama, mime){
+  const nm=String(nama||'').toLowerCase();
+  let m=String(mime||'').toLowerCase().trim();
+  const generik = !m || m==='application/octet-stream' || m==='binary/octet-stream';
+  if(generik){
+    if(nm.endsWith('.pdf')) m='application/pdf';
+    else if(/\.jpe?g$/.test(nm)) m='image/jpeg';
+    else if(nm.endsWith('.png')) m='image/png';
+    else if(nm.endsWith('.gif')) m='image/gif';
+    else if(nm.endsWith('.webp')) m='image/webp';
+    else if(nm.endsWith('.bmp')) m='image/bmp';
+    else if(nm.endsWith('.xlsx')) m='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    else if(nm.endsWith('.xls')) m='application/vnd.ms-excel';
+    else if(nm.endsWith('.docx')) m='application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    else if(nm.endsWith('.doc')) m='application/msword';
+  }
+  return m||'application/octet-stream';
+}
 function fkB64ToBlob(b64, mime){
   const bin=atob(b64||''); const len=bin.length; const bytes=new Uint8Array(len);
   for(let i=0;i<len;i++) bytes[i]=bin.charCodeAt(i);
@@ -7266,7 +7422,7 @@ function openFkInput(modul){
 }
 function openFkView(modul){
   // Akun TAMU tidak berhak membuka menu Dokumen (termasuk Perjanjian/Kontrak).
-  if(!canInput()){ toast('Menu ini hanya untuk akun admin','warn'); return; }
+  if(!canInput()){ toast('Menu ini tidak tersedia untuk akun Tamu','warn'); return; }
   if(!FK_MODULES[modul]) modul='kr';
   if(fkState.view.modul!==modul){ fkState.view.page=1; fkClearFilters('view'); }
   fkState.view.modul=modul; showView('fk-view');
@@ -7404,8 +7560,8 @@ function fkRenderRows(mode, modul, cfg, rows, meta, tb, pg){
     const noKontrak=cfg.noKontrak(r)||'—';
     const tgl=fmtDate(cfg.tgl(r))||'—';
     const f=meta[rid];
-    const aksi = (mode==='input') ? fkInputActionHtml(modul, rid, f) : fkViewActionHtml(modul, rid, f);
-    const dropAttrs = (mode==='input' && fkCanModify(modul))
+    const aksi = (mode==='input') ? fkInputActionHtml(modul, rid, f, r) : fkViewActionHtml(modul, rid, f, r);
+    const dropAttrs = (mode==='input' && fkCanModify(modul, r))
       ? ` ondragover="fkRowDragOver(event,this)" ondragleave="fkRowDragLeave(event,this)" ondrop="fkRowDrop(event,'${modul}','${rid}',this)"`
       : '';
     return `<tr>
@@ -7422,19 +7578,19 @@ function fkRenderRows(mode, modul, cfg, rows, meta, tb, pg){
 }
 
 /* Aksi kolom Input Data: hanya "Unggah File" (daftar ini hanya kontrak yang BELUM diunggah) */
-function fkInputActionHtml(modul, rid, f){
+function fkInputActionHtml(modul, rid, f, rec){
   const upIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v13"/></svg>';
-  return fkCanModify(modul)
+  return fkCanModify(modul, rec)
     ? `<button class="fk-act fk-act-up" onclick="fkUpload('${modul}','${rid}',this)">${upIcon}Unggah File</button>`
     : `<span class="fk-none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>Menunggu unggah</span>`;
 }
 /* Aksi kolom Lihat Data: Lihat/Preview (PDF) + Hapus — hanya ikon, tanpa nama file */
-function fkViewActionHtml(modul, rid, f){
+function fkViewActionHtml(modul, rid, f, rec){
   if(!f){
     return `<span class="fk-none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>Data tidak tersedia</span>`;
   }
   const view=`<button class="fk-act fk-act-view fk-act-icon" title="Lihat" aria-label="Lihat" onclick="fkPreview('${modul}','${rid}',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>`;
-  const del=fkCanModify(modul)?`<button class="fk-act fk-act-del fk-act-icon" title="Hapus" aria-label="Hapus" onclick="fkDelete('${modul}','${rid}',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>`:'';
+  const del=fkCanDelete(modul, rec)?`<button class="fk-act fk-act-del fk-act-icon" title="Hapus" aria-label="Hapus" onclick="fkDelete('${modul}','${rid}',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>`:'';
   return view+del;
 }
 
@@ -7468,7 +7624,7 @@ function fkIsPdf(file){
 /* Klik "Unggah File" -> buka POPUP drag & drop (di dalamnya bisa telusuri file). */
 function fkUpload(modul, recordId, btn){
   if(!requireInput()) return;
-  if(!fkRequireModify(modul)) return;
+  if(!fkRequireModify(modul, recordId)) return;
   fkUploadCtx={modul, recordId, btn};
   fkOpenUploadModal();
 }
@@ -7614,7 +7770,7 @@ function fkRowDrop(ev, modul, recordId, el){
   ev.preventDefault(); ev.stopPropagation();
   el.classList.remove('fk-drop-over');
   if(!requireInput()) return;
-  if(!fkRequireModify(modul)) return;
+  if(!fkRequireModify(modul, recordId)) return;
   const dt=ev.dataTransfer;
   const file=dt && dt.files && dt.files[0];
   if(!file){ toast('Tidak ada file yang terdeteksi pada saat drop','warn'); return; }
@@ -7652,13 +7808,16 @@ async function fkPreview(modul, recordId, btn){
   pnCleanupPreview();
   const _mdl2=document.querySelector('#pn-preview-overlay .pn-preview-modal'); if(_mdl2) _mdl2.classList.remove('is-max');
   pnPreviewResetMaxBtn();
-  if(bodyEl) bodyEl.innerHTML='<div class="pn-preview-nofile">Memuat pratinjau…</div>';
+  /* Kelas sisa dari pratinjau dokumen tersusun (Kelengkapan/HPS/Analisa) harus
+     dilepas — persis seperti dpengPreview & materiPreview — agar tinggi iframe
+     kembali normal dan bilah menu PDF tidak terpotong. */
+  if(bodyEl){ bodyEl.classList.remove('fkl-preview-body','has-tabs'); bodyEl.innerHTML='<div class="pn-preview-nofile">Memuat pratinjau…</div>'; }
   document.getElementById('pn-preview-overlay').classList.add('show');
   try{
     const row=await FileKontrak.getOne(modul, recordId);
     const blob=await FileKontrak.getBlob(row);
     if(!blob){ if(bodyEl) bodyEl.innerHTML=pnPreviewNoFileHtml(row&&row.nama_file,'File tidak tersedia.'); return; }
-    const mime=row.mime||'application/octet-stream';
+    const mime=fkNormMime(row.nama_file, row.mime||blob.type);
     const url=URL.createObjectURL(blob);
     pnPreviewCtx={url, name:row.nama_file||'file'};
     const nm=(row.nama_file||'').toLowerCase();
@@ -7678,7 +7837,7 @@ async function fkPreview(modul, recordId, btn){
 /* ---- Hapus file ---- */
 function fkDelete(modul, recordId, btn){
   if(!requireInput()) return;
-  if(!fkRequireModify(modul)) return;
+  if(!fkRequireDelete(modul, recordId)) return;
   openConfirm({
     icon:'del', title:'Hapus File', text:'Hapus file kontrak ini? Kontrak akan dikembalikan ke Input Kontrak untuk diunggah kembali.',
     onYes:async()=>{
@@ -8408,14 +8567,14 @@ async function pnPreview(id, key){
   pnCleanupPreview();
   const _mdl=document.querySelector('#pn-preview-overlay .pn-preview-modal'); if(_mdl) _mdl.classList.remove('is-max');
   pnPreviewResetMaxBtn();
-  if(bodyEl) bodyEl.innerHTML='<div class="pn-preview-nofile">Memuat pratinjau…</div>';
+  if(bodyEl){ bodyEl.classList.remove('fkl-preview-body','has-tabs'); bodyEl.innerHTML='<div class="pn-preview-nofile">Memuat pratinjau…</div>'; }
   document.getElementById('pn-preview-overlay').classList.add('show');
   try{
     await pnEnsureDokumen(r);
     d=pnFindDoc(r,key);
     const f=d && d.file;
     if(!f || !f.data_base64){ if(bodyEl) bodyEl.innerHTML=pnPreviewNoFileHtml(f&&f.nama_file,'File tidak tersedia.'); return; }
-    const mime=f.mime||'application/octet-stream';
+    const mime=fkNormMime(f.nama_file, f.mime);
     const url=URL.createObjectURL(fkB64ToBlob(f.data_base64, mime));
     pnPreviewCtx={url, name:f.nama_file||'file'};
     const nm=(f.nama_file||'').toLowerCase();
@@ -8447,11 +8606,123 @@ function pnPreviewToggleMax(){
   }
 }
 function pnCleanupPreview(){ if(pnPreviewCtx && pnPreviewCtx.url){ try{ URL.revokeObjectURL(pnPreviewCtx.url); }catch(e){} } pnPreviewCtx=null;
+  /* Batalkan peningkatan PDF yang mungkin masih berjalan & lepas mode PDF-nya,
+     supaya hasil render yang datang terlambat tidak menimpa pratinjau baru. */
+  docPdfSeq++; docPdfBusyOff();
+  const _pb=document.getElementById('pn-preview-body'); if(_pb) _pb.classList.remove('doc-pdf-mode');
   /* Sisa pratinjau Excel sebelumnya dibuang di sini — kalau kelasnya
      tertinggal, badan modal tetap memakai tata letak lembar kerja
      (latar abu, tanpa padding) walau isinya sudah berganti PDF/gambar. */
   const _b=document.getElementById('pn-preview-body'); if(_b) _b.classList.remove('dpeng-xls-body');
   xlsPreviewState=null;
+}
+/* ============================================================================
+   PRATINJAU DOKUMEN SEBAGAI PDF SUNGGUHAN  (penyeragaman pratinjau)
+   ----------------------------------------------------------------------------
+   Dokumen yang DISUSUN aplikasi (Kelengkapan, Pembukaan Penawaran, Referensi
+   Harga, HPS, Analisa, Rekap HPS) dulu hanya ditampilkan sebagai HTML di dalam
+   iframe, sehingga tidak punya bilah menu PDF bawaan peramban seperti pratinjau
+   berkas (Perjanjian/Kontrak, Dokumen Pengadaan, Materi, Penetapan Nomor).
+
+   Sekarang HTML dokumen yang SAMA PERSIS dikirim ke Worker `pln-file-gateway`
+   pada endpoint POST /api/pdf, dirender di sana oleh Chrome (Cloudflare Browser
+   Rendering), lalu PDF-nya dipasang balik ke iframe — hasilnya identik dengan
+   tombol "Cetak / PDF" karena mesin cetaknya sama, lengkap dengan bilah menu.
+
+   PENTING — aman bila endpoint belum ada:
+     - Pratinjau HTML tetap digambar lebih dulu seperti sebelumnya, jadi apa pun
+       yang terjadi pengguna langsung melihat dokumennya.
+     - Peningkatan ke PDF berjalan di latar; bila endpoint tidak ada / gagal,
+       tampilan HTML dibiarkan apa adanya dan percobaan TIDAK diulang lagi
+       selama sesi ini (docPdfSupported=false), sehingga tanpa Worker pun
+       aplikasi berperilaku persis seperti sebelumnya.
+     - Setel DOC_PDF_ENABLED=false untuk mematikan fitur ini sepenuhnya.
+   ============================================================================ */
+const DOC_PDF_ENABLED = true;
+const DOC_PDF_URL     = R2_GATEWAY_URL + '/api/pdf';
+const DOC_PDF_TIMEOUT = 45000;          // render dokumen tebal (Rekap HPS) bisa lama
+let docPdfSupported = null;             // null=belum dicoba, true=tersedia, false=tidak ada
+let docPdfSeq = 0;                      // penjaga: pratinjau terbaru saja yang boleh menimpa
+
+/* Gaya untuk mode PDF dipasang dari sini supaya style.css tidak perlu diubah. */
+function docPdfEnsureStyle(){
+  if(document.getElementById('doc-pdf-style')) return;
+  const st=document.createElement('style');
+  st.id='doc-pdf-style';
+  st.textContent =
+    '.pn-preview-body.doc-pdf-mode{display:flex;flex-direction:column;padding:0;background:#fff;overflow:hidden}'+
+    '.pn-preview-body.doc-pdf-mode > iframe{flex:1 1 auto;width:100%;min-height:0;margin:0;border:0;box-shadow:none;background:#fff;display:block}'+
+    '.doc-pdf-busy{position:absolute;right:16px;bottom:14px;z-index:5;display:flex;align-items:center;gap:8px;'+
+      'padding:7px 12px;border-radius:999px;background:rgba(17,17,17,.78);color:#fff;font-size:11px;letter-spacing:.2px}'+
+    '.doc-pdf-busy i{width:11px;height:11px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;'+
+      'border-radius:50%;display:inline-block;animation:docPdfSpin .8s linear infinite}'+
+    '@keyframes docPdfSpin{to{transform:rotate(360deg)}}';
+  document.head.appendChild(st);
+}
+function docPdfBusyOn(){
+  docPdfEnsureStyle();
+  const modal=document.querySelector('#pn-preview-overlay .pn-preview-modal');
+  if(!modal || document.getElementById('doc-pdf-busy')) return;
+  const el=document.createElement('div');
+  el.id='doc-pdf-busy'; el.className='doc-pdf-busy';
+  el.innerHTML='<i></i>Menyiapkan PDF…';
+  modal.appendChild(el);
+}
+function docPdfBusyOff(){ const el=document.getElementById('doc-pdf-busy'); if(el) el.remove(); }
+
+/* frameId  : id <iframe> pratinjau yang akan ditimpa (markup di sekitarnya —
+              mis. tab Analisa — sengaja dibiarkan utuh)
+   buildHtml: fungsi pembangun dokumen mandiri (*StandaloneDocHtml)
+   nama     : nama berkas untuk tombol unduh */
+async function docPdfUpgrade(frameId, buildHtml, nama){
+  if(!DOC_PDF_ENABLED || docPdfSupported===false) return false;
+  const seq = ++docPdfSeq;
+  let html='';
+  try{ html = (typeof buildHtml==='function') ? buildHtml() : String(buildHtml||''); }
+  catch(e){ console.warn('docPdfUpgrade (bangun HTML):', e); return false; }
+  if(!html) return false;
+
+  docPdfBusyOn();
+  const ctl = (typeof AbortController!=='undefined') ? new AbortController() : null;
+  const tmr = ctl ? setTimeout(()=>{ try{ ctl.abort(); }catch(e){} }, DOC_PDF_TIMEOUT) : null;
+  try{
+    const resp = await fetch(DOC_PDF_URL, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+fkAuthToken() },
+      body: JSON.stringify({ html, nama: nama||'dokumen.pdf' }),
+      signal: ctl ? ctl.signal : undefined
+    });
+    /* Endpoint belum dipasang di Worker -> matikan diam-diam untuk sesi ini. */
+    if(resp.status===404 || resp.status===405 || resp.status===501){ docPdfSupported=false; return false; }
+    if(!resp.ok) return false;
+    const raw = await resp.blob();
+    if(!raw || raw.size < 512) return false;
+    docPdfSupported = true;
+
+    if(seq !== docPdfSeq) return false;                       // sudah dibuka pratinjau lain
+    const ov=document.getElementById('pn-preview-overlay');
+    if(!ov || !ov.classList.contains('show')) return false;   // modal sudah ditutup
+    const ifr=document.getElementById(frameId);
+    if(!ifr || !document.body.contains(ifr)) return false;
+
+    const pdf = (raw.type==='application/pdf') ? raw : new Blob([raw],{type:'application/pdf'});
+    const url = URL.createObjectURL(pdf);
+    try{ if(pnPreviewCtx && pnPreviewCtx.url) URL.revokeObjectURL(pnPreviewCtx.url); }catch(e){}
+    pnPreviewCtx = { url, name: nama||'dokumen.pdf' };
+    docPdfEnsureStyle();
+    const body=document.getElementById('pn-preview-body');
+    if(body) body.classList.add('doc-pdf-mode');
+    ifr.removeAttribute('srcdoc');
+    ifr.src=url;
+    return true;
+  }catch(e){
+    if(e && e.name==='AbortError') console.warn('docPdfUpgrade: render PDF melebihi batas waktu');
+    else console.warn('docPdfUpgrade:', e);
+    return false;
+  }finally{
+    if(tmr) clearTimeout(tmr);
+    docPdfBusyOff();
+  }
 }
 function pnPreviewResetMaxBtn(){
   const lbl=document.getElementById('pn-preview-max-label'); if(lbl) lbl.textContent='Perbesar';
@@ -9481,7 +9752,7 @@ async function dpengPreview(recId, key){
   try{
     const raw=await dpengStorageGet(d.path);
     if(!raw){ if(bodyEl) bodyEl.innerHTML=dpengPreviewFallbackHtml(recId,d,'Berkas tidak ditemukan di penyimpanan.'); return; }
-    const mime=d.mime||raw.type||'application/octet-stream';
+    const mime=fkNormMime(d.nama_file, d.mime||raw.type);
     const blob=(raw.type===mime)?raw:new Blob([raw],{type:mime});
     const url=URL.createObjectURL(blob);
     pnPreviewCtx={url, name:d.nama_file||'file'};
@@ -10352,7 +10623,7 @@ async function materiPreview(recId){
   try{
     const raw=await dpengStorageGet(b.path);
     if(!raw){ if(bodyEl) bodyEl.innerHTML=materiPreviewFallbackHtml(recId,b,'Berkas tidak ditemukan di penyimpanan.'); return; }
-    const mime=b.mime||raw.type||'application/octet-stream';
+    const mime=fkNormMime(b.nama_file, b.mime||raw.type);
     const blob=(raw.type===mime)?raw:new Blob([raw],{type:mime});
     const url=URL.createObjectURL(blob);
     pnPreviewCtx={url, name:b.nama_file||'file'};
@@ -11902,6 +12173,7 @@ function fklOpenPreview(){
     const ifr=document.getElementById('fkl-preview-frame');
     const doc=ifr.contentWindow.document;
     doc.open(); doc.write(fklStandaloneDocHtml()); doc.close();
+    docPdfUpgrade('fkl-preview-frame', fklStandaloneDocHtml, 'Form Pemeriksaan Kelengkapan Dokumen.pdf');
   }
   /* Tombol aksi pada header pratinjau: sisipkan tombol Cetak khusus FKL bila belum ada */
   const actions=document.querySelector('#pn-preview-overlay .pn-preview-head-actions');
@@ -13254,6 +13526,7 @@ function pnwOpenPreview(){
     body.innerHTML='<iframe id="pnw-preview-frame" title="Pratinjau Dokumen"></iframe>';
     const ifr=document.getElementById('pnw-preview-frame');
     const doc=ifr.contentWindow.document; doc.open(); doc.write(pnwStandaloneDocHtml()); doc.close();
+    docPdfUpgrade('pnw-preview-frame', pnwStandaloneDocHtml, 'Form Pembukaan Penawaran.pdf');
   }
   const actions=document.querySelector('#pn-preview-overlay .pn-preview-head-actions');
   { const _c=document.getElementById('hpsc-preview-print'); if(_c) _c.remove(); }
@@ -14273,6 +14546,7 @@ function rhoOpenPreview(){
     body.innerHTML='<iframe id="rho-preview-frame" title="Pratinjau Dokumen"></iframe>';
     const ifr=document.getElementById('rho-preview-frame');
     const doc=ifr.contentWindow.document; doc.open(); doc.write(rhoStandaloneDocHtml()); doc.close();
+    docPdfUpgrade('rho-preview-frame', rhoStandaloneDocHtml, 'Referensi Harga Online.pdf');
   }
   const actions=document.querySelector('#pn-preview-overlay .pn-preview-head-actions');
   { const _c=document.getElementById('hpsc-preview-print'); if(_c) _c.remove(); }
@@ -16207,6 +16481,7 @@ function hpsOpenPreview(){
     body.innerHTML='<iframe id="hps-preview-frame" title="Pratinjau Dokumen"></iframe>';
     const ifr=document.getElementById('hps-preview-frame');
     const doc=ifr.contentWindow.document; doc.open(); doc.write(hpsStandaloneDocHtml()); doc.close();
+    docPdfUpgrade('hps-preview-frame', hpsStandaloneDocHtml, 'Perhitungan HPS.pdf');
   }
   const actions=document.querySelector('#pn-preview-overlay .pn-preview-head-actions');
   { const _c=document.getElementById('hpsc-preview-print'); if(_c) _c.remove(); }
@@ -17884,6 +18159,7 @@ function anaOpenPreview(section){
     body.innerHTML=tabsHtml+'<iframe id="ana-preview-frame" title="Pratinjau Dokumen"></iframe>';
     const ifr=document.getElementById('ana-preview-frame');
     const doc=ifr.contentWindow.document; doc.open(); doc.write(anaStandaloneDocHtml(anaPreviewSection)); doc.close();
+    docPdfUpgrade('ana-preview-frame', ()=>anaStandaloneDocHtml(anaPreviewSection), 'Analisa Harga Satuan.pdf');
   }
   const actions=document.querySelector('#pn-preview-overlay .pn-preview-head-actions');
   { const _c=document.getElementById('hpsc-preview-print'); if(_c) _c.remove(); }
@@ -18411,6 +18687,7 @@ function hpscOpenPreview(html, nama){
     body.innerHTML='<iframe id="hpsc-preview-frame" title="Pratinjau HPS"></iframe>';
     const ifr=document.getElementById('hpsc-preview-frame');
     const doc=ifr.contentWindow.document; doc.open(); doc.write(html); doc.close();
+    docPdfUpgrade('hpsc-preview-frame', ()=>html, 'Rekap HPS - '+(nama||'')+'.pdf');
   }
   // Tombol cetak modul lain dibersihkan agar tidak muncul dua tombol berdampingan
   const actions=document.querySelector('#pn-preview-overlay .pn-preview-head-actions');
@@ -18666,7 +18943,7 @@ resetLoginForm();
   const lastActiveAt=parseInt(ssGet(LAST_ACTIVE_KEY)||'0',10);
   const tooOldSession = loginAt>0 && (now-loginAt) > SESSION_MAX_MS;
   const tooLongIdle = IDLE_LOGOUT_ENABLED && lastActiveAt>0 && (now-lastActiveAt) > IDLE_LIMIT_MS;
-  const hasRole = (role==='admin' || role==='guest');
+  const hasRole = (role==='admin' || role==='user' || role==='guest');
   if(hasRole && !tooOldSession && !tooLongIdle){
     currentUsername = uname || null;
     // Refresh: kembali ke halaman terakhir (data di halaman itu di-refresh), bukan ke dashboard.
@@ -18677,7 +18954,7 @@ resetLoginForm();
       // Masuk aplikasi dulu (tanpa pindah halaman), lalu pulihkan form dari draft
       // sehingga data yang sedang diketik / diubah TIDAK hilang saat refresh.
       enterApp(role, 'dashboard');
-      const canInput = (role==='admin');
+      const canInput = (role!=='guest');
       if(canInput && draft && draft.kind===view && restoreDraft(draft)){
         // berhasil dipulihkan (termasuk mode Ubah Data)
       }else{
@@ -18689,14 +18966,14 @@ resetLoginForm();
       // Akun TAMU hanya boleh berada di Dashboard & Monitoring — halaman lain
       // (mis. Dokumen) tidak boleh ikut dipulihkan setelah refresh.
       const guestAllowed=['dashboard','list','list-pl','list-tender','track-view'];
-      const pool = (role==='guest') ? guestAllowed : allowed;
+      const pool = (role==='guest') ? guestAllowed : allowed;   // admin & user memakai daftar yang sama
       const target = pool.includes(view) ? view : 'dashboard';
       enterApp(role, target);   // langsung masuk aplikasi tanpa login ulang (filter default)
     }
   }else{
     if(hasRole && (tooOldSession || tooLongIdle)){
       // Sesi lama yang sudah kedaluwarsa → bersihkan & beri tahu, jangan dipulihkan diam-diam
-      ssDel(ROLE_KEY); ssDel(USER_KEY); ssDel(VIEW_KEY); ssDel(DRAFT_KEY); ssDel(LOGIN_TIME_KEY); ssDel(LAST_ACTIVE_KEY); ssDel(TOKEN_KEY);
+      ssDel(ROLE_KEY); ssDel(USER_KEY); ssDel(VIEW_KEY); ssDel(DRAFT_KEY); ssDel(LOGIN_TIME_KEY); ssDel(LAST_ACTIVE_KEY); ssDel(TOKEN_KEY); ssDel(BIDANG_KEY);
       setTimeout(()=>toast('Sesi sebelumnya sudah berakhir, silakan masuk kembali','warn'), 350);
     }
     currentRole=null; currentUsername=null;   // belum ada sesi / sesi kedaluwarsa → tampilkan layar login
