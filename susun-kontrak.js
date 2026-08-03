@@ -2565,7 +2565,7 @@ function renderSpkSusun(){
         '<span style="display:flex;gap:10px">'+
           '<button class="btn btn-red" onclick="spkBatalClick()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg> Batal</button>'+
           '<button class="btn btn-teal" onclick="spkPreviewCurrent()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg> Pratinjau / Cetak</button>'+
-          '<button class="btn btn-green" onclick="spkSaveKontrak()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> '+(spkEditId?'Simpan Perubahan':'Simpan Kontrak')+'</button>'+
+          '<button class="btn btn-green" onclick="spkSaveKontrak()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> '+'Simpan'+'</button>'+
         '</span>'+
       '</div>';
     spkLampRenderSummary();
@@ -3329,10 +3329,10 @@ function spkDocCss(){
      Rekap HPS agar terlihat rapi seperti hasil cetak. Blok ini HANYA berlaku di
      layar; saat mencetak, margin diatur oleh @page sehingga tidak berlipat. */
   '@media screen{'+
-    'html,body{background:#54585c}'+
-    'body{margin:0;padding:24px 0}'+
+    'html,body{background:#e9eef1}'+
+    'body{margin:0;padding:8px 0}'+
     '.spk-doc{margin:0 auto}'+
-    '.spk-page{width:210mm;height:297mm;min-height:297mm;background:#fff;margin:0 auto 22px;padding:25.4mm;box-shadow:0 8px 30px rgba(10,20,28,.34);overflow:hidden}'+
+    '.spk-page{width:210mm;height:297mm;min-height:297mm;background:#fff;margin:0 auto 16px;padding:25.4mm;box-shadow:0 10px 30px rgba(20,50,60,.18);overflow:hidden}'+
     /* Lembar TABEL Lampiran SPK: margin lebih rapat supaya kolom-kolom harga muat */
     /* Cover (SPK & Lampiran) memakai margin yang sama dengan lembar tabel Lampiran:
        12mm atas/bawah, 15mm kiri/kanan — desain cover butuh bidang lebih lebar.
@@ -3801,9 +3801,9 @@ function spkDocCss2(){
     'font-size:var(--spk-lamp-fs) !important;line-height:var(--spk-lamp-lh) !important}'+
   /* ---------- PRATINJAU DI LAYAR (lembar A4) ---------- */
   '@media screen{'+
-    'html,body{background:#54585c;margin:0;padding:24px 0}'+
+    'html,body{background:#e9eef1;margin:0;padding:8px 0}'+
     '.spk-doc{margin:0 auto}'+
-    '.spk-page{width:210mm;height:297mm;min-height:297mm;background:#fff;margin:0 auto 22px;padding:25.4mm;box-shadow:0 8px 30px rgba(10,20,28,.34);overflow:hidden}'+
+    '.spk-page{width:210mm;height:297mm;min-height:297mm;background:#fff;margin:0 auto 16px;padding:25.4mm;box-shadow:0 10px 30px rgba(20,50,60,.18);overflow:hidden}'+
     /* Lembar TABEL Lampiran SPK: margin lebih rapat supaya kolom-kolom harga muat */
     /* Cover (SPK & Lampiran) memakai margin yang sama dengan lembar tabel Lampiran:
        12mm atas/bawah, 15mm kiri/kanan — desain cover butuh bidang lebih lebar.
@@ -3876,7 +3876,7 @@ function spkDocCss2(){
     '-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   /* ---- Jarak antar badan dokumen pada pratinjau layar (KHS) ---- */
   '@media screen{'+
-    '#spk-docs > .spk-doc + .spk-doc{margin-top:26px}'+
+    '#spk-docs > .spk-doc + .spk-doc{margin-top:16px}'+
     '#spk-docs > .spk-doc.spk-hide{display:none}'+
   '}'+
   '@media print{#spk-docs > .spk-doc.spk-hide{display:none}}';
@@ -9570,11 +9570,12 @@ function spkOpenPreview(data, klausul){
     const btn=document.createElement('button');
     btn.id='spk-preview-print'; btn.className='btn btn-teal';
     btn.style.padding='8px 14px'; btn.style.fontSize='11px';
-    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>Cetak / PDF';
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>Cetak / PDF';
     btn.onclick=function(){ spkPrint(); };
     actions.insertBefore(btn, actions.firstChild);
   }
   ov.classList.add('show');
+  pnNavAttach('fkl-preview-frame');
 }
 function spkClosePreview(){ if(typeof closePnPreview==='function') closePnPreview(); }
 /* ===== Sheet per penyedia pada pratinjau Perjanjian/Kontrak KHS ===== */
@@ -9615,6 +9616,8 @@ function spkPreviewRender(){
 function spkKhsPreviewPick(v){
   spkKhsPreviewSel = parseInt(v,10)||0;
   spkPreviewRender();
+  /* Dokumen ditulis ulang -> rel mini & perbesaran dipasang ulang */
+  try{ if(typeof pnNavAttach==='function') pnNavAttach('fkl-preview-frame'); }catch(e){}
 }
 function spkPrint(){
   const data=spkPreviewData||{}, klausul=spkPreviewKlausul||[];

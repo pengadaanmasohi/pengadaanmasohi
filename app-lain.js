@@ -293,7 +293,7 @@
     h+=acHakHtml();
     h+='<div class="ac-actions">'
       + (e?'<button class="btn ghost" type="button" onclick="acTab(\'list\')">Batal</button>':'')
-      + '<button class="btn btn-teal" type="button" onclick="acCreateAccount('+(e?'true':'false')+')">'+(e?'Simpan Perubahan':'Buat Akun')+'</button></div>';
+      + '<button class="btn btn-teal" type="button" onclick="acCreateAccount('+(e?'true':'false')+')">'+(e?'Simpan':'Buat Akun')+'</button></div>';
     h+='</div>';
     document.getElementById('ac-pane-create').innerHTML=h;
   }
