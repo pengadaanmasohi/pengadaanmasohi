@@ -6810,8 +6810,8 @@ function renderJadwalView(){
       '<td class="wrap-cell col-nama-freeze">'+fkEsc(r.nama_pekerjaan||'—')+'</td>'+
       '<td class="fkl-col-lokasi">'+fkEsc(jadwalLokasi(r)||'—')+'</td>'+
       '<td class="col-durasi">'+jadwalDurasiFull(r)+'</td>'+
-      '<td class="col-date">'+fkEsc(r.tgl_mulai?pnwDateLong(r.tgl_mulai):'—')+'</td>'+
-      '<td class="col-date">'+fkEsc(r.tgl_selesai?pnwDateLong(r.tgl_selesai):'—')+'</td>'+
+      '<td class="col-date">'+fkEsc(r.tgl_mulai?pnwDateShort(r.tgl_mulai):'—')+'</td>'+
+      '<td class="col-date">'+fkEsc(r.tgl_selesai?pnwDateShort(r.tgl_selesai):'—')+'</td>'+
       '<td class="col-aksi"><div class="action-cell">'+
         '<button class="act act-edit" title="Ubah" onclick="openJadwalKerja(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
         '<button class="act act-view" title="Lihat" onclick="jadwalPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
