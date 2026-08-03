@@ -9375,7 +9375,7 @@ function spkClauseDocHtml(data, klausul, opts){
     spkClHeadCss(_all.length, _isPkDoc)+
     '</style></head><body><div class="spk-doc'+(_isPkDoc?' spk-pk':' spk-spk')+'">'+
       spkKlItalicAsing(isi)+
-    '</div>'+spkPageScript()+fklFitScript()+'</body></html>';
+    '</div>'+spkIndentScript()+spkPageScript()+fklFitScript()+'</body></html>';
 }
 /* ---------- Badan dokumen SATU PENYEDIA (<div class="spk-doc"> ... </div>) ----------
    Dipisah dari spkDocHtml() supaya bentuk Perjanjian/Kontrak KHS dapat
@@ -9512,7 +9512,95 @@ function spkDocHtml(data, klausul){
     spkDocCss()+spkDocCss2()+
     spkClHeadCss((klausul||[]).length, _isPkDoc)+
     '</style></head><body><div id="spk-docs">'+bodies+'</div>'+
-    spkPageScript()+fklFitScript()+'</body></html>';
+    spkIndentScript()+spkPageScript()+fklFitScript()+'</body></html>';
+}
+
+/* ==================================================================
+   PENGUNCI INDEN BERTINGKAT (3 Agu 2026)
+   ------------------------------------------------------------------
+   Laporan berulang: "1.1 / 2.1 / 4.1 masuk terlalu dalam" — terukur
+   0,75 cm dari kolom teks induknya, padahal aturan (SPK_PK_LEAD_ANGKA)
+   maupun template Word (KlausulButir1 left=386 hanging=386, KlausulButir2
+   left=782 hanging=396) sama-sama menghendaki satu langkah tipis saja.
+
+   Tahap 1-5 spkPkIndentStd menghitungnya lewat rantai panjang (tingkat ->
+   deret -> induk -> lebar kotak -> lantai se-dokumen). Sudah empat kali
+   satu mata rantainya meleset untuk pola penomoran yang sedikit berbeda,
+   dan setiap tambalan hanya menutup satu pola.
+
+   Skrip ini bekerja DI DALAM dokumen yang sudah tergambar, sesaat sebelum
+   paginasi, dan tidak peduli siapa yang memasang indennya (Word, kisi CSS,
+   atau mesin perapian). Ia membaca posisi NYATA tiap penanda lewat
+   getComputedStyle, menurunkan kedalaman butir dari SILSILAH NOMORNYA, lalu
+   menulis ulang satu aturan tunggal:
+
+       tepi penanda anak = kolom teks induk + 0,15 cm
+
+   Gantungan (lebar kotak nomor) tiap butir TIDAK diubah, jadi jeda
+   nomor->teks & perataannya tetap seperti semula. Butir tingkat-1 tidak
+   pernah disentuh. Paragraf lanjutan dan blok "Label : nilai" yang tadinya
+   sejajar dengan kolom teks sebuah butir ikut digeser bersamanya, sehingga
+   tidak ada yang tertinggal.
+
+   Dipakai pratinjau, Lihat Klausul, dan Cetak/PDF (ketiganya memakai
+   spkDocHtml/spkClauseDocHtml), jadi ketiganya selalu identik. */
+function spkIndentScript(){
+  return '<scr'+'ipt>(function(){'+
+  'if(window.__spkIndentDone)return; window.__spkIndentDone=1;'+
+  'var LEAD='+SPK_PK_LEAD_ANGKA+', TOL=0.06;'+
+  'function px1cm(){var d=document.createElement("div");'+
+  ' d.style.cssText="position:absolute;visibility:hidden;left:-9999px;width:1cm";'+
+  ' document.body.appendChild(d);var w=d.getBoundingClientRect().width;'+
+  ' d.parentNode.removeChild(d);return w||37.8;}'+
+  'var PX=px1cm();'+
+  'function cm(v){return Math.round((v/PX)*1000)/1000;}'+
+  'function segs(t){if(!/^(?:[0-9]+\\.)+$/.test(t)&&!/^[0-9]+\\)$/.test(t))return null;'+
+  ' var a=t.replace(/\\)$/,".").split(".").filter(function(x){return x!=="";});return a.length?a:null;}'+
+  'function huruf(t){return /^[A-Za-z][.)]$/.test(t)||/^[ivxlcdmIVXLCDM]{2,4}[.)]$/.test(t);}'+
+  /* Kotak nomor HARUS anak pertama paragraf; kalau tidak, butir itu dilewati
+     supaya teks biasa yang kebetulan memuat <span class="n"> tak ikut digeser. */
+  'function nbox(p){var sp=p.querySelector("span.n");if(!sp)return null;'+
+  ' var k=p.firstChild;while(k&&k.nodeType===3&&!k.nodeValue.replace(/[\\s\\u00A0]/g,""))k=k.nextSibling;'+
+  ' return (k===sp)?sp:null;}'+
+  'try{'+
+  'var cls=document.querySelectorAll(".spk-cl"),c;'+
+  'for(c=0;c<cls.length;c++){'+
+    'var els=cls[c].querySelectorAll("p,.spk-kv,.spk-kvgrp"),i;'+
+    'var lvlN={},tH=1,akhir=1,kol={},geser=null;'+
+    'for(i=0;i<els.length;i++){'+
+      'var e=els[i],sp=(e.tagName==="P")?nbox(e):null;'+
+      'var st=getComputedStyle(e),ml=cm(parseFloat(st.marginLeft)||0);'+
+      'if(!sp){'+
+        /* Paragraf lanjutan / blok kv: ikut pindah bila tadinya sejajar
+           dengan kolom teks butir yang barusan digeser. */
+        'if(geser&&Math.abs(ml-geser.lama)<TOL){e.style.marginLeft=geser.baru.toFixed(2)+"cm";}'+
+        'continue;'+
+      '}'+
+      'var tok=String(sp.textContent||"").replace(/[\\s\\u00A0]+/g,"");'+
+      'var sg=segs(tok),L;'+
+      'if(sg){var kun=sg.join(".")+".",ind=sg.slice(0,-1).join(".")+".";'+
+      ' L=(sg.length>1&&lvlN[ind])?lvlN[ind]+1:1;lvlN[kun]=L;tH=L+1;akhir=L;}'+
+      'else if(huruf(tok)){L=tH;akhir=L;}'+
+      'else {L=akhir+1;}'+
+      'var ti=cm(parseFloat(st.textIndent)||0),hang=-ti;'+
+      'if(!(hang>0.01))hang=cm(sp.getBoundingClientRect().width);'+
+      'var lamaKol=ml,pen=ml+ti;'+
+      'if(L>1){'+
+        'var ik=kol[L-1],k2;'+
+        'if(ik==null){for(k2=L-2;k2>=1;k2--){if(kol[k2]!=null){ik=kol[k2];break;}}}'+
+        'if(ik!=null)pen=Math.round((ik+LEAD)*100)/100;'+
+      '}'+
+      'var baru=Math.round((pen+hang)*100)/100;'+
+      'e.style.marginLeft=baru.toFixed(2)+"cm";'+
+      'e.style.textIndent="-"+hang.toFixed(2)+"cm";'+
+      'e.style.paddingLeft="0cm";'+
+      'geser=(Math.abs(baru-lamaKol)>0.005)?{lama:lamaKol,baru:baru}:null;'+
+      'kol[L]=baru;'+
+      'for(var d in kol){if(+d>L)delete kol[d];}'+
+    '}'+
+  '}'+
+  '}catch(e){}'+
+  '})();</scr'+'ipt>';
 }
 
 /* ---------- Pratinjau & Cetak ----------
