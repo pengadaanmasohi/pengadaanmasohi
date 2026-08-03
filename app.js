@@ -11466,6 +11466,41 @@ function fklPageScript(){
     'function utuh(n){var v=sty(n,"breakInside")||sty(n,"pageBreakInside");return v==="avoid";}',
     'function halamanBaru(n){var v=sty(n,"breakBefore")||sty(n,"pageBreakBefore");return v==="page"||v==="always";}',
     /* blok yang TIDAK boleh dipecah: dipindah utuh ke lembar berikutnya */
+    /* ---------- Penjaga baris judul / sub-judul di dasar lembar ----------
+       Baris judul yang tertinggal sendirian (atau hanya ditemani satu baris
+       uraian) di dasar lembar membuat dokumen terlihat terputus: pembacanya
+       membalik halaman hanya untuk menemukan isi kelompoknya. Aturannya:
+       sebuah baris judul/sub-judul baru boleh dimulai di lembar ini bila
+       DIRINYA + dua baris uraian pertamanya masih muat. Kalau kelompoknya
+       memang lebih pendek dari dua baris, cukup seadanya — kalau tidak,
+       judul dengan satu uraian tidak akan pernah bisa ditempatkan. */
+    /* 1 = judul, 2 = sub-judul, 3 = baris uraian biasa */
+    'function tingkatBaris(tr){',
+    ' if(!tr || tr.tagName!=="TR" || !tr.classList) return 3;',
+    ' if(!tr.classList.contains("grp")) return 3;',
+    /* Baris "JUMLAH HARGA ..." pada dokumen AHSP juga memakai kelas grp,
+       tetapi ia PENUTUP kelompok — bukan pembuka. Kalau ikut dianggap judul,
+       ia justru dipaksa pindah halaman bersama dua baris di bawahnya. */
+    ' if(tr.querySelector && tr.querySelector(".tot2")) return 3;',
+    ' return tr.classList.contains("sub") ? 2 : 1;',
+    '}',
+    'function barisGrup(tr){ return tingkatBaris(tr)<3; }',
+    /* Tinggi yang harus tersisa agar baris judul ini boleh dimulai di sini:
+       dirinya sendiri + sub-judul yang langsung menempel + maksimal dua baris
+       uraian pertama. Berhenti begitu kelompok setingkat berikutnya dimulai. */
+    'function tinggiGrupMin(tr){',
+    ' var lvl=tingkatBaris(tr);',
+    ' var h=tr.getBoundingClientRect().height, n=0;',
+    ' var k=tr.nextElementSibling;',
+    ' while(k && k.tagName==="TR" && n<2){',
+    '  var l=tingkatBaris(k);',
+    '  if(l<=lvl) break;',
+    '  h+=k.getBoundingClientRect().height;',
+    '  if(l===3) n++;',
+    '  k=k.nextElementSibling;',
+    ' }',
+    ' return h+1;',
+    '}',
     'function atom(n){',
     ' if(n.nodeType!==1) return true;',
     ' var t=n.tagName;',
@@ -11512,10 +11547,18 @@ function fklPageScript(){
     ' function kosong(){ return !((body.textContent||"").replace(/[\\s\\u00A0]/g,"")) && !body.querySelector("img,table,svg"); }',
     ' function pakaiBawah(){ var k=els(body); if(!k.length) return 0; var bt=body.getBoundingClientRect().top; return k[k.length-1].getBoundingClientRect().bottom - bt; }',
     ' function sisa(){ return body.clientHeight - pakaiBawah(); }',
+    /* Sudah ada baris tabel di lembar ini? Penjaga judul HANYA berlaku bila ya.
+       Pada lembar yang baru dibuat, cangkang tabel + <thead> sudah terpasang
+       sehingga kosong() bernilai false — tanpa pemeriksaan ini penjaganya bisa
+       memicu lembar baru terus-menerus, dan bisa meninggalkan lembar berisi
+       kepala tabel tanpa satu pun baris. */
+    ' function adaBarisDiLembar(){ try{ return body.querySelectorAll("tbody tr").length>0; }catch(e){ return false; } }',
     ' function taruh(node){',
     '   if(node.nodeType===1 && halamanBaru(node) && !kosong()) mk();',
     /* judul seksi jangan sampai berdiri sendiri di dasar lembar */
     '   if(node.nodeType===1 && node.classList && node.classList.contains("fkl-sec-h") && !kosong() && sisa()<MINH) mk();',
+    /* judul/sub-judul tabel jangan tertinggal sendirian di dasar lembar */
+    '   if(node.nodeType===1 && node.tagName==="TR" && barisGrup(node) && adaBarisDiLembar() && sisa()<tinggiGrupMin(node)) mk();',
     '   var t=tgt();',
     '   t.appendChild(node);',
     '   if(!penuh()) return;',
@@ -11616,6 +11659,41 @@ function hpscPageScript(){
     'function sty(n,p){try{var c=getComputedStyle(n);return c[p]||"";}catch(e){return "";}}',
     'function utuh(n){var v=sty(n,"breakInside")||sty(n,"pageBreakInside");return v==="avoid";}',
     'function halamanBaru(n){var v=sty(n,"breakBefore")||sty(n,"pageBreakBefore");return v==="page"||v==="always";}',
+    /* ---------- Penjaga baris judul / sub-judul di dasar lembar ----------
+       Baris judul yang tertinggal sendirian (atau hanya ditemani satu baris
+       uraian) di dasar lembar membuat dokumen terlihat terputus: pembacanya
+       membalik halaman hanya untuk menemukan isi kelompoknya. Aturannya:
+       sebuah baris judul/sub-judul baru boleh dimulai di lembar ini bila
+       DIRINYA + dua baris uraian pertamanya masih muat. Kalau kelompoknya
+       memang lebih pendek dari dua baris, cukup seadanya — kalau tidak,
+       judul dengan satu uraian tidak akan pernah bisa ditempatkan. */
+    /* 1 = judul, 2 = sub-judul, 3 = baris uraian biasa */
+    'function tingkatBaris(tr){',
+    ' if(!tr || tr.tagName!=="TR" || !tr.classList) return 3;',
+    ' if(!tr.classList.contains("grp")) return 3;',
+    /* Baris "JUMLAH HARGA ..." pada dokumen AHSP juga memakai kelas grp,
+       tetapi ia PENUTUP kelompok — bukan pembuka. Kalau ikut dianggap judul,
+       ia justru dipaksa pindah halaman bersama dua baris di bawahnya. */
+    ' if(tr.querySelector && tr.querySelector(".tot2")) return 3;',
+    ' return tr.classList.contains("sub") ? 2 : 1;',
+    '}',
+    'function barisGrup(tr){ return tingkatBaris(tr)<3; }',
+    /* Tinggi yang harus tersisa agar baris judul ini boleh dimulai di sini:
+       dirinya sendiri + sub-judul yang langsung menempel + maksimal dua baris
+       uraian pertama. Berhenti begitu kelompok setingkat berikutnya dimulai. */
+    'function tinggiGrupMin(tr){',
+    ' var lvl=tingkatBaris(tr);',
+    ' var h=tr.getBoundingClientRect().height, n=0;',
+    ' var k=tr.nextElementSibling;',
+    ' while(k && k.tagName==="TR" && n<2){',
+    '  var l=tingkatBaris(k);',
+    '  if(l<=lvl) break;',
+    '  h+=k.getBoundingClientRect().height;',
+    '  if(l===3) n++;',
+    '  k=k.nextElementSibling;',
+    ' }',
+    ' return h+1;',
+    '}',
     'function atom(n){',
     ' if(n.nodeType!==1) return true;',
     ' var t=n.tagName;',
@@ -11654,9 +11732,17 @@ function hpscPageScript(){
     ' function kosong(){ return !((body.textContent||"").replace(/[\\s\\u00A0]/g,"")) && !body.querySelector("img,table,svg"); }',
     ' function pakaiBawah(){ var k=els(body); if(!k.length) return 0; var bt=body.getBoundingClientRect().top; return k[k.length-1].getBoundingClientRect().bottom - bt; }',
     ' function sisa(){ return body.clientHeight - pakaiBawah(); }',
+    /* Sudah ada baris tabel di lembar ini? Penjaga judul HANYA berlaku bila ya.
+       Pada lembar yang baru dibuat, cangkang tabel + <thead> sudah terpasang
+       sehingga kosong() bernilai false — tanpa pemeriksaan ini penjaganya bisa
+       memicu lembar baru terus-menerus, dan bisa meninggalkan lembar berisi
+       kepala tabel tanpa satu pun baris. */
+    ' function adaBarisDiLembar(){ try{ return body.querySelectorAll("tbody tr").length>0; }catch(e){ return false; } }',
     ' function taruh(node){',
     '   if(node.nodeType===1 && halamanBaru(node) && !kosong()) mk();',
     '   if(node.nodeType===1 && node.classList && node.classList.contains("fkl-sec-h") && !kosong() && sisa()<MINH) mk();',
+    /* judul/sub-judul tabel jangan tertinggal sendirian di dasar lembar */
+    '   if(node.nodeType===1 && node.tagName==="TR" && barisGrup(node) && adaBarisDiLembar() && sisa()<tinggiGrupMin(node)) mk();',
     '   var t=tgt();',
     '   t.appendChild(node);',
     '   if(!penuh()) return;',
@@ -18232,27 +18318,36 @@ function hpscBuild(dp){
   const anaS=(anaRec&&anaRec.state&&Array.isArray(anaRec.state.sumber))?anaRec.state.sumber:[];
   const rhoS=(rhoRec&&rhoRec.state&&Array.isArray(rhoRec.state.sumber))?rhoRec.state.sumber:[];
   (anaS.length?anaS:rhoS).forEach(x=>{ if(x&&String(x).trim()) refNames.push(String(x).trim()); });
-  /* Tiap bagian (cover + dokumennya) DITERBITKAN HANYA bila datanya ada — tertaut
-     ke Nama Pekerjaan yang sama. Tanpa data: cover & dokumen tidak dibuat sama sekali,
-     sehingga tidak ada lagi lembar/kertas kosong di Rekap HPS. Cover HPS (indeks +
-     Data Pekerjaan) tetap selalu tampil sebagai sampul utama. */
+  /* SUSUNAN LEMBAR REKAP HPS
+     ------------------------------------------------------------------
+     SEMUA SAMPUL SELALU TERCETAK; yang bersyarat hanya ISI dokumennya.
+
+     Alasannya praktis: berkas Rekap HPS dicetak lalu dijilid, dan
+     susunan pembatasnya harus sama untuk setiap pekerjaan. Kalau sampul
+     ikut hilang saat datanya belum ada, urutan lembar berubah-ubah antar
+     berkas dan pembatasnya tidak bisa lagi dijadikan patokan. Sampul yang
+     berdiri tanpa isi justru berguna: ia menandai bagian yang MASIH
+     KOSONG dan perlu dilengkapi.
+
+     Analisa Harga Satuan tidak punya sampul sendiri — ia bernaung di
+     bawah sampul HPS & Review Pengadaan, jadi hanya isinya yang
+     bersyarat. */
   const hasHps=!!hpsRec, hasAna=!!anaRec, hasJadwal=!!jadwalRec, hasRho=hpscRhoAdaIsi(rhoRec);
   let pages='';
-  pages+=hpscCoverIndex(dp, tglHps, nomor, {hps:hasHps, ana:hasAna, jadwal:hasJadwal, ref:hasRho}); // 1 — selalu
-  if(hasHps){
-    pages+=hpscCoverHps(dp, nomor);                                                                  // Cover Harga Perkiraan Sendiri
-    pages+=hpscCoverReview(dp, hpsTotal, refNames, (anaRec&&anaRec.state)?anaNum(anaRec.state.rok):0); // Review Pengadaan
-    pages+=hpscModulePage(hpscModuleFrag('hps', hpsRec));                                            // Dokumen Perhitungan HPS
-  }
+  /* Keempatnya true: daftar dokumen pada indeks harus mencerminkan lembar
+     yang benar-benar tercetak, dan keempat bagiannya kini selalu ada. */
+  pages+=hpscCoverIndex(dp, tglHps, nomor, {hps:true, ana:true, jadwal:true, ref:true}); // Cover HPS (indeks + Data Pekerjaan)
+
+  pages+=hpscCoverHps(dp, nomor);                                                                    // Cover Harga Perkiraan Sendiri
+  pages+=hpscCoverReview(dp, hpsTotal, refNames, (anaRec&&anaRec.state)?anaNum(anaRec.state.rok):0); // Cover Review Pengadaan
+  if(hasHps) pages+=hpscModulePage(hpscModuleFrag('hps', hpsRec));                                   // Dokumen Perhitungan HPS
   if(hasAna) pages+=hpscModulePage(hpscModuleFrag('ana', anaRec));                                   // Dokumen Analisa Harga Satuan
-  if(hasJadwal){
-    pages+=hpscCoverSimple('RENCANA PELAKSANAAN','JADWAL PENGADAAN', dp, 'Jadwal & Tahapan Proses Pengadaan'); // Cover Jadwal Pengadaan
-    pages+=hpscModulePage(hpscModuleFrag('jadwal', jadwalRec));                                      // Isi Jadwal Pengadaan
-  }
-  if(hasRho){
-    pages+=hpscCoverSimple('SUMBER HARGA','REFERENSI HARGA', dp, 'Kumpulan Referensi Harga Barang / Jasa');    // Cover Referensi Harga
-    pages+=hpscModulePage(hpscModuleFrag('rho', rhoRec));                                            // Dokumen Referensi Harga Online
-  }
+
+  pages+=hpscCoverSimple('RENCANA PELAKSANAAN','JADWAL PENGADAAN', dp, 'Jadwal & Tahapan Proses Pengadaan'); // Cover Jadwal Pengadaan
+  if(hasJadwal) pages+=hpscModulePage(hpscModuleFrag('jadwal', jadwalRec));                          // Isi Jadwal Pengadaan
+
+  pages+=hpscCoverSimple('SUMBER HARGA','REFERENSI HARGA', dp, 'Kumpulan Referensi Harga Barang / Jasa');    // Cover Referensi Harga
+  if(hasRho) pages+=hpscModulePage(hpscModuleFrag('rho', rhoRec));                                   // Dokumen Referensi Harga Online
   return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>&#8203;</title>'+
     fklDocFontLink()+'<style>'+hpscAllCss()+'</style></head><body>'+pages+
     /* Paskan dulu tabel yang lebih lebar dari kertas (HPS/Analisa), baru dipecah
