@@ -9521,11 +9521,37 @@ function spkDocHtml(data, klausul){
    Satu aturan, berlaku untuk SEMUA tingkat & SEMUA Pasal — KHUSUS bentuk
    PERJANJIAN/KONTRAK dan KHS. Surat Perintah Kerja TIDAK disentuh.
 
-     lebar kotak nomor  = nomor TERPANJANG pada tingkat itu DI SELURUH
-                          dokumen + SPK_KISI_JEDA (0,08 cm)
-     tepi penanda anak  = kolom teks induk + SPK_KISI_INDEN (0,50 cm)
-     perataan penanda   = RATA KANAN
+     lebar kotak nomor  = penanda TERPANJANG SEJENIS DI SELURUH dokumen
+                          + SPK_KISI_JEDA (= SPK_NUM_GAP 0,12 cm)
+     tepi penanda anak  = kolom teks induk + SPK_KISI_INDEN
+                          (= SPK_PK_LEAD 0,15 cm)
+     perataan penanda   = ANGKA rata KANAN, HURUF/BULLET rata KIRI
      kolom teks         = tepi penanda + lebar kotak
+
+   PENYELARASAN 3 Agu 2026 (sore) — "samakan dengan draft SPK".
+   Ketiga angka di atas diambil langsung dari Surat Perintah Kerja,
+   diukur dari Draft_SPK.pdf (pdfplumber, satuan cm dari margin kiri
+   bidang teks):
+     judul klausul   nomor berakhir 0,720  kolom teks 0,840  jeda 0,120
+     ayat tingkat-1  nomor berakhir 2,020  kolom teks 2,140  jeda 0,120
+     ayat tingkat-2  nomor berakhir 3,680  kolom teks 3,800  jeda 0,120
+     huruf a. .. m.  penanda MULAI 2,290   kolom teks 2,810
+   Turunannya: (a) jeda penanda->teks 0,12 cm — sama di semua tingkat;
+   (b) tiap tingkat menjorok 0,15 cm dari kolom teks induknya
+   (2,140+0,15 = 2,29 = tepi huruf; 2,140+0,15 = tepi kotak tingkat-2);
+   (c) nomor 1 digit & 2 digit satu deret berakhir di titik yang SAMA
+   (9.1. dan 8.10. sama-sama 2,020) — bukti penanda ANGKA rata KANAN;
+   (d) seluruh huruf a. sampai m. MULAI di 2,290 dengan kolom teks tetap
+   2,810 — bukti penanda HURUF rata KIRI di dalam kotak selebar huruf
+   terlebar.
+
+   LEBAR KOTAK DIPISAH PER JENIS PENANDA. Dulu kuncinya tingkat saja,
+   sehingga huruf "a." yang kebetulan setingkat dengan "10.1.1." ikut
+   memakai kotak selebar nomor tiga ruas (1,19 cm): glifnya terdorong
+   jauh ke kanan oleh perataan kanan dan menyisakan lubang ~1,3 cm
+   antara kolom teks induk dan huruf itu. Kini kuncinya jenis + tingkat
+   + jumlah ruas, jadi deret huruf berkotak selebar hurufnya sendiri
+   persis seperti pada SPK.
 
    Lebar kotak sengaja dihitung SE-DOKUMEN, bukan per deret. Kalau
    per deret, Pasal yang ayatnya cuma sampai 1 digit memakai kotak
@@ -9551,8 +9577,11 @@ function spkDocHtml(data, klausul){
        daftar Peraturan/Sumber Anggaran ikut bergeser;
      - paragraf lanjutan hanya diikutkan bila margin kirinya memang
        sama dengan kolom teks butir tepat di atasnya. */
-var SPK_KISI_INDEN = 0.50;   /* jarak tepi penanda anak dari kolom teks induk (cm) */
-var SPK_KISI_JEDA  = 0.08;   /* jeda nomor -> teks (cm) */
+/* Kedua ukuran ini SENGAJA merujuk konstanta milik Surat Perintah Kerja,
+   bukan angka tersendiri: begitu jorokan/jeda SPK ditala, Perjanjian/Kontrak
+   ikut berubah dan keduanya tidak bisa lagi menyimpang diam-diam. */
+var SPK_KISI_INDEN = SPK_PK_LEAD;   /* jarak tepi penanda anak dari kolom teks induk (cm) */
+var SPK_KISI_JEDA  = SPK_NUM_GAP;   /* jeda penanda -> teks (cm) */
 function spkKisiScript(){
   return '<scr'+'ipt>(function(){'+
   'if(window.__spkKisiDone)return; window.__spkKisiDone=1;'+
@@ -9579,25 +9608,41 @@ function spkKisiScript(){
      Kerja sengaja TIDAK disentuh — indennya sudah rapi. */
   /* ===== LINTASAN 1: tentukan tingkat, kelompokkan deret, kumpulkan lebar ===== */
   'for(c=0;c<cls.length;c++){'+
-    'if(cls[c].closest && cls[c].closest(".spk-kv,.spk-kvgrp")) continue;'+
+    'if(cls[c].closest && cls[c].closest(".spk-kv,.spk-kvgrp,.spk-dlist,.spk-party-h,.spk-berdasar,.spk-pknum")) continue;'+
     'var ps=cls[c].querySelectorAll("p");'+
     'var lvlN={},tH=1,akhir=1,urut=[],buka={},deret=[];'+
     'for(i=0;i<ps.length;i++){'+
       'var p=ps[i];'+
-      'if(p.closest && p.closest(".spk-kv,.spk-kvgrp")) continue;'+
+      /* PREAMBLE TIDAK PERNAH DISENTUH. Blok PIHAK (I./II.) dan daftar
+         "Berdasarkan" sudah punya penyelarasnya sendiri — spkPartyColCm() &
+         spkDlistAlign() — yang membuat kolom teks keduanya bertemu di satu
+         garis (terukur 0,54 cm pada SPK maupun PK). Kalau kisi ini ikut
+         menghitungnya, daftar "Berdasarkan" ditarik ke kolom nomor Pasal dan
+         melenceng dari blok PIHAK di atasnya (terukur 0,82 lalu 0,49 cm vs
+         0,54 cm milik PIHAK). Sama halnya blok "Label : nilai". */
+      'if(p.closest && p.closest(".spk-kv,.spk-kvgrp,.spk-dlist,.spk-party-h,.spk-berdasar,.spk-pknum")) continue;'+
       'var sp=nbox(p); if(!sp){urut.push({p:p,sp:null});continue;}'+
       'var tok=String(sp.textContent||"").replace(/[\\s\\u00A0]+/g,"");'+
       'var sg=segs(tok),L;'+
       'if(sg){var ku=sg.join(".")+".",ik=sg.slice(0,-1).join(".")+".";'+
       ' L=(sg.length>1&&lvlN[ik])?lvlN[ik]+1:1;lvlN[ku]=L;tH=L+1;akhir=L;}'+
       'else if(huruf(tok)){L=tH;akhir=L;}else{L=akhir+1;}'+
+      /* KUNCI LEBAR = JENIS + tingkat + jumlah ruas. Angka tiga ruas
+         ("10.1.1.") dan huruf ("a.") boleh berbagi tingkat yang sama, tetapi
+         TIDAK boleh berbagi lebar kotak — itulah yang dulu menyeret huruf ke
+         kotak selebar nomor. Angka juga dipisah per jumlah ruas supaya deret
+         "9.1." tidak ikut melebar demi "10.1.1." di Pasal lain. */
+      'var kun = sg ? ("N"+L+"|"+sg.length) : (huruf(tok) ? ("H"+L) : ("B"+L));'+
       'var d;for(d in buka){if(Number(d)>L)delete buka[d];}'+
       'if(!buka[L]){var ind=buka[L-1]||null;'+
       ' if(!ind){for(var k2=L-2;k2>=1;k2--){if(buka[k2]){ind=buka[k2];break;}}}'+
-      ' buka[L]={lvl:L,induk:ind,W:0,pen:0};deret.push(buka[L]);}'+
+      ' buka[L]={lvl:L,induk:ind,W:0,pen:0,kun:kun,angka:!!sg};deret.push(buka[L]);}'+
+      /* Deret campur (jarang): jenis diambil dari penanda ANGKA pertama yang
+         dijumpai, sebab lebar & perataan angka yang menentukan kolom teksnya. */
+      'if(sg && !buka[L].angka){buka[L].angka=true;buka[L].kun=kun;}'+
       'var it={p:p,sp:sp,lvl:L,g:buka[L]};urut.push(it);'+
       'var w=Math.round((alami(sp)+JED)*100)/100;'+
-      'if(!GW[L]||w>GW[L]) GW[L]=w;'+                 /* lebar TERBESAR se-dokumen */
+      'if(!GW[kun]||w>GW[kun]) GW[kun]=w;'+           /* lebar TERBESAR sejenis se-dokumen */
       'if(w>buka[L].W) buka[L].W=w;'+                 /* cadangan bila GW kosong */
     '}'+
     'if(deret.length) BOX.push({deret:deret,urut:urut});'+
@@ -9607,7 +9652,7 @@ function spkKisiScript(){
     'var deret=BOX[b].deret,urut=BOX[b].urut,g;'+
     'for(i=0;i<deret.length;i++){'+
       'g=deret[i];'+
-      'g.W=GW[g.lvl]||g.W;'+
+      'g.W=GW[g.kun]||g.W;'+
       'if(g.induk) g.pen=Math.round((g.induk.pen+g.induk.W+IND)*100)/100;'+
       'else{'+
         'var q=null,z;for(z=0;z<urut.length;z++){if(urut[z].sp&&urut[z].g===g){q=urut[z];break;}}'+
@@ -9634,7 +9679,13 @@ function spkKisiScript(){
       't.sp.style.marginLeft="0cm";'+
       't.sp.style.boxSizing="border-box";'+
       't.sp.style.display="inline-block";'+
-      't.sp.style.textAlign="right";'+
+      /* ANGKA rata KANAN supaya titik penutup "9.1." & "8.10." lurus pada satu
+         garis; HURUF/BULLET rata KIRI supaya "a." sampai "m." semuanya mulai di
+         tepi yang sama — persis draft SPK (huruf mulai 2,290 cm, kolom teks
+         2,810 cm). Konsekuensi yang disengaja & sama dengan SPK: pada deret
+         huruf, jeda ke teks ikut bentuk glif ("m." rapat, "i." lebih lega),
+         sedangkan kolom teksnya tetap satu garis. */
+      't.sp.style.textAlign = t.g.angka ? "right" : "left";'+
       't.sp.style.paddingRight=JED+"cm";'+
       't.sp.style.whiteSpace="nowrap";'+
       'geser={lama:lama,baru:kol};'+
