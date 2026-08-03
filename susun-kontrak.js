@@ -3713,27 +3713,35 @@ function spkDocCss2(){
   '.spk-sheet .fkl-doc,.spk-page .fkl-doc{padding:0;overflow:visible}'+
   /* Blok tanda tangan pada Lampiran: dua pihak (PIHAK KEDUA & PIHAK PERTAMA),
      tanggal di atas kolom PIHAK PERTAMA, nama bergaris bawah. */
-  '.spk-lampsign{page-break-before:auto;break-before:auto;padding-top:0;margin-top:13px;break-inside:avoid;page-break-inside:avoid}'+
+  /* ---- UKURAN TANDA TANGAN LAMPIRAN: SATU TOMBOL PUTAR ----
+     Blok ini sengaja TIDAK boleh mewarisi ukuran badan SPK/PK (11pt). Ia harus
+     mengikuti isi Lampiran itu sendiri, yaitu sel tabel rincian pekerjaan:
+         table.hps-doc-tbl th,td{font-size:8.7px;line-height:1.3}   (app.js)
+     Familinya sudah sama sejak awal ('Plus Jakarta Sans' dari .fkl-doc); yang
+     dulu meleset hanyalah ukurannya — 12,5px mengikuti baris "Nama Pekerjaan"
+     pada kepala Lampiran, bukan nama pekerjaan pada tabel rinciannya.
+     Ubah dua variabel di bawah bila sewaktu-waktu perlu digeser; seluruh baris
+     tanda tangan ikut menyesuaikan. */
+  '.spk-lampsign{--spk-lamp-fs:8.7px;--spk-lamp-lh:1.3;'+
+    'page-break-before:auto;break-before:auto;padding-top:0;margin-top:13px;break-inside:avoid;page-break-inside:avoid}'+
   '.spk-lampsign .spk-sign{margin-top:0}'+
-  /* Tanda tangan LAMPIRAN mengikuti font & ukuran isi lampiran (.fkl-doc):
-     'Plus Jakarta Sans' 12,5px warna #1a2b31 — sama seperti baris "Nama Pekerjaan".
-     Sebelumnya dipaksa Arial 11pt sehingga terlihat berbeda sendiri. */
   '.spk-lampsign .spk-sign td{width:50%;text-align:center;vertical-align:top;padding:4px 6px;'+
-    "font-family:'Plus Jakarta Sans','Segoe UI',sans-serif;font-size:12.5px;color:#1a2b31}"+
-  '.spk-lampsign .ttd-date{min-height:1.2em;font-size:12.5px;margin-bottom:2px;color:#22343a;font-weight:500}'+
-  /* SEMUA baris tanda tangan lampiran memakai ukuran & warna yang sama (12,5px).
+    "font-family:'Plus Jakarta Sans','Segoe UI',sans-serif;font-size:var(--spk-lamp-fs);color:#1a2b31}"+
+  '.spk-lampsign .ttd-date{min-height:1.2em;font-size:var(--spk-lamp-fs);margin-bottom:2px;color:#22343a;font-weight:500}'+
+  /* SEMUA baris tanda tangan lampiran memakai ukuran & warna yang sama.
      Sebelumnya ".role" diam-diam kena aturan bawaan HPS 'tr.ttd-row .role{font-size:12px}'
      — yang mulai berlaku sejak blok ini dipindah ke DALAM tabel — sehingga
-     "PIHAK PERTAMA" (12px) terlihat lebih kecil dari "PT PLN (Persero)" (12,5px). */
-  '.spk-lampsign .role{font-size:12.5px;font-weight:700;color:#1a2b31}'+
-  '.spk-lampsign .org{font-size:12.5px;font-weight:700;color:#1a2b31;line-height:1.4;text-wrap:balance}'+
-  '.spk-lampsign .nm{font-size:12.5px;font-weight:700;color:#1a2b31;text-decoration:underline;margin-top:78px}'+
-  '.spk-lampsign .jab{font-size:12.5px;font-weight:700;color:#1a2b31}'+
+     "PIHAK PERTAMA" terlihat lebih kecil dari "PT PLN (Persero)". */
+  '.spk-lampsign .role{font-size:var(--spk-lamp-fs);font-weight:700;color:#1a2b31}'+
+  '.spk-lampsign .org{font-size:var(--spk-lamp-fs);font-weight:700;color:#1a2b31;line-height:1.4;text-wrap:balance}'+
+  '.spk-lampsign .nm{font-size:var(--spk-lamp-fs);font-weight:700;color:#1a2b31;text-decoration:underline;margin-top:78px}'+
+  '.spk-lampsign .jab{font-size:var(--spk-lamp-fs);font-weight:700;color:#1a2b31}'+
   /* Penyeragaman TEGAS: setiap baris teks di kedua kolom tanda tangan lampiran
      (PIHAK KEDUA & PIHAK PERTAMA) memakai ukuran & tinggi baris yang sama persis,
-     apa pun aturan bawaan yang mencoba menimpanya. */
+     apa pun aturan bawaan yang mencoba menimpanya. Kekhususan (0,3,1) sengaja
+     dibuat lebih tinggi dari 'tr.ttd-row .role/.nm' (0,2,1) milik CSS HPS. */
   '.spk-lampsign .spk-sign td,'+
-  '.spk-lampsign .spk-sign td > div{font-size:12.5px;line-height:1.35}'+
+  '.spk-lampsign .spk-sign td > div{font-size:var(--spk-lamp-fs);line-height:var(--spk-lamp-lh)}'+
   /* Struktur dua baris (sg-head / sg-body) — lihat spkSignBlockHtml. Padding di
      pertemuan kedua baris dinolkan agar jarak vertikalnya persis seperti saat blok
      ini masih satu sel. */
@@ -9573,6 +9581,16 @@ function spkPreviewRender(){
   var html=spkDocHtml(data, klausul);
   SPK_KHS_ONLY=0;
   var doc=ifr.contentWindow.document; doc.open(); doc.write(html); doc.close();
+  /* Setelah pratinjau HTML tergambar, coba tingkatkan jadi PDF sungguhan lewat
+     Worker (lihat docPdfUpgrade di app.js) supaya tampil di penampil PDF bawaan
+     peramban — seragam dengan pratinjau berkas. Bila endpoint /api/pdf belum
+     tersedia, fungsi ini diam saja dan pratinjau HTML tetap dipakai. */
+  try{
+    if(typeof docPdfUpgrade==='function'){
+      var nmDok=(spkDokTitle(data)||'Dokumen')+' - '+((data&&data.nomor_kontrak)||(data&&data.nama_pekerjaan)||'');
+      docPdfUpgrade('fkl-preview-frame', function(){ return html; }, nmDok.replace(/[\\/:*?"<>|]/g,'-')+'.pdf');
+    }
+  }catch(e){ console.warn('spkPreviewRender/pdf:', e); }
 }
 /* Ganti "sheet" penyedia pada pratinjau — dokumen dibangun ulang untuk penyedia
    terpilih saja (0 = seluruh penyedia berurutan). */
