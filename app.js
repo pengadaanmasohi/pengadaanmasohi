@@ -7667,6 +7667,9 @@ async function fkPreview(modul, recordId, btn){
     if(!bodyEl) return;
     if(isPdf){ bodyEl.innerHTML='<iframe title="Pratinjau PDF"></iframe>'; bodyEl.querySelector('iframe').src=url; }
     else if(isImg){ bodyEl.innerHTML='<img alt="Pratinjau gambar">'; bodyEl.querySelector('img').src=url; }
+    else if(isXlsFile(nm, mime)){ await xlsPreviewInto(bodyEl, blob, {
+      unduh:"fkDownload('"+fkEsc(String(modul))+"','"+fkEsc(String(recordId))+"')",
+      gagal:(m)=>pnPreviewNoFileHtml(pnPreviewCtx.name, m) }); }
     else{ bodyEl.innerHTML=pnPreviewNoFileHtml(pnPreviewCtx.name,'Jenis file ini tidak dapat dipratinjau. Silakan unduh untuk membukanya.'); }
   }catch(err){ console.error('fkPreview:',err); if(bodyEl) bodyEl.innerHTML=pnPreviewNoFileHtml(m&&m.nama_file,'Gagal memuat file: '+errMsg(err)); }
   finally{ if(btn) btn.classList.remove('is-busy'); }
@@ -8421,6 +8424,9 @@ async function pnPreview(id, key){
     if(!bodyEl) return;
     if(isPdf){ bodyEl.innerHTML='<iframe title="Pratinjau PDF"></iframe>'; bodyEl.querySelector('iframe').src=url; }
     else if(isImg){ bodyEl.innerHTML='<img alt="Pratinjau gambar">'; bodyEl.querySelector('img').src=url; }
+    else if(isXlsFile(nm, mime)){ await xlsPreviewInto(bodyEl, fkB64ToBlob(f.data_base64, mime), {
+      unduh:"pnDownload('"+fkEsc(String(id))+"','"+fkEsc(String(key))+"')",
+      gagal:(m)=>pnPreviewNoFileHtml(pnPreviewCtx.name, m) }); }
     else{ bodyEl.innerHTML=pnPreviewNoFileHtml(pnPreviewCtx.name,'Jenis file ini tidak dapat dipratinjau. Silakan unduh untuk membukanya.'); }
   }catch(err){ console.error('pnPreview:',err); if(bodyEl) bodyEl.innerHTML=pnPreviewNoFileHtml(d&&d.file&&d.file.nama_file,'Gagal memuat file: '+errMsg(err)); }
 }
@@ -8440,7 +8446,13 @@ function pnPreviewToggleMax(){
       : '<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>';  // maximize
   }
 }
-function pnCleanupPreview(){ if(pnPreviewCtx && pnPreviewCtx.url){ try{ URL.revokeObjectURL(pnPreviewCtx.url); }catch(e){} } pnPreviewCtx=null; }
+function pnCleanupPreview(){ if(pnPreviewCtx && pnPreviewCtx.url){ try{ URL.revokeObjectURL(pnPreviewCtx.url); }catch(e){} } pnPreviewCtx=null;
+  /* Sisa pratinjau Excel sebelumnya dibuang di sini — kalau kelasnya
+     tertinggal, badan modal tetap memakai tata letak lembar kerja
+     (latar abu, tanpa padding) walau isinya sudah berganti PDF/gambar. */
+  const _b=document.getElementById('pn-preview-body'); if(_b) _b.classList.remove('dpeng-xls-body');
+  xlsPreviewState=null;
+}
 function pnPreviewResetMaxBtn(){
   const lbl=document.getElementById('pn-preview-max-label'); if(lbl) lbl.textContent='Perbesar';
   const icon=document.getElementById('pn-preview-max-icon');
@@ -9476,11 +9488,13 @@ async function dpengPreview(recId, key){
     const nm=String(d.nama_file||'').toLowerCase();
     const isPdf=mime.includes('pdf')||nm.endsWith('.pdf');
     const isImg=mime.indexOf('image/')===0||/\.(png|jpe?g|gif|webp|bmp)$/.test(nm);
-    const isXls=/\.(xlsx|xls|xlsm|csv)$/.test(nm) || mime.indexOf('spreadsheet')>=0 || mime.indexOf('ms-excel')>=0;
+    const isXls=isXlsFile(nm, mime);
     if(!bodyEl) return;
     if(isPdf){ bodyEl.innerHTML='<iframe title="Pratinjau PDF"></iframe>'; bodyEl.querySelector('iframe').src=url; }
     else if(isImg){ bodyEl.innerHTML='<img alt="Pratinjau gambar">'; bodyEl.querySelector('img').src=url; }
-    else if(isXls){ await dpengPreviewExcel(bodyEl, blob, recId, d); }
+    else if(isXls){ await xlsPreviewInto(bodyEl, blob, {
+      unduh:"dpengDownload('"+fkEsc(String(recId))+"','"+fkEsc((d&&d.key)||'')+"')",
+      gagal:(m)=>dpengPreviewFallbackHtml(recId,d,m) }); }
     else{ bodyEl.innerHTML=dpengPreviewFallbackHtml(recId,d,'Jenis berkas ini tidak dapat dipratinjau di peramban. Silakan unduh untuk membukanya.'); }
   }catch(err){
     console.error('dpengPreview:',err);
@@ -9501,10 +9515,33 @@ function dpengPreviewFallbackHtml(recId, d, msg){
    jadi berkas dibaca dengan SheetJS lalu dirender sebagai tabel HTML.
    Setiap sheet mendapat satu tab; tombol unduh tetap disediakan.
    ================================================================== */
-let dpengXlsState=null;   // {sheets:[{nama,html}], aktif, recId, key}
-async function dpengPreviewExcel(bodyEl, blob, recId, d){
+/* Keadaan pratinjau Excel yang sedang tampil. Satu saja, karena modal
+   pratinjau juga cuma satu.
+     sheets : [{nama, html, kosong}]
+     aktif  : indeks tab yang sedang dibuka
+     unduh  : POTONGAN onclick untuk tombol "Unduh Berkas" — beda-beda tiap
+              modul (dpengDownload / pnDownload / fkDownload / materiDownload),
+              jadi pemanggilnya yang menentukan, bukan fungsi ini. */
+let xlsPreviewState=null;
+
+/* Apakah berkas ini sebuah lembar kerja? Dipakai keempat fungsi pratinjau. */
+function isXlsFile(nama, mime){
+  const nm=String(nama||'').toLowerCase(), mm=String(mime||'').toLowerCase();
+  return /\.(xlsx|xls|xlsm|csv)$/.test(nm) ||
+         mm.indexOf('spreadsheet')>=0 || mm.indexOf('ms-excel')>=0 || mm.indexOf('csv')>=0;
+}
+
+/* Baca blob Excel -> tabel HTML per sheet, lalu tampilkan di bodyEl.
+     opt.unduh    : potongan onclick tombol unduh (WAJIB diisi pemanggil)
+     opt.gagal(m) : fungsi yang mengembalikan HTML pesan gagal milik modul
+                    tersebut, supaya tombol unduhnya tetap yang benar. */
+async function xlsPreviewInto(bodyEl, blob, opt){
+  opt=opt||{};
+  const gagal=(typeof opt.gagal==='function')
+    ? opt.gagal
+    : function(m){ return '<div class="pn-preview-nofile"><div style="margin-top:6px;font-size:11.5px">'+fkEsc(m||'')+'</div></div>'; };
   if(typeof XLSX==='undefined' || !XLSX || !XLSX.read){
-    bodyEl.innerHTML=dpengPreviewFallbackHtml(recId,d,'Pustaka pembaca Excel belum termuat. Silakan muat ulang halaman atau unduh berkasnya.');
+    bodyEl.innerHTML=gagal('Pustaka pembaca Excel belum termuat. Silakan muat ulang halaman atau unduh berkasnya.');
     return;
   }
   bodyEl.innerHTML='<div class="pn-preview-nofile">Membaca isi berkas Excel…</div>';
@@ -9513,7 +9550,7 @@ async function dpengPreviewExcel(bodyEl, blob, recId, d){
     const wb=XLSX.read(new Uint8Array(buf), {type:'array'});
     const names=(wb.SheetNames||[]).filter(Boolean);
     if(!names.length){
-      bodyEl.innerHTML=dpengPreviewFallbackHtml(recId,d,'Berkas Excel ini tidak memuat lembar kerja.');
+      bodyEl.innerHTML=gagal('Berkas Excel ini tidak memuat lembar kerja.');
       return;
     }
     const sheets=names.map(n=>{
@@ -9530,38 +9567,42 @@ async function dpengPreviewExcel(bodyEl, blob, recId, d){
       const ref=wb.Sheets[n] && wb.Sheets[n]['!ref'];
       return { nama:n, html:html, kosong:!ref };
     });
-    dpengXlsState={ sheets, aktif:0, recId:String(recId), key:(d&&d.key)||'' };
-    dpengRenderExcel(bodyEl);
+    xlsPreviewState={ sheets, aktif:0, unduh:String(opt.unduh||'') };
+    xlsRenderPreview(bodyEl);
   }catch(err){
-    console.error('dpengPreviewExcel:',err);
-    bodyEl.innerHTML=dpengPreviewFallbackHtml(recId,d,'Gagal membaca berkas Excel: '+errMsg(err));
+    console.error('xlsPreviewInto:',err);
+    bodyEl.innerHTML=gagal('Gagal membaca berkas Excel: '+errMsg(err));
   }
 }
-function dpengRenderExcel(bodyEl){
-  const st=dpengXlsState; if(!st||!bodyEl) return;
+function xlsRenderPreview(bodyEl){
+  const st=xlsPreviewState; if(!st||!bodyEl) return;
   const tabs=st.sheets.length>1
     ? '<div class="dpeng-xls-tabs">'+st.sheets.map((s,i)=>
-        '<button type="button" class="dpeng-xls-tab'+(i===st.aktif?' active':'')+'" onclick="dpengExcelTab('+i+')">'+
+        '<button type="button" class="dpeng-xls-tab'+(i===st.aktif?' active':'')+'" onclick="xlsPreviewTab('+i+')">'+
           fkEsc(s.nama)+(s.kosong?' <span class="dpeng-xls-empty">kosong</span>':'')+
         '</button>').join('')+'</div>'
     : '';
   const s=st.sheets[st.aktif]||st.sheets[0];
+  const tombol=st.unduh
+    ? '<button class="btn btn-teal btn-sm" onclick="'+st.unduh+'">'+DPENG_IC_DL+' Unduh Berkas</button>'
+    : '';
   bodyEl.classList.add('dpeng-xls-body');
   bodyEl.innerHTML=
     '<div class="dpeng-xls-wrap">'+
       tabs+
       '<div class="dpeng-xls-bar">'+
         '<span class="dpeng-xls-nama">'+fkEsc(s.nama)+'</span>'+
-        '<button class="btn btn-teal btn-sm" onclick="dpengDownload(\''+fkEsc(st.recId)+'\',\''+fkEsc(st.key)+'\')">'+DPENG_IC_DL+' Unduh Berkas</button>'+
+        tombol+
       '</div>'+
       '<div class="dpeng-xls-scroll">'+(s.kosong?'<div class="dpeng-xls-blank">Lembar ini kosong.</div>':s.html)+'</div>'+
     '</div>';
 }
-function dpengExcelTab(i){
-  if(!dpengXlsState) return;
-  dpengXlsState.aktif=i;
-  dpengRenderExcel(document.getElementById('pn-preview-body'));
+function xlsPreviewTab(i){
+  if(!xlsPreviewState) return;
+  xlsPreviewState.aktif=i;
+  xlsRenderPreview(document.getElementById('pn-preview-body'));
 }
+
 /* Bersihkan sisa pratinjau Excel saat modal ditutup — closePnPreview milik
    modul lain, jadi dibungkus alih-alih diubah agar tidak mengganggu pemakai
    lainnya. */
@@ -9572,7 +9613,7 @@ function dpengExcelTab(i){
     asli.apply(this, arguments);
     const b=document.getElementById('pn-preview-body');
     if(b) b.classList.remove('dpeng-xls-body');
-    dpengXlsState=null;
+    xlsPreviewState=null;
   };
 })();
 async function dpengDownload(recId, key){
@@ -10321,6 +10362,9 @@ async function materiPreview(recId){
     if(!bodyEl) return;
     if(isPdf){ bodyEl.innerHTML='<iframe title="Pratinjau PDF"></iframe>'; bodyEl.querySelector('iframe').src=url; }
     else if(isImg){ bodyEl.innerHTML='<img alt="Pratinjau gambar">'; bodyEl.querySelector('img').src=url; }
+    else if(isXlsFile(nm, mime)){ await xlsPreviewInto(bodyEl, blob, {
+      unduh:"materiDownload('"+fkEsc(String(recId))+"')",
+      gagal:(m)=>materiPreviewFallbackHtml(recId,b,m) }); }
     else{ bodyEl.innerHTML=materiPreviewFallbackHtml(recId,b,'Jenis berkas ini tidak dapat dipratinjau di peramban. Silakan unduh untuk membukanya.'); }
   }catch(err){
     console.error('materiPreview:',err);

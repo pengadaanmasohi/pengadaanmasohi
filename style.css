@@ -5701,7 +5701,11 @@ table tfoot tr:hover td{ background:inherit !important; color:inherit; }
 /* ===== Pratinjau Excel (Dokumen Pengadaan) =====
    Isi .xlsx dibaca SheetJS lalu dirender sebagai tabel. Kolom & baris dibuat
    ringkas agar BoQ yang lebar tetap terbaca; area tabel bergulir dua arah. */
-.pn-preview-body.dpeng-xls-body{display:block;background:#eef2f4;padding:0;overflow:hidden}
+/* `:not(.fkl-preview-body)` = pengaman: pratinjau DOKUMEN (HPS, Analisa,
+   SPK, dsb.) selalu memasang .fkl-preview-body. Bila kelas Excel sempat
+   tertinggal dari pratinjau sebelumnya, aturan ini otomatis mundur
+   sehingga dokumennya tidak ikut memakai tata letak lembar kerja. */
+.pn-preview-body.dpeng-xls-body:not(.fkl-preview-body){display:block;background:#eef2f4;padding:0;overflow:hidden}
 .dpeng-xls-wrap{display:flex;flex-direction:column;height:74vh;min-height:0}
 .pn-preview-modal.is-max .dpeng-xls-wrap{height:calc(100vh - 62px)}
 @media(max-width:640px){ .dpeng-xls-wrap{height:64vh} }
@@ -8354,55 +8358,22 @@ tbody tr{transition:background-color .14s linear}
 
 
 /* ============================================================
-   30. RAIL SIDEBAR: IKON LEBIH KECIL + ANAK PANAH "BUKA PENUH"
+   30. RAIL SIDEBAR: IKON LEBIH KECIL
    ------------------------------------------------------------
-   Meniru laci ikon tersembunyi di Android/iOS:
+   Meniru laci ikon tersembunyi di Android/iOS: rail menyempit
+   76px -> 70px, kotak ikon 46x44 -> 34x34, dan gambar ikonnya
+   sendiri 18px -> 15px. Kepala (logo) & tombol Keluar ikut
+   mengecil supaya iramanya sama.
 
-     - Rail menyempit 76px -> 70px, kotak ikon 46x44 -> 34x34, dan
-       gambar ikonnya sendiri 18px -> 15px. Kepala (logo) & tombol
-       Keluar ikut mengecil supaya iramanya sama.
+   (Ukuran itu dinaikkan lagi di bagian 33; lebar rail sendiri
+   ditetapkan ulang jadi 72px di bagian 32.)
 
-     - Di TEPI KANAN rail ada gagang ramping berisi anak panah "›".
-       Fungsinya dua: (1) memberi tahu bahwa sidebar masih bisa
-       dibuka penuh — tanpa itu rail ikon terlihat seperti tembok
-       mati; (2) diklik untuk MENGUNCI sidebar tetap terbuka
-       (kelas .is-pinned), diklik lagi untuk mengembalikannya jadi
-       rail. Saat terbuka, panahnya berputar jadi "‹".
-
-   Catatan teknis: `.sidebar-shell` ber-`overflow:hidden` (bagian 26,
-   demi garis aksen beranimasi), jadi gagang ini WAJIB berada di
-   DALAM tepi rail — bukan menonjol keluar seperti tab. Lebar 12px
-   pada x = 53..65 sehingga tidak pernah bertabrakan dengan kotak
-   ikon (x = 18..52) maupun garis aksen 3px di x = 67..70.
+   Rail tidak memakai gagang/anak panah apa pun — satu-satunya
+   cara melebarkannya adalah mendekatkan kursor (desktop) atau
+   mengetuknya (tablet), lihat ui-sidebar.js bagian 1a & 1e.
    ============================================================ */
 :root{ --side-rail:70px }
 
-/* ---------- gagang anak panah ---------- */
-.side-peek{
-  position:absolute; right:5px; top:50%; margin-top:-23px;
-  width:12px; height:46px; padding:0; border:none; cursor:pointer;
-  display:flex; align-items:center; justify-content:center;
-  border-radius:7px; z-index:4;
-  background:rgba(255,255,255,.14);
-  color:rgba(255,255,255,.92);
-  font:inherit;
-  transition:background .16s ease, color .16s ease, width .16s ease;
-}
-.side-peek svg{ width:11px; height:11px; display:block; transition:transform .2s ease }
-.side-peek:hover{ background:rgba(255,255,255,.30); color:#fff }
-.side-peek:active{ background:rgba(255,255,255,.38) }
-.side-peek:focus-visible{ outline:2px solid #fff; outline-offset:2px }
-/* Terbuka -> panah berbalik arah */
-.sidebar-shell.is-open .side-peek svg{ transform:rotate(180deg) }
-/* Terkunci -> ditandai kuning, senada penanda menu aktif */
-.sidebar-shell.is-pinned .side-peek{
-  background:var(--yellow); color:#073f45;
-}
-.sidebar-shell.is-pinned .side-peek:hover{ background:#ffd35a }
-/* Sidebar terkunci tidak boleh menciut walau kursor pergi */
-.sidebar-shell.is-pinned{ width:var(--side-w) !important }
-/* Laci geser (ponsel) tidak memakai gagang ini */
-html:not(.mode-rail) .side-peek{ display:none }
 
 /* ---------- ukuran isi rail saat menciut ---------- */
 @media (hover:hover) and (min-width:1025px){
@@ -8514,13 +8485,10 @@ html.mode-rail:not(.sentuh) .sidebar-shell:not(.is-open) #topnav .topnav-trigger
 }
 
 /* --- Penanda keadaan dikuatkan ulang ---
-   Aturan menyeluruh di atas memakai !important, jadi dua penanda
-   arah ini harus ikut !important agar tetap berputar saat kursor
+   Aturan menyeluruh di atas memakai !important, jadi penanda arah
+   ini harus ikut !important agar tetap berputar saat kursor
    kebetulan berada tepat di atasnya. */
 #topnav .topnav-sub.open > .topnav-subtrigger .caret2{
-  transform:rotate(180deg) !important;
-}
-.sidebar-shell.is-open .side-peek svg{
   transform:rotate(180deg) !important;
 }
 
@@ -8554,16 +8522,11 @@ html.mode-rail:not(.sentuh) .sidebar-shell:not(.is-open) #topnav .topnav-trigger
    Kotak logo ikut disamakan 30px -> 34px supaya lebarnya sebaris
    dengan ikon menu & tombol Keluar.
 
-   Rail 70px -> 72px. Alasannya: begitu ikon menu bergeser ke tengah
-   yang benar, ujung kanannya jatuh di x=52 sedangkan gagang panah
-   mulai di x=53 — hanya bersisa 1px. Dengan 72px ikon berhenti di
-   x=53 dan gagang mulai di x=57, kembali berjarak 4px.
+   Rail 70px -> 72px supaya ikon yang sudah terpusat benar tetap
+   berjarak wajar dari garis aksen 3px di tepi kanan. Lebar ini
+   dipertahankan karena bagian 33 menaikkan kotak ikon jadi 38px.
    ============================================================ */
 :root{ --side-rail:72px }
-
-/* Gagang panah digeser mengikuti rail baru (72 - 3 - 12 = x 57..69,
-   tepat bersambung dengan garis aksen 3px di x 69..72) */
-.side-peek{ right:3px }
 
 /* ---------- rail menciut: tanpa gutter, tanpa batang gulir ---------- */
 .sidebar-shell:not(.is-open) #topnav,
@@ -8587,149 +8550,7 @@ html.mode-rail .sidebar-shell:not(.is-open) .topbar-brand .logo{
 
 
 /* ============================================================
-   33. GAGANG ANAK PANAH — DI LUAR RAIL & HILANG SAAT TERBUKA
-   ------------------------------------------------------------
-   Bagian 30 dulu menaruh gagang DI DALAM tepi rail (right:3px)
-   karena `.sidebar-shell` ber-`overflow:hidden` (bagian 26a) —
-   apa pun yang menonjol keluar akan terpotong.
-
-   Sekarang gagangnya DIPINDAH KELUAR dari sidebar: ui-sidebar.js
-   menyisipkannya sebagai SAUDARA `#sidebar-shell` (bukan anak),
-   lalu di sini diletakkan dengan `position:fixed` pada
-   x = --side-rail, yaitu tepat di garis tepi kanan rail. Karena
-   bukan anak sidebar lagi, `overflow:hidden` tidak menyentuhnya
-   sama sekali — gagangnya benar-benar menonjol keluar seperti
-   lidah penanda buku.
-
-   Bentuknya: kapsul separuh (sisi kiri rata menempel rail, sisi
-   kanan membulat penuh), berlapis gradien senada sidebar dengan
-   garis tipis cahaya di tepinya. Anak panah bergeser sedikit ke
-   kanan saat disorot supaya terasa "mengajak".
-
-   Saat sidebar TERBUKA (disorot kursor / dikunci), gagangnya
-   memudar dan menyusut ke kiri lalu hilang — petunjuk arah sudah
-   tidak diperlukan ketika menunya sudah terbaca penuh.
-   ============================================================ */
-
-/* ---------- posisi: menempel di tepi luar rail ---------- */
-.side-peek{
-  position:fixed;
-  left:calc(var(--side-rail) - 1px);   /* -1px: menindih garis aksen, tanpa celah */
-  right:auto;
-  top:50%;
-  margin-top:0;
-  transform:translateY(-50%);
-  transform-origin:left center;
-
-  width:19px; height:62px;
-  padding:0 2px 0 0;                   /* panah sedikit menepi ke kanan */
-  border:1px solid rgba(255,255,255,.16);
-  border-left:0;
-  border-radius:0 999px 999px 0;       /* kapsul separuh */
-  z-index:69;                          /* sidebar 70 -> tertimpa rapi saat melebar */
-
-  display:flex; align-items:center; justify-content:center;
-  cursor:pointer; font:inherit;
-
-  background:
-    linear-gradient(135deg, rgba(20,131,143,.97) 0%, rgba(9,74,84,.97) 55%, rgba(7,63,69,.97) 100%);
-  color:rgba(255,255,255,.94);
-  box-shadow:
-    4px 0 16px rgba(5,32,36,.30),
-    inset 0 1px 0 rgba(255,255,255,.14),
-    inset 0 -1px 0 rgba(0,0,0,.14);
-
-  transition:
-    width .18s cubic-bezier(.16,1,.3,1),
-    background .18s ease,
-    box-shadow .18s ease,
-    opacity .20s ease,
-    transform .22s cubic-bezier(.16,1,.3,1),
-    visibility 0s linear 0s;
-}
-
-/* Bilah cahaya tipis di sisi dalam: menyambungkan gagang dengan
-   garis aksen sidebar supaya terlihat menyatu, bukan menempel. */
-.side-peek::before{
-  content:"";
-  position:absolute; left:0; top:9px; bottom:9px; width:2px;
-  border-radius:2px;
-  background:linear-gradient(180deg, var(--yellow), var(--cyan));
-  opacity:.55;
-  transition:opacity .18s ease;
-}
-
-.side-peek svg{
-  width:12px; height:12px; display:block;
-  transform:none;                       /* tidak lagi berputar: terbuka = hilang */
-  transition:transform .18s cubic-bezier(.16,1,.3,1);
-}
-
-/* ---------- disorot & ditekan ---------- */
-.side-peek:hover{
-  width:24px;
-  background:
-    linear-gradient(135deg, rgba(28,163,177,.99) 0%, rgba(13,102,112,.99) 55%, rgba(9,74,84,.99) 100%);
-  color:#fff;
-  box-shadow:
-    6px 0 22px rgba(5,32,36,.38),
-    inset 0 1px 0 rgba(255,255,255,.22),
-    inset 0 -1px 0 rgba(0,0,0,.16);
-}
-.side-peek:hover::before{ opacity:1 }
-.side-peek:hover svg{ transform:translateX(2px) }
-
-.side-peek:active{
-  width:22px;
-  box-shadow:
-    2px 0 10px rgba(5,32,36,.34),
-    inset 0 1px 0 rgba(255,255,255,.10);
-}
-.side-peek:focus-visible{
-  outline:2px solid var(--yellow);
-  outline-offset:2px;
-}
-
-/* ---------- denyut halus: menarik mata tanpa berisik ---------- */
-@keyframes peekNudge{
-  0%,88%,100%{ transform:translateX(0) }
-  93%        { transform:translateX(2px) }
-}
-.side-peek svg{ animation:peekNudge 5.5s ease-in-out infinite }
-.side-peek:hover svg{ animation:none }
-@media (prefers-reduced-motion:reduce){
-  .side-peek svg{ animation:none }
-  .side-peek{ transition:opacity .12s linear, visibility 0s linear 0s }
-}
-
-/* ---------- SIDEBAR TERBUKA -> GAGANG HILANG ----------
-   Gagang kini SAUDARA sidebar, jadi dipilih lewat `~` (bukan
-   keturunan). `visibility` ikut diatur agar tidak bisa disorot
-   maupun difokuskan Tab saat sudah tak terlihat. */
-.sidebar-shell.is-open ~ .side-peek,
-.sidebar-shell.is-pinned ~ .side-peek{
-  opacity:0;
-  visibility:hidden;
-  pointer-events:none;
-  transform:translateY(-50%) translateX(-12px) scaleX(.55);
-  transition:
-    opacity .16s ease,
-    transform .20s cubic-bezier(.16,1,.3,1),
-    visibility 0s linear .20s;
-}
-
-/* Aturan lama bagian 30/31 memutar panah 180° saat terbuka —
-   sudah tidak berlaku karena gagangnya bukan keturunan sidebar
-   lagi, tetapi ditulis ulang di sini supaya niatnya jelas bila
-   suatu saat strukturnya dikembalikan. */
-.sidebar-shell.is-open .side-peek svg{ transform:none !important }
-
-/* Laci geser (ponsel) tetap tidak memakai gagang ini */
-html:not(.mode-rail) .side-peek{ display:none !important }
-
-
-/* ============================================================
-   34. RAIL MENCIUT: IKON SEDIKIT DIPERBESAR
+   33. RAIL MENCIUT: IKON SEDIKIT DIPERBESAR
    ------------------------------------------------------------
    Bagian 30 mengecilkan isi rail (kotak 34px, gambar ikon 15px)
    ketika lebar rail masih 76px. Sesudah bagian 32 memperbaiki
@@ -8742,10 +8563,10 @@ html:not(.mode-rail) .side-peek{ display:none !important }
        tombol Keluar 34 -> 38   (gambar 14 -> 16)
 
    Kenapa berhenti di 38: kotak selebar itu terpusat pada rail
-   72px jatuh di x = 17..55, sedangkan gagang anak panah mulai di
-   x = 71 dan garis aksen 3px di x = 69..72 — masih tersisa 14px
-   ruang bernapas. Angka 40 akan menyisakan 12px dan mulai terasa
-   sesak; 42 sudah bersinggungan dengan garis aksen.
+   72px jatuh di x = 17..55, sedangkan garis aksen 3px ada di
+   x = 69..72 — masih tersisa 14px ruang bernapas. Angka 40 akan
+   menyisakan 12px dan mulai terasa sesak; 42 sudah bersinggungan
+   dengan garis aksen.
 
    Ditulis untuk KEDUA jalur yang dipakai bagian 30 (media query
    perangkat berkursor DAN html.mode-rail untuk tablet sentuh),
@@ -8787,3 +8608,95 @@ html.mode-rail .sidebar-shell:not(.is-open) .side-logout svg{ width:16px; height
   .sidebar-shell:not(.is-open) #topnav{ padding:10px 0 12px; gap:3px }
 }
 html.mode-rail .sidebar-shell:not(.is-open) #topnav{ padding:10px 0 12px; gap:3px }
+
+
+/* ============================================================
+   34. RAIL MENCIUT: ISYARAT "MASIH BISA DILEBARKAN"
+   ------------------------------------------------------------
+   Rail ikon yang diam tampak seperti tembok mati — tidak ada
+   satu pun tanda bahwa ia menyimpan nama menu di baliknya.
+   Percobaan sebelumnya memakai gagang anak panah MENONJOL di
+   luar tepi rail; bentuk itu dibuang karena menempel seperti
+   tempelan asing pada sidebar yang selebihnya rata.
+
+   Penggantinya tiga isyarat halus, semuanya DI DALAM rail:
+
+   34a. Pegangan tiga titik di tepi kanan
+        Bahasa rupa yang sudah dikenal luas (pegangan geser di
+        panel, baris yang bisa diseret). Selalu tampak saat rail
+        menciut, tetapi sangat samar — dan bernapas pelan supaya
+        mata sempat menangkapnya tanpa merasa diteriaki.
+        Letaknya x = 61..64: bersih dari kotak ikon (berhenti di
+        x = 55) maupun garis aksen (x = 69..72).
+
+   34b. Bentuk kursor
+        Rail memakai `e-resize` — panah dua arah mendatar. Ini
+        isyarat paling jujur: kursornya sendiri yang mengatakan
+        "benda ini melebar ke samping". Tombol menu tetap
+        `pointer` supaya tidak ikut tertukar maknanya.
+
+   34c. Ajakan sekali per sesi
+        Sesudah halaman tenang, rail melebar sedikit lalu kembali
+        — dua kali, seperti laci yang menyembul. Satu gerakan
+        singkat mengajarkan lebih banyak daripada ikon apa pun,
+        dan karena hanya sekali per sesi ia tidak pernah menjadi
+        gangguan. Kelas .rail-ajak dipasang ui-sidebar.js.
+
+   Ketiganya padam begitu sidebar terbuka, dan tidak berlaku pada
+   mode laci geser (ponsel) yang memang punya tombol ☰ sendiri.
+   ============================================================ */
+
+/* ---------- 34a. pegangan tiga titik ---------- */
+.sidebar-shell::before{
+  content:"";
+  position:absolute; right:8px; top:50%;
+  width:3px; height:27px; margin-top:-13.5px;   /* 27 / 9 = tepat 3 titik */
+  pointer-events:none; z-index:3;
+  background-image:radial-gradient(circle at 50% 1.5px, rgba(255,255,255,.92) 1.4px, transparent 1.7px);
+  background-size:3px 9px;
+  background-repeat:repeat-y;
+  opacity:.30;
+  transition:opacity .22s ease;
+  animation:railGripNapas 3.6s ease-in-out infinite;
+}
+@keyframes railGripNapas{
+  0%,100%{ opacity:.26 }
+  50%    { opacity:.58 }
+}
+/* Terbuka -> isyarat tidak diperlukan lagi */
+.sidebar-shell.is-open::before{ opacity:0; animation:none }
+/* Laci geser (ponsel) tidak memakai rail sama sekali */
+html:not(.mode-rail) .sidebar-shell::before{ display:none }
+
+/* ---------- 34b. kursor "melebar ke samping" ---------- */
+html.mode-rail .sidebar-shell:not(.is-open){ cursor:e-resize }
+@media (hover:hover) and (min-width:1025px){
+  .sidebar-shell:not(.is-open){ cursor:e-resize }
+}
+/* Yang bisa diklik tetap bicara sebagai tombol */
+.sidebar-shell #topnav .topnav-link,
+.sidebar-shell #topnav .topnav-trigger,
+.sidebar-shell .side-logout,
+.sidebar-shell .topbar-brand{ cursor:pointer }
+
+/* ---------- 34c. ajakan sekali per sesi ---------- */
+@keyframes railAjak{
+  0%  { width:var(--side-rail) }
+  20% { width:calc(var(--side-rail) + 20px) }
+  44% { width:var(--side-rail) }
+  64% { width:calc(var(--side-rail) + 20px) }
+  100%{ width:var(--side-rail) }
+}
+.sidebar-shell.rail-ajak:not(.is-open){
+  animation:railAjak 1.9s cubic-bezier(.16,1,.3,1) both;
+}
+/* Selama mengajak, pegangannya ikut menyala supaya mata tertuju ke sana */
+.sidebar-shell.rail-ajak:not(.is-open)::before{
+  animation:none; opacity:.9;
+}
+
+/* ---------- hormati "kurangi gerak" ---------- */
+@media (prefers-reduced-motion:reduce){
+  .sidebar-shell::before{ animation:none; opacity:.42 }
+  .sidebar-shell.rail-ajak:not(.is-open){ animation:none }
+}
