@@ -1811,9 +1811,26 @@ function closeConfirm(){ document.getElementById('confirm-overlay').classList.re
       : {icon:'save', title:'Simpan Perubahan?', text:'Simpan data sesuai isian saat ini?'};
     openConfirm({icon:cfg.icon, title:cfg.title, text:cfg.text, onYes:function(){
       b.__spkConfirmed=true;
-      /* Tombol Batal: konfirmasi pembatalan susulan milik tombol itu sendiri
-         ditelan supaya tidak ada popup kedua. */
-      if(batal) __confirmSkipRe=/batal/i;
+      /* POPUP GANDA (perbaikan 3 Agu 2026) — konfirmasi susulan milik tombol itu
+         sendiri DITELAN supaya hanya modal terpusat di atas yang tampil.
+
+         Sebelumnya penelan ini hanya dipasang untuk tombol BATAL dan polanya
+         /batal/i, sehingga masih tersisa dua kelompok popup ganda:
+           - SELURUH tombol Simpan yang handler-nya memanggil openConfirm sendiri
+             ("Simpan Data" pada SPBJ/Kontrak Rinci, Pengadaan Langsung, Tender;
+             "Simpan Penyesuaian" pada Penyesuaian Form) -> 2 modal beruntun;
+           - tombol Batal yang judul konfirmasinya "Kembali" (Dokumen Pengadaan,
+             Materi & Peraturan) -> tak tertangkap pola /batal/i, juga 2 modal.
+         Modul yang handler-nya TIDAK berkonfirmasi sendiri (mis. Susun Kontrak)
+         sejak awal hanya memunculkan satu modal — itulah tampilan baku yang
+         kini berlaku untuk semua.
+
+         Pola sengaja DIJANGKARKAN ke awal judul (^) supaya modal lain yang
+         kebetulan memuat kata "simpan" di tengah judul — mis. "Kompres Foto
+         Tersimpan" — tidak ikut tertelan. Penanda ini hanya berlaku untuk SATU
+         panggilan openConfirm berikutnya (dinolkan di dalam openConfirm) dan
+         dibersihkan lagi di blok finally di bawah. */
+      __confirmSkipRe = batal ? /^(?:batal|kembali)/i : /^simpan/i;
       try{ b.click(); }
       finally{ __confirmSkipRe=null; }
     }});
