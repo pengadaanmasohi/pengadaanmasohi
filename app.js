@@ -11485,21 +11485,19 @@ function fklPageScript(){
     ' return tr.classList.contains("sub") ? 2 : 1;',
     '}',
     'function barisGrup(tr){ return tingkatBaris(tr)<3; }',
-    /* Tinggi yang harus tersisa agar baris judul ini boleh dimulai di sini:
-       dirinya sendiri + sub-judul yang langsung menempel + maksimal dua baris
-       uraian pertama. Berhenti begitu kelompok setingkat berikutnya dimulai. */
-    'function tinggiGrupMin(tr){',
-    ' var lvl=tingkatBaris(tr);',
-    ' var h=tr.getBoundingClientRect().height, n=0;',
-    ' var k=tr.nextElementSibling;',
+    /* Baris yang WAJIB menemani sebuah judul: sub-judul yang langsung menempel
+       + maksimal dua baris uraian pertama. Berhenti begitu kelompok setingkat
+       berikutnya dimulai, jadi kelompok pendek cukup dituntut seadanya. */
+    'function barisIkut(tr){',
+    ' var lvl=tingkatBaris(tr), out=[], n=0, k=tr.nextElementSibling;',
     ' while(k && k.tagName==="TR" && n<2){',
     '  var l=tingkatBaris(k);',
     '  if(l<=lvl) break;',
-    '  h+=k.getBoundingClientRect().height;',
+    '  out.push(k);',
     '  if(l===3) n++;',
     '  k=k.nextElementSibling;',
     ' }',
-    ' return h+1;',
+    ' return out;',
     '}',
     'function atom(n){',
     ' if(n.nodeType!==1) return true;',
@@ -11553,12 +11551,28 @@ function fklPageScript(){
        memicu lembar baru terus-menerus, dan bisa meninggalkan lembar berisi
        kepala tabel tanpa satu pun baris. */
     ' function adaBarisDiLembar(){ try{ return body.querySelectorAll("tbody tr").length>0; }catch(e){ return false; } }',
+    /* Muat tidak judul ini BESERTA pengiring wajibnya di sisa lembar?
+       Tingginya TIDAK diperkirakan lewat getBoundingClientRect: sisa ruang
+       yang terhitung dari situ meleset (padding lembar, sela antar baris,
+       pembulatan) sehingga judul yang sebenarnya mepet tetap dianggap muat.
+       Yang dipakai adalah ujian yang sama persis dengan pemenggal lainnya:
+       SALINAN barisnya ditempel sungguhan, penuh() ditanya, lalu salinannya
+       dibuang lagi. Salinan (bukan aslinya) supaya urutan tabel sumber tidak
+       perlu dibongkar-pasang. */
+    ' function muatGrup(node){',
+    '   var t=tgt(), ikut=barisIkut(node), sisipan=[], i, c;',
+    '   c=node.cloneNode(true); t.appendChild(c); sisipan.push(c);',
+    '   for(i=0;i<ikut.length;i++){ c=ikut[i].cloneNode(true); t.appendChild(c); sisipan.push(c); }',
+    '   var muat=!penuh();',
+    '   for(i=0;i<sisipan.length;i++){ try{ t.removeChild(sisipan[i]); }catch(e){} }',
+    '   return muat;',
+    ' }',
     ' function taruh(node){',
     '   if(node.nodeType===1 && halamanBaru(node) && !kosong()) mk();',
     /* judul seksi jangan sampai berdiri sendiri di dasar lembar */
     '   if(node.nodeType===1 && node.classList && node.classList.contains("fkl-sec-h") && !kosong() && sisa()<MINH) mk();',
     /* judul/sub-judul tabel jangan tertinggal sendirian di dasar lembar */
-    '   if(node.nodeType===1 && node.tagName==="TR" && barisGrup(node) && adaBarisDiLembar() && sisa()<tinggiGrupMin(node)) mk();',
+    '   if(node.nodeType===1 && node.tagName==="TR" && barisGrup(node) && adaBarisDiLembar() && !muatGrup(node)) mk();',
     '   var t=tgt();',
     '   t.appendChild(node);',
     '   if(!penuh()) return;',
@@ -11678,21 +11692,19 @@ function hpscPageScript(){
     ' return tr.classList.contains("sub") ? 2 : 1;',
     '}',
     'function barisGrup(tr){ return tingkatBaris(tr)<3; }',
-    /* Tinggi yang harus tersisa agar baris judul ini boleh dimulai di sini:
-       dirinya sendiri + sub-judul yang langsung menempel + maksimal dua baris
-       uraian pertama. Berhenti begitu kelompok setingkat berikutnya dimulai. */
-    'function tinggiGrupMin(tr){',
-    ' var lvl=tingkatBaris(tr);',
-    ' var h=tr.getBoundingClientRect().height, n=0;',
-    ' var k=tr.nextElementSibling;',
+    /* Baris yang WAJIB menemani sebuah judul: sub-judul yang langsung menempel
+       + maksimal dua baris uraian pertama. Berhenti begitu kelompok setingkat
+       berikutnya dimulai, jadi kelompok pendek cukup dituntut seadanya. */
+    'function barisIkut(tr){',
+    ' var lvl=tingkatBaris(tr), out=[], n=0, k=tr.nextElementSibling;',
     ' while(k && k.tagName==="TR" && n<2){',
     '  var l=tingkatBaris(k);',
     '  if(l<=lvl) break;',
-    '  h+=k.getBoundingClientRect().height;',
+    '  out.push(k);',
     '  if(l===3) n++;',
     '  k=k.nextElementSibling;',
     ' }',
-    ' return h+1;',
+    ' return out;',
     '}',
     'function atom(n){',
     ' if(n.nodeType!==1) return true;',
@@ -11738,11 +11750,27 @@ function hpscPageScript(){
        memicu lembar baru terus-menerus, dan bisa meninggalkan lembar berisi
        kepala tabel tanpa satu pun baris. */
     ' function adaBarisDiLembar(){ try{ return body.querySelectorAll("tbody tr").length>0; }catch(e){ return false; } }',
+    /* Muat tidak judul ini BESERTA pengiring wajibnya di sisa lembar?
+       Tingginya TIDAK diperkirakan lewat getBoundingClientRect: sisa ruang
+       yang terhitung dari situ meleset (padding lembar, sela antar baris,
+       pembulatan) sehingga judul yang sebenarnya mepet tetap dianggap muat.
+       Yang dipakai adalah ujian yang sama persis dengan pemenggal lainnya:
+       SALINAN barisnya ditempel sungguhan, penuh() ditanya, lalu salinannya
+       dibuang lagi. Salinan (bukan aslinya) supaya urutan tabel sumber tidak
+       perlu dibongkar-pasang. */
+    ' function muatGrup(node){',
+    '   var t=tgt(), ikut=barisIkut(node), sisipan=[], i, c;',
+    '   c=node.cloneNode(true); t.appendChild(c); sisipan.push(c);',
+    '   for(i=0;i<ikut.length;i++){ c=ikut[i].cloneNode(true); t.appendChild(c); sisipan.push(c); }',
+    '   var muat=!penuh();',
+    '   for(i=0;i<sisipan.length;i++){ try{ t.removeChild(sisipan[i]); }catch(e){} }',
+    '   return muat;',
+    ' }',
     ' function taruh(node){',
     '   if(node.nodeType===1 && halamanBaru(node) && !kosong()) mk();',
     '   if(node.nodeType===1 && node.classList && node.classList.contains("fkl-sec-h") && !kosong() && sisa()<MINH) mk();',
     /* judul/sub-judul tabel jangan tertinggal sendirian di dasar lembar */
-    '   if(node.nodeType===1 && node.tagName==="TR" && barisGrup(node) && adaBarisDiLembar() && sisa()<tinggiGrupMin(node)) mk();',
+    '   if(node.nodeType===1 && node.tagName==="TR" && barisGrup(node) && adaBarisDiLembar() && !muatGrup(node)) mk();',
     '   var t=tgt();',
     '   t.appendChild(node);',
     '   if(!penuh()) return;',
