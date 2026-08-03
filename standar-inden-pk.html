@@ -1,0 +1,69 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Standar Inden Penomoran — Perjanjian/Kontrak</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#e9eef1;font-family:'Plus Jakarta Sans','Segoe UI',sans-serif;color:#22343a}
+header{background:linear-gradient(120deg,#0d2a30,#0E7C86);color:#fff;padding:26px 30px}
+header h1{margin:0 0 6px;font-size:20px;letter-spacing:.2px}
+header p{margin:0;font-size:13px;opacity:.9;max-width:900px;line-height:1.5}
+main{padding:24px 30px 60px;max-width:1120px;margin:0 auto}
+.var{background:#fff;border:1px solid #d6e0e4;border-radius:12px;margin:0 0 26px;overflow:hidden;
+     box-shadow:0 6px 18px rgba(20,50,60,.07)}
+.vh{padding:16px 20px;border-bottom:1px solid #e6edef;background:#f6fafb}
+.vh h2{margin:0 0 4px;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:#0E7C86}
+.var.ref .vh h2{color:#b02626}
+.ket{margin:0;font-size:12px;color:#54666c;line-height:1.55}
+/* lembar A4: hanya bidang teks (159,2 mm) yang ditampilkan */
+.sheet{position:relative;width:159.2mm;margin:26px auto 18px;padding-top:20px;
+       font-family:'Inter','Segoe UI',Arial,sans-serif;font-size:11pt;line-height:1.3915;color:#000}
+.ruler{position:absolute;left:0;right:0;top:0;height:14px;border-bottom:1px solid #cfdade}
+.ruler i{position:absolute;top:0;width:0;height:14px;border-left:1px dashed #c3d2d7}
+.ruler i b{position:absolute;left:2px;top:0;font:700 8px/1.2 'Plus Jakarta Sans',Arial,sans-serif;color:#93a5ab}
+.ruler i:first-child{border-left:1px solid #0E7C86}
+.sheet p.kl{margin:0 0 6pt;text-align:justify}
+.sheet .n{display:inline-block;box-sizing:border-box;padding-right:.12cm;text-indent:0;
+          white-space:nowrap;text-align:left;font-variant-numeric:tabular-nums}
+.ang{border-collapse:collapse;margin:0 auto 20px;font-size:11.5px;min-width:340px}
+.ang th,.ang td{border:1px solid #dbe5e8;padding:5px 12px;text-align:right}
+.ang th{background:#eef4f6;font-weight:800;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#54666c}
+.ang td:first-child,.ang th:first-child{text-align:left;font-weight:700}
+.var.ref{border-color:#e8c4c4}
+.var.ref .vh{background:#fdf4f4;border-bottom-color:#f0d9d9}
+
+.sheet p.kl{position:relative;text-indent:0}
+.sheet p.kl > .anc{position:absolute;top:0;width:0}
+.sheet p.kl > .anc > .n{position:absolute;right:0;top:0;display:block;white-space:nowrap}
+.pasal{margin:0 0 24px}
+.pasal .pl{font:800 9.5px/1.3 'Plus Jakarta Sans',sans-serif;letter-spacing:.09em;text-transform:uppercase;color:#93a5ab;margin:0 0 7px}
+.aturan{background:#fff;border:1px solid #d6e0e4;border-radius:12px;padding:18px 22px;margin:0 0 26px}
+.aturan h3{margin:0 0 12px;font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:#0E7C86}
+.aturan ol{margin:0;padding-left:20px;font-size:13px;line-height:1.75;color:#3d5157}
+.aturan code{background:#eef4f6;border-radius:4px;padding:1px 6px;font-size:12px;color:#0d2a30}
+.catat{background:#fff8e8;border:1px solid #f0dcb0;border-radius:12px;padding:16px 20px;margin:0 0 26px;font-size:12.5px;line-height:1.7;color:#6b5320}
+.catat b{color:#8a5b06}
+</style></head><body>
+<header>
+  <h1>Standar Inden Penomoran &mdash; Perjanjian/Kontrak</h1>
+  <p>Berlaku untuk bentuk <b>Perjanjian/Kontrak</b> dan <b>Perjanjian/Kontrak KHS</b>. Surat Perintah Kerja tidak memakai standar ini &mdash; indennya dibiarkan seperti semula.</p>
+</header>
+<main>
+<div class="aturan"><h3>Aturan</h3><ol>
+<li><b>Lebar kotak nomor</b> tiap tingkat = nomor terpanjang pada tingkat itu <b>di seluruh dokumen</b> + <code>0,08 cm</code>. Dihitung se-dokumen, bukan per deret, supaya Pasal yang ayatnya 1 digit dan yang 2 digit selalu sekolom.</li>
+<li><b>Tepi penanda anak</b> = kolom teks induk + <code>0,50 cm</code>. Sama untuk tingkat 2, 3, dan 4.</li>
+<li><b>Perataan penanda</b> = rata kanan. Titik penutup nomor lurus dan jeda ke teks selalu <code>0,08 cm</code>; nomor pendek hanya mulai sedikit lebih ke kanan, tidak pernah menggantung.</li>
+<li><b>Kolom teks</b> = tepi penanda + lebar kotak. Baris pertama dan baris sambungan selalu mulai di kolom yang sama.</li>
+<li><b>Tingkat teratas tidak digeser</b> &mdash; tepinya dibiarkan di tempat semula.</li>
+</ol></div>
+<div class="catat">
+<b>Yang tidak disentuh:</b> blok &quot;Label : nilai&quot; (<code>.spk-kv</code> / <code>.spk-kvgrp</code>) seperti daftar Peraturan, Sumber Anggaran, dan No.&nbsp;Dokumen; seluruh isi di luar <code>.spk-cl</code>; dan seluruh dokumen Surat Perintah Kerja. Paragraf lanjutan hanya ikut bergeser bila margin kirinya memang sama dengan kolom teks butir tepat di atasnya.
+</div>
+<section class="var"><div class="vh"><h2>Contoh &mdash; dua Pasal dengan panjang nomor berbeda</h2>
+<p class="ket">Pasal atas penomorannya cuma 1 digit, Pasal bawah sampai 2 digit. Kolom teksnya bertemu di keempat tingkat.</p></div>
+<div class="sheet"><div class="ruler"><i style="left:0cm"><b>0</b></i><i style="left:1cm"><b>1</b></i><i style="left:2cm"><b>2</b></i><i style="left:3cm"><b>3</b></i><i style="left:4cm"><b>4</b></i><i style="left:5cm"><b>5</b></i><i style="left:6cm"><b>6</b></i><i style="left:7cm"><b>7</b></i><i style="left:8cm"><b>8</b></i><i style="left:9cm"><b>9</b></i><i style="left:10cm"><b>10</b></i><i style="left:11cm"><b>11</b></i><i style="left:12cm"><b>12</b></i><i style="left:13cm"><b>13</b></i><i style="left:14cm"><b>14</b></i><i style="left:15cm"><b>15</b></i></div><div class="pasal"><div class="pl">Pasal yang penomorannya 1 digit</div><p class="kl" style="margin-left:0.00cm;padding-left:0.41cm"><span class="anc" style="left:0.33cm"><span class="n">1.</span></span>Serah Terima Pekerjaan:</p><p class="kl" style="margin-left:0.91cm;padding-left:0.96cm"><span class="anc" style="left:0.88cm"><span class="n">1.8.</span></span>Perlengkapan dan Material milik <b>PIHAK PERTAMA</b> yang dipinjamkan harus dikembalikan dalam keadaan baik;</p><p class="kl" style="margin-left:0.91cm;padding-left:0.96cm"><span class="anc" style="left:0.88cm"><span class="n">1.9.</span></span>Setelah masa pemeliharaan berakhir dilakukan serah terima akhir pekerjaan, meliputi:</p><p class="kl" style="margin-left:2.37cm;padding-left:1.51cm"><span class="anc" style="left:1.43cm"><span class="n">1.9.1.</span></span>Perpanjangan waktu pelaksanaan dapat diberikan oleh <b>PIHAK PERTAMA</b> atas pertimbangan yang layak dan wajar;</p><p class="kl" style="margin-left:4.38cm;padding-left:0.54cm"><span class="anc" style="left:0.46cm"><span class="n">a.</span></span>Pekerjaan tambah;</p><p class="kl" style="margin-left:4.38cm;padding-left:0.54cm"><span class="anc" style="left:0.46cm"><span class="n">c.</span></span>Perubahan desain atas permintaan <b>PIHAK PERTAMA</b>.</p></div><div class="pasal"><div class="pl">Pasal yang penomorannya sampai 2 digit</div><p class="kl" style="margin-left:0.00cm;padding-left:0.41cm"><span class="anc" style="left:0.33cm"><span class="n">2.</span></span>Penutupan Perjanjian/Kontrak:</p><p class="kl" style="margin-left:0.91cm;padding-left:0.96cm"><span class="anc" style="left:0.88cm"><span class="n">1.10.</span></span>Mencatat kewajiban yang masih tersisa seperti garansi dan memberitahukan kepada para pihak;</p><p class="kl" style="margin-left:0.91cm;padding-left:0.96cm"><span class="anc" style="left:0.88cm"><span class="n">1.11.</span></span>Mengubah jadwal pelaksanaan sesuai kebutuhan lapangan, meliputi:</p><p class="kl" style="margin-left:2.37cm;padding-left:1.51cm"><span class="anc" style="left:1.43cm"><span class="n">1.11.1.</span></span>Perpanjangan waktu pelaksanaan dapat diberikan oleh <b>PIHAK PERTAMA</b> atas pertimbangan yang wajar;</p><p class="kl" style="margin-left:2.37cm;padding-left:1.51cm"><span class="anc" style="left:1.43cm"><span class="n">1.11.10.</span></span>Keadaan Kahar yang dinyatakan tertulis oleh pihak berwenang, meliputi antara lain:</p><p class="kl" style="margin-left:4.38cm;padding-left:0.54cm"><span class="anc" style="left:0.46cm"><span class="n">l.</span></span>Perubahan desain atas permintaan <b>PIHAK PERTAMA</b>;</p><p class="kl" style="margin-left:4.38cm;padding-left:0.54cm"><span class="anc" style="left:0.46cm"><span class="n">m.</span></span>Keadaan Kahar (<i>Force Majeure</i>).</p></div></div>
+<table class="ang"><thead><tr><th>&nbsp;</th><th>Tepi penanda</th><th>Kolom teks</th><th>Lebar kotak</th><th>Perataan</th></tr></thead><tbody><tr><td>Tingkat 1</td><td>0.00 cm</td><td>0.41 cm</td><td>0.41 cm</td><td>rata kanan</td></tr><tr><td>Tingkat 2</td><td>0.91 cm</td><td>1.87 cm</td><td>0.96 cm</td><td>rata kanan</td></tr><tr><td>Tingkat 3</td><td>2.37 cm</td><td>3.88 cm</td><td>1.51 cm</td><td>rata kanan</td></tr><tr><td>Tingkat 4</td><td>4.38 cm</td><td>4.92 cm</td><td>0.54 cm</td><td>rata kanan</td></tr></tbody></table>
+</section>
+<div class="catat" style="background:#eef4f6;border-color:#cfdee3;color:#3d5157">
+Angka pada tabel bukan nilai tetap di dalam kode &mdash; itu hasil hitung untuk contoh ini. Kotaknya diukur dari nomor terpanjang yang benar-benar ada di kontrak yang sedang dibuka, jadi kontrak yang seluruh Pasalnya 1 digit otomatis mendapat kotak lebih sempit dan tetap sekolom satu sama lain. Yang tetap: <b>inden 0,50 cm</b> dan <b>jeda 0,08 cm</b> &mdash; keduanya ada di <code>SPK_KISI_INDEN</code> dan <code>SPK_KISI_JEDA</code> pada <code>susun-kontrak.js</code>.
+</div>
+</main></body></html>

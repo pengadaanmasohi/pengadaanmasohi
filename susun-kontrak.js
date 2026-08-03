@@ -9375,7 +9375,7 @@ function spkClauseDocHtml(data, klausul, opts){
     spkClHeadCss(_all.length, _isPkDoc)+
     '</style></head><body><div class="spk-doc'+(_isPkDoc?' spk-pk':' spk-spk')+'">'+
       spkKlItalicAsing(isi)+
-    '</div>'+spkIndentScript()+spkPageScript()+fklFitScript()+'</body></html>';
+    '</div>'+spkKisiScript()+spkPageScript()+fklFitScript()+'</body></html>';
 }
 /* ---------- Badan dokumen SATU PENYEDIA (<div class="spk-doc"> ... </div>) ----------
    Dipisah dari spkDocHtml() supaya bentuk Perjanjian/Kontrak KHS dapat
@@ -9512,91 +9512,132 @@ function spkDocHtml(data, klausul){
     spkDocCss()+spkDocCss2()+
     spkClHeadCss((klausul||[]).length, _isPkDoc)+
     '</style></head><body><div id="spk-docs">'+bodies+'</div>'+
-    spkIndentScript()+spkPageScript()+fklFitScript()+'</body></html>';
+    spkKisiScript()+spkPageScript()+fklFitScript()+'</body></html>';
 }
 
 /* ==================================================================
-   PENGUNCI INDEN BERTINGKAT (3 Agu 2026)
+   KISI PENOMORAN FINAL (3 Agu 2026) — disetujui lewat pratinjau
    ------------------------------------------------------------------
-   Laporan berulang: "1.1 / 2.1 / 4.1 masuk terlalu dalam" — terukur
-   0,75 cm dari kolom teks induknya, padahal aturan (SPK_PK_LEAD_ANGKA)
-   maupun template Word (KlausulButir1 left=386 hanging=386, KlausulButir2
-   left=782 hanging=396) sama-sama menghendaki satu langkah tipis saja.
+   Satu aturan, berlaku untuk SEMUA tingkat & SEMUA Pasal — KHUSUS bentuk
+   PERJANJIAN/KONTRAK dan KHS. Surat Perintah Kerja TIDAK disentuh.
 
-   Tahap 1-5 spkPkIndentStd menghitungnya lewat rantai panjang (tingkat ->
-   deret -> induk -> lebar kotak -> lantai se-dokumen). Sudah empat kali
-   satu mata rantainya meleset untuk pola penomoran yang sedikit berbeda,
-   dan setiap tambalan hanya menutup satu pola.
+     lebar kotak nomor  = nomor TERPANJANG pada tingkat itu DI SELURUH
+                          dokumen + SPK_KISI_JEDA (0,08 cm)
+     tepi penanda anak  = kolom teks induk + SPK_KISI_INDEN (0,50 cm)
+     perataan penanda   = RATA KANAN
+     kolom teks         = tepi penanda + lebar kotak
 
-   Skrip ini bekerja DI DALAM dokumen yang sudah tergambar, sesaat sebelum
-   paginasi, dan tidak peduli siapa yang memasang indennya (Word, kisi CSS,
-   atau mesin perapian). Ia membaca posisi NYATA tiap penanda lewat
-   getComputedStyle, menurunkan kedalaman butir dari SILSILAH NOMORNYA, lalu
-   menulis ulang satu aturan tunggal:
+   Lebar kotak sengaja dihitung SE-DOKUMEN, bukan per deret. Kalau
+   per deret, Pasal yang ayatnya cuma sampai 1 digit memakai kotak
+   lebih sempit daripada Pasal yang sampai 2 digit, sehingga kolom
+   teks kedua Pasal tidak pernah bertemu — selisihnya menumpuk sampai
+   0,80 cm di tingkat 4. Dengan lebar se-dokumen, seluruh Pasal
+   sekolom di keempat tingkat; karena penandanya rata kanan, nomor
+   pendek hanya mulai sedikit lebih ke kanan dan jeda ke teksnya
+   tetap 0,08 cm — tidak pernah menggantung.
 
-       tepi penanda anak = kolom teks induk + 0,15 cm
+   Dijalankan DI DALAM dokumen yang sudah tergambar, sesaat sebelum
+   paginasi, dan mengukur posisi nyata — jadi tidak bergantung pada
+   siapa yang memasang inden sebelumnya (Word, kisi CSS, atau
+   spkPkIndentStd). Tingkat teratas TIDAK digeser: tepinya dibiarkan
+   di tempat semula, sehingga bentuk SPK yang basisnya bukan 0 tidak
+   ikut berubah.
 
-   Gantungan (lebar kotak nomor) tiap butir TIDAK diubah, jadi jeda
-   nomor->teks & perataannya tetap seperti semula. Butir tingkat-1 tidak
-   pernah disentuh. Paragraf lanjutan dan blok "Label : nilai" yang tadinya
-   sejajar dengan kolom teks sebuah butir ikut digeser bersamanya, sehingga
-   tidak ada yang tertinggal.
-
-   Dipakai pratinjau, Lihat Klausul, dan Cetak/PDF (ketiganya memakai
-   spkDocHtml/spkClauseDocHtml), jadi ketiganya selalu identik. */
-function spkIndentScript(){
+   BATAS TEGAS — supaya tidak ada yang lain ikut tersentuh:
+     - hanya <p> DI DALAM .spk-cl yang penanda <span class="n">-nya
+       benar-benar anak pertama paragraf;
+     - blok "Label : nilai" (.spk-kv/.spk-kvgrp) dan seluruh isi di
+       luar .spk-cl TIDAK PERNAH disentuh — inilah yang dulu membuat
+       daftar Peraturan/Sumber Anggaran ikut bergeser;
+     - paragraf lanjutan hanya diikutkan bila margin kirinya memang
+       sama dengan kolom teks butir tepat di atasnya. */
+var SPK_KISI_INDEN = 0.50;   /* jarak tepi penanda anak dari kolom teks induk (cm) */
+var SPK_KISI_JEDA  = 0.08;   /* jeda nomor -> teks (cm) */
+function spkKisiScript(){
   return '<scr'+'ipt>(function(){'+
-  'if(window.__spkIndentDone)return; window.__spkIndentDone=1;'+
-  'var LEAD='+SPK_PK_LEAD_ANGKA+', TOL=0.06;'+
-  'function px1cm(){var d=document.createElement("div");'+
+  'if(window.__spkKisiDone)return; window.__spkKisiDone=1;'+
+  'var IND='+SPK_KISI_INDEN+', JED='+SPK_KISI_JEDA+', TOL=0.06;'+
+  'function px1(){var d=document.createElement("div");'+
   ' d.style.cssText="position:absolute;visibility:hidden;left:-9999px;width:1cm";'+
   ' document.body.appendChild(d);var w=d.getBoundingClientRect().width;'+
   ' d.parentNode.removeChild(d);return w||37.8;}'+
-  'var PX=px1cm();'+
+  'var PX=px1();'+
   'function cm(v){return Math.round((v/PX)*1000)/1000;}'+
   'function segs(t){if(!/^(?:[0-9]+\\.)+$/.test(t)&&!/^[0-9]+\\)$/.test(t))return null;'+
   ' var a=t.replace(/\\)$/,".").split(".").filter(function(x){return x!=="";});return a.length?a:null;}'+
   'function huruf(t){return /^[A-Za-z][.)]$/.test(t)||/^[ivxlcdmIVXLCDM]{2,4}[.)]$/.test(t);}'+
-  /* Kotak nomor HARUS anak pertama paragraf; kalau tidak, butir itu dilewati
-     supaya teks biasa yang kebetulan memuat <span class="n"> tak ikut digeser. */
   'function nbox(p){var sp=p.querySelector("span.n");if(!sp)return null;'+
   ' var k=p.firstChild;while(k&&k.nodeType===3&&!k.nodeValue.replace(/[\\s\\u00A0]/g,""))k=k.nextSibling;'+
   ' return (k===sp)?sp:null;}'+
+  'function alami(sp){var w0=sp.style.width,m0=sp.style.minWidth,p0=sp.style.paddingRight;'+
+  ' sp.style.width="auto";sp.style.minWidth="0";sp.style.paddingRight="0";'+
+  ' var w=sp.getBoundingClientRect().width;'+
+  ' sp.style.width=w0;sp.style.minWidth=m0;sp.style.paddingRight=p0;return cm(w);}'+
   'try{'+
-  'var cls=document.querySelectorAll(".spk-cl"),c;'+
+  'var cls=document.querySelectorAll(".spk-doc.spk-pk .spk-cl"),c,i,GW={},BOX=[];'+
+  /* HANYA Perjanjian/Kontrak & KHS (wrapper .spk-doc.spk-pk). Surat Perintah
+     Kerja sengaja TIDAK disentuh — indennya sudah rapi. */
+  /* ===== LINTASAN 1: tentukan tingkat, kelompokkan deret, kumpulkan lebar ===== */
   'for(c=0;c<cls.length;c++){'+
-    'var els=cls[c].querySelectorAll("p,.spk-kv,.spk-kvgrp"),i;'+
-    'var lvlN={},tH=1,akhir=1,kol={},geser=null;'+
-    'for(i=0;i<els.length;i++){'+
-      'var e=els[i],sp=(e.tagName==="P")?nbox(e):null;'+
-      'var st=getComputedStyle(e),ml=cm(parseFloat(st.marginLeft)||0);'+
-      'if(!sp){'+
-        /* Paragraf lanjutan / blok kv: ikut pindah bila tadinya sejajar
-           dengan kolom teks butir yang barusan digeser. */
-        'if(geser&&Math.abs(ml-geser.lama)<TOL){e.style.marginLeft=geser.baru.toFixed(2)+"cm";}'+
-        'continue;'+
-      '}'+
+    'if(cls[c].closest && cls[c].closest(".spk-kv,.spk-kvgrp")) continue;'+
+    'var ps=cls[c].querySelectorAll("p");'+
+    'var lvlN={},tH=1,akhir=1,urut=[],buka={},deret=[];'+
+    'for(i=0;i<ps.length;i++){'+
+      'var p=ps[i];'+
+      'if(p.closest && p.closest(".spk-kv,.spk-kvgrp")) continue;'+
+      'var sp=nbox(p); if(!sp){urut.push({p:p,sp:null});continue;}'+
       'var tok=String(sp.textContent||"").replace(/[\\s\\u00A0]+/g,"");'+
       'var sg=segs(tok),L;'+
-      'if(sg){var kun=sg.join(".")+".",ind=sg.slice(0,-1).join(".")+".";'+
-      ' L=(sg.length>1&&lvlN[ind])?lvlN[ind]+1:1;lvlN[kun]=L;tH=L+1;akhir=L;}'+
-      'else if(huruf(tok)){L=tH;akhir=L;}'+
-      'else {L=akhir+1;}'+
-      'var ti=cm(parseFloat(st.textIndent)||0),hang=-ti;'+
-      'if(!(hang>0.01))hang=cm(sp.getBoundingClientRect().width);'+
-      'var lamaKol=ml,pen=ml+ti;'+
-      'if(L>1){'+
-        'var ik=kol[L-1],k2;'+
-        'if(ik==null){for(k2=L-2;k2>=1;k2--){if(kol[k2]!=null){ik=kol[k2];break;}}}'+
-        'if(ik!=null)pen=Math.round((ik+LEAD)*100)/100;'+
+      'if(sg){var ku=sg.join(".")+".",ik=sg.slice(0,-1).join(".")+".";'+
+      ' L=(sg.length>1&&lvlN[ik])?lvlN[ik]+1:1;lvlN[ku]=L;tH=L+1;akhir=L;}'+
+      'else if(huruf(tok)){L=tH;akhir=L;}else{L=akhir+1;}'+
+      'var d;for(d in buka){if(Number(d)>L)delete buka[d];}'+
+      'if(!buka[L]){var ind=buka[L-1]||null;'+
+      ' if(!ind){for(var k2=L-2;k2>=1;k2--){if(buka[k2]){ind=buka[k2];break;}}}'+
+      ' buka[L]={lvl:L,induk:ind,W:0,pen:0};deret.push(buka[L]);}'+
+      'var it={p:p,sp:sp,lvl:L,g:buka[L]};urut.push(it);'+
+      'var w=Math.round((alami(sp)+JED)*100)/100;'+
+      'if(!GW[L]||w>GW[L]) GW[L]=w;'+                 /* lebar TERBESAR se-dokumen */
+      'if(w>buka[L].W) buka[L].W=w;'+                 /* cadangan bila GW kosong */
+    '}'+
+    'if(deret.length) BOX.push({deret:deret,urut:urut});'+
+  '}'+
+  /* ===== LINTASAN 2: posisi + penulisan, memakai lebar SE-DOKUMEN ===== */
+  'for(var b=0;b<BOX.length;b++){'+
+    'var deret=BOX[b].deret,urut=BOX[b].urut,g;'+
+    'for(i=0;i<deret.length;i++){'+
+      'g=deret[i];'+
+      'g.W=GW[g.lvl]||g.W;'+
+      'if(g.induk) g.pen=Math.round((g.induk.pen+g.induk.W+IND)*100)/100;'+
+      'else{'+
+        'var q=null,z;for(z=0;z<urut.length;z++){if(urut[z].sp&&urut[z].g===g){q=urut[z];break;}}'+
+        'if(q){var st=getComputedStyle(q.p);'+
+        ' g.pen=Math.round((cm(parseFloat(st.marginLeft)||0)+cm(parseFloat(st.textIndent)||0))*100)/100;}'+
+        'if(!(g.pen>0)) g.pen=0;'+
       '}'+
-      'var baru=Math.round((pen+hang)*100)/100;'+
-      'e.style.marginLeft=baru.toFixed(2)+"cm";'+
-      'e.style.textIndent="-"+hang.toFixed(2)+"cm";'+
-      'e.style.paddingLeft="0cm";'+
-      'geser=(Math.abs(baru-lamaKol)>0.005)?{lama:lamaKol,baru:baru}:null;'+
-      'kol[L]=baru;'+
-      'for(var d in kol){if(+d>L)delete kol[d];}'+
+    '}'+
+    'var geser=null;'+
+    'for(i=0;i<urut.length;i++){'+
+      'var t=urut[i];'+
+      'if(!t.sp){'+
+        'if(geser){var m=cm(parseFloat(getComputedStyle(t.p).marginLeft)||0);'+
+        ' if(Math.abs(m-geser.lama)<TOL) t.p.style.marginLeft=geser.baru.toFixed(2)+"cm";}'+
+        'continue;'+
+      '}'+
+      'var W=t.g.W,kol=Math.round((t.g.pen+W)*100)/100;'+
+      'var lama=cm(parseFloat(getComputedStyle(t.p).marginLeft)||0);'+
+      't.p.style.marginLeft=kol.toFixed(2)+"cm";'+
+      't.p.style.textIndent="-"+W.toFixed(2)+"cm";'+
+      't.p.style.paddingLeft="0cm";'+
+      't.sp.style.width=W.toFixed(2)+"cm";'+
+      't.sp.style.minWidth=W.toFixed(2)+"cm";'+
+      't.sp.style.marginLeft="0cm";'+
+      't.sp.style.boxSizing="border-box";'+
+      't.sp.style.display="inline-block";'+
+      't.sp.style.textAlign="right";'+
+      't.sp.style.paddingRight=JED+"cm";'+
+      't.sp.style.whiteSpace="nowrap";'+
+      'geser={lama:lama,baru:kol};'+
     '}'+
   '}'+
   '}catch(e){}'+
