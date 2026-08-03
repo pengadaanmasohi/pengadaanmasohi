@@ -6752,6 +6752,12 @@ function jpStandaloneDocHtml(){
 }
 function jpPrint(){
   if(!jpState || !jpAdaJadwal()){ toast('Isi Awal & Akhir minimal satu tahapan terlebih dahulu','warn'); return; }
+  jpPrintDocHtml(jpStandaloneDocHtml());
+}
+/* Mencetak SATU dokumen jadwal yang HTML-nya sudah jadi. Dipisah dari jpPrint()
+   supaya tombol "Cetak / PDF" di modal pratinjau dapat mencetak PERSIS dokumen
+   yang sedang ditampilkan (mis. record lama), bukan isi form yang sedang aktif. */
+function jpPrintDocHtml(html){
   const old=document.getElementById('jp-print-frame'); if(old) old.remove();
   const ifr=document.createElement('iframe');
   ifr.id='jp-print-frame';
@@ -6759,7 +6765,7 @@ function jpPrint(){
   ifr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
   document.body.appendChild(ifr);
   const doc=ifr.contentWindow.document;
-  doc.open(); doc.write(jpStandaloneDocHtml()); doc.close();
+  doc.open(); doc.write(html); doc.close();
   const go=()=>fklWaitPaged(ifr, _go);
   const _go=()=>{
     withHiddenPageTitle(()=>{ try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }catch(e){ try{ window.print(); }catch(_){} } });
@@ -6959,12 +6965,59 @@ function renderJadwalView(){
 function jadwalViewGoto(p){ jadwalViewPage=p; renderJadwalView(); }
 function openJadwalLihat(){ refreshDataJadwal().then(()=>showView('jadwal-view')); }
 /* Cetak/pratinjau PDF sebuah jadwal tersimpan tanpa mengubah jadwal yang sedang disusun */
+/* ---------- Pratinjau Jadwal Pelaksanaan ----------
+   DULU: tombol "Lihat" langsung memanggil jpPrint() sehingga yang muncul adalah
+   dialog cetak peramban — satu-satunya modul yang berbeda sendiri.
+   SEKARANG: memakai modal pratinjau bersama (pn-preview-overlay) + peningkatan
+   ke PDF sungguhan lewat docPdfUpgrade, PERSIS seperti Kelengkapan Dokumen,
+   Pembukaan Penawaran, Referensi Harga, HPS, Analisa, Rekap HPS, dan SPK/PK.
+   Bila modal tidak ada di halaman, perilaku lama (langsung cetak) tetap dipakai
+   sebagai cadangan sehingga tidak ada alur yang mati. */
+function jpOpenPreview(html, nama){
+  const ov=document.getElementById('pn-preview-overlay');
+  if(!ov){ jpPrintDocHtml(html); return; }
+  const _mdl=ov.querySelector('.pn-preview-modal'); if(_mdl) _mdl.classList.remove('is-max');
+  if(typeof pnPreviewResetMaxBtn==='function') pnPreviewResetMaxBtn();
+  const titleEl=document.getElementById('pn-preview-title');
+  if(titleEl) titleEl.textContent='Pratinjau — Jadwal Pelaksanaan'+(nama?': '+nama:'');
+  const body=document.getElementById('pn-preview-body');
+  if(body){
+    body.classList.add('fkl-preview-body');
+    body.innerHTML='<iframe id="jp-preview-frame" title="Pratinjau Dokumen"></iframe>';
+    const ifr=document.getElementById('jp-preview-frame');
+    const doc=ifr.contentWindow.document; doc.open(); doc.write(html); doc.close();
+    try{
+      if(typeof docPdfUpgrade==='function'){
+        const fn='Jadwal Pelaksanaan'+(nama?' - '+String(nama):'');
+        docPdfUpgrade('jp-preview-frame', function(){ return html; }, fn.replace(/[\\/:*?"<>|]/g,'-')+'.pdf');
+      }
+    }catch(e){ console.warn('jpOpenPreview/pdf:', e); }
+  }
+  const actions=document.querySelector('#pn-preview-overlay .pn-preview-head-actions');
+  ['fkl-preview-print','pnw-preview-print','rho-preview-print','hps-preview-print',
+   'hpsc-preview-print','ana-preview-print','spk-preview-print','spk-preview-khs']
+    .forEach(function(bid){ const b=document.getElementById(bid); if(b) b.remove(); });
+  if(actions && !document.getElementById('jp-preview-print')){
+    const btn=document.createElement('button');
+    btn.id='jp-preview-print'; btn.className='btn btn-teal';
+    btn.style.padding='8px 14px'; btn.style.fontSize='11px';
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>Cetak / PDF';
+    btn.onclick=function(){ jpPrintDocHtml(html); };
+    actions.insertBefore(btn, actions.firstChild);
+  }
+  ov.classList.add('show');
+}
 function jadwalPreviewRecord(id){
   const rec=(records_jadwal||[]).find(r=>String(r.id)===String(id)); if(!rec) return;
+  /* Dokumen dibangun SEKALI di sini (jpState dipinjam sebentar lalu dikembalikan),
+     lalu HTML jadinya dipegang oleh modal. Ini penting karena docPdfUpgrade
+     memanggil ulang pembangun HTML secara asinkron — kalau ia membaca jpState
+     global, isinya sudah berganti kembali ke form yang sedang aktif. */
   const backup=jpState;
-  jpState=jpRecordToState(rec);
-  jpPrint();
-  jpState=backup;
+  let html='';
+  try{ jpState=jpRecordToState(rec); html=jpStandaloneDocHtml(); }
+  finally{ jpState=backup; }
+  jpOpenPreview(html, rec.nama_pekerjaan||'');
 }
 function jadwalDeleteRecord(id){
   if(!requireInput()) return;
@@ -8729,7 +8782,7 @@ function pnPreviewResetMaxBtn(){
   const icon=document.getElementById('pn-preview-max-icon');
   if(icon) icon.innerHTML='<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>';  // maximize
 }
-function closePnPreview(){ const ov=document.getElementById('pn-preview-overlay'); if(ov) ov.classList.remove('show'); const modal=ov&&ov.querySelector('.pn-preview-modal'); if(modal) modal.classList.remove('is-max'); pnPreviewResetMaxBtn(); const b=document.getElementById('pn-preview-body'); if(b){ b.innerHTML=''; b.classList.remove('fkl-preview-body'); b.classList.remove('has-tabs'); } const fp=document.getElementById('fkl-preview-print'); if(fp) fp.remove(); const pp=document.getElementById('pnw-preview-print'); if(pp) pp.remove(); const rp=document.getElementById('rho-preview-print'); if(rp) rp.remove(); const hp=document.getElementById('hps-preview-print'); if(hp) hp.remove(); const cp=document.getElementById('hpsc-preview-print'); if(cp) cp.remove(); const ap=document.getElementById('ana-preview-print'); if(ap) ap.remove(); const sp=document.getElementById('spk-preview-print'); if(sp) sp.remove(); if(typeof fklPreviewState!=='undefined') fklPreviewState=null; if(typeof pnwPreviewState!=='undefined') pnwPreviewState=null; if(typeof rhoPreviewState!=='undefined') rhoPreviewState=null; if(typeof hpsPreviewState!=='undefined') hpsPreviewState=null; if(typeof anaPreviewState!=='undefined') anaPreviewState=null; pnCleanupPreview(); }
+function closePnPreview(){ const ov=document.getElementById('pn-preview-overlay'); if(ov) ov.classList.remove('show'); const modal=ov&&ov.querySelector('.pn-preview-modal'); if(modal) modal.classList.remove('is-max'); pnPreviewResetMaxBtn(); const b=document.getElementById('pn-preview-body'); if(b){ b.innerHTML=''; b.classList.remove('fkl-preview-body'); b.classList.remove('has-tabs'); } const fp=document.getElementById('fkl-preview-print'); if(fp) fp.remove(); const pp=document.getElementById('pnw-preview-print'); if(pp) pp.remove(); const rp=document.getElementById('rho-preview-print'); if(rp) rp.remove(); const hp=document.getElementById('hps-preview-print'); if(hp) hp.remove(); const cp=document.getElementById('hpsc-preview-print'); if(cp) cp.remove(); const ap=document.getElementById('ana-preview-print'); if(ap) ap.remove(); const jpb=document.getElementById('jp-preview-print'); if(jpb) jpb.remove(); const sp=document.getElementById('spk-preview-print'); if(sp) sp.remove(); if(typeof fklPreviewState!=='undefined') fklPreviewState=null; if(typeof pnwPreviewState!=='undefined') pnwPreviewState=null; if(typeof rhoPreviewState!=='undefined') rhoPreviewState=null; if(typeof hpsPreviewState!=='undefined') hpsPreviewState=null; if(typeof anaPreviewState!=='undefined') anaPreviewState=null; pnCleanupPreview(); }
 
 /* ---- Upload / Download / Hapus lampiran (per masing-masing nomor dokumen) ---- */
 let pnUploadCtx=null;
@@ -15929,7 +15982,9 @@ function hpsActionsHtml(o){
   // Batal (merah) berdampingan dengan tombol navigasi di pojok kanan
   let right='<button class="btn btn-red" onclick="hpsBatal()">'+FKL_IC_RELOAD+'Batal</button>';
   if(o.back) right+='<button class="btn btn-light" onclick="hpsBack()">'+FKL_IC_BACK+'Kembali</button>';
-  if(o.save) right+='<button class="btn btn-green" onclick="hpsSimpan()">'+FKL_IC_SAVE+'Simpan &amp; Lihat PDF</button>';
+  /* Tombol akhir HPS cukup "Simpan" — pratinjau dibuka lewat tombol Lihat pada
+     daftar "Lihat HPS", bukan otomatis melompat sesudah menyimpan. */
+  if(o.save) right+='<button class="btn btn-green" onclick="hpsSimpan()">'+FKL_IC_SAVE+(hpsEditId?'Simpan Perubahan':'Simpan')+'</button>';
   else right+='<button class="btn btn-teal" onclick="hpsNext()">Selanjutnya'+FKL_IC_NEXT+'</button>';
   return '<div class="fkl-actions"><div class="fkl-actions-right">'+right+'</div></div>';
 }
@@ -15979,10 +16034,8 @@ async function hpsSimpan(){
     });
   }catch(err){ console.error(err); toast('Gagal menyimpan: '+errMsg(err),'err'); return; }
   toast(hpsEditId?'Data berhasil diperbarui':'Data berhasil disimpan','ok');
-  const savedId = hpsEditId || (saved && saved.id);
   hpsEditId=null; hpsState=hpsBlankState(); hpsSaveState(); hpsStep=1;
   showView('hps-view');
-  setTimeout(()=>{ if(savedId!=null) hpsPreviewRecord(savedId); }, 420);
 }
 
 /* ================= LIHAT HPS ================= */
@@ -17721,7 +17774,9 @@ function anaActionsHtml(o){
   // Batal (merah) berdampingan dengan tombol navigasi di pojok kanan
   let right='<button class="btn btn-red" onclick="anaBatal()">'+FKL_IC_RELOAD+'Batal</button>';
   if(o.back) right+='<button class="btn btn-light" onclick="anaBack()">'+FKL_IC_BACK+'Kembali</button>';
-  if(o.save) right+='<button class="btn btn-green" onclick="anaSimpan()">'+FKL_IC_SAVE+'Simpan dan Lihat</button>';
+  /* Sama seperti HPS: cukup "Simpan". Dokumennya dibuka lewat tombol Lihat pada
+     daftar "Lihat Analisa" yang memakai modal pratinjau PDF. */
+  if(o.save) right+='<button class="btn btn-green" onclick="anaSimpan()">'+FKL_IC_SAVE+(anaEditId?'Simpan Perubahan':'Simpan')+'</button>';
   if(o.next) right+='<button class="btn btn-teal" onclick="anaNext()">Selanjutnya'+FKL_IC_NEXT+'</button>';
   return '<div class="fkl-actions"><div class="fkl-actions-right">'+right+'</div></div>';
 }
@@ -17782,11 +17837,8 @@ async function anaSimpan(){
     });
   }catch(err){ console.error(err); toast('Gagal menyimpan: '+errMsg(err),'err'); return; }
   toast(anaEditId?'Data berhasil diperbarui':'Data berhasil disimpan','ok');
-  const savedId = anaEditId || (saved && saved.id);
-  const savedSection = (st.jenis==='Konstruksi' && anaStep===3) ? 'ahsp' : 'harga';
   anaEditId=null; anaState=anaBlankState(); anaSaveState(); anaStep=1;
   showView('analisa-view');
-  setTimeout(()=>{ if(savedId!=null) anaPreviewRecord(savedId, savedSection); }, 420);
 }
 
 /* ================= LIHAT ANALISA ================= */
