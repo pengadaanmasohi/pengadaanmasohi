@@ -34,6 +34,26 @@ var HOVER_IN_PX=24;   /* rail 76px + padding isi 24px -> zona ini jatuh tepat
 function isSmall(){ return window.matchMedia('(max-width:1024px)').matches; }
 function noHover(){ return window.matchMedia('(hover:none)').matches; }
 
+/* ---------- LORONG MENUJU GAGANG ANAK PANAH ----------
+   Gagang panah kini berdiri DI LUAR rail (lihat bagian 1f) dan
+   MENGHILANG begitu sidebar terbuka. Tanpa penjagaan, gagang itu
+   mustahil diklik: mendekatkan kursor ke sana sudah masuk zona
+   HOVER_IN_PX, sidebar melebar duluan, gagangnya lenyap tepat
+   sebelum jari sampai — klik selalu jatuh ke sidebar yang sudah
+   melebar.
+
+   Jadi pita mendatar setinggi gagang (ditambah sedikit ke kanan)
+   dinyatakan sebagai LORONG: selama kursor berada di dalamnya,
+   sidebar TIDAK membuka sendiri. Mendekat dari ketinggian lain
+   tetap membuka seperti biasa. Zonanya diukur oleh initPeekHandle
+   dan dikosongkan (null) begitu sidebar terbuka atau gagangnya
+   memang tidak dipakai (mode laci). */
+var ZONA_GAGANG=null;
+function diLorongGagang(x,y){
+  var z=ZONA_GAGANG; if(!z) return false;
+  return x>=z.x1 && x<=z.x2 && y>=z.y1 && y<=z.y2;
+}
+
 /* Tombol ☰ di bilah atas hanya dipakai layar kecil (laci geser). */
 window.toggleSidebar=function(){
   if(typeof toggleMobileNav==='function') toggleMobileNav();
@@ -131,6 +151,9 @@ function initHoverSidebar(){
          sekadar bergerak naik-turun di x yang sama (mis. menyusuri kolom No.)
          akan membuka sidebar sendiri. */
       var menujuKiri = (prevX<0) || (lastX < prevX);
+      /* Kursor sedang menuju gagang panah -> jangan buka sendiri,
+         beri kesempatan gagangnya diklik (lihat ZONA_GAGANG). */
+      if(diLorongGagang(lastX,lastY)) return;
       if(dalamTinggi && menujuKiri && lastX>=0 && lastX <= r.right + HOVER_IN_PX) open();
       return;
     }
@@ -287,11 +310,18 @@ function initRailSentuh(){
    Gagang ini ditambahkan dari JS (bukan index.html) supaya markup
    sidebar tidak perlu disentuh. Dua perannya:
      - PETUNJUK: anak panah "›" memberi tahu arah membukanya, dan
-       berbalik jadi "‹" begitu sidebar melebar.
+       MENGHILANG begitu sidebar melebar — petunjuk arah tidak lagi
+       diperlukan ketika menunya sudah terbaca penuh.
      - PENGUNCI: diklik -> sidebar dikunci terbuka (.is-pinned) dan
-       tidak lagi menciut sendiri saat kursor pergi; diklik lagi ->
-       kembali menjadi rail ikon.
-   Gaya tampilannya ada di style.css bagian 30. */
+       tidak lagi menciut sendiri saat kursor pergi. Karena gagangnya
+       lenyap saat terbuka, kuncinya dilepas lewat Esc, klik di luar
+       sidebar, atau setelah memilih salah satu menu.
+
+   LETAK: gagang ini BUKAN anak sidebar, melainkan saudaranya —
+   `.sidebar-shell` ber-`overflow:hidden` sehingga anak yang menonjol
+   keluar pasti terpotong. Sebagai saudara ber-`position:fixed`, ia
+   bebas berdiri di luar tepi rail.
+   Gaya tampilannya ada di style.css bagian 33 (menimpa bagian 30). */
 var IC_PEEK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" '+
             'stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">'+
             '<polyline points="9 18 15 12 9 6"/></svg>';
@@ -303,25 +333,51 @@ function initPeekHandle(){
   b.type='button'; b.id='side-peek'; b.className='side-peek';
   b.innerHTML=IC_PEEK;
 
+  /* ---- DILETAKKAN DI LUAR SIDEBAR ----
+     `.sidebar-shell` ber-`overflow:hidden` (style.css bagian 26a,
+     demi garis aksen beranimasi), jadi anak yang menonjol keluar
+     PASTI terpotong. Karena itu gagangnya disisipkan sebagai
+     SAUDARA sidebar — tepat sesudahnya — lalu diletakkan dengan
+     `position:fixed` di x = --side-rail oleh style.css bagian 33.
+     Urutan "sesudah" itu penting: pemilih `~` di CSS yang menyem-
+     bunyikan gagang saat sidebar terbuka hanya bekerja bila gagang
+     berada SETELAH sidebar di dalam DOM. */
+  if(el.parentNode) el.parentNode.insertBefore(b, el.nextSibling);
+  else document.body.appendChild(b);
+
+  /* Zona lorong: sepanjang gagang, memanjang ~72px ke kanan.
+     Selama kursor di sini, sidebar tidak membuka sendiri sehingga
+     gagangnya sempat diklik (lihat diLorongGagang di bagian 1a). */
+  var LORONG_KANAN=72;
+  function ukurZona(){
+    if(el.classList.contains('is-open') ||
+       !document.documentElement.classList.contains('mode-rail')){
+      ZONA_GAGANG=null; return;
+    }
+    var r=b.getBoundingClientRect();
+    if(!r || !r.width){ ZONA_GAGANG=null; return; }
+    ZONA_GAGANG={ x1:r.left-4, x2:r.right+LORONG_KANAN,
+                  y1:r.top-12, y2:r.bottom+12 };
+  }
+
   function sync(){
     var buka=el.classList.contains('is-open');
-    var kunci=el.classList.contains('is-pinned');
-    var judul = kunci ? 'Kembalikan menu menjadi ikon'
-                      : (buka ? 'Kunci menu tetap terbuka'
-                              : 'Tampilkan menu lengkap');
+    /* Gagang HILANG saat terbuka, jadi judulnya cukup satu:
+       perannya sekarang murni "buka & kunci". Menutup kembali
+       lewat Esc atau klik di luar (dipasang di bawah). */
+    var judul='Buka & kunci menu lengkap';
     b.title=judul;
     b.setAttribute('aria-label',judul);
     b.setAttribute('aria-expanded', buka ? 'true' : 'false');
+    /* Tersembunyi -> jangan ikut urutan Tab */
+    b.tabIndex = buka ? -1 : 0;
+    ukurZona();
   }
 
   b.addEventListener('click', function(e){
     e.preventDefault(); e.stopPropagation();
-    if(el.classList.contains('is-pinned')){
-      el.classList.remove('is-pinned','is-open');
-    }else{
-      el.classList.add('is-pinned','is-open');
-      if(typeof openActiveBranch==='function') openActiveBranch();
-    }
+    el.classList.add('is-pinned','is-open');
+    if(typeof openActiveBranch==='function') openActiveBranch();
     sync();
   });
   /* Penjaga "ketukan di luar" pada layar sentuh menangkap pointerdown
@@ -329,9 +385,45 @@ function initPeekHandle(){
      dianggap ketukan pada rail sehingga klik-nya tidak pernah sampai. */
   b.addEventListener('pointerdown', function(e){ e.stopPropagation(); }, true);
 
-  el.appendChild(b);
+  /* ---- JALAN KELUAR DARI KEADAAN TERKUNCI ----
+     Karena gagangnya lenyap begitu sidebar terbuka, tombol yang sama
+     tidak bisa dipakai untuk melepas kunci. Dua jalan keluar yang
+     sudah lazim dipakai orang: tombol Esc, dan mengetuk/mengklik di
+     luar sidebar. */
+  function lepasKunci(){
+    if(!el.classList.contains('is-pinned')) return false;
+    el.classList.remove('is-pinned','is-open');
+    el.querySelectorAll('.topnav-group.open').forEach(function(g){ g.classList.remove('open'); });
+    el.querySelectorAll('.topnav-sub.open').forEach(function(s){ s.classList.remove('open'); });
+    if(typeof openActiveBranch==='function') openActiveBranch();
+    sync();
+    return true;
+  }
+  document.addEventListener('keydown', function(e){
+    if(e.key==='Escape') lepasKunci();
+  });
+  document.addEventListener('pointerdown', function(e){
+    if(!el.classList.contains('is-pinned')) return;
+    var t=e.target;
+    if(!t || t.nodeType!==1) return;
+    if(t===el || el.contains(t) || t===b || b.contains(t)) return;
+    /* Jendela pop-up tampil DI ATAS sidebar — ketukan di sana bukan
+       "di luar menu", jadi kuncinya jangan ikut lepas. */
+    if(t.closest && t.closest('.overlay.show,.modal')) return;
+    lepasKunci();
+  }, true);
+  /* Memilih salah satu menu juga melepas kunci supaya rail kembali
+     ramping sesudah berpindah halaman. */
+  el.addEventListener('click', function(e){
+    var t=e.target;
+    if(t && t.closest && t.closest('.topnav-link')) setTimeout(lepasKunci, 160);
+  });
+
   /* .is-open juga diubah oleh hover/ketukan, bukan hanya oleh tombol ini */
   try{ new MutationObserver(sync).observe(el,{attributes:true,attributeFilter:['class']}); }catch(e){}
+  try{ new MutationObserver(sync).observe(document.documentElement,{attributes:true,attributeFilter:['class']}); }catch(e){}
+  window.addEventListener('resize', ukurZona, {passive:true});
+  window.addEventListener('scroll', ukurZona, {passive:true});
   sync();
 }
 

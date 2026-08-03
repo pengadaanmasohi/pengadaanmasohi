@@ -17035,8 +17035,11 @@ async function anaDownloadTemplate(){
    ['Jumlah Referensi', String(st.jumlahRef)+'  (tiap referensi punya sepasang kolom Harga Barang & Jasa)'],
    ['',''],
    ['No','Nomor urut uraian. Jangan diubah — dipakai untuk mencocokkan baris.'],
-   ['Judul','Judul kelompok pekerjaan. SELALU dicetak huruf besar semua pada dokumen. Kosongkan bila melanjutkan judul di atasnya.'],
-   ['Sub-Judul','Sub-judul di bawah judul. Dicetak sesuai huruf besar/kecil yang diketik. Kosongkan bila melanjutkan sub-judul di atasnya.'],
+   /* Baris penjelasan hanya ditulis bila kolomnya memang ADA di sheet Data.
+      Judul/Sub-Judul dimatikan di kartu Data Pekerjaan -> kolomnya tidak
+      dibuat (lihat anaTplBuildCols), jadi penjelasannya pun tidak perlu. */
+   ...(jsOn(st.judulOn)?[['Judul','Judul kelompok pekerjaan. SELALU dicetak huruf besar semua pada dokumen. Kosongkan bila melanjutkan judul di atasnya.']]:[]),
+   ...(jsOn(st.subjudulOn)?[['Sub-Judul','Sub-judul di bawah judul. Dicetak sesuai huruf besar/kecil yang diketik. Kosongkan bila melanjutkan sub-judul di atasnya.']]:[]),
    ['Uraian Pekerjaan','Nama barang/jasa/pekerjaan. Berlaku sama untuk semua referensi.'],
    ['Sat','Satuan (mis. Buah, Pack, m, unit). Berlaku sama untuk semua referensi.'],
    ['Vol','Volume. Ketik angka saja (mis. 10 atau 2.5). Ditampilkan format akuntansi 2 desimal, rata tengah. Berlaku sama untuk semua referensi.'],
@@ -17112,6 +17115,14 @@ function anaHandleUpload(ev){
         if(cVol<0 && (h==='vol'||h.indexOf('volume')>=0)){ cVol=ci; return; }
         if(cSat<0 && (h==='sat'||h==='sat.'||h.indexOf('satuan')>=0)){ cSat=ci; return; }
       });
+      /* Judul / Sub-Judul dimatikan pada kartu Data Pekerjaan -> kolomnya
+         DIABAIKAN walau file yang diunggah masih memuatnya (mis. template
+         lama yang diunduh sewaktu sakelarnya masih Ya, atau kolom yang
+         ditambah sendiri di Excel). Tanpa penjagaan ini nilainya tetap
+         masuk ke state: tidak terlihat sekarang, tetapi muncul kembali
+         begitu sakelarnya dinyalakan lagi. */
+      if(!jsOn(st.judulOn))    cJud=-1;
+      if(!jsOn(st.subjudulOn)) cSub=-1;
       if(cJud<0&&cSub<0&&cUr<0&&hargaCols.length===0){ toast('Header tidak dikenali. Gunakan template resmi.','warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
 
       // Tambah jumlah referensi bila file memuat lebih banyak (maks 20)
