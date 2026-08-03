@@ -8910,16 +8910,65 @@ function spkPageScript(){
     '   if(tx.length>90) return false;',
     '   return _nLines(c)<=1;',
     ' }',
+    /* ==== BUTIR BERNOMOR TINGKAT-2 TAK BOLEH PISAH DARI ISINYA (3 Agu 2026) ====
+       Laporan user (tangkapan layar halaman 15 dari 45, Perjanjian/Kontrak):
+       butir "4.4. Adanya penyesuaian harga;" berdiri SENDIRIAN di dasar halaman
+       sementara paragraf isinya ("Penyesuaian harga merupakan perubahan harga
+       ...") membuka halaman berikutnya.
+
+       Sebabnya: _numHead() sengaja MENOLAK paragraf yang diakhiri tanda kalimat
+       . ; , karena baris seperti itu biasanya kalimat ISI yang sudah lengkap,
+       bukan judul — jadi butir 4.4 tidak pernah ikut diboyong. Aturan itu benar
+       untuk butir yang memang berdiri sendiri, tetapi salah begitu di bawahnya
+       masih ada paragraf LANJUTAN milik butir tersebut.
+
+       Karena itu penilaiannya tidak lagi dari tanda baca, melainkan dari apa
+       yang menyusul: bila blok yang sedang dipindah ke halaman berikutnya
+       adalah paragraf TANPA penanda sendiri (= lanjutan butir di atasnya), dan
+       butir itu tampil KURANG DARI 3 BARIS di dasar halaman ini, maka butirnya
+       ikut diboyong. Ambang 3 baris memakai patokan yang sama dengan judul
+       klausul (MINKEEP). Hanya untuk penomoran DUA RUAS ke atas ("4.4.",
+       "4.4.1.") sesuai permintaan; butir nomor tunggal, huruf, dan bullet tidak
+       disentuh. */
+    ' function _butirBertingkat(c){',
+    '   if(!c || c.nodeType!==1 || c.tagName!=="P") return false;',
+    '   if(hasCls(c,"spk-cl-h")||hasCls(c,"spk-bab")||hasCls(c,"spk-party-h")||hasCls(c,"spk-ph")||hasCls(c,"spk-kv")||hasCls(c,"spk-sign-eyebrow")) return false;',
+    '   var tx=(c.textContent||"").replace(/[\\s\\u00A0]+/g," ").replace(/^ /,"");',
+    '   return /^\\d+(?:\\.\\d+)+[.)]/.test(tx);',
+    ' }',
+    /* Paragraf LANJUTAN = <p> biasa tanpa penanda sendiri (tidak berkotak nomor
+       span.n dan tidak diawali nomor/huruf/bullet). Blok tanda tangan, kop, kv,
+       dan judul dikecualikan supaya tidak pernah salah dianggap lanjutan. */
+    ' function _paraLanjutan(n){',
+    '   if(!n || n.nodeType!==1 || n.tagName!=="P") return false;',
+    '   if(hasCls(n,"spk-cl-h")||hasCls(n,"spk-bab")||hasCls(n,"spk-party-h")||hasCls(n,"spk-ph")||hasCls(n,"spk-kv")||hasCls(n,"spk-sign")||hasCls(n,"spk-sign-eyebrow")||hasCls(n,"spk-dlist")) return false;',
+    '   if(n.querySelector && n.querySelector("span.n")) return false;',
+    '   var tx=(n.textContent||"").replace(/[\\s\\u00A0]+/g," ").replace(/^ /,"").replace(/ $/,"");',
+    '   if(!tx) return false;',
+    '   if(/^(?:\\d+(?:\\.\\d+)*[.)]|[A-Za-z][.)]|[-\\u2022\\u25CF\\u2013])[\\s\\u00A0]/.test(tx)) return false;',
+    '   return true;',
+    ' }',
     ' function tarikJudulMenggantung(node){',
     '   if(!ISPK) return null;',
+    '   var out=[], g=0, kk, c;',
+    /* Langkah awal: butir bernomor bertingkat yang isinya baru saja terdorong
+       ke halaman berikutnya. Dijalankan sekali, sebelum penarikan judul biasa,
+       supaya judul induk di atasnya (mis. "4." lalu "4.4.") tetap bisa ikut
+       terboyong oleh perulangan di bawah. */
+    '   if(_paraLanjutan(node)){',
+    '     kk=els(tgt());',
+    '     if(kk.length>=2){',
+    '       c=kk[kk.length-1];',
+    '       if(_butirBertingkat(c) && _nLines(c)<3){ c.parentNode.removeChild(c); out.unshift(c); }',
+    '     }',
+    '   }',
     '   if(node && node.nodeType===1 && (hasCls(node,"spk-clause")||hasCls(node,"spk-cl-h")||hasCls(node,"spk-bab"))) return null;',
     /* Judul bertingkat bisa MENUMPUK di dasar halaman (mis. "2." lalu "2.1."),
        jadi ditarik berturut-turut, maksimal 3 tingkat. */
-    '   var out=[], g=0;',
     '   while(g++<3){',
-    '     var kk=els(tgt());',
+    '     kk=els(tgt());',
     '     if(kk.length<2) break;',
-    '     var c=kk[kk.length-1];',
+    '     c=kk[kk.length-1];',
     '     if(!_numHead(c)) break;',
     '     c.parentNode.removeChild(c); out.unshift(c);',
     '   }',
