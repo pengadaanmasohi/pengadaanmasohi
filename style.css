@@ -4850,6 +4850,13 @@ table.ac-list thead th{ background:linear-gradient(180deg,#eef6f7,#dfedee); box-
 .trk-fail .trk-nm{color:#b02f22}
 .trk-redo .trk-dot{background:#e39b23;color:#fff;box-shadow:0 3px 6px rgba(0,0,0,.14),inset 0 1px 1px rgba(255,255,255,.35)}
 .trk-redo .trk-nm{color:#8a5a0a}
+/* Jaring pengaman: bila app-lain.js versi LAMA masih tersimpan di cache
+   peramban, ia tetap mencetak <div class="trk-ket"><svg>…. Tanpa batas ukuran,
+   ikon balon obrolan itu membesar selebar kartu (lingkaran hitam raksasa).
+   Aturan ini menjaganya tetap kecil sampai berkas barunya termuat. */
+.trk-ket{margin-top:6px;font-size:12.5px;font-style:italic;color:#5a5f5e;display:flex;gap:7px;align-items:flex-start;line-height:1.5}
+.trk-ket svg{width:15px;height:15px;flex:0 0 auto;margin-top:2px;color:#0f9d80}
+.trk-ket-empty{display:none}
 /* ---- keterangan tahapan: teks miring biasa di bawah jadwal (tanpa kotak) ---- */
 .trk-note{margin:3px 0 0;font-size:12.5px;font-style:italic;color:#5a5f5e;line-height:1.5}
 .trk-wait .trk-note{color:#a8acab}

@@ -974,6 +974,7 @@ const TRK_LS_KEY='trk_records_v1';
 let records_track=[];
 let trkUseLocal=false;
 let trkSel='';        // nama pekerjaan terpilih
+let trkOpenTrackViewSel=null; // titipan pekerjaan dari Kelola Tracking → Tracking Pengadaan (setelah Simpan)
 let trkDraft=null;    // salinan info yang sedang diedit admin
 
 function trkSupaReady(){ return !!(USE_SUPABASE && db); }
@@ -1169,6 +1170,12 @@ function trkStepNama(steps,key){ const s=steps.find(x=>x.key===key); return s?s.
 
 /* ---------- Halaman PENGGUNA ---------- */
 function openTrackView(){
+  /* Masuk dari menu = selalu mulai dari keadaan awal "— pilih pekerjaan —".
+     Pengecualian: trkOpenTrackViewSel diisi oleh trkSave() agar sesudah
+     Simpan Tracking halaman ini langsung membuka pekerjaan yang baru disimpan. */
+  if(trkOpenTrackViewSel!=null){ trkSel=trkOpenTrackViewSel; trkOpenTrackViewSel=null; }
+  else { trkSel=''; }
+  trkDraft=null;
   showView('track-view');
   const jobs=[];
   if(typeof refreshDataDp==='function') jobs.push(refreshDataDp());
@@ -1199,7 +1206,7 @@ function trkHeadHtml(nama, info){
   }
   return '<div class="trk-head">'
     +'<div><p class="trk-head-nama">'+trkEsc(nama)+'</p>'
-    +(meta.length?'<p class="trk-head-meta">'+trkEsc(meta.join(' \u00b7 '))+'</p>':'')
+    +(meta.length?'<p class="trk-head-meta">'+trkEsc(meta.join(' - '))+'</p>':'')
     +'</div><span class="trk-pill '+st.cls+'">'+st.label+'</span></div>';
 }
 function trkItemHtml(o){
@@ -1210,14 +1217,14 @@ function trkItemHtml(o){
     +(o.last?'':'<span class="trk-rail"></span>')+'</div>'
     +'<div class="trk-body">'
     +'<p class="trk-nm">'+trkEsc(o.nama)+'</p>'
-    +(o.sub?'<p class="trk-sub">'+trkEsc(o.sub)+'</p>':'');
+    +(o.sub?'<p class="trk-sub">'+trkEsc(o.sub)+'</p>':'')
+    /* Keterangan tampil sebagai teks miring biasa tepat di bawah jadwal tahapan.
+       Tidak ada kotak/ikon, dan bila keterangan kosong tidak muncul apa pun. */
+    +(o.ket?'<p class="trk-note">'+trkEsc(o.ket)+'</p>':'');
   if(o.chips && o.chips.length){
     h+='<div class="trk-chips"><span class="trk-chip trk-chip-count">'+o.chips.length+' penyedia diundang</span>';
     o.chips.forEach(c=>{ h+='<span class="trk-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-4h6v4"/></svg>'+trkEsc(c)+'</span>'; });
     h+='</div>';
-  }
-  if(o.ket!==undefined){
-    h+='<div class="trk-ket'+(o.ket?'':' trk-ket-empty')+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.6 8.6 0 0 1-3.3-.7L3 21l1.8-5.7A8.4 8.4 0 1 1 21 11.5Z"/></svg><span>'+(o.ket?trkEsc(o.ket):'Belum ada keterangan pada tahap ini.')+'</span></div>';
   }
   return h+'</div></div>';
 }
@@ -1378,6 +1385,19 @@ function trkSusunJadwalUlang(){
     if(n>60) clearInterval(t);
   },150);
 }
+/* Tombol Simpan → konfirmasi dulu lewat pop-up, baru benar-benar menyimpan. */
+function trkSaveAsk(){
+  if(!trkSel){ toast('Pilih pekerjaan terlebih dahulu','warn'); return; }
+  if(!confirm('Simpan tracking untuk pekerjaan:\n\n'+trkSel+'\n\nData tracking akan diperbarui dan halaman berpindah ke Tracking Pengadaan.')) return;
+  trkSave();
+}
+/* Tombol Batal → buang perubahan yang belum disimpan, kembali ke Tracking Pengadaan. */
+function trkBatal(){
+  if(!confirm('Batalkan pengisian? Perubahan yang belum disimpan akan hilang.')) return;
+  trkDraft=null;
+  trkOpenTrackViewSel=null;
+  if(typeof openTrackView==='function') openTrackView(); else showView('track-view');
+}
 async function trkSave(){
   if(!trkSel){ toast('Pilih pekerjaan terlebih dahulu','warn'); return; }
   const d=trkDraftEnsure();
@@ -1416,7 +1436,11 @@ async function trkSave(){
       }
     }
   }catch(e){ console.warn('Sinkron keterangan ke jadwal dilewati:', e&&e.message); }
-  renderTrackKelola(true);
+  /* Sesudah Simpan → langsung diarahkan ke Tracking Pengadaan dengan
+     pekerjaan yang barusan disimpan sudah terpilih. */
+  trkOpenTrackViewSel=trkSel;
+  trkDraft=null;
+  if(typeof openTrackView==='function') openTrackView();
 }
 function trkAdmRow(s, info, undKey, ttdKey){
   const no=s.__no;
@@ -1516,8 +1540,8 @@ function renderTrackKelola(keep){
   h+='</div>';
 
   h+='<div class="trk-actions">'
-    +'<button type="button" class="trk-btn trk-btn-ghost" onclick="showView(\'track-view\')">Lihat sebagai Pengguna</button>'
-    +'<button type="button" class="trk-btn trk-btn-teal" onclick="trkSave()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> Simpan Tracking</button>'
+    +'<button type="button" class="trk-btn trk-btn-ghost" onclick="trkBatal()">Batal</button>'
+    +'<button type="button" class="trk-btn trk-btn-teal" onclick="trkSaveAsk()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> Simpan</button>'
     +'</div>';
 
   box.innerHTML=h;
