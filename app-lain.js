@@ -1385,15 +1385,11 @@ function trkSusunJadwalUlang(){
     if(n>60) clearInterval(t);
   },150);
 }
-/* Tombol Simpan → konfirmasi dulu lewat pop-up, baru benar-benar menyimpan. */
-function trkSaveAsk(){
-  if(!trkSel){ toast('Pilih pekerjaan terlebih dahulu','warn'); return; }
-  if(!confirm('Simpan tracking untuk pekerjaan:\n\n'+trkSel+'\n\nData tracking akan diperbarui dan halaman berpindah ke Tracking Pengadaan.')) return;
-  trkSave();
-}
-/* Tombol Batal → buang perubahan yang belum disimpan, kembali ke Tracking Pengadaan. */
+/* Tombol Batal → buang perubahan yang belum disimpan, kembali ke Tracking
+   Pengadaan. Konfirmasinya TIDAK ditulis di sini: penyadap klik terpusat di
+   app.js sudah memunculkan modal "Batalkan Proses?" sebelum fungsi ini jalan,
+   sama seperti tombol Batal di halaman lain. */
 function trkBatal(){
-  if(!confirm('Batalkan pengisian? Perubahan yang belum disimpan akan hilang.')) return;
   trkDraft=null;
   trkOpenTrackViewSel=null;
   if(typeof openTrackView==='function') openTrackView(); else showView('track-view');
@@ -1539,9 +1535,17 @@ function renderTrackKelola(keep){
   }
   h+='</div>';
 
+  /* Tombol Batal & Simpan memakai kelas baku .btn-red / .btn-green beserta
+     ikonnya, sama seperti di form lain. Dengan begitu penyadap klik terpusat di
+     app.js ikut menangkapnya, sehingga popup "Batalkan Proses?" / "Simpan
+     Perubahan?" yang muncul persis sama dengan halaman lain. */
   h+='<div class="trk-actions">'
-    +'<button type="button" class="trk-btn trk-btn-ghost" onclick="trkBatal()">Batal</button>'
-    +'<button type="button" class="trk-btn trk-btn-teal" onclick="trkSaveAsk()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> Simpan</button>'
+    +'<button type="button" class="btn btn-red" onclick="trkBatal()">'
+    +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>'
+    +'<span>Batal</span></button>'
+    +'<button type="button" class="btn btn-green" onclick="trkSave()">'
+    +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>'
+    +'<span>Simpan</span></button>'
     +'</div>';
 
   box.innerHTML=h;
