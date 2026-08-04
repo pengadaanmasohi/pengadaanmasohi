@@ -4845,17 +4845,15 @@ table.ac-list thead th{ background:linear-gradient(180deg,#eef6f7,#dfedee); box-
 .trk-wait .trk-dot{background:#f2f3f3;box-shadow:inset 0 1px 2px rgba(0,0,0,.06),0 1px 0 #fff;border:2px solid #dcdedd}
 .trk-wait .trk-nm{color:#9a9e9d;font-weight:500}
 .trk-wait .trk-sub{color:#a8acab}
-.trk-wait .trk-ket{opacity:.7}
+
 .trk-fail .trk-dot{background:#d3483a;color:#fff;box-shadow:0 3px 6px rgba(0,0,0,.14),inset 0 1px 1px rgba(255,255,255,.35)}
 .trk-fail .trk-nm{color:#b02f22}
 .trk-redo .trk-dot{background:#e39b23;color:#fff;box-shadow:0 3px 6px rgba(0,0,0,.14),inset 0 1px 1px rgba(255,255,255,.35)}
 .trk-redo .trk-nm{color:#8a5a0a}
-/* ---- kotak keterangan ---- */
-.trk-ket{margin-top:8px;background:#fafafa;border:1px solid #eceded;border-radius:10px;padding:8px 11px;font-size:12.5px;color:#4a4f4e;display:flex;gap:8px;align-items:flex-start;box-shadow:inset 0 1px 3px rgba(0,0,0,.04);line-height:1.5}
-.trk-ket svg{width:15px;height:15px;flex:none;margin-top:1px;color:#0f9d80}
-.trk-ket-empty span{color:#a2a6a5;font-style:italic}
-.trk-fail .trk-ket{background:#fdf4f3;border-color:#f2d6d2}
-.trk-fail .trk-ket svg{color:#c93a2c}
+/* ---- keterangan tahapan: teks miring biasa di bawah jadwal (tanpa kotak) ---- */
+.trk-note{margin:3px 0 0;font-size:12.5px;font-style:italic;color:#5a5f5e;line-height:1.5}
+.trk-wait .trk-note{color:#a8acab}
+.trk-fail .trk-note{color:#b0453a}
 /* ---- chip penyedia ---- */
 .trk-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;align-items:center}
 .trk-chip{display:inline-flex;align-items:center;gap:5px;background:#ffffff;border:1px solid #dcdedd;border-radius:99px;padding:3px 10px;font-size:12px;color:#444;box-shadow:0 2px 4px rgba(0,0,0,.06),inset 0 1px 0 #fff}

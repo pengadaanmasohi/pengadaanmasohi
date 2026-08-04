@@ -1206,7 +1206,7 @@ function trkHeadHtml(nama, info){
   }
   return '<div class="trk-head">'
     +'<div><p class="trk-head-nama">'+trkEsc(nama)+'</p>'
-    +(meta.length?'<p class="trk-head-meta">'+trkEsc(meta.join(' \u00b7 '))+'</p>':'')
+    +(meta.length?'<p class="trk-head-meta">'+trkEsc(meta.join(' - '))+'</p>':'')
     +'</div><span class="trk-pill '+st.cls+'">'+st.label+'</span></div>';
 }
 function trkItemHtml(o){
@@ -1217,16 +1217,14 @@ function trkItemHtml(o){
     +(o.last?'':'<span class="trk-rail"></span>')+'</div>'
     +'<div class="trk-body">'
     +'<p class="trk-nm">'+trkEsc(o.nama)+'</p>'
-    +(o.sub?'<p class="trk-sub">'+trkEsc(o.sub)+'</p>':'');
+    +(o.sub?'<p class="trk-sub">'+trkEsc(o.sub)+'</p>':'')
+    /* Keterangan tampil sebagai teks miring biasa tepat di bawah jadwal tahapan.
+       Tidak ada kotak/ikon, dan bila keterangan kosong tidak muncul apa pun. */
+    +(o.ket?'<p class="trk-note">'+trkEsc(o.ket)+'</p>':'');
   if(o.chips && o.chips.length){
     h+='<div class="trk-chips"><span class="trk-chip trk-chip-count">'+o.chips.length+' penyedia diundang</span>';
     o.chips.forEach(c=>{ h+='<span class="trk-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-4h6v4"/></svg>'+trkEsc(c)+'</span>'; });
     h+='</div>';
-  }
-  /* Keterangan hanya tampil bila memang diisi di Kelola Tracking;
-     bila kosong, kotak keterangan tidak dimunculkan sama sekali. */
-  if(o.ket){
-    h+='<div class="trk-ket"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.6 8.6 0 0 1-3.3-.7L3 21l1.8-5.7A8.4 8.4 0 1 1 21 11.5Z"/></svg><span>'+trkEsc(o.ket)+'</span></div>';
   }
   return h+'</div></div>';
 }
