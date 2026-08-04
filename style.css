@@ -632,6 +632,20 @@ td.cell-center{text-align:center}
 @media(max-width:640px){ .form-flow>.field.field-wide15{flex:1 1 100% !important} }
 .form-flow>.field input,.form-flow>.field select{width:100%}
 @media(max-width:640px){ .form-flow>.field{flex:1 1 100% !important;width:100% !important} }
+/* Kelompok yang memuat field multi-nilai (Bidang / Sub Bidang) — rata ATAS.
+   .form-flow bawaannya align-items:flex-end supaya kotak isian sebaris. Namun
+   pada kelompok yang memuat .indep-field, tiap penambahan baris membuat field
+   lain (Jenis Pengadaan, Jenis Perjanjian/Kontrak) ikut terdorong ke bawah
+   mengikuti isian terakhir. Di sini perataannya dibalik ke atas sehingga field
+   lain tetap di posisi semula meski daftar memanjang.
+   :has() dipakai agar HANYA kelompok tsb yang berubah — kelompok form lain
+   (termasuk .hl-add-flow yang butuh rata bawah) tidak ikut terpengaruh. */
+.form-flow:has(> .indep-field){align-items:flex-start;align-content:flex-start}
+.form-flow:has(> .indep-field)>.field{align-self:flex-start;justify-content:flex-start;margin-bottom:auto}
+/* Cadangan manual bila peramban belum mendukung :has() — tambahkan kelas
+   .flow-top pada container .form-flow yang bersangkutan. */
+.form-flow.flow-top{align-items:flex-start;align-content:flex-start}
+.form-flow.flow-top>.field{align-self:flex-start;justify-content:flex-start;margin-bottom:auto}
 /* Tombol "Tambah Tanggal" sejajar (rata bawah) dengan field Tanggal & Keterangan.
    .form-flow sudah align-items:flex-end, jadi tombol otomatis sebaris dengan input. */
 .hl-add-btn-field{display:flex;align-items:flex-end}

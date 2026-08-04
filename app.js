@@ -535,6 +535,44 @@ function makeWorkComparator(getYear, hasKontrak, getDate){
     return da>db ? -1 : da<db ? 1 : 0;
   };
 }
+/* Komparator daftar pekerjaan PENGADAAN (Monitoring Pengadaan Langsung & Tender).
+   ATURAN 4 Agu 2026 (permintaan user): urutan MURNI berdasarkan
+   **Tgl. Diterima Dokumen Pengadaan** — terbaru (newest) di atas, terlama
+   (oldest) di bawah. Tidak lagi dikelompokkan per tahun maupun berdasarkan
+   ada/tidaknya no. kontrak, supaya pekerjaan yang baru masuk selalu tampil
+   paling atas.
+   Catatan:
+     - Record tanpa tgl_terima_dok ditaruh paling bawah, dengan cadangan
+       tgl_awal_kontrak / tgl_nota_dinas / tgl_nd_rendan supaya data lama
+       (yang belum punya kolom ini) tetap terurut wajar dan tidak menumpuk.
+     - Tie-break terakhir memakai nama pekerjaan (A→Z) agar urutan stabil. */
+function tglTerimaDokOf(r){
+  if(!r) return '';
+  const t=String(r.tgl_terima_dok||'').trim();
+  return t;
+}
+function tglTerimaDokFallback(r){
+  if(!r) return '';
+  return String(r.tgl_awal_kontrak || r.tgl_nota_dinas || r.tgl_nd_rendan || '').trim();
+}
+function cmpTerimaDokDesc(a,b){
+  const da=tglTerimaDokOf(a), db=tglTerimaDokOf(b);
+  if(da!==db){
+    if(!da) return 1;        // tanpa tgl. diterima -> paling bawah
+    if(!db) return -1;
+    return da>db ? -1 : 1;   // tanggal terbaru lebih dulu
+  }
+  // tanggal diterima sama (atau sama-sama kosong): pakai tanggal cadangan
+  const fa=tglTerimaDokFallback(a), fb=tglTerimaDokFallback(b);
+  if(fa!==fb){
+    if(!fa) return 1;
+    if(!fb) return -1;
+    return fa>fb ? -1 : 1;
+  }
+  // tie-break stabil
+  const na=String(a&&a.nama_pekerjaan||''), nb=String(b&&b.nama_pekerjaan||'');
+  return na.localeCompare(nb,'id');
+}
 /* Isi opsi filter Tahun (Dashboard + Monitoring) dengan rentang tetap 2024–2034, pertahankan pilihan */
 function fillYearFilters(){
   const years=Array.from({length:11},(_,i)=>String(2024+i)); // 2024..2034
@@ -4362,11 +4400,7 @@ function getFilteredRecordsPl(){
       if(!hay.includes(fs)) return false;
     }
     return true;
-  }).sort(makeWorkComparator(
-    r=>yearPengadaan(r),
-    r=>!!String(r.no_kontrak||'').trim(),
-    r=>r.tgl_awal_kontrak
-  ));
+  }).sort(cmpTerimaDokDesc);
 }
 let currentPagePl=1;
 function renderTablePl(){
@@ -5673,15 +5707,7 @@ function getFilteredRecordsTender(){
       if(!hay.includes(fs)) return false;
     }
     return true;
-  }).sort(makeWorkComparator(
-    r=>yearPengadaan(r),
-    r=>{
-      if(String(r.no_kontrak||'').trim()) return true;
-      const layers=Array.isArray(r.penyedia_layers)?r.penyedia_layers:[];
-      return layers.some(l=>String((l&&l.no_kontrak)||'').trim());
-    },
-    r=>r.tgl_awal_kontrak
-  ));
+  }).sort(cmpTerimaDokDesc);
 }
 let currentPageTender=1;
 function renderTableTender(){
