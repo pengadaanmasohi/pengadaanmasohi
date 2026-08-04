@@ -4805,7 +4805,7 @@ table.ac-list thead th{ background:linear-gradient(180deg,#eef6f7,#dfedee); box-
 .trk-scene{background:#ffffff;border:1px solid #ececec;border-radius:18px;padding:22px;box-shadow:0 10px 30px rgba(0,0,0,.05),0 2px 6px rgba(0,0,0,.03)}
 .trk-scene *{box-sizing:border-box}
 .trk-toolbar{margin-bottom:16px}
-.trk-pickbox{max-width:560px}
+.trk-pickbox{width:100%}
 .trk-label{display:block;font-size:12.5px;color:#555;margin:0 0 6px;font-weight:600}
 .trk-label-sub{font-weight:400;color:#999}
 .trk-select{width:100%;height:42px;border:1px solid #dcdedd;border-radius:12px;background:#ffffff;color:#222;font-size:14px;padding:0 12px;box-shadow:0 3px 8px rgba(0,0,0,.06),inset 0 1px 0 #fff;outline:none;appearance:auto;cursor:pointer}
