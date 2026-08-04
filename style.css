@@ -6195,6 +6195,13 @@ tr:hover .pn-nomor-val{
   .toast{      transform:translateY(16px) !important }
   .toast.show{ transform:none !important }
 }
+/* Toast TIDAK BOLEH menangkap sentuhan.
+   Keadaan tersembunyinya hanya opacity:0 + geser 16px — jadi kotaknya tetap
+   berada di atas layar (z-index:200) walau tak terlihat. Di ponsel POTRET
+   kotak itu membentang selebar layar tepat di jalur tombol "Keluar" pada laci
+   navigasi, sehingga ketukan mendarat di toast tak kasatmata, bukan di tombol.
+   Isi toast memang tidak pernah perlu diklik, maka dimatikan seluruhnya. */
+.toast{ pointer-events:none !important }
 
 /* ------------------------------------------------------------
    B5. Area unggah berkas (dropzone) — miring rotateX(6deg)
