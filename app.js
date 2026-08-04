@@ -1784,6 +1784,18 @@ const ICON_BG={save:'#d8f0e3',back:'#fbe0e0',del:'#fbe0e0',warn:'#fdf0d6'};
    langsung dianggap "Ya" tanpa ditampilkan. Konfirmasi lain yang isinya berbeda
    (mis. "Masih Ada yang Belum Ditandai") tetap muncul seperti biasa. */
 let __confirmSkipRe=null;
+
+/* ============ IKON BAKU TOMBOL BATAL & SIMPAN ============
+   Satu sumber untuk SELURUH modul, supaya tombol Batal (merah, ikon panah
+   putar-balik) dan Simpan (hijau, ikon disket) tampil persis sama di mana pun.
+   Ukurannya sengaja tidak dikunci di sini — biar mengikuti aturan .btn svg
+   pada style.css, sama seperti tombol baku lainnya.
+   Catatan: tombol yang berada DI DALAM jendela pop-up diberi atribut
+   data-modal supaya penyadap klik terpusat melewatinya — jendela itu sendiri
+   sudah berperan sebagai konfirmasi, jadi tidak perlu popup bertumpuk. */
+const BTN_IC_BATAL='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>';
+const BTN_IC_SIMPAN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>';
+
 function openConfirm({icon,title,text,onYes,sfxNone}){
   if(__confirmSkipRe && __confirmSkipRe.test(String(title||''))){
     __confirmSkipRe=null;
@@ -6587,8 +6599,8 @@ function jpProfilOpenSave(){
     '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Simpan Profil Jadwal</div>'+
     '<div class="pnw-profil-sub">Menyimpan <b>'+cnt+'</b> Tahapan Pengadaan dan membaca <b>semua</b> sifat jadwalnya: durasi Awal\u2192Akhir tiap tahapan (dalam <b>hari kerja</b>), jarak tanggal antar tahapan (menyambung / mulai bersamaan / berjarak N hari kerja, termasuk tumpang tindih), serta <b>Jam Awal</b> dan <b>Jam Akhir</b> setiap tahapan. Tanggal mati tidak ikut tersimpan \u2014 saat dimuat, semuanya dihitung ulang dari Titik Mulai.</div>'+
     profilSaveBoxHtml('jadwal','jp-profil-name','jpProfilDoSave()','Nama profil (mis. Pengadaan Langsung Standar)')+
-    '<div class="pnw-profil-actions"><button type="button" class="btn btn-ghost" onclick="jpProfilClose()">Batal</button>'+
-    '<button type="button" class="btn btn-teal" id="jp-profil-name-btn" onclick="jpProfilDoSave()">Simpan Profil</button></div>'
+    '<div class="pnw-profil-actions"><button type="button" class="btn btn-red" data-modal onclick="jpProfilClose()">'+BTN_IC_BATAL+'Batal</button>'+
+    '<button type="button" class="btn btn-green" data-modal id="jp-profil-name-btn" onclick="jpProfilDoSave()">'+BTN_IC_SIMPAN+'Simpan Profil</button></div>'
   );
   setTimeout(()=>{ const el=document.getElementById('jp-profil-name'); if(el) el.focus(); },60);
 }
@@ -10264,9 +10276,8 @@ function materiKatModalHtml(ikon, judul, sub, nilai){
       'placeholder="cth. Peraturan Direksi" '+
       'onkeydown="if(event.key===&quot;Enter&quot;){event.preventDefault();materiKatSimpan();}">'+
     '<div class="materi-kat-actions">'+
-      '<button type="button" class="btn btn-ghost" onclick="materiKatClose()">Batal</button>'+
-      '<button type="button" class="btn btn-teal" onclick="materiKatSimpan()">'+
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Simpan</button>'+
+      '<button type="button" class="btn btn-red" data-modal onclick="materiKatClose()">'+BTN_IC_BATAL+'Batal</button>'+
+      '<button type="button" class="btn btn-green" data-modal onclick="materiKatSimpan()">'+BTN_IC_SIMPAN+'Simpan</button>'+
     '</div>';
 }
 function materiKatBuatOpen(){
@@ -10572,8 +10583,8 @@ function materiFormHtml(){
     '</div>' +
     '<div class="dpeng-uphint">'+MATERI_ACCEPT_HINT+' • maks. '+MATERI_MAX_MB+' MB per berkas (batas gateway Cloudflare).</div>' +
     '<div class="pn-doc-bar materi-act-bar">' +
-      '<button type="button" class="btn btn-indigo" onclick="materiSubmitForm()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> Simpan</button>' +
-      '<button type="button" class="btn btn-red" onclick="materiFormBatal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg> Kembali</button>' +
+      '<button type="button" class="btn btn-green" onclick="materiSubmitForm()">'+BTN_IC_SIMPAN+'Simpan</button>' +
+      '<button type="button" class="btn btn-red" onclick="materiFormBatal()">'+BTN_IC_BATAL+'Batal</button>' +
     '</div>' +
   '</div>';
 }
@@ -12819,8 +12830,8 @@ function pnwProfilOpenSave(){
     '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Simpan Profil Persyaratan</div>'+
     '<div class="pnw-profil-sub">Menyimpan <b>'+cnt+'</b> uraian persyaratan (beserta kategori terpilih) agar bisa dipakai lagi tanpa mengetik ulang.</div>'+
     profilSaveBoxHtml('syarat','pnw-profil-name','pnwProfilDoSave()','Nama profil (mis. Pengadaan Barang Standar)')+
-    '<div class="pnw-profil-actions"><button type="button" class="btn btn-ghost" onclick="pnwProfilClose()">Batal</button>'+
-    '<button type="button" class="btn btn-teal" id="pnw-profil-name-btn" onclick="pnwProfilDoSave()">Simpan Profil</button></div>'
+    '<div class="pnw-profil-actions"><button type="button" class="btn btn-red" data-modal onclick="pnwProfilClose()">'+BTN_IC_BATAL+'Batal</button>'+
+    '<button type="button" class="btn btn-green" data-modal id="pnw-profil-name-btn" onclick="pnwProfilDoSave()">'+BTN_IC_SIMPAN+'Simpan Profil</button></div>'
   );
   setTimeout(()=>{ const el=document.getElementById('pnw-profil-name'); if(el) el.focus(); },60);
 }

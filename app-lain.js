@@ -292,8 +292,8 @@
       + '</div>';
     h+=acHakHtml();
     h+='<div class="ac-actions">'
-      + (e?'<button class="btn ghost" type="button" onclick="acTab(\'list\')">Batal</button>':'')
-      + '<button class="btn btn-teal" type="button" onclick="acCreateAccount('+(e?'true':'false')+')">'+(e?'Simpan':'Buat Akun')+'</button></div>';
+      + (e?'<button class="btn btn-red" type="button" data-modal onclick="acTab(\'list\')">'+BTN_IC_BATAL+'Batal</button>':'')
+      + '<button class="btn btn-green" type="button" data-modal onclick="acCreateAccount('+(e?'true':'false')+')">'+(e?BTN_IC_SIMPAN+'Simpan':'+ Buat Akun')+'</button></div>';
     h+='</div>';
     document.getElementById('ac-pane-create').innerHTML=h;
   }

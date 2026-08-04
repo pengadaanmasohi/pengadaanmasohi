@@ -7527,7 +7527,7 @@ function spkWENumNewFormat(){
         '<select id="spk-nf-align" onchange="spkWENFAlign()">'+alignOpts+'</select>'+
         '<div class="spk-we-nfprev"><div class="pl">Pratinjau</div><div id="spk-nf-prev"></div></div>'+
       '</div>'+
-      '<div class="spk-we-nffoot"><button class="btn btn-ghost btn-sm" onclick="spkWENFClose()">Batal</button><button class="btn btn-green btn-sm" onclick="spkWENFApply()">OK</button></div>'+
+      '<div class="spk-we-nffoot"><button class="btn btn-red btn-sm" data-modal onclick="spkWENFClose()">'+BTN_IC_BATAL+'Batal</button><button class="btn btn-green btn-sm" onclick="spkWENFApply()">OK</button></div>'+
     '</div>';
   m.classList.add('show');
   spkWENFPrev();
@@ -7683,7 +7683,7 @@ function spkWEParagraphDialog(){
           '<div id="spk-pg-prevline" class="rc" style="width:55%;background:#111;margin:8px auto"></div>'+
           '<div class="rw" style="width:65%"></div><div class="rw" style="width:72%"></div></div>'+
       '</div>'+
-      '<div class="spk-we-nffoot"><button class="btn btn-ghost btn-sm" onclick="spkWENFClose()">Batal</button><button class="btn btn-green btn-sm" onclick="spkWEParagraphApply()">OK</button></div>'+
+      '<div class="spk-we-nffoot"><button class="btn btn-red btn-sm" data-modal onclick="spkWENFClose()">'+BTN_IC_BATAL+'Batal</button><button class="btn btn-green btn-sm" onclick="spkWEParagraphApply()">OK</button></div>'+
     '</div>';
   m.classList.add('show');
   // pratinjau perataan langsung
@@ -7832,7 +7832,7 @@ function spkWEBulNew(){
         '<div class="spk-we-nfprev"><div class="pl">Pratinjau</div>'+
           '<div style="font:13px Arial;color:#1c2733"><span id="spk-bul-prev">\u2022</span>&nbsp; Contoh butir poin</div></div>'+
       '</div>'+
-      '<div class="spk-we-nffoot"><button class="btn btn-ghost btn-sm" onclick="spkWENFClose()">Batal</button><button class="btn btn-green btn-sm" onclick="spkWEBulNewApply()">OK</button></div>'+
+      '<div class="spk-we-nffoot"><button class="btn btn-red btn-sm" data-modal onclick="spkWENFClose()">'+BTN_IC_BATAL+'Batal</button><button class="btn btn-green btn-sm" onclick="spkWEBulNewApply()">OK</button></div>'+
     '</div>';
   m.classList.add('show');
   var inp=document.getElementById('spk-bul-custom');
@@ -9967,8 +9967,8 @@ function spkKlProfilOpenSave(){
     '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Simpan Profil Klausul</div>'+
     '<div class="pnw-profil-sub">Menyimpan <b>'+snap.length+'</b> klausul (judul, isi, urutan, status aktif) sebagai satu profil yang dapat dimuat kembali kapan saja.</div>'+
     profilSaveBoxHtml('klausul','spk-klprofil-name','spkKlProfilDoSave()','Nama profil (mis. SPK Konstruksi Standar)')+
-    '<div class="pnw-profil-actions"><button type="button" class="btn btn-ghost" onclick="spkKlProfilClose()">Batal</button>'+
-    '<button type="button" class="btn btn-teal" id="spk-klprofil-name-btn" onclick="spkKlProfilDoSave()">Simpan Profil</button></div>'
+    '<div class="pnw-profil-actions"><button type="button" class="btn btn-red" data-modal onclick="spkKlProfilClose()">'+BTN_IC_BATAL+'Batal</button>'+
+    '<button type="button" class="btn btn-green" data-modal id="spk-klprofil-name-btn" onclick="spkKlProfilDoSave()">'+BTN_IC_SIMPAN+'Simpan Profil</button></div>'
   );
   setTimeout(function(){ const el=document.getElementById('spk-klprofil-name'); if(el) el.focus(); },60);
 }
@@ -10116,8 +10116,8 @@ function spkPyProfilOpenSave(){
     '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Simpan Profil Penyedia</div>'+
     '<div class="pnw-profil-sub">Menyimpan seluruh data <b>Informasi Penyedia</b> (nama perusahaan, lokasi, pimpinan, rekening, penawaran, akta) sebagai satu profil yang dapat dimuat kembali kapan saja.</div>'+
     profilSaveBoxHtml(SPK_PY_PROFIL_KIND,'spk-pyprofil-name','spkPyProfilDoSave()','Nama profil (mis. PT Seram Indo Pratama)')+
-    '<div class="pnw-profil-actions"><button type="button" class="btn btn-ghost" onclick="spkPyProfilClose()">Batal</button>'+
-    '<button type="button" class="btn btn-teal" id="spk-pyprofil-name-btn" onclick="spkPyProfilDoSave()">Simpan Profil</button></div>'
+    '<div class="pnw-profil-actions"><button type="button" class="btn btn-red" data-modal onclick="spkPyProfilClose()">'+BTN_IC_BATAL+'Batal</button>'+
+    '<button type="button" class="btn btn-green" data-modal id="spk-pyprofil-name-btn" onclick="spkPyProfilDoSave()">'+BTN_IC_SIMPAN+'Simpan Profil</button></div>'
   );
   setTimeout(function(){ const el=document.getElementById('spk-pyprofil-name'); if(el) el.focus(); },60);
 }
@@ -11534,8 +11534,8 @@ function spkKlausulOpenEditor(k){
         '<span class="spk-we-status">'+
           '<span>A4 &middot; Portrait &middot; Margin Normal (2,54 cm) &middot; Arial 11</span></span>'+
         '<div style="display:flex;gap:8px">'+
-          '<button class="btn btn-ghost btn-sm" onclick="spkKlDocAskClose()">Batal</button>'+
-          '<button class="btn btn-green" onclick="spkKlDocSave()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> Simpan</button>'+
+          '<button class="btn btn-red btn-sm" data-modal onclick="spkKlDocAskClose()">'+BTN_IC_BATAL+'Batal</button>'+
+          '<button class="btn btn-green" data-modal onclick="spkKlDocSave()">'+BTN_IC_SIMPAN+'Simpan</button>'+
         '</div>'+
       '</div>'+
     '</div>';
