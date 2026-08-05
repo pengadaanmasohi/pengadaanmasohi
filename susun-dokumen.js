@@ -330,6 +330,12 @@ const TOR_FIELD_GROUPS = [
     /* Terbilangnya TIDAK dijadikan field — dihitung otomatis saat dokumen
        dibangun ({{nilai_pekerjaan_terbilang}}). */
     {k:'nilai_pekerjaan', l:'Perkiraan Nilai Pekerjaan (+ PPN)', t:'rupiah', def:''},
+    /* Terbilang TIDAK disimpan sebagai data \u2014 ia diturunkan dari Perkiraan
+       Nilai Pekerjaan lewat torAutoVal('terbilang_nilai'). Field ber-atribut
+       `auto` digambar terkunci (readonly + cursor not-allowed) dan disegarkan
+       torRefreshAuto() pada tiap ketikan rupiah, jadi angkanya mustahil
+       tertinggal dari nilainya. Kode isiannya tetap {{nilai_pekerjaan_terbilang}}. */
+    {k:'nilai_pekerjaan_terbilang', l:'Terbilang', t:'text', auto:'terbilang_nilai'},
   ]},
   /* ---------- Sumber Dana ----------
      Tahun Anggaran & Sumber Dana TIDAK lagi menjadi isian:
@@ -355,15 +361,15 @@ const TOR_FIELD_GROUPS = [
                                      kosong. */
   { sec:'Pengendali Pekerjaan', fields:[
     {k:'perubahan_pengguna', l:'Perubahan Pengguna?', t:'select', opts:['Ya','Tidak'], reRender:true, def:''},
-    {k:'nama_pengguna', l:'Nama Pengguna Barang/Jasa', t:'text', lockedBy:'perubahan_pengguna', def:''},
+    {k:'nama_pengguna', l:'Nama Pengguna Barang/Jasa', t:'text', up:true, lockedBy:'perubahan_pengguna', def:''},
     {k:'jabatan_pengguna', l:'Jabatan Pengguna Barang/Jasa', t:'text', lockedBy:'perubahan_pengguna', def:''},
     /* NIP dipakai Pakta Integritas (baris "NIP : ..."), bukan oleh TOR/KAK. */
     {k:'nip_pengguna', l:'NIP Pengguna Barang/Jasa', t:'text', lockedBy:'perubahan_pengguna', def:'', ph:'cth. 7594128H'},
-    {k:'nama_direksi', l:'Nama Direksi Pekerjaan', t:'text', def:''},
+    {k:'nama_direksi', l:'Nama Direksi Pekerjaan', t:'text', up:true, def:''},
     {k:'jabatan_direksi', l:'Jabatan Direksi Pekerjaan', t:'text', def:''},
     {k:'nip_direksi', l:'NIP Direksi Pekerjaan', t:'text', def:'', ph:'cth. 9215934ZY'},
     {k:'ada_pengawas', l:'Pengawas Pekerjaan?', t:'select', opts:['Ada','Tidak Ada'], reRender:true, def:''},
-    {k:'nama_pengawas', l:'Nama Pengawas Pekerjaan', t:'text', lockedBy:'ada_pengawas', def:''},
+    {k:'nama_pengawas', l:'Nama Pengawas Pekerjaan', t:'text', up:true, lockedBy:'ada_pengawas', def:''},
     {k:'jabatan_pengawas', l:'Jabatan Pengawas Pekerjaan', t:'text', lockedBy:'ada_pengawas', def:''},
   ]},
   /* ---------- Rencana Anggaran Biaya ----------
@@ -375,12 +381,14 @@ const TOR_FIELD_GROUPS = [
      Gaya penomoran mengikuti JS_NUM_STYLES di app.js ('' = tanpa nomor). */
   { sec:'Rencana Anggaran Biaya (RAB)', fields:[
     {k:'jumlah_bj', l:'Jumlah Barang/Jasa', t:'number', def:'', ph:'cth. 3'},
-    {k:'rab_judul_on', l:'Judul?', t:'select', opts:['Ya','Tidak'], reRender:true, def:''},
-    {k:'rab_judul_num', l:'Penomoran Judul', t:'select', lockedBy:'rab_judul_on', def:'',
-      opts:[{v:'',l:'\u2014 Tanpa nomor'},{v:'A',l:'A, B, C'},{v:'a',l:'a, b, c'},{v:'I',l:'I, II, III'},{v:'i',l:'i, ii, iii'}]},
-    {k:'rab_subjudul_on', l:'Sub-Judul?', t:'select', opts:['Ya','Tidak'], reRender:true, def:''},
-    {k:'rab_subjudul_num', l:'Penomoran Sub-Judul', t:'select', lockedBy:'rab_subjudul_on', def:'',
-      opts:[{v:'',l:'\u2014 Tanpa nomor'},{v:'A',l:'A, B, C'},{v:'a',l:'a, b, c'},{v:'I',l:'I, II, III'},{v:'i',l:'i, ii, iii'}]},
+    /* Judul? & Sub-Judul? digambar sebagai SATU field masing-masing \u2014 sakelar
+       Ya/Tidak di kanan judul, gaya penomoran di barisan bawahnya \u2014 mengikuti
+       tata letak yang sama persis dengan Perhitungan HPS (hpsJudulFieldsHtml).
+       `numKey` menunjuk kunci penyimpan gaya penomorannya. */
+    {k:'rab_judul_on', l:'Judul?', t:'judulsw', numKey:'rab_judul_num', reRender:true, def:''},
+    {k:'rab_judul_num', t:'hidden', def:''},
+    {k:'rab_subjudul_on', l:'Sub-Judul?', t:'judulsw', numKey:'rab_subjudul_num', reRender:true, def:''},
+    {k:'rab_subjudul_num', t:'hidden', def:''},
   ]},
   /* CATATAN: kartu "Pelaksanaan & Pembayaran" dan "Penyusun Dokumen" DIHAPUS
      (permintaan 5 Agu 2026). Satu-satunya isian yang dipertahankan dari kartu
@@ -545,7 +553,12 @@ function torExtendCtx(ctx, d){
   d=d||{};
   TOR_FIELDS_FLAT.forEach(f=>{
     if(f.auto) return;
-    const raw=(d[f.k]!=null && d[f.k]!=='') ? d[f.k] : '';
+    let raw=(d[f.k]!=null && d[f.k]!=='') ? d[f.k] : '';
+    /* Nama orang selalu HURUF BESAR di dokumen \u2014 termasuk dokumen LAMA yang
+       terlanjur tersimpan campur, karena diubah saat konteks dibangun, bukan
+       saat disimpan. Berlaku untuk seluruh kode isian {{nama_*}} di klausul,
+       bukan hanya blok pengesahan. */
+    if(f.up) raw=String(raw).toUpperCase();
     if(f.t==='date'){ ctx[f.k]=spkDateLong(raw); ctx[f.k+'_iso']=raw; }
     else ctx[f.k]=raw;
   });
@@ -674,6 +687,27 @@ function torSet(k,v){
   if(f && f.reRender){ renderTorSusun(); return; }
   torRefreshAuto();
 }
+/* Sakelar pada field gabungan Judul?/Sub-Judul?.
+   jsSwitchToggle() sudah menulis el.value menjadi 'Ya'/'Tidak' sebelum handler
+   ini dipanggil, jadi di sini tinggal menyimpan & menggambar ulang supaya
+   dropdown gaya penomorannya muncul/hilang. */
+function torSwJudul(el){
+  if(!torState || !el) return;
+  const k=String(el.id||'').replace(/^tor-fld-/,'');
+  if(!k) return;
+  torState.data[k] = (String(el.value||'')==='Ya') ? 'Ya' : 'Tidak';
+  renderTorSusun();
+}
+/* Dropdown gaya penomoran (— / A / a / I / i). Tidak menggambar ulang form:
+   mengubahnya tidak mengubah struktur apa pun, dan menggambar ulang justru
+   akan membuat dropdown menutup sendiri saat dipilih dengan papan ketik. */
+function torSetNomorGaya(el){
+  if(!torState || !el) return;
+  const k=String(el.id||'').replace(/^tor-fld-/,'');
+  if(!k) return;
+  torState.data[k] = (typeof jsNumStyleOk==='function') ? jsNumStyleOk(el.value,'') : (el.value||'');
+}
+
 /* --- Field berlapis: ubah / tambah / hapus baris --- */
 function torMultiSet(k,i,el){
   if(!torState) return;
@@ -702,6 +736,15 @@ function torMultiDel(k){
   arr.pop();                 /* buang PERSIS satu baris (tanpa merapikan ekor) */
   torMultiSync(d,k);
   renderTorSusun();
+}
+/* Simpan nama orang dalam HURUF BESAR. Nilai pada elemen input TIDAK ditulis
+   ulang di sini — kalau ditulis ulang, kursor akan meloncat ke akhir setiap kali
+   pengguna menyunting di tengah kata. Yang terlihat sudah besar berkat
+   text-transform pada elemennya. */
+function torSetUpper(k,el){
+  if(!torState||!el) return;
+  torState.data[k]=String(el.value||'').toUpperCase();
+  torRefreshAuto();
 }
 function torSetRupiah(k,el){
   const n=String(el.value||'').replace(/[^0-9]/g,'');
@@ -791,10 +834,13 @@ function torFieldInput(f){
   const dispDate=(x)=>{ const p=String(x||'').split('-'); return (p.length===3)?(p[2]+'/'+p[1]+'/'+p[0]):(x||''); };
   const locked=(disp,tip)=>'<div class="field"'+span+'><label>'+torLbl(f)+'</label>'+
     '<input type="text" id="tor-fld-'+f.k+'" value="'+fkEsc(disp)+'" readonly '+
-    'style="background:#f3f5f7;color:#2b2f36;cursor:not-allowed" title="'+fkEsc(tip||'Terisi otomatis — tidak dapat diubah di sini')+'"></div>';
+    'style="background:#f3f5f7;color:#2b2f36;cursor:not-allowed'+(f.up?';text-transform:uppercase':'')+'" '+
+    'title="'+fkEsc(tip||'Terisi otomatis — tidak dapat diubah di sini')+'"></div>';
 
   if(f.auto) return locked(torAutoVal(f.auto, d),
-    (f.auto==='no_dokumen') ? 'Nomor depan digenerate otomatis sesuai urutan dokumen (mulai 0001)' : '');
+    (f.auto==='no_dokumen')      ? 'Nomor depan digenerate otomatis sesuai urutan dokumen (mulai 0001)' :
+    (f.auto==='terbilang_nilai') ? 'Terisi otomatis dari Perkiraan Nilai Pekerjaan' :
+    (f.auto==='terbilang_jangka')? 'Terisi otomatis dari Jangka Waktu Pelaksanaan' : '');
   /* Field yang dikunci oleh sebuah sakelar (lockedBy). Selama sakelarnya
      bukan "Ya", isian ditampilkan namun tidak dapat diubah — nilai yang
      sudah tersimpan tetap terbaca, tidak terlihat seolah terhapus. */
@@ -807,6 +853,25 @@ function torFieldInput(f){
      sendiri di modul ini (kelas .tor-ml-*) supaya baris judulnya setinggi
      field biasa. Daftar isian disimpan di torState (bukan hanya di DOM),
      sehingga tidak hilang saat form digambar ulang. */
+  /* Kunci penyimpan saja, tidak digambar (gaya penomoran Judul/Sub-Judul
+     ditangani oleh field t:'judulsw' di atasnya). */
+  if(f.t==='hidden') return '';
+  /* ---- Field GABUNGAN Judul?/Sub-Judul? (t:'judulsw') ----
+     Satu kotak berisi: judul field + sakelar Ya/Tidak di kanannya, lalu di
+     bawahnya dropdown gaya penomoran saat sakelarnya ON, atau kotak nilai
+     "Tidak" saat OFF. Seluruh potongannya MEMAKAI ULANG helper bersama di
+     app.js (jsLabelSwitchHtml, jsNumSelectHtml, jsSwitchStateHtml) dan kelas
+     .js-judul-field / .js-judul-row, jadi tampilannya dijamin sama dengan
+     Perhitungan HPS tanpa menyalin satu baris CSS pun. */
+  if(f.t==='judulsw'){
+    const on=(String(v||'')==='Ya');
+    return '<div class="field js-judul-field"'+span+'>'+
+      jsLabelSwitchHtml(torLbl(f), 'tor-fld-'+f.k, (on?'Ya':'Tidak'), 'torSwJudul', 'data-nk="'+fkEsc(f.numKey||'')+'"')+
+      '<div class="js-judul-row">'+
+        (on ? jsNumSelectHtml('tor-fld-'+f.numKey, d[f.numKey]||'', 'torSetNomorGaya')
+            : jsSwitchStateHtml('Tidak'))+
+      '</div></div>';
+  }
   if(f.t==='multi'){
     torMultiSync(d, f.k);            /* JANGAN dirapikan di sini — lihat torMultiSync */
     const arr=d[f.k+'_list'];
@@ -870,6 +935,19 @@ function torFieldInput(f){
   if(f.t==='textarea')
     return '<div class="field"'+span+'><label>'+torLbl(f)+'</label>'+
       '<textarea rows="3" oninput="torSet(\''+f.k+'\',this.value)">'+fkEsc(v||'')+'</textarea></div>';
+  /* Field bertanda `up` (NAMA ORANG) selalu tampil & tersimpan HURUF BESAR.
+     Dua lapis sengaja dipakai bersama:
+       - text-transform:uppercase  -> yang TERLIHAT langsung besar saat mengetik
+       - torSetUpper()             -> yang TERSIMPAN juga besar
+     Lapis CSS saja tidak cukup: ia hanya mengubah tampilan, sedangkan nilai
+     yang masuk ke database tetap seperti diketik. Lapis JS saja juga kurang
+     nyaman: kursor bisa meloncat ke akhir bila nilai input ditulis ulang tiap
+     ketukan, jadi input dibiarkan apa adanya dan CSS yang mengurus tampilannya. */
+  if(f.up)
+    return '<div class="field"'+span+'><label>'+torLbl(f)+'</label>'+
+      '<input type="text" style="text-transform:uppercase" autocapitalize="characters" spellcheck="false"'+
+      ' value="'+fkEsc(v||'')+'"'+(f.ph?(' placeholder="'+fkEsc(f.ph)+'"'):'')+
+      ' oninput="torSetUpper(\''+f.k+'\',this)"></div>';
   return '<div class="field"'+span+'><label>'+torLbl(f)+'</label>'+
     '<input type="text" value="'+fkEsc(v||'')+'"'+(f.ph?(' placeholder="'+fkEsc(f.ph)+'"'):'')+' oninput="torSet(\''+f.k+'\',this.value)"></div>';
 }
@@ -928,6 +1006,17 @@ function torEnsureStyle(){
       'font-size:10.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#1B3A6B}'+
     '#tor-susun-content .tor-babsep:first-child{margin-top:2px}'+
     '#tor-susun-content .tor-babsep::after{content:"";flex:1;height:1px;background:#DCE4EE}'+
+    /* ---- Stepper Penyusunan Dokumen: RATA KIRI-KANAN ----
+       Bawaannya .spk-stp-line{flex:1;max-width:120px} \u2014 batas 120px itu
+       membuat rangkaian langkah berhenti di tengah dan menyisakan ruang kosong
+       di kanan. Batasnya dilepas di sini supaya garis penghubung menyerap
+       seluruh sisa lebar dan langkah terakhir mentok ke tepi kanan.
+       DILINGKUPI #tor-susun-content: stepper Susun Kontrak yang hanya berisi
+       dua langkah TIDAK ikut berubah \u2014 pada dua langkah, garis sepanjang itu
+       justru terlihat menganga. */
+    '#tor-susun-content .spk-stepper{gap:12px}'+
+    '#tor-susun-content .spk-stp{flex:0 0 auto}'+
+    '#tor-susun-content .spk-stp-line{max-width:none;min-width:24px}'+
     /* Daftar dokumen pada menu aksi */
     '.tor-dk-ov{position:fixed;inset:0;z-index:9000;display:none;align-items:center;justify-content:center;'+
       'background:rgba(12,28,38,.45);padding:20px}'+
