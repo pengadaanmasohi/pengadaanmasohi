@@ -1132,8 +1132,19 @@ async function refreshDataKlausul(){
    Pustaka klausul lama yang masih tersimpan di tabel klausul_spk disalin menjadi
    sebuah Profil bernama "Pustaka Lama" agar tidak hilang & tetap bisa dimuat
    kapan saja lewat tombol "Muat Profil". Tabel aslinya TIDAK dihapus. */
+/* DIMATIKAN 5 Agu 2026 — lihat SPK_KL_MIGRASI_LAMA.
+   Penjaga "sudah pernah jalan" disimpan di localStorage (per-peramban),
+   sementara profil hasilnya disimpan di Supabase (dipakai bersama seluruh
+   perangkat) dan tabel sumber klausul_spk SENGAJA tidak pernah dihapus.
+   Akibatnya profil "Pustaka Lama" yang sudah dihapus akan DIBUAT ULANG setiap
+   kali aplikasi dibuka dari peramban/perangkat baru, mode penyamaran, atau
+   setelah data situs dibersihkan. Penyelamatan ini sudah lama selesai tugasnya,
+   jadi cukup dimatikan. Untuk menjalankannya lagi: ubah tetapan di bawah ke
+   true DAN hapus kunci 'spk_kl_lib_to_profile_v1' dari localStorage. */
+const SPK_KL_MIGRASI_LAMA = false;
 async function spkKlMigrateLibraryToProfile(){
   try{
+    if(!SPK_KL_MIGRASI_LAMA) return;
     if(localStorage.getItem('spk_kl_lib_to_profile_v1')==='1') return;
     let rows=[];
     try{ rows=await StoreSpkKlausul.list(); }catch(e){ return; }   // DB tak siap -> coba lagi lain kali
@@ -9945,8 +9956,31 @@ function renderSpkKlausul(){
    ========================================================= */
 const SPK_KL_PROFIL_KEY='spk_klausul_profiles_v1';
 var spkKlProfil={ active:'', backup:null };
-/* Profil Klausul SPK kini tersimpan di Supabase (cache: profileCache.klausul). */
-function spkKlProfilAll(){ return profilesGet('klausul'); }
+/* ---- GUDANG PROFIL KLAUSUL DIPISAH PER BENTUK DOKUMEN (5 Agu 2026) ----
+   Dulu Surat Perintah Kerja, Perjanjian/Kontrak, dan Dokumen TOR/KAK berbagi
+   satu gudang profil ('klausul'), sehingga profil klausul SPK ikut terdaftar
+   saat menyusun TOR dan sebaliknya — padahal isinya sama sekali tak berkaitan.
+   Kini tiap bentuk punya gudangnya sendiri:
+     'klausul'      -> Surat Perintah Kerja  (nama lama DIPERTAHANKAN supaya
+                       seluruh profil SPK yang sudah tersimpan tetap terbaca
+                       tanpa migrasi apa pun)
+     'klausul_pk'   -> Perjanjian/Kontrak & KHS
+     'klausul_tor'  -> Dokumen TOR/KAK
+   Jenisnya didaftarkan pada PROFILE_KINDS di app.js. */
+function spkKlKind(){
+  try{
+    var d = (typeof spkState!=='undefined' && spkState) ? spkState.data : null;
+    if(d && d.__doktype==='TOR') return 'klausul_tor';
+    return spkIsPkFam(d) ? 'klausul_pk' : 'klausul';
+  }catch(e){ return 'klausul'; }
+}
+/* Nama bentuk dokumen untuk judul & keterangan dialog profil */
+function spkKlKindLabel(){
+  var k=spkKlKind();
+  return (k==='klausul_tor') ? 'TOR/KAK' : (k==='klausul_pk' ? 'Perjanjian/Kontrak' : 'SPK');
+}
+/* Profil Klausul kini tersimpan di Supabase, terpisah per bentuk dokumen. */
+function spkKlProfilAll(){ return profilesGet(spkKlKind()); }
 function spkKlProfilSnapshot(){
   return (records_klausul||[]).map(function(k,i){
     return { judul:String(k.judul||''), isi:String(k.isi||''), urutan:(Number(k.urutan)||((i+1)*10)), aktif:(k.aktif!==false), isi_docx:String(k.isi_docx||'') };
@@ -9964,9 +9998,9 @@ function spkKlProfilOpenSave(){
   if(!snap.length){ toast('Belum ada klausul untuk disimpan','warn'); return; }
   const list=spkKlProfilAll();
   spkKlProfilOverlay(
-    '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Simpan Profil Klausul</div>'+
+    '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Simpan Profil Klausul '+spkKlKindLabel()+'</div>'+
     '<div class="pnw-profil-sub">Menyimpan <b>'+snap.length+'</b> klausul (judul, isi, urutan, status aktif) sebagai satu profil yang dapat dimuat kembali kapan saja.</div>'+
-    profilSaveBoxHtml('klausul','spk-klprofil-name','spkKlProfilDoSave()','Nama profil (mis. SPK Konstruksi Standar)')+
+    profilSaveBoxHtml(spkKlKind(),'spk-klprofil-name','spkKlProfilDoSave()','Nama profil (mis. SPK Konstruksi Standar)')+
     '<div class="pnw-profil-actions"><button type="button" class="btn btn-red" data-modal onclick="spkKlProfilClose()">'+BTN_IC_BATAL+'Batal</button>'+
     '<button type="button" class="btn btn-green" data-modal id="spk-klprofil-name-btn" onclick="spkKlProfilDoSave()">'+BTN_IC_SIMPAN+'Simpan Profil</button></div>'
   );
@@ -9977,7 +10011,7 @@ async function spkKlProfilDoSave(){
   if(!name){ toast('Isi nama profil dulu','warn'); if(el) el.focus(); return; }
   const snap={ name:name, savedAt:Date.now(), items:spkKlProfilSnapshot() };
   snap.count=snap.items.length;
-  if(await profilesUpsert('klausul', snap)){ toast('Profil "'+name+'" tersimpan','ok'); spkKlProfilClose(); }
+  if(await profilesUpsert(spkKlKind(), snap)){ toast('Profil "'+name+'" tersimpan','ok'); spkKlProfilClose(); }
 }
 function spkKlProfilOpenLoad(){
   const list=spkKlProfilAll();
@@ -9985,16 +10019,16 @@ function spkKlProfilOpenLoad(){
   const items=list.slice().sort((a,b)=>(b.savedAt||0)-(a.savedAt||0)).map(p=>
     '<div class="pnw-profil-item"><div class="pnw-profil-item-info"><div class="pnw-profil-item-name">'+fkEsc(p.name)+'</div>'+
     '<div class="pnw-profil-item-meta">'+(p.count||(p.items?p.items.length:0))+' klausul</div></div>'+
-    '<div class="pnw-profil-item-btns">'+profilActionBtns('klausul',p.name)+'</div></div>'
+    '<div class="pnw-profil-item-btns">'+profilActionBtns(spkKlKind(),p.name)+'</div></div>'
   ).join('');
   spkKlProfilOverlay(
-    '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6M9 14h6"/></svg>Muat Profil Klausul'+profilUploadBtnHtml('klausul')+'</div>'+
+    '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6M9 14h6"/></svg>Muat Profil Klausul '+spkKlKindLabel()+profilUploadBtnHtml(spkKlKind())+'</div>'+
     '<div class="pnw-profil-sub">Pustaka klausul saat ini akan <b>diganti</b> oleh isi profil. Keadaan sebelumnya disimpan sementara sehingga dapat dikembalikan lewat <b>Batalkan Pilihan</b>.</div>'+
     '<div class="pnw-profil-list">'+items+'</div>'
   );
 }
 async function spkKlProfilDoDelete(name){
-  if(await profilesDelete('klausul', name)){ toast('Profil "'+name+'" dihapus','ok'); if(spkKlProfilAll().length) spkKlProfilOpenLoad(); else spkKlProfilClose(); }
+  if(await profilesDelete(spkKlKind(), name)){ toast('Profil "'+name+'" dihapus','ok'); if(spkKlProfilAll().length) spkKlProfilOpenLoad(); else spkKlProfilClose(); }
 }
 /* Tulis ulang seluruh pustaka klausul dari daftar item (hapus semua -> buat ulang) */
 async function spkKlProfilWrite(items){

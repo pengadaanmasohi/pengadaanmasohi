@@ -60,6 +60,114 @@ const TOR_KOP_LABEL    = 'TOR / KAK';   /* nama dokumen pada kop tiap lembar */
 const TOR_PARAF_LABEL  = 'Paraf';       /* label kotak paraf di kaki lembar   */
 const TOR_DOK_TITLE    = 'Dokumen TOR/KAK';
 
+/* ===================== 1b. BAB — KISI PENOMORAN TEMPLATE WORD =====================
+   Penomoran pada berkas Word TOR/KAK berasal dari numbering.xml:
+     gaya "Judul 1"  -> upperRoman "%1."   =>  I.   II.   III.     (JUDUL BAB)
+     gaya "Judul 2"  -> decimal   "I.%1."  =>  I.1  I.2  I.3 ...   (klausul bab I)
+     gaya "Sub 3"    -> decimal   "II.%1." =>  II.1 II.2 II.3 ...  (klausul bab II)
+   Judul bab ditulis TANPA kata "BAB" — persis seperti berkasnya ("I. PENDAHULUAN").
+
+   Bab III (PENUTUP) pada lampiran TOR TIDAK memiliki sub-judul sama sekali:
+   isinya langsung menempel di bawah judul bab. Karena itu bab III ditandai
+   `tunggal:true` — bila hanya berisi SATU klausul, judul klausul itu DILEBUR
+   menjadi judul bab ("III. PENUTUP") dan klausulnya tidak diberi nomor sub.
+   Bila ternyata diisi lebih dari satu klausul, penomorannya otomatis kembali
+   normal (III.1, III.2, ...) sehingga tidak ada isi yang kehilangan judul.
+
+   Bab sebuah klausul disimpan pada `k.bab` (1/2/3) di pustaka klausul; klausul
+   tanpa penanda ikut bab klausul di atasnya. Bab TIDAK PERNAH MUNDUR sepanjang
+   urutan klausul, jadi susunan dokumen selalu berjalan I -> II -> III. */
+const TOR_BAB = [
+  {rom:'I',   nama:'PENDAHULUAN'},
+  {rom:'II',  nama:'PETUNJUK TEKNIS'},
+  {rom:'III', nama:'PENUTUP', tunggal:true}
+];
+/* Tebakan bab dari judul klausul. Dipakai HANYA untuk klausul yang belum punya
+   penanda bab sendiri (dokumen/profil klausul lama), dan hanya boleh MEMAJUKAN
+   bab — tidak pernah menariknya mundur. */
+const TOR_BAB_TEBAK = [
+  {b:2, re:/^\s*(petunjuk\s*teknis|lingkup\s*pekerjaan)\b/i},
+  {b:3, re:/^\s*penutup\b/i}
+];
+function torJudulPolos(j){
+  return String(j||'').replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').replace(/\s+/g,' ').trim();
+}
+function torBabTebak(judul){
+  var t=torJudulPolos(judul), b=0;
+  TOR_BAB_TEBAK.forEach(function(m){ if(!b && m.re.test(t)) b=m.b; });
+  return b;
+}
+/* Nomor bab tiap klausul (1..TOR_BAB.length), dijamin tidak pernah mundur. */
+function torBabPlan(list){
+  var out=[], cur=1, n=TOR_BAB.length;
+  (list||[]).forEach(function(k){
+    var b=parseInt(k&&k.bab,10);
+    if(!(b>=1 && b<=n)) b=torBabTebak(k&&k.judul);
+    if(b>cur) cur=b;
+    out.push(cur);
+  });
+  return out;
+}
+/* PETA PENOMORAN — satu sumber kebenaran yang dipakai bersama oleh Pustaka
+   Klausul, Daftar Isi, dan badan dokumen, sehingga ketiganya tidak mungkin
+   berbeda. Tiap entri: {bab, rom, babNama, urut, awal, lebur, no}. */
+function torStruktur(list){
+  list=list||[];
+  var bab=torBabPlan(list), jml={}, idx={}, out=[];
+  bab.forEach(function(b){ jml[b]=(jml[b]||0)+1; });
+  for(var i=0;i<list.length;i++){
+    var b=bab[i], B=TOR_BAB[b-1]||TOR_BAB[TOR_BAB.length-1];
+    idx[b]=(idx[b]||0)+1;
+    var lebur=!!(B.tunggal && jml[b]===1);      /* judul klausul dilebur ke judul bab */
+    out.push({
+      i:i, bab:b, rom:B.rom, babNama:B.nama, urut:idx[b],
+      awal:(idx[b]===1), lebur:lebur,
+      no: lebur ? B.rom : (B.rom+'.'+idx[b])
+    });
+  }
+  return out;
+}
+/* Lebar kotak nomor (cm) = lebar label TERPANJANG + jeda tetap SPK_NUM_GAP,
+   memakai alat ukur yang sama dengan Surat Perintah Kerja (spkClHeadW). Dengan
+   begitu seluruh judul klausul rata pada satu kisi, persis tab stop Word. */
+function torTokW(tok){
+  var w=0; try{ w=spkPkTextWidthCm(String(tok)); }catch(e){ w=0; }
+  /* Cadangan bila pengukur glif belum siap: ~0,16 cm per digit Inter tebal 11pt,
+     titik dihitung setengahnya. Sengaja dibuat mendekati hasil ukur sebenarnya
+     supaya kisi inden tidak melompat saat pengukur akhirnya tersedia. */
+  if(!(w>0)){
+    var s=String(tok), d=(s.match(/[^.]/g)||[]).length, dot=(s.match(/\./g)||[]).length;
+    w=0.16*d + 0.08*dot;
+  }
+  return w*1.06;                             /* judul dicetak TEBAL -> beri kelonggaran */
+}
+function torBoxW(toks, cadangan){
+  var m=0, arr=(toks && toks.length) ? toks : [cadangan||'1.'];
+  arr.forEach(function(t){ var w=torTokW(t); if(w>m) m=w; });
+  var gap=(typeof SPK_NUM_GAP!=='undefined') ? SPK_NUM_GAP : 0.18;
+  return Math.max(0.4, Math.round((m+gap)*100)/100);
+}
+/* Klik lencana nomor di Pustaka Klausul -> klausul pindah ke bab berikutnya.
+   Nilainya berputar: bab sekarang -> +1 -> ... -> kembali ke bab klausul di
+   ATASNYA (artinya "ikut bab sebelumnya"). Karena tidak boleh mundur melewati
+   klausul di atasnya, urutan bab dokumen selalu sah. */
+function torBabPindah(id){
+  if(typeof requireInput==='function' && !requireInput()) return;
+  var list=(records_klausul||[]).filter(function(k){ return k && !k.sys; });
+  var idx=-1, i;
+  for(i=0;i<list.length;i++){ if(String(list[i].id)===String(id)){ idx=i; break; } }
+  if(idx<0) return;
+  var bab=torBabPlan(list);
+  var prev=(idx>0)?bab[idx-1]:1;
+  var next=bab[idx]+1;
+  if(next>TOR_BAB.length) next=prev;
+  if(next<prev) next=prev;
+  list[idx].bab=next;
+  try{ spkKlSync(); }catch(e){}
+  try{ torSelectAll(); }catch(e){}
+  renderSpkKlausul();
+}
+
 /* Klausul bawaan: 3 klausul kosong — sama persis dengan Susun Kontrak */
 function torKlausulDefault(){
   var ph = (typeof SPK_KL_PLACEHOLDER!=='undefined') ? SPK_KL_PLACEHOLDER
@@ -300,7 +408,11 @@ function torRecordToState(rec){
   let lib=null;
   if(Array.isArray(d.__klausulLib) && d.__klausulLib.length) lib=d.__klausulLib;
   else if(rec && Array.isArray(rec.klausul) && rec.klausul.length){
-    lib=rec.klausul.map((k,i)=>({id:String(k.id||torUid()), judul:k.judul||'', isi:k.isi||'', urutan:(i+1)*10, aktif:true}));
+    lib=rec.klausul.map((k,i)=>{
+      const o={id:String(k.id||torUid()), judul:k.judul||'', isi:k.isi||'', urutan:(i+1)*10, aktif:true};
+      const b=parseInt(k.bab,10); if(b>=1 && b<=TOR_BAB.length) o.bab=b;   /* penanda bab ikut terbawa */
+      return o;
+    });
   }
   d.__klausulLib = (lib && lib.length) ? lib : torKlausulDefault();
   return { data:d, sel:d.__klausulLib.map(k=>String(k.id)) };
@@ -315,7 +427,11 @@ function torKlausulDok(){
   if(!torState) return [];
   return (torState.data.__klausulLib||[])
     .filter(k=>k && !k.sys && k.aktif!==false)
-    .map(k=>({id:String(k.id), judul:k.judul||'', isi:k.isi||''}));
+    .map(k=>{
+      const o={id:String(k.id), judul:k.judul||'', isi:k.isi||''};
+      const b=parseInt(k.bab,10); if(b>=1 && b<=TOR_BAB.length) o.bab=b;   /* bab ikut tersimpan */
+      return o;
+    });
 }
 
 /* ===================== 6. NILAI OTOMATIS & KONTEKS ===================== */
@@ -695,6 +811,20 @@ function torEnsureStyle(){
     '.tor-ml-btn:disabled{opacity:.45;cursor:not-allowed}'+
     '.tor-ml-list{display:flex;flex-direction:column;gap:8px}'+
     '.tor-ml-list input{width:100%}'+
+    /* ---- Lencana nomor bab pada Pustaka Klausul TOR ----
+       Lencana bawaan (.spk-klx-no) berukuran tetap 26x26 untuk angka tunggal;
+       label bab seperti "II.10" butuh kotak yang melar. Dilingkupi
+       #tor-susun-content supaya Pustaka Klausul milik Susun Kontrak TIDAK
+       tersentuh sama sekali. */
+    '#tor-susun-content .spk-klx-no{width:auto;min-width:34px;padding:0 8px;font-size:11.5px;'+
+      'letter-spacing:.01em;font-variant-numeric:tabular-nums}'+
+    '#tor-susun-content .spk-klx-no.tor-no{cursor:pointer;transition:background-color .15s ease}'+
+    '#tor-susun-content .spk-klx-no.tor-no:hover{background:#1B4F63}'+
+    /* Sekat bab: penanda visual awal tiap bab di daftar klausul */
+    '#tor-susun-content .tor-babsep{display:flex;align-items:center;gap:10px;margin:16px 0 2px;'+
+      'font-size:10.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#1B3A6B}'+
+    '#tor-susun-content .tor-babsep:first-child{margin-top:2px}'+
+    '#tor-susun-content .tor-babsep::after{content:"";flex:1;height:1px;background:#DCE4EE}'+
     '.tor-soon{padding:46px 20px;text-align:center;color:#7A828E}'+
     '.tor-soon svg{width:46px;height:46px;stroke:#B9C2CE;margin-bottom:12px}'+
     '.tor-soon b{display:block;font-size:15px;color:#2B3038;margin-bottom:6px}'+
@@ -828,17 +958,54 @@ function torBridgeKlausul(){
     torSelectAll();
   }catch(e){ console.error('torBridgeKlausul:', e); }
 }
-/* Setelah renderSpkKlausul(): sesuaikan istilah "SPK" -> "TOR/KAK" pada kartu */
+/* Setelah renderSpkKlausul(): sesuaikan istilah "SPK" -> "TOR/KAK" pada kartu,
+   LALU tulis ulang lencana nomor mengikuti penomoran template Word (I.1, I.2,
+   … II.1, … III) dan sisipkan sekat bab di atas klausul pertama tiap bab.
+   Lencana nomor sekaligus menjadi tombol: mengkliknya memindahkan klausul itu
+   ke bab berikutnya (lihat torBabPindah). */
 function torRelabelKlausul(){
   try{
-    const cont=document.getElementById('spk-klausul-content'); if(!cont) return;
+    /* PENJAGA MUTLAK: hanya bekerja bila wadah pustaka klausul memang bersarang
+       di dalam halaman Penyusunan TOR/KAK. Pada halaman "Ubah Klausul Kontrak"
+       milik Susun Kontrak, #spk-klausul-content berada di luar #tor-susun-content
+       sehingga querySelector di bawah mengembalikan null dan fungsi ini langsung
+       berhenti — mustahil menyentuh Pustaka Klausul SPK/PK walau spkState kebetulan
+       masih mengarah ke dokumen TOR. */
+    const cont=document.querySelector('#tor-susun-content #spk-klausul-content'); if(!cont) return;
     const t=cont.querySelector('.form-section-title > span');
     if(t) t.innerHTML=t.innerHTML.replace('Pustaka Klausul SPK','Pustaka Klausul TOR/KAK');
     const h=cont.querySelector('.hps-hint');
     if(h) h.innerHTML='Pustaka klausul ini <b>milik dokumen TOR/KAK yang sedang disusun</b>. '+
       '<b>Seluruh klausul selalu dipakai</b> — tidak ada langkah pilih/centang klausul. '+
-      'Dokumen baru selalu dimulai dari 3 klausul kosong; pakai <b>Muat Profil</b> untuk memanggil set klausul yang sudah jadi.';
-  }catch(e){}
+      'Penomorannya mengikuti template Word: <b>I.1, I.2 …</b> untuk bab <b>I. Pendahuluan</b> dan '+
+      '<b>II.1, II.2 …</b> untuk bab <b>II. Petunjuk Teknis</b>; bab terakhir '+
+      '(<b>III. Penutup</b>) tetap tanpa nomor sub seperti pada lampiran TOR. '+
+      '<b>Klik lencana nomor</b> untuk memindahkan sebuah klausul ke bab berikutnya.';
+
+    /* Daftar yang dirender renderSpkKlausul() = klausul non-sistem (dokumen TOR
+       berbentuk SPK, jadi entri sistem "Uraian Peraturan" tidak ditampilkan),
+       urutannya sama dengan urutan pustaka -> aman dipasangkan per indeks. */
+    const list=(records_klausul||[]).filter(k=>k && !k.sys);
+    const str=torStruktur(list);
+    const rows=cont.querySelectorAll('.spk-klx-list > .spk-klx');
+    for(let i=0;i<rows.length && i<str.length;i++){
+      const s=str[i], row=rows[i];
+      const no=row.querySelector('.spk-klx-no'); if(!no) continue;
+      no.textContent=s.no;
+      no.classList.add('tor-no');
+      no.setAttribute('role','button');
+      no.setAttribute('title', s.rom+'. '+s.babNama+' — klik untuk memindahkan klausul ini ke bab berikutnya');
+      no.onclick=(function(kid){ return function(){ torBabPindah(kid); }; })(String(list[i].id));
+      /* Sekat bab: satu baris judul bab di atas klausul pertama tiap bab. */
+      const sdh=row.previousElementSibling;
+      if(s.awal && row.parentNode && !(sdh && sdh.classList && sdh.classList.contains('tor-babsep'))){
+        const sep=document.createElement('div');
+        sep.className='tor-babsep';
+        sep.innerHTML='<span>'+fkEsc(s.rom+'. '+s.babNama)+'</span>';
+        row.parentNode.insertBefore(sep, row);
+      }
+    }
+  }catch(e){ console.error('torRelabelKlausul:', e); }
 }
 
 /* ===================== 9. SIMPAN ===================== */
@@ -879,9 +1046,45 @@ async function torSaveDokumen(){
 }
 
 /* ===================== 10. DOKUMEN (cover + daftar isi + isi) ===================== */
-/* CSS tambahan KHUSUS cover TOR — nomor dokumen di bawah judul TOR/KAK. */
-function torDocCss(){
+/* CSS tambahan KHUSUS cover TOR — nomor dokumen di bawah judul TOR/KAK.
+   Parameter wKl / wBab = lebar kotak nomor (cm) untuk judul klausul dan judul
+   bab, dihitung di torDocHtml dari label TERPANJANG dokumen ini. */
+function torDocCss(wKl, wBab){
+  const WK=(wKl>0?wKl:0.65), WB=(wBab>0?wBab:0.55);
+  const GAP=(typeof SPK_NUM_GAP!=='undefined') ? SPK_NUM_GAP : 0.18;
   return ''+
+  /* ================= PENOMORAN MENGIKUTI TEMPLATE WORD =================
+     Bawaan mesin SPK menomori judul klausul lewat penghitung CSS
+     (counter(spkcl) -> "1." "2." "3."). Dokumen TOR/KAK memakai penomoran
+     berbab (I.1, I.2 … II.1 …) yang tidak bisa dihasilkan satu penghitung,
+     jadi labelnya ditulis langsung ke atribut data-no pada <span class="n">
+     dan dicetak lewat content:attr(). Keuntungan tambahan: saat paginator
+     memindah judul klausul ke lembar berikutnya, labelnya ikut pindah apa
+     adanya — tidak ada risiko penghitung meloncat. Aturan ini menang atas
+     spkDocCss/spkClHeadCss karena kekhususannya lebih tinggi DAN dipasang
+     paling akhir di <style> dokumen. Susun Kontrak tidak tersentuh. */
+  '.spk-doc.spk-spk .spk-cl-h .n::before{content:attr(data-no)}'+
+  '.spk-doc.spk-spk .spk-cl-h{padding-left:'+WK.toFixed(2)+'cm;text-indent:-'+WK.toFixed(2)+'cm}'+
+  '.spk-doc.spk-spk .spk-cl-h .n{min-width:'+WK.toFixed(2)+'cm;width:auto;text-align:left;'+
+    'padding-right:'+GAP+'cm;box-sizing:border-box}'+
+  /* ---- Judul bab (gaya "Judul 1" Word): "I. PENDAHULUAN" ----
+     Ditulis TANPA kata "BAB", kotak nomornya lebih sempit (cukup untuk "III.")
+     dan jarak atasnya 18pt = w:spacing before 360 twip pada template. */
+  '.spk-doc.spk-spk .spk-cl-h.tor-babh{padding-left:'+WB.toFixed(2)+'cm;text-indent:-'+WB.toFixed(2)+'cm;'+
+    'margin:18pt 0 4pt}'+
+  '.spk-doc.spk-spk .spk-cl-h.tor-babh .n{min-width:'+WB.toFixed(2)+'cm;text-align:left;padding-right:'+GAP+'cm}'+
+  /* Cangkang bab yang hanya berisi judul (bab I & II): tanpa jarak bawah, dan
+     judul klausul pertama di bawahnya cukup diberi jarak kecil. */
+  '.spk-doc.spk-spk .spk-clause.tor-babonly{margin-bottom:0}'+
+  '.spk-doc.spk-spk .spk-clause.tor-babonly + .spk-clause > .spk-cl-h{margin-top:6pt}'+
+  /* ---- Daftar isi ----
+     Kolom nomor dilebarkan (bawaan 44px pas untuk "01", tidak untuk "II.10")
+     dan baris judul bab ditebalkan supaya susunannya terbaca sekali lihat. */
+  '.spk-tocpage .spk-toc2.tor-toc .row .no{width:58px}'+
+  '.spk-tocpage .spk-toc2.tor-toc.d1 .row .no{width:52px}'+
+  '.spk-tocpage .spk-toc2.tor-toc.d2 .row .no{width:46px}'+
+  '.spk-tocpage .spk-toc2.tor-toc.toc-2k .row .no{width:46px}'+
+  '.spk-toc2.tor-toc .row.bab .no,.spk-toc2.tor-toc .row.bab .nm{font-weight:800;color:#1B3A6B;text-transform:uppercase}'+
   '.spk-cover.cv-tor .cv-title{font-size:44px;max-width:82%}'+
   '.spk-cover.cv-tor .cv-title .l2{display:block;color:#E0A200;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   /* Nomor dokumen tepat DI BAWAH tulisan TOR/KAK */
@@ -963,12 +1166,26 @@ function torCoverHtml(data, ctx){
 /* ---- Daftar Isi (struktur .spk-toc2 .pg WAJIB: diisi oleh paginator) ---- */
 function torTocHtml(data, klausul){
   const esc=fkEsc, list=klausul||[];
-  const rows=list.map((k,i)=>{
-    const no=((i+1)<10?('0'+(i+1)):String(i+1));
-    return '<div class="row"><span class="no">'+esc(no)+'</span>'+
-      '<span class="nm">'+spkFmtJudulTitle(k.judul)+'</span>'+
+  const str=torStruktur(list);
+  /* PENTING: jumlah & urutan <span class="pg"> HARUS sama persis dengan jumlah
+     & urutan .spk-clause di badan dokumen — paginator (nomorToc) mengisinya
+     berpasangan menurut urutan. Judul bab I & II ikut berupa .spk-clause
+     tersendiri, jadi ia pun mendapat satu baris daftar isi bernomor halaman. */
+  let rows='', n=0;
+  list.forEach((k,i)=>{
+    const s=str[i];
+    if(s.awal && !s.lebur){
+      n++;
+      rows+='<div class="row bab"><span class="no">'+esc(s.rom+'.')+'</span>'+
+        '<span class="nm">'+esc(s.babNama)+'</span>'+
+        '<span class="dot"></span><span class="pg">\u2014</span></div>';
+    }
+    n++;
+    rows+='<div class="row'+(s.lebur?' bab':'')+'">'+
+      '<span class="no">'+esc(s.lebur?(s.rom+'.'):s.no)+'</span>'+
+      '<span class="nm">'+(s.lebur?esc(s.babNama):spkFmtJudulTitle(k.judul))+'</span>'+
       '<span class="dot"></span><span class="pg">\u2014</span></div>';
-  }).join('');
+  });
   return ''+
   '<section class="spk-page spk-tocpage">'+
     '<div class="toc-accent"></div>'+
@@ -976,7 +1193,7 @@ function torTocHtml(data, klausul){
       '<div class="toc-meta"><b>'+esc(TOR_DOK_LABEL)+'</b><span>'+esc(data.no_dokumen||'\u2014')+'</span></div>'+
     '</div>'+
     '<div class="toc-rule"></div>'+
-    '<div class="spk-toc2'+spkTocDensity(list.length)+'">'+rows+'</div>'+
+    '<div class="spk-toc2 tor-toc'+spkTocDensity(n)+'">'+rows+'</div>'+
   '</section>';
 }
 /* ---- Kop & kaki berulang tiap lembar ----
@@ -1030,17 +1247,42 @@ function torSignHtml(ctx){
 function torDocHtml(data, klausul){
   data=data||{}; klausul=klausul||[];
   const ctx=spkBuildCtx(data);
-  /* Titik tolak inden isi = lebar kotak nomor judul dokumen ini (dinamis) */
-  try{ SPK_JH_OVR = spkClHeadW(klausul.length); }catch(e){ SPK_JH_OVR=0; }
+  /* Peta bab/nomor dokumen ini — dipakai bersama daftar isi (torTocHtml). */
+  const str=torStruktur(klausul);
+  /* Titik tolak inden isi = lebar kotak nomor judul dokumen ini (dinamis).
+     Diukur dari label TERPANJANG ("II.10." dst), bukan dari jumlah klausul,
+     karena label TOR bukan lagi angka tunggal. */
+  const wKl  = torBoxW(str.filter(s=>!s.lebur).map(s=>s.no+'.'), '1.');
+  const wBab = torBoxW(str.filter(s=>s.awal||s.lebur).map(s=>s.rom+'.'), 'I.');
+  try{ SPK_JH_OVR = wKl; }catch(e){ SPK_JH_OVR=0; }
+  /* spkRenumberKlausul SENGAJA TIDAK dipakai di sini: fungsi itu menulis ulang
+     butir "X.Y" mengikuti NOMOR URUT klausul, sementara pada TOR/KAK nomor
+     klausul berbentuk "II.3" dan butir di dalamnya bernomor mulai 1 lagi
+     (persis lampiran TOR Word). Nomor butir dibiarkan apa adanya dari template. */
   const pre=klausul.map((k,i)=> spkKvGroup(spkKlItalicAsing(spkBoldPihak(spkNomorToNo(spkNumberFix(spkTidyKeyValue(
-      spkStripFontStyle(spkPruneKlausul(spkMerge(spkRenumberKlausul(spkSortDefinisiIf(k.judul, k.isi||''), i+1), ctx), i+1, data))
+      spkStripFontStyle(spkPruneKlausul(spkMerge(spkSortDefinisiIf(k.judul, k.isi||''), ctx), str[i].urut, data))
     )))))));
   try{ SPK_HANG_OVR = spkKumpulHang(pre.map(function(x){ try{ return spkPkBoxMark(x); }catch(e2){ return x; } })); }
   catch(e){ SPK_HANG_OVR=null; }
+  /* Judul bab dibungkus .spk-clause tersendiri (bukan sekadar <div> bebas) agar
+     seluruh perlakuan paginator untuk judul klausul otomatis berlaku juga
+     padanya: tidak pernah tertinggal sendirian di dasar lembar, dan ikut
+     terhitung saat nomor halaman daftar isi diisi. */
+  const babHead=(s)=>'<div class="spk-cl-h tor-babh"><span class="n" data-no="'+fkEsc(s.rom)+'."></span>'+
+    fkEsc(s.babNama)+'</div>';
   const clauses=klausul.map((k,i)=>{
-    const inner=spkPkTidy(pre[i], false);
-    return '<div class="spk-clause"><div class="spk-cl-h"><span class="n"></span>'+spkFmtJudul(k.judul)+'</div>'+
+    const s=str[i], inner=spkPkTidy(pre[i], false);
+    let out='';
+    /* Bab I & II: judul bab berdiri sendiri di atas klausul pertamanya. */
+    if(s.awal && !s.lebur) out+='<div class="spk-clause tor-babonly">'+babHead(s)+'</div>';
+    /* Bab bertanda `tunggal` yang hanya berisi satu klausul (III. PENUTUP):
+       judul klausul DILEBUR jadi judul bab, isinya langsung menempel — sama
+       seperti lampiran TOR Word. */
+    const head = s.lebur ? babHead(s)
+      : '<div class="spk-cl-h"><span class="n" data-no="'+fkEsc(s.no)+'."></span>'+spkFmtJudul(k.judul)+'</div>';
+    out+='<div class="spk-clause">'+head+
       '<div class="spk-cl'+spkLeadIndentCls(inner)+'">'+inner+'</div></div>';
+    return out;
   }).join('');
   SPK_HANG_OVR=null; SPK_JH_OVR=0;
 
@@ -1066,7 +1308,7 @@ function torDocHtml(data, klausul){
     '<style>'+
     (typeof fklDocBaseCss==='function'?fklDocBaseCss():'')+
     (typeof hpsExtraDocCss==='function'?hpsExtraDocCss():'')+
-    spkDocCss()+spkDocCss2()+spkClHeadCss(klausul.length,false)+torDocCss()+
+    spkDocCss()+spkDocCss2()+spkClHeadCss(klausul.length,false)+torDocCss(wKl, wBab)+
     '</style></head><body><div id="spk-docs">'+body+'</div>'+
     spkKisiScript()+spkPageScript()+fklFitScript()+'</body></html>';
 }
@@ -1300,6 +1542,79 @@ const TOR_VIEWS = { 'tor-view':'renderTorView', 'tor-susun':'renderTorSusun',
     }catch(e){}
     return _rr.apply(this, arguments);
   };
+})();
+
+/* ===================== 17. TAMBALAN MESIN KLAUSUL BERSAMA =====================
+   Pustaka Klausul dipinjam utuh dari Susun Kontrak. Tombol-tombolnya (Naikkan,
+   Turunkan, Hapus, + Klausul, Simpan/Muat Profil, Simpan pada editor) memanggil
+   renderSpkKlausul() LANGSUNG — bukan lewat renderTorSusun() — sehingga setelah
+   ditekan, lencana nomor kembali menjadi "1, 2, 3 ..." dan judul kartu kembali
+   berbunyi "Pustaka Klausul SPK".
+
+   Ketiga tambalan di bawah menutup celah itu TANPA menyentuh susun-kontrak.js:
+     1) renderSpkKlausul   -> selalu disusul torRelabelKlausul() saat dokumen
+                              yang sedang disusun bertipe TOR.
+     2) spkKlProfilSnapshot-> ikut merekam penanda bab (k.bab) ke dalam profil.
+     3) spkKlProfilWrite   -> mengembalikan penanda bab saat profil dimuat.
+   Tanpa (2) & (3), susunan bab hilang begitu pustaka klausul disimpan sebagai
+   Profil lalu dipanggil lagi — seluruh klausul akan jatuh ke bab I (kecuali
+   yang judulnya masih tertebak oleh TOR_BAB_TEBAK).
+
+   Semuanya memakai penjaga __tor supaya aman bila berkas ini termuat dua kali,
+   dan seluruhnya HANYA aktif untuk dokumen TOR (spkState.data.__doktype). Susun
+   Kontrak berjalan apa adanya. */
+(function(){
+  /* Benar hanya bila mesin klausul sedang dipinjam oleh dokumen TOR/KAK
+     (lihat torBridgeKlausul: spkState diarahkan ke torState). */
+  function torPinjam(){
+    try{ return !!(typeof spkState!=='undefined' && spkState && spkState.data && spkState.data.__doktype==='TOR'); }
+    catch(e){ return false; }
+  }
+
+  if(typeof renderSpkKlausul==='function' && !renderSpkKlausul.__tor){
+    var _render=renderSpkKlausul;
+    window.renderSpkKlausul=function(){
+      var r=_render.apply(this, arguments);
+      if(torPinjam()){ try{ torRelabelKlausul(); }catch(e){ console.error('torRelabel:', e); } }
+      return r;
+    };
+    window.renderSpkKlausul.__tor=1;
+  }
+
+  if(typeof spkKlProfilSnapshot==='function' && !spkKlProfilSnapshot.__tor){
+    var _snap=spkKlProfilSnapshot;
+    window.spkKlProfilSnapshot=function(){
+      var out=_snap.apply(this, arguments);
+      try{
+        (records_klausul||[]).forEach(function(k,i){
+          var b=parseInt(k&&k.bab,10);
+          if(out && out[i] && b>=1 && b<=TOR_BAB.length) out[i].bab=b;
+        });
+      }catch(e){}
+      return out;
+    };
+    window.spkKlProfilSnapshot.__tor=1;
+  }
+
+  if(typeof spkKlProfilWrite==='function' && !spkKlProfilWrite.__tor){
+    var _write=spkKlProfilWrite;
+    window.spkKlProfilWrite=function(items){
+      /* Fungsi aslinya async & MEMBUAT ULANG seluruh objek klausul (id baru),
+         jadi penanda bab dipasang kembali SESUDAH ia selesai, berpasangan
+         menurut indeks — urutan items dijamin sama dengan hasilnya. */
+      return Promise.resolve(_write.apply(this, arguments)).then(function(res){
+        try{
+          (items||[]).forEach(function(it,i){
+            var b=parseInt(it&&it.bab,10);
+            if(records_klausul[i] && b>=1 && b<=TOR_BAB.length) records_klausul[i].bab=b;
+          });
+          spkKlSync();
+        }catch(e){}
+        return res;
+      });
+    };
+    window.spkKlProfilWrite.__tor=1;
+  }
 })();
 
 /* ===================== 16. INIT ===================== */

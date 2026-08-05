@@ -866,7 +866,14 @@
 var PROFIL_REG = {
   jadwal:   { label:'Jadwal',      doLoad:function(n){ jpProfilDoLoad(n); },    doDelete:function(n){ jpProfilDoDelete(n); },    reopen:function(){ jpProfilOpenLoad(); } },
   syarat:   { label:'Persyaratan', doLoad:function(n){ pnwProfilDoLoad(n); },   doDelete:function(n){ pnwProfilDoDelete(n); },   reopen:function(){ pnwProfilOpenLoad(); } },
-  klausul:  { label:'Klausul',     doLoad:function(n){ spkKlProfilDoLoad(n); }, doDelete:function(n){ spkKlProfilDoDelete(n); }, reopen:function(){ spkKlProfilOpenLoad(); } },
+  /* Klausul dipisah per bentuk dokumen (5 Agu 2026). Ketiganya memakai dialog
+     yang SAMA (spkKlProfil*) — yang membedakan hanya gudang penyimpanannya,
+     ditentukan spkKlKind() dari dokumen yang sedang disusun. Label di sini
+     dipakai pada nama berkas unduhan & peringatan saat mengimpor profil dari
+     jenis yang berbeda. */
+  klausul:     { label:'Klausul SPK',       doLoad:function(n){ spkKlProfilDoLoad(n); }, doDelete:function(n){ spkKlProfilDoDelete(n); }, reopen:function(){ spkKlProfilOpenLoad(); } },
+  klausul_pk:  { label:'Klausul PK',        doLoad:function(n){ spkKlProfilDoLoad(n); }, doDelete:function(n){ spkKlProfilDoDelete(n); }, reopen:function(){ spkKlProfilOpenLoad(); } },
+  klausul_tor: { label:'Klausul TOR-KAK',   doLoad:function(n){ spkKlProfilDoLoad(n); }, doDelete:function(n){ spkKlProfilDoDelete(n); }, reopen:function(){ spkKlProfilOpenLoad(); } },
   penyedia: { label:'Penyedia',    doLoad:function(n){ spkPyProfilDoLoad(n); }, doDelete:function(n){ spkPyProfilDoDelete(n); }, reopen:function(){ spkPyProfilOpenLoad(); } }
 };
 function profilRegLabel(kind){ return (PROFIL_REG[kind] && PROFIL_REG[kind].label) || kind; }

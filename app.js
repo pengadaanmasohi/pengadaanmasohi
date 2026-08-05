@@ -292,7 +292,16 @@ function lsPersist(arr){ /* no-op: penyimpanan lokal dinonaktifkan */ }
    PRIMARY KEY (kind, name). */
 const PROFILE_TABLE = 'app_profiles';
 /* Cache per-jenis profil. Diisi saat login (profilesLoadAll) & write-through saat simpan. */
-const profileCache = { jadwal: [], syarat: [], klausul: [], penyedia: [] };
+/* Jenis profil klausul DIPISAH per bentuk dokumen (5 Agu 2026):
+     klausul      -> Surat Perintah Kerja  (nama lama dipertahankan supaya
+                     seluruh profil yang sudah ada TIDAK perlu dimigrasi)
+     klausul_pk   -> Perjanjian/Kontrak & KHS
+     klausul_tor  -> Dokumen TOR/KAK
+   Dulu ketiganya berbagi satu gudang 'klausul', sehingga profil SPK muncul di
+   daftar TOR dan sebaliknya. Lihat spkKlKind() di susun-kontrak.js. */
+const PROFILE_KINDS = ['jadwal','syarat','klausul','klausul_pk','klausul_tor','penyedia'];
+const profileCache = {};
+PROFILE_KINDS.forEach(function(k){ profileCache[k]=[]; });
 let profilesReady = false;
 /* Muat semua profil dari Supabase ke cache. Dipanggil sekali setelah login.
    Bila gagal (tabel belum dibuat / offline), cache tetap kosong & aplikasi
@@ -303,7 +312,7 @@ async function profilesLoadAll(){
   try{
     const {data,error}=await db.from(PROFILE_TABLE).select('kind,name,payload').order('updated_at',{ascending:false});
     if(error) throw error;
-    profileCache.jadwal=[]; profileCache.syarat=[]; profileCache.klausul=[]; profileCache.penyedia=[];
+    PROFILE_KINDS.forEach(function(k){ profileCache[k]=[]; });
     (data||[]).forEach(row=>{
       const k=row.kind; if(!profileCache[k]) return;
       let obj=row.payload;
@@ -428,15 +437,20 @@ function profilSavePick(kind, inputId, name){
 }
 /* Hapus SATU profil dari Supabase + cache. */
 async function profilesDelete(kind, name){
-  const arr=profileCache[kind]||[];
-  const i=arr.findIndex(p=>String(p.name)===String(name));
-  if(i>=0) arr.splice(i,1);
+  /* URUTAN PENTING (5 Agu 2026): dulu cache dibersihkan LEBIH DULU, baru server
+     dihubungi. Bila penghapusan di server gagal (mis. ditolak RLS), profilnya
+     tetap lenyap dari layar sehingga tampak berhasil — lalu MUNCUL LAGI begitu
+     halaman dimuat ulang & profilesLoadAll() membaca server. Kini server dulu:
+     cache hanya dibersihkan setelah server benar-benar menghapusnya. */
   if(USE_SUPABASE && db){
     try{
       const {error}=await db.from(PROFILE_TABLE).delete().eq('kind',kind).eq('name',String(name));
       if(error) throw error;
     }catch(err){ console.error('Gagal menghapus profil di Supabase:', err); toast('Profil gagal dihapus di server: '+errMsg(err),'err'); return false; }
   }
+  const arr=profileCache[kind]||[];
+  const i=arr.findIndex(p=>String(p.name)===String(name));
+  if(i>=0) arr.splice(i,1);
   return true;
 }
 
