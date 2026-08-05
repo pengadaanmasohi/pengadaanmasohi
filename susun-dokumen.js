@@ -1045,9 +1045,19 @@ function torEnsureStyle(){
     '.tor-dk-row.is-soon:hover{border-color:#E3EAF2;background:#fff}'+
     /* Tabel Susun RAB — menumpang seluruh gaya .hps-uraian milik HPS, hanya
        kolom "Jumlah (Rp)" yang baru (kolom hasil, tidak dapat diketik). */
-    '.hps-uraian.tor-rab td.c-jt,.hps-uraian.tor-rab th.c-jt{text-align:right;white-space:nowrap;'+
-      'font-variant-numeric:tabular-nums;font-weight:700;color:#1B3A6B;min-width:120px}'+
-    '.hps-uraian.tor-rab td.c-jt{background:#F7FCFC}'+
+    '.hps-uraian.tor-rab td.c-jt,.hps-uraian.tor-rab th.c-jt{white-space:nowrap;min-width:120px}'+
+    /* Warna & perataan angka HANYA untuk sel isi — bukan sel judul, supaya
+       kepala tabel tetap putih & rata tengah seperti kolom lainnya. */
+    '.hps-uraian.tor-rab td.c-jt{text-align:right;font-variant-numeric:tabular-nums;'+
+      'font-weight:700;color:#1B3A6B;background:#F7FCFC}'+
+    /* KEPALA TABEL SERAGAM — tiga kolom sempat beda sendiri:
+         - "NO"          : style.css menyatukan th.c-no & td.c-no dalam satu aturan
+                           ber-`color:#0b6a73`, jadi judulnya ikut kebiruan.
+         - "URAIAN PEKERJAAN": style.css memberi th.c-ur `text-align:left`.
+         - "JUMLAH (RP)" : aturan .tor-rab di atas dulu mencakup th juga.
+       Aturan ini dipatok ke `.tor-rab` saja (kekhususan 3 kelas > 2 kelas milik
+       style.css) sehingga tabel HPS, Analisa, & Lampiran SPK tidak tersentuh. */
+    'table.hps-uraian.tor-rab thead th{color:#fff;text-align:center}'+
     /* Daftar Pilih Klausul (langkah 3) */
     '.tor-pk-list{display:grid;grid-template-columns:1fr 1fr;gap:8px}'+
     '@media(max-width:760px){.tor-pk-list{grid-template-columns:1fr}}'+
@@ -1265,6 +1275,7 @@ function torRabHtml(){
     '<div class="hps-hint">Harga diketik langsung — tidak ada referensi maupun metode perhitungan. '+
       '<b>Jumlah</b> tiap baris = Vol \u00d7 (Harga Barang + Harga Jasa), lalu diringkas memakai rumus HPS '+
       '(DPP 11/12, PPn 12%). Banyaknya baris mengikuti <b>Jumlah Barang/Jasa</b> di langkah Data Pekerjaan.</div>'+
+    torRabTplBarHtml()+
     '<div class="hps-uraian-wrap"><table class="hps-uraian tor-rab"><thead><tr>'+
       '<th class="c-no">No</th>'+
       (cfg.judulOn?'<th>Judul</th>':'')+
@@ -1328,6 +1339,228 @@ function torRabRenderSummary(){
 }
 /* Total RAB — dipakai Pakta Integritas ("Perkiraan Pekerjaan") & BoQ */
 function torRabTotal(){ try{ return hpsSummary({items:torRabItems()}).totT; }catch(e){ return 0; } }
+
+/* ===== TEMPLATE PENGISIAN RAB (Excel) =====
+   Pola & tampilannya SAMA dengan "Template Pengisian Analisa" di app.js
+   (anaTemplateBarHtml / anaDownloadTemplate / anaHandleUpload), tetapi
+   disalin-sesuaikan ke sini karena RAB berbeda bentuk:
+     - TIDAK ada Referensi -> hanya SEPASANG kolom Harga Barang & Harga Jasa
+     - kolom Judul / Sub-Judul hanya terbit bila sakelarnya "Ya"
+     - banyaknya baris terikat field "Jumlah Barang/Jasa" (jumlah_bj), jadi
+       mengunggah berkas dengan baris lebih banyak ikut MENAIKKAN angka itu.
+   Berkasnya .xlsx (spreadsheet) — bukan .docx — karena isinya tabel harga,
+   persis seperti template Analisa Harga Satuan pada gambar acuan. */
+const TOR_RAB_MAX = 150;   /* pagar atas jumlah baris, setara ANA_MAX_ITEM */
+
+/* Susunan kolom sheet "Data" — dipakai bersama oleh unduh & (sebagai acuan) unggah */
+function torRabTplCols(){
+  const cfg=torRabCfg();
+  const cols=[{label:'No', w:6, kind:'no'}];
+  if(cfg.judulOn)    cols.push({label:'Judul',     w:22, kind:'judul'});
+  if(cfg.subjudulOn) cols.push({label:'Sub-Judul', w:22, kind:'subjudul'});
+  cols.push({label:'Uraian Pekerjaan', w:44, kind:'uraian'});
+  cols.push({label:'Sat',              w:10, kind:'sat'});
+  cols.push({label:'Vol',              w:12, kind:'vol'});
+  cols.push({label:'Harga Barang',     w:20, kind:'barang'});
+  cols.push({label:'Harga Jasa',       w:20, kind:'jasa'});
+  return cols;
+}
+
+function torRabTplBarHtml(){
+  return '<div class="hl-tpl-bar" style="margin-top:4px">'+
+    '<div class="hl-tpl-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>'+
+    '<div class="hl-tpl-txt"><b>Template Pengisian RAB</b><span>Unduh SATU file berisi <b>seluruh baris barang/jasa</b>, isi harganya, lalu unggah kembali.</span></div>'+
+    '<div class="hl-tpl-actions">'+
+      '<button type="button" class="btn btn-amber" onclick="torRabDownloadTemplate()">'+
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'+
+        'Download Template</button>'+
+      '<button type="button" class="btn btn-teal" onclick="document.getElementById(\'tor-rab-upload\').click()">'+
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>'+
+        'Upload Template</button>'+
+    '</div>'+
+    '<input type="file" id="tor-rab-upload" accept=".xlsx,.xls" style="display:none" onchange="torRabHandleUpload(event)">'+
+  '</div>';
+}
+
+async function torRabDownloadTemplate(){
+  if(typeof requireInput==='function' && !requireInput()) return;
+  if(!window.ExcelJS){ toast('Library Excel belum termuat, coba lagi','warn'); return; }
+  const d=(torState&&torState.data)||{};
+  const namaPek=String(d.nama_pekerjaan||'').trim();
+  const cols=torRabTplCols(), items=torRabItems(), n=items.length, NC=cols.length;
+
+  const wb=new ExcelJS.Workbook();
+  const wsD=wb.addWorksheet('Data');
+  wsD.addRow(cols.map(c=>c.label));
+  wsD.columns=cols.map(c=>({width:c.w||16}));
+
+  const thin={style:'thin',color:{argb:'FFBFCAD0'}};
+  const allBorder={top:thin,left:thin,bottom:thin,right:thin};
+
+  const headRow=wsD.getRow(1); headRow.height=34;
+  for(let c=1;c<=NC;c++){
+    const cell=wsD.getCell(1,c);
+    cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF0E7C86'}};
+    cell.font={bold:true,color:{argb:'FFFFFFFF'},size:10.5};
+    cell.alignment={wrapText:true,vertical:'middle',horizontal:'center'};
+    cell.border=allBorder;
+  }
+  for(let i=0;i<n;i++){
+    const it=items[i]||{};
+    const row=wsD.getRow(i+2);
+    cols.forEach((c,ci)=>{
+      const cell=row.getCell(ci+1);
+      if(c.kind==='no') cell.value=i+1;
+      else if(c.kind==='judul')    cell.value=it.judul||'';
+      else if(c.kind==='subjudul') cell.value=it.subjudul||'';
+      else if(c.kind==='uraian')   cell.value=it.uraian||'';
+      else if(c.kind==='sat')      cell.value=it.sat||'';
+      else if(c.kind==='vol')      cell.value=(it.vol!==''&&it.vol!=null)?jsVolNum(it.vol):'';
+      else if(c.kind==='barang'){  const v=hpsNum(it.hargaMat);  cell.value=v>0?v:''; }
+      else if(c.kind==='jasa'){    const v=hpsNum(it.hargaJasa); cell.value=v>0?v:''; }
+    });
+  }
+  for(let rr=2;rr<=n+1;rr++){
+    for(let c=1;c<=NC;c++){
+      const cell=wsD.getCell(rr,c);
+      cell.border=allBorder;
+      const kind=cols[c-1].kind;
+      if(kind==='no'||kind==='sat') cell.alignment={vertical:'middle',horizontal:'center'};
+      else if(kind==='vol'){ cell.numFmt=ACCT_VOL; cell.alignment={vertical:'middle',horizontal:'center'}; }
+      else if(kind==='barang'||kind==='jasa'){ cell.numFmt=ACCT_NODEC; cell.alignment={vertical:'middle',horizontal:'right'}; }
+      else cell.alignment={vertical:'middle'};
+      if(rr%2===1) cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF2F7F8'}};
+    }
+  }
+  /* Bekukan baris judul + kolom struktur, supaya Uraian tetap terlihat saat
+     menggeser ke kolom harga. */
+  const cfg=torRabCfg();
+  wsD.views=[{state:'frozen', xSplit:2+(cfg.judulOn?1:0)+(cfg.subjudulOn?1:0), ySplit:1}];
+
+  const wsG=wb.addWorksheet('Petunjuk');
+  wsG.columns=[{width:30},{width:90}];
+  const petunjuk=[['PETUNJUK PENGISIAN RAB',''],['',''],
+   ['Pekerjaan', namaPek||'\u2014'],
+   ['Jumlah Barang/Jasa', String(n)+'  (mengikuti isian di langkah Data Pekerjaan)'],
+   ['',''],
+   ['No','Nomor urut baris. Jangan diubah \u2014 dipakai untuk mencocokkan baris.'],
+   ...(cfg.judulOn?[['Judul','Judul kelompok pekerjaan. SELALU dicetak huruf besar semua pada dokumen. Kosongkan bila melanjutkan judul di atasnya.']]:[]),
+   ...(cfg.subjudulOn?[['Sub-Judul','Sub-judul di bawah judul. Dicetak sesuai huruf besar/kecil yang diketik. Kosongkan bila melanjutkan sub-judul di atasnya.']]:[]),
+   ['Uraian Pekerjaan','Nama barang/jasa/pekerjaan.'],
+   ['Sat','Satuan (mis. Buah, Pack, m, unit).'],
+   ['Vol','Volume. Ketik angka saja (mis. 10 atau 2.5).'],
+   ['Harga Barang','Harga satuan barang/material. Ketik angka saja (mis. 150000).'],
+   ['Harga Jasa','Harga satuan jasa. Ketik angka saja. Kosongkan bila tidak ada.'],
+   ['',''],
+   ['Perhitungan','Jumlah tiap baris = Vol \u00d7 (Harga Barang + Harga Jasa); ringkasannya memakai rumus HPS (DPP 11/12, PPn 12%).'],
+   ['Catatan','Isi data mulai baris ke-2. Nilai 0/kosong diabaikan saat perhitungan.'],
+   ['','Menambah baris di bawah baris terakhir otomatis MENAIKKAN Jumlah Barang/Jasa (maksimum '+TOR_RAB_MAX+' baris).'],
+   ['','Jangan menghapus kolom No.']
+  ];
+  petunjuk.forEach(row=>wsG.addRow(row));
+  wsG.getCell('A1').font={bold:true,size:14,color:{argb:'FF0E7C86'}};
+  for(let rr=3;rr<=petunjuk.length;rr++){
+    const a=wsG.getCell('A'+rr);
+    if(String(a.value||'').trim()!=='') a.font={bold:true,color:{argb:'FF095E66'}};
+    a.alignment={vertical:'top'};
+    wsG.getCell('B'+rr).alignment={vertical:'top',wrapText:true};
+  }
+
+  try{
+    const buf=await wb.xlsx.writeBuffer();
+    const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const url=URL.createObjectURL(blob);
+    const clean=x=>String(x||'').replace(/[\\/:*?"<>|]+/g,'_').replace(/\s+/g,'_').slice(0,40);
+    const a=document.createElement('a');
+    a.href=url; a.download='Template_RAB_'+(clean(namaPek)||'Pekerjaan')+'.xlsx';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+    toast('Template RAB diunduh \u2014 '+n+' baris barang/jasa','ok');
+  }catch(err){ console.error(err); toast('Gagal membuat template: '+(typeof errMsg==='function'?errMsg(err):err),'warn'); }
+}
+
+function torRabHandleUpload(ev){
+  if(typeof requireInput==='function' && !requireInput()){ ev.target.value=''; return; }
+  if(!window.XLSX){ toast('Library Excel belum termuat, coba lagi','warn'); ev.target.value=''; return; }
+  const file=ev.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      if(!torState) torState=torBlankState();
+      const d=torState.data;
+      const cfg=torRabCfg();
+      const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+      const sheetName=wb.SheetNames.includes('Data')?'Data':wb.SheetNames[0];
+      const rows=XLSX.utils.sheet_to_json(wb.Sheets[sheetName],{header:1,defval:''});
+      if(rows.length<2){ toast('File kosong / tidak ada data','warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
+      const head=rows[0].map(h=>String(h==null?'':h).trim().toLowerCase());
+
+      let cNo=-1,cJud=-1,cSub=-1,cUr=-1,cSat=-1,cVol=-1,cMat=-1,cJasa=-1;
+      head.forEach((h,ci)=>{
+        if(h==='') return;
+        if(cMat <0 && h.indexOf('harga')>=0 && (h.indexOf('barang')>=0||h.indexOf('material')>=0)){ cMat=ci; return; }
+        if(cJasa<0 && h.indexOf('harga')>=0 && h.indexOf('jasa')>=0){ cJasa=ci; return; }
+        if(cNo  <0 && h==='no'){ cNo=ci; return; }
+        if(cSub <0 && (h.indexOf('sub-judul')>=0||h.indexOf('sub judul')>=0||h.indexOf('subjudul')>=0)){ cSub=ci; return; }
+        if(cJud <0 && (h.indexOf('judul')>=0||h.indexOf('kelompok')>=0)){ cJud=ci; return; }
+        if(cUr  <0 && h.indexOf('uraian')>=0){ cUr=ci; return; }
+        if(cVol <0 && (h==='vol'||h.indexOf('volume')>=0)){ cVol=ci; return; }
+        if(cSat <0 && (h==='sat'||h==='sat.'||h.indexOf('satuan')>=0)){ cSat=ci; return; }
+      });
+      /* Sakelar Judul/Sub-Judul "Tidak" -> kolomnya DIABAIKAN walau berkasnya
+         masih memuatnya (mis. template lama). Tanpa penjagaan ini nilainya
+         diam-diam masuk & muncul lagi begitu sakelarnya dinyalakan. */
+      if(!cfg.judulOn)    cJud=-1;
+      if(!cfg.subjudulOn) cSub=-1;
+      if(cJud<0&&cSub<0&&cUr<0&&cMat<0&&cJasa<0){ toast('Header tidak dikenali. Gunakan template resmi.','warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
+
+      const dataCols=[cJud,cSub,cUr,cSat,cVol,cMat,cJasa].filter(x=>x>=0);
+      const dataRows=[];
+      for(let rIdx=1;rIdx<rows.length;rIdx++){
+        const row=rows[rIdx]; if(!row) continue;
+        const kosong=dataCols.every(ci=> String(row[ci]==null?'':row[ci]).trim()==='');
+        if(kosong) continue;
+        let idx;
+        if(cNo>=0){ const num=parseInt(String(row[cNo]==null?'':row[cNo]).replace(/[^\d]/g,''),10); idx=(num>=1)?(num-1):dataRows.length; }
+        else idx=dataRows.length;
+        dataRows.push({idx,row});
+      }
+      if(!dataRows.length){ toast('Tidak ada baris data untuk diimpor','warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
+
+      /* Baris melebihi grid -> NAIKKAN "Jumlah Barang/Jasa" (bukan dibuang). */
+      let maxIdx=0; dataRows.forEach(x=>{ if(x.idx>maxIdx) maxIdx=x.idx; });
+      const perlu=Math.min(TOR_RAB_MAX, Math.max(cfg.jml, maxIdx+1));
+      let ditambah=0;
+      if(perlu!==cfg.jml){ ditambah=perlu-cfg.jml; d.jumlah_bj=String(perlu); }
+
+      const store=torRabStore();
+      while(store.length<perlu) store.push(torRabBlankItem());
+
+      let terisi=0, dilewati=0;
+      dataRows.forEach(x=>{
+        if(x.idx<0 || x.idx>=perlu){ dilewati++; return; }
+        const it=store[x.idx]; if(!it){ dilewati++; return; }
+        const teks=ci=>String(x.row[ci]==null?'':x.row[ci]).trim();
+        if(cJud >=0) it.judul   =teks(cJud);
+        if(cSub >=0) it.subjudul=teks(cSub);
+        if(cUr  >=0) it.uraian  =teks(cUr);
+        if(cSat >=0) it.sat     =teks(cSat);
+        if(cVol >=0){ const raw=x.row[cVol]; it.vol=(teks(cVol)===''?'':String(jsVolNum(raw))); }
+        if(cMat >=0){ const raw=x.row[cMat];  it.hargaMat =(teks(cMat) ===''?'':parseRupiah(raw)); }
+        if(cJasa>=0){ const raw=x.row[cJasa]; it.hargaJasa=(teks(cJasa)===''?'':parseRupiah(raw)); }
+        terisi++;
+      });
+
+      renderTorSusun();
+      let msg=terisi+' baris RAB diperbarui';
+      if(ditambah>0) msg+=' \u2014 Jumlah Barang/Jasa dinaikkan jadi '+perlu;
+      if(dilewati>0) msg+=' \u2014 '+dilewati+' baris dilewati (di luar jangkauan, maks '+TOR_RAB_MAX+')';
+      toast(msg,'ok');
+    }catch(err){ console.error(err); toast('Gagal membaca file Excel','warn', TOAST_MS_UPLOAD); }
+    ev.target.value='';
+  };
+  reader.readAsArrayBuffer(file);
+}
 
 /* ===== LANGKAH 3 — PILIH KLAUSUL =====
    Menentukan klausul MANA dari pustaka yang ikut tercetak, lewat penanda
