@@ -95,13 +95,20 @@
    menimpa field sebelahnya (penyebab tampilan "numpuk"). */
 #view-dpeng-view .fk-toolbar > .filter-field{margin:0;min-width:0;flex:0 1 auto}
 #view-dpeng-view .fk-toolbar > .filter-field > select,
-#view-dpeng-view .fk-toolbar > .filter-field input[type="text"]{width:100%;min-width:0}
+#view-dpeng-view .fk-toolbar > .filter-field input[type="text"],
+#view-dpeng-view .fk-toolbar > .filter-field .search-elegant-box{
+  width:100% !important;max-width:100% !important;min-width:0 !important}
+/* box-sizing WAJIB: bila kotak isian memakai content-box, padding + border
+   ditambahkan DI LUAR lebar yang kita tetapkan, sehingga select meluber
+   ~20-40px ke kanan dan menimpa field sesudahnya. */
+#view-dpeng-view .fk-toolbar,
+#view-dpeng-view .fk-toolbar *{box-sizing:border-box}
 /* Porsi lebar tiap field. Hanya "Cari" yang MELAR (flex-grow 1); field lain
    lebarnya tetap, jadi sisa ruang jatuh ke Cari dan jarak Cari -> Reset
    persis = --dpeng-gap. Ubah angka px di bawah untuk menggeser lebarnya. */
-#view-dpeng-view .fk-toolbar .dpeng-ff-bidang{flex:0 1 210px;max-width:230px}
-#view-dpeng-view .fk-toolbar .dpeng-ff-status{flex:0 1 150px;max-width:170px}
-#view-dpeng-view .fk-toolbar .dpeng-ff-tahun {flex:0 1 150px;max-width:170px}
+#view-dpeng-view .fk-toolbar .dpeng-ff-bidang{flex:0 1 190px;max-width:200px}
+#view-dpeng-view .fk-toolbar .dpeng-ff-status{flex:0 1 150px;max-width:165px}
+#view-dpeng-view .fk-toolbar .dpeng-ff-tahun {flex:0 1 150px;max-width:165px}
 #view-dpeng-view .fk-toolbar .dpeng-ff-cari  {flex:1 1 220px}
 #view-dpeng-view .fk-toolbar .dpeng-ff-cari .search-elegant-box{width:100%;min-width:0}
 /* PENTING — penyebab tombol menimpa field Cari: tombol (mis. .dpeng-corner-btn
