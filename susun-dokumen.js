@@ -131,6 +131,24 @@ function torFormatNo(seq, klas, year){
 }
 /* Hitung ulang nomor urut & nomor dokumen pada state yang sedang disusun.
    Nomor urut dokumen TERSIMPAN tidak diubah (tetap milik dokumen itu). */
+/* Tahun Anggaran & Sumber Dana diturunkan, bukan diketik.
+   Dipanggil tiap kali form digambar & sebelum dokumen dibangun. */
+function torSyncSumberDana(d){
+  if(!d) return;
+  const th = String(d.tahun_dokumen||torYearNow());
+  d.tahun_anggaran = th;
+  const jenis = String(d.jenis_anggaran||'').trim();
+  d.sumber_dana = jenis ? ('APLN Tahun '+th+' Anggaran '+jenis) : '';
+}
+/* Rapikan daftar field berlapis: buang baris kosong di ekor, sisakan minimal 1,
+   lalu satukan menjadi satu teks untuk placeholder {{key}}. */
+function torMultiSync(d, k){
+  let arr = Array.isArray(d[k+'_list']) ? d[k+'_list'].slice() : [String(d[k]||'')];
+  while(arr.length>1 && String(arr[arr.length-1]||'').trim()==='') arr.pop();
+  if(!arr.length) arr=[''];
+  d[k+'_list'] = arr;
+  d[k] = arr.map(x=>String(x||'').trim()).filter(Boolean).join('; ');
+}
 function torSyncNomor(){
   if(!torState) return;
   const d=torState.data;
@@ -167,13 +185,18 @@ const TOR_FIELD_GROUPS = [
        dibangun ({{nilai_pekerjaan_terbilang}}). */
     {k:'nilai_pekerjaan', l:'Perkiraan Nilai Pekerjaan (+ PPN)', t:'rupiah', def:''},
   ]},
+  /* ---------- Sumber Dana ----------
+     Tahun Anggaran & Sumber Dana TIDAK lagi menjadi isian:
+       tahun_anggaran -> tahun berjalan (= tahun pembuatan dokumen)
+       sumber_dana    -> "APLN Tahun <tahun> Anggaran <Jenis Anggaran>",
+                         ikut berubah begitu Jenis Anggaran diganti.
+     Nomor PRK berlapis (boleh lebih dari satu), memakai pola yang sama dengan
+     Bidang/Sub Bidang pada Monitoring — lihat torFieldInput t:'multi'. */
   { sec:'Sumber Dana', fields:[
-    {k:'jenis_anggaran', l:'Jenis Anggaran', t:'select', opts:TOR_ANGGARAN_OPTS, def:''},
-    {k:'tahun_anggaran', l:'Tahun Anggaran', t:'text', def:'', ph:'cth. 2026'},
-    {k:'sumber_dana', l:'Sumber Dana', t:'text', def:'', ph:'cth. APLN Tahun 2026 Anggaran Investasi'},
+    {k:'jenis_anggaran', l:'Jenis Anggaran', t:'select', opts:TOR_ANGGARAN_OPTS, reRender:true, def:''},
     {k:'no_anggaran', l:'No. Anggaran (SKKO/SKKI)', t:'text', def:''},
     {k:'tgl_anggaran', l:'Tgl. Anggaran', t:'date', def:''},
-    {k:'no_prk', l:'Nomor PRK', t:'text', def:'', ph:'cth. 2026.WMMU.4.003'},
+    {k:'no_prk', l:'Nomor PRK', t:'multi', def:'', ph:'cth. 2026.WMMU.4.003'},
   ]},
   /* ---------- Pengendali Pekerjaan ----------
      Dua sakelar mengunci isian di bawahnya, mengikuti pola "Perubahan?" pada
@@ -221,7 +244,11 @@ function torTahunOpts(){
 /* ===================== 5. STATE ===================== */
 function torBlankState(){
   const d={};
-  TOR_FIELDS_FLAT.forEach(f=>{ if(!f.auto) d[f.k]=(f.def!=null?f.def:''); });
+  TOR_FIELDS_FLAT.forEach(f=>{
+    if(f.auto) return;
+    d[f.k]=(f.def!=null?f.def:'');
+    if(f.t==='multi') d[f.k+'_list']=[''];        /* field berlapis: simpan daftarnya */
+  });
   d.__doktype='TOR';
   d.bentuk_kontrak='SPK';          /* dipakai mesin SPK: tata letak & inden SPK */
   d.tahun_dokumen=String(torYearNow());
@@ -344,9 +371,24 @@ function torExtendCtx(ctx, d){
   ctx.kota_ttd       = TOR_KOTA_TTD;
   ctx.tgl_ttd        = spkDateLong(d.tgl_dokumen);
   ctx.tempat_tanggal = TOR_KOTA_TTD+', '+spkDateLong(d.tgl_dokumen);
-  /* --- Sumber dana --- */
+  /* --- Sumber dana ---
+     tahun_anggaran & sumber_dana diturunkan di sini juga, supaya dokumen yang
+     dibuka lewat Pratinjau dari Daftar (tanpa membuka form) tetap benar. */
+  torSyncSumberDana(d);
+  ctx.tahun_anggaran      = d.tahun_anggaran||String(torYearNow());
+  ctx.sumber_dana         = d.sumber_dana||'';
   ctx.sumber_dana_no      = d.no_anggaran||'';
   ctx.sumber_dana_tgl_pjg = spkDateLong(d.tgl_anggaran);
+  /* Nomor PRK berlapis:
+       {{no_prk}}       -> satu baris, dipisah "; "   (mis. "A; B; C")
+       {{no_prk_baris}} -> satu nomor per baris (untuk daftar bernomor di Word)
+       {{no_prk_1}}..   -> nomor ke-n bila ingin ditempatkan sendiri-sendiri */
+  const _prk = Array.isArray(d.no_prk_list)
+    ? d.no_prk_list.map(x=>String(x||'').trim()).filter(Boolean)
+    : String(d.no_prk||'').split(';').map(x=>x.trim()).filter(Boolean);
+  ctx.no_prk       = _prk.join('; ');
+  ctx.no_prk_baris = _prk.join('<br>');
+  _prk.forEach((v,i)=>{ ctx['no_prk_'+(i+1)]=v; });
   return ctx;
 }
 
@@ -376,6 +418,35 @@ function torSet(k,v){
      digambar ulang supaya field di bawahnya langsung terbuka/terkunci. */
   if(f && f.reRender){ renderTorSusun(); return; }
   torRefreshAuto();
+}
+/* --- Field berlapis: ubah / tambah / hapus baris --- */
+function torMultiSet(k,i,el){
+  if(!torState) return;
+  const d=torState.data;
+  if(!Array.isArray(d[k+'_list'])) d[k+'_list']=[''];
+  d[k+'_list'][i]=el.value;
+  d[k]=d[k+'_list'].map(x=>String(x||'').trim()).filter(Boolean).join('; ');
+}
+function torMultiAdd(k){
+  if(!torState) return;
+  const d=torState.data;
+  if(!Array.isArray(d[k+'_list'])) d[k+'_list']=[''];
+  d[k+'_list'].push('');
+  renderTorSusun();
+  /* Fokus ke baris yang baru ditambahkan */
+  try{
+    const rows=document.querySelectorAll('.indep-list .indep-row input');
+    if(rows.length) rows[rows.length-1].focus();
+  }catch(e){}
+}
+function torMultiDel(k){
+  if(!torState) return;
+  const d=torState.data;
+  const arr=Array.isArray(d[k+'_list'])?d[k+'_list']:[''];
+  if(arr.length<=1){ toast('Minimal harus ada 1 isian','warn'); return; }
+  arr.pop();
+  torMultiSync(d,k);
+  renderTorSusun();
 }
 function torSetRupiah(k,el){
   const n=String(el.value||'').replace(/[^0-9]/g,'');
@@ -443,6 +514,12 @@ const TOR_KODE_AUTO = [
   ['jangka_waktu_terbilang','Terbilang jangka waktu'],
   ['masa_garansi_terbilang','Terbilang masa garansi'],
   ['tahap_pembayaran_terbilang','Terbilang tahap pembayaran'],
+  ['tahun_anggaran','Tahun anggaran (= tahun berjalan)'],
+  ['sumber_dana','APLN Tahun … Anggaran Investasi/Operasi'],
+  ['no_prk_baris','Nomor PRK, satu per baris'],
+  ['nama_unit','Nama unit (baku)'],
+  ['singkatan_unit','Singkatan unit (baku)'],
+  ['lokasi_unit','Alamat unit (baku)'],
   ['unit_lengkap','PT PLN (Persero) + nama unit'],
   ['kota_ttd','Kota penandatanganan (Masohi)'],
   ['tgl_ttd','Tanggal tanda tangan = tanggal dokumen'],
@@ -465,6 +542,30 @@ function torFieldInput(f){
   if(f.lockedBy && String(d[f.lockedBy]||'')!=='Ya')
     return locked(f.t==='date'?dispDate(v):(v||''),
       'Terkunci — pilih "'+(TOR_FIELDS_FLAT.filter(x=>x.k===f.lockedBy)[0]||{l:''}).l+' = Ya" untuk mengisi');
+  /* ---- Field BERLAPIS (t:'multi') ----
+     Satu field dengan beberapa baris isian + tombol Tambah/Hapus, seperti
+     Bidang/Sub Bidang & No. SPPBJ pada Monitoring. Kelas .indep-* dipakai
+     ulang dari style.css supaya tampilannya seragam. Bedanya: daftar di sini
+     disimpan di torState (bukan hanya di DOM), sehingga tidak hilang saat
+     form digambar ulang. */
+  if(f.t==='multi'){
+    torMultiSync(d, f.k);
+    const arr=d[f.k+'_list'];
+    const rows=arr.map((val,i)=>
+      '<div class="indep-row"><input type="text" value="'+fkEsc(val||'')+'"'+
+      (f.ph?(' placeholder="'+fkEsc(f.ph)+'"'):'')+
+      ' oninput="torMultiSet(\''+f.k+'\','+i+',this)"></div>').join('');
+    return '<div class="field indep-field"><div class="indep-head">'+
+        '<label>'+torLbl(f)+'</label>'+
+        '<div class="indep-actions">'+
+          '<button type="button" class="indep-add" onclick="torMultiAdd(\''+f.k+'\')" title="Tambah isian">'+
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M12 5v14M5 12h14"/></svg>Tambah</button>'+
+          '<button type="button" class="indep-del-btn" onclick="torMultiDel(\''+f.k+'\')"'+(arr.length<=1?' disabled':'')+' title="Hapus isian terakhir">'+
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>Hapus</button>'+
+        '</div></div>'+
+        '<div class="indep-list">'+rows+'</div>'+
+      '</div>';
+  }
   if(f.t==='select'){
     const isYT=Array.isArray(f.opts)&&f.opts.length===2&&
       f.opts.map(o=>String((o&&o.v)||o).toLowerCase()).sort().join('|')==='tidak|ya';
@@ -571,6 +672,7 @@ function renderTorSusun(){
   torEnsureStyle();
   if(!torState) torState=torBlankState();
   torSyncNomor();
+  torSyncSumberDana(torState.data);
   /* Mesin klausul milik Susun Kontrak dipakai ulang: state & pustaka klausul
      diarahkan ke dokumen TOR yang sedang disusun (lihat torBridgeKlausul). */
   torBridgeKlausul();
