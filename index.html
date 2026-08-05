@@ -79,32 +79,44 @@
 @media (max-width:1100px){#view-pn-lihat .table-wrap{overflow-x:auto}}
 </style>
 
-<!-- ============ DOKUMEN PENGADAAN: FILTER STATUS + KOLOM STATUS ============
+<!-- ============ DOKUMEN PENGADAAN: TOOLBAR + KOLOM STATUS ============
      Dipasang SESUDAH style.css supaya menimpa aturan bawaan.
-     - Baris toolbar dibuat PENUH selebar wadah (semua tombol & field ikut).
-     - Field "Status" diselipkan sesudah "Bidang Pelaksana" dan MENGAMBIL 15%
-       dari lebar field Bidang Pelaksana (rasio 85 : 15), jadi lebar total
-       kedua field itu sama dengan lebar field Bidang Pelaksana semula. -->
+     Tata letak toolbar diatur PENUH di sini (tidak bergantung aturan bawaan)
+     supaya field tidak saling menumpuk: semua item jadi item flex dengan
+     lebar yang jelas, dan JARAK ANTAR ITEM SERAGAM lewat satu variabel
+     --dpeng-gap (field Cari -> Reset = Reset -> Dokumen). -->
 <style id="dpeng-status-cols">
-/* -- toolbar penuh -- */
-#view-dpeng-view .toolbar.fk-toolbar{width:100%}
-/* Bidang Pelaksana + Status berbagi satu slot toolbar. Angka 85/15 = porsi
-   lebar; ubah di sini bila ingin Status lebih lebar/sempit. */
-#view-dpeng-view .dpeng-filter-pair{display:flex;align-items:flex-end;gap:10px;flex:1 1 300px;min-width:0}
-#view-dpeng-view .dpeng-filter-pair .filter-field{margin:0;min-width:0}
-#view-dpeng-view .dpeng-filter-pair .dpeng-ff-bidang{flex:85 1 0}
-#view-dpeng-view .dpeng-filter-pair .dpeng-ff-status{flex:15 1 0;min-width:118px}
-#view-dpeng-view .dpeng-filter-pair select{width:100%;min-width:0}
+/* -- toolbar: satu baris, jarak seragam, penuh selebar wadah -- */
+#view-dpeng-view .toolbar.fk-toolbar{
+  --dpeng-gap:12px;                    /* ubah di sini: jarak SEMUA item toolbar */
+  display:flex;flex-wrap:wrap;align-items:flex-end;
+  gap:var(--dpeng-gap);width:100%}
+/* min-width:0 wajib: tanpa ini field tidak bisa menyusut lalu meluber
+   menimpa field sebelahnya (penyebab tampilan "numpuk"). */
+#view-dpeng-view .fk-toolbar > .filter-field{margin:0;min-width:0;flex:0 1 auto}
+#view-dpeng-view .fk-toolbar > .filter-field > select,
+#view-dpeng-view .fk-toolbar > .filter-field input[type="text"]{width:100%;min-width:0}
+/* Porsi lebar tiap field — ubah angka basis (px) sesuai selera. */
+#view-dpeng-view .fk-toolbar .dpeng-ff-bidang{flex:3 1 190px}
+#view-dpeng-view .fk-toolbar .dpeng-ff-status{flex:1 1 132px;max-width:170px}
+#view-dpeng-view .fk-toolbar .dpeng-ff-tahun {flex:1 1 132px;max-width:170px}
+#view-dpeng-view .fk-toolbar .dpeng-ff-cari  {flex:4 1 220px}
+#view-dpeng-view .fk-toolbar .dpeng-ff-cari .search-elegant-box{width:100%;min-width:0}
+/* Tombol: jarak antar tombol = jarak antar field, dan TIDAK didorong ke kanan
+   (margin-left:auto bawaan dilepas) agar jarak Cari->Reset tetap sama. */
+#view-dpeng-view .fk-toolbar .toolbar-actions{
+  display:flex;align-items:center;gap:var(--dpeng-gap);
+  flex:0 0 auto;margin-left:0;margin-right:0}
+#view-dpeng-view .fk-toolbar .toolbar-actions .btn{white-space:nowrap}
 /* -- tabel penuh selebar wadah + kolom Status -- */
 #view-dpeng-view .table-wrap table{width:100% !important;min-width:0 !important}
 #view-dpeng-view .table-wrap th.dpeng-col-status,
 #view-dpeng-view .table-wrap td.dpeng-col-status{width:132px;min-width:118px;text-align:center}
 @media (max-width:1100px){#view-dpeng-view .table-wrap{overflow-x:auto}}
 /* -- lencana status: Lengkap (hijau) / Belum Lengkap (merah) -- */
-.dpeng-st{display:inline-flex;align-items:center;justify-content:center;gap:6px;
+.dpeng-st{display:inline-flex;align-items:center;justify-content:center;
   min-width:104px;padding:4px 12px;border-radius:20px;font-size:10.5px;font-weight:800;
   letter-spacing:.3px;white-space:nowrap;line-height:1.25}
-.dpeng-st .dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex:0 0 auto}
 .dpeng-st.ok{background:#e0f5ea;color:#127a43;border:1px solid #a8dcc0}
 .dpeng-st.no{background:#fce4e4;color:#b02626;border:1px solid #edbcbc}
 </style>
@@ -1186,27 +1198,24 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
       </div>
     </div>
     <div class="toolbar fk-toolbar">
-      <!-- Bidang Pelaksana + Status dibungkus satu slot: Status mengambil 15%
-           dari lebar field Bidang Pelaksana (lihat #dpeng-status-cols). -->
-      <div class="dpeng-filter-pair">
-        <div class="filter-field dpeng-ff-bidang">
-          <label>Bidang Pelaksana</label>
-          <select id="dpeng-view-bidang" onchange="dpengFilterView()"><option value="">Semua Bidang</option></select>
-        </div>
-        <div class="filter-field dpeng-ff-status">
-          <label>Status</label>
-          <select id="dpeng-view-status" onchange="dpengFilterView()">
-            <option value="">Semua Status</option>
-            <option value="lengkap">Lengkap</option>
-            <option value="belum">Belum Lengkap</option>
-          </select>
-        </div>
+      <!-- Lebar tiap field diatur di blok #dpeng-status-cols (head). -->
+      <div class="filter-field dpeng-ff-bidang">
+        <label>Bidang Pelaksana</label>
+        <select id="dpeng-view-bidang" onchange="dpengFilterView()"><option value="">Semua Bidang</option></select>
       </div>
-      <div class="filter-field">
+      <div class="filter-field dpeng-ff-status">
+        <label>Status</label>
+        <select id="dpeng-view-status" onchange="dpengFilterView()">
+          <option value="">Semua Status</option>
+          <option value="lengkap">Lengkap</option>
+          <option value="belum">Belum Lengkap</option>
+        </select>
+      </div>
+      <div class="filter-field dpeng-ff-tahun">
         <label>Tahun</label>
         <select id="dpeng-view-tahun" onchange="dpengFilterView()"><option value="">Semua Tahun</option></select>
       </div>
-      <div class="filter-field toolbar-search fk-search search-elegant">
+      <div class="filter-field toolbar-search fk-search search-elegant dpeng-ff-cari">
         <label>Cari</label>
         <div class="search-elegant-box">
           <svg class="search-elegant-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
@@ -1220,7 +1229,7 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
         </button>
         <button class="btn btn-teal role-keepspace head-add-btn dpeng-corner-btn" id="dpeng-view-unggah" data-role="admin" onclick="dpengOpenUnggah()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-          Tambah Dokumen
+          Dokumen
         </button>
       </div>
     </div>

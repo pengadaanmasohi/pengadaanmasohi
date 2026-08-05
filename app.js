@@ -1243,6 +1243,7 @@ function performLogout(){
     try{ resetAllFilters(); }catch(e){}
     document.getElementById('topbar-user').style.display='none';
     document.getElementById('login-screen').style.display='flex';
+    syncPageTitle();          // judul tab kembali ke "Halaman Login"
     replayLoginZoom();
     resetLoginForm();
     if(anim){
@@ -1259,6 +1260,48 @@ function performLogout(){
     finish();
   }
 }
+/* ==================================================================
+   JUDUL TAB (document.title) MENGIKUTI STATUS SESI
+   Judul tab diperbarui mengikuti halaman aktif (mis. "Dashboard ·
+   Monitoring Pengadaan Masohi"). Saat pengguna keluar / sesi berakhir,
+   layar kembali ke Halaman Login tetapi judul halaman TERAKHIR ikut
+   tertinggal di tab. Pengawas di bawah mengembalikan judul begitu
+   #login-screen tampil, dan TIDAK mengubah apa pun selama sesi aktif
+   (biar pengatur judul per halaman tetap berkuasa penuh).
+   ================================================================== */
+const APP_TITLE_LOGIN='Halaman Login · Monitoring Pengadaan Masohi';
+function loginScreenVisible(){
+  const el=document.getElementById('login-screen');
+  if(!el) return false;
+  /* getComputedStyle dipakai (bukan offsetParent) karena .login-screen bisa
+     saja berposisi fixed — offsetParent selalu null pada elemen fixed. */
+  try{ return getComputedStyle(el).display!=='none'; }
+  catch(e){ return el.style.display!=='none'; }
+}
+function syncPageTitle(){
+  const belumMasuk = (typeof currentRole==='undefined') || !currentRole;
+  if(belumMasuk && loginScreenVisible() && document.title!==APP_TITLE_LOGIN){
+    document.title=APP_TITLE_LOGIN;
+  }
+}
+(function watchLoginTitle(){
+  const bind=function(){
+    const el=document.getElementById('login-screen'); if(!el) return;
+    syncPageTitle();
+    try{
+      /* style/class layar login berubah -> cek ulang judul. setTimeout dipakai
+         supaya tetap menang bila ada pengatur judul lain yang menulis
+         berbarengan (mis. saat animasi keluar selesai). */
+      new MutationObserver(function(){
+        syncPageTitle();
+        setTimeout(syncPageTitle, 60);
+        setTimeout(syncPageTitle, 600);
+      }).observe(el, {attributes:true, attributeFilter:['style','class']});
+    }catch(e){}
+  };
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', bind);
+  else bind();
+})();
 function logout(){
   openConfirm({
     icon:'back', title:'Keluar',
@@ -9334,8 +9377,8 @@ function dpengLengkap(r){
 }
 function dpengStatusPill(r){
   return dpengLengkap(r)
-    ? '<span class="dpeng-st ok"><span class="dot"></span>Lengkap</span>'
-    : '<span class="dpeng-st no"><span class="dot"></span>Belum Lengkap</span>';
+    ? '<span class="dpeng-st ok">Lengkap</span>'
+    : '<span class="dpeng-st no">Belum Lengkap</span>';
 }
 /* Daftar pekerjaan yang lolos filter bidang + status + tahun + cari */
 function dpengPekerjaanPool(){
@@ -9409,7 +9452,7 @@ function renderDpengView(){
     const adaData=(records_dpeng||[]).length>0;
     tb.innerHTML=dpengEmptyRow(adaData
       ? 'Tidak ada pekerjaan yang cocok dengan filter. Klik "Reset" untuk menampilkan semua.'
-      : 'Belum ada pekerjaan. Klik "Tambah Dokumen" untuk menambah.');
+      : 'Belum ada pekerjaan. Klik "+ Dokumen" untuk menambah.');
     return;
   }
   const totalPages=Math.max(1,Math.ceil(rows.length/DPENG_PAGE_SIZE));
