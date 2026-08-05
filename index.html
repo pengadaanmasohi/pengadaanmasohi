@@ -461,14 +461,53 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
           </div>
         </div>
 
-        <!-- ===== Pembuatan Kontrak (satu menu, seperti File Kontrak) =====
-             Klik Pembuatan Kontrak langsung membuka daftar kontrak (Lihat Kontrak).
-             Penyusunan kontrak diakses lewat tombol "Buat Kontrak" di dalam halaman;
-             pengelolaan klausul kini menjadi langkah dalam Penyusunan Kontrak. -->
-        <button class="topnav-link" data-view="spk-view" data-role="admin" onclick="openSpkView()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></svg>
-          Susun Kontrak
-        </button>
+        <!-- ===== Penyusunan Dokumen (dahulu "Susun Kontrak") =====
+             Grup berisi dua cabang:
+               1. Kontrak            -> halaman lama (spk-view / spk-susun), TIDAK berubah
+               2. Dokumen Pengadaan  -> submenu bertingkat:
+                    - Dokumen TOR/KAK   (tor-view / tor-susun)
+                    - Dokumen RAB       (rab-view, menyusul)
+                    - Pakta Integritas  (pakta-view, menyusul)
+             Klik "Kontrak" langsung membuka daftar kontrak; penyusunan diakses
+             lewat tombol "Buat Kontrak" di dalam halaman — perilaku lama dipertahankan. -->
+        <div class="topnav-group" data-group="susun-dok">
+          <button class="topnav-trigger" type="button" onclick="toggleTopGroup(event,'susun-dok')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></svg>
+            Penyusunan Dokumen
+            <svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="topnav-dropdown">
+            <!-- 1. Kontrak — dahulu menu "Susun Kontrak"; halaman & fungsi tak berubah. -->
+            <button class="topnav-item" data-view="spk-view" data-role="admin" onclick="openSpkView()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8M16 17H8M10 9H8"/></svg>
+              Kontrak
+            </button>
+            <!-- 2. Dokumen Pengadaan — submenu bertingkat (pola sama dengan grup HPS) -->
+            <div class="topnav-sub" data-sub="dokpeng" data-role="admin">
+              <button class="topnav-subtrigger" type="button" onclick="toggleFkSub(event,'dokpeng')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/></svg>
+                <span class="sub-label">Dokumen Pengadaan</span>
+                <svg class="caret2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <div class="topnav-subdrop">
+                <!-- Dokumen TOR/KAK: klik langsung membuka daftar; "Buat TOR/KAK"
+                     ada di dalam halaman daftar (pola sama dengan Kontrak). -->
+                <button class="topnav-item" data-view="tor-view" data-role="admin" onclick="openTorView()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>
+                  Dokumen TOR/KAK
+                </button>
+                <button class="topnav-item" data-view="rab-view" data-role="admin" onclick="openRabView()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 10h2M14 10h2M8 14h2M14 14h2M8 18h8"/></svg>
+                  Dokumen RAB
+                </button>
+                <button class="topnav-item" data-view="pakta-view" data-role="admin" onclick="openPaktaView()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg>
+                  Pakta Integritas
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="side-sec">Sistem</div>
         <!-- ===== Pengaturan (dulu menu gear di kanan atas) =====
              ID tiap tombol DIPERTAHANKAN (btn-change-pass, btn-akun-kontrol,
@@ -1899,6 +1938,69 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
 
   <!-- Ubah Klausul Kontrak kini menjadi Langkah 2 di dalam Penyusunan Kontrak (spk-susun). -->
 
+<!-- ============ PENYUSUNAN DOKUMEN — DOKUMEN PENGADAAN ============ -->
+
+  <!-- Daftar Dokumen TOR/KAK -->
+  <section id="view-tor-view" class="view">
+    <div class="page-head">
+      <div>
+        <h2>Daftar Dokumen TOR/KAK <span class="count-badge" id="tor-view-count">0</span></h2>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end">
+        <div class="filter-field toolbar-search pn-search-right search-elegant pn-head-search">
+          <div class="search-elegant-box">
+            <svg class="search-elegant-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            <input id="tor-view-search" type="text" placeholder="Cari No. Dokumen / Nama Pekerjaan" oninput="renderTorView()">
+          </div>
+        </div>
+        <button class="btn btn-teal head-add-btn" data-role="admin" onclick="torNewDokumen()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg> Buat TOR/KAK
+        </button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="col-no">No.</th>
+              <th class="col-spk-nokon">No. Dokumen</th>
+              <th class="col-nama-freeze">Nama Pekerjaan</th>
+              <th>Bidang Pelaksana</th>
+              <th class="col-date">Tanggal</th>
+              <th class="col-nilai">Nilai HPS</th>
+              <th class="col-spk-aksi">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="tor-view-body"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="tor-view-pagination"></div>
+    </div>
+  </section>
+
+  <!-- Penyusunan Dokumen TOR/KAK: Langkah 1 Data, Langkah 2 Klausul (semua klausul dipakai) -->
+  <section id="view-tor-susun" class="view">
+    <div class="page-head">
+      <div>
+        <h2>Penyusunan Dokumen TOR/KAK</h2>
+      </div>
+    </div>
+    <div id="tor-susun-content"></div>
+  </section>
+
+  <!-- Dokumen RAB (menyusul) -->
+  <section id="view-rab-view" class="view">
+    <div class="page-head"><div><h2>Dokumen RAB</h2></div></div>
+    <div id="rab-view-content"></div>
+  </section>
+
+  <!-- Pakta Integritas (menyusul) -->
+  <section id="view-pakta-view" class="view">
+    <div class="page-head"><div><h2>Pakta Integritas</h2></div></div>
+    <div id="pakta-view-content"></div>
+  </section>
+
 </main>
   </div><!-- /.app-main -->
 </div><!-- /.app-shell -->
@@ -2392,6 +2494,7 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
      Memisah "Susun Kontrak" (SPK) agar bisa disunting tanpa memuat seluruh app.js. -->
 <script src="app.js?v=20260805a"></script>
 <script src="susun-kontrak.js?v=20260805a"></script>
+<script src="susun-dokumen.js?v=20260805a"></script>
 <script src="app-lain.js?v=20260805a"></script>
 <script src="ui-sidebar.js?v=20260805a"></script>
 
