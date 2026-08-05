@@ -188,7 +188,7 @@ const TOR_FIELD_GROUPS = [
     /* Kode Klasifikasi diletakkan TEPAT SESUDAH Lokasi Pekerjaan.
        Mengubahnya langsung memperbarui No. Dokumen (lihat reNo). */
     {k:'kode_klasifikasi', l:'Kode Klasifikasi', t:'select',
-      opts:TOR_KLAS_OPTS.map(o=>({v:o.kode, l:o.label})), reNo:true, def:'DAN.01.03'},
+      opts:TOR_KLAS_OPTS.map(o=>({v:o.kode, l:o.label})), reNo:true, def:''},
     {k:'pelaksana', l:'Bidang Pelaksana', t:'select', opts:TOR_BIDANG_OPTS, def:''},
     {k:'jenis_pengadaan', l:'Jenis Pengadaan', t:'select', opts:['Barang','Jasa','Barang dan Jasa'], def:''},
     {k:'metode_pengadaan', l:'Metode Pengadaan', t:'select', opts:TOR_METODE_OPTS, def:''},
@@ -277,8 +277,11 @@ function torBlankState(){
   d.__doktype='TOR';
   d.bentuk_kontrak='SPK';          /* dipakai mesin SPK: tata letak & inden SPK */
   d.tahun_dokumen=String(torYearNow());
-  d.kode_klasifikasi=d.kode_klasifikasi||'DAN.01.03';
-  d.jenis_pengadaan=TOR_KLAS_JENIS[d.kode_klasifikasi]||'';
+  /* Bawaan Kode Klasifikasi sengaja KOSONG ("— pilih —"): dokumen baru
+     tidak lagi otomatis dianggap DAN.01.03. Jenis Pengadaan ikut kosong dan
+     baru terisi sendiri begitu klasifikasinya dipilih (lihat torSet). */
+  d.kode_klasifikasi=d.kode_klasifikasi||'';
+  d.jenis_pengadaan=d.kode_klasifikasi ? (TOR_KLAS_JENIS[d.kode_klasifikasi]||'') : '';
   d.tgl_dokumen=d.tgl_dokumen||torTodayISO();
   d.no_urut=0; d.no_dokumen='';
   d.__klausulLib=torKlausulDefault();
@@ -444,7 +447,8 @@ function torSet(k,v){
   if(!torState) return;
   torState.data[k]=v;
   if(k==='kode_klasifikasi'){
-    const j=TOR_KLAS_JENIS[v]; if(j) torState.data.jenis_pengadaan=j;
+    /* Kembali ke "— pilih —" -> Jenis Pengadaan ikut dikosongkan. */
+    torState.data.jenis_pengadaan = v ? (TOR_KLAS_JENIS[v]||'') : '';
   }
   const f=TOR_FIELDS_FLAT.filter(x=>x.k===k)[0];
   if(f && f.reNo){ torState.data.no_urut=0; torSyncNomor(); renderTorSusun(); return; }
@@ -655,10 +659,6 @@ function torFieldInput(f){
 function torEnsureStyle(){
   if(document.getElementById('tor-style')) return;
   const css=
-    /* Baris nomor dokumen (keterangan panjangnya dihapus 5 Agu 2026) */
-    '.tor-noline{margin:0 0 12px;display:flex;align-items:center;gap:10px;font-size:11.5px;color:#5B6472}'+
-    '.tor-nobox{display:inline-flex;align-items:center;gap:8px;padding:4px 10px;border-radius:8px;'+
-      'background:#fff;border:1px dashed #9FB6DA;color:#1B3A6B;font-weight:800;letter-spacing:.02em}'+
     /* ---- Sakelar on/off milik form TOR ----
        Tanpa aturan :hover sama sekali: tampilannya hanya berubah setelah
        diklik, tidak "bergetar"/berpindah saat tersentuh kursor. */
@@ -676,7 +676,14 @@ function torEnsureStyle(){
     '.tor-sw-val .dt{width:7px;height:7px;border-radius:50%;background:#C2CBD6}'+
     '.tor-sw-val.on{background:#EAF6F4;border-color:#BCE0DA;color:#1F5E58;font-weight:700}'+
     '.tor-sw-val.on .dt{background:#2E8B84}'+
-    /* ---- Field berlapis (Nomor PRK) ---- */
+    /* ---- Field berlapis (Nomor PRK) ----
+       Tiap field DIPATOK ke sisi ATAS barisnya. Tanpa ini, saat baris Nomor
+       PRK bertambah, seluruh field lain di baris yang sama ikut turun
+       (kotaknya diregangkan setinggi field terpanjang lalu isinya menempel di
+       bawah). Dengan align-self:flex-start, field lain tetap di atas dan
+       Nomor PRK memanjang sendiri ke bawah. */
+    '#tor-susun-content .form-flow{align-items:flex-start}'+
+    '#tor-susun-content .form-flow > .field{align-self:flex-start}'+
     '.field.tor-ml{position:relative}'+
     '.tor-ml-act{position:absolute;top:-2px;right:0;display:flex;gap:6px;z-index:2}'+
     '.tor-ml-btn{-webkit-appearance:none;appearance:none;display:inline-flex;align-items:center;gap:4px;'+
@@ -771,7 +778,6 @@ function renderTorSusun(){
       : '<div class="form-section-title">'+secIcon+' '+fkEsc(g.sec)+'</div>';
     return '<div class="form-card">'+
       judul+
-      (gi===0 ? torNomorHintHtml() : '')+
       '<div class="form-flow" style="--cols:4">'+isi+'</div>'+
     '</div>';
   };
@@ -804,14 +810,6 @@ function renderTorSusun(){
       '</div>';
     try{ renderSpkKlausul(); torRelabelKlausul(); }catch(e){ console.error(e); }
   }
-}
-/* Keterangan panjang tentang cara penomoran DIHAPUS (permintaan 5 Agu 2026).
-   Yang tersisa hanya nomor dokumen yang sedang dibuat — informasi ini tidak
-   ada di tempat lain pada Langkah 1. */
-function torNomorHintHtml(){
-  const d=torState.data;
-  return '<div class="tor-noline">Nomor dokumen ini:'+
-    '<span class="tor-nobox">'+fkEsc(d.no_dokumen||'—')+'</span></div>';
 }
 
 /* ---- Jembatan ke mesin Pustaka Klausul milik Susun Kontrak ----
@@ -850,6 +848,8 @@ async function torSaveDokumen(){
   const d=torState.data;
   const nama=String(d.nama_pekerjaan||'').trim();
   if(!nama){ toast('Nama Pekerjaan wajib diisi','warn'); return; }
+  /* Kode klasifikasi ikut membentuk nomor dokumen, jadi tidak boleh kosong. */
+  if(!String(d.kode_klasifikasi||'').trim()){ toast('Kode Klasifikasi wajib dipilih','warn'); return; }
   torMultiTrimAll(d);          /* buang baris berlapis yang dibiarkan kosong */
   torSyncNomor();
   const klausul=torKlausulDok();
