@@ -44,6 +44,15 @@ const TOR_RISIKO_OPTS  = ['Risiko Rendah','Risiko Menengah','Risiko Tinggi'];
 const TOR_ANGGARAN_OPTS= ['Investasi','Operasi'];
 const TOR_METODE_OPTS  = ['Pengadaan Langsung','Penunjukan Langsung','Tender Terbatas','Tender Terbuka','Seleksi Umum','Seleksi Terbatas','Tender Cepat'];
 
+/* ---- Identitas unit: BAKU, bukan isian ----
+   Dulu tersedia sebagai kartu "Unit Pelaksana" pada form. Karena nilainya
+   tidak pernah berubah untuk UP3 Masohi, ketiganya dijadikan tetapan supaya
+   tidak ada peluang salah ketik dan formnya lebih pendek. Bila suatu saat
+   aplikasi dipakai unit lain, cukup ubah tiga baris ini. */
+const TOR_NAMA_UNIT      = 'Unit Pelaksana Pelayanan Pelanggan Masohi';
+const TOR_SINGKATAN_UNIT = 'UP3 Masohi';
+const TOR_LOKASI_UNIT    = (typeof SPK_ALAMAT_1!=='undefined' && SPK_ALAMAT_1) ? SPK_ALAMAT_1 : '';
+const TOR_KOTA_TTD     = 'Masohi';   /* kota penandatanganan — tetap, bukan isian */
 const TOR_JUDUL_BARIS1 = 'TERM OF REFERENCE (TOR)';
 const TOR_JUDUL_BARIS2 = 'KERANGKA ACUAN KERJA (KAK)';
 const TOR_DOK_LABEL    = 'TERM OF REFERENCE (TOR)/KERANGKA ACUAN KERJA (KAK)';
@@ -143,65 +152,62 @@ const TOR_DEF_DENDA_MAKS = '5% (lima persen) dari nilai Perjanjian/Kontrak';
 const TOR_DEF_BAYAR      = 'transfer (Bilyet Giro) ke rekening bank Penyedia Barang/Jasa';
 
 const TOR_FIELD_GROUPS = [
-  { sec:'Identitas Dokumen', fields:[
-    /* Dropdown kode klasifikasi — mengubahnya langsung memperbarui No. Dokumen */
-    {k:'kode_klasifikasi', l:'Kode Klasifikasi', t:'select',
-      opts:TOR_KLAS_OPTS.map(o=>({v:o.kode, l:o.label})), span:2, reNo:true, def:'DAN.01.03'},
-    {k:'tahun_dokumen', l:'Tahun Dokumen', t:'select', opts:torTahunOpts(), reNo:true, def:String(torYearNow())},
-    {k:'auto_no_urut', l:'Nomor Urut', auto:'no_urut'},
-    /* Nomor depan digenerate otomatis sesuai urutan dokumen, mulai dari 0001 */
-    {k:'no_dokumen', l:'No. Dokumen TOR/KAK', auto:'no_dokumen', span:2},
-    {k:'tgl_dokumen', l:'Tgl. Dokumen', t:'date', def:''},
-  ]},
   { sec:'Informasi Pengadaan', fields:[
-    {k:'nama_pekerjaan', l:'Nama Pekerjaan', t:'text', span:2, dpLock:true, def:''},
-    {k:'lokasi_pekerjaan', l:'Lokasi Pekerjaan', t:'text', span:2, dpLock:true, def:''},
-    {k:'pelaksana', l:'Bidang Pelaksana', t:'select', opts:TOR_BIDANG_OPTS, dpLock:true, def:''},
+    /* Kode Klasifikasi pindah ke sini dari kartu "Identitas Dokumen" yang
+       dihapus. Mengubahnya langsung memperbarui No. Dokumen (lihat reNo). */
+    {k:'kode_klasifikasi', l:'Kode Klasifikasi', t:'select',
+      opts:TOR_KLAS_OPTS.map(o=>({v:o.kode, l:o.label})), reNo:true, def:'DAN.01.03'},
+    {k:'nama_pekerjaan', l:'Nama Pekerjaan', t:'text', def:''},
+    {k:'lokasi_pekerjaan', l:'Lokasi Pekerjaan', t:'text', def:''},
+    {k:'pelaksana', l:'Bidang Pelaksana', t:'select', opts:TOR_BIDANG_OPTS, def:''},
     {k:'jenis_pengadaan', l:'Jenis Pengadaan', t:'select', opts:['Barang','Jasa','Barang dan Jasa'], def:''},
-    {k:'metode_pengadaan', l:'Metode Pengadaan', t:'select', opts:TOR_METODE_OPTS, dpLock:true, def:''},
+    {k:'metode_pengadaan', l:'Metode Pengadaan', t:'select', opts:TOR_METODE_OPTS, def:''},
     {k:'level_risiko', l:'Level Risiko Pekerjaan', t:'select', opts:TOR_RISIKO_OPTS, def:''},
-    {k:'nilai_hps', l:'Nilai HPS / Pagu (+ PPN)', t:'rupiah', def:''},
-    {k:'auto_terbilang_nilai', l:'Terbilang Nilai HPS', auto:'terbilang_nilai', span:2},
+    /* Terbilangnya TIDAK dijadikan field — dihitung otomatis saat dokumen
+       dibangun ({{nilai_pekerjaan_terbilang}}). */
+    {k:'nilai_pekerjaan', l:'Perkiraan Nilai Pekerjaan (+ PPN)', t:'rupiah', def:''},
   ]},
   { sec:'Sumber Dana', fields:[
-    {k:'jenis_anggaran', l:'Jenis Anggaran', t:'select', opts:TOR_ANGGARAN_OPTS, dpLock:true, def:''},
+    {k:'jenis_anggaran', l:'Jenis Anggaran', t:'select', opts:TOR_ANGGARAN_OPTS, def:''},
     {k:'tahun_anggaran', l:'Tahun Anggaran', t:'text', def:'', ph:'cth. 2026'},
-    {k:'sumber_dana', l:'Sumber Dana', t:'text', span:2, def:'', ph:'cth. APLN Tahun 2026 Anggaran Investasi'},
-    {k:'no_anggaran', l:'No. Anggaran (SKKO/SKKI)', t:'text', span:2, dpLock:true, def:''},
-    {k:'tgl_anggaran', l:'Tgl. Anggaran', t:'date', dpLock:true, def:''},
-    {k:'no_prk', l:'Nomor PRK', t:'text', span:2, def:'', ph:'cth. 2026.WMMU.4.003'},
+    {k:'sumber_dana', l:'Sumber Dana', t:'text', def:'', ph:'cth. APLN Tahun 2026 Anggaran Investasi'},
+    {k:'no_anggaran', l:'No. Anggaran (SKKO/SKKI)', t:'text', def:''},
+    {k:'tgl_anggaran', l:'Tgl. Anggaran', t:'date', def:''},
+    {k:'no_prk', l:'Nomor PRK', t:'text', def:'', ph:'cth. 2026.WMMU.4.003'},
   ]},
-  { sec:'Unit Pelaksana', fields:[
-    {k:'nama_unit', l:'Nama Unit', t:'text', span:2, def:'Unit Pelaksana Pelayanan Pelanggan Masohi'},
-    {k:'singkatan_unit', l:'Singkatan Unit', t:'text', def:'UP3 Masohi'},
-    {k:'lokasi_unit', l:'Lokasi/Alamat Unit', t:'text', span:2, def:''},
-    {k:'nama_pengguna', l:'Nama Pengguna Barang/Jasa', t:'text', span:2, def:''},
-    {k:'jabatan_pengguna', l:'Jabatan Pengguna Barang/Jasa', t:'text', span:2, def:'Manager PT PLN (Persero) UP3 Masohi'},
-  ]},
+  /* ---------- Pengendali Pekerjaan ----------
+     Dua sakelar mengunci isian di bawahnya, mengikuti pola "Perubahan?" pada
+     Susun Kontrak:
+       Perubahan Pengguna?  Ya -> Nama & Jabatan Pengguna dapat diisi
+                            Tidak -> terkunci (nilai terakhir tetap terbaca)
+       Pengawas Pekerjaan?  Ya -> Nama & Jabatan Pengawas dapat diisi
+                            Tidak -> terkunci; butir Pengawas otomatis hilang
+                                     dari dokumen karena nilainya kosong. */
   { sec:'Pengendali Pekerjaan', fields:[
-    {k:'jabatan_direksi', l:'Direksi Pekerjaan', t:'text', span:2, def:''},
-    {k:'jabatan_pengawas', l:'Pengawas Pekerjaan', t:'text', span:2, def:''},
-    {k:'jabatan_pengawas_lapangan', l:'Pengawas Lapangan', t:'text', span:2, def:''},
-    {k:'tim_pemeriksa', l:'Tim Pemeriksa Barang/Jasa', t:'text', span:2, def:''},
+    {k:'perubahan_pengguna', l:'Perubahan Pengguna?', t:'select', opts:['Ya','Tidak'], reRender:true, def:''},
+    {k:'nama_pengguna', l:'Nama Pengguna Barang/Jasa', t:'text', lockedBy:'perubahan_pengguna', def:''},
+    {k:'jabatan_pengguna', l:'Jabatan Pengguna Barang/Jasa', t:'text', lockedBy:'perubahan_pengguna', def:''},
+    {k:'nama_direksi', l:'Nama Direksi Pekerjaan', t:'text', def:''},
+    {k:'jabatan_direksi', l:'Jabatan Direksi Pekerjaan', t:'text', def:''},
+    {k:'ada_pengawas', l:'Pengawas Pekerjaan?', t:'select', opts:['Ya','Tidak'], reRender:true, def:''},
+    {k:'nama_pengawas', l:'Nama Pengawas Pekerjaan', t:'text', lockedBy:'ada_pengawas', def:''},
+    {k:'jabatan_pengawas', l:'Jabatan Pengawas Pekerjaan', t:'text', lockedBy:'ada_pengawas', def:''},
   ]},
   { sec:'Pelaksanaan & Pembayaran', fields:[
     {k:'jangka_waktu', l:'Jangka Waktu Pelaksanaan (hari)', t:'number', def:''},
-    {k:'auto_terbilang_jangka', l:'Terbilang Jangka Waktu', auto:'terbilang_jangka', span:2},
     {k:'masa_garansi', l:'Masa Garansi (bulan)', t:'number', def:''},
-    {k:'auto_terbilang_garansi', l:'Terbilang Masa Garansi', auto:'terbilang_garansi', span:2},
     {k:'tahap_pembayaran', l:'Jumlah Tahap Pembayaran', t:'number', def:''},
-    {k:'auto_terbilang_tahap', l:'Terbilang Tahap Pembayaran', auto:'terbilang_tahap', span:2},
     {k:'uang_muka', l:'Uang Muka?', t:'select', opts:['Ya','Tidak'], def:''},
     {k:'syarat_csms', l:'Wajib Sertifikat CSMS?', t:'select', opts:['Ya','Tidak'], def:''},
-    {k:'cara_pembayaran', l:'Cara Pembayaran', t:'text', span:2, def:TOR_DEF_BAYAR},
-    {k:'denda_keterlambatan', l:'Denda Keterlambatan', t:'text', span:2, def:TOR_DEF_DENDA},
-    {k:'denda_maksimal', l:'Denda Maksimal', t:'text', span:2, def:TOR_DEF_DENDA_MAKS},
+    {k:'cara_pembayaran', l:'Cara Pembayaran', t:'text', def:TOR_DEF_BAYAR},
+    {k:'denda_keterlambatan', l:'Denda Keterlambatan', t:'text', def:TOR_DEF_DENDA},
+    {k:'denda_maksimal', l:'Denda Maksimal', t:'text', def:TOR_DEF_DENDA_MAKS},
   ]},
+  /* Kota & tanggal penandatanganan TIDAK lagi jadi field: kota tetap "Masohi",
+     tanggalnya mengikuti tanggal pembuatan dokumen (lihat torExtendCtx). */
   { sec:'Penyusun Dokumen', fields:[
-    {k:'kota_ttd', l:'Kota Penandatanganan', t:'text', def:'Masohi'},
-    {k:'tgl_ttd', l:'Tgl. Penandatanganan', t:'date', def:''},
-    {k:'nama_penyusun', l:'Nama Penyusun', t:'text', span:2, def:''},
-    {k:'jabatan_penyusun', l:'Jabatan Penyusun', t:'text', span:2, def:''},
+    {k:'nama_penyusun', l:'Nama Penyusun', t:'text', def:''},
+    {k:'jabatan_penyusun', l:'Jabatan Penyusun', t:'text', def:''},
   ]},
 ];
 const TOR_FIELDS_FLAT = TOR_FIELD_GROUPS.reduce((a,g)=>a.concat(g.fields),[]);
@@ -263,7 +269,7 @@ function torAutoVal(kind, d){
   try{
     if(kind==='no_urut')            return d.no_urut ? torPad4(d.no_urut) : '';
     if(kind==='no_dokumen')         return d.no_dokumen || '';
-    if(kind==='terbilang_nilai')    return d.nilai_hps!=='' && d.nilai_hps!=null ? spkTerbilangRupiah(d.nilai_hps) : '';
+    if(kind==='terbilang_nilai')    return (d.nilai_pekerjaan!=='' && d.nilai_pekerjaan!=null) ? spkTerbilangRupiah(d.nilai_pekerjaan) : '';
     if(kind==='terbilang_jangka')   return d.jangka_waktu ? (spkTerbilang(d.jangka_waktu)+' Hari Kalender') : '';
     if(kind==='terbilang_garansi')  return d.masa_garansi ? (spkTerbilang(d.masa_garansi)+' Bulan') : '';
     if(kind==='terbilang_tahap')    return d.tahap_pembayaran ? (spkTerbilang(d.tahap_pembayaran)+' Tahap') : '';
@@ -291,30 +297,53 @@ function torExtendCtx(ctx, d){
   ctx.dok_title         = TOR_DOK_TITLE;
   ctx.tgl_dokumen_pjg   = spkDateLong(d.tgl_dokumen);
   ctx.hari_dokumen      = spkDayName(d.tgl_dokumen);
-  /* --- Nilai & terbilang --- */
-  ctx.nilai_hps            = (d.nilai_hps!==''&&d.nilai_hps!=null) ? spkRupiah(d.nilai_hps) : '';
-  ctx.nilai_hps_rp         = ctx.nilai_hps;
-  ctx.nilai_hps_terbilang  = torAutoVal('terbilang_nilai', d);
+  /* --- Nilai & terbilang ---
+     Terbilang TIDAK lagi menjadi field isian: seluruhnya dihitung di sini,
+     sehingga otomatis muncul di Pratinjau/Cetak lewat placeholder-nya. */
+  ctx.nilai_pekerjaan           = (d.nilai_pekerjaan!==''&&d.nilai_pekerjaan!=null) ? spkRupiah(d.nilai_pekerjaan) : '';
+  ctx.nilai_pekerjaan_rp        = ctx.nilai_pekerjaan;
+  ctx.nilai_pekerjaan_terbilang = torAutoVal('terbilang_nilai', d);
+  /* Alias lama — dipertahankan agar klausul yang terlanjur memakai
+     {{nilai_hps}} tetap terisi. */
+  ctx.nilai_hps            = ctx.nilai_pekerjaan;
+  ctx.nilai_hps_rp         = ctx.nilai_pekerjaan;
+  ctx.nilai_hps_terbilang  = ctx.nilai_pekerjaan_terbilang;
   ctx.jangka_waktu_hari       = (d.jangka_waktu!=null && d.jangka_waktu!=='') ? String(d.jangka_waktu) : '';
   ctx.jangka_waktu_terbilang  = d.jangka_waktu ? spkTerbilang(d.jangka_waktu) : '';
   ctx.masa_garansi_terbilang  = d.masa_garansi ? spkTerbilang(d.masa_garansi) : '';
   ctx.tahap_pembayaran_terbilang = d.tahap_pembayaran ? spkTerbilang(d.tahap_pembayaran) : '';
-  ctx.auto_terbilang_nilai   = ctx.nilai_hps_terbilang;
+  ctx.auto_terbilang_nilai   = ctx.nilai_pekerjaan_terbilang;
   ctx.auto_terbilang_jangka  = torAutoVal('terbilang_jangka', d);
   ctx.auto_terbilang_garansi = torAutoVal('terbilang_garansi', d);
   ctx.auto_terbilang_tahap   = torAutoVal('terbilang_tahap', d);
   ctx.auto_no_urut           = ctx.no_urut;
   /* --- Unit & pejabat --- */
-  const unit = String(d.nama_unit||'').trim() || 'Unit Pelaksana Pelayanan Pelanggan Masohi';
-  ctx.unit_lengkap = /^PT\s*PLN/i.test(unit) ? unit : ('PT PLN (Persero) '+unit);
+  const unit = TOR_NAMA_UNIT;
+  ctx.nama_unit       = unit;
+  ctx.singkatan_unit  = TOR_SINGKATAN_UNIT;
+  ctx.lokasi_unit     = TOR_LOKASI_UNIT;
+  ctx.unit_lengkap    = /^PT\s*PLN/i.test(unit) ? unit : ('PT PLN (Persero) '+unit);
   ctx.p1_nama_singkat = unit;
-  ctx.p1_alamat = d.lokasi_unit||'';
+  ctx.p1_alamat       = TOR_LOKASI_UNIT;
   ctx.nama_pengguna = String(d.nama_pengguna||'').toUpperCase();
   ctx.p1_wakil      = ctx.nama_pengguna;
   ctx.p1_jabatan    = d.jabatan_pengguna||'';
+  /* Direksi & Pengawas Pekerjaan.
+     Bila "Pengawas Pekerjaan? = Tidak", kedua nilai Pengawas dikosongkan —
+     butir yang memakai placeholder itu otomatis hilang dari dokumen dan
+     penomorannya menyesuaikan (lihat spkPruneKlausul). */
+  ctx.nama_direksi     = d.nama_direksi||'';
+  ctx.jabatan_direksi  = d.jabatan_direksi||'';
+  const _adaPengawas = String(d.ada_pengawas||'')==='Ya';
+  ctx.nama_pengawas    = _adaPengawas ? (d.nama_pengawas||'') : '';
+  ctx.jabatan_pengawas = _adaPengawas ? (d.jabatan_pengawas||'') : '';
+  ctx.ada_pengawas     = _adaPengawas ? 'Ya' : 'Tidak';
   ctx.penyusun_nama = String(d.nama_penyusun||'').toUpperCase();
   ctx.penyusun_jabatan = d.jabatan_penyusun||'';
-  ctx.tempat_tanggal = (d.kota_ttd||'Masohi')+', '+(spkDateLong(d.tgl_ttd)||spkDateLong(d.tgl_dokumen));
+  /* Kota tetap Masohi; tanggal tanda tangan = tanggal pembuatan dokumen. */
+  ctx.kota_ttd       = TOR_KOTA_TTD;
+  ctx.tgl_ttd        = spkDateLong(d.tgl_dokumen);
+  ctx.tempat_tanggal = TOR_KOTA_TTD+', '+spkDateLong(d.tgl_dokumen);
   /* --- Sumber dana --- */
   ctx.sumber_dana_no      = d.no_anggaran||'';
   ctx.sumber_dana_tgl_pjg = spkDateLong(d.tgl_anggaran);
@@ -343,6 +372,9 @@ function torSet(k,v){
   }
   const f=TOR_FIELDS_FLAT.filter(x=>x.k===k)[0];
   if(f && f.reNo){ torState.data.no_urut=0; torSyncNomor(); renderTorSusun(); return; }
+  /* Sakelar pengunci (Perubahan Pengguna? / Pengawas Pekerjaan?): form
+     digambar ulang supaya field di bawahnya langsung terbuka/terkunci. */
+  if(f && f.reRender){ renderTorSusun(); return; }
   torRefreshAuto();
 }
 function torSetRupiah(k,el){
@@ -364,12 +396,33 @@ function torRefreshAuto(){
     if(el) el.value=torAutoVal(f.auto, torState.data);
   });
 }
-function torLbl(f){
-  /* Label + tombol salin kode placeholder ({{key}}) — sama gaya dengan Susun Kontrak */
-  const kode=f.auto ? f.k : f.k;
-  return fkEsc(f.l)+' <button type="button" class="spk-code" title="Salin kode {{'+kode+'}}" '+
-    'onclick="torCopyCode(\''+fkEscJs(kode)+'\')">{{'+fkEsc(kode)+'}}</button>';
+/* Label field. Chip kode {{key}} DIHAPUS dari tiap field supaya barisnya
+   rapat & seragam; daftar lengkap kodenya dibuka lewat tombol "Kode Isian"
+   di kepala Langkah 1 (lihat torKodeModal). */
+function torLbl(f){ return fkEsc(f.l); }
+/* Daftar seluruh kode mail-merge — pengganti chip per-field. */
+function torKodeModal(){
+  torEnsureStyle();
+  const baris = TOR_FIELD_GROUPS.map(g=>
+    '<div class="tor-kode-sec">'+fkEsc(g.sec)+'</div>'+
+    g.fields.map(f=>'<div class="tor-kode-row"><span>'+fkEsc(f.l)+'</span>'+
+      '<code onclick="torCopyCode(\''+fkEscJs(f.k)+'\')" title="Klik untuk menyalin">{{'+fkEsc(f.k)+'}}</code></div>').join('')
+  ).join('') +
+  '<div class="tor-kode-sec">Otomatis (tanpa isian)</div>'+
+  TOR_KODE_AUTO.map(x=>'<div class="tor-kode-row"><span>'+fkEsc(x[1])+'</span>'+
+    '<code onclick="torCopyCode(\''+fkEscJs(x[0])+'\')" title="Klik untuk menyalin">{{'+fkEsc(x[0])+'}}</code></div>').join('');
+  let ov=document.getElementById('tor-kode-ov');
+  if(!ov){ ov=document.createElement('div'); ov.id='tor-kode-ov'; ov.className='spk-ov'; document.body.appendChild(ov);
+    ov.addEventListener('click', e=>{ if(e.target.id==='tor-kode-ov') torKodeClose(); }); }
+  ov.innerHTML='<div class="spk-ov-modal" style="max-width:720px">'+
+    '<div class="spk-ov-head"><span class="spk-ov-title">Kode Isian TOR/KAK</span>'+
+      '<button class="btn btn-ghost btn-sm" onclick="torKodeClose()">Tutup</button></div>'+
+    '<div class="spk-ov-body"><div class="tor-kode-hint">Tulis kode ini di dalam klausul (Word maupun editor). '+
+      'Saat dokumen dibangun, kode diganti isian yang sesuai. Klik kode untuk menyalin.</div>'+
+      '<div class="tor-kode-list">'+baris+'</div></div></div>';
+  ov.classList.add('show');
 }
+/* Salin sebuah kode {{key}} ke papan klip (dipakai modal Kode Isian). */
 function torCopyCode(k){
   const t='{{'+k+'}}';
   try{
@@ -378,9 +431,27 @@ function torCopyCode(k){
     toast('Kode '+t+' disalin','ok');
   }catch(e){ toast('Gagal menyalin kode','err'); }
 }
+function torKodeClose(){ const ov=document.getElementById('tor-kode-ov'); if(ov) ov.classList.remove('show'); }
+/* Kode yang terisi otomatis — tidak punya field isian sama sekali. */
+const TOR_KODE_AUTO = [
+  ['no_dokumen','No. Dokumen lengkap'],
+  ['no_urut','Nomor urut 4 digit'],
+  ['tahun_dokumen','Tahun dokumen'],
+  ['tgl_dokumen','Tanggal dokumen (panjang)'],
+  ['hari_dokumen','Nama hari tanggal dokumen'],
+  ['nilai_pekerjaan_terbilang','Terbilang perkiraan nilai pekerjaan'],
+  ['jangka_waktu_terbilang','Terbilang jangka waktu'],
+  ['masa_garansi_terbilang','Terbilang masa garansi'],
+  ['tahap_pembayaran_terbilang','Terbilang tahap pembayaran'],
+  ['unit_lengkap','PT PLN (Persero) + nama unit'],
+  ['kota_ttd','Kota penandatanganan (Masohi)'],
+  ['tgl_ttd','Tanggal tanda tangan = tanggal dokumen'],
+  ['tempat_tanggal','"Masohi, 5 Agustus 2026"']
+];
 function torFieldInput(f){
   const d=torState.data, v=d[f.k];
-  const span=(f.span===2)?' style="flex:1 1 calc(50% - 15px)"':'';
+  /* Seluruh field selebar satu kolom -> 4 field per baris (--cols:4). */
+  const span='';
   const dispDate=(x)=>{ const p=String(x||'').split('-'); return (p.length===3)?(p[2]+'/'+p[1]+'/'+p[0]):(x||''); };
   const locked=(disp,tip)=>'<div class="field"'+span+'><label>'+torLbl(f)+'</label>'+
     '<input type="text" id="tor-fld-'+f.k+'" value="'+fkEsc(disp)+'" readonly '+
@@ -388,10 +459,12 @@ function torFieldInput(f){
 
   if(f.auto) return locked(torAutoVal(f.auto, d),
     (f.auto==='no_dokumen') ? 'Nomor depan digenerate otomatis sesuai urutan dokumen (mulai 0001)' : '');
-  /* Field yang terisi dari Data Pekerjaan -> terkunci selama tautan aktif */
-  if(f.dpLock && d.__dpId && !(f.k==='pelaksana' && !String(v||'').trim()))
-    return locked(f.t==='date'?dispDate(v):(v||''), 'Terisi otomatis dari Data Pekerjaan');
-
+  /* Field yang dikunci oleh sebuah sakelar (lockedBy). Selama sakelarnya
+     bukan "Ya", isian ditampilkan namun tidak dapat diubah — nilai yang
+     sudah tersimpan tetap terbaca, tidak terlihat seolah terhapus. */
+  if(f.lockedBy && String(d[f.lockedBy]||'')!=='Ya')
+    return locked(f.t==='date'?dispDate(v):(v||''),
+      'Terkunci — pilih "'+(TOR_FIELDS_FLAT.filter(x=>x.k===f.lockedBy)[0]||{l:''}).l+' = Ya" untuk mengisi');
   if(f.t==='select'){
     const isYT=Array.isArray(f.opts)&&f.opts.length===2&&
       f.opts.map(o=>String((o&&o.v)||o).toLowerCase()).sort().join('|')==='tidak|ya';
@@ -435,12 +508,26 @@ function torEnsureStyle(){
     '.tor-nohint b{font-weight:800}'+
     '.tor-nobox{display:inline-flex;align-items:center;gap:8px;padding:4px 10px;border-radius:8px;'+
       'background:#fff;border:1px dashed #9FB6DA;font-weight:800;letter-spacing:.02em}'+
-    '.spk-code{margin-left:6px;border:1px solid #D9DEE6;background:#F6F8FB;color:#5B6472;border-radius:6px;'+
-      'font-size:9.5px;font-weight:700;padding:1px 6px;cursor:pointer;font-family:ui-monospace,Menlo,Consolas,monospace}'+
-    '.spk-code:hover{background:#E9EFF8;color:#1B3A6B}'+
     '.tor-soon{padding:46px 20px;text-align:center;color:#7A828E}'+
     '.tor-soon svg{width:46px;height:46px;stroke:#B9C2CE;margin-bottom:12px}'+
-    '.tor-soon b{display:block;font-size:15px;color:#2B3038;margin-bottom:6px}';
+    '.tor-soon b{display:block;font-size:15px;color:#2B3038;margin-bottom:6px}'+
+    /* Modal "Kode Isian" — pengganti chip {{kode}} yang dulu menempel di
+       tiap label field. */
+    '.tor-kode-btn{gap:6px}'+
+    '.tor-kode-hint{margin:0 0 12px;padding:10px 14px;border-radius:10px;background:#EEF4FF;'+
+      'border:1px solid #D6E2F7;color:#1B3A6B;font-size:11.5px;line-height:1.6}'+
+    '.tor-kode-list{display:flex;flex-direction:column;gap:2px}'+
+    '.tor-kode-sec{margin:14px 0 6px;font-size:10px;font-weight:800;letter-spacing:.12em;'+
+      'text-transform:uppercase;color:#7A828E}'+
+    '.tor-kode-sec:first-child{margin-top:0}'+
+    '.tor-kode-row{display:flex;align-items:center;justify-content:space-between;gap:14px;'+
+      'padding:7px 10px;border-radius:8px}'+
+    '.tor-kode-row:nth-child(odd){background:#F7F9FC}'+
+    '.tor-kode-row>span{font-size:12px;color:#2B3038;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'+
+    '.tor-kode-row>code{flex:0 0 auto;cursor:pointer;font-size:11px;font-weight:700;padding:3px 8px;'+
+      'border-radius:6px;border:1px solid #D9DEE6;background:#fff;color:#1B3A6B;'+
+      'font-family:ui-monospace,Menlo,Consolas,monospace}'+
+    '.tor-kode-row>code:hover{background:#E9EFF8;border-color:#9FB6DA}';
   const st=document.createElement('style'); st.id='tor-style'; st.textContent=css;
   (document.head||document.documentElement).appendChild(st);
 }
@@ -489,11 +576,20 @@ function renderTorSusun(){
   torBridgeKlausul();
 
   const secIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>';
+  /* Tombol "Pilih Pekerjaan" DIHAPUS — seluruh isian ditulis langsung di sini.
+     Kartu pertama membawa banner nomor dokumen (informasi, bukan isian) dan
+     tombol "Kode Isian" pengganti chip {{kode}} per-field. */
   const kartu=(g,gi)=>{
-    const pick=(gi===1 && typeof dpPickBtnHtml==='function') ? dpPickBtnHtml('tor') : '';
     const isi=g.fields.map(torFieldInput).join('');
+    const alat = (gi===0)
+      ? '<button type="button" class="btn btn-ghost btn-sm tor-kode-btn" onclick="torKodeModal()">'+
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/></svg> Kode Isian</button>'
+      : '';
+    const judul = alat
+      ? '<div class="form-section-title" style="justify-content:space-between"><span>'+secIcon+' '+fkEsc(g.sec)+'</span>'+alat+'</div>'
+      : '<div class="form-section-title">'+secIcon+' '+fkEsc(g.sec)+'</div>';
     return '<div class="form-card">'+
-      '<div class="form-section-title">'+secIcon+' '+fkEsc(g.sec)+pick+'</div>'+
+      judul+
       (gi===0 ? torNomorHintHtml() : '')+
       '<div class="form-flow" style="--cols:4">'+isi+'</div>'+
     '</div>';
@@ -583,7 +679,7 @@ async function torSaveDokumen(){
     nama_pekerjaan: nama,
     bidang_pelaksana: d.pelaksana||'',
     tanggal: d.tgl_dokumen||null,
-    nilai: spkNum(d.nilai_hps),
+    nilai: spkNum(d.nilai_pekerjaan),
     data: d,
     klausul: klausul
   };
@@ -636,7 +732,7 @@ function torCoverHtml(data, ctx){
   '<section class="spk-page spk-cover cv-spk cv-tor">'+
     '<div class="cv-top">'+
       '<div class="cv-brand">'+logo+
-        '<div class="cv-org"><span>PT PLN (PERSERO)</span><b>'+esc(data.singkatan_unit||'UP3 Masohi')+'</b></div>'+
+        '<div class="cv-org"><span>PT PLN (PERSERO)</span><b>'+esc(TOR_SINGKATAN_UNIT)+'</b></div>'+
       '</div>'+
       '<div class="cv-kind">DOKUMEN PENGADAAN</div>'+
     '</div>'+
@@ -664,9 +760,9 @@ function torCoverHtml(data, ctx){
       fld('TANGGAL ANGGARAN', ctx.sumber_dana_tgl_pjg, 'fv-lastrow')+
     '</div>'+
     '<div class="cv-nilai">'+
-      '<div class="l"><div class="fk">NILAI HPS / PAGU</div>'+
-        '<div class="terb">('+esc(ctx.nilai_hps_terbilang||'')+')</div></div>'+
-      '<div class="r">'+esc(ctx.nilai_hps||'')+'</div>'+
+      '<div class="l"><div class="fk">PERKIRAAN NILAI PEKERJAAN</div>'+
+        '<div class="terb">('+esc(ctx.nilai_pekerjaan_terbilang||'')+')</div></div>'+
+      '<div class="r">'+esc(ctx.nilai_pekerjaan||'')+'</div>'+
     '</div>'+
     '<div class="cv-unit">'+esc(unit)+'</div>'+
     '<div class="cv-rule"></div>'+
@@ -698,7 +794,7 @@ function torRunHeadHtml(data){
   const esc=fkEsc;
   const logo=(typeof SPK_LOGO_SRC!=='undefined' && SPK_LOGO_SRC)?'<img src="'+SPK_LOGO_SRC+'" alt="PLN">':'';
   return '<div class="spk-rhd">'+
-    '<div class="l">'+logo+'<div class="o"><span>PT PLN (PERSERO)</span><b>'+esc(data.singkatan_unit||'UP3 Masohi')+'</b></div></div>'+
+    '<div class="l">'+logo+'<div class="o"><span>PT PLN (PERSERO)</span><b>'+esc(TOR_SINGKATAN_UNIT)+'</b></div></div>'+
     '<div class="r"><b>TOR / KAK</b><span>'+esc(data.no_dokumen||'\u2014')+'</span></div>'+
   '</div>';
 }
@@ -707,7 +803,7 @@ function torRunFootHtml(data){
   /* .ft-pg WAJIB dipertahankan — diisi nomor halaman oleh spkPageScript(). */
   return '<div class="spk-rft">'+
     '<div class="ft-row"><div class="ft-tor">'+
-      '<span class="u">'+esc(String(data.singkatan_unit||'UP3 MASOHI').toUpperCase())+'</span>'+
+      '<span class="u">'+esc(TOR_SINGKATAN_UNIT.toUpperCase())+'</span>'+
       '<span class="ft-pg">&#8203;</span>'+
       '<span class="u">TOR / KAK</span>'+
     '</div></div>'+
@@ -921,75 +1017,14 @@ function torDeleteRecord(id){
     }});
 }
 
-/* ===================== 13. TAUTAN DATA PEKERJAAN ("Pilih Pekerjaan") =====================
-   Modul 'tor' didaftarkan ke mesin pemilih Data Pekerjaan milik app.js tanpa
-   menyunting app.js: objek DP_USE_TARGETS diperluas, tiga fungsi pembungkus
-   menambahkan cabang 'tor'. */
-(function(){
-  try{
-    if(typeof DP_USE_TARGETS==='object' && DP_USE_TARGETS){
-      DP_USE_TARGETS.tor = { label:'Dokumen TOR/KAK',
-        list:()=>(typeof records_tor!=='undefined'?records_tor:[]),
-        edit:()=>(typeof torEditId!=='undefined'?torEditId:null) };
-    }
-  }catch(e){}
-  if(typeof DP_USE_REFRESH==='object' && DP_USE_REFRESH) DP_USE_REFRESH.tor='refreshDataTor';
-  if(typeof dpPickerSelect==='function'){
-    var _sel=dpPickerSelect;
-    window.dpPickerSelect=function(id){
-      if(typeof _dpPickerTarget!=='undefined' && _dpPickerTarget==='tor'){
-        var rec=(records_dp||[]).find(r=>String(r.id)===String(id)); if(!rec) return;
-        var dipakai=dpUsedBy('tor', String(rec.id), rec.nama_pekerjaan||'');
-        if(dipakai){ toast('Data pekerjaan sudah digunakan','err'); return; }
-        torApplyDp(rec); closeDpPicker(); return;
-      }
-      return _sel.apply(this, arguments);
-    };
-  }
-  if(typeof dpTargetPicked==='function'){
-    var _pick=dpTargetPicked;
-    window.dpTargetPicked=function(t){
-      if(t==='tor') return !!(torState && torState.data && torState.data.__dpId);
-      return _pick.apply(this, arguments);
-    };
-  }
-  if(typeof dpCancelPick==='function'){
-    var _cancel=dpCancelPick;
-    window.dpCancelPick=function(t){
-      if(t==='tor'){ torLepasDp(); return; }
-      return _cancel.apply(this, arguments);
-    };
-  }
-})();
-async function torApplyDp(rec){
-  if(!torState) torState=torBlankState();
-  const d=torState.data, info=(rec.state&&rec.state.info)||{};
-  d.__dpId=String(rec.id);
-  d.__dpNama=rec.nama_pekerjaan||info.nama||'';
-  const nama=info.nama||rec.nama_pekerjaan||'';
-  if(nama) d.nama_pekerjaan=nama;
-  if(info.lokasi) d.lokasi_pekerjaan=info.lokasi;
-  if(info.no_anggaran) d.no_anggaran=info.no_anggaran;
-  if(info.tgl_anggaran) d.tgl_anggaran=info.tgl_anggaran;
-  if(info.jenis_anggaran) d.jenis_anggaran=info.jenis_anggaran;
-  d.pelaksana = info.bidang_pelaksana || '';
-  if(info.metode) d.metode_pengadaan=info.metode;
-  /* Nilai HPS ditarik dari Perhitungan HPS bila pekerjaan ini sudah punya HPS */
-  try{
-    if(typeof refreshDataHps==='function') await refreshDataHps();
-    const h=(typeof records_hps!=='undefined'?records_hps:[]).find(x=>
-      String(x.nama_pekerjaan||'').trim().toLowerCase()===String(nama).trim().toLowerCase());
-    if(h && h.nilai){ d.nilai_hps=spkNum(h.nilai); toast('Nilai HPS terisi otomatis dari Perhitungan HPS','ok'); }
-    else toast('Data pekerjaan berhasil diterapkan','ok');
-  }catch(e){ toast('Data pekerjaan berhasil diterapkan','ok'); }
-  renderTorSusun();
-}
-function torLepasDp(){
-  if(!torState) return;
-  delete torState.data.__dpId; delete torState.data.__dpNama;
-  renderTorSusun();
-  toast('Pilihan pekerjaan dibatalkan (isian tetap dipertahankan)','ok');
-}
+/* ===================== 13. CATATAN: TANPA TAUTAN DATA PEKERJAAN =====================
+   Tombol "Pilih Pekerjaan" SENGAJA tidak dipakai pada Dokumen TOR/KAK — seluruh
+   isian diketik langsung. Karena itu modul 'tor' TIDAK didaftarkan ke
+   DP_USE_TARGETS milik app.js, dan tidak ada pembungkus dpPickerSelect /
+   dpTargetPicked / dpCancelPick di berkas ini. Bila suatu saat tautan itu
+   dikehendaki, yang perlu ditambahkan: satu entri DP_USE_TARGETS.tor, tiga
+   pembungkus tersebut, tombol dpPickBtnHtml('tor') pada kartu Informasi
+   Pengadaan, dan atribut dpLock:true pada field yang ikut terkunci. */
 
 /* ===================== 14. MODUL MENYUSUL (RAB & PAKTA INTEGRITAS) ===================== */
 function torSoonHtml(judul, ket){
