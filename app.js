@@ -19247,7 +19247,7 @@ resetLoginForm();
   if(hasRole && !tooOldSession && !tooLongIdle){
     currentUsername = uname || null;
     // Refresh: kembali ke halaman terakhir (data di halaman itu di-refresh), bukan ke dashboard.
-    const allowed=['dashboard','list','list-pl','list-tender','pn-lihat','pn-ambil','form-kelengkapan','fkl-view','form-pembukaan','pnw-view','form-rho','rho-view','form-hps','hps-view','form-analisa','analisa-view','spk-susun','spk-view','spk-klausul','dpeng-view','materi-view'];
+    const allowed=['dashboard','list','list-pl','list-tender','pn-lihat','pn-ambil','form-kelengkapan','fkl-view','form-pembukaan','pnw-view','form-rho','rho-view','form-hps','hps-view','form-analisa','analisa-view','spk-susun','spk-view','spk-klausul','dpeng-view','materi-view','tor-view'];
     const inputViews=['input','input-pl','input-tender'];
     const draft=getDraft();
     if(inputViews.includes(view)){

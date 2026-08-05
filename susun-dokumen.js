@@ -248,8 +248,18 @@ function torNextSeq(year){
   let n=1; while(used.has(n)) n++;
   return n;
 }
-function torFormatNo(seq, klas, year){
-  return torPad4(seq)+'.'+TOR_KODE+'/'+(klas||'DAN.01.03')+'/'+TOR_UNIT+'/'+(year||torYearNow());
+function torFormatNo(seq, klas, year, kode){
+  return torPad4(seq)+'.'+(kode||TOR_KODE)+'/'+(klas||'DAN.01.03')+'/'+TOR_UNIT+'/'+(year||torYearNow());
+}
+/* Nomor dokumen turunan untuk berkas SEINDUK (RAB, dsb).
+   Nomor urut, kode klasifikasi, dan tahunnya SAMA dengan TOR \u2014 hanya kode
+   dokumennya yang berganti, mis. 0001.TOR/... menjadi 0001.RAB/...  Diambil
+   dari data yang tersimpan, jadi dokumen lama pun ternomori benar. */
+function torNoDok(data, kode){
+  data=data||{};
+  const seq=parseInt(data.no_urut,10)||0;
+  const th=parseInt(data.tahun_dokumen,10)||torYearNow();
+  return torFormatNo(seq, data.kode_klasifikasi, th, kode);
 }
 /* Hitung ulang nomor urut & nomor dokumen pada state yang sedang disusun.
    Nomor urut dokumen TERSIMPAN tidak diubah (tetap milik dokumen itu). */
@@ -347,11 +357,30 @@ const TOR_FIELD_GROUPS = [
     {k:'perubahan_pengguna', l:'Perubahan Pengguna?', t:'select', opts:['Ya','Tidak'], reRender:true, def:''},
     {k:'nama_pengguna', l:'Nama Pengguna Barang/Jasa', t:'text', lockedBy:'perubahan_pengguna', def:''},
     {k:'jabatan_pengguna', l:'Jabatan Pengguna Barang/Jasa', t:'text', lockedBy:'perubahan_pengguna', def:''},
+    /* NIP dipakai Pakta Integritas (baris "NIP : ..."), bukan oleh TOR/KAK. */
+    {k:'nip_pengguna', l:'NIP Pengguna Barang/Jasa', t:'text', lockedBy:'perubahan_pengguna', def:'', ph:'cth. 7594128H'},
     {k:'nama_direksi', l:'Nama Direksi Pekerjaan', t:'text', def:''},
     {k:'jabatan_direksi', l:'Jabatan Direksi Pekerjaan', t:'text', def:''},
+    {k:'nip_direksi', l:'NIP Direksi Pekerjaan', t:'text', def:'', ph:'cth. 9215934ZY'},
     {k:'ada_pengawas', l:'Pengawas Pekerjaan?', t:'select', opts:['Ada','Tidak Ada'], reRender:true, def:''},
     {k:'nama_pengawas', l:'Nama Pengawas Pekerjaan', t:'text', lockedBy:'ada_pengawas', def:''},
     {k:'jabatan_pengawas', l:'Jabatan Pengawas Pekerjaan', t:'text', lockedBy:'ada_pengawas', def:''},
+  ]},
+  /* ---------- Rencana Anggaran Biaya ----------
+     Rangka RAB memakai ULANG model data HPS/Analisa Harga Satuan supaya tabel,
+     penomoran, dan pengelompokannya berperilaku persis sama:
+       jumlah_bj        -> hpsState.jumlahItem   (banyaknya baris barang/jasa)
+       rab_judul_on     -> hpsState.judulOn      + rab_judul_num    -> judulNum
+       rab_subjudul_on  -> hpsState.subjudulOn   + rab_subjudul_num -> subjudulNum
+     Gaya penomoran mengikuti JS_NUM_STYLES di app.js ('' = tanpa nomor). */
+  { sec:'Rencana Anggaran Biaya (RAB)', fields:[
+    {k:'jumlah_bj', l:'Jumlah Barang/Jasa', t:'number', def:'', ph:'cth. 3'},
+    {k:'rab_judul_on', l:'Judul?', t:'select', opts:['Ya','Tidak'], reRender:true, def:''},
+    {k:'rab_judul_num', l:'Penomoran Judul', t:'select', lockedBy:'rab_judul_on', def:'',
+      opts:[{v:'',l:'\u2014 Tanpa nomor'},{v:'A',l:'A, B, C'},{v:'a',l:'a, b, c'},{v:'I',l:'I, II, III'},{v:'i',l:'i, ii, iii'}]},
+    {k:'rab_subjudul_on', l:'Sub-Judul?', t:'select', opts:['Ya','Tidak'], reRender:true, def:''},
+    {k:'rab_subjudul_num', l:'Penomoran Sub-Judul', t:'select', lockedBy:'rab_subjudul_on', def:'',
+      opts:[{v:'',l:'\u2014 Tanpa nomor'},{v:'A',l:'A, B, C'},{v:'a',l:'a, b, c'},{v:'I',l:'I, II, III'},{v:'i',l:'i, ii, iii'}]},
   ]},
   /* CATATAN: kartu "Pelaksanaan & Pembayaran" dan "Penyusun Dokumen" DIHAPUS
      (permintaan 5 Agu 2026). Satu-satunya isian yang dipertahankan dari kartu
@@ -387,6 +416,52 @@ function torTahunOpts(){
 }
 
 /* ===================== 5. STATE ===================== */
+/* ---- PENGGUNA BARANG/JASA: BAWAAN = DATA TERAKHIR DISIMPAN ----
+   Meniru perilaku "Perubahan?" pada Penyusunan Dokumen Kontrak (spkApplyLastSk):
+     Perubahan Pengguna? = Ya    -> Nama / Jabatan / NIP Pengguna bebas diubah
+                         = Tidak -> ketiganya dikunci DAN dikembalikan ke data
+                                    terakhir yang pernah disimpan.
+   Sumbernya dokumen TOR tersimpan paling baru yang ketiga isiannya tidak kosong.
+   Hasilnya dicadangkan ke localStorage supaya tetap terbaca saat daftar dokumen
+   belum selesai dimuat (mis. dokumen pertama sesudah membuka aplikasi). */
+const TOR_PENGGUNA_KEYS  = ['nama_pengguna','jabatan_pengguna','nip_pengguna'];
+const TOR_PENGGUNA_CACHE = 'tor_pengguna_terakhir_v1';
+function torPenggunaCacheSave(o){
+  try{
+    if(o && TOR_PENGGUNA_KEYS.some(k=>String(o[k]||'').trim()!==''))
+      localStorage.setItem(TOR_PENGGUNA_CACHE, JSON.stringify(o));
+  }catch(e){}
+}
+function torPenggunaCacheLoad(){
+  try{
+    const t=localStorage.getItem(TOR_PENGGUNA_CACHE);
+    if(!t) return null;
+    const o=JSON.parse(t);
+    return (o && typeof o==='object') ? o : null;
+  }catch(e){ return null; }
+}
+function torLastPengguna(){
+  const out={};
+  const list=(typeof records_tor!=='undefined' && Array.isArray(records_tor))?records_tor:[];
+  for(let i=0;i<list.length;i++){
+    const d=(list[i] && list[i].data && typeof list[i].data==='object')?list[i].data:null;
+    if(!d) continue;
+    if(!TOR_PENGGUNA_KEYS.some(k=>String(d[k]||'').trim()!=='')) continue;
+    TOR_PENGGUNA_KEYS.forEach(k=>{ out[k]=(d[k]!=null?d[k]:''); });
+    torPenggunaCacheSave(out);
+    return out;
+  }
+  return torPenggunaCacheLoad() || out;
+}
+function torApplyLastPengguna(data){
+  if(!data) return data;
+  const last=torLastPengguna();
+  TOR_PENGGUNA_KEYS.forEach(k=>{
+    if(last[k]!=null && String(last[k]).trim()!=='') data[k]=last[k];
+  });
+  return data;
+}
+
 function torBlankState(){
   const d={};
   TOR_FIELDS_FLAT.forEach(f=>{
@@ -401,6 +476,8 @@ function torBlankState(){
      tidak lagi otomatis dianggap DAN.01.03. Jenis Pengadaan ikut kosong dan
      baru terisi sendiri begitu klasifikasinya dipilih (lihat torSet). */
   d.kode_klasifikasi=d.kode_klasifikasi||'';
+  /* Pengguna Barang/Jasa: bawaan = data terakhir disimpan (lihat torApplyLastPengguna) */
+  torApplyLastPengguna(d);
   d.jenis_pengadaan=d.kode_klasifikasi ? (TOR_KLAS_JENIS[d.kode_klasifikasi]||'') : '';
   d.tgl_dokumen=d.tgl_dokumen||torTodayISO();
   d.no_urut=0; d.no_dokumen='';
@@ -429,7 +506,11 @@ function torRecordToState(rec){
   d.__klausulLib = (lib && lib.length) ? lib : torKlausulDefault();
   return { data:d, sel:d.__klausulLib.map(k=>String(k.id)) };
 }
-/* Seluruh klausul TOR selalu dipakai — tidak ada langkah "Pilih Klausul". */
+/* Segarkan torState.sel (daftar id klausul) mengikuti isi pustaka.
+   CATATAN: sejak langkah "Pilih Klausul" ada, yang menentukan klausul tercetak
+   adalah penanda `aktif` pada tiap klausul (lihat torKlausulDok), BUKAN `sel`.
+   `sel` dipertahankan semata karena mesin Pustaka Klausul milik Susun Kontrak
+   membacanya lewat spkState.sel. */
 function torSelectAll(){
   if(!torState) return;
   const lib=torState.data.__klausulLib||[];
@@ -515,6 +596,10 @@ function torExtendCtx(ctx, d){
   ctx.nama_pengawas    = _adaPengawas ? (d.nama_pengawas||'') : '';
   ctx.jabatan_pengawas = _adaPengawas ? (d.jabatan_pengawas||'') : '';
   ctx.ada_pengawas     = _adaPengawas ? 'Ada' : 'Tidak Ada';
+  /* NIP: dipakai Pakta Integritas, dan tersedia pula sebagai kode isian
+     {{nip_pengguna}} / {{nip_direksi}} bila suatu saat perlu di klausul. */
+  ctx.nip_pengguna = String(d.nip_pengguna||'').trim();
+  ctx.nip_direksi  = String(d.nip_direksi ||'').trim();
   /* --- Kode isian LAMA (kartu "Pelaksanaan & Pembayaran" + "Penyusun Dokumen") ---
      Field-fieldnya sudah dihapus dari form karena nilainya kini ditulis
      LANGSUNG di teks klausul. Kodenya tetap dikenali di sini supaya:
@@ -551,10 +636,6 @@ function torExtendCtx(ctx, d){
   const _prk = Array.isArray(d.no_prk_list)
     ? d.no_prk_list.map(x=>String(x||'').trim()).filter(Boolean)
     : String(d.no_prk||'').split(';').map(x=>x.trim()).filter(Boolean);
-  /* Kode {{tabel_boq}} diganti PENANDA dulu; blok tabelnya baru disisipkan
-     lewat torBoqInject() sesudah pipeline klausul selesai, supaya <table>
-     tidak pernah terjebak di dalam <p>. */
-  ctx.tabel_boq    = TOR_BOQ_MARK;
   ctx.no_prk       = _prk.join('; ');
   ctx.no_prk_baris = _prk.join('<br>');
   _prk.forEach((v,i)=>{ ctx['no_prk_'+(i+1)]=v; });
@@ -584,6 +665,10 @@ function torSet(k,v){
   }
   const f=TOR_FIELDS_FLAT.filter(x=>x.k===k)[0];
   if(f && f.reNo){ torState.data.no_urut=0; torSyncNomor(); renderTorSusun(); return; }
+  /* "Perubahan Pengguna?" dikembalikan ke Tidak -> Nama/Jabatan/NIP Pengguna
+     dipulihkan ke data terakhir disimpan, bukan sekadar dikunci. Sama dengan
+     spkSetPerubahan() pada Penyusunan Dokumen Kontrak. */
+  if(k==='perubahan_pengguna' && String(v)!=='Ya') torApplyLastPengguna(torState.data);
   /* Sakelar pengunci (Perubahan Pengguna? / Pengawas Pekerjaan?): form
      digambar ulang supaya field di bawahnya langsung terbuka/terkunci. */
   if(f && f.reRender){ renderTorSusun(); return; }
@@ -696,7 +781,8 @@ const TOR_KODE_AUTO = [
   ['kota_ttd','Kota penandatanganan (Masohi)'],
   ['tgl_ttd','Tanggal tanda tangan = tanggal dokumen'],
   ['tempat_tanggal','"Masohi, 5 Agustus 2026"'],
-  ['tabel_boq','Formulir Bill of Quantity (BoQ) — otomatis dari RAB/HPS']
+  ['nip_pengguna','NIP Pengguna Barang/Jasa'],
+  ['nip_direksi','NIP Direksi Pekerjaan']
 ];
 function torFieldInput(f){
   const d=torState.data, v=d[f.k];
@@ -842,9 +928,48 @@ function torEnsureStyle(){
       'font-size:10.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#1B3A6B}'+
     '#tor-susun-content .tor-babsep:first-child{margin-top:2px}'+
     '#tor-susun-content .tor-babsep::after{content:"";flex:1;height:1px;background:#DCE4EE}'+
-    '.tor-soon{padding:46px 20px;text-align:center;color:#7A828E}'+
-    '.tor-soon svg{width:46px;height:46px;stroke:#B9C2CE;margin-bottom:12px}'+
-    '.tor-soon b{display:block;font-size:15px;color:#2B3038;margin-bottom:6px}'+
+    /* Daftar dokumen pada menu aksi */
+    '.tor-dk-ov{position:fixed;inset:0;z-index:9000;display:none;align-items:center;justify-content:center;'+
+      'background:rgba(12,28,38,.45);padding:20px}'+
+    '.tor-dk-ov.show{display:flex}'+
+    '.tor-dk-mdl{width:min(560px,100%);background:#fff;border-radius:16px;overflow:hidden;'+
+      'box-shadow:0 24px 60px rgba(10,30,40,.28)}'+
+    '.tor-dk-hd{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;'+
+      'background:linear-gradient(90deg,#0E7C86,#12A0A8);color:#fff}'+
+    '.tor-dk-hd b{display:block;font-size:14px}'+
+    '.tor-dk-hd i{display:block;font-style:normal;font-size:11.5px;opacity:.85;margin-top:2px}'+
+    '.tor-dk-hd .x{border:0;background:rgba(255,255,255,.18);color:#fff;width:28px;height:28px;'+
+      'border-radius:8px;font-size:18px;line-height:1;cursor:pointer;flex:none}'+
+    '.tor-dk-bd{padding:12px;display:flex;flex-direction:column;gap:8px;max-height:70vh;overflow:auto}'+
+    '.tor-dk-row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 14px;'+
+      'border:1px solid #E3EAF2;border-radius:12px;background:#fff;cursor:pointer;'+
+      'transition:border-color .15s ease,background .15s ease}'+
+    '.tor-dk-row:hover{border-color:#9FD0D6;background:#F6FCFC}'+
+    '.tor-dk-row .ic{flex:none;width:34px;height:34px;border-radius:9px;background:#E6F4F5;color:#0E7C86;'+
+      'display:flex;align-items:center;justify-content:center;font-size:16px}'+
+    '.tor-dk-row .tx{flex:1;min-width:0}'+
+    '.tor-dk-row .tx b{display:block;font-size:13px;color:#1B3A6B}'+
+    '.tor-dk-row .tx i{display:block;font-style:normal;font-size:11px;color:#7A868F;margin-top:2px}'+
+    '.tor-dk-row .go{flex:none;font-size:12px;color:#9AA6B0;font-weight:700}'+
+    '.tor-dk-row.is-soon{opacity:.6;cursor:not-allowed}'+
+    '.tor-dk-row.is-soon:hover{border-color:#E3EAF2;background:#fff}'+
+    /* Tabel Susun RAB — menumpang seluruh gaya .hps-uraian milik HPS, hanya
+       kolom "Jumlah (Rp)" yang baru (kolom hasil, tidak dapat diketik). */
+    '.hps-uraian.tor-rab td.c-jt,.hps-uraian.tor-rab th.c-jt{text-align:right;white-space:nowrap;'+
+      'font-variant-numeric:tabular-nums;font-weight:700;color:#1B3A6B;min-width:120px}'+
+    '.hps-uraian.tor-rab td.c-jt{background:#F7FCFC}'+
+    /* Daftar Pilih Klausul (langkah 3) */
+    '.tor-pk-list{display:flex;flex-direction:column;gap:6px}'+
+    '.tor-pk-row{display:flex;align-items:center;gap:12px;padding:9px 12px;border:1px solid #E3EAF2;'+
+      'border-radius:10px;background:#fff;cursor:pointer;transition:border-color .15s ease,background .15s ease}'+
+    '.tor-pk-row.on{border-color:#BBD9DE;background:#F7FCFC}'+
+    '.tor-pk-row input{width:16px;height:16px;flex:none;cursor:pointer;accent-color:#0E7C86}'+
+    '.tor-pk-row .no{flex:none;min-width:44px;padding:2px 8px;border-radius:7px;background:#1B3A6B;color:#fff;'+
+      'font-size:11.5px;font-weight:800;text-align:center;font-variant-numeric:tabular-nums}'+
+    '.tor-pk-row:not(.on) .no{background:#C7CFD8}'+
+    '.tor-pk-row .jd{font-size:13px;font-weight:700;color:#1B3A6B;text-transform:uppercase;letter-spacing:.01em}'+
+    '.tor-pk-row:not(.on) .jd{color:#93A0AD;text-decoration:line-through}'+
+
     /* Modal "Kode Isian" — pengganti chip {{kode}} yang dulu menempel di
        tiap label field. */
     '.tor-kode-btn{gap:6px}'+
@@ -931,7 +1056,15 @@ function renderTorSusun(){
 
   const stp=(no,label)=>'<button type="button" class="spk-stp'+(torStep===no?' active':(torStep>no?' done':''))+'" onclick="torGoStep('+no+')">'+
     '<span class="spk-stp-no">'+(torStep>no?'&#10003;':no)+'</span> '+label+'</button>';
-  const stepper='<div class="spk-stepper">'+stp(1,'Data TOR/KAK')+'<div class="spk-stp-line"></div>'+stp(2,'Klausul TOR/KAK')+'</div>';
+  /* Alur Dokumen Pengadaan:
+       1. Data TOR/KAK   2. Ubah Klausul   3. Pilih Klausul   (4. Susun RAB — menyusul)
+     Pakta Integritas TIDAK berupa langkah isian: ia dibangkitkan otomatis dari
+     data yang sudah masuk begitu dokumen disimpan. */
+  const stepper='<div class="spk-stepper">'+
+    stp(1,'Data TOR/KAK')+'<div class="spk-stp-line"></div>'+
+    stp(2,'Ubah Klausul')+'<div class="spk-stp-line"></div>'+
+    stp(3,'Pilih Klausul')+'<div class="spk-stp-line"></div>'+
+    stp(4,'Susun RAB')+'</div>';
 
   const btnBatal='<button class="btn btn-red" onclick="torBatalClick()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg> Batal</button>';
 
@@ -941,22 +1074,210 @@ function renderTorSusun(){
       TOR_FIELD_GROUPS.map(kartu).join('')+
       '<div class="jp-actions" style="justify-content:flex-end;margin-top:4px">'+
         btnBatal+
-        '<button class="btn btn-teal" onclick="torGoStep(2)">Berikutnya: Klausul TOR/KAK <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>'+
+        '<button class="btn btn-teal" onclick="torGoStep(2)">Berikutnya: Ubah Klausul <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>'+
       '</div>';
-  }else{
+  }else if(torStep===2){
     cont.innerHTML=
       stepper+
       '<div id="spk-klausul-content"></div>'+
       '<div class="jp-actions" style="justify-content:space-between;margin-top:4px">'+
         '<button class="btn btn-ghost" onclick="torGoStep(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 12H5M11 6l-6 6 6 6"/></svg> Kembali</button>'+
+        '<button class="btn btn-teal" onclick="torGoStep(3)">Berikutnya: Pilih Klausul <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>'+
+      '</div>';
+    try{ renderSpkKlausul(); }catch(e){ console.error(e); }
+  }else if(torStep===3){
+    cont.innerHTML=
+      stepper+
+      torPilihKlausulHtml()+
+      '<div class="jp-actions" style="justify-content:space-between;margin-top:4px">'+
+        '<button class="btn btn-ghost" onclick="torGoStep(2)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 12H5M11 6l-6 6 6 6"/></svg> Kembali</button>'+
+        '<button class="btn btn-teal" onclick="torGoStep(4)">Berikutnya: Susun RAB <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>'+
+      '</div>';
+  }else{
+    cont.innerHTML=
+      stepper+
+      torRabHtml()+
+      '<div class="jp-actions" style="justify-content:space-between;margin-top:4px">'+
+        '<button class="btn btn-ghost" onclick="torGoStep(3)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 12H5M11 6l-6 6 6 6"/></svg> Kembali</button>'+
         '<span style="display:flex;gap:10px">'+
           btnBatal+
           '<button class="btn btn-teal" onclick="torPreviewCurrent()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg> Pratinjau / Cetak</button>'+
           '<button class="btn btn-green" onclick="torSaveDokumen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> Simpan</button>'+
         '</span>'+
       '</div>';
-    try{ renderSpkKlausul(); torRelabelKlausul(); }catch(e){ console.error(e); }
+    try{ torRabRenderSummary(); }catch(e){ console.error(e); }
   }
+}
+
+/* ===================== LANGKAH 4 — SUSUN RAB =====================
+   RAB memakai ULANG seluruh mesin hitung HPS di app.js, bukan menyalinnya:
+     hpsItemMat(it)  = Vol x Harga Barang   (dibulatkan)
+     hpsItemJasa(it) = Vol x Harga Jasa     (dibulatkan)
+     hpsItemTotal(it)= Barang + Jasa
+     hpsSummary(st)  = Jumlah -> DPP (11/12) -> PPn 12% -> Jumlah Total
+   Bedanya dengan Analisa Harga Satuan: TIDAK ada Referensi, Metode Perhitungan,
+   maupun Metode (Semua Uraian) — harga diketik langsung, sekali saja.
+
+   Barisnya disimpan di torState.data.__rab. Karena torSaveDokumen menyimpan
+   seluruh objek data apa adanya (rec.data = d), RAB ikut tersimpan & termuat
+   kembali tanpa perlu kolom tabel baru di Supabase.
+
+   Banyaknya baris mengikuti isian "Jumlah Barang/Jasa" pada langkah 1. Data
+   baris yang sudah terlanjur diisi TIDAK dibuang saat angka itu dikecilkan —
+   hanya disembunyikan — sehingga menaikkannya kembali memulihkan isinya. */
+function torRabBlankItem(){ return {judul:'', subjudul:'', uraian:'', sat:'', vol:'', hargaMat:'', hargaJasa:''}; }
+function torRabCfg(){
+  const d=(torState&&torState.data)||{};
+  return {
+    judulOn:    String(d.rab_judul_on||'')==='Ya',
+    judulNum:   String(d.rab_judul_num||''),
+    subjudulOn: String(d.rab_subjudul_on||'')==='Ya',
+    subjudulNum:String(d.rab_subjudul_num||''),
+    jml: Math.max(1, parseInt(d.jumlah_bj,10)||1)
+  };
+}
+/* Simpanan mentah (boleh lebih panjang dari jumlah baris yang tampil) */
+function torRabStore(){
+  if(!torState) return [];
+  if(!Array.isArray(torState.data.__rab)) torState.data.__rab=[];
+  return torState.data.__rab;
+}
+/* Baris yang TAMPIL & ikut dihitung — tepat sebanyak Jumlah Barang/Jasa */
+function torRabItems(){
+  const st=torRabStore(), n=torRabCfg().jml;
+  while(st.length<n) st.push(torRabBlankItem());
+  return st.slice(0,n);
+}
+function torRabHtml(){
+  const cfg=torRabCfg(), items=torRabItems(), esc=fkEsc;
+  let rows='';
+  items.forEach((it,i)=>{
+    rows+='<tr>'+
+      '<td class="c-no">'+(i+1)+'</td>'+
+      (cfg.judulOn?('<td class="c-kel"><input type="text" data-i="'+i+'" placeholder="mis. PENGADAAN BARANG" value="'+esc(it.judul||'')+'" oninput="torRabSet(this,\'judul\')"></td>'):'')+
+      (cfg.subjudulOn?('<td class="c-kel"><input type="text" data-i="'+i+'" placeholder="mis. Material Utama" value="'+esc(it.subjudul||'')+'" oninput="torRabSet(this,\'subjudul\')"></td>'):'')+
+      '<td class="c-ur"><textarea data-i="'+i+'" rows="1" placeholder="Uraian barang / jasa ke-'+(i+1)+'" oninput="torRabSet(this,\'uraian\')">'+esc(it.uraian||'')+'</textarea></td>'+
+      '<td class="c-sat"><input type="text" data-i="'+i+'" placeholder="Set" value="'+esc(it.sat||'')+'" oninput="torRabSet(this,\'sat\')"></td>'+
+      '<td class="c-vol"><input type="text" inputmode="decimal" data-i="'+i+'" placeholder="0" value="'+esc(it.vol!=null?String(it.vol):'')+'" oninput="torRabOnVol(this)"></td>'+
+      '<td class="c-money"><input type="text" inputmode="numeric" data-i="'+i+'" placeholder="Rp" value="'+rupiahInputText(it.hargaMat)+'" oninput="torRabOnRp(this,\'hargaMat\')"></td>'+
+      '<td class="c-money"><input type="text" inputmode="numeric" data-i="'+i+'" placeholder="Rp" value="'+rupiahInputText(it.hargaJasa)+'" oninput="torRabOnRp(this,\'hargaJasa\')"></td>'+
+      '<td class="c-jt" id="tor-rab-jt-'+i+'">'+hpsRp(hpsItemTotal(it))+'</td>'+
+    '</tr>';
+  });
+  return '<div class="form-section">'+
+    '<div class="form-section-title"><span>Susun RAB</span>'+
+      '<span class="hps-chip">'+items.length+' barang/jasa</span></div>'+
+    '<div class="hps-hint">Harga diketik langsung — tidak ada referensi maupun metode perhitungan. '+
+      '<b>Jumlah</b> tiap baris = Vol \u00d7 (Harga Barang + Harga Jasa), lalu diringkas memakai rumus HPS '+
+      '(DPP 11/12, PPn 12%). Banyaknya baris mengikuti <b>Jumlah Barang/Jasa</b> di langkah Data TOR/KAK.</div>'+
+    '<div class="hps-uraian-wrap"><table class="hps-uraian tor-rab"><thead><tr>'+
+      '<th class="c-no">No</th>'+
+      (cfg.judulOn?'<th>Judul</th>':'')+
+      (cfg.subjudulOn?'<th>Sub-Judul</th>':'')+
+      '<th class="c-ur">Uraian Pekerjaan</th><th>Sat</th><th>Vol</th>'+
+      '<th>Harga<br>Barang</th><th>Harga<br>Jasa</th><th class="c-jt">Jumlah<br>(Rp)</th>'+
+    '</tr></thead><tbody>'+rows+'</tbody></table></div>'+
+    '<div id="tor-rab-sum" class="hps-sum-wrap"></div>'+
+  '</div>';
+}
+/* ---- Penyunting sel ---- */
+function torRabItemAt(el){
+  const i=parseInt(el&&el.dataset&&el.dataset.i,10);
+  const st=torRabStore();
+  return (i>=0 && st[i]) ? st[i] : null;
+}
+function torRabSet(el,key){
+  const it=torRabItemAt(el); if(!it) return;
+  it[key]=el.value;
+}
+function torRabOnVol(el){
+  let v=String(el.value||'').replace(/[^0-9.,]/g,'');
+  el.value=v;
+  const it=torRabItemAt(el); if(!it) return;
+  /* Ketikan dibiarkan apa adanya selagi mengetik (agar "2." atau "1,5" tidak
+     terpotong); yang DISIMPAN hasil jsVolNum — persis perilaku HPS. */
+  it.vol = (v==='' ? '' : String(jsVolNum(v)));
+  torRabRecalc(el);
+}
+function torRabOnRp(el,key){
+  const it=torRabItemAt(el); if(!it) return;
+  const n=spkNum(el.value);
+  it[key]=n;
+  el.value=rupiahInputText(n);
+  torRabRecalc(el);
+}
+function torRabRecalc(el){
+  const i=parseInt(el&&el.dataset&&el.dataset.i,10);
+  const it=torRabStore()[i];
+  const c=document.getElementById('tor-rab-jt-'+i);
+  if(c && it) c.innerHTML=hpsRp(hpsItemTotal(it));
+  torRabRenderSummary();
+}
+/* Ringkasan memakai hpsSummary apa adanya -> angka RAB dijamin sama persis
+   dengan cara HPS menghitung, termasuk pembulatan tiap tahapnya. */
+function torRabRenderSummary(){
+  const box=document.getElementById('tor-rab-sum'); if(!box) return;
+  const s=hpsSummary({items:torRabItems()});
+  const row=(lbl,mat,jasa,tot,cls)=>'<tr'+(cls?' class="'+cls+'"':'')+'>'+
+    '<td class="lbl">'+lbl+'</td><td class="val">'+hpsRp(mat)+'</td>'+
+    '<td class="val">'+hpsRp(jasa)+'</td><td class="val">'+hpsRp(tot)+'</td></tr>';
+  box.innerHTML='<table class="hps-sum"><thead><tr>'+
+      '<td class="lbl">Uraian</td><td class="val">Barang</td>'+
+      '<td class="val">Jasa</td><td class="val">Total</td></tr></thead><tbody>'+
+      row('Jumlah', s.jM, s.jJ, s.jT)+
+      row('DPP (11/12 \u00d7 Jumlah)', s.dppM, s.dppJ, s.dppT)+
+      row('PPn 12% (12% \u00d7 DPP)', s.ppnM, s.ppnJ, s.ppnT)+
+      row('Jumlah Total (Jumlah + PPn)', s.totM, s.totJ, s.totT, 'grand')+
+    '</tbody></table>'+
+    '<div class="hps-terbilang"><b>Terbilang :</b> '+fkEsc(hpsTerbilangRupiah(s.totT))+'</div>';
+}
+/* Total RAB — dipakai Pakta Integritas ("Perkiraan Pekerjaan") & BoQ */
+function torRabTotal(){ try{ return hpsSummary({items:torRabItems()}).totT; }catch(e){ return 0; } }
+
+/* ===== LANGKAH 3 — PILIH KLAUSUL =====
+   Menentukan klausul MANA dari pustaka yang ikut tercetak, lewat penanda
+   `aktif` pada tiap klausul (torKlausulDok() sudah menyaring aktif!==false).
+   Penomoran babnya memakai torStruktur atas klausul YANG AKTIF SAJA, sehingga
+   nomor di layar ini sama persis dengan yang akan tercetak — mematikan sebuah
+   klausul otomatis merapatkan nomor sesudahnya. */
+function torPilihKlausulHtml(){
+  const lib=(records_klausul||[]).filter(k=>k && !k.sys);
+  const aktif=lib.filter(k=>k.aktif!==false);
+  const str=torStruktur(aktif);
+  const noOf={}; aktif.forEach((k,i)=>{ noOf[String(k.id)]=str[i]; });
+  const baris=lib.map(k=>{
+    const on=(k.aktif!==false), s=noOf[String(k.id)];
+    return '<label class="tor-pk-row'+(on?' on':'')+'">'+
+      '<input type="checkbox" '+(on?'checked':'')+' onchange="torKlausulAktif(\''+fkEsc(String(k.id))+'\',this.checked)">'+
+      '<span class="no">'+(on&&s?fkEsc(s.no):'\u2013')+'</span>'+
+      '<span class="jd">'+fkEsc(torJudulPolos(k.judul)||'(tanpa judul)')+'</span>'+
+    '</label>';
+  }).join('');
+  return '<div class="form-section">'+
+    '<div class="form-section-title"><span>Pilih Klausul</span>'+
+      '<span style="display:flex;gap:8px">'+
+        '<button type="button" class="btn btn-ghost btn-sm" onclick="torKlausulAktifSemua(true)">Pilih Semua</button>'+
+        '<button type="button" class="btn btn-ghost btn-sm" onclick="torKlausulAktifSemua(false)">Kosongkan</button>'+
+      '</span></div>'+
+    '<div class="hps-hint">Hanya klausul yang tercentang yang ikut tercetak. '+
+      'Nomornya sudah memakai penomoran bab yang sebenarnya, jadi angka di sini sama dengan hasil cetak. '+
+      'Untuk menyunting isinya, kembali ke <b>Ubah Klausul</b>.</div>'+
+    '<div class="tor-pk-list">'+(baris||'<div class="hps-hint">Pustaka klausul masih kosong.</div>')+'</div>'+
+  '</div>';
+}
+function torKlausulAktif(id,on){
+  if(typeof requireInput==='function' && !requireInput()) return;
+  const k=(records_klausul||[]).find(x=>x && String(x.id)===String(id));
+  if(!k) return;
+  k.aktif=!!on;
+  try{ spkKlSync(); }catch(e){}
+  renderTorSusun();
+}
+function torKlausulAktifSemua(on){
+  if(typeof requireInput==='function' && !requireInput()) return;
+  (records_klausul||[]).forEach(k=>{ if(k && !k.sys) k.aktif=!!on; });
+  try{ spkKlSync(); }catch(e){}
+  renderTorSusun();
 }
 
 /* ---- Jembatan ke mesin Pustaka Klausul milik Susun Kontrak ----
@@ -972,7 +1293,9 @@ function torBridgeKlausul(){
     if(!Array.isArray(torState.data.__klausulLib) || !torState.data.__klausulLib.length)
       torState.data.__klausulLib = torKlausulDefault();
     records_klausul = torState.data.__klausulLib;
-    torSelectAll();
+    /* torSelectAll() TIDAK dipanggil lagi: pilihan klausul kini ditentukan
+       pengguna di langkah 3. Yang belum pernah dipilih dianggap aktif. */
+    (records_klausul||[]).forEach(k=>{ if(k && k.aktif===undefined) k.aktif=true; });
   }catch(e){ console.error('torBridgeKlausul:', e); }
 }
 /* Setelah renderSpkKlausul(): sesuaikan istilah "SPK" -> "TOR/KAK" pada kartu,
@@ -1140,296 +1463,8 @@ function torDocCss(wKl, wBab){
   '.tor-ttd .sp{height:2.2cm}'+
   '.tor-ttd .nm{font-weight:700}'+
   /* Jarak antara baris penanda tangan atas dengan baris pengesah */
-  '.tor-ttd table.tt tr + tr td{padding-top:14pt}'+
-  /* Formulir Bill of Quantity (BoQ) — lihat torBoqHtml */
-  torBoqCss();
+  '.tor-ttd table.tt tr + tr td{padding-top:14pt}';
 }
-
-/* ===================== 10b. BILL OF QUANTITY (BoQ) =====================
-   BoQ = RAB TANPA HARGA. Susunan barang/jasa, satuan, dan volumenya PERSIS
-   sama dengan dokumen Perhitungan HPS (yang memang disusun dari RAB); yang
-   dikosongkan hanyalah kolom harga — diisi sendiri oleh Penyedia Barang/Jasa
-   saat memasukkan penawaran. Karena itu tabelnya TIDAK diketik ulang di form
-   TOR: isinya diambil otomatis dari record HPS dengan Nama Pekerjaan yang
-   sama (mekanisme yang sama dipakai Lampiran SPK & Rekap HPS).
-
-   Cara memakainya: tulis kode {{tabel_boq}} pada klausul "Bill of Quantity
-   (BoQ)" — saat dokumen dibangun, kode itu DIGANTI seluruh blok formulir BoQ
-   (kop perusahaan, judul, Pekerjaan/Lokasi, tabel, rekap, terbilang, dan blok
-   tanda tangan Penyedia). Sebelumnya bagian ini hanya berupa GAMBAR yang
-   ditempel di berkas Word, sehingga hilang begitu klausulnya diunggah
-   (jalur baca .docx mengabaikan w:drawing).
-
-   Catatan tata letak: seluruh formulir dibuat HITAM-PUTIH (bukan tosca gaya
-   dokumen HPS) karena lembar ini dicetak & diisi oleh pihak luar. */
-const TOR_BOQ_MARK  = '@@TABEL-BOQ@@';    /* penanda sementara hasil mail-merge */
-const TOR_BOQ_KOP   = '(KOP PERUSAHAAN)'; /* diisi kop surat Penyedia sendiri  */
-const TOR_BOQ_JUDUL = 'Bill of Quantity (BoQ)';
-const TOR_BOQ_DASH  = '-';                /* isi kolom harga yang dikosongkan  */
-const TOR_BOQ_TTD   = {
-  tempat : 'Kota/Kabupaten,….., Tanggal…..',
-  badan  : 'Nama Perusahaan',
-  nama   : '(Nama Lengkap)',
-  jabatan: 'Jabatan'
-};
-const TOR_BOQ_TERBILANG = 'Nol Rupiah';
-
-/* Ambil susunan item dari record Perhitungan HPS yang Nama Pekerjaannya sama.
-   Mengembalikan state gaya HPS ({items, judulOn, judulNum, ...}) atau null. */
-function torBoqState(d){
-  d = d || {};
-  let rec = null;
-  try{
-    if(typeof spkCariHps === 'function'){
-      rec = spkCariHps(null, d.nama_pekerjaan);
-    }else{
-      const list = (typeof records_hps !== 'undefined' && records_hps) ? records_hps : [];
-      const nm = String(d.nama_pekerjaan || '').trim().toLowerCase();
-      rec = nm ? (list.find(r => String(r.nama_pekerjaan || '').trim().toLowerCase() === nm) || null) : null;
-    }
-  }catch(e){ console.error('torBoqState:', e); }
-  if(!rec) return null;
-  try{
-    const st = hpsRecordToState(rec);
-    const isi = (st.items || []).some(it =>
-      String((it && it.uraian) || '').trim() ||
-      String((it && it.judul)  || '').trim() ||
-      String((it && it.subjudul) || '').trim());
-    return isi ? st : null;
-  }catch(e){ console.error('torBoqState:', e); return null; }
-}
-
-/* Baris isi tabel BoQ. Judul & Sub-Judul ditelusuri memakai jsWalk (mesin yang
-   sama dengan dokumen HPS) supaya penomoran romawi/abjadnya identik. Kolom
-   harga SELALU "-": nilainya memang tidak boleh ikut terbawa ke Penyedia. */
-function torBoqRowsHtml(st){
-  const cfg = jsCfg(st);
-  const dash = '<td class="num">' + TOR_BOQ_DASH + '</td>';
-  const isiNilai = (it) => {
-    const sat = (it && it.sat != null && String(it.sat).trim()) ? String(it.sat) : '-';
-    const vol = jsVolDoc(it && it.vol);
-    return '<td class="st">' + fkEsc(sat) + '</td><td class="vl">' + fkEsc(vol) + '</td>' + dash + dash + dash + dash + dash;
-  };
-  const kosong = '<td class="st"></td><td class="vl"></td>' + '<td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td>';
-  /* Baris dikumpulkan dulu supaya kelas penyambung ("nogar") baru dipasang
-     setelah diketahui bahwa baris judul memang diikuti butir — judul kelompok
-     yang kebetulan menjadi baris TERAKHIR tetap punya garis bawah. */
-  const baris = [];
-  const grp = (cls, no, txt, it) => {
-    baris.push({ jenis:'grp', cls:cls,
-      html: '<tr class="grp ' + cls + '{X}"><td class="no">' + fkEsc(no) + '</td>' +
-            '<td class="ur">' + fkEsc(txt) + '</td>' + (it ? isiNilai(it) : kosong) + '</tr>' });
-  };
-  jsWalk(st.items, cfg, {
-    judul: (no, txt, it) => grp('g1', no, txt, it),
-    sub:   (no, txt, it) => grp('g2', no, txt, it),
-    item:  (no, it, idx) => {
-      const ur = (it && String(it.uraian || '').trim()) ? String(it.uraian) : ('Barang/Jasa ' + (idx + 1));
-      baris.push({ jenis:'itm',
-        html: '<tr class="itm{X}"><td class="no">' + fkEsc(String(no)) + '</td>' +
-              '<td class="ur">' + fkEsc(ur) + '</td>' + isiNilai(it) + '</tr>' });
-    }
-  });
-  /* Dikembalikan sebagai ARRAY supaya torBoqHtml bisa menambah kelas
-     penghapus garis (nb-t / nb-b) pada baris PERTAMA & TERAKHIR. */
-  return baris.map(function(b, i){
-    const brk = baris[i+1];
-    let tambah = '';
-    if(b.jenis === 'grp' && brk && brk.jenis === 'itm') tambah = ' nogar';        /* buang garis bawah  */
-    if(b.jenis === 'itm' && i > 0 && baris[i-1].jenis === 'grp') tambah = ' after-grp'; /* buang garis atas */
-    return b.html.replace('{X}', tambah);
-  });
-}
-
-/* Formulir BoQ lengkap (kop – judul – data pekerjaan – tabel – rekap –
-   terbilang – tanda tangan Penyedia). */
-function torBoqHtml(d){
-  d = d || {};
-  const st = torBoqState(d);
-  if(!st){
-    return '<div class="tor-boq tor-boq-kosong">Rincian <b>Bill of Quantity (BoQ)</b> belum dapat ditampilkan. ' +
-      'Buat dokumen <b>Perhitungan HPS</b> dengan Nama Pekerjaan yang sama persis, ' +
-      'lalu bangun ulang dokumen TOR/KAK ini.</div>';
-  }
-  /* Lebar kolom harga 11%% (bukan 11%% bawaan HPS) supaya judul "Material (Rp)"
-     & "Jumlah Total" muat SATU baris; sisanya jadi milik kolom Uraian. */
-  const cw = jsHpsColPct(st.items, jsCfg(st), 11);
-  const kolgrup =
-    '<colgroup><col style="width:' + cw.no + '%"><col style="width:' + cw.ur + '%">' +
-      '<col style="width:' + cw.sat + '%"><col style="width:' + cw.vol + '%">' +
-      '<col style="width:' + cw.hg + '%"><col style="width:' + cw.hg + '%"><col style="width:' + cw.hg + '%">' +
-      '<col style="width:' + cw.hg + '%"><col style="width:' + cw.hg + '%"></colgroup>';
-  /* Baris kosong penyela — setinggi baris berisi SATU baris teks (dipakai
-     &nbsp; supaya tingginya mengikuti font, bukan dipatok px). Dipasang di
-     ATAS judul kelompok pertama dan di BAWAH uraian terakhir. */
-  const barisKosong = '<tr class="kosong"><td class="no">&nbsp;</td><td class="ur"></td>' +
-    '<td class="st"></td><td class="vl"></td>' +
-    '<td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td></tr>';
-  const sumRow = (lbl, cls) => '<tr class="sum' + (cls || '') + '"><td class="sum-lbl" colspan="6">' + fkEsc(lbl) + '</td>' +
-    '<td class="num">' + TOR_BOQ_DASH + '</td><td class="num">' + TOR_BOQ_DASH + '</td><td class="num">' + TOR_BOQ_DASH + '</td></tr>';
-  /* Tambahkan kelas ke <tr class="..."> pertama pada sepotong markup baris. */
-  const tambahKelas = (html, cls) => String(html).replace('<tr class="', '<tr class="' + cls + ' ');
-
-  /* ---- SATU TABEL UTUH ----
-     Uraian Pekerjaan, rekap (Jumlah/DPP/PPn/Jumlah Total) dan Terbilang berada
-     di dalam TABEL YANG SAMA sehingga garis tepi kiri-kanannya menyambung dari
-     kepala tabel sampai baris Terbilang. Pemisahnya BUKAN jarak antar-tabel,
-     melainkan dua baris kosong (tr.kosong) yang sengaja TIDAK bergaris
-     mendatar — di atas & di bawahnya tidak ada pembatas horizontal sama
-     sekali, jadi yang terlihat hanya ruang putih di antara garis tegak. */
-  let isiBaris = torBoqRowsHtml(st);
-  if(isiBaris.length){
-    isiBaris[0] = tambahKelas(isiBaris[0], 'nb-t');                       /* tanpa garis atas  */
-    isiBaris[isiBaris.length - 1] = tambahKelas(isiBaris[isiBaris.length - 1], 'nb-b'); /* tanpa garis bawah */
-  }
-  const badan = barisKosong + isiBaris.join('') + barisKosong;
-  /* Rekap + Terbilang = satu blok yang tak boleh terpisah dari angka rekapnya
-     (tbody.hps-tail sudah dikenali atom() pada spkPageScript). */
-  const rekap =
-    sumRow('Jumlah', ' nb-t') + sumRow('DPP') + sumRow('PPn 12%') + sumRow('Jumlah Total') +
-    '<tr class="terb"><td colspan="9"><b>Terbilang :</b> ' + fkEsc(TOR_BOQ_TERBILANG) + '</td></tr>';
-
-  return '<div class="tor-boq">' +
-    '<div class="boq-kop">' + fkEsc(TOR_BOQ_KOP) + '</div>' +
-    '<div class="boq-judul">' + fkEsc(TOR_BOQ_JUDUL) + '</div>' +
-    '<table class="boq-info"><tbody>' +
-      '<tr><td class="k">Pekerjaan</td><td class="s">:</td><td class="v">' + fkEsc(d.nama_pekerjaan || '-') + '</td></tr>' +
-      '<tr><td class="k">Lokasi</td><td class="s">:</td><td class="v">' + fkEsc(d.lokasi_pekerjaan || '-') + '</td></tr>' +
-    '</tbody></table>' +
-    '<table class="tor-boq-tbl boq-uraian">' + kolgrup +
-      '<thead>' +
-        '<tr>' +
-          '<th class="no" rowspan="2">No.</th>' +
-          '<th class="ur" rowspan="2">Uraian Pekerjaan</th>' +
-          '<th class="st" rowspan="2">Sat</th>' +
-          '<th class="vl" rowspan="2">Vol</th>' +
-          '<th colspan="2">Harga Satuan</th>' +
-          '<th colspan="2">Jumlah Harga</th>' +
-          '<th rowspan="2">Jumlah Total<br>(Rp)</th>' +
-        '</tr>' +
-        '<tr><th>Material (Rp)</th><th>Jasa (Rp)</th><th>Material (Rp)</th><th>Jasa (Rp)</th></tr>' +
-        /* nb-b: garis bawah baris penomoran kolom dihapus supaya menyatu dengan
-           baris kosong di bawahnya (tanpa pembatas mendatar). */
-        '<tr class="numh nb-b"><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td>' +
-          '<td>7 = 4 x 5</td><td>8 = 4 x 6</td><td>9 = 7 + 8</td></tr>' +
-      '</thead>' +
-      '<tbody>' + badan + '</tbody>' +
-      '<tbody class="hps-tail">' + rekap + '</tbody>' +
-    '</table>' +
-    '<div class="boq-sign spk-keep">' +
-      '<div class="tpt">' + fkEsc(TOR_BOQ_TTD.tempat) + '</div>' +
-      '<div class="bdn">' + fkEsc(TOR_BOQ_TTD.badan) + '</div>' +
-      '<div class="sp"></div>' +
-      '<div class="nm">' + fkEsc(TOR_BOQ_TTD.nama) + '</div>' +
-      '<div class="jab">' + fkEsc(TOR_BOQ_TTD.jabatan) + '</div>' +
-    '</div>' +
-  '</div>';
-}
-
-/* Ganti penanda {{tabel_boq}} (sudah jadi TOR_BOQ_MARK sesudah mail-merge)
-   dengan blok formulir BoQ. Dikerjakan lewat DOM, bukan replace string, supaya
-   tabel tidak pernah tersisip DI DALAM <p> (HTML tidak sah & merusak paginasi):
-     - bila paragrafnya HANYA berisi penanda -> paragraf itu DIGANTI tabel;
-     - bila penanda menempel pada kalimat lain -> penandanya dibuang dan tabel
-       disisipkan TEPAT SESUDAH paragraf tersebut. */
-function torBoqInject(html, d){
-  var s = String(html == null ? '' : html);
-  if(s.indexOf(TOR_BOQ_MARK) < 0) return s;
-  var tbl = '';
-  try{ tbl = torBoqHtml(d); }catch(e){ console.error('torBoqHtml:', e); tbl = ''; }
-  try{
-    var BLOK = ['P','DIV','LI','TD','TH','H1','H2','H3','H4','H5','H6'];
-    var box = document.createElement('div'); box.innerHTML = s;
-    var putar = 0;
-    while(putar++ < 20){
-      var teks = null;
-      var w = document.createTreeWalker(box, NodeFilter.SHOW_TEXT, null, false);
-      while(w.nextNode()){
-        if(String(w.currentNode.nodeValue || '').indexOf(TOR_BOQ_MARK) >= 0){ teks = w.currentNode; break; }
-      }
-      if(!teks) break;
-      var host = teks.parentNode;
-      while(host && host !== box && BLOK.indexOf(host.tagName) < 0) host = host.parentNode;
-      if(!host || host === box) host = teks.parentNode || box;
-      var sisa = String(host.textContent || '').split(TOR_BOQ_MARK).join('').replace(/[\s\u00A0]/g,'');
-      var frag = document.createElement('div'); frag.innerHTML = tbl;
-      if(sisa){
-        teks.nodeValue = String(teks.nodeValue).split(TOR_BOQ_MARK).join('');
-        var ref = host.nextSibling;
-        while(frag.firstChild) host.parentNode.insertBefore(frag.firstChild, ref);
-      }else{
-        while(frag.firstChild) host.parentNode.insertBefore(frag.firstChild, host);
-        host.parentNode.removeChild(host);
-      }
-    }
-    return box.innerHTML;
-  }catch(e){
-    console.error('torBoqInject:', e);
-    return s.split(TOR_BOQ_MARK).join('');
-  }
-}
-
-/* Gaya formulir BoQ — sengaja HITAM-PUTIH & garis tunggal, meniru lembar BoQ
-   pada lampiran TOR/KAK versi Word (bukan gaya tosca dokumen HPS). */
-function torBoqCss(){
-  return ''+
-  '.tor-boq{margin:12pt 0 6pt;color:#000;line-height:1.25}'+
-  '.tor-boq .boq-kop{text-align:center;font-weight:800;font-size:11pt;color:#1B6C9C;letter-spacing:.02em;margin-bottom:12pt;'+
-    '-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
-  '.tor-boq .boq-judul{text-align:center;font-weight:800;font-size:11pt;text-decoration:underline;margin-bottom:12pt}'+
-  '.tor-boq table.boq-info{border-collapse:collapse;margin:0 0 10pt 12pt;font-size:9pt}'+
-  '.tor-boq table.boq-info td{border:0;padding:0 6px 2pt 0;vertical-align:top;background:transparent}'+
-  '.tor-boq table.boq-info td.k{width:2.4cm;white-space:nowrap}'+
-  '.tor-boq table.boq-info td.s{width:.35cm}'+
-  /* --- tabel --- */
-  '.tor-boq table.tor-boq-tbl{width:100%;border-collapse:collapse;table-layout:fixed;margin:0}'+
-  '.tor-boq table.tor-boq-tbl th,.tor-boq table.tor-boq-tbl td{border:1px solid #000;padding:3px 5px;'+
-    'font-size:8.6pt;line-height:1.25;vertical-align:middle;color:#000;background:#fff;'+
-    'word-wrap:break-word;overflow-wrap:anywhere}'+
-  /* Judul kolom SELALU satu baris ("Material (Rp)", "Jumlah Total"):
-     huruf sedikit dikecilkan + padding samping dirapatkan + nowrap. Hanya
-     pemenggalan yang dibuat oleh <br> ("Jumlah Total" / "(Rp)") yang tetap. */
-  '.tor-boq table.tor-boq-tbl thead th,.tor-boq table.tor-boq-tbl thead td{padding:3px 1px;font-size:7.4pt;white-space:nowrap}'+
-  '.tor-boq table.tor-boq-tbl thead th{font-weight:700;text-align:center;hyphens:none}'+
-  '.tor-boq table.tor-boq-tbl thead tr.numh td{text-align:center;font-weight:700}'+
-  '.tor-boq table.tor-boq-tbl td.no{text-align:center}'+
-  '.tor-boq table.tor-boq-tbl td.ur{text-align:left}'+
-  '.tor-boq table.tor-boq-tbl td.st,.tor-boq table.tor-boq-tbl td.vl{text-align:center;white-space:nowrap;'+
-    'overflow-wrap:normal;word-break:keep-all}'+
-  '.tor-boq table.tor-boq-tbl td.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}'+
-  /* Judul kelompok: tebal & huruf besar, TANPA arsiran; garis mendatar antara
-     judul kelompok dan butir pertamanya sengaja dihilangkan supaya sama dengan
-     lembar BoQ acuan. */
-  '.tor-boq table.tor-boq-tbl tr.grp td.ur{font-weight:700;text-transform:uppercase}'+
-  '.tor-boq table.tor-boq-tbl tr.grp.g2 td.ur{text-transform:none;font-style:italic;font-weight:700}'+
-  '.tor-boq table.tor-boq-tbl tr.grp.nogar td{border-bottom-style:hidden}'+
-  '.tor-boq table.tor-boq-tbl tr.itm.after-grp td{border-top-style:hidden}'+
-  /* --- Baris kosong penyela & penghapus garis mendatar ---
-     WAJIB memakai border-style:hidden, BUKAN border:0. Pada model border
-     collapse, `0`/`none` adalah pemenang TERLEMAH: garis tetangga di seberang
-     tepi tetap terlukis — itulah sebabnya garis di bawah baris penomoran
-     (batas thead->tbody) dan di atas baris Jumlah (batas tbody->tbody) masih
-     muncul meski sudah diberi nb-b/nb-t. `hidden` adalah pemenang TERKUAT:
-     tepi itu dipadamkan apa pun garis tetangganya. Hasilnya: ruang putih
-     setinggi satu baris teks tanpa pembatas mendatar, garis tegak menyambung. */
-  '.tor-boq table.tor-boq-tbl tr.kosong td{border-top-style:hidden;border-bottom-style:hidden}'+
-  '.tor-boq table.tor-boq-tbl tr.nb-t td{border-top-style:hidden}'+
-  '.tor-boq table.tor-boq-tbl tr.nb-b td{border-bottom-style:hidden}'+
-  /* --- rekap & Terbilang: masih di dalam tabel yang sama --- */
-  '.tor-boq table.tor-boq-tbl tr.sum td.sum-lbl{text-align:right;font-weight:700}'+
-  '.tor-boq table.tor-boq-tbl tr.terb td{text-align:left;font-size:9pt;padding:5px 6px}'+
-  /* --- tanda tangan Penyedia: di LUAR tabel, tanpa garis --- */
-  '.tor-boq .boq-sign{width:7.6cm;margin:20pt 0 0 auto;text-align:center;font-size:9pt}'+
-  '.tor-boq .boq-sign .bdn{font-weight:700;margin-top:2pt}'+
-  '.tor-boq .boq-sign .sp{height:2.2cm}'+
-  '.tor-boq .boq-sign .nm{font-weight:700;text-decoration:underline}'+
-  '.tor-boq .boq-sign .jab{font-weight:700;margin-top:1pt}'+
-  /* Blok BoQ selalu memakai lebar penuh lembar — inden klausul tidak berlaku. */
-  '.spk-cl .tor-boq,.spk-cl .tor-boq table.tor-boq-tbl{margin-left:0;margin-right:0}'+
-  '.tor-boq-kosong{margin:12pt 0;padding:10pt 12pt;border:1px dashed #999;border-radius:6px;'+
-    'font-size:9pt;color:#5b4a00;background:#fffbe6;-webkit-print-color-adjust:exact;print-color-adjust:exact}';
-}
-
 /* ---- Sampul ---- */
 function torCoverHtml(data, ctx){
   const esc=fkEsc;
@@ -1644,12 +1679,7 @@ function torDocHtml(data, klausul){
   const babHead=(s)=>'<div class="spk-cl-h tor-babh"><span class="n" data-no="'+fkEsc(s.rom)+'."></span>'+
     fkEsc(s.babNama)+'</div>';
   const clauses=klausul.map((k,i)=>{
-    const s=str[i];
-    const isiAsli=spkPkTidy(pre[i], false);
-    /* Kelas inden dihitung dari isi ASLI (sebelum tabel BoQ masuk) supaya
-       spkLeadIndentCls tetap membaca paragraf pembuka, bukan <table>. */
-    const indenCls=spkLeadIndentCls(isiAsli);
-    const inner=torBoqInject(isiAsli, data);
+    const s=str[i], inner=spkPkTidy(pre[i], false);
     let out='';
     /* Bab I & II: judul bab berdiri sendiri di atas klausul pertamanya. */
     if(s.awal && !s.lebur) out+='<div class="spk-clause tor-babonly">'+babHead(s)+'</div>';
@@ -1659,7 +1689,7 @@ function torDocHtml(data, klausul){
     const head = s.lebur ? babHead(s)
       : '<div class="spk-cl-h"><span class="n" data-no="'+fkEsc(s.no)+'."></span>'+spkFmtJudul(k.judul)+'</div>';
     out+='<div class="spk-clause">'+head+
-      '<div class="spk-cl'+indenCls+'">'+inner+'</div></div>';
+      '<div class="spk-cl'+spkLeadIndentCls(inner)+'">'+inner+'</div></div>';
     return out;
   }).join('');
   SPK_HANG_OVR=null; SPK_JH_OVR=0;
@@ -1696,17 +1726,282 @@ function torDocHtml(data, klausul){
     spkKisiScript()+spkPageScript()+fklFitScript()+'</body></html>';
 }
 
+/* ===================== 11a. KOP & KERANGKA GAYA HPS =====================
+   Dokumen RAB dan Pakta Integritas TIDAK memakai mesin dokumen SPK (sampul +
+   kop berulang tiap lembar). Keduanya memakai kerangka HPS: satu kop di kepala
+   dokumen, lalu isi mengalir. Kopnya MENGAMBIL ULANG potongan yang sama persis
+   dengan hpsBuildDocHtml() di app.js \u2014 logo, tiga baris identitas unit, pita
+   pemisah, judul + nomor dokumen \u2014 sehingga tiga dokumen ini seragam. */
+function torKopHtml(){
+  return '<div class="fkl-doc-head">'+
+      '<div class="fkl-doc-logo"><img src="'+FKL_LOGO_SRC+'" alt="Logo PLN"></div>'+
+      '<div class="fkl-doc-org">'+
+        '<div class="l1">PT PLN (PERSERO)</div>'+
+        '<div class="l2">UNIT PELAKSANA PELAYANAN PELANGGAN MASOHI</div>'+
+        '<div class="l3">Jl. Abdullah Soulissa No 1, Masohi, Kec. Kota Masohi</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="fkl-doc-band"></div>';
+}
+/* Blok judul dokumen: judul di tengah + garis bawah + nomor dokumen di bawahnya.
+   Memakai kelas bawaan .fkl-doc-title.has-rule dan .fkl-doc-docno supaya garis
+   & jaraknya persis sama dengan dokumen cetak lain. Nomor boleh dikosongkan \u2014
+   Pakta Integritas memang tidak bernomor pada berkas acuannya. */
+function torJudulDokHtml(judul, nomor){
+  return '<h1 class="fkl-doc-title has-rule">'+fkEsc(judul)+'</h1>'+
+    (nomor ? '<div class="fkl-doc-docno">'+fkEsc(nomor)+'</div>' : '')+
+    '<div class="fkl-doc-titlegap"></div>';
+}
+/* Blok tanda tangan gaya HPS \u2014 dipakai RAB & Pakta Integritas. */
+function torTtdHpsHtml(kiri, kanan){
+  const esc=fkEsc, sel=(o)=> o ? ('<td><div class="hps-topgap"></div>'+
+      '<div class="role">'+esc(o.cap||'')+'</div>'+
+      '<div class="role2">'+esc(o.jab||'\u2014')+'</div>'+
+      '<div class="gap"></div>'+
+      '<div class="nm nm-up">'+esc(String(o.nama||'(..........................)').toUpperCase())+'</div></td>')
+    : '<td></td>';
+  return '<table class="ttd"><tbody><tr>'+sel(kiri)+sel(kanan)+'</tr></tbody></table>';
+}
+
+/* ===================== 11d. DOKUMEN RAB =====================
+   Tabel & rekapnya SENGAJA dibuat sebangun dengan cetakan HPS (hpsBuildDocHtml)
+   supaya dua dokumen itu terbaca sebagai satu keluarga: sembilan kolom dengan
+   baris nomor rumus (7 = 4 x 5, 8 = 4 x 6, 9 = 7 + 8), rekap Jumlah / DPP /
+   PPn 12% / Jumlah Total, terbilang, lalu tanda tangan \u2014 semuanya di dalam
+   <tbody class="hps-tail"> agar tidak pernah terpisah dari angkanya.
+
+   Bedanya dengan HPS: blok "Data Pekerjaan" hanya memuat Nama Pekerjaan dan
+   Lokasi Pekerjaan. Angka-angkanya dihitung memakai fungsi HPS yang sama, jadi
+   RAB dan HPS mustahil berbeda hasil. */
+function torRabDocHtml(data){
+  data=data||{};
+  const esc=fkEsc;
+  const items=(Array.isArray(data.__rab)?data.__rab:[]).slice(0,
+      Math.max(1, parseInt(data.jumlah_bj,10)||((Array.isArray(data.__rab)&&data.__rab.length)||1)));
+  const cfg={
+    judulOn:    String(data.rab_judul_on||'')==='Ya',
+    judulNum:   String(data.rab_judul_num||''),
+    subjudulOn: String(data.rab_subjudul_on||'')==='Ya',
+    subjudulNum:String(data.rab_subjudul_num||'')
+  };
+  const infoRow=(k,v)=>'<tr><td class="k">'+k+'</td><td class="s">:</td>'+
+    '<td class="v" style="text-align:justify">'+esc(v||'-')+'</td></tr>';
+  /* Baris judul / sub-judul memakai penelusur yang sama dengan HPS (jsWalk),
+     sehingga gaya penomoran yang dipilih di langkah 1 berlaku identik. */
+  const grpRow=(cls,no,txt,it)=>{
+    if(!it) return '<tr class="'+cls+'"><td class="no">'+esc(no)+'</td>'+
+      '<td class="gname" colspan="8">'+esc(txt)+'</td></tr>';
+    return '<tr class="'+cls+' has-val"><td class="no">'+esc(no)+'</td>'+
+      '<td class="gname ur">'+esc(txt)+'</td>'+
+      '<td class="st">'+esc(String(it.sat||'-'))+'</td>'+
+      '<td class="vl">'+esc(String(jsVolDoc(it.vol)))+'</td>'+
+      '<td class="num">'+hpsRpDoc(it.hargaMat)+'</td>'+
+      '<td class="num">'+hpsRpDoc(it.hargaJasa)+'</td>'+
+      '<td class="num">'+hpsRpDoc(hpsItemMat(it))+'</td>'+
+      '<td class="num">'+hpsRpDoc(hpsItemJasa(it))+'</td>'+
+      '<td class="num tot">'+hpsRpDoc(hpsItemTotal(it))+'</td></tr>';
+  };
+  let bodyRows='';
+  jsWalk(items, cfg, {
+    judul:(no,txt,it)=>{ bodyRows+=grpRow('grp',no,txt,it); },
+    sub:  (no,txt,it)=>{ bodyRows+=grpRow('grp sub',no,txt,it); },
+    item: (noInGroup,it,idx)=>{
+      bodyRows+='<tr>'+
+        '<td class="no">'+noInGroup+'</td>'+
+        '<td class="ur">'+esc((it.uraian&&String(it.uraian).trim())?it.uraian:('Barang/Jasa '+(idx+1)))+'</td>'+
+        '<td class="st">'+esc(String(it.sat||'-'))+'</td>'+
+        '<td class="vl">'+esc(String(jsVolDoc(it.vol)))+'</td>'+
+        '<td class="num">'+hpsRpDoc(it.hargaMat)+'</td>'+
+        '<td class="num">'+hpsRpDoc(it.hargaJasa)+'</td>'+
+        '<td class="num">'+hpsRpDoc(hpsItemMat(it))+'</td>'+
+        '<td class="num">'+hpsRpDoc(hpsItemJasa(it))+'</td>'+
+        '<td class="num tot">'+hpsRpDoc(hpsItemTotal(it))+'</td></tr>';
+    }
+  });
+  const sm=hpsSummary({items:items});
+  const sumRow=(lbl,mat,jasa,tot,cls)=>'<tr class="sum'+(cls?' '+cls:'')+'">'+
+    '<td class="sum-lbl" colspan="6">'+lbl+'</td>'+
+    '<td class="num">'+hpsRpDoc(mat)+'</td><td class="num">'+hpsRpDoc(jasa)+'</td>'+
+    '<td class="num">'+hpsRpDoc(tot)+'</td></tr>';
+  const ttdRow='<tr class="ttd-row"><td colspan="9">'+
+    torTtdHpsHtml(
+      {cap:'Diperiksa oleh,', jab:data.jabatan_direksi||'Direksi Pekerjaan', nama:data.nama_direksi},
+      {cap:'Disetujui oleh,', jab:data.jabatan_pengguna||'Pengguna Barang/Jasa', nama:data.nama_pengguna}
+    )+'</td></tr>';
+  const _cw=jsHpsColPct(items, cfg, jsHpsHargaPct(String(hpsRpDoc(sm.totT)||'').length));
+  const tbl='<table class="hps-doc-tbl">'+
+    '<colgroup><col style="width:'+_cw.no+'%"><col style="width:'+_cw.ur+'%"><col style="width:'+_cw.sat+'%">'+
+      '<col style="width:'+_cw.vol+'%"><col style="width:'+_cw.hg+'%"><col style="width:'+_cw.hg+'%">'+
+      '<col style="width:'+_cw.hg+'%"><col style="width:'+_cw.hg+'%"><col style="width:'+_cw.hg+'%"></colgroup>'+
+    '<thead>'+
+      '<tr><th class="no" rowspan="2">No</th><th class="ur" rowspan="2">Uraian Pekerjaan</th>'+
+        '<th class="st" rowspan="2">Sat</th><th class="vl" rowspan="2">Vol</th>'+
+        '<th colspan="2">Harga Satuan</th><th colspan="2">Jumlah Harga</th>'+
+        '<th rowspan="2">Jumlah Total<br>(Rp)</th></tr>'+
+      '<tr><th>Barang (Rp)</th><th>Jasa (Rp)</th><th>Barang (Rp)</th><th>Jasa (Rp)</th></tr>'+
+      '<tr class="numh"><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td>'+
+        '<td>7 = 4 x 5</td><td>8 = 4 x 6</td><td>9 = 7 + 8</td></tr>'+
+    '</thead><tbody>'+bodyRows+'</tbody>'+
+    '<tbody class="hps-tail">'+
+      sumRow('Jumlah', sm.jM, sm.jJ, sm.jT)+
+      sumRow('DPP', sm.dppM, sm.dppJ, sm.dppT)+
+      sumRow('PPn 12%', sm.ppnM, sm.ppnJ, sm.ppnT)+
+      sumRow('Jumlah Total', sm.totM, sm.totJ, sm.totT, 'grand')+
+      '<tr class="terb"><td colspan="9"><b>Terbilang :</b> '+esc(hpsTerbilangRupiah(sm.totT))+'</td></tr>'+
+      ttdRow+
+    '</tbody></table>';
+  /* Urutan halaman RAB (permintaan 5 Agu 2026): kop \u2192 Data Pekerjaan
+     (hanya Nama & Lokasi) \u2192 judul dokumen di tengah + garis bawah + nomor
+     \u2192 tabel rincian. Judulnya sengaja TIDAK di kepala halaman seperti HPS. */
+  const isi='<div class="fkl-doc pnw-doc hps-doc">'+
+    torKopHtml()+
+    '<div class="fkl-sec-h"><span class="rn">A</span>Data Pekerjaan</div>'+
+    '<table class="fkl-info"><tbody>'+
+      infoRow('Nama Pekerjaan', data.nama_pekerjaan)+
+      infoRow('Lokasi Pekerjaan', data.lokasi_pekerjaan)+
+    '</tbody></table>'+
+    '<div class="rab-jd">'+torJudulDokHtml('RENCANA ANGGARAN BIAYA (RAB)', torNoDok(data,'RAB'))+'</div>'+
+    '<div class="fkl-sec-h"><span class="rn">B</span>Uraian Pekerjaan &amp; Rincian Harga</div>'+
+    tbl+
+  '</div>';
+  return fklDocShell(hpsExtraDocCss()+
+    '.rab-jd{margin:14px 0 4px}'+
+    '.rab-jd .fkl-doc-titlegap{height:6px}', isi);
+}
+
+/* ===================== 11b. PAKTA INTEGRITAS =====================
+   Dua dokumen dari SATU cetakan yang sama; yang membedakan hanya penanda
+   tangan & kotak centang mana yang dicontreng:
+     peran 'pengguna' -> Pengguna Barang/Jasa (nama/jabatan/NIP Pengguna)
+     peran 'direksi'  -> Direksi Pekerjaan    (nama/jabatan/NIP Direksi)
+   Seluruh isinya diambil dari data yang SUDAH masuk di langkah 1, kecuali
+   "Perkiraan Pekerjaan" yang diambil dari JUMLAH TOTAL RAB (langkah 4) karena
+   angka itu lebih mutakhir daripada taksiran awal. Bila RAB masih kosong,
+   nilainya jatuh kembali ke Perkiraan Nilai Pekerjaan pada langkah 1. */
+const TOR_PI_PERAN = [
+  ['perencana','Pejabat Perencana Pengadaan'],
+  ['pelaksana','Pejabat Pelaksana Pengadaan'],
+  ['direksi',  'Direksi Pekerjaan'],
+  ['pengguna', 'Pengguna Barang/Jasa']
+];
+const TOR_PI_KOMITMEN = [
+  'Mematuhi seluruh ketentuan Sistem Manajemen Anti Penyuapan (SMAP), termasuk namun tidak terbatas pada SNI ISO 37001:2025, peraturan perundang-undangan yang berlaku, serta kebijakan internal perusahaan terkait anti penyuapan, gratifikasi, konflik kepentingan, dan pengadaan barang/jasa.',
+  'Tidak melakukan, tidak menjanjikan, tidak menawarkan, dan tidak memberikan suap, gratifikasi ilegal, komisi, hadiah, atau bentuk keuntungan tidak sah lainnya, baik secara langsung maupun tidak langsung, kepada pihak mana pun yang terkait dengan proyek ini.',
+  'Tidak menerima atau meminta suap, gratifikasi ilegal, hadiah, fasilitas, atau keuntungan apa pun yang dapat mempengaruhi atau patut diduga mempengaruhi independensi, objektivitas, dan profesionalitas sebelum, selama / setelah proses pengadaan barang/jasa.',
+  'Menghindari dan mengungkapkan konflik kepentingan, baik yang bersifat aktual, potensial, maupun yang dapat dipersepsikan, dengan menyampaikan secara tertulis kepada atasan langsung dan/atau fungsi kepatuhan apabila terdapat hubungan pribadi, keuangan, atau kepentingan lain dengan penyedia atau pihak terkait proyek.',
+  'Menjamin proses pengadaan dilaksanakan secara transparan, objektif, adil, dan akuntabel, berdasarkan prinsip value for money, kepatuhan, dan integritas.',
+  'Tidak menyalahgunakan kewenangan, jabatan, atau informasi yang dimiliki untuk kepentingan pribadi, keluarga, kelompok, atau pihak lain.',
+  'Melaporkan setiap indikasi pelanggaran SMAP, termasuk dugaan penyuapan, gratifikasi, kecurangan, atau pelanggaran etika lainnya yang diketahui selama proses proyek melalui mekanisme Whistleblowing System (WBS) perusahaan.',
+  'Bersedia bekerja sama dalam proses audit, monitoring, dan investigasi yang dilakukan oleh Perusahaan melalui auditor internal sesuai kewenangannya.',
+  'Bertanggung jawab secara pribadi atas kebenaran pernyataan ini dan memahami bahwa pelanggaran terhadap Pakta Integritas ini dapat dikenakan sanksi disiplin pegawai sesuai ketentuan yang berlaku.'
+];
+const TOR_PI_TUTUP = [
+  'Pakta Integritas ini saya tandatangani dengan penuh kesadaran, tanpa paksaan dari pihak mana pun, sebagai bentuk komitmen pribadi terhadap penerapan integritas dan pencegahan penyuapan dalam setiap proyek.',
+  'Pakta Integritas ini berlaku sejak tanggal ditandatangani dan menjadi bagian yang tidak terpisahkan dari dokumen proyek/paket pekerjaan yang bersangkutan.'
+];
+/* Penanda tangan sesuai peran */
+function torPiOrang(data, peran){
+  const d=data||{};
+  if(peran==='direksi') return {nama:d.nama_direksi||'', jab:d.jabatan_direksi||'', nip:d.nip_direksi||''};
+  return {nama:d.nama_pengguna||'', jab:d.jabatan_pengguna||'', nip:d.nip_pengguna||''};
+}
+function torPiJudul(peran){
+  return 'Pakta Integritas '+(peran==='direksi'?'Direksi Pekerjaan':'Pengguna Barang/Jasa');
+}
+/* Perkiraan Pekerjaan: utamakan Jumlah Total RAB, mundur ke taksiran awal. */
+function torPiNilai(data){
+  let n=0;
+  try{ const it=(data&&Array.isArray(data.__rab))?data.__rab:[]; if(it.length) n=hpsSummary({items:it}).totT; }catch(e){ n=0; }
+  if(!(n>0)) n=spkNum(data&&data.nilai_pekerjaan)||0;
+  return n;
+}
+function torPiDocHtml(data, peran){
+  data=data||{};
+  const esc=fkEsc, ctx=spkBuildCtx(data), org=torPiOrang(data,peran);
+  const rp=(n)=> n>0 ? ('Rp'+Number(n).toLocaleString('id-ID')) : '\u2014';
+  /* "Pada hari ini, <Hari>, tanggal <dd> bulan <Bulan> tahun <yyyy>" —
+     seluruhnya diturunkan dari Tgl. Dokumen, tidak ada isian baru. */
+  const tg=String(data.tgl_dokumen||'').slice(0,10);
+  const HARI=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+  const BLN=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  let pembuka='Pada hari ini, \u2014, Saya yang bertanda tangan di bawah ini:';
+  if(/^\d{4}-\d{2}-\d{2}$/.test(tg)){
+    const dt=new Date(tg+'T00:00:00');
+    pembuka='Pada hari ini, '+HARI[dt.getDay()]+', tanggal '+dt.getDate()+
+      ' bulan '+BLN[dt.getMonth()]+' tahun '+dt.getFullYear()+', Saya yang bertanda tangan di bawah ini:';
+  }
+  const brs=(l,v)=>'<tr><td class="l">'+esc(l)+'</td><td class="s">:</td><td class="v">'+v+'</td></tr>';
+  const prk=String(data.no_prk||'').split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+  const cek=TOR_PI_PERAN.map(pr=>'<span class="pi-ck">'+
+      '<span class="bx">'+(pr[0]===peran?'\u2611':'\u2610')+'</span>'+esc(pr[1])+'</span>').join('');
+  const angg = esc(data.no_anggaran||'\u2014') +
+    (data.tgl_anggaran ? '<br>Tanggal, '+esc(spkDateLong(data.tgl_anggaran)) : '');
+  const isi='<div class="fkl-doc pnw-doc hps-doc">'+
+    torKopHtml()+
+    torJudulDokHtml('PAKTA INTEGRITAS','')+
+    '<div class="pi-sub">SISTEM MANAJEMEN ANTI PENYUAPAN (SMAP)</div>'+
+    '<p class="pi-p">'+esc(pembuka)+'</p>'+
+    '<table class="pi-tb"><tbody>'+
+      brs('Nama', esc(org.nama||'\u2014'))+
+      brs('NIP', esc(org.nip||'\u2014'))+
+      brs('Jabatan', esc(org.jab||'\u2014'))+
+    '</tbody></table>'+
+    '<p class="pi-p">dalam hal ini sebagai :</p>'+
+    '<div class="pi-cks">'+cek+'</div>'+
+    '<table class="pi-tb"><tbody>'+
+      brs('Satuan/ Unit Kerja', esc(ctx.unit_lengkap||TOR_NAMA_UNIT||''))+
+      brs('Nama Pekerjaan', esc(data.nama_pekerjaan||'\u2014'))+
+      brs('Perkiraan Pekerjaan', esc(rp(torPiNilai(data))))+
+      brs('No. Anggaran', angg)+
+      brs('No. PRK', prk.length?prk.map(esc).join('<br>'):'\u2014')+
+    '</tbody></table>'+
+    '<p class="pi-p">selanjutnya disebut PIHAK YANG MENANDATANGANI PAKTA INTEGRITAS.</p>'+
+    '<p class="pi-p">Dengan ini saya menyatakan dan berkomitmen untuk:</p>'+
+    '<ol class="pi-ol">'+TOR_PI_KOMITMEN.map(t=>'<li>'+esc(t)+'</li>').join('')+'</ol>'+
+    TOR_PI_TUTUP.map(t=>'<p class="pi-p">'+esc(t)+'</p>').join('')+
+    '<div class="pi-tgl">'+esc(ctx.tempat_tanggal||'')+'</div>'+
+    '<div class="pi-ttd">'+torTtdHpsHtml(null,
+      {cap:'Yang menyatakan,', jab:org.jab, nama:org.nama})+'</div>'+
+  '</div>';
+  return fklDocShell(hpsExtraDocCss()+
+    '.pi-sub{text-align:center;font-weight:700;font-size:11px;margin:-4px 0 10px;letter-spacing:.02em}'+
+    '.pi-p{margin:0 0 6px;text-align:justify}'+
+    '.pi-tb{border-collapse:collapse;margin:0 0 8px}'+
+    '.pi-tb td{border:0;padding:1px 0;vertical-align:top}'+
+    '.pi-tb td.l{width:4.6cm}.pi-tb td.s{width:.45cm}'+
+    '.pi-cks{display:flex;flex-wrap:wrap;gap:3px 18px;margin:0 0 9px 1cm}'+
+    '.pi-ck{flex:0 0 45%;display:flex;gap:6px;align-items:flex-start}'+
+    '.pi-ck .bx{font-size:1.15em;line-height:1}'+
+    '.pi-ol{margin:0 0 8px;padding-left:1.05cm}'+
+    '.pi-ol li{margin:0 0 5px;text-align:justify}'+
+    '.pi-tgl{text-align:right;margin:14px 0 0}'+
+    '.pi-ttd{page-break-inside:avoid;break-inside:avoid}'+
+    '.pi-ttd table.ttd{width:100%}'
+  , isi);
+}
+
 /* ===================== 11. PRATINJAU & CETAK ===================== */
 let torPreviewData=null, torPreviewKlausul=null;
+let torPreviewMode='tor';   /* 'tor' | 'pi-pengguna' | 'pi-direksi' */
 function torPreviewCurrent(){
   if(!torState){ toast('Data belum diisi','warn'); return; }
   torSyncNomor();
   const kl=torKlausulDok();
   if(!kl.length){ toast('Belum ada klausul untuk ditampilkan','warn'); return; }
+  torPreviewMode='tor';
   torOpenPreview(torState.data, kl);
 }
-function torPreviewRecord(id){
+/* Satu pintu untuk seluruh jenis dokumen: pratinjau, Cetak/PDF, dan unduhan PDF
+   memakai fungsi ini, sehingga menambah jenis dokumen baru cukup di SATU tempat. */
+function torDokHtmlAktif(data, kl){
+  if(torPreviewMode==='rab')         return torRabDocHtml(data);
+  if(torPreviewMode==='pi-pengguna') return torPiDocHtml(data,'pengguna');
+  if(torPreviewMode==='pi-direksi')  return torPiDocHtml(data,'direksi');
+  return torDocHtml(data, kl||[]);
+}
+function torPreviewRecord(id, mode){
   const rec=(records_tor||[]).find(r=>String(r.id)===String(id)); if(!rec) return;
+  torPreviewMode=mode||'tor';
   torOpenPreview(rec.data||{}, (Array.isArray(rec.klausul)?rec.klausul:[]));
 }
 function torOpenPreview(data, klausul){
@@ -1716,7 +2011,11 @@ function torOpenPreview(data, klausul){
   const mdl=ov.querySelector('.pn-preview-modal'); if(mdl) mdl.classList.remove('is-max');
   if(typeof pnPreviewResetMaxBtn==='function') pnPreviewResetMaxBtn();
   const t=document.getElementById('pn-preview-title');
-  if(t) t.textContent='Pratinjau — TOR/KAK: '+((data&&data.no_dokumen)||(data&&data.nama_pekerjaan)||'');
+  const _jd = (torPreviewMode==='pi-pengguna') ? torPiJudul('pengguna')
+            : (torPreviewMode==='pi-direksi')  ? torPiJudul('direksi')
+            : (torPreviewMode==='rab')         ? 'RAB'
+            : 'TOR/KAK';
+  if(t) t.textContent='Pratinjau \u2014 '+_jd+': '+((data&&data.no_dokumen)||(data&&data.nama_pekerjaan)||'');
   const body=document.getElementById('pn-preview-body');
   if(body){
     body.classList.add('fkl-preview-body');
@@ -1741,7 +2040,7 @@ function torOpenPreview(data, klausul){
 function torPreviewRender(){
   const ifr=document.getElementById('fkl-preview-frame'); if(!ifr) return;
   const data=torPreviewData||{}, kl=torPreviewKlausul||[];
-  const html=torDocHtml(data, kl);
+  const html=torDokHtmlAktif(data, kl);
   const doc=ifr.contentWindow.document; doc.open(); doc.write(html); doc.close();
   try{
     if(typeof docPdfUpgrade==='function'){
@@ -1756,7 +2055,7 @@ function torPrint(){
   const ifr=document.createElement('iframe'); ifr.id='tor-print-frame'; ifr.setAttribute('aria-hidden','true');
   ifr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
   document.body.appendChild(ifr);
-  const doc=ifr.contentWindow.document; doc.open(); doc.write(torDocHtml(data, kl)); doc.close();
+  const doc=ifr.contentWindow.document; doc.open(); doc.write(torDokHtmlAktif(data, kl)); doc.close();
   const go=()=>{
     const run=()=>{ try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }catch(e){ try{ window.print(); }catch(_){} } };
     if(typeof withHiddenPageTitle==='function') withHiddenPageTitle(run); else run();
@@ -1791,6 +2090,220 @@ function torViewRows(){
     String(r.bidang_pelaksana||'').toLowerCase().includes(fs));
   return rows;
 }
+/* ===================== 11e. BILL OF QUANTITY (EXCEL) =====================
+   Berkas .xlsx yang SUDAH BERUMUS \u2014 penyedia tinggal mengisi Harga Satuan
+   (kolom 5 & 6), sisanya menghitung sendiri. Rumusnya cermin persis
+   hpsSummary() di app.js supaya BoQ, RAB, dan HPS tak mungkin beda hasil:
+       kolom 7 = Vol x Harga Material          (ROUND ke rupiah penuh)
+       kolom 8 = Vol x Harga Jasa              (ROUND)
+       kolom 9 = 7 + 8
+       Jumlah  = SUM kolom
+       DPP     = ROUND(Jumlah x 11/12)
+       PPn 12% = ROUND(DPP x 0,12)
+       Jml Tot = Jumlah + PPn                  (bukan DPP + PPn)
+
+   Harga sengaja DIKOSONGKAN meski RAB sudah berisi angka: berkas ini untuk
+   diisi penyedia. Angka Vol, Sat, dan uraian tetap dibawa dari RAB. */
+const TOR_BOQ_TERBILANG =
+  '="Terbilang  :  "&PROPER(IF({C}=0;"nol";IF({C}<0;"minus ";"")&SUBSTITUTE(TRIM(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(IF(--MID(TEXT(ABS({C});"000000000000000");1;3)=0;"";MID(TEXT(ABS({C});"000000000000000");1;1)&" ratus "&MID(TEXT(ABS({C});"000000000000000");2;1)&" puluh "&MID(TEXT(ABS({C});"000000000000000");3;1)&" trilyun ")&IF(--MID(TEXT(ABS({C});"000000000000000");4;3)=0;"";MID(TEXT(ABS({C});"000000000000000");4;1)&" ratus "&MID(TEXT(ABS({C});"000000000000000");5;1)&" puluh "&MID(TEXT(ABS({C});"000000000000000");6;1)&" milyar ")&IF(--MID(TEXT(ABS({C});"000000000000000");7;3)=0;"";MID(TEXT(ABS({C});"000000000000000");7;1)&" ratus "&MID(TEXT(ABS({C});"000000000000000");8;1)&" puluh "&MID(TEXT(ABS({C});"000000000000000");9;1)&" juta ")&IF(--MID(TEXT(ABS({C});"000000000000000");10;3)=0;"";IF(--MID(TEXT(ABS({C});"000000000000000");10;3)=1;"*";MID(TEXT(ABS({C});"000000000000000");10;1)&" ratus "&MID(TEXT(ABS({C});"000000000000000");11;1)&" puluh ")&MID(TEXT(ABS({C});"000000000000000");12;1)&" ribu ")&IF(--MID(TEXT(ABS({C});"000000000000000");13;3)=0;"";MID(TEXT(ABS({C});"000000000000000");13;1)&" ratus "&MID(TEXT(ABS({C});"000000000000000");14;1)&" puluh "&MID(TEXT(ABS({C});"000000000000000");15;1));1;"satu");2;"dua");3;"tiga");4;"empat");5;"lima");6;"enam");7;"tujuh");8;"delapan");9;"sembilan");"0 ratus";"");"0 puluh";"");"satu puluh 0";"sepuluh");"satu puluh satu";"sebelas");"satu puluh dua";"dua belas");"satu puluh tiga";"tiga belas");"satu puluh empat";"empat belas");"satu puluh lima";"lima belas");"satu puluh enam";"enam belas");"satu puluh tujuh";"tujuh belas");"satu puluh delapan";"delapan belas");"satu puluh sembilan";"sembilan belas");"satu ratus";"seratus");"*satu ribu";"seribu");0;""));" ";" "))&" rupiah")';
+/* Berkas .xlsx SELALU menyimpan rumus dengan pemisah koma, apa pun bahasa
+   Excel yang membukanya. Rumus di atas ditulis memakai titik koma (seperti
+   yang tampil di Excel Indonesia), jadi diterjemahkan di sini. Aman disapu
+   rata karena tidak satu pun teks di dalamnya memuat titik koma. */
+function torBoqTerbilangRumus(cellTotal){
+  return TOR_BOQ_TERBILANG.split('{C}').join(cellTotal).replace(/;/g, ',').replace(/^=/,'');
+}
+async function torBoqExcel(id){
+  const rec=(records_tor||[]).find(r=>String(r.id)===String(id));
+  if(!rec){ toast('Dokumen tidak ditemukan','warn'); return; }
+  if(typeof ExcelJS==='undefined'){ toast('Pustaka Excel belum termuat','err'); return; }
+  const data=rec.data||{};
+  const semua=Array.isArray(data.__rab)?data.__rab:[];
+  const items=semua.slice(0, Math.max(1, parseInt(data.jumlah_bj,10)||semua.length||1));
+  if(!items.length){ toast('RAB masih kosong','warn'); return; }
+  const cfg={
+    judulOn:    String(data.rab_judul_on||'')==='Ya',
+    judulNum:   String(data.rab_judul_num||''),
+    subjudulOn: String(data.rab_subjudul_on||'')==='Ya',
+    subjudulNum:String(data.rab_subjudul_num||'')
+  };
+  try{
+    await withActionLoader('Menyiapkan BoQ', async()=>{
+      const wb=new ExcelJS.Workbook();
+      const ws=wb.addWorksheet('BoQ',{pageSetup:{paperSize:9,orientation:'portrait',fitToPage:true,fitToWidth:1,fitToHeight:0,margins:{left:0.4,right:0.4,top:0.5,bottom:0.5,header:0.2,footer:0.2}}});
+      ws.columns=[{width:5},{width:44},{width:7},{width:7},{width:15},{width:15},{width:15},{width:15},{width:16}];
+      const TIPIS={style:'thin',color:{argb:'FF000000'}};
+      const kotak={top:TIPIS,left:TIPIS,bottom:TIPIS,right:TIPIS};
+      const RP='#,##0;[Red]-#,##0';
+      const tulis=(r,c,v,opt)=>{ const cell=ws.getCell(r,c); if(v!=null) cell.value=v;
+        if(opt&&opt.b) cell.font=Object.assign({bold:true},opt.font||{});
+        else if(opt&&opt.font) cell.font=opt.font;
+        cell.alignment=Object.assign({vertical:'middle',wrapText:true},(opt&&opt.al)||{});
+        if(opt&&opt.box) cell.border=kotak;
+        if(opt&&opt.fmt) cell.numFmt=opt.fmt;
+        return cell; };
+      let R=1;
+      /* --- Kepala --- */
+      ws.mergeCells(R,1,R,9);
+      tulis(R,1,'(KOP PERUSAHAAN)',{b:true,al:{horizontal:'center'},font:{bold:true,size:12,color:{argb:'FF0070C0'}}}); R+=2;
+      ws.mergeCells(R,1,R,9);
+      tulis(R,1,'Bill of Quantity (BoQ)',{b:true,al:{horizontal:'center'},font:{bold:true,size:12,underline:true}}); R+=2;
+      tulis(R,2,'Pekerjaan',{b:true}); tulis(R,3,':'); ws.mergeCells(R,4,R,9);
+      tulis(R,4,data.nama_pekerjaan||'-'); R++;
+      tulis(R,2,'Lokasi',{b:true}); tulis(R,3,':'); ws.mergeCells(R,4,R,9);
+      tulis(R,4,data.lokasi_pekerjaan||'-'); R+=2;
+      /* --- Kepala tabel (tiga baris, sama dengan cetakan HPS) --- */
+      const H=R;
+      ws.mergeCells(H,1,H+1,1); ws.mergeCells(H,2,H+1,2);
+      ws.mergeCells(H,3,H+1,3); ws.mergeCells(H,4,H+1,4);
+      ws.mergeCells(H,5,H,6);   ws.mergeCells(H,7,H,8);   ws.mergeCells(H,9,H+1,9);
+      const tengah={horizontal:'center',vertical:'middle',wrapText:true};
+      tulis(H,1,'No.',{b:true,al:tengah,box:true});
+      tulis(H,2,'Uraian Pekerjaan',{b:true,al:tengah,box:true});
+      tulis(H,3,'Sat',{b:true,al:tengah,box:true});
+      tulis(H,4,'Vol',{b:true,al:tengah,box:true});
+      tulis(H,5,'Harga Satuan',{b:true,al:tengah,box:true});
+      tulis(H,7,'Jumlah Harga',{b:true,al:tengah,box:true});
+      tulis(H,9,'Jumlah Total\n(Rp)',{b:true,al:tengah,box:true});
+      ['','','','','Material (Rp)','Jasa (Rp)','Material (Rp)','Jasa (Rp)',''].forEach((t,i)=>{
+        tulis(H+1,i+1,t||null,{b:true,al:tengah,box:true}); });
+      ['1','2','3','4','5','6','7 = 4 x 5','8 = 4 x 6','9 = 7 + 8'].forEach((t,i)=>{
+        tulis(H+2,i+1,t,{b:true,al:tengah,box:true}); });
+      R=H+3;
+      /* --- Baris isi (judul / sub-judul / barang), penomoran = jsWalk --- */
+      const barisAngka=[];
+      const kosongkan=(r)=>{ for(let c=1;c<=9;c++) tulis(r,c,null,{box:true}); };
+      const rumusBaris=(r)=>{
+        tulis(r,7,{formula:'IF(N(D'+r+')*N(E'+r+')=0,"",ROUND(D'+r+'*E'+r+',0))'},{al:{horizontal:'right'},box:true,fmt:RP});
+        tulis(r,8,{formula:'IF(N(D'+r+')*N(F'+r+')=0,"",ROUND(D'+r+'*F'+r+',0))'},{al:{horizontal:'right'},box:true,fmt:RP});
+        tulis(r,9,{formula:'IF(N(G'+r+')+N(H'+r+')=0,"",N(G'+r+')+N(H'+r+'))'},{al:{horizontal:'right'},box:true,fmt:RP});
+      };
+      jsWalk(items, cfg, {
+        judul:(no,txt,it)=>{ kosongkan(R);
+          tulis(R,1,no,{b:true,al:{horizontal:'center'},box:true});
+          tulis(R,2,txt,{b:true,box:true});
+          if(it){ tulis(R,3,it.sat||'',{al:{horizontal:'center'},box:true});
+                  tulis(R,4,jsVolNum(it.vol)||null,{al:{horizontal:'center'},box:true});
+                  rumusBaris(R); barisAngka.push(R); }
+          R++; },
+        sub:(no,txt,it)=>{ kosongkan(R);
+          tulis(R,1,no,{b:true,al:{horizontal:'center'},box:true});
+          tulis(R,2,'   '+txt,{b:true,box:true});
+          if(it){ tulis(R,3,it.sat||'',{al:{horizontal:'center'},box:true});
+                  tulis(R,4,jsVolNum(it.vol)||null,{al:{horizontal:'center'},box:true});
+                  rumusBaris(R); barisAngka.push(R); }
+          R++; },
+        item:(noInGroup,it,idx)=>{ kosongkan(R);
+          tulis(R,1,noInGroup,{al:{horizontal:'center'},box:true});
+          tulis(R,2,(it.uraian&&String(it.uraian).trim())?it.uraian:('Barang/Jasa '+(idx+1)),{box:true});
+          tulis(R,3,it.sat||'',{al:{horizontal:'center'},box:true});
+          tulis(R,4,jsVolNum(it.vol)||null,{al:{horizontal:'center'},box:true});
+          /* Harga dikosongkan \u2014 diisi penyedia */
+          tulis(R,5,null,{al:{horizontal:'right'},box:true,fmt:RP});
+          tulis(R,6,null,{al:{horizontal:'right'},box:true,fmt:RP});
+          rumusBaris(R); barisAngka.push(R);
+          R++; }
+      });
+      const r1=H+3, r2=R-1;
+      /* --- Rekap: cermin hpsSummary() --- */
+      const rekap=(label, f7, f8, f9, tebal)=>{
+        ws.mergeCells(R,1,R,6);
+        tulis(R,1,label,{b:true,al:{horizontal:'right'},box:true});
+        [[7,f7],[8,f8],[9,f9]].forEach(([c,f])=>
+          tulis(R,c,{formula:f},{b:!!tebal,al:{horizontal:'right'},box:true,fmt:RP}));
+        R++;
+      };
+      const rJml=R;
+      rekap('Jumlah','SUM(G'+r1+':G'+r2+')','SUM(H'+r1+':H'+r2+')','SUM(I'+r1+':I'+r2+')');
+      const rDpp=R;
+      rekap('DPP','ROUND(G'+rJml+'*11/12,0)','ROUND(H'+rJml+'*11/12,0)','ROUND(I'+rJml+'*11/12,0)');
+      const rPpn=R;
+      rekap('PPn 12%','ROUND(G'+rDpp+'*0.12,0)','ROUND(H'+rDpp+'*0.12,0)','ROUND(I'+rDpp+'*0.12,0)');
+      const rTot=R;
+      rekap('Jumlah Total','G'+rJml+'+G'+rPpn,'H'+rJml+'+H'+rPpn,'I'+rJml+'+I'+rPpn, true);
+      /* --- Terbilang: rumus yang mengikuti sel Jumlah Total --- */
+      R++;
+      ws.mergeCells(R,1,R,9);
+      tulis(R,1,{formula:torBoqTerbilangRumus('I'+rTot)},{b:true,al:{horizontal:'left'}});
+      /* --- Tanda tangan penyedia --- */
+      R+=3;
+      ws.mergeCells(R,6,R,9); tulis(R,6,'Kota/Kabupaten,....., Tanggal.....',{al:{horizontal:'center'}}); R++;
+      ws.mergeCells(R,6,R,9); tulis(R,6,'Nama Perusahaan',{b:true,al:{horizontal:'center'}}); R+=4;
+      ws.mergeCells(R,6,R,9); tulis(R,6,'(Nama Lengkap)',{b:true,al:{horizontal:'center'},font:{bold:true,underline:true}}); R++;
+      ws.mergeCells(R,6,R,9); tulis(R,6,'Jabatan',{b:true,al:{horizontal:'center'}});
+      const nm=('BoQ - '+(data.nama_pekerjaan||'Pekerjaan')).replace(/[\\/:*?"<>|]/g,'-').slice(0,90);
+      const buf=await wb.xlsx.writeBuffer();
+      const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a'); a.href=url; a.download=nm+'.xlsx';
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    });
+  }catch(err){ console.error(err); toast('Gagal membuat BoQ: '+errMsg(err),'err'); }
+}
+
+/* ===================== 11c. DAFTAR DOKUMEN (MENU AKSI) =====================
+   Satu pekerjaan menghasilkan beberapa dokumen sekaligus, jadi tombol mata pada
+   daftar tidak lagi langsung membuka TOR melainkan memunculkan pilihan dokumen
+   — pola yang sama dengan Dokumen Pengadaan (dpengOpenDocList).
+
+   Daftar jenisnya ditaruh pada SATU tetapan supaya menambah dokumen baru cukup
+   menambah satu baris di sini + satu cabang di torDokHtmlAktif(). */
+const TOR_DOK_MENU = [
+  {mode:'tor',         nama:'Dokumen TOR/KAK',                     ket:'Kerangka Acuan Kerja lengkap dengan klausul & pengesahan'},
+  {mode:'rab',         nama:'Dokumen RAB',                         ket:'Rencana Anggaran Biaya \u2014 tabel & rekap gaya HPS'},
+  {mode:'pi-pengguna', nama:'Pakta Integritas Pengguna Barang/Jasa',ket:'SMAP \u2014 ditandatangani Pengguna Barang/Jasa'},
+  {mode:'pi-direksi',  nama:'Pakta Integritas Direksi Pekerjaan',   ket:'SMAP \u2014 ditandatangani Direksi Pekerjaan'},
+  {mode:'boq',         nama:'Bill of Quantity (Excel)',             ket:'Berkas .xlsx berumus \u2014 harga diisi penyedia'}
+];
+function torOpenDokList(id){
+  const rec=(records_tor||[]).find(r=>String(r.id)===String(id)); if(!rec) return;
+  const esc=fkEsc, rid=fkEscJs(String(rec.id));
+  const baris=TOR_DOK_MENU.map(m=>{
+    const dis=m.belum?' is-soon':'';
+    const act=m.belum
+      ? 'toast(\'' + esc(m.nama) + ' belum tersedia\',\'warn\')'
+      : 'torDokPilih(\'' + rid + '\',\'' + m.mode + '\')';
+    return '<button type="button" class="tor-dk-row'+dis+'" onclick="'+act+'">'+
+      '<span class="ic">'+(m.mode==='boq'?'\u25A6':'\u25A4')+'</span>'+
+      '<span class="tx"><b>'+esc(m.nama)+'</b><i>'+esc(m.ket)+'</i></span>'+
+      '<span class="go">'+(m.belum?'segera':'\u203A')+'</span></button>';
+  }).join('');
+  let ov=document.getElementById('tor-dk-ov');
+  if(!ov){
+    ov=document.createElement('div'); ov.id='tor-dk-ov'; ov.className='tor-dk-ov';
+    ov.addEventListener('mousedown', function(e){ if(e.target===ov) torCloseDokList(); });
+    document.body.appendChild(ov);
+  }
+  ov.innerHTML='<div class="tor-dk-mdl">'+
+    '<div class="tor-dk-hd"><div><b>'+esc(rec.nama_pekerjaan||'Dokumen Pengadaan')+'</b>'+
+      '<i>'+esc(rec.no_dokumen||'')+'</i></div>'+
+      '<button type="button" class="x" onclick="torCloseDokList()" aria-label="Tutup">\u00d7</button></div>'+
+    '<div class="tor-dk-bd">'+baris+'</div></div>';
+  ov.classList.add('show');
+}
+function torCloseDokList(){ const ov=document.getElementById('tor-dk-ov'); if(ov) ov.classList.remove('show'); }
+function torDokPilih(id, mode){
+  torCloseDokList();
+  /* BoQ bukan dokumen cetak melainkan UNDUHAN .xlsx, jadi tidak lewat pratinjau. */
+  if(mode==='boq'){ torBoqExcel(id); return; }
+  torPreviewRecord(id, mode);
+}
+
+/* Ikon kolom Aksi — mengambil tetapan milik Dokumen Pengadaan agar seragam.
+   Cadangan dipakai hanya bila app.js belum sempat termuat. */
+const TOR_IC_CADANGAN = {
+  VIEW:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
+  EDIT:'<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+  DEL :'<path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>'
+};
+function torIcAksi(k){
+  try{
+    const v = (k==='EDIT') ? DPENG_IC_EDIT : (k==='DEL') ? DPENG_IC_DEL : DPENG_IC_VIEW;
+    if(typeof v==='string' && v) return v;
+  }catch(e){}
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">'+TOR_IC_CADANGAN[k]+'</svg>';
+}
+
 function renderTorView(){
   torEnsureStyle();
   const tb=document.getElementById('tor-view-body'); if(!tb) return;
@@ -1816,10 +2329,15 @@ function renderTorView(){
       '<td>'+fkEsc(r.bidang_pelaksana||'—')+'</td>'+
       '<td class="col-date">'+fkEsc(r.tanggal?spkDateLong(r.tanggal):'—')+'</td>'+
       '<td class="col-nilai">'+(r.nilai?('Rp '+Number(r.nilai).toLocaleString('id-ID')):'—')+'</td>'+
-      '<td class="col-spk-aksi"><div class="fk-act">'+
-        '<button class="fk-act-icon act-view" title="Pratinjau / Cetak" onclick="torPreviewRecord(\''+rid+'\')">'+ic('<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>')+'</button>'+
-        '<button class="fk-act-icon act-edit" title="Ubah" onclick="torEditRecord(\''+rid+'\')">'+ic('<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>')+'</button>'+
-        '<button class="fk-act-icon act-del" title="Hapus" onclick="torDeleteRecord(\''+rid+'\')">'+ic('<path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>')+'</button>'+
+      /* Kolom AKSI DISERAGAMKAN dengan Dokumen Pengadaan (5 Agu 2026):
+         urutan Ubah \u2192 Lihat \u2192 Hapus, pembungkus .action-cell, tombol
+         berkelas .act, dan ikonnya MEMAKAI ULANG tetapan DPENG_IC_* di app.js
+         \u2014 bukan disalin \u2014 supaya bila ikon Dokumen Pengadaan diubah,
+         daftar ini ikut berubah sendiri dan keduanya mustahil berbeda. */
+      '<td><div class="action-cell" style="justify-content:center">'+
+        '<button class="act act-edit" title="Ubah" onclick="torEditRecord(\''+rid+'\')">'+torIcAksi('EDIT')+'</button>'+
+        '<button class="act act-view" title="Lihat Dokumen" onclick="torOpenDokList(\''+rid+'\')">'+torIcAksi('VIEW')+'</button>'+
+        '<button class="act act-del" title="Hapus" onclick="torDeleteRecord(\''+rid+'\')">'+torIcAksi('DEL')+'</button>'+
       '</div></td>'+
     '</tr>';
   }).join('');
@@ -1856,33 +2374,14 @@ function torDeleteRecord(id){
    pembungkus tersebut, tombol dpPickBtnHtml('tor') pada kartu Informasi
    Pengadaan, dan atribut dpLock:true pada field yang ikut terkunci. */
 
-/* ===================== 14. MODUL MENYUSUL (RAB & PAKTA INTEGRITAS) ===================== */
-function torSoonHtml(judul, ket){
-  return '<div class="panel"><div class="tor-soon">'+
-    '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>'+
-    '<b>'+fkEsc(judul)+'</b><div>'+fkEsc(ket)+'</div></div></div>';
-}
-function openRabView(){ showView('rab-view'); }
-function renderRabView(){
-  torEnsureStyle();
-  const c=document.getElementById('rab-view-content'); if(!c) return;
-  c.innerHTML=torSoonHtml('Dokumen RAB belum tersedia',
-    'Modul Rencana Anggaran Biaya sedang disiapkan. Struktur & mesin dokumennya akan mengikuti Dokumen TOR/KAK.');
-}
-function openPaktaView(){ showView('pakta-view'); }
-function renderPaktaView(){
-  torEnsureStyle();
-  const c=document.getElementById('pakta-view-content'); if(!c) return;
-  c.innerHTML=torSoonHtml('Pakta Integritas belum tersedia',
-    'Modul Pakta Integritas sedang disiapkan. Struktur & mesin dokumennya akan mengikuti Dokumen TOR/KAK.');
-}
-
 /* ===================== 15. INTEGRASI ROUTING =====================
    showView() di app.js tidak mengenal halaman baru ini. Alih-alih menyunting
    app.js, fungsinya DIBUNGKUS di sini: setelah halaman ditukar (2x rAF di
    dalam showView), render halaman TOR dijalankan & menu induk ditandai aktif. */
-const TOR_VIEWS = { 'tor-view':'renderTorView', 'tor-susun':'renderTorSusun',
-                    'rab-view':'renderRabView', 'pakta-view':'renderPaktaView' };
+/* Halaman rab-view & pakta-view DIHAPUS (5 Agu 2026): RAB kini menjadi langkah 4
+   penyusunan, dan Pakta Integritas terbit otomatis \u2014 keduanya diakses lewat
+   tombol "Lihat" pada daftar, bukan menu tersendiri. */
+const TOR_VIEWS = { 'tor-view':'renderTorView', 'tor-susun':'renderTorSusun' };
 (function(){
   if(typeof showView!=='function') return;
   var _sv=showView;

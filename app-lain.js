@@ -420,8 +420,8 @@
       +'<div class="ac-fld"><label>Kata Sandi Baru</label><input id="ac-rs-pass" type="text" autocomplete="off" placeholder="min. 6 karakter"></div>'
       +'</div><div class="ac-actions"><button class="btn btn-teal" type="button" onclick="acResetServer()">Reset Kata Sandi Server</button></div>';
     h+='<details class="ac-sql"><summary>SQL fungsi reset (jalankan sekali di Supabase)</summary>'
-      +'<pre>create or replace function admin_reset_password(\n  p_username text, p_new text\n) returns boolean language plpgsql security definer as $$\nbegin\n  if lower(p_username) = \'admin\' then\n    return false;              -- akun admin tidak boleh direset di sini\n  end if;\n  update app_users\n     set pass_hash = crypt(p_new, gen_salt(\'bf\'))\n   where lower(username) = lower(p_username);\n  return found;\nend; $$;</pre>'
-      +'<small>Sesuaikan nama tabel/kolom (mis. <code>app_users.pass_hash</code>) dengan skema akun Anda.</small></details></div>';
+      +'<pre>create or replace function admin_reset_password(\n  p_username text, p_new text\n) returns boolean language plpgsql security definer as $$\nbegin\n  if lower(p_username) = \'admin\' then\n    return false;              -- akun admin tidak boleh direset di sini\n  end if;\n  update app_users\n     set password_hash = crypt(p_new, gen_salt(\'bf\')),\n         updated_at    = now()\n   where lower(username) = lower(p_username);\n  return found;\nend; $$;</pre>'
+      +'<small>Nama kolom di atas sudah sesuai skema <code>01_auth_login.sql</code> (<code>app_users.password_hash</code>). Catatan: berkas itu SENGAJA membuang <code>admin_reset_password</code> karena seluruh akun kini berperan admin dan akun admin memang tidak boleh direset dari sini \u2014 pasang kembali hanya bila akun non-admin dihidupkan lagi.</small></details></div>';
     document.getElementById('ac-pane-reset').innerHTML=h;
   }
   window.acResetCustom=async function(idx, username){
