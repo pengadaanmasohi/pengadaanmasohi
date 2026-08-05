@@ -1432,11 +1432,11 @@ function resetAllFilters(){
    'filter-tender-bidang','filter-tender-tahapan','filter-tender-tahun','filter-tender-search',
    'fk-input-bidang','fk-input-search','fk-view-bidang','fk-view-search',
    'pn-lihat-search','fkl-view-search',
-   'dpeng-view-search','dpeng-view-tahun','dpeng-view-bidang',
+   'dpeng-view-search','dpeng-view-tahun','dpeng-view-bidang','dpeng-view-status',
    'materi-view-search','materi-view-tahun','materi-view-kategori',
    'dash-filter-anggaran','dash-filter-tahun','dash-filter-periode','dash-filter-metode'
   ].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
-  if(typeof dpengState!=='undefined'){ dpengState.view.page=1; dpengState.view.search=''; dpengState.view.tahun=''; dpengState.view.bidang=''; }
+  if(typeof dpengState!=='undefined'){ dpengState.view.page=1; dpengState.view.search=''; dpengState.view.tahun=''; dpengState.view.bidang=''; dpengState.view.status=''; }
   if(typeof materiState!=='undefined'){ materiState.view.page=1; materiState.view.search=''; materiState.view.tahun=''; materiState.view.kategori=''; }
   // Filter dashboard "Jenis Pekerjaan" kembali ke BAWAAN = PL & Tender
   const dj=document.getElementById('dash-filter-jenis'); if(dj) dj.value='pl_tender';
@@ -9202,8 +9202,9 @@ function dpengResolveKey(d){
 
 let records_dpeng = [];
 const dpengState = {
-  /* Filter daftar: Bidang Pelaksana (menggantikan "Pilih Pekerjaan"), Tahun, Cari. */
-  view:   { bidang:'', tahun:'', search:'', page:1 },
+  /* Filter daftar: Bidang Pelaksana (menggantikan "Pilih Pekerjaan"), Status,
+     Tahun, Cari. status: '' = semua | 'lengkap' | 'belum'. */
+  view:   { bidang:'', status:'', tahun:'', search:'', page:1 },
   unggah: null   // buffer form: {editId, nama, bidang, tgl, tglLocked, picks:{key:true}, recId}
 };
 
@@ -9305,28 +9306,51 @@ function openDpengView(){
   });
 }
 function dpengResetView(){
-  dpengState.view.bidang=''; dpengState.view.tahun=''; dpengState.view.search=''; dpengState.view.page=1;
+  dpengState.view.bidang=''; dpengState.view.status=''; dpengState.view.tahun=''; dpengState.view.search=''; dpengState.view.page=1;
   const s=document.getElementById('dpeng-view-search'); if(s) s.value='';
   const y=document.getElementById('dpeng-view-tahun'); if(y) y.value='';
   const b=document.getElementById('dpeng-view-bidang'); if(b) b.value='';
+  const st=document.getElementById('dpeng-view-status'); if(st) st.value='';
   renderDpengView();
 }
 function dpengFilterView(){
   dpengState.view.tahun=(document.getElementById('dpeng-view-tahun')?.value)||'';
   dpengState.view.search=(document.getElementById('dpeng-view-search')?.value)||'';
   dpengState.view.bidang=(document.getElementById('dpeng-view-bidang')?.value)||'';
+  dpengState.view.status=(document.getElementById('dpeng-view-status')?.value)||'';
   dpengState.view.page=1;   // setiap perubahan filter kembali ke halaman 1
   renderDpengView();
 }
 function dpengBidang(r){ return String((r&&r.bidang_pelaksana)||'').trim(); }
-/* Daftar pekerjaan yang lolos filter bidang + tahun + cari */
+/* ---- STATUS KELENGKAPAN BERKAS ----
+   LENGKAP  : pekerjaan punya minimal satu jenis dokumen DAN semua jenis
+              dokumen itu sudah ada berkasnya (d.path terisi).
+   BELUM     : masih ada jenis dokumen tanpa berkas, atau belum memilih
+              jenis dokumen sama sekali. */
+function dpengLengkap(r){
+  const docs=Array.isArray(r&&r.dokumen)?r.dokumen:[];
+  if(!docs.length) return false;
+  return docs.every(d=>!!(d&&d.path));
+}
+function dpengStatusPill(r){
+  return dpengLengkap(r)
+    ? '<span class="dpeng-st ok"><span class="dot"></span>Lengkap</span>'
+    : '<span class="dpeng-st no"><span class="dot"></span>Belum Lengkap</span>';
+}
+/* Daftar pekerjaan yang lolos filter bidang + status + tahun + cari */
 function dpengPekerjaanPool(){
   const yy=dpengState.view.tahun;
   const bd=String(dpengState.view.bidang||'').trim();
+  const st=String(dpengState.view.status||'').trim();
   const fs=String(dpengState.view.search||'').toLowerCase().trim();
   return (records_dpeng||[]).filter(r=>{
     if(yy && dpengYear(r)!==yy) return false;
     if(bd && dpengBidang(r)!==bd) return false;
+    if(st){
+      const ok=dpengLengkap(r);
+      if(st==='lengkap' && !ok) return false;
+      if(st==='belum'   &&  ok) return false;
+    }
     if(fs && !dpengNama(r).toLowerCase().includes(fs)) return false;
     return true;
   });
@@ -9352,7 +9376,8 @@ function dpengFillBidangFilter(){
   sel.value=dpengState.view.bidang||'';
 }
 function dpengEmptyRow(msg){
-  return '<tr><td colspan="5"><div class="empty">'+DPENG_IC_DOC+
+  /* 6 kolom: No. | Nama Pekerjaan | Bidang | Tgl. Terima | Status | Aksi */
+  return '<tr><td colspan="6"><div class="empty">'+DPENG_IC_DOC+
     '<div>'+fkEsc(msg||'Data tidak tersedia')+'</div></div></td></tr>';
 }
 /* Ikon Edit (pensil) untuk kolom Aksi — mengarah ke halaman Unggah Dokumen. */
@@ -9402,6 +9427,7 @@ function renderDpengView(){
         '<span class="dpeng-count-chip'+(terisi?' ok':'')+'" title="Berkas terunggah / jenis dokumen">'+terisi+'/'+docs.length+'</span></td>'+
       '<td class="fk-col-bidang">'+fkEsc(dpengBidang(r)||'—')+'</td>'+
       '<td class="col-date">'+(r.tgl_terima?fmtTanggal(r.tgl_terima):'—')+'</td>'+
+      '<td class="dpeng-col-status">'+dpengStatusPill(r)+'</td>'+
       '<td><div class="action-cell" style="justify-content:center">'+
         '<button class="act act-edit" title="Ubah / Unggah Dokumen" onclick="dpengOpenUnggah(\''+rid+'\')">'+DPENG_IC_EDIT+'</button>'+
         '<button class="act act-view" title="Lihat Dokumen" onclick="dpengOpenDocList(\''+rid+'\')">'+DPENG_IC_VIEW+'</button>'+
