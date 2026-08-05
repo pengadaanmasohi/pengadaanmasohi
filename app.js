@@ -6812,7 +6812,8 @@ function jpPrint(){
 /* Mencetak SATU dokumen jadwal yang HTML-nya sudah jadi. Dipisah dari jpPrint()
    supaya tombol "Cetak / PDF" di modal pratinjau dapat mencetak PERSIS dokumen
    yang sedang ditampilkan (mis. record lama), bukan isi form yang sedang aktif. */
-function jpPrintDocHtml(html){
+function jpPrintDocHtml(html, _lewatiPdf){
+  if(!_lewatiPdf && docPdfPrintActive(function(x){ jpPrintDocHtml(html, x); })) return;
   const old=document.getElementById('jp-print-frame'); if(old) old.remove();
   const ifr=document.createElement('iframe');
   ifr.id='jp-print-frame';
@@ -8778,6 +8779,84 @@ function docPdfBusyOn(){
 }
 function docPdfBusyOff(){ const el=document.getElementById('doc-pdf-busy'); if(el) el.remove(); }
 
+/* ============================================================================
+   CETAK = PRATINJAU  (satu sumber tampilan untuk semua dokumen)
+
+   Sebelumnya pratinjau dan cetak memakai DUA mesin gambar yang berbeda:
+     - Pratinjau : PDF hasil render server (docPdfUpgrade -> /api/pdf), dibuka
+                   di penampil PDF bawaan peramban.
+     - Cetak/PDF : HTML dokumen dibangun ulang di sisi peramban lalu diserahkan
+                   ke mesin cetak peramban (window.print), yang masih tunduk
+                   pada setelan margin/skala/kertas milik pengguna.
+   Karena mesinnya berbeda, hasilnya tidak pernah dijamin sama — inilah sebab
+   tampilan cetak bisa terpotong padahal pratinjau terlihat utuh.
+
+   Sekarang: bila pratinjau yang sedang terbuka SUDAH berupa PDF hasil render
+   server, tombol Cetak/PDF mencetak BERKAS PDF ITU JUGA — bukan membangun ulang
+   dokumennya. Hasil cetak jadi identik dengan yang dilihat, sampai ke titiknya.
+   Bila PDF server tidak tersedia (Worker mati, jaringan putus, render gagal),
+   fungsi ini mengembalikan false dan jalur cetak HTML yang lama tetap dipakai
+   sebagai cadangan — jadi tombol Cetak tidak pernah macet.
+   ========================================================================= */
+function docPdfActiveUrl(){
+  try{
+    if(!pnPreviewCtx || !pnPreviewCtx.doc || !pnPreviewCtx.url) return '';
+    const ov=document.getElementById('pn-preview-overlay');
+    if(!ov || !ov.classList.contains('show')) return '';
+    const body=document.getElementById('pn-preview-body');
+    if(!body || !body.classList.contains('doc-pdf-mode')) return '';
+    /* Pengaman: PDF yang dipegang harus benar-benar PDF yang sedang tampil di
+       bingkai pratinjau saat ini — bukan sisa pratinjau sebelumnya. */
+    const ifr=pnPreviewCtx.frame ? document.getElementById(pnPreviewCtx.frame) : null;
+    if(!ifr || !body.contains(ifr) || ifr.src!==pnPreviewCtx.url) return '';
+    return pnPreviewCtx.url;
+  }catch(e){ return ''; }
+}
+/* Mengembalikan true bila proses cetak PDF sudah dimulai (pemanggil harus
+   berhenti). `cadangan` dipanggil dengan argumen true bila PDF gagal dimuat,
+   sehingga fungsi cetak asalnya mengulang lewat jalur HTML lama. */
+function docPdfPrintActive(cadangan){
+  const url=docPdfActiveUrl();
+  if(!url) return false;
+  const old=document.getElementById('doc-pdf-print-frame'); if(old) old.remove();
+  const ifr=document.createElement('iframe');
+  ifr.id='doc-pdf-print-frame';
+  ifr.setAttribute('aria-hidden','true');
+  /* Penampil PDF perlu ukuran nyata untuk dimuat; disembunyikan dengan cara
+     digeser ke luar layar, BUKAN 0x0/display:none (penampil PDF tidak akan
+     aktif bila ukurannya nol). */
+  ifr.style.cssText='position:fixed;left:-10000px;top:0;width:820px;height:1160px;border:0;opacity:0;pointer-events:none';
+  let selesai=false, gagal=false;
+  const menyerah=()=>{
+    if(selesai) return; selesai=true; gagal=true;
+    const f=document.getElementById('doc-pdf-print-frame'); if(f) f.remove();
+    if(typeof cadangan==='function'){ try{ cadangan(true); }catch(e){ console.warn('docPdfPrintActive/cadangan:', e); } }
+  };
+  const batas=setTimeout(menyerah, 8000);
+  ifr.onload=()=>{
+    if(selesai) return;
+    /* Beri jeda agar penampil PDF selesai menggambar halaman pertama; tanpa
+       ini sebagian peramban mencetak lembar kosong. */
+    setTimeout(()=>{
+      if(selesai) return;
+      try{
+        ifr.contentWindow.focus();
+        ifr.contentWindow.print();
+        selesai=true; clearTimeout(batas);
+        /* Iframe dibiarkan hidup sampai dialog cetak ditutup — dialog
+           "Simpan sebagai PDF" masih membacanya. */
+        const bersih=()=>{ setTimeout(()=>{ const f=document.getElementById('doc-pdf-print-frame'); if(f) f.remove(); }, 500); window.removeEventListener('focus', bersih); };
+        window.addEventListener('focus', bersih);
+        setTimeout(()=>{ const f=document.getElementById('doc-pdf-print-frame'); if(f) f.remove(); }, 120000);
+      }catch(e){ clearTimeout(batas); menyerah(); }
+    }, 420);
+  };
+  ifr.onerror=()=>{ clearTimeout(batas); menyerah(); };
+  document.body.appendChild(ifr);
+  ifr.src=url;
+  return true;
+}
+
 /* frameId  : id <iframe> pratinjau yang akan ditimpa (markup di sekitarnya —
               mis. tab Analisa — sengaja dibiarkan utuh)
    buildHtml: fungsi pembangun dokumen mandiri (*StandaloneDocHtml)
@@ -8816,7 +8895,7 @@ async function docPdfUpgrade(frameId, buildHtml, nama){
     const pdf = (raw.type==='application/pdf') ? raw : new Blob([raw],{type:'application/pdf'});
     const url = URL.createObjectURL(pdf);
     try{ if(pnPreviewCtx && pnPreviewCtx.url) URL.revokeObjectURL(pnPreviewCtx.url); }catch(e){}
-    pnPreviewCtx = { url, name: nama||'dokumen.pdf' };
+    pnPreviewCtx = { url, name: nama||'dokumen.pdf', doc:true, frame:frameId };
     docPdfEnsureStyle();
     const body=document.getElementById('pn-preview-body');
     if(body) body.classList.add('doc-pdf-mode');
@@ -11533,7 +11612,7 @@ function fklSheetCss(){
     /* Lembar TIDAK berubah bentuk saat dicetak: ukuran, padding, dan pemenggalannya
        sama persis dengan pratinjau, sehingga PDF tidak pernah "terkompres" atau
        menyisipkan halaman kosong. */
-    '.fkl-sheet{margin:0;box-shadow:none;page-break-after:always;break-after:page}'+
+    '.fkl-sheet{height:296.6mm;margin:0;box-shadow:none;page-break-after:always;break-after:page}'+
     '.fkl-sheet:last-child{page-break-after:auto;break-after:auto}'+
   '}';
 }
@@ -11572,14 +11651,22 @@ function fklFitScript(){
     'function target(w){'+
       'return w.querySelector(".spk-page,.fkl-sheet,.hpsc-page,.fkl-print-page")||w.firstElementChild||w;'+
     '}'+
-    'var raf=0;'+
+    'var raf=0,CETAK=false;'+
+    'function asli(w){'+
+      'if(w){w.style.transform="none";w.style.width="";w.style.height="";w.style.marginLeft="";w.style.marginRight="";}'+
+      'var de=document.documentElement,bd=document.body;'+
+      'if(de)de.style.overflowX="";if(bd)bd.style.overflowX="";'+
+    '}'+
     'function fit(){'+
+      'if(CETAK){asli(document.querySelector(".fkl-fit-wrap"));return;}'+
+      'try{if(window.matchMedia&&window.matchMedia("print").matches){asli(document.querySelector(".fkl-fit-wrap"));return;}}catch(e){}'+
       'var w=ensureWrap();if(!w)return;'+
       'var de=document.documentElement,bd=document.body;'+
       'w.style.transform="none";w.style.width="";w.style.height="";w.style.marginLeft="";w.style.marginRight="";'+
       'var sheet=target(w);'+
       'var sw=sheet?sheet.offsetWidth:w.offsetWidth;if(!sw)return;'+
-      'var vw=document.documentElement.clientWidth||window.innerWidth||sw;'+
+      'var vw=document.documentElement.clientWidth||window.innerWidth||0;'+
+      'if(!(vw>40)){asli(w);return;}'+
       'var avail=vw-8;'+
       'var s=avail/sw;'+
       'if(s>=1){w.style.transform="none";w.style.width="";w.style.height="";w.style.marginLeft="";w.style.marginRight="";if(de)de.style.overflowX="";if(bd)bd.style.overflowX="";return;}'+
@@ -11598,8 +11685,8 @@ function fklFitScript(){
     'window.addEventListener("load",schedule);'+
     'try{if(document.fonts&&document.fonts.ready&&document.fonts.ready.then){document.fonts.ready.then(schedule);}}catch(e){}'+
     'setTimeout(fit,120);setTimeout(fit,500);setTimeout(fit,1500);setTimeout(fit,3200);'+
-    'window.addEventListener("beforeprint",function(){var w=document.querySelector(".fkl-fit-wrap");if(w){w.style.transform="none";w.style.width="";w.style.height="";w.style.marginLeft="";w.style.marginRight="";}var de=document.documentElement,bd=document.body;if(de)de.style.overflowX="";if(bd)bd.style.overflowX="";});'+
-    'window.addEventListener("afterprint",schedule);'+
+    'window.addEventListener("beforeprint",function(){CETAK=true;if(raf){cancelAnimationFrame(raf);raf=0;}asli(document.querySelector(".fkl-fit-wrap"));});'+
+    'window.addEventListener("afterprint",function(){CETAK=false;schedule();});'+
   '})();</scr'+'ipt>';
 }
 /* ---------- TABEL LEBAR DIPASKAN KE BIDANG CETAK ----------
@@ -11902,7 +11989,7 @@ function fklPageScript(){
     ' function mk(){',
     '   var sh=document.createElement("section"); sh.className="fkl-sheet";',
     '   var b=document.createElement("div"); b.className="fkl-sheet-bd";',
-    '   b.style.height=Math.max(80,PH-2)+"px";',
+    '   b.style.height=Math.max(80,PH-6)+"px";',
     '   sh.appendChild(b);',
     '   wrap.parentNode.insertBefore(sh, wrap);',   /* harus di DOM agar tinggi terukur */
     '   sheets.push(sh); body=b;',
@@ -11919,7 +12006,7 @@ function fklPageScript(){
     '   return body;',
     ' }',
     ' function tgt(){ return stack.length? stack[stack.length-1].el : body; }',
-    ' function penuh(){ return body.scrollHeight > body.clientHeight+1; }',
+    ' function penuh(){ return body.scrollHeight > body.clientHeight; }',
     ' function kosong(){ return !((body.textContent||"").replace(/[\\s\\u00A0]/g,"")) && !body.querySelector("img,table,svg"); }',
     ' function pakaiBawah(){ var k=els(body); if(!k.length) return 0; var bt=body.getBoundingClientRect().top; return k[k.length-1].getBoundingClientRect().bottom - bt; }',
     ' function sisa(){ return body.clientHeight - pakaiBawah(); }',
@@ -12102,7 +12189,7 @@ function hpscPageScript(){
     ' function mk(){',
     '   var sh=document.createElement("section"); sh.className="fkl-sheet";',
     '   var b=document.createElement("div"); b.className="fkl-sheet-bd";',
-    '   b.style.height=Math.max(80,PH-2)+"px";',
+    '   b.style.height=Math.max(80,PH-6)+"px";',
     '   sh.appendChild(b);',
     '   wrap.parentNode.insertBefore(sh, wrap);',
     '   sheets.push(sh); body=b;',
@@ -12118,7 +12205,7 @@ function hpscPageScript(){
     '   return body;',
     ' }',
     ' function tgt(){ return stack.length? stack[stack.length-1].el : body; }',
-    ' function penuh(){ return body.scrollHeight > body.clientHeight+1; }',
+    ' function penuh(){ return body.scrollHeight > body.clientHeight; }',
     ' function kosong(){ return !((body.textContent||"").replace(/[\\s\\u00A0]/g,"")) && !body.querySelector("img,table,svg"); }',
     ' function pakaiBawah(){ var k=els(body); if(!k.length) return 0; var bt=body.getBoundingClientRect().top; return k[k.length-1].getBoundingClientRect().bottom - bt; }',
     ' function sisa(){ return body.clientHeight - pakaiBawah(); }',
@@ -12325,7 +12412,8 @@ function withHiddenPageTitle(fn){
   }
 }
 /* Cetak dokumen (mencetak isi dokumen yang sama dengan pratinjau) */
-function fklPrint(){
+function fklPrint(_lewatiPdf){
+  if(!_lewatiPdf && docPdfPrintActive(fklPrint)) return;
   // Buat iframe terisolasi agar isi dokumen pasti tercetak (tidak terpengaruh overlay/aplikasi)
   const old=document.getElementById('fkl-print-frame'); if(old) old.remove();
   const ifr=document.createElement('iframe');
@@ -13649,7 +13737,8 @@ function pnwOpenPreview(){
   }
   ov.classList.add('show');
 }
-function pnwPrint(){
+function pnwPrint(_lewatiPdf){
+  if(!_lewatiPdf && docPdfPrintActive(pnwPrint)) return;
   const old=document.getElementById('pnw-print-frame'); if(old) old.remove();
   const ifr=document.createElement('iframe');
   ifr.id='pnw-print-frame'; ifr.setAttribute('aria-hidden','true');
@@ -14669,7 +14758,8 @@ function rhoOpenPreview(){
   }
   ov.classList.add('show');
 }
-function rhoPrint(){
+function rhoPrint(_lewatiPdf){
+  if(!_lewatiPdf && docPdfPrintActive(rhoPrint)) return;
   const old=document.getElementById('rho-print-frame'); if(old) old.remove();
   const ifr=document.createElement('iframe');
   ifr.id='rho-print-frame'; ifr.setAttribute('aria-hidden','true');
@@ -16605,7 +16695,8 @@ function hpsOpenPreview(){
   }
   ov.classList.add('show');
 }
-function hpsPrint(){
+function hpsPrint(_lewatiPdf){
+  if(!_lewatiPdf && docPdfPrintActive(hpsPrint)) return;
   const old=document.getElementById('hps-print-frame'); if(old) old.remove();
   const ifr=document.createElement('iframe');
   ifr.id='hps-print-frame'; ifr.setAttribute('aria-hidden','true');
@@ -18280,7 +18371,8 @@ function anaOpenPreview(section){
   }
   ov.classList.add('show');
 }
-function anaPrint(){
+function anaPrint(_lewatiPdf){
+  if(!_lewatiPdf && docPdfPrintActive(anaPrint)) return;
   const old=document.getElementById('ana-print-frame'); if(old) old.remove();
   const ifr=document.createElement('iframe');
   ifr.id='ana-print-frame'; ifr.setAttribute('aria-hidden','true');
@@ -18812,7 +18904,8 @@ function hpscOpenPreview(html, nama){
    Iframe TIDAK dibuang lewat timer: dialog "Simpan sebagai PDF" masih memakainya,
    sehingga penghapusan dini membuat dialog tertutup sendiri. Pembersihan menunggu
    'afterprint', dengan cadangan event 'focus' bila browser tak mengirimkannya. */
-function hpscPrintHtml(html){
+function hpscPrintHtml(html, _lewatiPdf){
+  if(!_lewatiPdf && docPdfPrintActive(function(x){ hpscPrintHtml(html, x); })) return;
   const old=document.getElementById('hpsc-print-frame'); if(old) old.remove();
   const ifr=document.createElement('iframe');
   ifr.id='hpsc-print-frame'; ifr.setAttribute('aria-hidden','true');
