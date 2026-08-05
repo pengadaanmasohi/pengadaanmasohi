@@ -15600,7 +15600,7 @@ function jsSwitchHtml(id,val,handler,extra,onLbl,offLbl){
     ' aria-checked="'+(on?'true':'false')+'" aria-label="'+fkEsc(onLbl+' / '+offLbl)+'"'+
     ' title="'+fkEsc(jsSwTitle(on,onLbl,offLbl))+'"'+
     (extra?(' '+extra):'')+
-    ' onclick="jsSwitchToggle(this,\''+handler+'\')"><span class="sw-knob"></span></button>';
+    ' onclick="jsSwitchToggle(this,\''+handler+'\',event)"><span class="sw-knob"></span></button>';
 }
 /* Selaraskan tampilan sakelar dengan nilainya (dipakai setelah handler jalan,
    karena sebagian handler membatalkan perubahan dengan menulis ulang el.value).
@@ -15633,8 +15633,26 @@ function jsSwSyncAll(root){
   var list=r.querySelectorAll('button.js-switch[data-sw="1"]');
   for(var i=0;i<list.length;i++) jsSwitchSync(list[i]);
 }
-function jsSwitchToggle(el,handler){
+/* PENJAGA "HANYA PINDAH SAAT DIKLIK" (5 Agu 2026)
+   Laporan: sakelar berpindah-pindah cepat sementara kursor diam di atasnya.
+   Dua pintu masuk yang bisa menyebabkannya ditutup di sini:
+     1) Kejadian BUATAN (isTrusted=false) — mis. el.click() yang tak sengaja
+        terpanggil dari penyelaras form. Klik sungguhan dari tetikus/papan
+        ketik selalu isTrusted=true, jadi penjaga ini tidak pernah menghalangi
+        pengguna.
+     2) Kejadian KEMBAR dari satu ketukan fisik — bila sebuah tombol sempat
+        menerima onclick sebaris DAN penyimak lain (mis. saat kartu form
+        digambar ulang tepat ketika diklik), keduanya membawa timeStamp yang
+        sama persis. Yang kedua diabaikan.
+   Klik beruntun yang disengaja tetap jalan: timeStamp-nya selalu berbeda. */
+function jsSwitchToggle(el,handler,ev){
   if(!el || el.disabled) return;
+  if(ev){
+    if(ev.isTrusted===false) return;
+    var ts=ev.timeStamp;
+    if(el.__swTs!=null && el.__swTs===ts) return;
+    el.__swTs=ts;
+  }
   var Lb=jsSwLbls(el);
   el.value=(String(el.value==null?'':el.value).trim()===Lb[0])?Lb[1]:Lb[0];
   jsSwitchSync(el);

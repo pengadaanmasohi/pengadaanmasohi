@@ -4972,7 +4972,10 @@ button.js-switch{
   width:38px;height:20px;padding:0;border:0;border-radius:999px;
   background:#c9d4da;box-shadow:inset 0 1px 3px rgba(16,40,50,.28);
   cursor:pointer;outline:none;overflow:visible;-webkit-appearance:none;appearance:none;
-  transition:background .24s ease,box-shadow .24s ease,filter .2s ease;
+  /* PERBAIKAN 5 Agu 2026 — sakelar hanya berpindah saat DIKLIK.
+     'filter' dikeluarkan dari daftar transisi karena efek :hover yang dulu
+     memakainya sudah dibuang (lihat catatan di bawah). */
+  transition:background .24s ease,box-shadow .24s ease;
 }
 button.js-switch>.sw-knob{
   position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;
@@ -4984,8 +4987,30 @@ button.js-switch.is-on{
   box-shadow:inset 0 1px 3px rgba(9,94,102,.35),0 0 0 3px rgba(14,124,134,.13);
 }
 button.js-switch.is-on>.sw-knob{transform:translateX(18px)}
-button.js-switch:hover{filter:brightness(1.05)}
-button.js-switch:active>.sw-knob{width:19px}
+/* ---- SAKELAR TIDAK BOLEH "BERGERAK SENDIRI" (5 Agu 2026) ----
+   Dua aturan lama dibuang karena keduanya MENGUBAH RUPA SAKELAR HANYA KARENA
+   TERSENTUH/DITEKAN KURSOR, sehingga tampak seperti berpindah posisi padahal
+   nilainya tidak berubah:
+
+     button.js-switch:hover{filter:brightness(1.05)}
+        -> mencerahkan seluruh rel. Pada keadaan ON (rel bergradasi teal->cyan)
+           kecerahannya bergeser cukup jauh sehingga terbaca seperti ganti
+           keadaan. Karena :hover menyala-padam mengikuti gerak halus kursor di
+           tepi tombol, kesannya sakelar berkedip cepat selama kursor diam di
+           atasnya.
+
+     button.js-switch:active>.sw-knob{width:19px}
+        -> knop MELEBAR 16px->19px selama tombol tetek. Knop diposisikan
+           absolut dari kiri (left:2px + translateX(18px) saat ON), jadi
+           penambahan lebar mendorong tepi kanannya keluar — terlihat persis
+           seperti knop bergeser.
+
+   Penggantinya: penanda fokus/sentuh yang TIDAK menggeser apa pun dan tidak
+   menyentuh warna rel — hanya lingkar tipis di luar tombol. Dengan begitu satu-
+   satunya hal yang memindahkan knop adalah kelas .is-on, dan .is-on hanya
+   dipasang oleh jsSwitchToggle() saat tombol benar-benar diklik. */
+button.js-switch:hover{box-shadow:inset 0 1px 3px rgba(16,40,50,.28),0 0 0 3px rgba(14,124,134,.10)}
+button.js-switch.is-on:hover{box-shadow:inset 0 1px 3px rgba(9,94,102,.35),0 0 0 3px rgba(14,124,134,.22)}
 button.js-switch:focus-visible{box-shadow:0 0 0 3px rgba(14,124,134,.30)}
 button.js-switch[data-locked="1"]{opacity:.55;cursor:not-allowed}
 button.js-switch:disabled{opacity:.55;cursor:not-allowed;filter:none}

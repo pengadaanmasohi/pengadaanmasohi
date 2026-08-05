@@ -82,6 +82,18 @@ const TOR_BAB = [
   {rom:'II',  nama:'PETUNJUK TEKNIS'},
   {rom:'III', nama:'PENUTUP', tunggal:true}
 ];
+/* Teks baku bab PENUTUP — disalin apa adanya dari lampiran TOR/KAK. Dipakai
+   bila pustaka klausul TIDAK memuat klausul apa pun di bab III, sehingga bab
+   Penutup + blok pengesahan SELALU tercetak tanpa perlu dibuat manual. Bila
+   sebuah klausul memang ditaruh di bab III, isi klausul itulah yang dipakai
+   dan teks baku ini dilewati. */
+const TOR_PENUTUP_TEKS =
+  'Demikian dokumen Term of Reference (TOR)/ Kerangka Acuan Kerja (KAK) ini disusun untuk '+
+  'menjadi acuan dan pedoman bagi seluruh pihak yang terlibat dalam proses pengadaan '+
+  'Barang/Jasa PT PLN (Persero), dan diharapkan dapat membantu dalam pelaksanaan pengadaan '+
+  'yang efektif, efisien, dan transparan, serta memenuhi kebutuhan PT PLN (Persero) dengan '+
+  'kualitas yang baik dan waktu yang tepat.';
+
 /* Tebakan bab dari judul klausul. Dipakai HANYA untuk klausul yang belum punya
    penanda bab sendiri (dokumen/profil klausul lama), dan hanya boleh MEMAJUKAN
    bab — tidak pernah menariknya mundur. */
@@ -1105,11 +1117,25 @@ function torDocCss(wKl, wBab){
      lembar — bila kolom kiri dibuang, keduanya akan bergeser ke kiri. */
   '.spk-rft .ft-row.ft-tor .l,.spk-rft .ft-row.ft-tor .r{flex:1 1 0}'+
   '.spk-rft .ft-row.ft-tor .r{text-align:right}'+
-  /* Blok tanda tangan penyusun TOR */
-  '.tor-sign{margin-top:22pt;display:flex;justify-content:flex-end}'+
-  '.tor-sign .bx{min-width:7.5cm;text-align:center;font-size:11pt;line-height:1.5}'+
-  '.tor-sign .bx .sp{height:2.1cm}'+
-  '.tor-sign .bx .nm{font-weight:700;text-decoration:underline;text-underline-offset:3px}';
+  /* ---- Blok pengesahan tanda tangan (lihat torTtdHtml) ----
+     Tata letaknya meniru tabel 3 kolom di akhir lampiran TOR: dua penanda
+     tangan berdampingan, lalu pengesah di tengah bawah. Kolom .gap yang kosong
+     dipertahankan sebagai penyeimbang supaya kolom pengesah benar-benar jatuh
+     di tengah lembar. Nama TIDAK digarisbawahi — mengikuti berkas Word yang
+     hanya menebalkannya. */
+  '.tor-ttd{margin-top:24pt;font-size:11pt;line-height:'+spkLHCss(1.15)+';color:#000}'+
+  '.tor-ttd .tgl{text-align:right;margin-bottom:10pt}'+
+  '.tor-ttd table.tt{width:100%;border-collapse:collapse;table-layout:fixed}'+
+  '.tor-ttd table.tt td{border:0;padding:0;vertical-align:top}'+
+  '.tor-ttd td.kol{text-align:center}'+
+  '.tor-ttd td.gap{width:33.33%}'+
+  '.tor-ttd .cap{margin-bottom:2pt}'+
+  '.tor-ttd .jab{font-weight:700}'+
+  /* Ruang bubuh tanda tangan & cap */
+  '.tor-ttd .sp{height:2.2cm}'+
+  '.tor-ttd .nm{font-weight:700}'+
+  /* Jarak antara baris penanda tangan atas dengan baris pengesah */
+  '.tor-ttd table.tt tr + tr td{padding-top:14pt}';
 }
 /* ---- Sampul ---- */
 function torCoverHtml(data, ctx){
@@ -1186,6 +1212,17 @@ function torTocHtml(data, klausul){
       '<span class="nm">'+(s.lebur?esc(s.babNama):spkFmtJudulTitle(k.judul))+'</span>'+
       '<span class="dot"></span><span class="pg">\u2014</span></div>';
   });
+  /* Bab PENUTUP otomatis (lihat torPenutupHtml) juga berupa satu .spk-clause di
+     badan dokumen, jadi ia WAJIB punya barisnya sendiri di sini — kalau tidak,
+     pasangan .pg <-> .spk-clause meleset satu dan seluruh nomor halaman daftar
+     isi ikut bergeser. */
+  if(!str.some(x=>x.bab===TOR_BAB.length)){
+    const B=TOR_BAB[TOR_BAB.length-1];
+    n++;
+    rows+='<div class="row bab"><span class="no">'+esc(B.rom+'.')+'</span>'+
+      '<span class="nm">'+esc(B.nama)+'</span>'+
+      '<span class="dot"></span><span class="pg">\u2014</span></div>';
+  }
   return ''+
   '<section class="spk-page spk-tocpage">'+
     '<div class="toc-accent"></div>'+
@@ -1227,19 +1264,62 @@ function torRunFootHtml(data){
     '</div>'+
   '</div>';
 }
-/* ---- Blok tanda tangan penyusun ---- */
-function torSignHtml(ctx){
+/* ---- BAB PENUTUP OTOMATIS ----
+   Dibangun sebagai .spk-clause seperti klausul biasa supaya seluruh perlakuan
+   paginator & penomoran halaman daftar isi berlaku sama. Hanya dipakai bila
+   tidak ada klausul yang menempati bab III (lihat torStruktur). */
+function torPenutupHtml(){
+  const B=TOR_BAB[TOR_BAB.length-1];
+  return '<div class="spk-clause">'+
+    '<div class="spk-cl-h tor-babh"><span class="n" data-no="'+fkEsc(B.rom)+'."></span>'+fkEsc(B.nama)+'</div>'+
+    '<div class="spk-cl"><p class="kl0">'+fkEsc(TOR_PENUTUP_TEKS)+'</p></div>'+
+  '</div>';
+}
+/* ---- BLOK PENGESAHAN TANDA TANGAN ----
+   Susunannya mengikuti lampiran TOR/KAK (tabel 3 kolom di akhir dokumen):
+
+       Masohi, <tanggal dokumen>                    <- rata kanan
+       Diperiksa oleh;                Disusun oleh;
+       <jabatan direksi>              <jabatan pengawas>      (tebal)
+       [ruang tanda tangan]
+       <NAMA DIREKSI>                 <NAMA PENGAWAS>         (tebal)
+                    Disahkan oleh;
+                    <jabatan pengguna>                        (tebal)
+                    [ruang tanda tangan]
+                    <NAMA PENGGUNA>                           (tebal)
+
+   Seluruh isinya diambil dari kartu "Pejabat Terkait" pada form — TIDAK ada
+   nama yang ditanam di dalam kode, sehingga dokumen tetap benar saat pejabatnya
+   berganti. Bila Pengawas Pekerjaan diisi "Tidak Ada", kolom kanan ditiadakan
+   dan "Disusun oleh" jatuh ke Direksi Pekerjaan supaya tidak ada kotak tanda
+   tangan tanpa nama.
+
+   Kelas .spk-keep membuat paginator memperlakukan blok ini sebagai SATU
+   kesatuan: bila sisa lembar tidak cukup, seluruhnya turun bersama ke lembar
+   berikutnya — tanda tangan tidak pernah terpisah dari nama & jabatannya. */
+function torTtdHtml(ctx){
   const esc=fkEsc;
-  /* Kartu "Penyusun Dokumen" dihapus, jadi nama & jabatan penyusun tidak lagi
-     diisi lewat form. Bila keduanya kosong, blok tanda tangan tidak diterbitkan
-     supaya dokumen tidak memuat kotak tanda tangan tanpa nama. */
-  if(!String(ctx.penyusun_nama||'').trim() && !String(ctx.penyusun_jabatan||'').trim()) return '';
-  return '<div class="tor-sign spk-keep"><div class="bx">'+
-    '<div>'+esc(ctx.tempat_tanggal||'')+'</div>'+
-    '<div>'+esc(ctx.penyusun_jabatan||'')+'</div>'+
-    '<div class="sp"></div>'+
-    '<div class="nm">'+esc(ctx.penyusun_nama||'')+'</div>'+
-  '</div></div>';
+  const nm=(v)=>String(v||'').trim().toUpperCase();
+  const dirN=nm(ctx.nama_direksi),  dirJ=String(ctx.jabatan_direksi||'').trim();
+  const pgwN=nm(ctx.nama_pengawas), pgwJ=String(ctx.jabatan_pengawas||'').trim();
+  const pguN=nm(ctx.nama_pengguna), pguJ=String(ctx.jabatan_pengguna||'').trim();
+  const adaPgw=!!(pgwN||pgwJ);
+  const kolom=(cap,jab,nama)=>'<td class="kol">'+
+      '<div class="cap">'+esc(cap)+'</div>'+
+      '<div class="jab">'+esc(jab||'\u2014')+'</div>'+
+      '<div class="sp"></div>'+
+      '<div class="nm">'+esc(nama||'\u2014')+'</div>'+
+    '</td>';
+  /* Baris atas: dua penanda tangan bila ada Pengawas, satu bila tidak. */
+  const atas = adaPgw
+    ? '<tr>'+kolom('Diperiksa oleh;',dirJ,dirN)+'<td class="gap"></td>'+kolom('Disusun oleh;',pgwJ,pgwN)+'</tr>'
+    : '<tr><td class="gap"></td><td class="gap"></td>'+kolom('Disusun oleh;',dirJ,dirN)+'</tr>';
+  return '<div class="tor-ttd spk-keep">'+
+    '<div class="tgl">'+esc(ctx.tempat_tanggal||'')+'</div>'+
+    '<table class="tt"><tbody>'+atas+
+      '<tr><td class="gap"></td>'+kolom('Disahkan oleh;',pguJ,pguN)+'<td class="gap"></td></tr>'+
+    '</tbody></table>'+
+  '</div>';
 }
 /* ---- Dokumen lengkap ----
    Pipeline & KISI INDEN dipakai ulang dari Surat Perintah Kerja (bungkus
@@ -1286,10 +1366,15 @@ function torDocHtml(data, klausul){
   }).join('');
   SPK_HANG_OVR=null; SPK_JH_OVR=0;
 
+  /* Bab PENUTUP: dipakai dari pustaka bila ada klausul di bab terakhir,
+     selain itu dibangkitkan otomatis dari teks baku lampiran TOR. */
+  const babAkhir=TOR_BAB.length;
+  const adaPenutup=str.some(s=>s.bab===babAkhir);
   const isiBody=
     '<div class="spk-bab"><b>'+fkEsc(TOR_DOK_LABEL)+'</b><span>'+fkEsc(data.no_dokumen||'')+'</span></div>'+
     clauses+
-    torSignHtml(ctx);
+    (adaPenutup ? '' : torPenutupHtml())+
+    torTtdHtml(ctx);
   const isi=
     '<section class="spk-page spk-flow" id="spk-flow">'+
       '<table class="spk-run"><thead><tr><td>'+torRunHeadHtml(data)+'</td></tr></thead>'+
