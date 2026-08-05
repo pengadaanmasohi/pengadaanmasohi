@@ -24,6 +24,12 @@
    ============================================================================ */
 
 /* ===================== 1. TETAPAN ===================== */
+/* Lebar kotak isian kolom Judul pada tabel Susun RAB (px).
+   Bawaan style.css `td.c-kel input` = 96px; 2,5x -> 240px. */
+const TOR_RAB_JUDUL_W = 240;
+/* Lebar minimum kolom "Jumlah Total (Rp)" pada cetakan RAB, dalam PERSEN
+   lebar tabel — lihat alasannya di torRabDocHtml. */
+const TOR_RAB_JT_MIN  = 11.5;
 const TOR_TABLE   = 'dokumen_tor';
 const TOR_KODE    = 'TOR';                                     /* kode dokumen di nomor */
 const TOR_UNIT    = (typeof PN_UNIT!=='undefined') ? PN_UNIT : 'F17060000';
@@ -1058,6 +1064,13 @@ function torEnsureStyle(){
        Aturan ini dipatok ke `.tor-rab` saja (kekhususan 3 kelas > 2 kelas milik
        style.css) sehingga tabel HPS, Analisa, & Lampiran SPK tidak tersentuh. */
     'table.hps-uraian.tor-rab thead th{color:#fff;text-align:center}'+
+    /* Kotak isian JUDUL dilebarkan 2,5x dari bawaan style.css (96px -> 240px).
+       Tambahan lebarnya diambil dari kolom Uraian Pekerjaan: `td.c-ur` ber-
+       `width:100%` sehingga ia yang mengalah lebih dulu, dan penyusutannya
+       berhenti di `min-width:340px` milik th.c-ur (sisanya jadi geser mendatar
+       di .hps-uraian-wrap). Kelas `c-judul`/`c-subjudul` sengaja dipisah dari
+       `c-kel` supaya Sub-Judul TIDAK ikut melebar. */
+    'table.hps-uraian.tor-rab td.c-judul input{min-width:'+TOR_RAB_JUDUL_W+'px}'+
     /* Daftar Pilih Klausul (langkah 3) */
     '.tor-pk-list{display:grid;grid-template-columns:1fr 1fr;gap:8px}'+
     '@media(max-width:760px){.tor-pk-list{grid-template-columns:1fr}}'+
@@ -1259,8 +1272,8 @@ function torRabHtml(){
   items.forEach((it,i)=>{
     rows+='<tr>'+
       '<td class="c-no">'+(i+1)+'</td>'+
-      (cfg.judulOn?('<td class="c-kel"><input type="text" data-i="'+i+'" placeholder="mis. PENGADAAN BARANG" value="'+esc(it.judul||'')+'" oninput="torRabSet(this,\'judul\')"></td>'):'')+
-      (cfg.subjudulOn?('<td class="c-kel"><input type="text" data-i="'+i+'" placeholder="mis. Material Utama" value="'+esc(it.subjudul||'')+'" oninput="torRabSet(this,\'subjudul\')"></td>'):'')+
+      (cfg.judulOn?('<td class="c-kel c-judul"><input type="text" data-i="'+i+'" placeholder="mis. PENGADAAN BARANG" value="'+esc(it.judul||'')+'" oninput="torRabSet(this,\'judul\')"></td>'):'')+
+      (cfg.subjudulOn?('<td class="c-kel c-subjudul"><input type="text" data-i="'+i+'" placeholder="mis. Material Utama" value="'+esc(it.subjudul||'')+'" oninput="torRabSet(this,\'subjudul\')"></td>'):'')+
       '<td class="c-ur"><textarea data-i="'+i+'" rows="1" placeholder="Uraian barang / jasa ke-'+(i+1)+'" oninput="torRabSet(this,\'uraian\')">'+esc(it.uraian||'')+'</textarea></td>'+
       '<td class="c-sat"><input type="text" data-i="'+i+'" placeholder="Set" value="'+esc(it.sat||'')+'" oninput="torRabSet(this,\'sat\')"></td>'+
       '<td class="c-vol"><input type="text" inputmode="decimal" data-i="'+i+'" placeholder="0" value="'+esc(it.vol!=null?String(it.vol):'')+'" oninput="torRabOnVol(this)"></td>'+
@@ -1278,8 +1291,8 @@ function torRabHtml(){
     torRabTplBarHtml()+
     '<div class="hps-uraian-wrap"><table class="hps-uraian tor-rab"><thead><tr>'+
       '<th class="c-no">No</th>'+
-      (cfg.judulOn?'<th>Judul</th>':'')+
-      (cfg.subjudulOn?'<th>Sub-Judul</th>':'')+
+      (cfg.judulOn?'<th class="c-judul">Judul</th>':'')+
+      (cfg.subjudulOn?'<th class="c-subjudul">Sub-Judul</th>':'')+
       '<th class="c-ur">Uraian Pekerjaan</th><th>Sat</th><th>Vol</th>'+
       '<th>Harga<br>Barang</th><th>Harga<br>Jasa</th><th class="c-jt">Jumlah<br>(Rp)</th>'+
     '</tr></thead><tbody>'+rows+'</tbody></table></div>'+
@@ -1305,11 +1318,17 @@ function torRabOnVol(el){
   it.vol = (v==='' ? '' : String(jsVolNum(v)));
   torRabRecalc(el);
 }
+/* BUG LAMA: memakai `spkNum(el.value)` = Number(buang selain 0-9 . -).
+   Begitu nilainya melewati ribuan, `rupiahInputText` menyisipkan TITIK sebagai
+   pemisah ribuan ("Rp 1.850"); digit berikutnya membuat "1.8500" yang oleh
+   Number() dibaca sebagai DESIMAL 1,85 -> angka menyusut jadi 1 digit.
+   Sekarang memakai pasangan yang sama persis dengan tabel HPS (hpsOnHargaMat):
+   `onRupiahInput` memformat sambil mengetik SEKALIGUS memulihkan posisi kursor,
+   lalu `parseRupiah` membaca angkanya (koma = desimal, titik = ribuan). */
 function torRabOnRp(el,key){
+  onRupiahInput(el);
   const it=torRabItemAt(el); if(!it) return;
-  const n=spkNum(el.value);
-  it[key]=n;
-  el.value=rupiahInputText(n);
+  it[key]=parseRupiah(el.value);
   torRabRecalc(el);
 }
 function torRabRecalc(el){
@@ -2127,6 +2146,39 @@ function torTtdHpsHtml(kiri, kanan){
   return '<table class="ttd"><tbody><tr>'+sel(kiri)+sel(kanan)+'</tr></tbody></table>';
 }
 
+/* Blok tanda tangan RAB \u2014 FORMASI-nya mengikuti dokumen TOR/KAK
+   (lihat torTtdHtml): tanggal rata kanan, lalu tabel 3 kolom berisi
+     baris 1 : "Diperiksa oleh;" (Direksi)  +  "Disusun oleh;" (Pengawas)
+     baris 2 : "Disahkan oleh;" (Pengguna) di TENGAH
+   Bila Pengawas Pekerjaan tidak ada, baris 1 menyusut jadi satu penanda
+   tangan "Disusun oleh;" milik Direksi \u2014 persis aturan di torTtdHtml.
+   Yang dipakai ulang dari gaya HPS hanyalah TAMPILAN selnya (.hps-topgap /
+   .role / .role2 / .gap / .nm) supaya menyatu dengan cetakan RAB; kelas
+   .tor-ttd milik mesin dokumen SPK sengaja TIDAK dipakai karena CSS-nya
+   tidak ikut termuat pada kerangka dokumen gaya HPS. */
+function torTtdRabHtml(data){
+  const esc=fkEsc, up=v=>String(v||'').trim().toUpperCase();
+  const dirN=up(data.nama_direksi),  dirJ=String(data.jabatan_direksi||'').trim();
+  const pgwN=up(data.nama_pengawas), pgwJ=String(data.jabatan_pengawas||'').trim();
+  const pguN=up(data.nama_pengguna), pguJ=String(data.jabatan_pengguna||'').trim();
+  const adaPgw=!!(pgwN||pgwJ);
+  const kol=(cap,jab,nama)=>'<td><div class="hps-topgap"></div>'+
+      '<div class="role">'+esc(cap)+'</div>'+
+      '<div class="role2">'+esc(jab||'\u2014')+'</div>'+
+      '<div class="gap"></div>'+
+      '<div class="nm nm-up">'+esc(nama||'(..........................)')+'</div></td>';
+  const kosong='<td class="kosong"></td>';
+  const atas = adaPgw
+    ? '<tr>'+kol('Diperiksa oleh;',dirJ,dirN)+kosong+kol('Disusun oleh;',pgwJ,pgwN)+'</tr>'
+    : '<tr>'+kosong+kosong+kol('Disusun oleh;',dirJ,dirN)+'</tr>';
+  const tgl=TOR_KOTA_TTD+', '+(typeof spkDateLong==='function'?spkDateLong(data.tgl_dokumen):'');
+  return '<div class="rab-ttd">'+
+    '<div class="ttd-date rab-tgl">'+esc(tgl)+'</div>'+
+    '<table class="ttd ttd3"><tbody>'+atas+
+      '<tr>'+kosong+kol('Disahkan oleh;',pguJ,pguN)+kosong+'</tr>'+
+    '</tbody></table></div>';
+}
+
 /* ===================== 11d. DOKUMEN RAB =====================
    Tabel & rekapnya SENGAJA dibuat sebangun dengan cetakan HPS (hpsBuildDocHtml)
    supaya dua dokumen itu terbaca sebagai satu keluarga: sembilan kolom dengan
@@ -2187,21 +2239,28 @@ function torRabDocHtml(data){
     '<td class="sum-lbl" colspan="6">'+lbl+'</td>'+
     '<td class="num">'+hpsRpDoc(mat)+'</td><td class="num">'+hpsRpDoc(jasa)+'</td>'+
     '<td class="num">'+hpsRpDoc(tot)+'</td></tr>';
-  const ttdRow='<tr class="ttd-row"><td colspan="9">'+
-    torTtdHpsHtml(
-      {cap:'Diperiksa oleh,', jab:data.jabatan_direksi||'Direksi Pekerjaan', nama:data.nama_direksi},
-      {cap:'Disetujui oleh,', jab:data.jabatan_pengguna||'Pengguna Barang/Jasa', nama:data.nama_pengguna}
-    )+'</td></tr>';
+  const ttdRow='<tr class="ttd-row"><td colspan="9">'+torTtdRabHtml(data)+'</td></tr>';
   const _cw=jsHpsColPct(items, cfg, jsHpsHargaPct(String(hpsRpDoc(sm.totT)||'').length));
+  /* Kolom TERAKHIR ("Jumlah Total (Rp)") dilebarkan tersendiri, tidak ikut
+     `_cw.hg` yang dipakai kelima kolom harga. Sebabnya `jsHpsHargaPct` mengukur
+     dari PANJANG ANGKA, jadi pada nilai kecil ia turun ke lantai 9% (~61px) —
+     terlalu sempit untuk tulisan "Jumlah Total" sehingga judulnya pecah tiga
+     baris ("Jumlah / Total / (Rp)"). Yang dikehendaki: "Jumlah Total" SATU
+     baris dengan "(Rp)" di bawahnya (pemenggalan hanya dari <br>).
+     TOR_RAB_JT_MIN = perkiraan lebar "Jumlah Total" pada font tebal 8,7px
+     (~12 huruf x 5,4px) + padding sel 10px + garis 2px, dibagi lebar isi
+     dokumen ~680px. Tambahannya diambil dari kolom Uraian Pekerjaan. */
+  const _jt = Math.max(_cw.hg, TOR_RAB_JT_MIN);
+  const _ur = Math.max(14, Math.round((_cw.ur - (_jt - _cw.hg))*10)/10);
   const tbl='<table class="hps-doc-tbl">'+
-    '<colgroup><col style="width:'+_cw.no+'%"><col style="width:'+_cw.ur+'%"><col style="width:'+_cw.sat+'%">'+
+    '<colgroup><col style="width:'+_cw.no+'%"><col style="width:'+_ur+'%"><col style="width:'+_cw.sat+'%">'+
       '<col style="width:'+_cw.vol+'%"><col style="width:'+_cw.hg+'%"><col style="width:'+_cw.hg+'%">'+
-      '<col style="width:'+_cw.hg+'%"><col style="width:'+_cw.hg+'%"><col style="width:'+_cw.hg+'%"></colgroup>'+
+      '<col style="width:'+_cw.hg+'%"><col style="width:'+_cw.hg+'%"><col style="width:'+_jt+'%"></colgroup>'+
     '<thead>'+
       '<tr><th class="no" rowspan="2">No</th><th class="ur" rowspan="2">Uraian Pekerjaan</th>'+
         '<th class="st" rowspan="2">Sat</th><th class="vl" rowspan="2">Vol</th>'+
         '<th colspan="2">Harga Satuan</th><th colspan="2">Jumlah Harga</th>'+
-        '<th rowspan="2">Jumlah Total<br>(Rp)</th></tr>'+
+        '<th class="jt" rowspan="2">Jumlah Total<br>(Rp)</th></tr>'+
       '<tr><th>Barang (Rp)</th><th>Jasa (Rp)</th><th>Barang (Rp)</th><th>Jasa (Rp)</th></tr>'+
       '<tr class="numh"><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td>'+
         '<td>7 = 4 x 5</td><td>8 = 4 x 6</td><td>9 = 7 + 8</td></tr>'+
@@ -2214,23 +2273,36 @@ function torRabDocHtml(data){
       '<tr class="terb"><td colspan="9"><b>Terbilang :</b> '+esc(hpsTerbilangRupiah(sm.totT))+'</td></tr>'+
       ttdRow+
     '</tbody></table>';
-  /* Urutan halaman RAB (permintaan 5 Agu 2026): kop \u2192 Data Pekerjaan
-     (hanya Nama & Lokasi) \u2192 judul dokumen di tengah + garis bawah + nomor
-     \u2192 tabel rincian. Judulnya sengaja TIDAK di kepala halaman seperti HPS. */
+  /* Urutan halaman RAB (permintaan 6 Agu 2026 \u2014 TANPA penanda bagian A/B):
+       kop \u2192 judul dokumen di tengah + garis bawah + nomor
+           \u2192 Nama & Lokasi Pekerjaan \u2192 tabel rincian.
+     Dua baris '.fkl-sec-h' ("A Data Pekerjaan" & "B Uraian Pekerjaan &
+     Rincian Harga") DIBUANG: dokumen ini hanya punya satu bagian, jadi
+     penomoran bagian justru membingungkan. */
   const isi='<div class="fkl-doc pnw-doc hps-doc">'+
     torKopHtml()+
-    '<div class="fkl-sec-h"><span class="rn">A</span>Data Pekerjaan</div>'+
-    '<table class="fkl-info"><tbody>'+
+    '<div class="rab-jd">'+torJudulDokHtml('RENCANA ANGGARAN BIAYA (RAB)', torNoDok(data,'RAB'))+'</div>'+
+    '<table class="fkl-info rab-info"><tbody>'+
       infoRow('Nama Pekerjaan', data.nama_pekerjaan)+
       infoRow('Lokasi Pekerjaan', data.lokasi_pekerjaan)+
     '</tbody></table>'+
-    '<div class="rab-jd">'+torJudulDokHtml('RENCANA ANGGARAN BIAYA (RAB)', torNoDok(data,'RAB'))+'</div>'+
-    '<div class="fkl-sec-h"><span class="rn">B</span>Uraian Pekerjaan &amp; Rincian Harga</div>'+
     tbl+
   '</div>';
   return fklDocShell(hpsExtraDocCss()+
-    '.rab-jd{margin:14px 0 4px}'+
-    '.rab-jd .fkl-doc-titlegap{height:6px}', isi);
+    '.rab-jd{margin:16px 0 4px}'+
+    '.rab-jd .fkl-doc-titlegap{height:6px}'+
+    /* Jarak Nama/Lokasi Pekerjaan ke tabel rincian */
+    'table.fkl-info.rab-info{margin-bottom:12px}'+
+    /* --- Tanda tangan 3 kolom (formasi TOR/KAK) ---
+       `tr.ttd-row .ttd td{width:50%}` bawaan gaya HPS dibuat untuk DUA kolom,
+       jadi varian .ttd3 memakai sepertiga lebar & kolom penyeimbang kosong. */
+    'tr.ttd-row .ttd.ttd3 td{width:33.33%}'+
+    'tr.ttd-row .ttd.ttd3 td.kosong{padding:0}'+
+    'tr.ttd-row .ttd.ttd3 tr + tr td{padding-top:10px}'+
+    '.rab-ttd .rab-tgl{text-align:right;margin:0 12px 6px 0}'+
+    /* "Jumlah Total" satu baris; satu-satunya pemenggalan datang dari <br>
+       sebelum "(Rp)". Menimpa aturan bawaan thead th{overflow-wrap:break-word}. */
+    'table.hps-doc-tbl thead th.jt{white-space:nowrap;overflow-wrap:normal;word-break:keep-all}', isi);
 }
 
 /* ===================== 11b. PAKTA INTEGRITAS =====================
@@ -2496,16 +2568,34 @@ async function torBoqExcel(id){
       const wb=new ExcelJS.Workbook();
       const ws=wb.addWorksheet('BoQ',{pageSetup:{paperSize:9,orientation:'portrait',fitToPage:true,fitToWidth:1,fitToHeight:0,margins:{left:0.4,right:0.4,top:0.5,bottom:0.5,header:0.2,footer:0.2}}});
       ws.columns=[{width:5},{width:44},{width:7},{width:7},{width:15},{width:15},{width:15},{width:15},{width:16}];
-      const TIPIS={style:'thin',color:{argb:'FF000000'}};
+      /* ---- Palet & garis: SALINAN PERSIS gaya cetak RAB (hpsExtraDocCss,
+         selektor table.hps-doc-tbl di app.js). Bila warna di sana diubah,
+         ubah juga di sini supaya BoQ tetap kembar dengan RAB. ---- */
+      const TIPIS={style:'thin',color:{argb:'FF7D979C'}};   /* td border #7d979c */
       const kotak={top:TIPIS,left:TIPIS,bottom:TIPIS,right:TIPIS};
-      const RP='#,##0;[Red]-#,##0';
+      const C_KOP='FF0E7C86',  T_KOP='FFFFFFFF';            /* thead th        */
+      const C_NUMH='FFE7F2F3', T_NUMH='FF0B3D42';           /* thead tr.numh   */
+      const C_GRP='FFDCECEE',  C_SUB='FFEEF5F6', T_GRP='FF0B3D42';
+      const C_SUM='FFF2F7F8',  T_SUML='FF0D2A30', T_SUMN='FF0B3D42';
+      const C_TOT='FFE7F6EC',  T_TOT='FF0D7A3F';            /* tr.sum.grand    */
+      const C_TERB='FFFBFDF4', T_TERB='FF22343A';           /* tr.terb         */
+      /* "Semuanya format accounting tanpa desimal" (permintaan user):
+         nol tampil sebagai "-" dan angka rata pada kolomnya, sama seperti
+         ACCT_NODEC yang dipakai template Excel lain di aplikasi ini. */
+      const RP='_(* #,##0_);_(* (#,##0);_(* "-"_);_(@_)';
+      const isi=(argb)=>({type:'pattern',pattern:'solid',fgColor:{argb:argb}});
       const tulis=(r,c,v,opt)=>{ const cell=ws.getCell(r,c); if(v!=null) cell.value=v;
         if(opt&&opt.b) cell.font=Object.assign({bold:true},opt.font||{});
         else if(opt&&opt.font) cell.font=opt.font;
         cell.alignment=Object.assign({vertical:'middle',wrapText:true},(opt&&opt.al)||{});
         if(opt&&opt.box) cell.border=kotak;
         if(opt&&opt.fmt) cell.numFmt=opt.fmt;
+        if(opt&&opt.bg) cell.fill=isi(opt.bg);
         return cell; };
+      /* Warnai seluruh 9 kolom sebuah baris sekaligus (sel kosong pun ikut,
+         supaya pita warnanya utuh seperti di cetakan RAB). */
+      const warnai=(r,bg)=>{ for(let c=1;c<=9;c++){ const cell=ws.getCell(r,c);
+        cell.fill=isi(bg); cell.border=kotak; } };
       let R=1;
       /* --- Kepala --- */
       ws.mergeCells(R,1,R,9);
@@ -2522,59 +2612,75 @@ async function torBoqExcel(id){
       ws.mergeCells(H,3,H+1,3); ws.mergeCells(H,4,H+1,4);
       ws.mergeCells(H,5,H,6);   ws.mergeCells(H,7,H,8);   ws.mergeCells(H,9,H+1,9);
       const tengah={horizontal:'center',vertical:'middle',wrapText:true};
-      tulis(H,1,'No.',{b:true,al:tengah,box:true});
-      tulis(H,2,'Uraian Pekerjaan',{b:true,al:tengah,box:true});
-      tulis(H,3,'Sat',{b:true,al:tengah,box:true});
-      tulis(H,4,'Vol',{b:true,al:tengah,box:true});
-      tulis(H,5,'Harga Satuan',{b:true,al:tengah,box:true});
-      tulis(H,7,'Jumlah Harga',{b:true,al:tengah,box:true});
-      tulis(H,9,'Jumlah Total\n(Rp)',{b:true,al:tengah,box:true});
-      ['','','','','Material (Rp)','Jasa (Rp)','Material (Rp)','Jasa (Rp)',''].forEach((t,i)=>{
-        tulis(H+1,i+1,t||null,{b:true,al:tengah,box:true}); });
+      const fKop={bold:true,color:{argb:T_KOP}};
+      const kop=(r,c,t)=>tulis(r,c,t,{al:tengah,box:true,bg:C_KOP,font:fKop});
+      /* Judul kolom "Barang (Rp)" (bukan "Material") agar 100% sama dengan
+         cetakan RAB & dokumen HPS. */
+      warnai(H,C_KOP); warnai(H+1,C_KOP);
+      kop(H,1,'No.');  kop(H,2,'Uraian Pekerjaan'); kop(H,3,'Sat'); kop(H,4,'Vol');
+      kop(H,5,'Harga Satuan'); kop(H,7,'Jumlah Harga'); kop(H,9,'Jumlah Total\n(Rp)');
+      ['','','','','Barang (Rp)','Jasa (Rp)','Barang (Rp)','Jasa (Rp)',''].forEach((t,i)=>{
+        kop(H+1,i+1,t||null); });
+      warnai(H+2,C_NUMH);
       ['1','2','3','4','5','6','7 = 4 x 5','8 = 4 x 6','9 = 7 + 8'].forEach((t,i)=>{
-        tulis(H+2,i+1,t,{b:true,al:tengah,box:true}); });
+        tulis(H+2,i+1,t,{al:tengah,box:true,bg:C_NUMH,font:{bold:true,italic:true,color:{argb:T_NUMH}}}); });
       R=H+3;
       /* --- Baris isi (judul / sub-judul / barang), penomoran = jsWalk --- */
       const barisAngka=[];
       const kosongkan=(r)=>{ for(let c=1;c<=9;c++) tulis(r,c,null,{box:true}); };
-      const rumusBaris=(r)=>{
-        tulis(r,7,{formula:'IF(N(D'+r+')*N(E'+r+')=0,"",ROUND(D'+r+'*E'+r+',0))'},{al:{horizontal:'right'},box:true,fmt:RP});
-        tulis(r,8,{formula:'IF(N(D'+r+')*N(F'+r+')=0,"",ROUND(D'+r+'*F'+r+',0))'},{al:{horizontal:'right'},box:true,fmt:RP});
-        tulis(r,9,{formula:'IF(N(G'+r+')+N(H'+r+')=0,"",N(G'+r+')+N(H'+r+'))'},{al:{horizontal:'right'},box:true,fmt:RP});
+      /* Rumusnya dibiarkan POLOS (tanpa pembungkus IF(...)="") supaya hasilnya
+         angka 0, bukan teks kosong \u2014 format accounting-lah yang menampilkan
+         nol sebagai "-" persis seperti kolom harga di cetakan RAB. */
+      const rumusBaris=(r,bg)=>{
+        const o={al:{horizontal:'right'},box:true,fmt:RP,bg:bg};
+        tulis(r,7,{formula:'ROUND(D'+r+'*E'+r+',0)'},o);
+        tulis(r,8,{formula:'ROUND(D'+r+'*F'+r+',0)'},o);
+        /* Kolom 9 tebal & bertinta gelap \u2014 sama seperti td.num.tot di RAB. */
+        tulis(r,9,{formula:'G'+r+'+H'+r},
+          {al:{horizontal:'right'},box:true,fmt:RP,bg:bg,font:{bold:true,color:{argb:T_GRP}}});
+      };
+      /* Harga satuan Barang & Jasa SELALU 0 (permintaan user): BoQ = RAB tanpa
+         harga. Nilainya angka 0, bukan sel kosong, supaya rumus di kolom 7-9
+         ikut menghasilkan 0 dan tampil "-" oleh format accounting. */
+      const hargaNol=(r,bg)=>{
+        tulis(r,5,0,{al:{horizontal:'right'},box:true,fmt:RP,bg:bg});
+        tulis(r,6,0,{al:{horizontal:'right'},box:true,fmt:RP,bg:bg});
       };
       jsWalk(items, cfg, {
-        judul:(no,txt,it)=>{ kosongkan(R);
-          tulis(R,1,no,{b:true,al:{horizontal:'center'},box:true});
-          tulis(R,2,txt,{b:true,box:true});
-          if(it){ tulis(R,3,it.sat||'',{al:{horizontal:'center'},box:true});
-                  tulis(R,4,jsVolNum(it.vol)||null,{al:{horizontal:'center'},box:true});
-                  rumusBaris(R); barisAngka.push(R); }
+        judul:(no,txt,it)=>{ kosongkan(R); warnai(R,C_GRP);
+          const f={bold:true,color:{argb:T_GRP}};
+          tulis(R,1,no,{al:{horizontal:'center'},box:true,bg:C_GRP,font:f});
+          tulis(R,2,String(txt||'').toUpperCase(),{box:true,bg:C_GRP,font:f});
+          if(it){ tulis(R,3,it.sat||'',{al:{horizontal:'center'},box:true,bg:C_GRP,font:f});
+                  tulis(R,4,jsVolNum(it.vol)||null,{al:{horizontal:'center'},box:true,bg:C_GRP,font:f});
+                  hargaNol(R,C_GRP); rumusBaris(R,C_GRP); barisAngka.push(R); }
           R++; },
-        sub:(no,txt,it)=>{ kosongkan(R);
-          tulis(R,1,no,{b:true,al:{horizontal:'center'},box:true});
-          tulis(R,2,'   '+txt,{b:true,box:true});
-          if(it){ tulis(R,3,it.sat||'',{al:{horizontal:'center'},box:true});
-                  tulis(R,4,jsVolNum(it.vol)||null,{al:{horizontal:'center'},box:true});
-                  rumusBaris(R); barisAngka.push(R); }
+        sub:(no,txt,it)=>{ kosongkan(R); warnai(R,C_SUB);
+          const f={bold:true,italic:true,color:{argb:T_GRP}};
+          tulis(R,1,no,{al:{horizontal:'center'},box:true,bg:C_SUB,font:f});
+          tulis(R,2,'   '+txt,{box:true,bg:C_SUB,font:f});
+          if(it){ tulis(R,3,it.sat||'',{al:{horizontal:'center'},box:true,bg:C_SUB,font:f});
+                  tulis(R,4,jsVolNum(it.vol)||null,{al:{horizontal:'center'},box:true,bg:C_SUB,font:f});
+                  hargaNol(R,C_SUB); rumusBaris(R,C_SUB); barisAngka.push(R); }
           R++; },
         item:(noInGroup,it,idx)=>{ kosongkan(R);
           tulis(R,1,noInGroup,{al:{horizontal:'center'},box:true});
           tulis(R,2,(it.uraian&&String(it.uraian).trim())?it.uraian:('Barang/Jasa '+(idx+1)),{box:true});
           tulis(R,3,it.sat||'',{al:{horizontal:'center'},box:true});
           tulis(R,4,jsVolNum(it.vol)||null,{al:{horizontal:'center'},box:true});
-          /* Harga dikosongkan \u2014 diisi penyedia */
-          tulis(R,5,null,{al:{horizontal:'right'},box:true,fmt:RP});
-          tulis(R,6,null,{al:{horizontal:'right'},box:true,fmt:RP});
-          rumusBaris(R); barisAngka.push(R);
+          hargaNol(R); rumusBaris(R); barisAngka.push(R);
           R++; }
       });
       const r1=H+3, r2=R-1;
       /* --- Rekap: cermin hpsSummary() --- */
       const rekap=(label, f7, f8, f9, tebal)=>{
+        const bg=tebal?C_TOT:C_SUM, tl=tebal?T_TOT:T_SUML, tn=tebal?T_TOT:T_SUMN;
+        warnai(R,bg);
         ws.mergeCells(R,1,R,6);
-        tulis(R,1,label,{b:true,al:{horizontal:'right'},box:true});
+        tulis(R,1,label,{al:{horizontal:'right'},box:true,bg:bg,font:{bold:true,color:{argb:tl}}});
         [[7,f7],[8,f8],[9,f9]].forEach(([c,f])=>
-          tulis(R,c,{formula:f},{b:!!tebal,al:{horizontal:'right'},box:true,fmt:RP}));
+          tulis(R,c,{formula:f},{al:{horizontal:'right'},box:true,fmt:RP,bg:bg,
+            font:{bold:true,color:{argb:tn}}}));
         R++;
       };
       const rJml=R;
@@ -2586,9 +2692,10 @@ async function torBoqExcel(id){
       const rTot=R;
       rekap('Jumlah Total','G'+rJml+'+G'+rPpn,'H'+rJml+'+H'+rPpn,'I'+rJml+'+I'+rPpn, true);
       /* --- Terbilang: rumus yang mengikuti sel Jumlah Total --- */
-      R++;
+      warnai(R,C_TERB);
       ws.mergeCells(R,1,R,9);
-      tulis(R,1,{formula:torBoqTerbilangRumus('I'+rTot)},{b:true,al:{horizontal:'left'}});
+      tulis(R,1,{formula:torBoqTerbilangRumus('I'+rTot)},
+        {al:{horizontal:'left'},box:true,bg:C_TERB,font:{bold:true,color:{argb:T_TERB}}});
       /* --- Tanda tangan penyedia --- */
       R+=3;
       ws.mergeCells(R,6,R,9); tulis(R,6,'Kota/Kabupaten,....., Tanggal.....',{al:{horizontal:'center'}}); R++;
