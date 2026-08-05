@@ -551,6 +551,10 @@ function torExtendCtx(ctx, d){
   const _prk = Array.isArray(d.no_prk_list)
     ? d.no_prk_list.map(x=>String(x||'').trim()).filter(Boolean)
     : String(d.no_prk||'').split(';').map(x=>x.trim()).filter(Boolean);
+  /* Kode {{tabel_boq}} diganti PENANDA dulu; blok tabelnya baru disisipkan
+     lewat torBoqInject() sesudah pipeline klausul selesai, supaya <table>
+     tidak pernah terjebak di dalam <p>. */
+  ctx.tabel_boq    = TOR_BOQ_MARK;
   ctx.no_prk       = _prk.join('; ');
   ctx.no_prk_baris = _prk.join('<br>');
   _prk.forEach((v,i)=>{ ctx['no_prk_'+(i+1)]=v; });
@@ -691,7 +695,8 @@ const TOR_KODE_AUTO = [
   ['unit_lengkap','PT PLN (Persero) + nama unit'],
   ['kota_ttd','Kota penandatanganan (Masohi)'],
   ['tgl_ttd','Tanggal tanda tangan = tanggal dokumen'],
-  ['tempat_tanggal','"Masohi, 5 Agustus 2026"']
+  ['tempat_tanggal','"Masohi, 5 Agustus 2026"'],
+  ['tabel_boq','Formulir Bill of Quantity (BoQ) — otomatis dari RAB/HPS']
 ];
 function torFieldInput(f){
   const d=torState.data, v=d[f.k];
@@ -1135,8 +1140,296 @@ function torDocCss(wKl, wBab){
   '.tor-ttd .sp{height:2.2cm}'+
   '.tor-ttd .nm{font-weight:700}'+
   /* Jarak antara baris penanda tangan atas dengan baris pengesah */
-  '.tor-ttd table.tt tr + tr td{padding-top:14pt}';
+  '.tor-ttd table.tt tr + tr td{padding-top:14pt}'+
+  /* Formulir Bill of Quantity (BoQ) — lihat torBoqHtml */
+  torBoqCss();
 }
+
+/* ===================== 10b. BILL OF QUANTITY (BoQ) =====================
+   BoQ = RAB TANPA HARGA. Susunan barang/jasa, satuan, dan volumenya PERSIS
+   sama dengan dokumen Perhitungan HPS (yang memang disusun dari RAB); yang
+   dikosongkan hanyalah kolom harga — diisi sendiri oleh Penyedia Barang/Jasa
+   saat memasukkan penawaran. Karena itu tabelnya TIDAK diketik ulang di form
+   TOR: isinya diambil otomatis dari record HPS dengan Nama Pekerjaan yang
+   sama (mekanisme yang sama dipakai Lampiran SPK & Rekap HPS).
+
+   Cara memakainya: tulis kode {{tabel_boq}} pada klausul "Bill of Quantity
+   (BoQ)" — saat dokumen dibangun, kode itu DIGANTI seluruh blok formulir BoQ
+   (kop perusahaan, judul, Pekerjaan/Lokasi, tabel, rekap, terbilang, dan blok
+   tanda tangan Penyedia). Sebelumnya bagian ini hanya berupa GAMBAR yang
+   ditempel di berkas Word, sehingga hilang begitu klausulnya diunggah
+   (jalur baca .docx mengabaikan w:drawing).
+
+   Catatan tata letak: seluruh formulir dibuat HITAM-PUTIH (bukan tosca gaya
+   dokumen HPS) karena lembar ini dicetak & diisi oleh pihak luar. */
+const TOR_BOQ_MARK  = '@@TABEL-BOQ@@';    /* penanda sementara hasil mail-merge */
+const TOR_BOQ_KOP   = '(KOP PERUSAHAAN)'; /* diisi kop surat Penyedia sendiri  */
+const TOR_BOQ_JUDUL = 'Bill of Quantity (BoQ)';
+const TOR_BOQ_DASH  = '-';                /* isi kolom harga yang dikosongkan  */
+const TOR_BOQ_TTD   = {
+  tempat : 'Kota/Kabupaten,….., Tanggal…..',
+  badan  : 'Nama Perusahaan',
+  nama   : '(Nama Lengkap)',
+  jabatan: 'Jabatan'
+};
+const TOR_BOQ_TERBILANG = 'Nol Rupiah';
+
+/* Ambil susunan item dari record Perhitungan HPS yang Nama Pekerjaannya sama.
+   Mengembalikan state gaya HPS ({items, judulOn, judulNum, ...}) atau null. */
+function torBoqState(d){
+  d = d || {};
+  let rec = null;
+  try{
+    if(typeof spkCariHps === 'function'){
+      rec = spkCariHps(null, d.nama_pekerjaan);
+    }else{
+      const list = (typeof records_hps !== 'undefined' && records_hps) ? records_hps : [];
+      const nm = String(d.nama_pekerjaan || '').trim().toLowerCase();
+      rec = nm ? (list.find(r => String(r.nama_pekerjaan || '').trim().toLowerCase() === nm) || null) : null;
+    }
+  }catch(e){ console.error('torBoqState:', e); }
+  if(!rec) return null;
+  try{
+    const st = hpsRecordToState(rec);
+    const isi = (st.items || []).some(it =>
+      String((it && it.uraian) || '').trim() ||
+      String((it && it.judul)  || '').trim() ||
+      String((it && it.subjudul) || '').trim());
+    return isi ? st : null;
+  }catch(e){ console.error('torBoqState:', e); return null; }
+}
+
+/* Baris isi tabel BoQ. Judul & Sub-Judul ditelusuri memakai jsWalk (mesin yang
+   sama dengan dokumen HPS) supaya penomoran romawi/abjadnya identik. Kolom
+   harga SELALU "-": nilainya memang tidak boleh ikut terbawa ke Penyedia. */
+function torBoqRowsHtml(st){
+  const cfg = jsCfg(st);
+  const dash = '<td class="num">' + TOR_BOQ_DASH + '</td>';
+  const isiNilai = (it) => {
+    const sat = (it && it.sat != null && String(it.sat).trim()) ? String(it.sat) : '-';
+    const vol = jsVolDoc(it && it.vol);
+    return '<td class="st">' + fkEsc(sat) + '</td><td class="vl">' + fkEsc(vol) + '</td>' + dash + dash + dash + dash + dash;
+  };
+  const kosong = '<td class="st"></td><td class="vl"></td>' + '<td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td>';
+  /* Baris dikumpulkan dulu supaya kelas penyambung ("nogar") baru dipasang
+     setelah diketahui bahwa baris judul memang diikuti butir — judul kelompok
+     yang kebetulan menjadi baris TERAKHIR tetap punya garis bawah. */
+  const baris = [];
+  const grp = (cls, no, txt, it) => {
+    baris.push({ jenis:'grp', cls:cls,
+      html: '<tr class="grp ' + cls + '{X}"><td class="no">' + fkEsc(no) + '</td>' +
+            '<td class="ur">' + fkEsc(txt) + '</td>' + (it ? isiNilai(it) : kosong) + '</tr>' });
+  };
+  jsWalk(st.items, cfg, {
+    judul: (no, txt, it) => grp('g1', no, txt, it),
+    sub:   (no, txt, it) => grp('g2', no, txt, it),
+    item:  (no, it, idx) => {
+      const ur = (it && String(it.uraian || '').trim()) ? String(it.uraian) : ('Barang/Jasa ' + (idx + 1));
+      baris.push({ jenis:'itm',
+        html: '<tr class="itm{X}"><td class="no">' + fkEsc(String(no)) + '</td>' +
+              '<td class="ur">' + fkEsc(ur) + '</td>' + isiNilai(it) + '</tr>' });
+    }
+  });
+  /* Dikembalikan sebagai ARRAY supaya torBoqHtml bisa menambah kelas
+     penghapus garis (nb-t / nb-b) pada baris PERTAMA & TERAKHIR. */
+  return baris.map(function(b, i){
+    const brk = baris[i+1];
+    let tambah = '';
+    if(b.jenis === 'grp' && brk && brk.jenis === 'itm') tambah = ' nogar';        /* buang garis bawah  */
+    if(b.jenis === 'itm' && i > 0 && baris[i-1].jenis === 'grp') tambah = ' after-grp'; /* buang garis atas */
+    return b.html.replace('{X}', tambah);
+  });
+}
+
+/* Formulir BoQ lengkap (kop – judul – data pekerjaan – tabel – rekap –
+   terbilang – tanda tangan Penyedia). */
+function torBoqHtml(d){
+  d = d || {};
+  const st = torBoqState(d);
+  if(!st){
+    return '<div class="tor-boq tor-boq-kosong">Rincian <b>Bill of Quantity (BoQ)</b> belum dapat ditampilkan. ' +
+      'Buat dokumen <b>Perhitungan HPS</b> dengan Nama Pekerjaan yang sama persis, ' +
+      'lalu bangun ulang dokumen TOR/KAK ini.</div>';
+  }
+  /* Lebar kolom harga 11%% (bukan 11%% bawaan HPS) supaya judul "Material (Rp)"
+     & "Jumlah Total" muat SATU baris; sisanya jadi milik kolom Uraian. */
+  const cw = jsHpsColPct(st.items, jsCfg(st), 11);
+  const kolgrup =
+    '<colgroup><col style="width:' + cw.no + '%"><col style="width:' + cw.ur + '%">' +
+      '<col style="width:' + cw.sat + '%"><col style="width:' + cw.vol + '%">' +
+      '<col style="width:' + cw.hg + '%"><col style="width:' + cw.hg + '%"><col style="width:' + cw.hg + '%">' +
+      '<col style="width:' + cw.hg + '%"><col style="width:' + cw.hg + '%"></colgroup>';
+  /* Baris kosong penyela — setinggi baris berisi SATU baris teks (dipakai
+     &nbsp; supaya tingginya mengikuti font, bukan dipatok px). Dipasang di
+     ATAS judul kelompok pertama dan di BAWAH uraian terakhir. */
+  const barisKosong = '<tr class="kosong"><td class="no">&nbsp;</td><td class="ur"></td>' +
+    '<td class="st"></td><td class="vl"></td>' +
+    '<td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td></tr>';
+  const sumRow = (lbl, cls) => '<tr class="sum' + (cls || '') + '"><td class="sum-lbl" colspan="6">' + fkEsc(lbl) + '</td>' +
+    '<td class="num">' + TOR_BOQ_DASH + '</td><td class="num">' + TOR_BOQ_DASH + '</td><td class="num">' + TOR_BOQ_DASH + '</td></tr>';
+  /* Tambahkan kelas ke <tr class="..."> pertama pada sepotong markup baris. */
+  const tambahKelas = (html, cls) => String(html).replace('<tr class="', '<tr class="' + cls + ' ');
+
+  /* ---- SATU TABEL UTUH ----
+     Uraian Pekerjaan, rekap (Jumlah/DPP/PPn/Jumlah Total) dan Terbilang berada
+     di dalam TABEL YANG SAMA sehingga garis tepi kiri-kanannya menyambung dari
+     kepala tabel sampai baris Terbilang. Pemisahnya BUKAN jarak antar-tabel,
+     melainkan dua baris kosong (tr.kosong) yang sengaja TIDAK bergaris
+     mendatar — di atas & di bawahnya tidak ada pembatas horizontal sama
+     sekali, jadi yang terlihat hanya ruang putih di antara garis tegak. */
+  let isiBaris = torBoqRowsHtml(st);
+  if(isiBaris.length){
+    isiBaris[0] = tambahKelas(isiBaris[0], 'nb-t');                       /* tanpa garis atas  */
+    isiBaris[isiBaris.length - 1] = tambahKelas(isiBaris[isiBaris.length - 1], 'nb-b'); /* tanpa garis bawah */
+  }
+  const badan = barisKosong + isiBaris.join('') + barisKosong;
+  /* Rekap + Terbilang = satu blok yang tak boleh terpisah dari angka rekapnya
+     (tbody.hps-tail sudah dikenali atom() pada spkPageScript). */
+  const rekap =
+    sumRow('Jumlah', ' nb-t') + sumRow('DPP') + sumRow('PPn 12%') + sumRow('Jumlah Total') +
+    '<tr class="terb"><td colspan="9"><b>Terbilang :</b> ' + fkEsc(TOR_BOQ_TERBILANG) + '</td></tr>';
+
+  return '<div class="tor-boq">' +
+    '<div class="boq-kop">' + fkEsc(TOR_BOQ_KOP) + '</div>' +
+    '<div class="boq-judul">' + fkEsc(TOR_BOQ_JUDUL) + '</div>' +
+    '<table class="boq-info"><tbody>' +
+      '<tr><td class="k">Pekerjaan</td><td class="s">:</td><td class="v">' + fkEsc(d.nama_pekerjaan || '-') + '</td></tr>' +
+      '<tr><td class="k">Lokasi</td><td class="s">:</td><td class="v">' + fkEsc(d.lokasi_pekerjaan || '-') + '</td></tr>' +
+    '</tbody></table>' +
+    '<table class="tor-boq-tbl boq-uraian">' + kolgrup +
+      '<thead>' +
+        '<tr>' +
+          '<th class="no" rowspan="2">No.</th>' +
+          '<th class="ur" rowspan="2">Uraian Pekerjaan</th>' +
+          '<th class="st" rowspan="2">Sat</th>' +
+          '<th class="vl" rowspan="2">Vol</th>' +
+          '<th colspan="2">Harga Satuan</th>' +
+          '<th colspan="2">Jumlah Harga</th>' +
+          '<th rowspan="2">Jumlah Total<br>(Rp)</th>' +
+        '</tr>' +
+        '<tr><th>Material (Rp)</th><th>Jasa (Rp)</th><th>Material (Rp)</th><th>Jasa (Rp)</th></tr>' +
+        /* nb-b: garis bawah baris penomoran kolom dihapus supaya menyatu dengan
+           baris kosong di bawahnya (tanpa pembatas mendatar). */
+        '<tr class="numh nb-b"><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td>' +
+          '<td>7 = 4 x 5</td><td>8 = 4 x 6</td><td>9 = 7 + 8</td></tr>' +
+      '</thead>' +
+      '<tbody>' + badan + '</tbody>' +
+      '<tbody class="hps-tail">' + rekap + '</tbody>' +
+    '</table>' +
+    '<div class="boq-sign spk-keep">' +
+      '<div class="tpt">' + fkEsc(TOR_BOQ_TTD.tempat) + '</div>' +
+      '<div class="bdn">' + fkEsc(TOR_BOQ_TTD.badan) + '</div>' +
+      '<div class="sp"></div>' +
+      '<div class="nm">' + fkEsc(TOR_BOQ_TTD.nama) + '</div>' +
+      '<div class="jab">' + fkEsc(TOR_BOQ_TTD.jabatan) + '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+/* Ganti penanda {{tabel_boq}} (sudah jadi TOR_BOQ_MARK sesudah mail-merge)
+   dengan blok formulir BoQ. Dikerjakan lewat DOM, bukan replace string, supaya
+   tabel tidak pernah tersisip DI DALAM <p> (HTML tidak sah & merusak paginasi):
+     - bila paragrafnya HANYA berisi penanda -> paragraf itu DIGANTI tabel;
+     - bila penanda menempel pada kalimat lain -> penandanya dibuang dan tabel
+       disisipkan TEPAT SESUDAH paragraf tersebut. */
+function torBoqInject(html, d){
+  var s = String(html == null ? '' : html);
+  if(s.indexOf(TOR_BOQ_MARK) < 0) return s;
+  var tbl = '';
+  try{ tbl = torBoqHtml(d); }catch(e){ console.error('torBoqHtml:', e); tbl = ''; }
+  try{
+    var BLOK = ['P','DIV','LI','TD','TH','H1','H2','H3','H4','H5','H6'];
+    var box = document.createElement('div'); box.innerHTML = s;
+    var putar = 0;
+    while(putar++ < 20){
+      var teks = null;
+      var w = document.createTreeWalker(box, NodeFilter.SHOW_TEXT, null, false);
+      while(w.nextNode()){
+        if(String(w.currentNode.nodeValue || '').indexOf(TOR_BOQ_MARK) >= 0){ teks = w.currentNode; break; }
+      }
+      if(!teks) break;
+      var host = teks.parentNode;
+      while(host && host !== box && BLOK.indexOf(host.tagName) < 0) host = host.parentNode;
+      if(!host || host === box) host = teks.parentNode || box;
+      var sisa = String(host.textContent || '').split(TOR_BOQ_MARK).join('').replace(/[\s\u00A0]/g,'');
+      var frag = document.createElement('div'); frag.innerHTML = tbl;
+      if(sisa){
+        teks.nodeValue = String(teks.nodeValue).split(TOR_BOQ_MARK).join('');
+        var ref = host.nextSibling;
+        while(frag.firstChild) host.parentNode.insertBefore(frag.firstChild, ref);
+      }else{
+        while(frag.firstChild) host.parentNode.insertBefore(frag.firstChild, host);
+        host.parentNode.removeChild(host);
+      }
+    }
+    return box.innerHTML;
+  }catch(e){
+    console.error('torBoqInject:', e);
+    return s.split(TOR_BOQ_MARK).join('');
+  }
+}
+
+/* Gaya formulir BoQ — sengaja HITAM-PUTIH & garis tunggal, meniru lembar BoQ
+   pada lampiran TOR/KAK versi Word (bukan gaya tosca dokumen HPS). */
+function torBoqCss(){
+  return ''+
+  '.tor-boq{margin:12pt 0 6pt;color:#000;line-height:1.25}'+
+  '.tor-boq .boq-kop{text-align:center;font-weight:800;font-size:11pt;color:#1B6C9C;letter-spacing:.02em;margin-bottom:12pt;'+
+    '-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  '.tor-boq .boq-judul{text-align:center;font-weight:800;font-size:11pt;text-decoration:underline;margin-bottom:12pt}'+
+  '.tor-boq table.boq-info{border-collapse:collapse;margin:0 0 10pt 12pt;font-size:9pt}'+
+  '.tor-boq table.boq-info td{border:0;padding:0 6px 2pt 0;vertical-align:top;background:transparent}'+
+  '.tor-boq table.boq-info td.k{width:2.4cm;white-space:nowrap}'+
+  '.tor-boq table.boq-info td.s{width:.35cm}'+
+  /* --- tabel --- */
+  '.tor-boq table.tor-boq-tbl{width:100%;border-collapse:collapse;table-layout:fixed;margin:0}'+
+  '.tor-boq table.tor-boq-tbl th,.tor-boq table.tor-boq-tbl td{border:1px solid #000;padding:3px 5px;'+
+    'font-size:8.6pt;line-height:1.25;vertical-align:middle;color:#000;background:#fff;'+
+    'word-wrap:break-word;overflow-wrap:anywhere}'+
+  /* Judul kolom SELALU satu baris ("Material (Rp)", "Jumlah Total"):
+     huruf sedikit dikecilkan + padding samping dirapatkan + nowrap. Hanya
+     pemenggalan yang dibuat oleh <br> ("Jumlah Total" / "(Rp)") yang tetap. */
+  '.tor-boq table.tor-boq-tbl thead th,.tor-boq table.tor-boq-tbl thead td{padding:3px 1px;font-size:7.4pt;white-space:nowrap}'+
+  '.tor-boq table.tor-boq-tbl thead th{font-weight:700;text-align:center;hyphens:none}'+
+  '.tor-boq table.tor-boq-tbl thead tr.numh td{text-align:center;font-weight:700}'+
+  '.tor-boq table.tor-boq-tbl td.no{text-align:center}'+
+  '.tor-boq table.tor-boq-tbl td.ur{text-align:left}'+
+  '.tor-boq table.tor-boq-tbl td.st,.tor-boq table.tor-boq-tbl td.vl{text-align:center;white-space:nowrap;'+
+    'overflow-wrap:normal;word-break:keep-all}'+
+  '.tor-boq table.tor-boq-tbl td.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}'+
+  /* Judul kelompok: tebal & huruf besar, TANPA arsiran; garis mendatar antara
+     judul kelompok dan butir pertamanya sengaja dihilangkan supaya sama dengan
+     lembar BoQ acuan. */
+  '.tor-boq table.tor-boq-tbl tr.grp td.ur{font-weight:700;text-transform:uppercase}'+
+  '.tor-boq table.tor-boq-tbl tr.grp.g2 td.ur{text-transform:none;font-style:italic;font-weight:700}'+
+  '.tor-boq table.tor-boq-tbl tr.grp.nogar td{border-bottom-style:hidden}'+
+  '.tor-boq table.tor-boq-tbl tr.itm.after-grp td{border-top-style:hidden}'+
+  /* --- Baris kosong penyela & penghapus garis mendatar ---
+     WAJIB memakai border-style:hidden, BUKAN border:0. Pada model border
+     collapse, `0`/`none` adalah pemenang TERLEMAH: garis tetangga di seberang
+     tepi tetap terlukis — itulah sebabnya garis di bawah baris penomoran
+     (batas thead->tbody) dan di atas baris Jumlah (batas tbody->tbody) masih
+     muncul meski sudah diberi nb-b/nb-t. `hidden` adalah pemenang TERKUAT:
+     tepi itu dipadamkan apa pun garis tetangganya. Hasilnya: ruang putih
+     setinggi satu baris teks tanpa pembatas mendatar, garis tegak menyambung. */
+  '.tor-boq table.tor-boq-tbl tr.kosong td{border-top-style:hidden;border-bottom-style:hidden}'+
+  '.tor-boq table.tor-boq-tbl tr.nb-t td{border-top-style:hidden}'+
+  '.tor-boq table.tor-boq-tbl tr.nb-b td{border-bottom-style:hidden}'+
+  /* --- rekap & Terbilang: masih di dalam tabel yang sama --- */
+  '.tor-boq table.tor-boq-tbl tr.sum td.sum-lbl{text-align:right;font-weight:700}'+
+  '.tor-boq table.tor-boq-tbl tr.terb td{text-align:left;font-size:9pt;padding:5px 6px}'+
+  /* --- tanda tangan Penyedia: di LUAR tabel, tanpa garis --- */
+  '.tor-boq .boq-sign{width:7.6cm;margin:20pt 0 0 auto;text-align:center;font-size:9pt}'+
+  '.tor-boq .boq-sign .bdn{font-weight:700;margin-top:2pt}'+
+  '.tor-boq .boq-sign .sp{height:2.2cm}'+
+  '.tor-boq .boq-sign .nm{font-weight:700;text-decoration:underline}'+
+  '.tor-boq .boq-sign .jab{font-weight:700;margin-top:1pt}'+
+  /* Blok BoQ selalu memakai lebar penuh lembar — inden klausul tidak berlaku. */
+  '.spk-cl .tor-boq,.spk-cl .tor-boq table.tor-boq-tbl{margin-left:0;margin-right:0}'+
+  '.tor-boq-kosong{margin:12pt 0;padding:10pt 12pt;border:1px dashed #999;border-radius:6px;'+
+    'font-size:9pt;color:#5b4a00;background:#fffbe6;-webkit-print-color-adjust:exact;print-color-adjust:exact}';
+}
+
 /* ---- Sampul ---- */
 function torCoverHtml(data, ctx){
   const esc=fkEsc;
@@ -1351,7 +1644,12 @@ function torDocHtml(data, klausul){
   const babHead=(s)=>'<div class="spk-cl-h tor-babh"><span class="n" data-no="'+fkEsc(s.rom)+'."></span>'+
     fkEsc(s.babNama)+'</div>';
   const clauses=klausul.map((k,i)=>{
-    const s=str[i], inner=spkPkTidy(pre[i], false);
+    const s=str[i];
+    const isiAsli=spkPkTidy(pre[i], false);
+    /* Kelas inden dihitung dari isi ASLI (sebelum tabel BoQ masuk) supaya
+       spkLeadIndentCls tetap membaca paragraf pembuka, bukan <table>. */
+    const indenCls=spkLeadIndentCls(isiAsli);
+    const inner=torBoqInject(isiAsli, data);
     let out='';
     /* Bab I & II: judul bab berdiri sendiri di atas klausul pertamanya. */
     if(s.awal && !s.lebur) out+='<div class="spk-clause tor-babonly">'+babHead(s)+'</div>';
@@ -1361,7 +1659,7 @@ function torDocHtml(data, klausul){
     const head = s.lebur ? babHead(s)
       : '<div class="spk-cl-h"><span class="n" data-no="'+fkEsc(s.no)+'."></span>'+spkFmtJudul(k.judul)+'</div>';
     out+='<div class="spk-clause">'+head+
-      '<div class="spk-cl'+spkLeadIndentCls(inner)+'">'+inner+'</div></div>';
+      '<div class="spk-cl'+indenCls+'">'+inner+'</div></div>';
     return out;
   }).join('');
   SPK_HANG_OVR=null; SPK_JH_OVR=0;
