@@ -16,7 +16,8 @@
      - Pustaka klausul    : renderSpkKlausul() + seluruh unggah/unduh template Word
 
    BEDA POKOK dengan Susun Kontrak:
-     - TIDAK ada langkah "Pilih Klausul" — SELURUH klausul selalu dipakai.
+     - Langkah "Pilih Klausul" memakai penanda `aktif` pada tiap klausul
+       (Susun Kontrak memakai daftar id di spkState.sel).
      - Tidak ada Lampiran (BoQ tetap ditulis sebagai klausul biasa).
      - Nomor dokumen digenerate otomatis: 0001.TOR/DAN.01.03/F17060000/2026
        (format Penetapan Nomor, hanya kode depannya diganti "TOR").
@@ -1048,7 +1049,8 @@ function torEnsureStyle(){
       'font-variant-numeric:tabular-nums;font-weight:700;color:#1B3A6B;min-width:120px}'+
     '.hps-uraian.tor-rab td.c-jt{background:#F7FCFC}'+
     /* Daftar Pilih Klausul (langkah 3) */
-    '.tor-pk-list{display:flex;flex-direction:column;gap:6px}'+
+    '.tor-pk-list{display:grid;grid-template-columns:1fr 1fr;gap:8px}'+
+    '@media(max-width:760px){.tor-pk-list{grid-template-columns:1fr}}'+
     '.tor-pk-row{display:flex;align-items:center;gap:12px;padding:9px 12px;border:1px solid #E3EAF2;'+
       'border-radius:10px;background:#fff;cursor:pointer;transition:border-color .15s ease,background .15s ease}'+
     '.tor-pk-row.on{border-color:#BBD9DE;background:#F7FCFC}'+
@@ -1105,8 +1107,12 @@ function torBatalClick(){
   showView('tor-view');
 }
 function torGoStep(n){
-  n=(n===2)?2:1;
-  if(n===2){
+  /* BUG LAMA: `n=(n===2)?2:1` — sisa dari masa alur ini masih 2 langkah.
+     Akibatnya torGoStep(3) & torGoStep(4) diam-diam dipaksa jadi 1, sehingga
+     tombol "Berikutnya: Pilih Klausul" terpental balik ke Langkah 1.
+     Sekarang keempat langkah diterima, sama seperti spkGoStep(). */
+  n=(n===2?2:(n===3?3:(n===4?4:1)));
+  if(n>=2){
     const nama=String((torState&&torState.data&&torState.data.nama_pekerjaan)||'').trim();
     if(!nama){ toast('Isi Nama Pekerjaan terlebih dahulu sebelum lanjut','warn'); n=1; }
   }
@@ -1146,11 +1152,11 @@ function renderTorSusun(){
   const stp=(no,label)=>'<button type="button" class="spk-stp'+(torStep===no?' active':(torStep>no?' done':''))+'" onclick="torGoStep('+no+')">'+
     '<span class="spk-stp-no">'+(torStep>no?'&#10003;':no)+'</span> '+label+'</button>';
   /* Alur Dokumen Pengadaan:
-       1. Data TOR/KAK   2. Ubah Klausul   3. Pilih Klausul   (4. Susun RAB — menyusul)
+       1. Data Pekerjaan   2. Ubah Klausul   3. Pilih Klausul   4. Susun RAB
      Pakta Integritas TIDAK berupa langkah isian: ia dibangkitkan otomatis dari
      data yang sudah masuk begitu dokumen disimpan. */
   const stepper='<div class="spk-stepper">'+
-    stp(1,'Data TOR/KAK')+'<div class="spk-stp-line"></div>'+
+    stp(1,'Data Pekerjaan')+'<div class="spk-stp-line"></div>'+
     stp(2,'Ubah Klausul')+'<div class="spk-stp-line"></div>'+
     stp(3,'Pilih Klausul')+'<div class="spk-stp-line"></div>'+
     stp(4,'Susun RAB')+'</div>';
@@ -1258,7 +1264,7 @@ function torRabHtml(){
       '<span class="hps-chip">'+items.length+' barang/jasa</span></div>'+
     '<div class="hps-hint">Harga diketik langsung — tidak ada referensi maupun metode perhitungan. '+
       '<b>Jumlah</b> tiap baris = Vol \u00d7 (Harga Barang + Harga Jasa), lalu diringkas memakai rumus HPS '+
-      '(DPP 11/12, PPn 12%). Banyaknya baris mengikuti <b>Jumlah Barang/Jasa</b> di langkah Data TOR/KAK.</div>'+
+      '(DPP 11/12, PPn 12%). Banyaknya baris mengikuti <b>Jumlah Barang/Jasa</b> di langkah Data Pekerjaan.</div>'+
     '<div class="hps-uraian-wrap"><table class="hps-uraian tor-rab"><thead><tr>'+
       '<th class="c-no">No</th>'+
       (cfg.judulOn?'<th>Judul</th>':'')+
@@ -1342,9 +1348,13 @@ function torPilihKlausulHtml(){
       '<span class="jd">'+fkEsc(torJudulPolos(k.judul)||'(tanpa judul)')+'</span>'+
     '</label>';
   }).join('');
-  return '<div class="form-section">'+
-    '<div class="form-section-title"><span>Pilih Klausul</span>'+
-      '<span style="display:flex;gap:8px">'+
+  /* Bentuk kartunya disamakan dengan Langkah 3 Penyusunan Kontrak:
+     judul "Klausul Terpilih (N dari M)" + tombol Pilih Semua / Kosongkan. */
+  return '<div class="form-card">'+
+    '<div class="form-section-title" style="justify-content:space-between">'+
+      '<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg> '+
+        'Klausul Terpilih ('+aktif.length+' dari '+lib.length+')</span>'+
+      '<span class="spk-kl-tools">'+
         '<button type="button" class="btn btn-ghost btn-sm" onclick="torKlausulAktifSemua(true)">Pilih Semua</button>'+
         '<button type="button" class="btn btn-ghost btn-sm" onclick="torKlausulAktifSemua(false)">Kosongkan</button>'+
       '</span></div>'+
@@ -1387,6 +1397,37 @@ function torBridgeKlausul(){
     (records_klausul||[]).forEach(k=>{ if(k && k.aktif===undefined) k.aktif=true; });
   }catch(e){ console.error('torBridgeKlausul:', e); }
 }
+/* Cuplikan isi klausul pada kartu pustaka.
+   renderSpkKlausul() (milik Susun Kontrak) membuatnya dengan
+   `isi.replace(/<[^>]+>/g,' ')` lalu fkEsc() — pembuang TAG, bukan pembaca HTML.
+   Akibatnya ENTITAS (&nbsp; &amp; &quot; …) lolos apa adanya, lalu fkEsc()
+   meng-escape tanda & di depannya sehingga di layar terbaca mentah
+   "&nbsp;&nbsp;… Lingkup pekerjaan pada pengadaan ini …".
+   Di sini cuplikan itu DIHITUNG ULANG memakai parser HTML browser sehingga
+   entitas terbaca sebagai karakter aslinya (nbsp -> spasi biasa). Perbaikan
+   ditempel dari sisi TOR saja lewat torRelabelKlausul(), jadi susun-kontrak.js
+   TIDAK disentuh sama sekali. */
+const TOR_PREV_MAX = 150;
+function torPrevText(html){
+  const mentah = String(html||'');
+  try{
+    const d=document.createElement('div');
+    /* textContent merapatkan blok yang bersebelahan ("<p>Satu</p><p>Dua</p>"
+       -> "SatuDua"), jadi batas antar-blok & <br> diberi spasi lebih dulu. */
+    d.innerHTML=mentah
+      .replace(/<br\s*\/?>/gi,' ')
+      .replace(/<\/(p|div|li|tr|td|th|h[1-6]|blockquote|section|table)\s*>/gi,'$& ');
+    return String(d.textContent||'').replace(/\u00a0/g,' ').replace(/\s+/g,' ').trim();
+  }catch(e){
+    return mentah.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
+  }
+}
+function torPrevFix(row, rec){
+  const pv=row && row.querySelector('.spk-klx-prev'); if(!pv) return;
+  const t=torPrevText(rec && rec.isi);
+  /* textContent: tak perlu escape manual & mustahil menyuntik markup. */
+  pv.textContent = t.slice(0,TOR_PREV_MAX) + (t.length>TOR_PREV_MAX?'\u2026':'');
+}
 /* Setelah renderSpkKlausul(): sesuaikan istilah "SPK" -> "TOR/KAK" pada kartu,
    LALU tulis ulang lencana nomor mengikuti penomoran template Word (I.1, I.2,
    … II.1, … III) dan sisipkan sekat bab di atas klausul pertama tiap bab.
@@ -1405,7 +1446,7 @@ function torRelabelKlausul(){
     if(t) t.innerHTML=t.innerHTML.replace('Pustaka Klausul SPK','Pustaka Klausul TOR/KAK');
     const h=cont.querySelector('.hps-hint');
     if(h) h.innerHTML='Pustaka klausul ini <b>milik dokumen TOR/KAK yang sedang disusun</b>. '+
-      '<b>Seluruh klausul selalu dipakai</b> — tidak ada langkah pilih/centang klausul. '+
+      'Klausul <b>mana</b> yang ikut tercetak ditentukan di langkah <b>Pilih Klausul</b>. '+
       'Penomorannya mengikuti template Word: <b>I.1, I.2 …</b> untuk bab <b>I. Pendahuluan</b> dan '+
       '<b>II.1, II.2 …</b> untuk bab <b>II. Petunjuk Teknis</b>; bab terakhir '+
       '(<b>III. Penutup</b>) tetap tanpa nomor sub seperti pada lampiran TOR. '+
@@ -1419,6 +1460,7 @@ function torRelabelKlausul(){
     const rows=cont.querySelectorAll('.spk-klx-list > .spk-klx');
     for(let i=0;i<rows.length && i<str.length;i++){
       const s=str[i], row=rows[i];
+      torPrevFix(row, list[i]);
       const no=row.querySelector('.spk-klx-no'); if(!no) continue;
       no.textContent=s.no;
       no.classList.add('tor-no');
