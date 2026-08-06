@@ -8064,6 +8064,28 @@ html.mode-rail .wrap{
 }
 html.mode-rail .crumb-path{display:none}
 
+/* --- PERBAIKAN TAMPILAN RAIL DI TABLET (iPad) ---------------------------
+   a) Rail yang menciut dulu memakai overflow:hidden (menimpa overflow-y:auto
+      milik aturan laci). iPad dalam posisi lanskap tingginya hanya ~820 px,
+      sedangkan daftar menunya lebih panjang dari itu — akibatnya butir di
+      bawah garis lipat TERPOTONG dan tidak ada cara menggulirnya sama sekali.
+      Batang gulirnya disembunyikan supaya rail tetap bersih selebar 76 px.  */
+html.mode-rail .sidebar-shell #topnav{
+  flex:1 1 auto;min-height:0;
+  overflow-y:auto;overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;-ms-overflow-style:none}
+html.mode-rail .sidebar-shell #topnav::-webkit-scrollbar{width:0;height:0}
+
+/* b) Tinggi diambil dari inset (top:0 + bottom:0) yang memang sudah dipasang
+      di atas — BUKAN dari 100vh/100dvh. Di Safari iPad nilai dvh berubah tiap
+      bilah alat menyusut atau melebar, dan itulah yang membuat kaki sidebar
+      (Jenis Akun & Keluar) melompat sendiri saat halaman digulir.
+      Aturan ini WAJIB berada sesudah blok @supports (height:100dvh) di atas
+      agar memenangkan urutan berkas. */
+html.mode-rail .sidebar-shell,
+html.mode-rail .sidebar-shell.is-open{height:auto}
+
 
 /* ============================================================
    24. PRATINJAU DI TABLET = PERSIS DESKTOP

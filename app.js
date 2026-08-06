@@ -13943,6 +13943,50 @@ async function refreshDataRho(){
    Unggah & hapus lewat Worker (bertoken); BACA langsung dari custom domain
    publik RHO_PUBLIC_BASE. */
 const RHO_PREFIX = 'foto-referensi/';   // prefiks path = penentu bucket di Worker
+/* Nama bucket R2-nya, dipakai pada pesan diagnosis. Dulu dirujuk di tiga
+   tempat (rhoMigrasiFotoStorage) tanpa pernah dideklarasikan — pemanggilnya
+   melempar ReferenceError sebelum dialog konfirmasi sempat tampil. */
+const RHO_BUCKET = 'foto-referensi';
+
+/* URL BACA foto — lewat Worker, BUKAN lewat pub-*.r2.dev.
+   Public Development URL R2 punya rate limit dan tidak dianjurkan Cloudflare
+   untuk produksi: begitu ambangnya tersentuh, gambar dijawab 429 dan foto
+   "hilang" dari layar lalu muncul lagi beberapa saat kemudian. Selain itu satu
+   Public Development URL terikat pada SATU bucket, jadi nilai yang tersimpan
+   bisa menunjuk bucket lama tanpa jejak apa pun.
+   Endpoint /api/foto pada Worker hanya-baca, tanpa token (atribut src <img>
+   tidak bisa mengirim header Authorization), dan dibatasi keras pada prefiks
+   foto-referensi saja — lihat PUBLIC_MODULES di worker.js.
+   `v` = penanda versi; berubah tiap foto ditimpa sehingga cache lama terlewati. */
+function rhoFotoUrl(path, v){
+  const p = String(path||'').replace(/^\/+/,'');
+  if(!p) return '';
+  return R2_GATEWAY_URL + '/api/foto?path=' + encodeURIComponent(p) + (v ? ('&v=' + v) : '');
+}
+/* Sumber gambar yang dipakai <img>. Menyembuhkan sendiri record lama yang
+   URL-nya masih menunjuk pub-*.r2.dev: selama fotoPath ada, URL dirakit ulang
+   ke gateway — jadi TIDAK perlu migrasi basis data untuk pindah jalur baca. */
+function rhoFotoSrc(c){
+  if(!c) return '';
+  const f = String(c.foto||'');
+  if(!f) return '';
+  if(rhoIsDataUrl(f)) return f;                       // base64 cadangan: pakai apa adanya
+  if(f.indexOf(R2_GATEWAY_URL) === 0) return f;       // sudah lewat gateway
+  const p = String(c.fotoPath||'');
+  if(!p) return f;                                    // tak ada path: tak bisa dirakit ulang
+  const v = (f.match(/[?&]v=(\d+)/)||[])[1] || '';    // pertahankan penanda versi lama
+  return rhoFotoUrl(p, v);
+}
+/* URL cadangan (basis publik lama). Dipakai HANYA bila gateway gagal —
+   mis. Worker versi lama yang belum punya /api/foto. */
+function rhoFotoSrcAlt(c){
+  if(!c) return '';
+  const f = String(c.foto||'');
+  if(rhoIsDataUrl(f)) return '';
+  const p = String(c.fotoPath||'');
+  if(p && RHO_PUBLIC_BASE) return String(RHO_PUBLIC_BASE).replace(/\/+$/,'')+'/'+p;
+  return (f && f.indexOf(R2_GATEWAY_URL)!==0) ? f : '';
+}
 function rhoUid(){ try{ if(window.crypto&&crypto.randomUUID) return 'rho_'+crypto.randomUUID(); }catch(e){} return 'rho_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,10); }
 function rhoIsDataUrl(s){ return typeof s==='string' && s.indexOf('data:image')===0; }
 function rhoIsHttpUrl(s){ return typeof s==='string' && /^https?:\/\//i.test(s); }
@@ -13957,8 +14001,11 @@ const StoreRhoFoto = {
     if(!fkAuthToken()) throw new Error('Sesi berkas tidak tersedia — silakan login ulang.');
     const blob=rhoDataUrlToBlob(dataUrl);
     await r2XhrPut(path, blob);
-    /* URL baca = custom domain publik + kunci objek (kunci = path, persis). */
-    return { url: String(RHO_PUBLIC_BASE).replace(/\/+$/,'')+'/'+path, path };
+    /* URL baca = endpoint publik Worker + kunci objek (kunci = path, persis).
+       Penanda versi disertakan di sini, BUKAN ditempel pemanggil — dulu
+       pemanggil menambahkan '?v=' pada URL yang sudah punya query string,
+       menghasilkan '...?path=x?v=123' yang tidak sah. */
+    return { url: rhoFotoUrl(path, Date.now()), path };
   },
   /* Hapus seluruh folder foto milik satu record.
      R2 tidak punya padanan list()+remove() milik Supabase Storage, jadi
@@ -14161,11 +14208,34 @@ function rhoRecalcCell(i,r){ const e=document.getElementById('rho-est-'+i+'-'+r)
 function rhoFotoInnerEmpty(){
   return '<div class="rho-foto-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg><span>Klik lalu tempel<br>(Ctrl + V)</span></div>';
 }
+/* Gambar gagal dimuat.
+   Dulu tidak ada penanganan apa pun: sel jadi kosong tanpa jejak, dan karena
+   base64 cadangan sudah dihapus saat migrasi, tidak ada cara mengetahui
+   penyebabnya. Sekarang bertahap — (1) coba ulang sekali (kalau sekadar
+   jaringan tersendat), (2) coba basis publik lama (kalau Worker yang terpasang
+   belum punya /api/foto), (3) baru menyerah, sambil menyebut path objeknya
+   supaya bisa langsung dicocokkan dengan isi bucket. */
+function rhoFotoGagal(img,i,r){
+  const st=(typeof rhoState!=='undefined' && rhoState) ? rhoState : null;
+  const c=(st && st.refs && st.refs[i] && st.refs[i][r]) ? st.refs[i][r] : {};
+  const tahap=(img.__tahap|0)+1; img.__tahap=tahap;
+  if(tahap===1){ const s=img.src; setTimeout(function(){ img.src=''; img.src=s; },1200); return; }
+  if(tahap===2){
+    const alt=rhoFotoSrcAlt(c);
+    if(alt && alt!==img.src){ img.src=alt; return; }
+  }
+  console.warn('Foto RHO gagal dimuat:', {item:i, ref:r, src:img.src, path:c.fotoPath||null});
+  const cell=img.closest ? img.closest('.rho-foto-cell') : null;
+  if(cell){
+    cell.classList.remove('has-img');
+    cell.innerHTML='<div class="rho-foto-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.4v.01"/></svg><span>Foto gagal dimuat<br>'+fkEsc(c.fotoPath||'(tanpa path)')+'</span></div>';
+  }
+}
 function rhoFotoInnerImg(url,i,r){
-  return '<img src="'+url+'" alt="Foto produk"><div class="rho-foto-actions"><button type="button" title="Hapus foto" onclick="rhoClearFoto(event,'+i+','+r+')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></div>';
+  return '<img src="'+url+'" alt="Foto produk" onerror="rhoFotoGagal(this,'+i+','+r+')"><div class="rho-foto-actions"><button type="button" title="Hapus foto" onclick="rhoClearFoto(event,'+i+','+r+')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></div>';
 }
 function rhoFotoCellHtml(i,r){
-  const st=rhoState; const cell=(st.refs[i]&&st.refs[i][r])?st.refs[i][r]:{}; const foto=cell.foto||'';
+  const st=rhoState; const cell=(st.refs[i]&&st.refs[i][r])?st.refs[i][r]:{}; const foto=rhoFotoSrc(cell);
   const inner = foto ? rhoFotoInnerImg(foto,i,r) : rhoFotoInnerEmpty();
   return '<div class="rho-foto-cell'+(foto?' has-img':'')+'" id="rho-foto-'+i+'-'+r+'" data-i="'+i+'" data-r="'+r+'" tabindex="0" onclick="rhoFotoClick(this)">'+inner+'</div>';
 }
@@ -14473,7 +14543,7 @@ async function rhoSimpan(){
         const path=RHO_PREFIX+key+'/r'+job.r+'_i'+job.i+'.jpg';
         try{
           const res=await StoreRhoFoto.uploadDataUrl(job.c.foto, path);
-          job.c.foto=res.url+'?v='+Date.now();   // cache-bust saat foto ditimpa
+          job.c.foto=res.url;                    // penanda versi sudah ada di dalamnya
           job.c.fotoPath=path;
         }catch(err){ console.error('Upload foto gagal',path,err); failed++; /* biarkan base64 sebagai cadangan */ }
         await new Promise(r=>setTimeout(r,0));
@@ -14613,7 +14683,7 @@ async function rhoMigrasiFotoStorage(){
               const path=RHO_PREFIX+key+'/r'+r+'_i'+k+'.jpg';
               try{
                 const res=await StoreRhoFoto.uploadDataUrl(c.foto, path);
-                c.foto=res.url+'?v='+Date.now(); c.fotoPath=path;
+                c.foto=res.url; c.fotoPath=path;
                 bytesAfter+=String(res.url).length;
                 recChanged=true;
               }catch(err){ console.error('Migrasi foto gagal',path,err); failed++; bytesAfter+=before; /* pertahankan base64 */ }
@@ -14739,7 +14809,21 @@ function rhoBuildDocHtml(){
     for(let r=0;r<K;r++) th+='<th>'+fkEsc(rhoRefLabel(r))+'</th>';
     th+='</tr>';
     let rowFoto='<tr><td class="lbl">Foto Produk</td>';
-    for(let r=0;r<K;r++){ const f=cells[r]?cells[r].foto:''; rowFoto+='<td class="foto">'+(f?'<img class="rho-pdf-foto" src="'+f+'">':'<span class="rho-pdf-foto-empty">–</span>')+'</td>'; }
+    /* Dokumen ini ditulis ke dalam IFRAME lewat doc.write(), jadi rhoFotoGagal()
+       milik halaman induk tidak terjangkau dari sini. Cadangannya karena itu
+       ditulis inline dan berdiri sendiri: sekali gagal -> pindah ke basis publik
+       lama, gagal lagi -> tampilkan tanda strip, bukan ikon gambar rusak. */
+    for(let r=0;r<K;r++){
+      const c=cells[r]; const f=rhoFotoSrc(c); const alt=rhoFotoSrcAlt(c);
+      let img='<span class="rho-pdf-foto-empty">–</span>';
+      if(f){
+        const jaring = alt && alt!==f
+          ? 'this.onerror=null;this.src=&quot;'+fkEsc(alt).replace(/"/g,'&quot;')+'&quot;'
+          : 'this.onerror=null;this.outerHTML=&quot;<span class=\\&quot;rho-pdf-foto-empty\\&quot;>–</span>&quot;';
+        img='<img class="rho-pdf-foto" src="'+fkEsc(f)+'" onerror="'+jaring+'">';
+      }
+      rowFoto+='<td class="foto">'+img+'</td>';
+    }
     rowFoto+='</tr>';
     let rowLink='<tr><td class="lbl">Link Produk</td>';
     for(let r=0;r<K;r++){ const v=cells[r]?(cells[r].link||''):''; rowLink+='<td class="lnk">'+(v?('<a href="'+fkEsc(v)+'">'+fkEsc(v)+'</a>'):'-')+'</td>'; }

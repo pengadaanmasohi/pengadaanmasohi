@@ -273,7 +273,31 @@ function initRailSentuh(){
     }
   });
   window.addEventListener('resize', terapkanModeRail);
-  window.addEventListener('orientationchange', function(){ setTimeout(terapkanModeRail,120); });
+  /* Dulu: satu setTimeout 120 ms sesudah orientationchange. Di iOS,
+     innerWidth/innerHeight sering BELUM diperbarui pada 120 ms, sehingga
+     modeRail() menghitung dari ukuran sebelum layar diputar dan mode yang
+     terpasang salah sampai peristiwa berikutnya datang — itulah sidebar yang
+     "tergeser tiba-tiba". Sekarang diperiksa berlapis. */
+  window.addEventListener('orientationchange', function(){
+    [60,200,500,900].forEach(function(ms){ setTimeout(terapkanModeRail, ms); });
+  });
+  /* Media query-nya sendiri ikut didengarkan. Ini yang paling menentukan di
+     iPad: (hover:none) BERBALIK begitu Magic Keyboard / trackpad dipasang atau
+     dilepas, tanpa resize apa pun. Tanpa pendengar ini, kelas .mode-rail jadi
+     basi, aturan laci di style.css (transform:translateX(-100%)) mengambil
+     alih, dan sidebar meluncur keluar layar — tampak seperti "hilang".
+     Ambang 700/600 px & 1024 px ikut didengarkan karena Stage Manager di iPadOS
+     bisa melintasinya tanpa memicu orientationchange. */
+  ['(hover:none)','(max-width:1024px)','(min-width:700px)','(min-height:600px)'].forEach(function(q){
+    try{
+      var mq=window.matchMedia(q);
+      if(mq.addEventListener) mq.addEventListener('change', terapkanModeRail);
+      else if(mq.addListener) mq.addListener(terapkanModeRail);
+    }catch(e){}
+  });
+  /* Bilah alat Safari yang menyusut/melebar mengubah tinggi terlihat tanpa
+     memicu resize pada sebagian versi iOS. */
+  try{ if(window.visualViewport) window.visualViewport.addEventListener('resize', terapkanModeRail); }catch(e){}
   terapkanModeRail();
 }
 

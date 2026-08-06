@@ -9313,6 +9313,9 @@ function spkPageScript(){
     ' var PHL=mm2px(273);',
     ' if(!PH||PH<200){ if(TRY++<80) setTimeout(jalan,100); return; }',
     ' DONE=true;',
+    /* Kisi penomoran dijalankan DI SINI — sesudah document.fonts.ready dan
+       SEBELUM pemenggalan halaman. Lihat catatan panjang di spkKisiScript(). */
+    ' try{ if(window.__spkKisi) window.__spkKisi(); }catch(eK){ try{ console.error("spk kisi:", eK); }catch(_){} }',
     ' var doc=document.getElementById("spk-docs")||document.querySelector(".spk-doc");',
     ' var backup=doc?doc.innerHTML:"";',
     ' try{',
@@ -9643,7 +9646,20 @@ function spkDocHtml(data, klausul){
 var SPK_KISI_INDEN = SPK_PK_LEAD;   /* jarak tepi penanda anak dari kolom teks induk (cm) */
 var SPK_KISI_JEDA  = SPK_NUM_GAP;   /* jeda penanda -> teks (cm) */
 function spkKisiScript(){
-  return '<scr'+'ipt>(function(){'+
+  /* PENTING — JANGAN dijalankan sendiri saat naskah ini di-parse.
+     Kisi ini MENGUKUR lebar glif penanda (alami() -> getBoundingClientRect)
+     lalu mengunci lebar kotak nomor. Bila diukur sebelum "Inter Local" selesai
+     dimuat, yang terukur adalah font cadangan (Arial/Times) — kotaknya jadi
+     lebih sempit daripada glif yang akhirnya digambar, dan karena span-nya
+     width:W + white-space:nowrap + text-indent:-W, nomornya tumpah ke kolom
+     teks. Itulah "nomor menyatu dengan teks" yang hilang sesudah hard refresh:
+     hard refresh hanya mengubah urutan balapannya, kadang font sudah
+     ter-decode duluan sehingga kebetulan benar.
+     Karena itu kisi kini dititipkan ke spkPageScript(), yang memang sudah
+     menunggu document.fonts.ready sebelum memaginasi. Urutannya jadi pasti:
+     font siap -> kisi diukur dengan font asli -> paginasi mengukur tinggi
+     terhadap inden final. */
+  return '<scr'+'ipt>window.__spkKisi=function(){'+
   'if(window.__spkKisiDone)return; window.__spkKisiDone=1;'+
   'var IND='+SPK_KISI_INDEN+', JED='+SPK_KISI_JEDA+', TOL=0.06;'+
   'function px1(){var d=document.createElement("div");'+
@@ -9752,7 +9768,7 @@ function spkKisiScript(){
     '}'+
   '}'+
   '}catch(e){}'+
-  '})();</scr'+'ipt>';
+  '};</scr'+'ipt>';
 }
 
 /* ---------- Pratinjau & Cetak ----------
@@ -9856,25 +9872,58 @@ function spkKhsPreviewPick(v){
   spkKhsPreviewSel = parseInt(v,10)||0;
   spkPreviewRender();
 }
-function spkPrint(){
+/* Penjaga masuk-ulang. Dulu tidak ada: klik kedua pada "Cetak / PDF" langsung
+   mencabut bingkai milik klik pertama (`old.remove()`), sementara rantai
+   goPaged() milik klik pertama masih hidup sampai 3 detik. Rantai itu lalu
+   menemukan ifr.contentWindow bernilai null -> `siap` selamanya false -> begitu
+   jatah waktunya habis ia memanggil go(), focus() melempar, dan penangkap
+   galatnya jatuh ke window.print() — yang mencetak HALAMAN APLIKASI beserta
+   iframe pratinjau yang sedang tampil. Itulah dokumen yang tercetak ganda. */
+let spkPrintBusy = false;
+function spkPrint(_lewatiPdf){
+  if(spkPrintBusy) return;
   const data=spkPreviewData||{}, klausul=spkPreviewKlausul||[];
   /* Cetak/PDF mengikuti sheet penyedia yang sedang dipilih di pratinjau. */
   SPK_KHS_ONLY = spkIsKhsOf(data) ? (parseInt(spkKhsPreviewSel,10)||0) : 0;
+  /* Bila pratinjau yang terbuka SUDAH berupa PDF hasil render Worker, cetak
+     berkas PDF itu juga — jangan membangun ulang dokumennya lewat mesin cetak
+     peramban. Seluruh modul lain (fklPrint, pnwPrint, rhoPrint, hpsPrint,
+     anaPrint, hpscPrint) sudah melakukan ini; SPK/PK satu-satunya yang
+     terlewat, sehingga pratinjau dan hasil cetaknya digambar oleh dua mesin
+     berbeda dan tidak pernah dijamin sama. */
+  if(!_lewatiPdf && typeof docPdfPrintActive==='function' && docPdfPrintActive(spkPrint)) return;
+  spkPrintBusy = true;
   const old=document.getElementById('spk-print-frame'); if(old) old.remove();
   const ifr=document.createElement('iframe'); ifr.id='spk-print-frame'; ifr.setAttribute('aria-hidden','true');
-  ifr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+  /* Digeser ke luar layar dengan ukuran NYATA, bukan 0x0 + visibility:hidden.
+     Safari (iPad) mencetak lembar kosong dari bingkai berukuran nol. */
+  ifr.style.cssText='position:fixed;left:-10000px;top:0;width:820px;height:1160px;border:0;opacity:0;pointer-events:none';
   document.body.appendChild(ifr);
   const doc=ifr.contentWindow.document; doc.open(); doc.write(spkDocHtml(data, klausul)); doc.close();
+
+  const bebas=()=>{ const f=document.getElementById('spk-print-frame'); if(f) f.remove(); spkPrintBusy=false; };
   const go=()=>{
-    const run=()=>{ try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }catch(e){ try{ window.print(); }catch(_){} } };
+    const run=()=>{
+      try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }
+      catch(e){ console.warn('spkPrint:', e); bebas(); }   /* JANGAN window.print() */
+    };
     if(typeof withHiddenPageTitle==='function') withHiddenPageTitle(run); else run();
-    setTimeout(()=>{ const f=document.getElementById('spk-print-frame'); if(f) f.remove(); }, 1500);
+    /* Bingkai dibiarkan hidup sampai dialog cetak ditutup — dialog "Simpan
+       sebagai PDF" masih membacanya, dan mencabutnya di tengah jalan membuat
+       sebagian peramban menggambar ulang isinya. Dulu dicabut paksa 1,5 detik
+       sesudah print() dipanggil. */
+    const bersih=()=>{ window.removeEventListener('focus',bersih); setTimeout(bebas,500); };
+    window.addEventListener('focus', bersih);
+    setTimeout(bebas, 120000);
   };
   /* Tunggu sampai isi selesai dipecah menjadi lembar A4 (spkPageScript) agar
      hasil cetak sama persis dengan pratinjau. */
   let printed=false;
   const goPaged=(sisa)=>{
     if(printed) return;
+    /* Bingkainya sudah dicabut (mis. oleh panggilan cetak lain) -> berhenti,
+       jangan sampai jatuh ke jalur cadangan yang mencetak halaman utama. */
+    if(!document.body.contains(ifr)){ printed=true; spkPrintBusy=false; return; }
     let siap=false;
     try{ siap=!!(ifr.contentWindow && ifr.contentWindow.__spkPaged); }catch(e){ siap=true; }
     if(siap || sisa<=0){ printed=true; go(); return; }
