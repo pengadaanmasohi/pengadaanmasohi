@@ -1314,8 +1314,24 @@ function torEnsureStyle(){
     /* align-items:flex-start (bukan center): begitu nama pekerjaan melipat jadi
        dua-tiga baris, tombol Cetak & tutup TETAP menempel di sudut KANAN ATAS,
        tidak ikut melorot ke tengah tinggi kepala (ketentuan 6 Agu 2026). */
-    '.tor-dk-hd{display:flex;flex-wrap:nowrap;align-items:flex-start;'+
-      'justify-content:space-between;gap:12px;padding:16px 18px;'+
+    /* ---- TOMBOL DIPAKU DI SUDUT KANAN ATAS ----
+       KETENTUAN 6 Agu 2026: "panjang teks pekerjaan tidak akan menggeser posisi
+       ikon cetak dan x ke depannya".
+
+       Susunan flex (judul dan tombol sebagai dua kolom bersebelahan) TIDAK bisa
+       menjamin itu: berapa pun penjagaan flex:none & min-width:0 yang dipasang,
+       posisi tombol tetap merupakan HASIL dari lebar judul — satu nama tanpa
+       spasi yang sangat panjang, atau lebar layar yang tidak terduga, masih bisa
+       menggesernya. Karena itu kelompok tombol dikeluarkan dari aliran flex dan
+       DIPAKU (position:absolute) ke sudut kanan atas kepala.
+
+       Ruang untuk tombol dicadangkan lewat padding-kanan kepala (--dk-act),
+       jadi judul berhenti tepat sebelum tombol dan tidak pernah menyelinap di
+       bawahnya. Dengan cara ini letak tombol menjadi TETAP — sama sekali tidak
+       bergantung pada isi judul. */
+    '.tor-dk-hd{--dk-act:92px;position:relative;display:flex;flex-wrap:nowrap;'+
+      'align-items:flex-start;gap:12px;padding:16px 18px;'+
+      'padding-right:calc(18px + var(--dk-act));'+
       'background:linear-gradient(90deg,#0E7C86,#12A0A8);color:#fff}'+
     /* Judul MELIPAT, tombol TIDAK MENGECIL (ketentuan 6 Agu 2026: "tombol x
        sepertinya gepeng karena nama pekerjaan terlalu panjang"). Penyebabnya
@@ -1332,18 +1348,25 @@ function torEnsureStyle(){
       'white-space:normal;overflow-wrap:anywhere;word-break:break-word}'+
     /* margin-top negatif tipis: menyamakan titik tengah tombol dengan titik
        tengah BARIS PERTAMA judul, supaya sudut kanan atas terlihat presisi. */
-    '.tor-dk-hd .act{flex:0 0 auto;display:flex;align-items:center;gap:10px;margin-top:-3px}'+
+    '.tor-dk-hd .act{position:absolute;top:14px;right:14px;margin:0;'+
+      'display:flex;align-items:center;gap:10px}'+
     /* IKON PUTIH POLOS (ketentuan 6 Agu 2026: "cetak dan x berwarna putih
        saja"): kotak latar rgba putih dihapus, yang tersisa hanya guratan
        ikonnya. Umpan balik sorot memakai opacity — tidak menambah warna baru. */
+    /* IKON PUTIH POLOS. `background:transparent` ditulis untuk KEDUA keadaan
+       (diam & disorot) supaya kotak latar bawaan tombol .btn tidak menyelinap
+       masuk; umpan balik sorot memakai opacity saja, tidak menambah warna. */
     '.tor-dk-hd .x,.tor-dk-hd .pr{border:0;background:transparent;color:#fff;'+
       'width:28px;height:28px;flex:0 0 28px;border-radius:8px;line-height:1;cursor:pointer;'+
       'display:flex;align-items:center;justify-content:center;padding:0;'+
-      'opacity:.92;transition:opacity .15s ease}'+
-    '.tor-dk-hd .x{font-size:20px}'+
+      'box-shadow:none;opacity:.92;transition:opacity .15s ease}'+
+    '.tor-dk-hd .x{font-size:22px;font-weight:400}'+
     '.tor-dk-hd .x:hover,.tor-dk-hd .pr:hover{opacity:1;background:transparent}'+
     '.tor-dk-hd .x:focus-visible,.tor-dk-hd .pr:focus-visible{outline:2px solid #fff;outline-offset:2px}'+
-    '.tor-dk-hd .pr svg{width:17px;height:17px}'+
+    /* Guratan ikon dipaksa putih. TOR_IC_CETAK memang memakai
+       stroke="currentColor", tetapi menyebutnya di sini membuat ikon tetap putih
+       walau suatu saat ikonnya diganti dengan yang berwarna tetap. */
+    '.tor-dk-hd .pr svg{width:18px;height:18px;stroke:#fff;color:#fff}'+
     '.tor-dk-bd{padding:12px;display:flex;flex-direction:column;gap:8px;max-height:70vh;overflow:auto}'+
     '.tor-dk-row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 14px;'+
       'border:1px solid #E3EAF2;border-radius:12px;background:#fff;cursor:pointer;'+
@@ -3511,6 +3534,14 @@ const TOR_PI_TUTUP = [
    berikutnya. Ketentuan 6 Agu 2026: "semua jarak ini 6 pt" — jadi satu tetapan
    ini saja yang menentukan, tidak ada lagi angka piksel tersebar. */
 const TOR_PI_JARAK_BARIS_PT = 6;
+/* Jarak PEMISAH BLOK pada Pakta Integritas (pt). Ketentuan 6 Agu 2026:
+   "line spacing before/after menjadi 12 pt" untuk blok pilihan peran —
+     before : sebelum baris "dalam hal ini sebagai :"
+     after  : sesudah pilihan terakhir ("Pengguna Barang/Jasa")
+   Dipakai HANYA untuk memisahkan blok itu dari bagian di atas & bawahnya.
+   Jarak antar-baris di DALAM blok (keempat pilihan peran) sengaja TIDAK ikut —
+   pengguna meminta "spacing teks-teks di gambar tetap seperti ini". */
+const TOR_PI_JARAK_BLOK_PT = 12;
 /* Margin KIRI-KANAN lembar Pakta Integritas (mm) = padding `.spk-page` pada isi
    klausul TOR/KAK, supaya lebar kolom teks kedua dokumen persis sama. */
 const TOR_PI_MARGIN_MM = 25.4;
@@ -3725,7 +3756,9 @@ function torPiDocHtml(data, peran){
       brs('NIP', esc(org.nip||'\u2014'))+
       brs('Jabatan', esc(org.jab||'\u2014'))+
     '</tbody></table>'+
-    '<p class="pi-p">dalam hal ini sebagai :</p>'+
+    /* .pi-sbg = penanda baris pengantar blok pilihan peran; dipakai
+       torPiKertasCss untuk memberi jarak 12 pt di atasnya. */
+    '<p class="pi-p pi-sbg">dalam hal ini sebagai :</p>'+
     '<div class="pi-cks">'+cek+'</div>'+
     '<table class="pi-tb pi-tb2"><tbody>'+
       /* Bentuk RINGKAS (ketentuan 6 Agu 2026): "PT PLN (Persero) UP3 Masohi".
@@ -3819,8 +3852,16 @@ function torPiDocHtml(data, peran){
     /* `gap` = jarak ANTAR-PILIHAN peran; sengaja tetap rapat (3px) karena
        keempatnya satu kesatuan pilihan, bukan alinea terpisah. Yang diseragamkan
        ke 6 pt adalah jarak blok ini ke bagian berikutnya (margin bawah). */
+    /* BLOK PILIHAN PERAN — jarak 12 pt di atas & di bawahnya.
+       Jarak ATAS dipasang pada baris pengantarnya (.pi-sbg), bukan pada blok
+       ini, supaya kalimat "dalam hal ini sebagai :" ikut terdorong bersama
+       daftarnya — keduanya satu kesatuan.
+       Margin bawah .pi-tb di atasnya (6 pt) TIDAK ditambahkan: margin blok yang
+       bersebelahan MENYATU dan diambil yang terbesar, jadi hasilnya tepat
+       12 pt, bukan 18 pt. */
+    '.pi-p.pi-sbg{margin-top:'+TOR_PI_JARAK_BLOK_PT+'pt}'+
     '.pi-cks{display:flex;flex-direction:column;align-items:flex-start;'+
-      'gap:3px;margin:0 0 '+TOR_PI_JARAK_BARIS_PT+'pt 1cm}'+
+      'gap:3px;margin:0 0 '+TOR_PI_JARAK_BLOK_PT+'pt 1cm}'+
     '.pi-ck{flex:0 0 auto;display:flex;gap:6px;align-items:flex-start}'+
     '.pi-ck .bx{font-size:1.15em;line-height:1}'+
     '.pi-ol{margin:0 0 '+TOR_PI_JARAK_BARIS_PT+'pt;padding-left:1.05cm}'+
@@ -3884,6 +3925,10 @@ function torOpenPreview(data, klausul){
     btn.id='tor-preview-print'; btn.className='btn btn-teal';
     btn.style.padding='8px 14px'; btn.style.fontSize='11px';
     btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>Cetak / PDF';
+    /* Teksnya disembunyikan (tombol kini ikon saja, lihat #pn-preview-ikon
+       di index.html), jadi judulnya dipindah ke atribut title supaya
+       maksudnya tetap terbaca saat disorot. */
+    btn.title='Cetak / PDF';
     btn.onclick=function(){ torPrint(); };
     actions.insertBefore(btn, actions.firstChild);
   }

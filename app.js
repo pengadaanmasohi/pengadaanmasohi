@@ -7119,6 +7119,10 @@ function jpOpenPreview(html, nama){
     btn.id='jp-preview-print'; btn.className='btn btn-teal';
     btn.style.padding='8px 14px'; btn.style.fontSize='11px';
     btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>Cetak / PDF';
+    /* Teksnya disembunyikan (tombol kini ikon saja, lihat #pn-preview-ikon
+       di index.html), jadi judulnya dipindah ke atribut title supaya
+       maksudnya tetap terbaca saat disorot. */
+    btn.title='Cetak / PDF';
     btn.onclick=function(){ jpPrintDocHtml(html); };
     actions.insertBefore(btn, actions.firstChild);
   }
@@ -12493,6 +12497,10 @@ function fklOpenPreview(){
     btn.id='fkl-preview-print'; btn.className='btn btn-teal';
     btn.style.padding='8px 14px'; btn.style.fontSize='11px';
     btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>Cetak / PDF';
+    /* Teksnya disembunyikan (tombol kini ikon saja, lihat #pn-preview-ikon
+       di index.html), jadi judulnya dipindah ke atribut title supaya
+       maksudnya tetap terbaca saat disorot. */
+    btn.title='Cetak / PDF';
     btn.onclick=fklPrint;
     actions.insertBefore(btn, actions.firstChild);
   }
@@ -13850,6 +13858,10 @@ function pnwOpenPreview(){
     btn.id='pnw-preview-print'; btn.className='btn btn-teal';
     btn.style.padding='8px 14px'; btn.style.fontSize='11px';
     btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>Cetak / PDF';
+    /* Teksnya disembunyikan (tombol kini ikon saja, lihat #pn-preview-ikon
+       di index.html), jadi judulnya dipindah ke atribut title supaya
+       maksudnya tetap terbaca saat disorot. */
+    btn.title='Cetak / PDF';
     btn.onclick=pnwPrint;
     actions.insertBefore(btn, actions.firstChild);
   }
@@ -14965,6 +14977,10 @@ function rhoOpenPreview(){
     btn.id='rho-preview-print'; btn.className='btn btn-teal';
     btn.style.padding='8px 14px'; btn.style.fontSize='11px';
     btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>Cetak / PDF';
+    /* Teksnya disembunyikan (tombol kini ikon saja, lihat #pn-preview-ikon
+       di index.html), jadi judulnya dipindah ke atribut title supaya
+       maksudnya tetap terbaca saat disorot. */
+    btn.title='Cetak / PDF';
     btn.onclick=rhoPrint;
     actions.insertBefore(btn, actions.firstChild);
   }
@@ -16929,6 +16945,10 @@ function hpsOpenPreview(){
     btn.id='hps-preview-print'; btn.className='btn btn-teal';
     btn.style.padding='8px 14px'; btn.style.fontSize='11px';
     btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>Cetak / PDF';
+    /* Teksnya disembunyikan (tombol kini ikon saja, lihat #pn-preview-ikon
+       di index.html), jadi judulnya dipindah ke atribut title supaya
+       maksudnya tetap terbaca saat disorot. */
+    btn.title='Cetak / PDF';
     btn.onclick=hpsPrint;
     actions.insertBefore(btn, actions.firstChild);
   }
@@ -18610,6 +18630,10 @@ function anaOpenPreview(section){
     btn.id='ana-preview-print'; btn.className='btn btn-teal';
     btn.style.padding='8px 14px'; btn.style.fontSize='11px';
     btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>Cetak / PDF';
+    /* Teksnya disembunyikan (tombol kini ikon saja, lihat #pn-preview-ikon
+       di index.html), jadi judulnya dipindah ke atribut title supaya
+       maksudnya tetap terbaca saat disorot. */
+    btn.title='Cetak / PDF';
     btn.onclick=anaPrint;
     actions.insertBefore(btn, actions.firstChild);
   }
@@ -19145,6 +19169,10 @@ function hpscOpenPreview(html, nama){
     btn.id='hpsc-preview-print'; btn.className='btn btn-teal';
     btn.style.padding='8px 14px'; btn.style.fontSize='11px';
     btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>Cetak / PDF';
+    /* Teksnya disembunyikan (tombol kini ikon saja, lihat #pn-preview-ikon
+       di index.html), jadi judulnya dipindah ke atribut title supaya
+       maksudnya tetap terbaca saat disorot. */
+    btn.title='Cetak / PDF';
     btn.onclick=function(){ hpscPrintHtml(html); };
     actions.insertBefore(btn, actions.firstChild);
   }

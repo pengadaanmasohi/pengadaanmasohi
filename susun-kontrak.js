@@ -9885,6 +9885,10 @@ function spkOpenPreview(data, klausul){
     btn.id='spk-preview-print'; btn.className='btn btn-teal';
     btn.style.padding='8px 14px'; btn.style.fontSize='11px';
     btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>Cetak / PDF';
+    /* Teksnya disembunyikan (tombol kini ikon saja, lihat #pn-preview-ikon
+       di index.html), jadi judulnya dipindah ke atribut title supaya
+       maksudnya tetap terbaca saat disorot. */
+    btn.title='Cetak / PDF';
     btn.onclick=function(){ spkPrint(); };
     actions.insertBefore(btn, actions.firstChild);
   }

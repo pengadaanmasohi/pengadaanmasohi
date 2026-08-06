@@ -113,7 +113,7 @@
 })();
 </script>
 
-<link rel="stylesheet" href="style.css?v=20260806p">
+<link rel="stylesheet" href="style.css?v=20260806q">
 
 <!-- ============ IKON KEPALA MODAL PRATINJAU ============
      KETENTUAN 6 Agu 2026: ikon Cetak/PDF (printer/mata), Layar Penuh
@@ -148,10 +148,74 @@
    Yang ber-fill="none" sengaja dikecualikan agar tidak berubah jadi blok pejal. */
 #pn-preview-overlay .detail-head svg:not([fill="none"]),
 #pn-preview-overlay .pn-preview-head-actions svg:not([fill="none"]){fill:#fff !important}
-/* Kejelasan saat disorot/ditekan: latar putih transparan, bukan warna gelap
-   yang justru menenggelamkan ikonnya. */
+/* ---- KOTAK KONTRAS DI BELAKANG IKON ----
+   Ikon putih di atas gradasi teal memang terbaca, tetapi batas tombolnya
+   tidak: yang tampak hanya guratan melayang, sehingga tidak jelas mana yang
+   bisa diklik dan seberapa besar sasaran ketukannya.
+
+   Tiap tombol diberi kotak putih transparan + garis tepi putih. Dipilih putih
+   transparan, BUKAN warna pekat: latar kepala modal berupa GRADASI yang
+   warnanya berubah dari kiri ke kanan, jadi warna tetap apa pun akan cocok di
+   satu sisi dan menabrak di sisi lain. Putih transparan selalu selaras karena
+   ia mencerahkan apa pun yang ada di belakangnya.
+
+   .pn-fs-btn ("Layar Penuh") punya latar gradasi teal sendiri dari style.css —
+   justru itu yang membuatnya nyaris melebur dengan kepala modal. Latarnya
+   ditimpa di sini supaya ketiga tombol tampil seragam. */
+#pn-preview-overlay .detail-head .btn,
+#pn-preview-overlay .pn-preview-head-actions .btn,
+#pn-preview-overlay .detail-head .detail-close{
+  background:rgba(255,255,255,.16) !important;
+  border:1.5px solid rgba(255,255,255,.55) !important;
+  box-shadow:none !important;
+  border-radius:10px;
+  transition:background .15s ease,border-color .15s ease}
+/* ---- TOMBOL = IKON SAJA ----
+   KETENTUAN 6 Agu 2026: tulisan "Cetak / PDF" dan "Layar Penuh" dilepas,
+   yang tersisa hanya ikonnya.
+
+   `font-size:0` dipakai, BUKAN menghapus teksnya dari HTML. Alasannya dua:
+     1. Tulisan itu dibangkitkan sembilan modul yang berbeda lewat
+        btn.innerHTML='<svg ...>Cetak / PDF' — teksnya berupa TEXT NODE polos
+        tanpa pembungkus, jadi tidak ada yang bisa disasar CSS selain ukuran
+        hurufnya. Menyunting kesembilan tempat itu berarti sembilan peluang
+        tertinggal saat modul baru ditambahkan; aturan di sini berlaku untuk
+        semuanya sekaligus, termasuk yang belum ada.
+     2. Teksnya TETAP ADA di pohon aksesibilitas, sehingga pembaca layar masih
+        menyuarakan "Cetak / PDF" — hilang secara visual, bukan secara makna.
+   Judulnya juga dipasang sebagai atribut title (lihat app.js / susun-*.js)
+   supaya maksud tombol terbaca saat disorot kursor.
+
+   !important diperlukan: kesembilan modul itu menuliskan padding & font-size
+   sebagai GAYA SEBARIS (btn.style.fontSize='11px'), yang mengalahkan CSS biasa. */
+#pn-preview-overlay .detail-head .btn,
+#pn-preview-overlay .pn-preview-head-actions .btn{
+  font-size:0 !important;
+  padding:0 !important;
+  gap:0 !important;
+  width:38px;height:38px;flex:0 0 38px;
+  display:inline-flex;align-items:center;justify-content:center}
+#pn-preview-overlay .detail-head .btn svg,
+#pn-preview-overlay .pn-preview-head-actions .btn svg{
+  width:18px !important;height:18px !important;flex:none}
+/* Label "Layar Penuh"/"Keluar Layar Penuh" berupa <span> ber-id — dilepas
+   sepenuhnya. Nama tombolnya sudah dibawa atribut title di index.html. */
+#pn-preview-overlay #pn-preview-fs-label{display:none}
+/* Tombol tutup dibuat persegi supaya silangnya benar-benar di tengah kotak.
+   font-size-nya DISEBUT ULANG karena silang "x" adalah teks, bukan ikon SVG —
+   tanpa ini ia ikut lenyap oleh font-size:0 di atas. */
+#pn-preview-overlay .detail-head .detail-close{
+  width:38px;height:38px;padding:0;display:inline-flex;
+  align-items:center;justify-content:center;line-height:1;
+  font-size:22px !important}
+/* Kejelasan saat disorot/ditekan: kotaknya menebal, bukan berganti warna
+   gelap yang justru menenggelamkan ikonnya. */
 #pn-preview-overlay .detail-head .btn:hover,
-#pn-preview-overlay .detail-head .detail-close:hover{background:rgba(255,255,255,.18) !important;color:#fff !important}
+#pn-preview-overlay .pn-preview-head-actions .btn:hover,
+#pn-preview-overlay .detail-head .detail-close:hover{
+  background:rgba(255,255,255,.30) !important;
+  border-color:rgba(255,255,255,.85) !important;
+  color:#fff !important}
 </style>
 
 <!-- ============ LEBAR KOLOM: DAFTAR NOMOR DOKUMEN (Penetapan Nomor) ============
@@ -2577,11 +2641,11 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
 
 <!-- app.js dipecah menjadi 3 bagian. URUTAN WAJIB: inti -> susun-kontrak -> lain.
      Memisah "Susun Kontrak" (SPK) agar bisa disunting tanpa memuat seluruh app.js. -->
-<script src="app.js?v=20260806p"></script>
-<script src="susun-kontrak.js?v=20260806p"></script>
-<script src="susun-dokumen.js?v=20260806p"></script>
-<script src="app-lain.js?v=20260806p"></script>
-<script src="ui-sidebar.js?v=20260806p"></script>
+<script src="app.js?v=20260806q"></script>
+<script src="susun-kontrak.js?v=20260806q"></script>
+<script src="susun-dokumen.js?v=20260806q"></script>
+<script src="app-lain.js?v=20260806q"></script>
+<script src="ui-sidebar.js?v=20260806q"></script>
 
 </body>
 </html>
