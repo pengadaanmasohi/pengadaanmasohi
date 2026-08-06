@@ -3104,10 +3104,10 @@ const TOR_PI_TUTUP = [
    Muka huruf Inter DITANAM ulang lewat spkInterFontFace() karena berkas ini
    dokumen terpisah yang tidak mewarisi <style> halaman aplikasi — persis
    sebagaimana torDocHtml melakukannya untuk TOR/KAK. */
-const TOR_PI_MARGIN_MM = 25.4;    /* margin normal Word = 2,54 cm */
+/* Jarak antar-baris blok "Satuan / Unit Kerja" s.d. "No. PRK" (pt). */
+const TOR_PI_JARAK_BARIS_PT = 6;
 function torPiKertasCss(){
   var LH=(typeof spkLHCss==='function') ? (spkLHCss(1.15)||'1.39') : '1.39';
-  var M=TOR_PI_MARGIN_MM, BADAN=Math.round((297-2*M)*10)/10;
   /* Lebar kotak nomor & jeda ke teks — diukur dengan fungsi yang SAMA dengan
      spkNumberFix pada TOR/KAK, jadi hasilnya tidak mungkin berbeda. */
   var GAP=(typeof SPK_NUM_GAP!=='undefined') ? SPK_NUM_GAP : 0.12;
@@ -3173,33 +3173,33 @@ function torPiKertasCss(){
     '.fkl-doc .pi-tb td.l{width:'+WL+'cm;white-space:nowrap}'+
     '.fkl-doc .pi-tb td.s{width:.3cm;white-space:nowrap}'+
     '.fkl-doc .pi-tb td.v{width:auto}'+
-    '.fkl-doc .pi-ol{list-style:none;margin:0 0 8px;padding:0;counter-reset:pikom}'+
-    '.fkl-doc .pi-ol li{counter-increment:pikom;margin:0 0 5px;text-align:justify;'+
-      'margin-left:'+KOL+'cm;text-indent:-'+W+'cm;padding-left:0}'+
-    '.fkl-doc .pi-ol li::before{content:counter(pikom) ".";display:inline-block;'+
-      'box-sizing:border-box;min-width:'+W+'cm;padding-right:'+GAP+'cm;'+
-      'text-align:right;text-indent:0;white-space:nowrap;'+
-      'font-variant-numeric:tabular-nums}'+
-    /* --- kertas A4 & margin normal 2,54 cm ---
-       Dokumen ini dipecah menjadi lembar A4 oleh fklPageScript: .fkl-print-page
-       yang memanjang diubah menjadi deretan .fkl-sheet, dan tinggi badan tiap
-       lembar (.fkl-sheet-bd) dipasang SEBARIS dari tetapan 273mm (= 297 - 12 - 12,
-       margin bawaan kerangka cetak). Karena marginnya kini 2,54cm, tinggi badan
-       itu harus ikut disesuaikan menjadi 297 - 2 x 25,4 = 246,2mm — dan WAJIB
-       ber-!important supaya menang atas gaya sebaris tersebut. Tanpa itu, isi
-       setinggi 273mm dijejalkan ke lembar yang ruangnya tinggal 246,2mm dan
-       kelebihannya terpotong oleh .fkl-sheet{overflow:hidden}. */
-    '.fkl-print-page{width:210mm;min-height:297mm;padding:'+M+'mm}'+
-    '.fkl-sheet{padding:'+M+'mm}'+
-    '.fkl-sheet-bd{height:'+BADAN+'mm !important}'+
-    '@media print{'+
-      '@page{size:A4;margin:0}'+
-      /* Margin atas & bawah pada cetakan datang dari .fkl-vspace di thead/tfoot
-         tabel pembungkus — itulah yang membuatnya berulang di TIAP lembar. */
-      '.fkl-vspace{height:'+M+'mm}'+
-      '.fkl-print-page{width:auto;min-height:0;margin:0;padding:0 '+M+'mm;box-shadow:none}'+
-      '.fkl-sheet{height:296.6mm;padding:'+M+'mm}'+
-    '}';
+    '.fkl-doc .pi-ol{list-style:none;margin:0 0 8px;padding:0}'+
+    /* GANTUNGAN DENGAN FLEX (perbaikan 6 Agu 2026: "baris selanjutnya tidak
+       sejajar dengan teks baris pertama sesudah penomoran"). Cara lama
+       memakai text-indent negatif + kotak ::before inline-block: begitu glif
+       nomornya sedikit lebih lebar dari kotaknya, kotak itu MELAR dan baris
+       pertama terdorong ke kanan, sementara baris lanjutan tetap di kolom
+       lama \u2014 keduanya jadi tidak lurus. Dengan flex, penanda menjadi
+       kolom tersendiri berlebar TETAP dan seluruh teks butir (baris pertama
+       maupun lanjutannya) berada dalam satu kolom yang sama, jadi mustahil
+       melenceng berapa pun lebar angkanya. */
+    '.fkl-doc .pi-ol li{margin:0 0 5px;text-align:justify;'+
+      'display:flex;align-items:flex-start;'+
+      'margin-left:'+KOL+'cm;text-indent:0;padding-left:0}'+
+    '.fkl-doc .pi-ol li .pin{'+
+      'flex:0 0 '+W+'cm;box-sizing:border-box;width:'+W+'cm;padding-right:'+GAP+'cm;'+
+      'text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}'+
+    /* --- KERTAS & MARGIN: KEMBALI KE BAWAAN KERANGKA CETAK (6 Agu 2026) ---
+       Penimpaan margin 2,54cm DIBATALKAN atas permintaan pengguna. Selain
+       memang tidak dikehendaki, penimpaan itu berbahaya: fklPageScript
+       memecah dokumen memakai tetapan tinggi badan lembar 273mm (297-12-12)
+       yang dipasang SEBARIS, sedangkan CSS tadi menyusutkan kotaknya menjadi
+       246,2mm lewat !important. Paginator menata isi untuk 273mm, kotaknya
+       cuma 246,2mm, dan selisih ~27mm di dasar tiap lembar TERPOTONG diam-diam
+       oleh .fkl-sheet{overflow:hidden} \u2014 itulah sebabnya blok tanggal
+       ("Masohi, ...") dan baris "Yang menyatakan," hilang dari cetakan.
+       Dengan dikembalikan ke bawaan, geometri paginator kembali utuh. */
+    '';
 }
 
 /* Penanda tangan sesuai peran */
@@ -3260,7 +3260,10 @@ function torPiDocHtml(data, peran){
     '</tbody></table>'+
     '<p class="pi-p">selanjutnya disebut PIHAK YANG MENANDATANGANI PAKTA INTEGRITAS.</p>'+
     '<p class="pi-p">Dengan ini saya menyatakan dan berkomitmen untuk:</p>'+
-    '<ol class="pi-ol">'+TOR_PI_KOMITMEN.map(t=>'<li>'+esc(t)+'</li>').join('')+'</ol>'+
+    /* Nomor ditulis LANGSUNG di markup, bukan lewat penghitung CSS: paginator
+       menyalin cangkang <ol> ke lembar lanjutan, dan counter-reset pada salinan
+       itu membuat penomoran mulai dari 1 lagi di halaman berikutnya. */
+    '<ol class="pi-ol">'+TOR_PI_KOMITMEN.map((t,i)=>'<li><span class="pin">'+(i+1)+'.</span>'+esc(t)+'</li>').join('')+'</ol>'+
     TOR_PI_TUTUP.map(t=>'<p class="pi-p">'+esc(t)+'</p>').join('')+
     '<div class="pi-tgl">'+esc(ctx.tempat_tanggal||'')+'</div>'+
     '<div class="pi-ttd">'+torTtdHpsHtml(null,
@@ -3302,7 +3305,7 @@ function torPiDocHtml(data, peran){
        label-labelnya lurus dengan teks daftar komitmen di bawah \u2014 bukan
        angka pilihan bebas. Lebar tabel dikurangi sebanyak itu supaya sisi
        kanannya tetap berhenti tepat di margin. */
-    '.pi-tb.pi-tb2 td{padding:0 0 2pt}'+
+    '.pi-tb.pi-tb2 td{padding:0 0 '+TOR_PI_JARAK_BARIS_PT+'pt}'+
     /* KETENTUAN 6 Agu 2026: keempat pilihan peran TIDAK lagi dibagi dua kolom
        kiri-kanan (dua baris), melainkan SATU kolom berisi empat baris berurutan
        ke bawah — lebih mudah dibaca dan tanda centangnya sejajar dalam satu
