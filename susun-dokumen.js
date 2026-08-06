@@ -1800,24 +1800,135 @@ function torDocCss(wKl, wBab){
      judul klausul pertama di bawahnya cukup diberi jarak kecil. */
   '.spk-doc.spk-spk .spk-clause.tor-babonly{margin-bottom:0}'+
   '.spk-doc.spk-spk .spk-clause.tor-babonly + .spk-clause > .spk-cl-h{margin-top:6pt}'+
-  /* ---- Daftar isi ----
-     Kolom nomor dilebarkan (bawaan 44px pas untuk "01", tidak untuk "II.10")
-     dan baris judul bab ditebalkan supaya susunannya terbaca sekali lihat. */
-  '.spk-tocpage .spk-toc2.tor-toc .row .no{width:58px}'+
-  '.spk-tocpage .spk-toc2.tor-toc.d1 .row .no{width:52px}'+
-  '.spk-tocpage .spk-toc2.tor-toc.d2 .row .no{width:46px}'+
-  '.spk-tocpage .spk-toc2.tor-toc.toc-2k .row .no{width:46px}'+
-  '.spk-toc2.tor-toc .row.bab .no,.spk-toc2.tor-toc .row.bab .nm{font-weight:800;color:#1B3A6B;text-transform:uppercase}'+
-  '.spk-cover.cv-tor .cv-title{font-size:44px;max-width:82%}'+
-  '.spk-cover.cv-tor .cv-title .l2{display:block;color:#E0A200;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
-  /* Nomor dokumen tepat DI BAWAH tulisan TOR/KAK */
-  '.spk-cover.cv-tor .cv-docno{margin-top:14px;display:inline-flex;align-items:center;gap:10px;'+
-    'padding:9px 16px;border-radius:9px;background:#1B3A6B;color:#fff;border-left:4px solid #F6B40E;'+
+  /* ================================================================
+     SAMPUL & DAFTAR ISI TOR/KAK — rancangan "GARIS TEGAK"
+     ----------------------------------------------------------------
+     Kedua lembar TIDAK lagi memakai kelas .spk-cover / .spk-tocpage,
+     sehingga seluruh gaya sampul Surat Perintah Kerja (cv-*) tidak lagi
+     ikut terpasang dan tidak perlu ditimpa satu per satu. Yang masih
+     dipertahankan HANYALAH pembungkus .spk-toc2 beserta anak
+     .row/.no/.nm/.dot/.pg — nomorToc() di spkPageScript() mengisi nomor
+     halaman lewat querySelectorAll(".spk-toc2 .pg"), jadi struktur itu
+     wajib utuh. Susun Kontrak tidak tersentuh sama sekali.
+
+     Ukuran memakai satuan pt (mengikuti berkas rancangan): tepi 56,7pt
+     = 2 cm, batang tegak 24pt, jadi tepi kiri isi 80,7pt supaya jarak
+     teks ke batang tetap 2 cm. */
+  '.spk-page.tor-lembar{padding:0;position:relative;overflow:hidden;color:#14346B;'+
+    'font-family:"Plus Jakarta Sans","Segoe UI",Arial,sans-serif;'+
     '-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
-  '.spk-cover.cv-tor .cv-docno span{font-size:9px;font-weight:700;letter-spacing:.2em;color:#C3D2EA}'+
-  '.spk-cover.cv-tor .cv-docno b{font-size:15px;font-weight:800;letter-spacing:.02em}'+
-  '.spk-cover.cv-tor .cv-kind{background:#E6F0FF;color:#1B3A6B;border:1px solid #BFD4F2}'+
-  '.spk-cover.cv-tor .cv-unit{margin-top:16px;text-align:center;font-size:13px;font-weight:800;color:#1B3A6B;line-height:1.6}'+
+  /* Batang tegak di tepi kiri kertas; ujung atasnya kuning setinggi 132pt. */
+  '.tor-lembar .tor-bat{position:absolute;left:0;top:0;bottom:0;width:24pt;background:#14346B;'+
+    '-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  '.tor-lembar .tor-bat::before{content:"";position:absolute;left:0;right:0;top:0;height:132pt;'+
+    'background:#F6B21B;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  /* Bidang isi dipatok ke keempat tepi lembar (bukan height:100%) supaya
+     margin-top:auto pada kaki halaman tetap mendorong kaki ke dasar kertas,
+     apa pun model kotak yang berlaku di lembar induk. */
+  '.tor-lembar .tor-isi{position:absolute;left:0;top:0;right:0;bottom:0;'+
+    'display:flex;flex-direction:column;padding:56.7pt 56.7pt 56.7pt 80.7pt}'+
+
+  /* ---------------------------------------------------- SAMPUL --------- */
+  '.tor-cv .tor-kop{display:flex;align-items:center;gap:11pt}'+
+  '.tor-cv .tor-kop img{height:40pt;width:auto;display:block}'+
+  '.tor-cv .tor-kop-nm{font-size:10pt;font-weight:700;letter-spacing:.02em;line-height:1.15}'+
+  /* Jarak 3,5pt memisahkan dua baris kop tanpa menambah tinggi baris kop:
+     tinggi tumpukan teks ~24pt, masih di bawah tinggi logo (40pt). */
+  '.tor-cv .tor-kop-sub{font-size:7.6pt;font-weight:500;letter-spacing:.16em;color:#7A8698;'+
+    'margin-top:3.5pt;text-transform:uppercase}'+
+  '.tor-cv .tor-kop-sp{flex:1}'+
+  '.tor-cv .tor-th{display:flex;align-items:baseline;gap:6pt;border-radius:999pt;padding:5pt 13pt;'+
+    'background:#14346B;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  '.tor-cv .tor-th span{font-size:7pt;font-weight:600;letter-spacing:.18em;opacity:.75}'+
+  '.tor-cv .tor-th b{font-size:11pt;font-weight:700;letter-spacing:.02em}'+
+  /* Rancangan ini TIDAK memakai garis kuning pendek di bawah judul — garis itu
+     sudah diwakili ujung atas batang tegak, jadi nomor dokumen langsung
+     menempel di bawah judul. */
+  '.tor-cv .tor-judul{margin-top:32pt}'+
+  '.tor-cv .tor-kelopak{font-size:8pt;font-weight:600;letter-spacing:.22em;color:#2F5698;margin-bottom:10pt}'+
+  '.tor-cv h1.tor-tt{margin:0;font-size:29pt;font-weight:700;line-height:1.16;'+
+    'letter-spacing:-.02em;color:#14346B}'+
+  '.tor-cv h1.tor-tt i{font-style:italic}'+
+  '.tor-cv .tor-no{margin-top:20pt;font-size:10pt;font-weight:600;letter-spacing:.04em;'+
+    'color:#2F5698;font-variant-numeric:tabular-nums}'+
+  /* Kotak keterangan: garis tipis mengelilingi, garis atas tebal navy. */
+  '.tor-cv .tor-set{margin-top:18pt;display:flex;flex-direction:column;gap:10pt}'+
+  '.tor-cv .ko{border:.75pt solid #E3E8F1;border-top:2.5pt solid #14346B;padding:9pt 13pt 10pt}'+
+  '.tor-cv .ko-lb{font-size:7.2pt;font-weight:600;letter-spacing:.2em;color:#2F5698;margin-bottom:5pt}'+
+  '.tor-cv .ko-isi{font-size:11.5pt;font-weight:700;line-height:1.42;color:#14346B}'+
+  '.tor-cv .ko-isi.kosong{color:#C2C6CC;font-weight:600}'+
+  '.tor-cv .tor-kisi{margin-top:10pt;display:grid;grid-template-columns:1fr 1fr;gap:10pt}'+
+  '.tor-cv .ko.kecil .ko-isi{font-size:10pt}'+
+  '.tor-cv .ko.lebar{grid-column:1 / -1}'+
+  /* Terbilang sengaja MIRING & berbobot normal, bukan tebal seperti nilai di
+     atasnya: ia pengulangan angka dalam bentuk kata, jadi tidak perlu bersaing
+     perhatian. Berat 400 juga menghindari miring-tebal hasil sintesis. */
+  '.tor-cv .ko.tor-terb .ko-isi{font-style:italic;font-weight:400;font-size:10pt}'+
+  /* margin-top:auto mendorong kaki ke dasar kertas berapa pun panjang isinya. */
+  '.tor-cv .tor-kaki{margin-top:auto;padding-top:16pt}'+
+  '.tor-cv .tor-kaki-g{height:.75pt;background:#E3E8F1;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  '.tor-cv .tor-unit{margin-top:12pt;font-size:9.4pt;font-weight:700;line-height:1.45;'+
+    'letter-spacing:.05em;text-transform:uppercase}'+
+  /* Alamat kantor: keterangan, bukan judul — bobot normal & warna abu. */
+  '.tor-cv .tor-alamat{margin-top:5pt;font-size:8pt;font-weight:400;line-height:1.55;'+
+    'color:#7A8698;letter-spacing:.01em}'+
+  '.tor-cv .tor-alamat b{font-weight:600;color:#2F5698}'+
+
+  /* ------------------------------------------------ DAFTAR ISI --------- */
+  '.tor-di .di-kop{display:flex;justify-content:space-between;align-items:baseline;gap:14pt;'+
+    'font-size:7.4pt;font-weight:600;letter-spacing:.18em;color:#7A8698}'+
+  '.tor-di .di-judul{margin:26pt 0 0;font-size:26pt;font-weight:700;letter-spacing:-.02em;color:#14346B}'+
+  '.tor-di .di-rule{height:3pt;width:56pt;background:#F6B21B;border-radius:2pt;margin-top:11pt;'+
+    '-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  /* Baris daftar isi. Seluruh gaya bawaan .spk-toc2 (garis pemisah tiap baris,
+     kolom nomor 44px, titik-titik border-dotted) DINETRALKAN di sini. */
+  '.tor-di .spk-toc2.tor-toc{margin-top:26pt}'+
+  '.tor-di .spk-toc2.tor-toc .row{display:flex;align-items:baseline;border:0;margin:0;'+
+    'padding:4.6pt 0 4.6pt 24pt;font-size:9.6pt;line-height:1.35;font-weight:400;color:#33415C}'+
+  '.tor-di .spk-toc2.tor-toc .row:first-child,.tor-di .spk-toc2.tor-toc .row:last-child{border:0}'+
+  /* Ukuran huruf anak baris dibuat mewarisi .row supaya pengaturan kerapatan
+     (d1/d2/d3) cukup mengubah SATU nilai, tidak empat. */
+  '.tor-di .spk-toc2.tor-toc .row .no,.tor-di .spk-toc2.tor-toc .row .nm,'+
+    '.tor-di .spk-toc2.tor-toc .row .dot,.tor-di .spk-toc2.tor-toc .row .pg{font-size:inherit}'+
+  '.tor-di .spk-toc2.tor-toc .row .no{flex:0 0 auto;width:34pt;font-weight:400;color:#33415C;'+
+    'font-variant-numeric:tabular-nums}'+
+  /* flex:0 0 auto WAJIB. Dengan flex-shrink aktif, span titik (yang isinya
+     ratusan karakter) membuat peramban ikut menyusutkan judul di sebelahnya
+     sampai tiap judul pecah jadi beberapa baris. Judul hanya boleh melipat
+     bila memang melewati max-width. */
+  '.tor-di .spk-toc2.tor-toc .row .nm{flex:0 0 auto;max-width:74%;font-weight:400;'+
+    'color:#33415C;text-transform:none}'+
+  /* Titik pemandu memakai karakter titik dari font yang SAMA dengan teksnya,
+     persis seperti Word — bukan border-dotted, yang jarak & bentuk titiknya
+     ditentukan peramban. direction:rtl membuat kelebihan titik terpotong di
+     ujung KIRI, sehingga titik terakhir selalu utuh & rapat ke nomor halaman. */
+  '.tor-di .spk-toc2.tor-toc .row .dot{flex:1 1 0;min-width:0;overflow:hidden;direction:rtl;'+
+    'white-space:nowrap;border:0;transform:none;margin:0 7pt;color:#C3CCDA;letter-spacing:.08em}'+
+  '.tor-di .spk-toc2.tor-toc .row .pg{flex:0 0 auto;min-width:1.6em;text-align:right;'+
+    'font-weight:600;color:#14346B;font-variant-numeric:tabular-nums}'+
+  /* Baris judul bab: tanpa latar, hanya garis atas tebal + nomor bab kuning
+     gelap, sejalan dengan kotak bergaris di sampulnya. */
+  '.tor-di .spk-toc2.tor-toc .row.bab{font-weight:700;text-transform:uppercase;letter-spacing:.04em;'+
+    'border-top:1.5pt solid #14346B;padding:8pt 0 6pt;margin:14pt 0 4pt;color:#14346B}'+
+  '.tor-di .spk-toc2.tor-toc .row.bab:first-child{margin-top:0}'+
+  '.tor-di .spk-toc2.tor-toc .row.bab .no{width:30pt;font-weight:700;color:#B57C05}'+
+  '.tor-di .spk-toc2.tor-toc .row.bab .nm{font-weight:700;color:#14346B;text-transform:uppercase;max-width:80%}'+
+  '.tor-di .spk-toc2.tor-toc .row.bab .dot{visibility:hidden}'+
+  '.tor-di .spk-toc2.tor-toc .row.bab .pg{font-weight:700}'+
+  /* ---- Kerapatan otomatis (kelas dari spkTocDensity: d1 >16, d2 >22, d3 >28)
+     Daftar isi TOR/KAK harus tetap SATU lembar; karena kelas .spk-tocpage tidak
+     lagi dipakai, aturan kerapatan bawaan tidak berlaku dan ditulis ulang di
+     sini — termasuk jarak baris bab, yang paling banyak memakan tinggi. */
+  '.tor-di .spk-toc2.tor-toc.d1{margin-top:20pt}'+
+  '.tor-di .spk-toc2.tor-toc.d1 .row{padding:3.6pt 0 3.6pt 20pt;font-size:9pt}'+
+  '.tor-di .spk-toc2.tor-toc.d1 .row.bab{padding:7pt 0 5pt;margin:11pt 0 3pt}'+
+  '.tor-di .spk-toc2.tor-toc.d2{margin-top:16pt}'+
+  '.tor-di .spk-toc2.tor-toc.d2 .row{padding:2.8pt 0 2.8pt 18pt;font-size:8.4pt}'+
+  '.tor-di .spk-toc2.tor-toc.d2 .row.bab{padding:6pt 0 4pt;margin:9pt 0 3pt}'+
+  '.tor-di .spk-toc2.tor-toc.d3{margin-top:13pt}'+
+  '.tor-di .spk-toc2.tor-toc.d3{column-count:1}'+
+  '.tor-di .spk-toc2.tor-toc.d3 .row{padding:2.1pt 0 2.1pt 16pt;font-size:7.8pt}'+
+  '.tor-di .spk-toc2.tor-toc.d3 .row.bab{padding:5pt 0 3.5pt;margin:7pt 0 2pt}'+
   /* ---- Kaki halaman isi TOR/KAK ----
      Kop & kaki memakai kelas milik Surat Perintah Kerja (.spk-rhd / .spk-rft /
      .ft-row / .ln / .ft-unit / .ft-pg dari spkDocCss2) supaya tampilannya
@@ -1848,56 +1959,74 @@ function torDocCss(wKl, wBab){
   /* Jarak antara baris penanda tangan atas dengan baris pengesah */
   '.tor-ttd table.tt tr + tr td{padding-top:14pt}';
 }
-/* ---- Sampul ---- */
+/* ---- Sampul (rancangan "garis tegak") ----
+   Tata letaknya memakai aliran normal (flex column) dengan kaki dikunci
+   margin-top:auto, jadi nama pekerjaan boleh memanjang beberapa baris tanpa
+   perlu kalibrasi ulang. Lembar TIDAK lagi memakai kelas .spk-cover: seluruh
+   gayanya berdiri sendiri di torDocCss (lihat .tor-lembar / .tor-cv). */
 function torCoverHtml(data, ctx){
   const esc=fkEsc;
   const logo=(typeof SPK_LOGO_SRC!=='undefined' && SPK_LOGO_SRC) ? '<img src="'+SPK_LOGO_SRC+'" alt="PLN">' : '';
-  const fld=(k,v,cls)=>{
-    const kosong=!(v && String(v).trim());
-    return '<div class="f"><div class="fk">'+esc(k)+'</div>'+
-      '<div class="fv'+(kosong?' kosong':'')+(cls?' '+cls:'')+'">'+(kosong?'—':esc(v))+'</div></div>';
+  /* Kotak keterangan. Ruas kosong ditandai '—' dan diredupkan, bukan
+     dihilangkan, supaya kisi dua kolom tidak berubah bentuk. */
+  const ko=(label, nilai, cls)=>{
+    const kosong=!(nilai && String(nilai).trim());
+    return '<div class="ko'+(cls?' '+cls:'')+'">'+
+      '<div class="ko-lb">'+esc(label)+'</div>'+
+      '<div class="ko-isi'+(kosong?' kosong':'')+'">'+(kosong?'\u2014':esc(nilai))+'</div></div>';
   };
+  /* Nomor PRK boleh lebih dari satu. Pemisahnya berbeda-beda tergantung dari
+     mana nilainya datang (daftar berlapis pada form -> baris baru; ctx.no_prk
+     -> titik koma), jadi keduanya diterima lalu ditampilkan satu per baris. */
+  const prk=(Array.isArray(data.no_prk_list) ? data.no_prk_list : String(data.no_prk||'').split(/[\r\n;]+/))
+    .map(x=>String(x||'').trim()).filter(Boolean);
+  const prkHtml=prk.length ? prk.map(esc).join('<br>') : '';
+  /* Baris kedua alamat sudah memuat "· www.pln.co.id"; alamat situsnya
+     ditebalkan tanpa mengubah tetapan SPK_ALAMAT_2. */
+  const al1=(typeof SPK_ALAMAT_1!=='undefined')?SPK_ALAMAT_1:'';
+  const al2=(typeof SPK_ALAMAT_2!=='undefined')?SPK_ALAMAT_2:'';
+  const alamat=esc(al1)+(al2?('<br>'+esc(al2).replace(/(www\.pln\.co\.id)/i,'<b>$1</b>')):'');
   const unit=ctx.unit_lengkap||'PT PLN (Persero) UP3 Masohi';
   return ''+
-  '<section class="spk-page spk-cover cv-spk cv-tor">'+
-    '<div class="cv-top">'+
-      '<div class="cv-brand">'+logo+
-        '<div class="cv-org"><span>PT PLN (PERSERO)</span><b>'+esc(TOR_SINGKATAN_UNIT)+'</b></div>'+
+  '<section class="spk-page tor-lembar tor-cv">'+
+    '<div class="tor-bat"></div>'+
+    '<div class="tor-isi">'+
+      '<div class="tor-kop">'+logo+
+        '<div><div class="tor-kop-nm">PT PLN (PERSERO)</div>'+
+          '<div class="tor-kop-sub">'+esc(TOR_SINGKATAN_UNIT)+'</div></div>'+
+        '<div class="tor-kop-sp"></div>'+
+        '<div class="tor-th"><span>TAHUN</span><b>'+esc(ctx.tahun_dokumen||'')+'</b></div>'+
       '</div>'+
-      '<div class="cv-kind">DOKUMEN PENGADAAN</div>'+
+
+      '<div class="tor-judul">'+
+        '<div class="tor-kelopak">DOKUMEN PENGADAAN BARANG/JASA</div>'+
+        '<h1 class="tor-tt"><i>Term of Reference</i> (TOR)<br>Kerangka Acuan Kerja (KAK)</h1>'+
+        '<div class="tor-no">'+esc(data.no_dokumen||'\u2014')+'</div>'+
+      '</div>'+
+
+      '<div class="tor-set">'+
+        ko('PEKERJAAN', data.nama_pekerjaan)+
+        ko('LOKASI', data.lokasi_pekerjaan)+
+      '</div>'+
+
+      '<div class="tor-kisi">'+
+        ko('BIDANG PELAKSANA', data.pelaksana, 'kecil lebar')+
+        ko('NO. ANGGARAN', ctx.sumber_dana_no, 'kecil')+
+        ko('TGL. ANGGARAN', ctx.sumber_dana_tgl_pjg, 'kecil')+
+        /* Nomor PRK ditulis langsung (bukan lewat ko()) karena isinya sudah
+           berupa HTML berbaris ganda yang tiap barisnya sudah diloloskan. */
+        '<div class="ko kecil"><div class="ko-lb">NO. PRK</div>'+
+          '<div class="ko-isi'+(prkHtml?'':' kosong')+'">'+(prkHtml||'\u2014')+'</div></div>'+
+        ko('PERKIRAAN NILAI PEKERJAAN', ctx.nilai_pekerjaan, 'kecil')+
+        ko('TERBILANG', ctx.nilai_pekerjaan_terbilang, 'kecil lebar tor-terb')+
+      '</div>'+
+
+      '<div class="tor-kaki">'+
+        '<div class="tor-kaki-g"></div>'+
+        '<div class="tor-unit">'+esc(unit)+'</div>'+
+        '<div class="tor-alamat">'+alamat+'</div>'+
+      '</div>'+
     '</div>'+
-    '<div class="cv-rule"></div>'+
-    '<div class="cv-accent"></div>'+
-    '<div class="cv-eyebrow">'+esc(String(data.metode_pengadaan||'PENGADAAN LANGSUNG').toUpperCase())+'</div>'+
-    /* Judul TOR/KAK dua baris ... */
-    '<h1 class="cv-title"><span>'+esc(TOR_JUDUL_BARIS1)+'</span><span class="l2">'+esc(TOR_JUDUL_BARIS2)+'</span></h1>'+
-    /* ... dan TEPAT DI BAWAHNYA nomor dokumen (0001.TOR/DAN.01.03/F17060000/2026) */
-    '<div class="cv-docno"><span>NOMOR</span><b>'+esc(data.no_dokumen||'—')+'</b></div>'+
-    '<div class="cv-rule2"></div>'+
-    '<div class="cv-parties">'+
-      '<div class="p"><div class="pl">PEKERJAAN</div><div class="pn">'+esc(data.nama_pekerjaan||'—')+'</div></div>'+
-      '<div class="p"><div class="pl">LOKASI</div><div class="pn">'+esc(data.lokasi_pekerjaan||'—')+'</div></div>'+
-    '</div>'+
-    '<div class="cv-spacer"></div>'+
-    '<div class="cv-grid">'+
-      fld('BIDANG PELAKSANA', data.pelaksana)+
-      fld('JENIS PENGADAAN', data.jenis_pengadaan)+
-      fld('METODE PENGADAAN', data.metode_pengadaan)+
-      fld('LEVEL RISIKO', data.level_risiko)+
-      fld('JANGKA WAKTU', ctx.auto_terbilang_jangka ? ((data.jangka_waktu||'')+' ('+ctx.jangka_waktu_terbilang+') Hari Kalender') : '')+
-      fld('TANGGAL DOKUMEN', ctx.tgl_dokumen_pjg)+
-      fld('SUMBER ANGGARAN', ctx.sumber_dana_no, 'fv-lastrow fv-fit')+
-      fld('TANGGAL ANGGARAN', ctx.sumber_dana_tgl_pjg, 'fv-lastrow')+
-    '</div>'+
-    '<div class="cv-nilai">'+
-      '<div class="l"><div class="fk">PERKIRAAN NILAI PEKERJAAN</div>'+
-        '<div class="terb">('+esc(ctx.nilai_pekerjaan_terbilang||'')+')</div></div>'+
-      '<div class="r">'+esc(ctx.nilai_pekerjaan||'')+'</div>'+
-    '</div>'+
-    '<div class="cv-unit">'+esc(unit)+'</div>'+
-    '<div class="cv-rule"></div>'+
-    '<div class="cv-foot"><div>'+esc((typeof SPK_ALAMAT_1!=='undefined')?SPK_ALAMAT_1:'')+'</div>'+
-      '<div>'+esc((typeof SPK_ALAMAT_2!=='undefined')?SPK_ALAMAT_2:'')+'</div></div>'+
   '</section>';
 }
 /* ---- Daftar Isi (struktur .spk-toc2 .pg WAJIB: diisi oleh paginator) ---- */
@@ -1919,7 +2048,9 @@ function torTocHtml(data, klausul){
     }
     n++;
     rows+='<div class="row'+(s.lebur?' bab':'')+'">'+
-      '<span class="no">'+esc(s.lebur?(s.rom+'.'):s.no)+'</span>'+
+      /* Titik penutup label disamakan dengan judul di badan dokumen
+         (data-no="II.3.") supaya daftar isi & isi terbaca satu gaya. */
+      '<span class="no">'+esc(s.lebur?(s.rom+'.'):(s.no+'.'))+'</span>'+
       '<span class="nm">'+(s.lebur?esc(s.babNama):spkFmtJudulTitle(k.judul))+'</span>'+
       '<span class="dot"></span><span class="pg">\u2014</span></div>';
   });
@@ -1934,14 +2065,21 @@ function torTocHtml(data, klausul){
       '<span class="nm">'+esc(B.nama)+'</span>'+
       '<span class="dot"></span><span class="pg">\u2014</span></div>';
   }
+  /* Titik pemandu ditulis sebagai KARAKTER titik (lihat aturan .dot pada
+     torDocCss): kelebihannya dipotong di ujung kiri oleh direction:rtl +
+     overflow:hidden, jadi jumlahnya cukup dibuat berlebih sekali saja. */
+  const titik=new Array(221).join('.');
+  rows=rows.split('<span class="dot"></span>').join('<span class="dot">'+titik+'</span>');
   return ''+
-  '<section class="spk-page spk-tocpage">'+
-    '<div class="toc-accent"></div>'+
-    '<div class="toc-head"><h1>Daftar Isi</h1>'+
-      '<div class="toc-meta"><b>'+esc(TOR_DOK_LABEL)+'</b><span>'+esc(data.no_dokumen||'\u2014')+'</span></div>'+
+  '<section class="spk-page tor-lembar tor-di">'+
+    '<div class="tor-bat"></div>'+
+    '<div class="tor-isi">'+
+      '<div class="di-kop"><span>'+esc(TOR_DOK_LABEL)+'</span>'+
+        '<span>'+esc(TOR_SINGKATAN_UNIT.toUpperCase())+'</span></div>'+
+      '<div class="di-judul">Daftar Isi</div>'+
+      '<div class="di-rule"></div>'+
+      '<div class="spk-toc2 tor-toc'+spkTocDensity(n)+'">'+rows+'</div>'+
     '</div>'+
-    '<div class="toc-rule"></div>'+
-    '<div class="spk-toc2 tor-toc'+spkTocDensity(n)+'">'+rows+'</div>'+
   '</section>';
 }
 /* ---- Kop & kaki berulang tiap lembar ----
