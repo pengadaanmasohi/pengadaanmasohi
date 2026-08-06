@@ -50,11 +50,39 @@ const TOR_TTD_KOL_W   = 44;
    12,5px tebal). Pada t=9 sisanya ±221px. Lembar TOR/KAK TIDAK diberi tepi ini
    karena di sana cadangannya sudah tipis. */
 const TOR_TTD_RAB_TEPI = 9;
+/* ---- KISI KOLOM LEMBAR BoQ: SATU-SATUNYA SUMBER UKURAN ----
+   KETENTUAN 6 Agu 2026 (berkas BoQ contoh dari pengguna). Angka di bawah adalah
+   lebar kolom A..K dalam SATUAN LEBAR KOLOM EXCEL, disalin apa adanya dari
+   lembar BoQ yang dikehendaki:
+
+     A  3          kolom sela di tepi kiri (tabel tidak menempel pinggir)
+     B  5          No.
+     C  16.265625  paruh kiri Uraian — DI LUAR tabel dipakai sendirian sebagai
+                   penampung label "Nama Pekerjaan :" / "Lokasi Pekerjaan :"
+     D  23.6640625 paruh kanan Uraian (C+D = 39,93 = lebar kolom Uraian)
+     E  5.73046875 Sat
+     F  5.73046875 Vol
+     G..K 12       Harga Satuan (2), Jumlah Harga (2), Jumlah Total
+
+   Dipakai DUA KALI: apa adanya oleh berkas .xlsx (torBoqExcel) dan diubah
+   menjadi persen oleh tabel BoQ di dalam klausul TOR/KAK (torBoqTabelHtml),
+   sehingga lembar Excel dan klausul TOR mustahil berbeda bentuk. Bila kisi
+   kolomnya digeser, CUKUP UBAH DI SINI. */
+const TOR_BOQ_W = [3, 5, 16.265625, 23.6640625, 5.73046875, 5.73046875,
+                   12, 12, 12, 12, 12];
+/* Lebar badan tabel = B..K (kolom sela A tidak ikut tercetak sebagai tabel). */
+const TOR_BOQ_W_TOT = TOR_BOQ_W.slice(1).reduce((a,b)=>a+b, 0);   /* 116,390625 */
+/* Persen lebar sebuah kolom (atau gabungan kolom) terhadap badan tabel — dipakai
+   colgroup tabel BoQ di klausul TOR supaya proporsinya sama dengan .xlsx. */
+function torBoqPct(){
+  var s=0; for(var i=0;i<arguments.length;i++) s+=TOR_BOQ_W[arguments[i]];
+  return Math.round(s/TOR_BOQ_W_TOT*1000)/10;
+}
 /* Lebar blok tanda tangan penyedia pada lembar BoQ di dalam klausul TOR
    (PERSEN lebar badan klausul). Di berkas BoQ.xlsx blok itu menempati kolom
-   6 sampai 9 dari 9 kolom — kira-kira 45% lembar, rata tengah di dalamnya —
-   dan angka di bawah meniru proporsi tersebut. */
-const TOR_BOQ_TTD_W = 46;
+   I sampai K, jadi lebarnya DITURUNKAN dari kisi kolom di atas — bukan lagi
+   angka tetap — supaya ikut menyesuaikan bila kolomnya digeser. */
+const TOR_BOQ_TTD_W = torBoqPct(8,9,10);                          /* ±30,9% */
 /* Jarak (pt) dari klausul Bill of Quantity ke klausul sesudahnya. Lihat aturan
    .tor-boq-cl di torDocCss untuk alasan jaraknya dipasang sebagai margin BAWAH. */
 const TOR_BOQ_JARAK_PT = 24;
@@ -2306,20 +2334,50 @@ function torDocCss(wKl, wBab){
   '.spk-cl .tor-boq .boq-kop{margin:0 0 6px}'+
   '.spk-cl .tor-boq .boq-kop,'+
   '.spk-cl .tor-boq .boq-kop *{font-size:9.2px !important}'+
-  '.spk-cl .tor-boq .boq-kop .kp,'+
-  '.spk-cl .tor-boq .boq-kop .jd{font-size:11px !important}'+
+  /* Ukuran kop & judul MENIRU PERBANDINGAN pada lembar .xlsx (ketentuan
+     6 Agu 2026): di sana kop 16 dan judul 14 terhadap isi 11, jadi di sini
+     9,2px dikalikan 16/11 dan 14/11. Ditulis sebagai perkalian, bukan angka
+     jadi, supaya hubungannya dengan lembar Excel tetap terbaca. */
+  '.spk-cl .tor-boq .boq-kop .kp{font-size:'+(Math.round(9.2*16/11*10)/10)+'px !important}'+
+  '.spk-cl .tor-boq .boq-kop .jd{font-size:'+(Math.round(9.2*14/11*10)/10)+'px !important}'+
   '.spk-cl .tor-boq .boq-kop .kp{text-align:center;font-weight:700;color:#0070C0;'+
     'margin:0 0 10px;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   '.spk-cl .tor-boq .boq-kop .jd{text-align:center;font-weight:700;'+
     'text-decoration:underline;margin:0 0 10px}'+
-  '.spk-cl .tor-boq table.boq-info{border-collapse:collapse;table-layout:auto;'+
-    'width:auto;margin:0 0 8px 6%}'+
+  /* ---- Baris Nama Pekerjaan / Lokasi Pekerjaan ----
+     Blok ini MENIRU PERILAKU FORMAT ANGKA `@\ * ":"` yang dipakai sel C6/C7 di
+     lembar .xlsx. Yang ditiru bukan hanya hasil akhirnya, tetapi cara kerjanya:
+
+       LABELNYA RATA KIRI, TITIK DUANYA YANG TERDORONG KE TEPI KANAN KOLOM.
+
+     Sebab dalam format itu `*` berarti "ulangi karakter sesudahnya sampai
+     selebar kolom" — karakter itu SPASI — sehingga teks tetap mulai dari kiri
+     dan ":" terlempar ke ujung kanan. Jadi kedua label mulai pada satu garis
+     lurus di kiri DAN titik duanya lurus di kanan. (Percobaan pertama memakai
+     rata kanan pada labelnya: titik duanya memang lurus, tetapi awal kata
+     "Nama" dan "Lokasi" jadi tidak sejajar — tidak sama dengan lembar Excel.)
+
+     Lebar selnya DITURUNKAN dari kisi kolom lembar .xlsx (TOR_BOQ_W) supaya
+     label berdiri tepat di atas kolom yang sama seperti di lembar Excel:
+       td.pad = kolom B (kolom "No.")
+       td.k   = kolom C, RATA KIRI — labelnya
+       td.s   = titik dua, menempel di tepi kanan kolom C (peran `* ":"`)
+       td.v   = sisanya (kolom D..K), tempat nilai boleh melipat.
+     Tabelnya kini SELEBAR PENUH (dulu width:auto bermargin kiri 6%), karena
+     lebar kolomnya sudah mengurus perataan itu sendiri. */
+  '.spk-cl .tor-boq table.boq-info{border-collapse:collapse;table-layout:fixed;'+
+    'width:100%;margin:0 0 8px}'+
   '.spk-cl .tor-boq table.boq-info td{border:0;padding:0 0 2px;vertical-align:top;'+
     'line-height:1.35}'+
-  '.spk-cl .tor-boq table.boq-info td.k{font-weight:700;white-space:nowrap;'+
-    'padding-right:2.6cm}'+
-  '.spk-cl .tor-boq table.boq-info td.s{padding-right:.45cm}'+
-  '.spk-cl .tor-boq table.boq-info td.v{text-align:left}'+
+  /* Titik dua menempati selnya sendiri di ujung kanan kolom C; lebarnya (1,6%)
+     DIPOTONG dari kolom C supaya tepi kanan "label + :" tetap jatuh pas di
+     batas kolom C/D. Labelnya sendiri RATA KIRI — lihat catatan di atas. */
+  '.spk-cl .tor-boq table.boq-info td.pad{width:'+torBoqPct(1)+'%}'+
+  '.spk-cl .tor-boq table.boq-info td.k{width:'+(Math.round((torBoqPct(2)-1.6)*10)/10)+'%;'+
+    'font-weight:700;white-space:nowrap;text-align:left}'+
+  '.spk-cl .tor-boq table.boq-info td.s{width:1.6%;text-align:right}'+
+  '.spk-cl .tor-boq table.boq-info td.v{text-align:left;font-weight:700;'+
+    'padding-left:.12cm;overflow-wrap:break-word}'+
   /* ---- Tanda tangan penyedia: paruh kanan lembar, rata tengah ---- */
   '.spk-cl .tor-boq .boq-ttd,'+
   '.spk-cl .tor-boq .boq-ttd *{font-size:9.2px !important}'+
@@ -2345,7 +2403,30 @@ function torDocCss(wKl, wBab){
   /* Judul kolom memenggal antar-KATA saja, bukan di tengah kata
      ("Barang" tidak boleh jadi "Bara/ng"). */
   '.spk-cl .tor-boq table.hps-doc-tbl thead th{overflow-wrap:break-word;'+
-    'word-break:normal;hyphens:none}';
+    'word-break:normal;hyphens:none}'+
+  /* ===== SATU MUKA HURUF DI SELURUH BADAN KLAUSUL =====
+     KETENTUAN 6 Agu 2026: nilai kode isian pada klausul PENGENDALI PEKERJAAN
+     ({{jabatan_pengguna}}, {{jabatan_direksi}}, {{jabatan_pengawas}}) tercetak
+     dengan muka huruf yang berbeda dari kalimat di sekitarnya.
+
+     SEBABNYA ADA DI ISI KLAUSUL, BUKAN DI KODE. Teks klausul disalin-tempel
+     dari template Word, dan Word membawa serta muka hurufnya sendiri pada
+     potongan yang ditempel — biasanya sebagai atribut <font face="..."> atau
+     gaya sebaris pada <span> yang MEMBUNGKUS placeholder itu. spkStripFontStyle
+     sudah membuang sebagian besar di antaranya, tetapi tidak semua bentuk
+     penulisan Word tertangkap, dan gaya sebaris selalu mengalahkan CSS biasa.
+
+     Karena itu penyeragamannya dikerjakan di sini, di lapisan CSS PALING AKHIR
+     dokumen TOR/KAK, dengan !important sehingga gaya sebaris peninggalan Word
+     pun kalah. Cakupannya SENGAJA DIBATASI pada badan & judul klausul
+     (.spk-cl / .spk-cl-h): sampul dan daftar isi TIDAK ikut karena keduanya
+     memang memakai Plus Jakarta Sans. Daftar muka hurufnya disamakan persis
+     dengan aturan .fkl-doc di torHpsDocCss, termasuk "Inter Local" (versi
+     base64 yang ditanam spkInterFontFace) sebagai pilihan pertama supaya
+     cetakan tetap benar walau jaringan mati. */
+  '.spk-doc .spk-cl,.spk-doc .spk-cl *,'+
+  '.spk-doc .spk-cl-h,.spk-doc .spk-cl-h *{'+
+    'font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif !important}';
 }
 /* ---- Klausul OVERVIEW PEKERJAAN: tanpa cetak tebal ----
    Nilai "Direksi Pekerjaan" & "Pengawas Pekerjaan" tampil tebal karena template
@@ -3686,20 +3767,28 @@ function torBoqTabelHtml(data){
       '<td class="sum-lbl" colspan="6">'+esc(lbl)+'</td>'+
       '<td class="num">'+NOL+'</td><td class="num">'+NOL+'</td><td class="num">'+NOL+'</td></tr>';
   };
-  /* Lebar kolom: pemakai fungsi yang sama dengan cetakan RAB. Karena seluruh
-     kolom harga berisi "-", jsHpsHargaPct jatuh ke lantainya (9%) sehingga sisa
-     lebar mengalir ke kolom Uraian Pekerjaan — pas untuk lembar TOR yang lebih
-     sempit daripada lembar RAB. */
-  var cw=jsHpsColPct(items, cfg, jsHpsHargaPct(String(NOL||'').length));
-  var jt=Math.max(cw.hg, TOR_RAB_JT_MIN);
-  var ur=Math.max(14, Math.round((cw.ur-(jt-cw.hg))*10)/10);
+  /* ---- LEBAR KOLOM: SALINAN PERSIS KISI LEMBAR .xlsx ----
+     KETENTUAN 6 Agu 2026: "format BoQ di klausul BoQ dalam TOR/KAK mengikuti
+     tampilan BoQ terbaru". Sebelumnya lebar kolom di sini dihitung sendiri oleh
+     jsHpsColPct() — cara yang sama dengan cetakan RAB — sehingga tabel di TOR
+     dan berkas .xlsx yang diunduh penyedia berbeda proporsi meski isinya sama.
+
+     Sekarang persentase tiap kolom DITURUNKAN dari TOR_BOQ_W, yaitu kisi kolom
+     yang dipakai berkas .xlsx itu sendiri (torBoqPct mengubah satuan lebar
+     kolom Excel menjadi persen terhadap badan tabel B..K). Jadi menggeser satu
+     kolom di TOR_BOQ_W otomatis menggeser kolom yang sama di KEDUA tempat, dan
+     keduanya mustahil berbeda lagi. Kolom Uraian = gabungan C+D, sama seperti
+     di lembar Excel. */
+  var _wNo =torBoqPct(1), _wUr=torBoqPct(2,3), _wSat=torBoqPct(4), _wVol=torBoqPct(5),
+      _wHrg=torBoqPct(6), _wTot=torBoqPct(10);
   return ''+
     '<table class="hps-doc-tbl">'+
-    '<colgroup><col style="width:'+cw.no+'%"><col style="width:'+ur+'%"><col style="width:'+cw.sat+'%">'+
-      '<col style="width:'+cw.vol+'%"><col style="width:'+cw.hg+'%"><col style="width:'+cw.hg+'%">'+
-      '<col style="width:'+cw.hg+'%"><col style="width:'+cw.hg+'%"><col style="width:'+jt+'%"></colgroup>'+
+    '<colgroup><col style="width:'+_wNo+'%"><col style="width:'+_wUr+'%"><col style="width:'+_wSat+'%">'+
+      '<col style="width:'+_wVol+'%"><col style="width:'+_wHrg+'%"><col style="width:'+_wHrg+'%">'+
+      '<col style="width:'+_wHrg+'%"><col style="width:'+_wHrg+'%"><col style="width:'+_wTot+'%"></colgroup>'+
     '<thead>'+
-      '<tr><th class="no" rowspan="2">No</th><th class="ur" rowspan="2">Uraian Pekerjaan</th>'+
+      /* "No." bertitik — sama persis dengan kepala kolom di lembar .xlsx. */
+      '<tr><th class="no" rowspan="2">No.</th><th class="ur" rowspan="2">Uraian Pekerjaan</th>'+
         '<th class="st" rowspan="2">Sat</th><th class="vl" rowspan="2">Vol</th>'+
         '<th colspan="2">Harga Satuan</th><th colspan="2">Jumlah Harga</th>'+
         '<th class="jt" rowspan="2">Jumlah Total<br>(Rp)</th></tr>'+
@@ -3720,7 +3809,8 @@ function torBoqTabelHtml(data){
 
      (KOP PERUSAHAAN)            — biru, tebal, rata tengah (tempat kop penyedia)
      Bill of Quantity (BoQ)      — tebal, bergaris bawah, rata tengah
-     Pekerjaan / Lokasi          — dua baris "label : nilai"
+     Nama Pekerjaan / Lokasi
+     Pekerjaan                   — dua baris "label : nilai"
      tabel rincian               — torBoqTabelHtml()
      blok tanda tangan penyedia  — Kota/Kabupaten,....., Tanggal..... /
                                    Nama Perusahaan / (Nama Lengkap) / Jabatan
@@ -3733,13 +3823,23 @@ function torBoqBlokHtml(data){
   var tbl=torBoqTabelHtml(data);
   if(!tbl) return '';
   var esc=fkEsc;
+  /* Baris "label : nilai" — MENIRU LEMBAR .xlsx (ketentuan 6 Agu 2026):
+       td.pad  sel kosong selebar kolom B, supaya label mulai sejajar kolom C;
+       td.k    label, selebar kolom C dan DIRATAKAN KE KANAN sehingga titik dua
+               kedua baris jatuh pada satu garis lurus — di lembar Excel hal ini
+               dikerjakan oleh format angka `@\ * ":"`, di sini oleh lebar sel
+               yang diambil dari kisi kolom yang sama (lihat .boq-info di
+               torDocCss);
+       td.v    nilainya, mulai di kolom D dan boleh melipat sampai kolom K. */
   var baris=function(k,v){
-    return '<tr><td class="k">'+esc(k)+'</td><td class="s">:</td><td class="v">'+esc(v||'-')+'</td></tr>';
+    return '<tr><td class="pad"></td><td class="k">'+esc(k)+'</td>'+
+      '<td class="s">:</td><td class="v">'+esc(v||'-')+'</td></tr>';
   };
-  /* Blok tanda tangan penyedia — di berkas .xlsx menempati kolom 6-9 (paruh
-     kanan lembar) dan rata tengah di dalamnya; di sini ditiru dengan kotak
-     selebar TOR_BOQ_TTD_W% yang didorong ke kanan. .spk-keep menjaga blok ini
-     tidak pernah terpenggal paginator. */
+  /* Blok tanda tangan penyedia — di berkas .xlsx menempati kolom I s.d. K
+     (paruh kanan lembar) dan rata tengah di dalamnya; di sini ditiru dengan
+     kotak selebar TOR_BOQ_TTD_W% yang didorong ke kanan — persentase itu
+     dihitung dari kisi kolom .xlsx yang sama (lihat TOR_BOQ_W). .spk-keep
+     menjaga blok ini tidak pernah terpenggal paginator. */
   var ttd='<div class="boq-ttd spk-keep">'+
       '<div class="tg">Kota/Kabupaten,....., Tanggal.....</div>'+
       '<div class="pr">Nama Perusahaan</div>'+
@@ -3752,8 +3852,8 @@ function torBoqBlokHtml(data){
         '<div class="kp">(KOP PERUSAHAAN)</div>'+
         '<div class="jd">Bill of Quantity (BoQ)</div>'+
         '<table class="boq-info"><tbody>'+
-          baris('Pekerjaan', data.nama_pekerjaan)+
-          baris('Lokasi', data.lokasi_pekerjaan)+
+          baris('Nama Pekerjaan', data.nama_pekerjaan)+
+          baris('Lokasi Pekerjaan', data.lokasi_pekerjaan)+
         '</tbody></table>'+
       '</div>'+
       tbl+ttd+
@@ -3800,25 +3900,29 @@ async function torBoqExcel(id){
   try{
     await withActionLoader('Menyiapkan BoQ', async()=>{
       const wb=new ExcelJS.Workbook();
-      const ws=wb.addWorksheet('BoQ',{pageSetup:{paperSize:9,orientation:'portrait',fitToPage:true,fitToWidth:1,fitToHeight:0,margins:{left:0.4,right:0.4,top:0.5,bottom:0.5,header:0.2,footer:0.2}}});
+      /* ---- PENGATURAN CETAK ----
+         KETENTUAN 6 Agu 2026: mengikuti berkas BoQ contoh — "Fit to page"
+         MATI (fitToPage:false), jadi lembar dicetak pada skala 100% apa adanya.
+         fitToHeight:0 ("halaman ke bawah: otomatis") tetap ditulis supaya
+         pengaturannya identik dengan berkas contoh. */
+      const ws=wb.addWorksheet('BoQ',{pageSetup:{paperSize:9,orientation:'portrait',fitToPage:false,fitToHeight:0,margins:{left:0.4,right:0.4,top:0.5,bottom:0.5,header:0.2,footer:0.2}}});
       /* ---- TAMPILAN LEMBAR: TANPA GARIS KISI ----
          Hanya tampilan bawaan yang dimatikan (showGridLines), BUKAN garis
          tabel: garis tabel datang dari border tiap sel (kotak) sehingga tetap
          terlihat dan tetap ikut tercetak. */
       ws.views=[{showGridLines:false}];
       /* ---- KISI KOLOM ----
-         Dua kolom BARU dibanding rancangan lama (ketentuan 6 Agu 2026):
-           A (lebar 3)  : kolom sela di tepi kiri — tabel tidak lagi menempel
-                          ke pinggir lembar.
-           C (lebar 12) : kolom penampung label "Pekerjaan :" / "Lokasi :".
-                          DI DALAM TABEL kolom ini selalu digabung dengan D,
-                          sehingga kolom Uraian Pekerjaan tetap selebar 44
-                          seperti semula (12 + 32) dan tidak ada kolom kosong
-                          yang mengganggu.
+         Angkanya TIDAK ditulis di sini melainkan di tetapan TOR_BOQ_W (lihat
+         catatan lengkapnya di sana), karena kisi yang sama juga dipakai tabel
+         BoQ di dalam klausul TOR/KAK. Ringkasnya:
+           A : kolom sela di tepi kiri — tabel tidak menempel ke pinggir lembar.
+           C : DI LUAR tabel menjadi penampung label "Nama Pekerjaan :" /
+               "Lokasi Pekerjaan :"; DI DALAM tabel selalu digabung dengan D
+               sehingga kolom Uraian Pekerjaan utuh (C+D) dan tidak ada kolom
+               kosong yang mengganggu.
          Nomor kolom FISIK dipakai di seluruh fungsi di bawah lewat tetapan K_*
          supaya penambahan/pemindahan kolom berikutnya cukup diubah di sini. */
-      ws.columns=[{width:3},{width:5},{width:12},{width:32},{width:7},{width:7},
-                  {width:15},{width:15},{width:15},{width:15},{width:16}];
+      ws.columns=TOR_BOQ_W.map(function(w){ return {width:w}; });
       const K_NO=2, K_URA=3, K_URA2=4, K_SAT=5, K_VOL=6,
             K_HB=7, K_HJ=8, K_JB=9, K_JJ=10, K_TOT=11;
       const K_KIRI=K_NO, K_KANAN=K_TOT;          /* batas kiri-kanan tabel */
@@ -3828,17 +3932,27 @@ async function torBoqExcel(id){
       const L_VOL=HRF(K_VOL), L_HB=HRF(K_HB), L_HJ=HRF(K_HJ),
             L_JB=HRF(K_JB),   L_JJ=HRF(K_JJ), L_TOT=HRF(K_TOT);
       /* ---- TINGGI BARIS ----
-         Ketentuan 6 Agu 2026: semua baris tabel 20, kecuali baris penomoran
-         kolom ("1, 2, 3, 4, …") yang dibuat tipis 6, dan satu baris sela di
-         paling atas setinggi 15.
-         Baris Uraian yang teksnya melipat memakai KELIPATAN dari 20 (2 baris
-         teks -> 40, 3 baris -> 60) supaya tetap seirama tetapi tulisannya tidak
-         terpotong — tinggi baris gabungan (merge) TIDAK bisa dihitung sendiri
-         oleh Excel, jadi harus ditentukan di sini. */
-      const T_BARIS=20, T_BARIS_NUM=6, T_BARIS_ATAS=15;
-      const tinggi=(r,h)=>{ ws.getRow(r).height=(h==null?T_BARIS:h); };
-      /* Perkiraan jumlah baris teks pada kolom Uraian (lebar gabungan C+D). */
-      const LEBAR_URA=(12+32)-2;
+         KETENTUAN 6 Agu 2026 (berkas BoQ contoh dari pengguna) — tiga ukuran
+         saja, dan ini MENGGANTI rancangan lama (20 / 6 tipis / 15):
+
+           T_SELA  16,05  SELURUH baris di luar tabel: baris sela paling atas,
+                          kop, judul, Nama Pekerjaan/Lokasi, ruang & blok tanda
+                          tangan. Juga dipakai baris penomoran kolom
+                          ("1, 2, 3, …") — baris tipis 6 DIBATALKAN karena pada
+                          berkas contoh baris itu setinggi baris biasa.
+           T_BARIS 18     baris tabel: kepala, isi satu baris, rekap, terbilang.
+           T_URA   20     dipakai HANYA bila teks Uraian melipat, sebagai
+                          KELIPATAN (2 baris teks -> 40, 3 baris -> 60).
+
+         Kenapa baris melipat memakai 20 dan bukan 18: tinggi baris gabungan
+         (merge) TIDAK dapat dihitung sendiri oleh Excel, jadi harus ditaksir di
+         sini — 20 per baris teks memberi sedikit kelonggaran sehingga huruf
+         berkait bawah (g, y, j) tidak terpangkas garis sel. */
+      const T_SELA=16.05, T_BARIS=18, T_URA=20;
+      const tinggi=(r,h)=>{ ws.getRow(r).height=(h==null?T_SELA:h); };
+      /* Perkiraan jumlah baris teks pada kolom Uraian (lebar gabungan C+D,
+         dikurangi 2 untuk tepi dalam sel). */
+      const LEBAR_URA=Math.round(TOR_BOQ_W[2]+TOR_BOQ_W[3])-2;
       const barisTeks=(txt)=>{
         const s=String(txt==null?'':txt);
         let n=0;
@@ -3847,6 +3961,9 @@ async function torBoqExcel(id){
         });
         return Math.max(1, n);
       };
+      /* Tinggi baris isi tabel: satu baris teks -> T_BARIS, melipat -> kelipatan
+         T_URA. Dipakai baris judul, sub-judul, dan barang/jasa. */
+      const tinggiIsi=(txt)=>{ const n=barisTeks(txt); return n<=1 ? T_BARIS : T_URA*n; };
       /* ---- Palet & garis: SALINAN PERSIS gaya cetak RAB (hpsExtraDocCss,
          selektor table.hps-doc-tbl di app.js). Bila warna di sana diubah,
          ubah juga di sini supaya BoQ tetap kembar dengan RAB. ---- */
@@ -3878,33 +3995,43 @@ async function torBoqExcel(id){
       /* Sel Uraian selalu gabungan C+D — lihat catatan kisi kolom di atas. */
       const gabungUraian=(r)=>{ ws.mergeCells(r,K_URA,r,K_URA2); };
       /* ---- Baris sela paling atas (ketentuan 6 Agu 2026) ---- */
-      tinggi(1,T_BARIS_ATAS);
+      tinggi(1);
       let R=2;
-      /* --- Kepala --- */
+      /* --- Kepala ---
+         Ukuran huruf mengikuti berkas BoQ contoh: kop penyedia 16, judul
+         lembar 14 bergaris bawah (semula keduanya 12). */
       ws.mergeCells(R,K_KIRI,R,K_KANAN);
-      tulis(R,K_KIRI,'(KOP PERUSAHAAN)',{b:true,al:{horizontal:'center'},font:{bold:true,size:12,color:{argb:'FF0070C0'}}}); tinggi(R); R++;
+      tulis(R,K_KIRI,'(KOP PERUSAHAAN)',{b:true,al:{horizontal:'center'},font:{bold:true,size:16,color:{argb:'FF0070C0'}}}); tinggi(R); R++;
       tinggi(R); R++;
       ws.mergeCells(R,K_KIRI,R,K_KANAN);
-      tulis(R,K_KIRI,'Bill of Quantity (BoQ)',{b:true,al:{horizontal:'center'},font:{bold:true,size:12,underline:true}}); tinggi(R); R++;
+      tulis(R,K_KIRI,'Bill of Quantity (BoQ)',{b:true,al:{horizontal:'center'},font:{bold:true,size:14,underline:true}}); tinggi(R); R++;
       tinggi(R); R++;
-      /* --- Pekerjaan & Lokasi: DUA sel saja per baris ---
-         Ketentuan 6 Agu 2026: "jarak dari Pekerjaan ke titik : ke nama
-         pekerjaan sangat jauh". Dulu label ditulis di kolom Uraian yang
-         selebar 44, tanda ":" di kolom terpisah, lalu nilainya baru mulai di
-         kolom berikutnya — itulah sumber jaraknya.
-         Sekarang label DAN titik dua menjadi SATU sel gabungan (B+C) yang
-         DIRATAKAN KE KANAN, sehingga titik dua "Pekerjaan :" dan "Lokasi :"
-         jatuh pada satu garis lurus; nilainya menempati satu sel gabungan
-         berikutnya (D s.d. K) dengan indent 1 karakter sebagai jaraknya. */
+      /* --- Nama Pekerjaan & Lokasi Pekerjaan: DUA sel per baris ---
+         KETENTUAN 6 Agu 2026 (berkas BoQ contoh). Riwayat singkatnya: mula-mula
+         label ada di kolom Uraian yang lebar dan ":" di kolom terpisah, jadi
+         jarak label ke nilainya menganga; lalu label + ":" disatukan di sel
+         gabungan B+C yang diratakan ke kanan.
+
+         Sekarang caranya berbeda lagi dan JAUH LEBIH RAPI:
+           - label ditulis SENDIRIAN di kolom C (bukan gabungan B+C), dan
+           - titik duanya TIDAK diketik, melainkan datang dari FORMAT ANGKA
+             `@\ * ":"`. Dalam format angka Excel, `*` berarti "ulangi karakter
+             sesudahnya sampai selebar kolom" — di sini karakter itu SPASI,
+             lalu ditutup ":". Hasilnya titik dua selalu menempel PERSIS di
+             tepi kanan kolom C, berapa pun panjang labelnya, sehingga ":"
+             kedua baris mustahil tidak lurus dan tidak perlu disetel manual.
+           - nilainya menempati sel gabungan D s.d. K dengan indent 1 karakter.
+         Labelnya juga diperjelas menjadi "Nama Pekerjaan" & "Lokasi Pekerjaan"
+         (semula "Pekerjaan" & "Lokasi"). */
+      const FMT_TDUA='@\\ * ":"';
       const infoBaris=(label,nilai)=>{
-        ws.mergeCells(R,K_NO,R,K_URA);
-        tulis(R,K_NO,label+' :',{b:true,al:{horizontal:'right',vertical:'middle'}});
+        tulis(R,K_URA,label,{b:true,al:{horizontal:'center'},fmt:FMT_TDUA});
         ws.mergeCells(R,K_URA2,R,K_KANAN);
-        tulis(R,K_URA2,nilai||'-',{al:{horizontal:'left',indent:1}});
+        tulis(R,K_URA2,nilai||'-',{b:true,al:{horizontal:'left',indent:1}});
         tinggi(R); R++;
       };
-      infoBaris('Pekerjaan', data.nama_pekerjaan);
-      infoBaris('Lokasi',    data.lokasi_pekerjaan);
+      infoBaris('Nama Pekerjaan',   data.nama_pekerjaan);
+      infoBaris('Lokasi Pekerjaan', data.lokasi_pekerjaan);
       tinggi(R); R++;
       /* --- Kepala tabel (tiga baris, sama dengan cetakan HPS) --- */
       const H=R;
@@ -3923,12 +4050,12 @@ async function torBoqExcel(id){
       kop(H,K_HB,'Harga Satuan'); kop(H,K_JB,'Jumlah Harga'); kop(H,K_TOT,'Jumlah Total\n(Rp)');
       kop(H+1,K_HB,'Barang (Rp)'); kop(H+1,K_HJ,'Jasa (Rp)');
       kop(H+1,K_JB,'Barang (Rp)'); kop(H+1,K_JJ,'Jasa (Rp)');
-      tinggi(H); tinggi(H+1);
+      tinggi(H,T_BARIS); tinggi(H+1,T_BARIS);
       warnai(H+2,C_NUMH); gabungUraian(H+2);
       [[K_NO,'1'],[K_URA,'2'],[K_SAT,'3'],[K_VOL,'4'],[K_HB,'5'],[K_HJ,'6'],
        [K_JB,'7 = 4 x 5'],[K_JJ,'8 = 4 x 6'],[K_TOT,'9 = 7 + 8']].forEach(([c,t])=>{
         tulis(H+2,c,t,{al:tengah,box:true,bg:C_NUMH,font:{bold:true,italic:true,color:{argb:T_NUMH}}}); });
-      tinggi(H+2,T_BARIS_NUM);
+      tinggi(H+2);            /* baris penomoran kolom: setinggi baris biasa */
       R=H+3;
       /* --- Baris isi (judul / sub-judul / barang), penomoran = jsWalk --- */
       const barisAngka=[];
@@ -3936,10 +4063,15 @@ async function torBoqExcel(id){
       /* Rumusnya dibiarkan POLOS (tanpa pembungkus IF(...)="") supaya hasilnya
          angka 0, bukan teks kosong \u2014 format accounting-lah yang menampilkan
          nol sebagai "-" persis seperti kolom harga di cetakan RAB. */
+      /* RUMUS TANPA ROUND (ketentuan 6 Agu 2026, mengikuti berkas BoQ contoh).
+         Semula tiap perkalian dibungkus ROUND(...,0) supaya angka BoQ mustahil
+         berbeda satu rupiah pun dengan RAB & HPS. Pengguna memilih rumus polos
+         seperti pada berkas contoh: pembulatan diserahkan sepenuhnya kepada
+         format accounting (RP) yang menampilkan angka tanpa desimal. */
       const rumusBaris=(r,bg)=>{
         const o={al:{horizontal:'right'},box:true,fmt:RP,bg:bg};
-        tulis(r,K_JB,{formula:'ROUND('+L_VOL+r+'*'+L_HB+r+',0)'},o);
-        tulis(r,K_JJ,{formula:'ROUND('+L_VOL+r+'*'+L_HJ+r+',0)'},o);
+        tulis(r,K_JB,{formula:L_VOL+r+'*'+L_HB+r},o);
+        tulis(r,K_JJ,{formula:L_VOL+r+'*'+L_HJ+r},o);
         /* Kolom Jumlah Total tebal & bertinta gelap \u2014 sama seperti td.num.tot di RAB. */
         tulis(r,K_TOT,{formula:L_JB+r+'+'+L_JJ+r},
           {al:{horizontal:'right'},box:true,fmt:RP,bg:bg,font:{bold:true,color:{argb:T_GRP}}});
@@ -3960,7 +4092,7 @@ async function torBoqExcel(id){
           if(it){ tulis(R,K_SAT,it.sat||'',{al:{horizontal:'center'},box:true,bg:C_GRP,font:f});
                   tulis(R,K_VOL,jsVolNum(it.vol)||null,{al:{horizontal:'center'},box:true,bg:C_GRP,font:f});
                   hargaNol(R,C_GRP); rumusBaris(R,C_GRP); barisAngka.push(R); }
-          tinggi(R, T_BARIS*barisTeks(t)); R++; },
+          tinggi(R, tinggiIsi(t)); R++; },
         sub:(no,txt,it)=>{ kosongkan(R); warnai(R,C_SUB); gabungUraian(R);
           const f={bold:true,italic:true,color:{argb:T_GRP}};
           const t='   '+txt;
@@ -3969,7 +4101,7 @@ async function torBoqExcel(id){
           if(it){ tulis(R,K_SAT,it.sat||'',{al:{horizontal:'center'},box:true,bg:C_SUB,font:f});
                   tulis(R,K_VOL,jsVolNum(it.vol)||null,{al:{horizontal:'center'},box:true,bg:C_SUB,font:f});
                   hargaNol(R,C_SUB); rumusBaris(R,C_SUB); barisAngka.push(R); }
-          tinggi(R, T_BARIS*barisTeks(t)); R++; },
+          tinggi(R, tinggiIsi(t)); R++; },
         item:(noInGroup,it,idx)=>{ kosongkan(R); gabungUraian(R);
           const t=(it.uraian&&String(it.uraian).trim())?it.uraian:('Barang/Jasa '+(idx+1));
           tulis(R,K_NO,noInGroup,{al:{horizontal:'center'},box:true});
@@ -3977,7 +4109,7 @@ async function torBoqExcel(id){
           tulis(R,K_SAT,it.sat||'',{al:{horizontal:'center'},box:true});
           tulis(R,K_VOL,jsVolNum(it.vol)||null,{al:{horizontal:'center'},box:true});
           hargaNol(R); rumusBaris(R); barisAngka.push(R);
-          tinggi(R, T_BARIS*barisTeks(t)); R++; }
+          tinggi(R, tinggiIsi(t)); R++; }
       });
       const r1=H+3, r2=R-1;
       /* --- Rekap: cermin hpsSummary() --- */
@@ -3989,14 +4121,18 @@ async function torBoqExcel(id){
         [[K_JB,fB],[K_JJ,fJ],[K_TOT,fT]].forEach(([c,f])=>
           tulis(R,c,{formula:f},{al:{horizontal:'right'},box:true,fmt:RP,bg:bg,
             font:{bold:true,color:{argb:tn}}}));
-        tinggi(R); R++;
+        tinggi(R,T_BARIS); R++;
       };
       const rJml=R;
-      rekap('Jumlah','SUM('+L_JB+r1+':'+L_JB+r2+')','SUM('+L_JJ+r1+':'+L_JJ+r2+')','SUM('+L_TOT+r1+':'+L_TOT+r2+')');
+      /* Kolom Jumlah Total pada baris "Jumlah" MENJUMLAHKAN DUA SEL DI KIRINYA
+         (Barang + Jasa), bukan menjumlahkan kolom Jumlah Total ke bawah —
+         mengikuti berkas BoQ contoh. Hasilnya sama, tetapi rumusnya lebih mudah
+         ditelusuri penyedia yang memeriksa lembar ini. */
+      rekap('Jumlah','SUM('+L_JB+r1+':'+L_JB+r2+')','SUM('+L_JJ+r1+':'+L_JJ+r2+')','SUM('+L_JB+R+':'+L_JJ+R+')');
       const rDpp=R;
-      rekap('DPP','ROUND('+L_JB+rJml+'*11/12,0)','ROUND('+L_JJ+rJml+'*11/12,0)','ROUND('+L_TOT+rJml+'*11/12,0)');
+      rekap('DPP','('+L_JB+rJml+'*11/12)','('+L_JJ+rJml+'*11/12)','('+L_TOT+rJml+'*11/12)');
       const rPpn=R;
-      rekap('PPn 12%','ROUND('+L_JB+rDpp+'*0.12,0)','ROUND('+L_JJ+rDpp+'*0.12,0)','ROUND('+L_TOT+rDpp+'*0.12,0)');
+      rekap('PPn 12%',L_JB+rDpp+'*0.12',L_JJ+rDpp+'*0.12',L_TOT+rDpp+'*0.12');
       const rTot=R;
       rekap('Jumlah Total',L_JB+rJml+'+'+L_JB+rPpn,L_JJ+rJml+'+'+L_JJ+rPpn,L_TOT+rJml+'+'+L_TOT+rPpn, true);
       /* --- Terbilang: rumus yang mengikuti sel Jumlah Total --- */
@@ -4004,7 +4140,7 @@ async function torBoqExcel(id){
       ws.mergeCells(R,K_KIRI,R,K_KANAN);
       tulis(R,K_KIRI,{formula:torBoqTerbilangRumus(L_TOT+rTot)},
         {al:{horizontal:'left'},box:true,bg:C_TERB,font:{bold:true,color:{argb:T_TERB}}});
-      tinggi(R);
+      tinggi(R,T_BARIS);
       /* --- Tanda tangan penyedia ---
          TOR_BOQ_TTD_RUANG = jumlah baris kosong untuk membubuhkan tanda tangan
          & cap. Ditambah satu baris pada 6 Agu 2026 atas permintaan pengguna. */
