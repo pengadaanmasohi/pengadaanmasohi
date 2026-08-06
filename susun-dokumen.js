@@ -1775,8 +1775,13 @@ async function torSaveDokumen(){
 function torDocCss(wKl, wBab){
   const WK=(wKl>0?wKl:0.65), WB=(wBab>0?wBab:0.55);
   const GAP=(typeof SPK_NUM_GAP!=='undefined') ? SPK_NUM_GAP : 0.18;
-  /* Langkah inden tingkat 1 -> tingkat 2 = setengah kolom teks judul bab. */
-  const LV2=Math.round(((WB+GAP)/2)*100)/100;
+  /* Langkah inden tingkat 1 -> tingkat 2 = LEBAR KOTAK NOMOR BAB.
+     Kotak nomor bab (.tor-babh .n) selebar WB dengan box-sizing:border-box,
+     jadi teks "PENDAHULUAN" tepat mulai di WB. Dengan menggeser judul klausul
+     sejauh WB, penanda "I.1." berdiri persis di bawah teks bab induknya —
+     bukan di bawah penanda "I."-nya. Itulah pola inden bertingkat Word:
+     penomoran tingkat 2 sejajar dengan TEKS tingkat 1, bukan dengan nomornya. */
+  const LV2=WB;
   return ''+
   /* ================= PENOMORAN MENGIKUTI TEMPLATE WORD =================
      Bawaan mesin SPK menomori judul klausul lewat penghitung CSS
@@ -1791,12 +1796,19 @@ function torDocCss(wKl, wBab){
   '.spk-doc.spk-spk .spk-cl-h .n::before{content:attr(data-no)}'+
   /* ---- Inden bertingkat tingkat 1 -> tingkat 2 ----
      Judul bab ("I. PENDAHULUAN") mulai di batas margin; judul klausul
-     ("I.1. OVERVIEW PEKERJAAN") digeser SEDIKIT ke kanan supaya susunan
-     bertingkatnya terlihat — tidak sampai sejajar kata "PENDAHULUAN", cukup
-     setengah kolom teks bab. Nilainya diturunkan dari lebar kotak nomor bab
-     supaya ikut menyesuaikan bila labelnya melebar ("VIII."). Judul bab
-     dikecualikan lewat :not(.tor-babh). */
+     ("I.1. OVERVIEW PEKERJAAN") digeser ke kanan sejauh kotak nomor bab,
+     sehingga penanda "I.1." mulai tepat di bawah kata "PENDAHULUAN". Nilainya
+     diturunkan dari WB, jadi ikut menyesuaikan bila label bab melebar
+     ("VIII."). Judul bab dikecualikan lewat :not(.tor-babh). */
   '.spk-doc.spk-spk .spk-cl-h:not(.tor-babh){margin-left:'+LV2.toFixed(2)+'cm}'+
+  /* ISI klausul ikut bergeser sejauh yang sama. Kalau hanya judulnya yang
+     digeser, butir tingkat 3 & 4 di dalamnya tetap menempel di batas margin
+     dan tampak terlepas dari judul induknya. Yang digeser BLOKNYA, bukan tiap
+     tingkat sendiri-sendiri — jenjang 3 -> 4 di dalam blok sudah diatur
+     spkPkIndentStd dan tidak boleh diutak-atik ulang, cukup ikut bergeser.
+     Bab yang judul klausulnya dilebur jadi judul bab (III. PENUTUP) TIDAK
+     diberi kelas tor-lv2, jadi isinya tetap rata dengan judul babnya. */
+  '.spk-doc.spk-spk .spk-clause.tor-lv2 > .spk-cl{margin-left:'+LV2.toFixed(2)+'cm}'+
   '.spk-doc.spk-spk .spk-cl-h{padding-left:'+WK.toFixed(2)+'cm;text-indent:-'+WK.toFixed(2)+'cm}'+
   '.spk-doc.spk-spk .spk-cl-h .n{min-width:'+WK.toFixed(2)+'cm;width:auto;text-align:left;'+
     'padding-right:'+GAP+'cm;box-sizing:border-box}'+
@@ -2280,7 +2292,7 @@ function torDocHtml(data, klausul){
        seperti lampiran TOR Word. */
     const head = s.lebur ? babHead(s)
       : '<div class="spk-cl-h"><span class="n" data-no="'+fkEsc(s.no)+'."></span>'+spkFmtJudul(k.judul)+'</div>';
-    out+='<div class="spk-clause">'+head+
+    out+='<div class="spk-clause'+(s.lebur?'':' tor-lv2')+'">'+head+
       '<div class="spk-cl'+spkLeadIndentCls(inner)+'">'+inner+'</div></div>';
     return out;
   }).join('');
