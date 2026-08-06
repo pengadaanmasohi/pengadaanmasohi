@@ -6146,7 +6146,13 @@ function renderHariLibur(){
     const d=hlParseISO(r.tgl); const dow=d.getDay();
     return '<tr class="'+((dow===0||dow===6)?'hl-weekend':'')+'">'+
       '<td class="col-no">'+(i+1)+'</td>'+
-      '<td class="col-date">'+fkEsc(pnwDateLong(r.tgl))+'</td>'+
+      /* Tanggal pada TABEL DAFTAR memakai bentuk pendek dd/mm/yyyy
+         (ketentuan 6 Agu 2026: "format tanggal di semua tampilan tabel
+         daftar adalah cth. 07/08/2026"). fmtDate() dipakai ulang karena
+         daftar lain di aplikasi ini memang sudah memakainya — jadi
+         seluruh daftar kini seragam. Bentuk panjang tetap dipakai di
+         dalam DOKUMEN, tempat ejaan bulan memang dikehendaki. */
+      '<td class="col-date">'+fkEsc(fmtDate(r.tgl))+'</td>'+
       '<td>'+HARI_NAMA[dow]+'</td>'+
       '<td class="wrap-cell">'+fkEsc(r.keterangan||'—')+'</td>'+
       '<td style="text-align:center"><button class="fk-act fk-act-del fk-act-icon" title="Hapus" onclick="hlDelete(\''+r.id+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></td>'+
@@ -11364,7 +11370,7 @@ function fklBatal(){
     text:'Batalkan proses ini? Data yang belum disimpan akan hilang.',
     onYes:()=>{
       fklEditId=null; fklState[fklModul]=fklBlankState(); fklSaveState();
-      fklTlError=false; fklStep=1; openFklView(); toast('Proses dibatalkan','ok');
+      fklTlError=false; fklStep=1; openFklView(); toast('Proses dibatalkan','err');
     }
   });
 }
@@ -11404,7 +11410,13 @@ async function fklSimpan(){
       ok=true;
     }catch(err){ console.error(err); toast('Gagal menyimpan: '+errMsg(err),'err'); return; }
     if(!ok) return;
-    toast(fklEditId?'Data berhasil diperbarui':'Data berhasil disimpan','ok');
+    /* Pesan BAKU keberhasilan menyimpan (hijau + ikon centang) — pasangan dari
+     toast('Proses dibatalkan','err')
+   pada tombol Batal. Ketentuan 6 Agu 2026: keduanya memakai kalimat sejajar
+   supaya pemakai langsung tahu proses mana yang barusan selesai.
+   Bentuk lama membedakan 'disimpan' (baru) dan 'diperbarui' (ubah); pembedaan
+   itu dilepas atas permintaan pengguna. */
+  toast('Proses berhasil disimpan','ok');
     // #6: kosongkan seluruh isian input agar siap data baru
     fklEditId=null; fklState[fklModul]=fklBlankState(); fklSaveState(); fklTlError=false; fklStep=1;
     // #5: alihkan ke Lihat Data
@@ -13399,7 +13411,7 @@ function pnwScrollTop(){ const v=document.getElementById('view-form-pembukaan');
 function pnwBatal(){
   openConfirm({ icon:'del', title:'Batalkan Proses',
     text:'Batalkan proses ini? Data yang belum disimpan akan hilang.',
-    onYes:()=>{ pnwEditId=null; pnwState=pnwBlankState(); pnwSaveState(); pnwStep=1; openPnwView(); toast('Proses dibatalkan','ok'); }
+    onYes:()=>{ pnwEditId=null; pnwState=pnwBlankState(); pnwSaveState(); pnwStep=1; openPnwView(); toast('Proses dibatalkan','err'); }
   });
 }
 
@@ -13497,7 +13509,13 @@ async function pnwSimpan(){
       ok=true;
     }catch(err){ console.error(err); toast('Gagal menyimpan: '+errMsg(err),'err'); return; }
     if(!ok) return;
-    toast(pnwEditId?'Data berhasil diperbarui':'Data berhasil disimpan','ok');
+    /* Pesan BAKU keberhasilan menyimpan (hijau + ikon centang) — pasangan dari
+     toast('Proses dibatalkan','err')
+   pada tombol Batal. Ketentuan 6 Agu 2026: keduanya memakai kalimat sejajar
+   supaya pemakai langsung tahu proses mana yang barusan selesai.
+   Bentuk lama membedakan 'disimpan' (baru) dan 'diperbarui' (ubah); pembedaan
+   itu dilepas atas permintaan pengguna. */
+  toast('Proses berhasil disimpan','ok');
     // Beritahu bila Sampul Dua sengaja dibiarkan kosong (boleh dilengkapi kemudian)
     if(pnwIsTwoSampul(st) && pnwSampulProgres('s2', st).kosong){
       setTimeout(()=>toast('Sampul Dua belum diperiksa — dapat dilengkapi kemudian lewat tombol Ubah','warn'), 900);
@@ -14534,7 +14552,7 @@ function rhoScrollTop(){ const v=document.getElementById('view-form-rho'); if(v)
 function rhoBatal(){
   openConfirm({ icon:'del', title:'Batalkan Proses',
     text:'Batalkan proses ini? Data yang belum disimpan akan hilang.',
-    onYes:()=>{ rhoEditId=null; rhoState=rhoBlankState(); rhoSaveState(); rhoStep=1; openRhoView(); toast('Proses dibatalkan','ok'); }
+    onYes:()=>{ rhoEditId=null; rhoState=rhoBlankState(); rhoSaveState(); rhoStep=1; openRhoView(); toast('Proses dibatalkan','err'); }
   });
 }
 
@@ -14586,7 +14604,13 @@ async function rhoSimpan(){
       await refreshDataRho();
     });
   }catch(err){ console.error(err); toast('Gagal menyimpan: '+errMsg(err),'err'); return; }
-  toast(rhoEditId?'Data berhasil diperbarui':'Data berhasil disimpan','ok');
+  /* Pesan BAKU keberhasilan menyimpan (hijau + ikon centang) — pasangan dari
+     toast('Proses dibatalkan','err')
+   pada tombol Batal. Ketentuan 6 Agu 2026: keduanya memakai kalimat sejajar
+   supaya pemakai langsung tahu proses mana yang barusan selesai.
+   Bentuk lama membedakan 'disimpan' (baru) dan 'diperbarui' (ubah); pembedaan
+   itu dilepas atas permintaan pengguna. */
+  toast('Proses berhasil disimpan','ok');
   const savedId = rhoEditId || (saved && saved.id);
   rhoEditId=null; rhoState=rhoBlankState(); rhoSaveState(); rhoStep=1;
   showView('rho-view');
@@ -14773,7 +14797,13 @@ function renderRhoView(){
       '<td>'+fkEsc(metode||'—')+'</td>'+
       '<td style="text-align:center">'+ji+'</td>'+
       '<td style="text-align:center">'+jr+'</td>'+
-      '<td class="col-date">'+fkEsc(tgl?rhoDateLong(tgl):'—')+'</td>'+
+      /* Tanggal pada TABEL DAFTAR memakai bentuk pendek dd/mm/yyyy
+         (ketentuan 6 Agu 2026: "format tanggal di semua tampilan tabel
+         daftar adalah cth. 07/08/2026"). fmtDate() dipakai ulang karena
+         daftar lain di aplikasi ini memang sudah memakainya — jadi
+         seluruh daftar kini seragam. Bentuk panjang tetap dipakai di
+         dalam DOKUMEN, tempat ejaan bulan memang dikehendaki. */
+      '<td class="col-date">'+fkEsc(tgl?fmtDate(tgl):'—')+'</td>'+
       '<td><div class="action-cell" style="justify-content:center">'+
         '<button class="act act-edit" title="Ubah" onclick="openRhoInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
         '<button class="act act-view" title="Lihat" onclick="rhoPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
@@ -15134,7 +15164,7 @@ function renderDpForm(){
 }
 function dpBatal(){
   openConfirm({ icon:'del', title:'Batalkan Proses', text:'Batalkan proses ini? Data yang belum disimpan akan hilang.',
-    onYes:()=>{ dpEditId=null; dpState=dpBlankState(); openDpView(); toast('Proses dibatalkan','ok'); }
+    onYes:()=>{ dpEditId=null; dpState=dpBlankState(); openDpView(); toast('Proses dibatalkan','err'); }
   });
 }
 async function dpSimpan(){
@@ -15155,7 +15185,13 @@ async function dpSimpan(){
       await refreshDataDp();
     });
   }catch(err){ console.error(err); toast('Gagal menyimpan: '+errMsg(err),'err'); return; }
-  toast(dpEditId?'Data berhasil diperbarui':'Data berhasil disimpan','ok');
+  /* Pesan BAKU keberhasilan menyimpan (hijau + ikon centang) — pasangan dari
+     toast('Proses dibatalkan','err')
+   pada tombol Batal. Ketentuan 6 Agu 2026: keduanya memakai kalimat sejajar
+   supaya pemakai langsung tahu proses mana yang barusan selesai.
+   Bentuk lama membedakan 'disimpan' (baru) dan 'diperbarui' (ubah); pembedaan
+   itu dilepas atas permintaan pengguna. */
+  toast('Proses berhasil disimpan','ok');
   dpEditId=null; dpState=dpBlankState();
   openDpView();
 }
@@ -16348,7 +16384,7 @@ function hpsScrollTop(){ const v=document.getElementById('view-form-hps'); if(v)
 function hpsBatal(){
   openConfirm({ icon:'del', title:'Batalkan Proses',
     text:'Batalkan proses ini? Data yang belum disimpan akan hilang.',
-    onYes:()=>{ hpsEditId=null; hpsState=hpsBlankState(); hpsSaveState(); hpsStep=1; openHpsView(); toast('Proses dibatalkan','ok'); }
+    onYes:()=>{ hpsEditId=null; hpsState=hpsBlankState(); hpsSaveState(); hpsStep=1; openHpsView(); toast('Proses dibatalkan','err'); }
   });
 }
 
@@ -16377,7 +16413,13 @@ async function hpsSimpan(){
       await refreshDataHps();
     });
   }catch(err){ console.error(err); toast('Gagal menyimpan: '+errMsg(err),'err'); return; }
-  toast(hpsEditId?'Data berhasil diperbarui':'Data berhasil disimpan','ok');
+  /* Pesan BAKU keberhasilan menyimpan (hijau + ikon centang) — pasangan dari
+     toast('Proses dibatalkan','err')
+   pada tombol Batal. Ketentuan 6 Agu 2026: keduanya memakai kalimat sejajar
+   supaya pemakai langsung tahu proses mana yang barusan selesai.
+   Bentuk lama membedakan 'disimpan' (baru) dan 'diperbarui' (ubah); pembedaan
+   itu dilepas atas permintaan pengguna. */
+  toast('Proses berhasil disimpan','ok');
   hpsEditId=null; hpsState=hpsBlankState(); hpsSaveState(); hpsStep=1;
   showView('hps-view');
 }
@@ -18140,7 +18182,7 @@ function anaScrollTop(){ const v=document.getElementById('view-form-analisa'); i
 function anaBatal(){
   openConfirm({ icon:'del', title:'Batalkan Proses',
     text:'Batalkan proses ini? Data yang belum disimpan akan hilang.',
-    onYes:()=>{ anaEditId=null; anaState=anaBlankState(); anaSaveState(); anaStep=1; openAnalisaView(); toast('Proses dibatalkan','ok'); }
+    onYes:()=>{ anaEditId=null; anaState=anaBlankState(); anaSaveState(); anaStep=1; openAnalisaView(); toast('Proses dibatalkan','err'); }
   });
 }
 
@@ -18178,7 +18220,13 @@ async function anaSimpan(){
       await refreshDataAnalisa();
     });
   }catch(err){ console.error(err); toast('Gagal menyimpan: '+errMsg(err),'err'); return; }
-  toast(anaEditId?'Data berhasil diperbarui':'Data berhasil disimpan','ok');
+  /* Pesan BAKU keberhasilan menyimpan (hijau + ikon centang) — pasangan dari
+     toast('Proses dibatalkan','err')
+   pada tombol Batal. Ketentuan 6 Agu 2026: keduanya memakai kalimat sejajar
+   supaya pemakai langsung tahu proses mana yang barusan selesai.
+   Bentuk lama membedakan 'disimpan' (baru) dan 'diperbarui' (ubah); pembedaan
+   itu dilepas atas permintaan pengguna. */
+  toast('Proses berhasil disimpan','ok');
   anaEditId=null; anaState=anaBlankState(); anaSaveState(); anaStep=1;
   showView('analisa-view');
 }
@@ -18623,7 +18671,13 @@ function rekapTampilkan(){
   const {hpsList, anaList}=rekapRowsFor(id);
   const hpsRows = hpsList.length ? hpsList.map((r,i)=>'<tr>'+
       '<td class="col-no">'+(i+1)+'</td>'+
-      '<td class="col-date">'+fkEsc(r.tgl_hps?pnwDateLong(r.tgl_hps):'—')+'</td>'+
+      /* Tanggal pada TABEL DAFTAR memakai bentuk pendek dd/mm/yyyy
+         (ketentuan 6 Agu 2026: "format tanggal di semua tampilan tabel
+         daftar adalah cth. 07/08/2026"). fmtDate() dipakai ulang karena
+         daftar lain di aplikasi ini memang sudah memakainya — jadi
+         seluruh daftar kini seragam. Bentuk panjang tetap dipakai di
+         dalam DOKUMEN, tempat ejaan bulan memang dikehendaki. */
+      '<td class="col-date">'+fkEsc(r.tgl_hps?fmtDate(r.tgl_hps):'—')+'</td>'+
       '<td style="text-align:center">'+(r.jumlah_item!=null?r.jumlah_item:'—')+'</td>'+
       '<td class="col-num" style="text-align:right;font-weight:700">'+hpsRp(r.nilai_total)+'</td>'+
     '</tr>').join('')

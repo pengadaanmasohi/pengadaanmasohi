@@ -50,6 +50,22 @@ const TOR_TTD_KOL_W   = 44;
    12,5px tebal). Pada t=9 sisanya ±221px. Lembar TOR/KAK TIDAK diberi tepi ini
    karena di sana cadangannya sudah tipis. */
 const TOR_TTD_RAB_TEPI = 9;
+/* ---- RUANG BUBUH TANDA TANGAN & CAP: SATU UKURAN UNTUK SEMUA DOKUMEN ----
+   KETENTUAN 6 Agu 2026. Sebelumnya tiap dokumen memakai angkanya sendiri, dan
+   ketiganya berbeda karena ditulis di berkas & satuan yang berbeda pula:
+
+     TOR/KAK          .tor-ttd .sp        2.2cm   (susundokumen.js)
+     RAB              tr.ttd-row .gap     66px    (hpsExtraDocCss di app.js,
+                                                   ditumpangi dari HPS) = 1,75cm
+                                                   + .nm{padding-top:5px}
+     BoQ dlm klausul  .boq-ttd .sp        1.9cm   (susundokumen.js)
+
+   Ketiganya kini memakai tetapan di bawah. RAB butuh perlakuan khusus: aturan
+   milik HPS di app.js menambahkan padding atas 5px pada nama penanda tangan,
+   sehingga jarak tampaknya menjadi 2,2cm + 5px. Padding itu DINOLKAN khusus
+   untuk RAB (lihat torRabDocHtml) supaya jaraknya benar-benar sama, tanpa
+   mengubah cetakan HPS yang memang sudah mapan. */
+const TOR_TTD_RUANG_CM = 2.2;
 /* ---- KISI KOLOM LEMBAR BoQ: SATU-SATUNYA SUMBER UKURAN ----
    KETENTUAN 6 Agu 2026 (berkas BoQ contoh dari pengguna). Angka di bawah adalah
    lebar kolom A..K dalam SATUAN LEBAR KOLOM EXCEL, disalin apa adanya dari
@@ -333,6 +349,30 @@ function torNoDok(data, kode){
   const th=parseInt(data.tahun_dokumen,10)||torYearNow();
   return torFormatNo(seq, data.kode_klasifikasi, th, kode);
 }
+/* Pasangan nomor untuk KOLOM "No. Dokumen" pada daftar (ketentuan 6 Agu 2026:
+   "isinya No TOR/KAK dan RAB yang di-alt-enter").
+
+   Nomor RAB DIHITUNG, bukan disimpan: ia seinduk dengan TOR — nomor urut, kode
+   klasifikasi, dan tahunnya sama, hanya kode dokumennya berganti. Sumber
+   utamanya rec.data (lewat torNoDok) supaya memakai jalur yang sama dengan
+   nomor yang tercetak di dokumen RAB itu sendiri.
+
+   CADANGANNYA menukar potongan ".TOR/" pada nomor yang tersimpan. Ini penting
+   untuk baris daftar yang datanya belum termuat penuh (daftar hanya membawa
+   ringkasan): tanpa cadangan itu kolomnya akan kosong sebelah. */
+function torNoDokPasangan(rec){
+  rec=rec||{};
+  var tor=String(rec.no_dokumen||'').trim();
+  var rab='';
+  try{
+    if(rec.data && (rec.data.no_urut||rec.data.no_dokumen)) rab=torNoDok(rec.data,'RAB');
+  }catch(e){ rab=''; }
+  if(!rab && tor) rab=tor.replace('.'+TOR_KODE+'/', '.RAB/');
+  /* Bila penukaran tidak mengubah apa pun, nomornya tidak berpola TOR yang
+     dikenali — lebih baik dikosongkan daripada menampilkan nomor keliru. */
+  if(rab===tor) rab='';
+  return { tor: tor || '\u2014', rab: rab };
+}
 /* Hitung ulang nomor urut & nomor dokumen pada state yang sedang disusun.
    Nomor urut dokumen TERSIMPAN tidak diubah (tetap milik dokumen itu). */
 /* Tahun Anggaran & Sumber Dana diturunkan, bukan diketik.
@@ -412,14 +452,28 @@ const TOR_FIELD_GROUPS = [
        terbilang saja, tanpa "Hari Kalender") supaya yang terlihat di form =
        yang tercetak di klausul. Untuk versi berakhiran "Hari Kalender",
        klausul dapat memakai {{auto_terbilang_jangka}}. */
-    {k:'jangka_waktu_terbilang', l:'Terbilang', t:'text', auto:'terbilang_jangka_polos'},
-    {k:'nilai_pekerjaan', l:'Perkiraan Nilai Pekerjaan (+ PPN)', t:'rupiah', def:''},
-    /* Terbilang TIDAK disimpan sebagai data \u2014 ia diturunkan dari Perkiraan
-       Nilai Pekerjaan lewat torAutoVal('terbilang_nilai'). Field ber-atribut
-       `auto` digambar terkunci (readonly + cursor not-allowed) dan disegarkan
-       torRefreshAuto() pada tiap ketikan rupiah, jadi angkanya mustahil
-       tertinggal dari nilainya. Kode isiannya tetap {{nilai_pekerjaan_terbilang}}. */
-    {k:'nilai_pekerjaan_terbilang', l:'Terbilang', t:'text', auto:'terbilang_nilai'},
+    {k:'jangka_waktu_terbilang', l:'Terbilang Jangka Waktu', t:'text', auto:'terbilang_jangka_polos'},
+    /* ---- NILAI RAB: TERKUNCI, SELALU MENGIKUTI RAB ----
+       KETENTUAN 6 Agu 2026. Semula "Perkiraan Nilai Pekerjaan (+ PPN)" berupa
+       isian rupiah bebas, sehingga bisa berbeda dari Jumlah Total RAB pada
+       langkah 4 \u2014 dan bila penyusun lupa memperbaruinya sesudah RAB diubah,
+       dokumen mencetak angka usang.
+
+       Sekarang field ini ber-atribut `auto`, jadi torFieldInput menggambarnya
+       TERKUNCI (readonly + cursor not-allowed) dan torRefreshAuto menyegarkan
+       isinya; angkanya diambil torAutoVal('nilai_rab') dari Jumlah Total RAB
+       memakai hpsSummary() \u2014 fungsi yang sama dengan cetakan RAB, HPS, dan
+       Pakta Integritas, jadi keempatnya mustahil berbeda.
+
+       Kode isiannya TIDAK berubah ({{nilai_pekerjaan}}, {{nilai_hps}}, dst.)
+       supaya klausul yang sudah terlanjur memakainya tetap terisi benar. */
+    {k:'nilai_pekerjaan', l:'Nilai RAB', t:'rupiah', auto:'nilai_rab'},
+    /* Terbilang TIDAK disimpan sebagai data \u2014 ia diturunkan dari Nilai RAB
+       lewat torAutoVal('terbilang_nilai'). Field ber-atribut `auto` digambar
+       terkunci (readonly + cursor not-allowed) dan disegarkan torRefreshAuto()
+       setiap kali RAB berubah, jadi angkanya mustahil tertinggal dari nilainya.
+       Kode isiannya tetap {{nilai_pekerjaan_terbilang}}. */
+    {k:'nilai_pekerjaan_terbilang', l:'Terbilang Nilai RAB', t:'text', auto:'terbilang_nilai'},
   ]},
   /* ---------- Sumber Dana ----------
      Tahun Anggaran & Sumber Dana TIDAK lagi menjadi isian:
@@ -624,7 +678,12 @@ function torAutoVal(kind, d){
   try{
     if(kind==='no_urut')            return d.no_urut ? torPad4(d.no_urut) : '';
     if(kind==='no_dokumen')         return d.no_dokumen || '';
-    if(kind==='terbilang_nilai')    return (d.nilai_pekerjaan!=='' && d.nilai_pekerjaan!=null) ? spkTerbilangRupiah(d.nilai_pekerjaan) : '';
+    /* Nilai RAB = Jumlah Total RAB (sesudah PPn). Dihitung torPiNilai() supaya
+       SATU sumber dengan Pakta Integritas: ia memakai hpsSummary() atas
+       data.__rab, dan mundur ke angka tersimpan bila RAB masih kosong \u2014
+       sehingga dokumen LAMA yang nilainya diketik manual tetap tercetak benar. */
+    if(kind==='nilai_rab'){ var _n=torPiNilai(d); return _n>0 ? spkRupiah(_n) : ''; }
+    if(kind==='terbilang_nilai'){ var _t=torPiNilai(d); return _t>0 ? spkTerbilangRupiah(_t) : ''; }
     if(kind==='terbilang_jangka')   return d.jangka_waktu ? (spkTerbilang(d.jangka_waktu)+' Hari Kalender') : '';
     /* Versi POLOS (tanpa "Hari Kalender") — dipakai field "Terbilang" di bawah
        Jangka Waktu Pelaksanaan, dan HARUS sama dengan ctx.jangka_waktu_terbilang
@@ -666,7 +725,9 @@ function torExtendCtx(ctx, d){
   /* --- Nilai & terbilang ---
      Terbilang TIDAK lagi menjadi field isian: seluruhnya dihitung di sini,
      sehingga otomatis muncul di Pratinjau/Cetak lewat placeholder-nya. */
-  ctx.nilai_pekerjaan           = (d.nilai_pekerjaan!==''&&d.nilai_pekerjaan!=null) ? spkRupiah(d.nilai_pekerjaan) : '';
+  /* {{nilai_pekerjaan}} kini SELALU Jumlah Total RAB (lihat catatan field
+     'nilai_pekerjaan'). torPiNilai mundur ke angka tersimpan bila RAB kosong. */
+  ctx.nilai_pekerjaan           = torAutoVal('nilai_rab', d);
   ctx.nilai_pekerjaan_rp        = ctx.nilai_pekerjaan;
   ctx.nilai_pekerjaan_terbilang = torAutoVal('terbilang_nilai', d);
   /* Alias lama — dipertahankan agar klausul yang terlanjur memakai
@@ -685,6 +746,15 @@ function torExtendCtx(ctx, d){
   ctx.singkatan_unit  = TOR_SINGKATAN_UNIT;
   ctx.lokasi_unit     = TOR_LOKASI_UNIT;
   ctx.unit_lengkap    = /^PT\s*PLN/i.test(unit) ? unit : ('PT PLN (Persero) '+unit);
+  /* Bentuk RINGKAS: "PT PLN (Persero) UP3 Masohi" \u2014 badan hukum + SINGKATAN
+     unit, bukan nama panjangnya. Ditambahkan 6 Agu 2026 untuk baris
+     "Satuan / Unit Kerja" pada Pakta Integritas, yang dengan nama panjang
+     melipat jadi dua baris.
+     SENGAJA menjadi kode isian BARU, bukan mengubah {{unit_lengkap}}: kode itu
+     sudah dipakai klausul lain yang memang menghendaki nama panjangnya. */
+  ctx.unit_singkat    = /^PT\s*PLN/i.test(TOR_SINGKATAN_UNIT)
+                          ? TOR_SINGKATAN_UNIT
+                          : ('PT PLN (Persero) '+TOR_SINGKATAN_UNIT);
   ctx.p1_nama_singkat = unit;
   ctx.p1_alamat       = TOR_LOKASI_UNIT;
   ctx.nama_pengguna = String(d.nama_pengguna||'').toUpperCase();
@@ -1033,6 +1103,7 @@ const TOR_KODE_AUTO = [
   ['singkatan_unit','Singkatan unit (baku)'],
   ['lokasi_unit','Alamat unit (baku)'],
   ['unit_lengkap','PT PLN (Persero) + nama unit'],
+  ['unit_singkat','PT PLN (Persero) + singkatan unit'],
   ['kota_ttd','Kota penandatanganan (Masohi)'],
   ['tgl_ttd','Tanggal tanda tangan = tanggal dokumen'],
   ['tempat_tanggal','"Masohi, 5 Agustus 2026"'],
@@ -1051,7 +1122,8 @@ function torFieldInput(f){
 
   if(f.auto) return locked(torAutoVal(f.auto, d),
     (f.auto==='no_dokumen')      ? 'Nomor depan digenerate otomatis sesuai urutan dokumen (mulai 0001)' :
-    (f.auto==='terbilang_nilai') ? 'Terisi otomatis dari Perkiraan Nilai Pekerjaan' :
+    (f.auto==='nilai_rab')       ? 'Terisi otomatis dari Jumlah Total RAB (langkah 4) \u2014 tidak dapat diubah di sini' :
+    (f.auto==='terbilang_nilai') ? 'Terisi otomatis dari Nilai RAB' :
     (f.auto==='terbilang_jangka'|| f.auto==='terbilang_jangka_polos')
                                  ? 'Terisi otomatis dari Jangka Waktu Pelaksanaan' : '');
   /* Field yang dikunci oleh sebuah sakelar (lockedBy). Selama sakelarnya
@@ -1361,9 +1433,31 @@ function torEditRecord(id){
   torStep=1;
   showView('tor-susun');
 }
+/* Tombol "Batal" pada SETIAP langkah penyusunan dokumen TOR/KAK.
+
+   DISERAGAMKAN dengan modul lain (6 Agu 2026). Dulu fungsi ini langsung
+   membuang seluruh isian tanpa bertanya — berbahaya, karena tombolnya
+   bersebelahan dengan "Berikutnya" di keempat langkah. Sekarang memakai pola
+   yang sama persis dengan pnwBatal/rhoBatal/dpBatal/hpsBatal:
+     tanya dulu lewat openConfirm -> baru kosongkan -> beri kabar lewat toast.
+
+   Toast-nya bernada 'err' (MERAH + ikon silang), bukan 'ok' (hijau + centang):
+   membatalkan proses bukan keberhasilan, dan tanda centang hijau untuk
+   pekerjaan yang justru dibuang membingungkan. Nada yang sama dipakai seluruh
+   modul lain yang menampilkan pesan "Proses dibatalkan". */
 function torBatalClick(){
-  torEditId=null; torState=torBlankState(); torStep=1;
-  showView('tor-view');
+  const lanjut=()=>{
+    torEditId=null; torState=torBlankState(); torStep=1;
+    showView('tor-view');
+    toast('Proses dibatalkan','err');
+  };
+  if(typeof openConfirm==='function'){
+    openConfirm({ icon:'del', title:'Batalkan Proses',
+      text:'Batalkan proses ini? Data yang belum disimpan akan hilang.',
+      onYes:lanjut });
+    return;
+  }
+  lanjut();
 }
 function torGoStep(n){
   /* BUG LAMA: `n=(n===2)?2:1` — sisa dari masa alur ini masih 2 langkah.
@@ -1999,7 +2093,10 @@ async function torSaveDokumen(){
       await refreshDataTor();
     });
   }catch(err){ console.error(err); toast('Gagal menyimpan: '+errMsg(err),'err'); return; }
-  toast('Dokumen TOR/KAK berhasil disimpan','ok');
+  /* Pesan BAKU keberhasilan menyimpan — pasangan dari toast('Proses
+     dibatalkan','err') pada torBatalClick, dan sama dengan seluruh modul lain
+     (ketentuan 6 Agu 2026). */
+  toast('Proses berhasil disimpan','ok');
   torEditId=null; torState=torBlankState();
   torViewPage=1; showView('tor-view');
 }
@@ -2275,7 +2372,7 @@ function torDocCss(wKl, wBab){
   '.tor-ttd .cap{margin-bottom:2pt}'+
   '.tor-ttd .jab{font-weight:700}'+
   /* Ruang bubuh tanda tangan & cap */
-  '.tor-ttd .sp{height:2.2cm}'+
+  '.tor-ttd .sp{height:'+TOR_TTD_RUANG_CM+'cm}'+
   '.tor-ttd .nm{font-weight:700}'+
   /* Jarak antara tabel penanda tangan atas dengan tabel pengesah */
   '.tor-ttd table.tt.tt-b{margin-top:14pt}'+
@@ -2387,8 +2484,9 @@ function torDocCss(wKl, wBab){
   '.spk-cl .tor-boq .boq-ttd .nm,'+
   '.spk-cl .tor-boq .boq-ttd .jb{font-weight:700}'+
   '.spk-cl .tor-boq .boq-ttd .nm{text-decoration:underline}'+
-  /* Ruang bubuh tanda tangan & cap — setara 4 baris kosong di berkas .xlsx. */
-  '.spk-cl .tor-boq .boq-ttd .sp{height:1.9cm}'+
+  /* Ruang bubuh tanda tangan & cap — SATU ukuran dengan TOR/KAK & RAB,
+     lihat TOR_TTD_RUANG_CM. */
+  '.spk-cl .tor-boq .boq-ttd .sp{height:'+TOR_TTD_RUANG_CM+'cm}'+
   /* UKURAN HURUF TABEL HARUS DITULIS ULANG DI SINI — DAN DENGAN !important.
      Mesin dokumen SPK memaksa SELURUH isi klausul memakai 11pt lewat aturan
      ber-!important (`.spk-doc .spk-cl *`, `.spk-flow .spk-cl *`,
@@ -2619,7 +2717,8 @@ function torRunFootHtml(data){
    tidak ada klausul yang menempati bab III (lihat torStruktur). */
 function torPenutupHtml(){
   const B=TOR_BAB[TOR_BAB.length-1];
-  return '<div class="spk-clause tor-babisi">'+
+  /* .tor-akhir — lihat torAkhirKeepScript. */
+  return '<div class="spk-clause tor-babisi tor-akhir">'+
     '<div class="spk-cl-h tor-babh"><span class="n" data-no="'+fkEsc(B.rom)+'."></span>'+fkEsc(B.nama)+'</div>'+
     '<div class="spk-cl"><p class="kl0">'+fkEsc(TOR_PENUTUP_TEKS)+'</p></div>'+
   '</div>';
@@ -2881,6 +2980,110 @@ function torBoqFitScript(){
   return '<scr'+'ipt>'+js+'</scr'+'ipt>';
 }
 
+/* ===================== 10d. PENUTUP SELALU MENEMANI TANDA TANGAN =====================
+   KETENTUAN 6 Agu 2026: "jika bagian tanda tangan terpisah di halaman sendiri,
+   maka Bab III. PENUTUP ikut bergeser bersamanya ke halaman itu."
+
+   MASALAHNYA. Blok tanda tangan (.tor-ttd) sudah ber-kelas `spk-keep`, jadi ia
+   tidak pernah terpenggal — bila sisa lembar tidak cukup, SELURUHNYA turun ke
+   lembar berikutnya. Tetapi Bab III PENUTUP di atasnya adalah blok terpisah dan
+   biasanya pendek, sehingga ia tetap tertinggal di dasar lembar sebelumnya:
+   lembar terakhir lalu berisi tanda tangan SENDIRIAN — persis yang tidak
+   dikehendaki.
+
+   CARANYA. Sebelum halaman dipecah, klausul bab terakhir (.tor-akhir) dan blok
+   tanda tangan DIBUNGKUS menjadi SATU <div class="spk-keep">. Bagi paginator
+   bungkus itu satu blok utuh: kalau muat ia tetap di lembar berjalan, kalau
+   tidak keduanya turun BERSAMA. Tidak ada logika baru yang ditambahkan ke
+   paginator.
+
+   MENGAPA DIUKUR DULU, TIDAK LANGSUNG DIBUNGKUS DI HTML. Alasannya sama persis
+   dengan torBoqFitScript: pada spkPageScript, blok atom yang LEBIH TINGGI
+   daripada satu lembar ditempel apa adanya ke lembar kosong, sedangkan badan
+   lembar ber-`overflow:hidden` — kelebihannya TERPOTONG DIAM-DIAM. Bab Penutup
+   yang panjang (mis. beberapa klausul) bisa saja tidak muat bersama tanda
+   tangan; dalam keadaan itu pembungkusnya TIDAK dipasang sama sekali, dan
+   keduanya kembali berperilaku seperti sebelumnya (tanda tangan tetap utuh
+   berkat `spk-keep` miliknya sendiri).
+
+   DAFTAR ISI TIDAK TERGANGGU. nomorToc() mencari `.spk-clause:not(.spk-cont)`
+   dengan querySelectorAll — pencarian KETURUNAN, bukan anak langsung — sehingga
+   klausul yang berpindah ke dalam pembungkus tetap terhitung, tetap pada urutan
+   yang sama, dan tetap terbaca sebagai isi lembar tempat pembungkus itu berada.
+
+   Skrip ini WAJIB berjalan SEBELUM spkPageScript. Keduanya menunggu
+   document.fonts.ready dan callback promise dijalankan menurut urutan
+   pendaftaran, jadi cukup dengan menaruh <script> ini lebih dulu di <body>. */
+function torAkhirKeepScript(){
+  var js=[
+    '(function(){',
+    'var SUDAH=false;',
+    'function mm2px(mm){var d=document.createElement("div");',
+    ' d.style.cssText="position:absolute;visibility:hidden;left:-9999px;height:"+mm+"mm";',
+    ' document.body.appendChild(d);var h=d.getBoundingClientRect().height;',
+    ' d.parentNode.removeChild(d);return h;}',
+    'function jalan(){',
+    ' if(SUDAH) return;',
+    ' try{',
+    '  var sec=document.querySelector(".spk-doc .spk-page.spk-flow");',
+    '  if(!sec){ SUDAH=true; return; }',
+    '  var ttd=sec.querySelector(".tor-ttd");',
+    '  var awal=sec.querySelector(".spk-clause.tor-akhir");',
+    '  if(!ttd || !awal){ SUDAH=true; return; }',
+    /* Keduanya HARUS bersaudara-kandung di wadah yang sama; bila tidak,
+       memindahkannya berarti mengubah susunan dokumen — lebih baik mundur. */
+    '  if(awal.parentNode!==ttd.parentNode){ SUDAH=true; return; }',
+    /* Kumpulkan berurutan dari klausul bab terakhir sampai blok tanda tangan.
+       Ditelusuri lewat nextElementSibling (bukan querySelectorAll) supaya yang
+       terbawa PASTI bersambung — tidak ada unsur asing yang terlewat di
+       tengahnya, dan tidak ada yang tertinggal di lembar sebelumnya. */
+    '  var isi=[], n=awal, aman=0;',
+    '  while(n && aman++<200){ isi.push(n); if(n===ttd) break; n=n.nextElementSibling; }',
+    '  if(isi[isi.length-1]!==ttd){ SUDAH=true; return; }',
+    /* 246,2 + 26,8 — lihat PH & EXPK di spkPageScript, sama dengan torBoqFitScript */
+    '  var PH=mm2px(273);',
+    '  if(!PH||PH<200) return;',                       /* CSS/font belum siap: tunggu panggilan berikutnya */
+    '  var hh=0, fh=0;',
+    '  var run=sec.querySelector("table.spk-run");',
+    '  if(run){',
+    '   var th=run.querySelector("thead > tr > td"), tf=run.querySelector("tfoot > tr > td");',
+    '   if(th) hh=th.getBoundingClientRect().height;',
+    '   if(tf) fh=tf.getBoundingClientRect().height;',
+    '  }',
+    /* Cadangan 8mm — alasannya sama dengan torBoqFitScript: tinggi kop & kaki
+       di sini diukur dari <td> table.spk-run, sedangkan paginator memakai
+       salinannya (.sh-hd/.sh-ft) yang tidak persis sama. Ambangnya PELIT:
+       salah menilai "tidak muat" hanya membuat Penutup tetap seperti perilaku
+       lama, sedangkan salah menilai "muat" berarti isinya terpotong. */
+    '  var muat=PH-hh-fh-6-mm2px(8);',
+    '  var atas=isi[0].getBoundingClientRect().top;',
+    '  var bawah=ttd.getBoundingClientRect().bottom;',
+    '  var h=bawah-atas;',
+    '  if(h>0 && h<=muat){',
+    '   var box=document.createElement("div");',
+    '   box.className="spk-keep tor-akhir-keep";',
+    '   isi[0].parentNode.insertBefore(box, isi[0]);',
+    '   for(var i=0;i<isi.length;i++) box.appendChild(isi[i]);',
+    '  }',
+    '  SUDAH=true;',
+    ' }catch(e){ SUDAH=true; try{ console.error("tor akhir keep:", e); }catch(_){} }',
+    '}',
+    'function pasang(){',
+    ' try{',
+    '  if(document.fonts && document.fonts.ready && document.fonts.ready.then){',
+    '   document.fonts.ready.then(jalan);',
+    '   setTimeout(jalan, 2900);',                     /* cadangan, mendahului 3000ms milik paginator */
+    '   return;',
+    '  }',
+    ' }catch(e){}',
+    ' jalan();',
+    '}',
+    'if(document.readyState==="loading") window.addEventListener("load", pasang); else pasang();',
+    '})();'
+  ].join('\n');
+  return '<scr'+'ipt>'+js+'</scr'+'ipt>';
+}
+
 /* ---- Dokumen lengkap ----
    Pipeline & KISI INDEN dipakai ulang dari Surat Perintah Kerja (bungkus
    .spk-doc.spk-spk), sehingga inden klausul TOR = inden SPK. */
@@ -2947,8 +3150,14 @@ function torDocHtml(data, klausul){
       if(blok){ inner=blok; klBoq=true; }
     }
     let out='';
+    /* .tor-akhir = penanda bahwa klausul ini milik BAB TERAKHIR (III. PENUTUP).
+       Dipakai torAkhirKeepScript untuk menyatukannya dengan blok tanda tangan
+       — lihat catatan lengkapnya di sana. Ditempelkan ke SEMUA bentuk cangkang
+       bab itu (judul bab tersendiri maupun klausulnya) supaya bab yang berisi
+       lebih dari satu klausul pun ikut terbawa utuh. */
+    const akhir = (s.bab===TOR_BAB.length) ? ' tor-akhir' : '';
     /* Bab I & II: judul bab berdiri sendiri di atas klausul pertamanya. */
-    if(s.awal && !s.lebur) out+='<div class="spk-clause tor-babonly">'+babHead(s)+'</div>';
+    if(s.awal && !s.lebur) out+='<div class="spk-clause tor-babonly'+akhir+'">'+babHead(s)+'</div>';
     /* Bab bertanda `tunggal` yang hanya berisi satu klausul (III. PENUTUP):
        judul klausul DILEBUR jadi judul bab, isinya langsung menempel — sama
        seperti lampiran TOR Word. */
@@ -2960,7 +3169,7 @@ function torDocHtml(data, klausul){
        memberi JARAK BAWAH 24 pt ke klausul sesudahnya — lihat catatannya di
        sana (termasuk alasan jaraknya dipasang sebagai margin BAWAH, bukan
        margin atas pada klausul berikutnya). */
-    out+='<div class="spk-clause'+(s.lebur?' tor-babisi':' tor-lv2')+(klBoq?' tor-boq-cl':'')+'">'+head+
+    out+='<div class="spk-clause'+(s.lebur?' tor-babisi':' tor-lv2')+(klBoq?' tor-boq-cl':'')+akhir+'">'+head+
       '<div class="spk-cl'+spkLeadIndentCls(inner)+'">'+inner+'</div></div>';
     return out;
   }).join('');
@@ -2998,8 +3207,9 @@ function torDocHtml(data, klausul){
     (typeof hpsExtraDocCss==='function'?hpsExtraDocCss():'')+
     spkDocCss()+spkDocCss2()+spkClHeadCss(klausul.length,false)+torDocCss(wKl, wBab)+
     '</style></head><body><div id="spk-docs">'+body+'</div>'+
-    /* torBoqFitScript WAJIB mendahului spkPageScript — lihat catatan di sana. */
-    torBoqFitScript()+spkKisiScript()+spkPageScript()+fklFitScript()+'</body></html>';
+    /* torBoqFitScript & torAkhirKeepScript WAJIB mendahului spkPageScript —
+       lihat catatan di masing-masing fungsi. */
+    torBoqFitScript()+torAkhirKeepScript()+spkKisiScript()+spkPageScript()+fklFitScript()+'</body></html>';
 }
 
 /* ===================== 11a. KOP & KERANGKA GAYA HPS =====================
@@ -3222,6 +3432,17 @@ function torRabDocHtml(data){
        bawah dinyatakan dalam persen, isinya menyusut proporsional dan letak
        tanggal tetap berimpit dengan kolom "Disusun oleh". */
     'tr.ttd-row .rab-ttd{padding-left:'+TOR_TTD_RAB_TEPI+'%;padding-right:'+TOR_TTD_RAB_TEPI+'%}'+
+    /* ---- RUANG BUBUH TANDA TANGAN: SAMA DENGAN TOR/KAK ----
+       KETENTUAN 6 Agu 2026 (lihat TOR_TTD_RUANG_CM). Aturan bawaan datang
+       dari hpsExtraDocCss() di app.js: `.hps-foot .gap,tr.ttd-row .gap`
+       (kekhususan 0,2,0) setinggi 66px = 1,75cm, DITAMBAH padding atas 5px
+       pada nama penanda tangan. Dua-duanya ditimpa di sini dengan selektor
+       yang lebih khusus (0,3,0, memakai .rab-ttd) supaya:
+         - hanya cetakan RAB yang berubah — dokumen HPS & Analisa Harga
+           Satuan yang menumpang aturan yang sama TIDAK ikut tergeser;
+         - jaraknya PERSIS TOR_TTD_RUANG_CM, bukan sekian cm + 5px. */
+    'tr.ttd-row .rab-ttd .gap{height:'+TOR_TTD_RUANG_CM+'cm}'+
+    'tr.ttd-row .rab-ttd .nm{padding-top:0}'+
     'tr.ttd-row .ttd.ttd3 td.sisi{width:'+_ttdW.w+'%}'+
     'tr.ttd-row .ttd.ttd3 td.celah{width:'+_ttdW.celah+'%}'+
     'tr.ttd-row .ttd.ttd3 td.tepi{width:'+_ttdW.tepi+'%}'+
@@ -3285,6 +3506,10 @@ const TOR_PI_TUTUP = [
    sebagaimana torDocHtml melakukannya untuk TOR/KAK. */
 /* Jarak antar-baris blok "label : nilai" — berlaku untuk KEDUA blok
    (Nama/NIP/Jabatan dan Satuan Kerja s.d. No. PRK), pt. */
+/* JARAK BAKU seluruh dokumen Pakta Integritas (pt): antar-baris "label :
+   nilai", antar-paragraf, antar-butir komitmen, dan jarak tiap blok ke blok
+   berikutnya. Ketentuan 6 Agu 2026: "semua jarak ini 6 pt" — jadi satu tetapan
+   ini saja yang menentukan, tidak ada lagi angka piksel tersebar. */
 const TOR_PI_JARAK_BARIS_PT = 6;
 /* Margin KIRI-KANAN lembar Pakta Integritas (mm) = padding `.spk-page` pada isi
    klausul TOR/KAK, supaya lebar kolom teks kedua dokumen persis sama. */
@@ -3313,6 +3538,13 @@ const TOR_PI_INDEN_CM = 0;
    dan nama penanda tangan (pt). Dilonggarkan 6 Agu 2026 ("berikan sedikit ruang
    dari baris Masohi, tanggal ke nama pegawai"). */
 const TOR_PI_TTD_TINGGI_PT = 66;
+/* Jarak dari paragraf penutup terakhir ke baris "Masohi, <tanggal>" (pt).
+   Semula 14px (~10,5pt) — hampir sama dengan jarak antar-paragraf biasa,
+   sehingga blok tanda tangan terlihat menempel pada kalimat di atasnya.
+   Ketentuan 6 Agu 2026: "berikan sedikit jarak antara teks terakhir dengan
+   Masohi". Satuannya pt (bukan px) supaya seirama dengan jarak lain di
+   dokumen ini yang memang memakai pt. */
+const TOR_PI_JARAK_TTD_PT = 22;
 function torPiKertasCss(){
   var LH=(typeof spkLHCss==='function') ? (spkLHCss(1.15)||'1.39') : '1.39';
   /* Lebar kotak nomor diukur dengan fungsi yang SAMA dengan spkNumberFix pada
@@ -3430,7 +3662,7 @@ function torPiKertasCss(){
        dokumen. `display:table` membuat blok menyusut selebar barisnya yang
        terpanjang, `margin-left:auto` menempelkan sisi kanannya ke margin, dan
        `text-align:center` membuat tanggal & nama lurus satu kolom. */
-    '.fkl-doc .pi-sign{display:table;margin:14px 0 0 auto;text-align:center;'+
+    '.fkl-doc .pi-sign{display:table;margin:'+TOR_PI_JARAK_TTD_PT+'pt 0 0 auto;text-align:center;'+
       'max-width:100%;'+
       'page-break-inside:avoid;break-inside:avoid}'+
     '.fkl-doc .pi-sign .pi-tgl{text-align:center;margin:0;white-space:nowrap}'+
@@ -3496,7 +3728,10 @@ function torPiDocHtml(data, peran){
     '<p class="pi-p">dalam hal ini sebagai :</p>'+
     '<div class="pi-cks">'+cek+'</div>'+
     '<table class="pi-tb pi-tb2"><tbody>'+
-      brs('Satuan / Unit Kerja', esc(ctx.unit_lengkap||TOR_NAMA_UNIT||''))+
+      /* Bentuk RINGKAS (ketentuan 6 Agu 2026): "PT PLN (Persero) UP3 Masohi".
+         Nama panjangnya membuat baris ini melipat jadi dua baris sementara
+         seluruh baris lain di blok ini cukup satu baris. */
+      brs('Satuan / Unit Kerja', esc(ctx.unit_singkat||TOR_SINGKATAN_UNIT||''))+
       brs('Nama Pekerjaan', esc(data.nama_pekerjaan||'\u2014'))+
       brs('Perkiraan Pekerjaan', esc(rp(torPiNilai(data))))+
       brs('No. Anggaran', angg)+
@@ -3538,13 +3773,31 @@ function torPiDocHtml(data, peran){
       'line-height:1.28;letter-spacing:.6px;text-transform:uppercase;'+
       'margin:0 0 12pt}'+
     '.fkl-doc .fkl-doc-titlegap{height:0}'+
-    '.pi-p{margin:0 0 6px;text-align:justify}'+
-    '.pi-tb{border-collapse:collapse;margin:0 0 8px}'+
+    /* ---- SATU JARAK UNTUK SELURUH DOKUMEN: TOR_PI_JARAK_BARIS_PT (6 pt) ----
+       KETENTUAN 6 Agu 2026: "semua jarak ini 6 pt". Sebelumnya tiap blok
+       memakai angkanya sendiri dalam PIKSEL dan hasilnya tidak seragam:
+         .pi-p     6px = 4,5 pt      .pi-ol li 5px = 3,75 pt
+         .pi-cks   9px = 6,75 pt     .pi-tb / .pi-ol 8px = 6 pt (kebetulan pas)
+       Sekarang semuanya memakai tetapan yang sama dengan jarak baris
+       "label : nilai", ditulis dalam pt supaya nilainya terbaca apa adanya. */
+    '.pi-p{margin:0 0 '+TOR_PI_JARAK_BARIS_PT+'pt;text-align:justify}'+
+    '.pi-tb{border-collapse:collapse;margin:0 0 '+TOR_PI_JARAK_BARIS_PT+'pt}'+
     /* Jarak antar-baris 6 pt berlaku untuk KEDUA blok "label : nilai"
        (ketentuan 6 Agu 2026: "jarak dari Nama, NIP dan Jabatan masing-masing
        baris adalah 6 pt"). Sebelumnya blok atas dipatok 1px sementara blok
        bawah sudah 6 pt, sehingga keduanya tidak seirama. */
     '.pi-tb td{border:0;padding:0 0 '+TOR_PI_JARAK_BARIS_PT+'pt;vertical-align:top}'+
+    /* ---- KOLOM NILAI RATA KIRI-KANAN (ketentuan 6 Agu 2026) ----
+       Nilai yang panjang ("Satuan / Unit Kerja", "Nama Pekerjaan") melipat ke
+       baris kedua. Dengan rata kiri, baris pertamanya berhenti sebelum margin
+       kanan sehingga tepi kanan blok ini terlihat bergerigi dibanding paragraf
+       di sekitarnya yang sudah rata kiri-kanan (.pi-p / .pi-ol li).
+       Dengan justify, baris yang MELIPAT direnggangkan sampai mentok margin
+       kanan; baris terakhir dan baris yang diakhiri <br> (mis. "No. Anggaran"
+       yang disusul barisan Tanggal) tetap rata kiri karena begitulah perilaku
+       bawaan justify — jadi nilai satu baris seperti "Rp248.418.000" TIDAK
+       ikut direnggangkan. Label & titik dua sengaja tidak disentuh. */
+    '.pi-tb td.v{text-align:justify}'+
     /* ---- BLOK "Satuan / Unit Kerja" s.d. "No. PRK" ----
        Jarak antar-baris 2 pt, dan kolom ":" DIRAPATKAN ke kiri hingga hampir
        menempel label terpanjang ("Perkiraan Pekerjaan"). Caranya bukan menebak
@@ -3563,12 +3816,15 @@ function torPiDocHtml(data, peran){
        kiri-kanan (dua baris), melainkan SATU kolom berisi empat baris berurutan
        ke bawah — lebih mudah dibaca dan tanda centangnya sejajar dalam satu
        garis lurus. flex-direction:column menggantikan flex-wrap + flex:0 0 45%. */
+    /* `gap` = jarak ANTAR-PILIHAN peran; sengaja tetap rapat (3px) karena
+       keempatnya satu kesatuan pilihan, bukan alinea terpisah. Yang diseragamkan
+       ke 6 pt adalah jarak blok ini ke bagian berikutnya (margin bawah). */
     '.pi-cks{display:flex;flex-direction:column;align-items:flex-start;'+
-      'gap:3px;margin:0 0 9px 1cm}'+
+      'gap:3px;margin:0 0 '+TOR_PI_JARAK_BARIS_PT+'pt 1cm}'+
     '.pi-ck{flex:0 0 auto;display:flex;gap:6px;align-items:flex-start}'+
     '.pi-ck .bx{font-size:1.15em;line-height:1}'+
-    '.pi-ol{margin:0 0 8px;padding-left:1.05cm}'+
-    '.pi-ol li{margin:0 0 5px;text-align:justify}'+
+    '.pi-ol{margin:0 0 '+TOR_PI_JARAK_BARIS_PT+'pt;padding-left:1.05cm}'+
+    '.pi-ol li{margin:0 0 '+TOR_PI_JARAK_BARIS_PT+'pt;text-align:justify}'+
     /* Gaya blok tanda tangan (.pi-sign/.pi-tgl/.pi-ttdgap/.pi-nm)
        ditulis di torPiKertasCss bersama margin lembar. */
     ''
@@ -4439,10 +4695,23 @@ function renderTorView(){
     const rid=fkEscJs(String(r.id));
     return '<tr>'+
       '<td class="col-no">'+no+'</td>'+
-      '<td class="col-spk-nokon"><b>'+fkEsc(r.no_dokumen||'—')+'</b></td>'+
+      /* Dua nomor bertumpuk (TOR/KAK di atas, RAB di bawah) dengan sedikit
+         ruang di antaranya. Gaya ditulis sebaris, bukan lewat style.css,
+         supaya perubahan ini cukup pada satu berkas. */
+      '<td class="col-spk-nokon">'+(function(){
+          var n=torNoDokPasangan(r);
+          return '<div style="display:flex;flex-direction:column;gap:4px">'+
+            '<b>'+fkEsc(n.tor)+'</b>'+
+            (n.rab ? '<b>'+fkEsc(n.rab)+'</b>' : '')+
+          '</div>';
+        })()+'</td>'+
       '<td class="col-nama-freeze">'+fkEsc(r.nama_pekerjaan||'—')+'</td>'+
       '<td>'+fkEsc(r.bidang_pelaksana||'—')+'</td>'+
-      '<td class="col-date">'+fkEsc(r.tanggal?spkDateLong(r.tanggal):'—')+'</td>'+
+      /* Tanggal pada TABEL DAFTAR memakai bentuk pendek dd/mm/yyyy (ketentuan
+         6 Agu 2026). fmtDate() milik app.js dipakai ulang — bukan disalin —
+         supaya daftar ini seragam dengan daftar Susun Kontrak & lainnya.
+         spkDateLong (bentuk panjang) tetap dipakai DI DALAM dokumen. */
+      '<td class="col-date">'+fkEsc(r.tanggal?fmtDate(r.tanggal):'—')+'</td>'+
       '<td class="col-nilai">'+(r.nilai?('Rp '+Number(r.nilai).toLocaleString('id-ID')):'—')+'</td>'+
       /* Kolom AKSI DISERAGAMKAN dengan Dokumen Pengadaan (5 Agu 2026):
          urutan Ubah \u2192 Lihat \u2192 Hapus, pembungkus .action-cell, tombol
@@ -4458,15 +4727,28 @@ function renderTorView(){
   }).join('');
   if(typeof revealTbody==='function') revealTbody(tb);
   if(pg){
+    /* ---- PAGINASI DAFTAR: DISERAGAMKAN DENGAN SUSUN KONTRAK (SPK) ----
+       KETENTUAN 6 Agu 2026: "logika pagination di SPK terapkan juga di dokumen
+       TOR/KAK". Tiga hal yang sebelumnya tidak ada di sini dan disalin dari
+       renderSpkView():
+         - tombol MUNDUR (\u2039) & MAJU (\u203a) di kiri-kanan deretan nomor;
+         - keduanya `disabled` saat sudah di halaman pertama/terakhir, jadi
+           tidak bisa diklik ke halaman yang tidak ada;
+         - kelas `pg-btn` pada SETIAP tombol \u2014 tanpa itu tombol di sini
+           tidak mendapat gaya bakunya dan terlihat berbeda dari daftar SPK. */
     if(total<=1){ pg.innerHTML=''; }
     else{
-      let h='';
-      for(let p=1;p<=total;p++) h+='<button class="'+(p===torViewPage?'active':'')+'" onclick="torViewGoto('+p+')">'+p+'</button>';
+      let h='<button class="pg-btn" '+(torViewPage<=1?'disabled':'')+' onclick="torViewGoto('+(torViewPage-1)+')">&#8249;</button>';
+      for(let p=1;p<=total;p++) h+='<button class="pg-btn '+(p===torViewPage?'active':'')+'" onclick="torViewGoto('+p+')">'+p+'</button>';
+      h+='<button class="pg-btn" '+(torViewPage>=total?'disabled':'')+' onclick="torViewGoto('+(torViewPage+1)+')">&#8250;</button>';
       pg.innerHTML=h;
     }
   }
 }
-function torViewGoto(p){ torViewPage=p; renderTorView(); }
+/* Pagar rentang \u2014 tombol \u2039/\u203a memang sudah `disabled` di ujung,
+   tetapi torViewGoto juga dipanggil dari tempat lain; renderTorView menjepit
+   torViewPage ke halaman terakhir, jadi cukup jaga batas bawahnya di sini. */
+function torViewGoto(p){ torViewPage=Math.max(1, parseInt(p,10)||1); renderTorView(); }
 function torDeleteRecord(id){
   if(typeof requireInput==='function' && !requireInput()) return;
   const r=(records_tor||[]).find(x=>String(x.id)===String(id)); if(!r) return;

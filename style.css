@@ -8773,3 +8773,115 @@ html.mode-rail .sidebar-shell:not(.is-open){ cursor:e-resize }
   .sidebar-shell::before{ animation:none; opacity:.42 }
   .sidebar-shell.rail-ajak:not(.is-open){ animation:none }
 }
+
+
+/* ============================================================
+   36. TABLET SENTUH BENAR-BENAR SAMA DENGAN DESKTOP
+   ------------------------------------------------------------
+   KETENTUAN 6 Agu 2026: "di mobile view landscape seperti pada
+   tablet dan iPad, tampilannya 100% seperti tampilan desktop".
+
+   Mode rail-nya sendiri sudah ditangani bagian 23 (html.mode-rail)
+   dan sekarang dipasang sebelum halaman digambar (lihat skrip
+   #mode-rail-awal di index.html). Yang TERTINGGAL adalah aturan
+   di dalam blok @media (max-width:1024px),(hover:none) yang TIDAK
+   punya penawar .mode-rail — semuanya tetap berlaku di iPad dan
+   membuat tampilannya berbeda dari desktop:
+
+     - .crumb-now disembunyikan, .crumb-path dimunculkan
+     - .sidebar-shell diberi padding safe-area
+     - sasaran sentuh menu diperbesar (padding 11px/10px)
+     - .appbar diberi tinggi minimum & padding safe-area
+
+   Di bawah ini semuanya dikembalikan ke nilai desktop KHUSUS saat
+   html.mode-rail aktif. Ponsel (yang memang memakai laci geser)
+   TIDAK tersentuh sama sekali, sebab kelas itu tidak ada di sana.
+
+   Kenapa ditulis sebagai bagian baru di akhir berkas, bukan dengan
+   menyunting blok aslinya: blok asli juga melayani ponsel. Menambah
+   :not(.mode-rail) di sana berarti menyentuh puluhan pemilih yang
+   sudah teruji; menuliskan penawarnya di sini lebih sedikit risiko
+   dan langsung terlihat sebagai satu kesatuan ketentuan.
+   ============================================================ */
+html.mode-rail .crumb-now{display:block}
+html.mode-rail .crumb-path{display:block;font-size:12px;font-weight:600;color:var(--muted)}
+html.mode-rail .sidebar-shell{padding-left:0}
+html.mode-rail #topnav .topnav-link,
+html.mode-rail #topnav .topnav-trigger{padding:10px 12px}
+html.mode-rail #topnav .topnav-item,
+html.mode-rail #topnav .topnav-subtrigger{padding:9px 12px}
+/* Bilah atas memang sudah display:none di mode rail (bagian 23); tinggi
+   minimum & padding-nya dinolkan juga agar tidak menyisakan ruang bila
+   suatu saat bilah itu ditampilkan lagi. */
+html.mode-rail .appbar{min-height:0}
+/* Isi halaman: padding kiri-kanan kembali seperti desktop. Safe-area hanya
+   relevan pada ponsel berponi; iPad tidak punya poni di sisi layar. */
+html.mode-rail .wrap{padding-left:24px;padding-right:24px}
+
+/* ---- TINGGI SIDEBAR: TANPA RUANG KOSONG DI BAWAH ----
+   Gejala "sidebar kadang ada yang kosong di bawahnya" berasal dari satuan
+   tinggi. 100vh di peramban bergerak dihitung SEOLAH bilah alamat selalu
+   tersembunyi, jadi sidebar dibuat lebih tinggi daripada layar yang terlihat;
+   kaki sidebar (Jenis Akun & Keluar) terdorong keluar dan yang tersisa di
+   bawah daftar menu hanyalah gradien latar — terbaca sebagai ruang kosong.
+
+   100dvh sudah dipakai di bagian 11, tetapi hanya sebagai @supports terpisah
+   sehingga pada beberapa peramban kalah oleh html.mode-rail .sidebar-shell
+   yang menyebut height lagi. Di sini keduanya dipastikan: dvh bila didukung,
+   dan `bottom:0` sebagai jangkar terakhir supaya sidebar mustahil melewati
+   dasar layar berapa pun satuan yang menang. */
+.sidebar-shell{bottom:0}
+@supports (height:100dvh){
+  .sidebar-shell,
+  html.mode-rail .sidebar-shell{height:100dvh;max-height:100dvh}
+}
+/* Daftar menu yang isinya sedikit tidak boleh menyisakan lubang di antara
+   menu terakhir dan kaki sidebar: kakinya didorong menempel ke dasar. */
+.side-foot{margin-top:auto}
+
+
+/* ============================================================
+   37. TOOLBAR DAFTAR: SATU BARIS PADA LEBAR TABLET
+   ------------------------------------------------------------
+   KETENTUAN 6 Agu 2026: "di iPad, tombol seperti Reset harusnya
+   jadi satu baris dengan field yang lain, malah beda baris".
+
+   SEBABNYA aritmetika lebar, bukan aturan responsif. Toolbar
+   memakai flex-wrap:wrap dengan lebar isi yang DIPATOK:
+     kotak Cari      min-width 300px (bagian 3)
+     tiap filter     min/max-width 158px
+     Reset & Hapus   min-width 118px masing-masing
+   Pada iPad lanskap, lebar yang tersisa untuk isi halaman kira-kira
+   1024px dikurangi rail 76px dan padding 2x24px = ±876px. Dengan dua
+   filter + Cari + dua tombol, jumlahnya sudah melewati angka itu,
+   sehingga .toolbar-actions terlempar ke baris kedua.
+
+   Pada rentang tablet, patokan itu dilonggarkan secukupnya sehingga
+   semuanya kembali muat satu baris. Desktop (>1200px) dan ponsel
+   (<768px, yang memang lebih enak bertumpuk) tidak tersentuh.
+   ============================================================ */
+@media (min-width:768px) and (max-width:1200px){
+  .toolbar{padding:12px;gap:8px}
+  .toolbar .filter-field select,
+  .toolbar .filter-field input{min-width:126px;max-width:126px}
+  .toolbar #filter-search,
+  .toolbar #filter-pl-search,
+  .toolbar #filter-tender-search,
+  .toolbar #fkl-view-search{min-width:180px;max-width:240px}
+  .toolbar #pn-lihat-search{min-width:180px;max-width:240px}
+  .toolbar .toolbar-actions{gap:8px}
+  .toolbar .toolbar-actions>.btn-red,
+  .toolbar .toolbar-actions>.btn-danger{min-width:96px}
+  .toolbar .toolbar-actions>.btn{padding-left:12px;padding-right:12px}
+}
+/* Lebar tablet SEMPIT (iPad potret 768/834px): tombol tetap sebaris dengan
+   Cari, tetapi kotak Cari-nya yang mengalah — bukan tombolnya yang turun. */
+@media (min-width:768px) and (max-width:900px){
+  .toolbar .filter-field select,
+  .toolbar .filter-field input{min-width:112px;max-width:112px}
+  .toolbar #filter-search,
+  .toolbar #filter-pl-search,
+  .toolbar #filter-tender-search,
+  .toolbar #fkl-view-search,
+  .toolbar #pn-lihat-search{min-width:150px;max-width:190px}
+}

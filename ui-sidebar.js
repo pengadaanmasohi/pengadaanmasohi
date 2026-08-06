@@ -220,18 +220,37 @@ function initTutupDiLuar(){
    Sekarang keduanya memakai susunan yang sama. Penanda <html class="mode-rail">
    dibaca style.css bagian 23. Ponsel (dan ponsel lanskap yang tingginya
    pendek) tetap memakai laci geser. */
-var RAIL_MIN_W = 700;    /* iPad Mini potret = 744px */
+/* ATURAN MODE-NYA TIDAK LAGI DITULIS DI SINI.
+
+   Sejak 6 Agu 2026 penentuan mode dipindah ke skrip inline <script
+   id="mode-rail-awal"> di dalam <head> index.html, dan dijalankan SEBELUM
+   style.css dibaca. Alasannya: berkas ini dimuat paling akhir, sesudah app.js
+   dan kawan-kawannya, sehingga selalu ada jeda ketika halaman sudah tergambar
+   memakai aturan laci (sidebar di luar layar) padahal seharusnya rail — itulah
+   sidebar yang "kadang" berubah jadi tombol garis tiga.
+
+   Di sini hanya SISA PEKERJAANNYA yang dikerjakan: membereskan keadaan laci /
+   sidebar yang terlanjur terbuka. Perhitungan ambangnya diambil dari
+   window.__MODE_RAIL supaya satu-satunya sumber aturan, dan tetap ada
+   cadangan seandainya skrip awal itu dihapus orang. */
+var RAIL_MIN_W = 700;    /* iPad Mini potret = 744px  — cadangan saja */
 var RAIL_MIN_H = 600;    /* ponsel lanskap ±400px -> tetap laci */
 function modeRail(){
+  var M=window.__MODE_RAIL;
+  if(M && typeof M.hitung==='function') return M.hitung();
   if(!noHover()) return !isSmall();                 /* perangkat berkursor: seperti dulu */
   return window.innerWidth  >= RAIL_MIN_W
       && window.innerHeight >= RAIL_MIN_H;          /* tablet sentuh */
 }
 function terapkanModeRail(){
-  var html=document.documentElement;
-  var rail=modeRail();
-  html.classList.toggle('mode-rail', rail);
-  html.classList.toggle('sentuh', noHover());
+  var M=window.__MODE_RAIL, rail;
+  if(M && typeof M.terapkan==='function'){ rail=M.terapkan(); }
+  else{
+    var html=document.documentElement;
+    rail=modeRail();
+    html.classList.toggle('mode-rail', rail);
+    html.classList.toggle('sentuh', noHover());
+  }
   if(rail && laciTerbuka()) tutupLaci();            /* sisa keadaan laci dibersihkan */
   if(!rail){
     var el=document.getElementById('sidebar-shell');
@@ -298,6 +317,13 @@ function initRailSentuh(){
   /* Bilah alat Safari yang menyusut/melebar mengubah tinggi terlihat tanpa
      memicu resize pada sebagian versi iOS. */
   try{ if(window.visualViewport) window.visualViewport.addEventListener('resize', terapkanModeRail); }catch(e){}
+  /* Kembali dari tab lain / dari cache maju-mundur peramban: iOS kerap
+     memulihkan halaman TANPA resize apa pun, sedangkan ukurannya bisa sudah
+     berubah (mis. layar diputar saat tab tidak aktif). */
+  window.addEventListener('pageshow', terapkanModeRail);
+  document.addEventListener('visibilitychange', function(){
+    if(!document.hidden) terapkanModeRail();
+  });
   terapkanModeRail();
 }
 

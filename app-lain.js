@@ -1190,16 +1190,42 @@ function openTrackView(){
   jobs.push(refreshDataTrack());
   Promise.all(jobs).then(()=>{ const v=document.querySelector('.view.active'); if(v&&v.id==='view-track-view') renderTrackView(); });
 }
-function trkFillPick(id){
+/* Isi dropdown "Pilih Pekerjaan".
+
+   DUA HALAMAN memakai fungsi ini dengan kebutuhan yang BERBEDA:
+     Kelola Tracking (admin)  -> SELURUH nama pekerjaan dari Dokumen Pengadaan
+                                 & Jadwal. Harus lengkap, sebab di sinilah
+                                 tracking sebuah pekerjaan pertama kali dibuat.
+     Tracking Pengadaan (user)-> HANYA pekerjaan yang trackingnya SUDAH
+                                 DISIMPAN (ketentuan 6 Agu 2026). Sebelumnya
+                                 daftarnya sama dengan halaman admin, sehingga
+                                 pemakai bisa memilih pekerjaan yang belum
+                                 punya data tracking dan disambut halaman
+                                 kosong tanpa penjelasan.
+
+   `tersimpanSaja` yang membedakan keduanya. Penyaringnya trkGetRec() — fungsi
+   yang sama yang dipakai halaman ini untuk membaca datanya — jadi tidak
+   mungkin ada nama yang lolos ke daftar tetapi datanya ternyata tidak ada. */
+function trkFillPick(id, tersimpanSaja){
   const el=document.getElementById(id); if(!el) return;
   const cur=trkSel;
-  let h='<option value="">\u2014 pilih pekerjaan \u2014</option>';
-  trkDpNames().forEach(nm=>{ h+='<option value="'+trkEsc(nm)+'"'+(trkNamaKey(nm)===trkNamaKey(cur)?' selected':'')+'>'+trkEsc(nm)+'</option>'; });
+  let nama=trkDpNames();
+  if(tersimpanSaja) nama=nama.filter(nm=>!!trkGetRec(nm));
+  /* Pilihan yang sedang aktif tetapi TIDAK ada lagi di daftar (mis. trackingnya
+     baru dihapus) dilepas, supaya kotaknya tidak menampilkan nama yang isinya
+     sudah tiada. */
+  if(cur && !nama.some(nm=>trkNamaKey(nm)===trkNamaKey(cur))) trkSel='';
+  let h='<option value="">'+(
+      (tersimpanSaja && !nama.length)
+        ? '\u2014 belum ada tracking tersimpan \u2014'
+        : '\u2014 pilih pekerjaan \u2014')+'</option>';
+  nama.forEach(nm=>{ h+='<option value="'+trkEsc(nm)+'"'+(trkNamaKey(nm)===trkNamaKey(trkSel)?' selected':'')+'>'+trkEsc(nm)+'</option>'; });
   el.innerHTML=h;
 }
 function trkPick(v){ trkSel=v||''; renderTrackUser(); }
 function renderTrackView(){
-  trkFillPick('trk-pick');
+  /* true = hanya pekerjaan yang trackingnya sudah disimpan di Kelola Tracking. */
+  trkFillPick('trk-pick', true);
   renderTrackUser();
 }
 function trkHeadHtml(nama, info){
