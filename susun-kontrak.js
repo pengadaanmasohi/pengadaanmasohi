@@ -817,32 +817,63 @@ function spkBuildCtx(data){
    Bila ada tag di antara kurung & nama field, regex merge di bawah tidak cocok
    dan placeholder tampil apa adanya (mentah) di dokumen. Fungsi ini menyatukan
    kembali {{ ... }} yang terpotong tag/spasi menjadi {{key}} yang bersih —
-   format tebal/miring di LUAR placeholder tetap dipertahankan. */
+   format tebal/miring di LUAR placeholder tetap dipertahankan.
+
+   FORMAT DI DALAM KURUNG IKUT DISELAMATKAN (6 Agu 2026). Banyak penyusun
+   menebalkan/memiringkan hanya NAMA FIELD-nya, bukan berikut kurungnya, jadi
+   hasil konversinya berbentuk {{<b>nama_pekerjaan</b>}}. Dulu tag di dalam
+   kurung dibuang begitu saja, sehingga niat tebal/miring dari Word HILANG dan
+   nilainya tercetak polos. Sekarang tag b/i/u yang ditemukan di dalam kurung
+   DIPINDAH ke luar — {{<b>x</b>}} menjadi <b>{{x}}</b> — supaya penggantian
+   nilai di spkMerge menghasilkan <b>nilai</b>.
+   Pencocokannya sengaja menerima tag PEMBUKA MAUPUN PENUTUP: pada placeholder
+   yang dipecah Word, potongan di dalam kurung kerap berupa `</b><b>` (ekor run
+   sebelumnya + kepala run berikutnya), bukan pasangan utuh.
+   Penebalan/pemiringan ganda tidak masalah: peramban merendernya sekali, dan
+   konversi balik ke Word menelusuri DOM sehingga tetap terhitung sekali. */
 function spkHealPlaceholders(html){
   return String(html==null?'':html).replace(
     /\{(?:<[^>]*>|\s)*\{([\s\S]*?)\}(?:<[^>]*>|\s)*\}/g,
     function(m, inner){
       var key = inner.replace(/<[^>]*>/g,'').replace(/\s+/g,'');
-      return /^[a-zA-Z0-9_]+$/.test(key) ? '{{'+key+'}}' : m;
+      if(!/^[a-zA-Z0-9_]+$/.test(key)) return m;
+      var out = '{{'+key+'}}';
+      if(/<\/?u\b[^>]*>/i.test(inner))            out = '<u>'+out+'</u>';
+      if(/<\/?(?:i|em)\b[^>]*>/i.test(inner))     out = '<i>'+out+'</i>';
+      if(/<\/?(?:b|strong)\b[^>]*>/i.test(inner)) out = '<b>'+out+'</b>';
+      return out;
     }
   );
 }
 function spkMerge(tpl, ctx){
-  /* Jabatan Direksi & Pengawas Pekerjaan selalu dicetak TEBAL pada dokumen
-     (hanya berlaku bila klausul memakai placeholder {{jabatan_direksi}} /
-     {{jabatan_pengawas}}; nilai kosong tidak dibungkus <b>). */
-  var SPK_BOLD_FIELDS = { jabatan_direksi:1, jabatan_pengawas:1 };
+  /* TIDAK ADA PENEBALAN OTOMATIS (6 Agu 2026).
+     Dulu {{jabatan_direksi}} & {{jabatan_pengawas}} selalu dibungkus <b> oleh
+     fungsi ini, apa pun isi templatnya. Akibatnya format di berkas Word tidak
+     pernah menentukan: kode isian yang sengaja ditulis polos tetap tercetak
+     tebal, dan penyusun tidak punya cara mematikannya.
+     Sekarang WORD yang menentukan: tebal/miring/garis bawah pada kode isian
+     dibawa apa adanya oleh spkHealPlaceholders, dan fungsi ini hanya menukar
+     kode dengan nilainya. Untuk menebalkan sebuah nilai, tebalkan kode
+     isiannya di Word. Berlaku sama untuk SPK, Perjanjian/Kontrak, & TOR/KAK. */
   /* Rapikan dulu placeholder yang terpecah oleh Word agar {{key}} kembali utuh
      sebelum dicocokkan & diganti nilainya. */
   tpl = spkHealPlaceholders(tpl);
-  return String(tpl||'').replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, function(m,k){
+  var out = String(tpl||'').replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, function(m,k){
     if(Object.prototype.hasOwnProperty.call(ctx,k)){
-      var val=(ctx[k]==null?'':String(ctx[k]));
-      if(val && SPK_BOLD_FIELDS[k]) return '<b>'+val+'</b>';
-      return val;
+      return (ctx[k]==null?'':String(ctx[k]));
     }
     return m;
   });
+  /* Kode isian bernilai KOSONG yang ditebalkan di Word menyisakan pembungkus
+     hampa seperti <b></b>. Tidak terlihat di layar, tapi ikut terbawa saat
+     dokumen dikonversi balik ke Word sebagai run kosong bergaya. Dibersihkan
+     berulang supaya susunan bersarang (<b><i></i></b>) ikut terangkat. */
+  for(var _i=0;_i<3;_i++){
+    var _b=out;
+    out=out.replace(/<(b|i|u|strong|em)>\s*<\/\1>/gi,'');
+    if(out===_b) break;
+  }
+  return out;
 }
 /* Ubah SEMUA penulisan "Nomor:" -> "No." pada isi kontrak (klausul & uraian).
    Dijalankan pada tahap render SETELAH merge, sehingga mencakup teks tetap,
