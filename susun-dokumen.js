@@ -58,6 +58,11 @@ const TOR_BOQ_TTD_W = 46;
 /* Jarak (pt) dari klausul Bill of Quantity ke klausul sesudahnya. Lihat aturan
    .tor-boq-cl di torDocCss untuk alasan jaraknya dipasang sebagai margin BAWAH. */
 const TOR_BOQ_JARAK_PT = 24;
+/* Jumlah BARIS KOSONG untuk membubuhkan tanda tangan & cap pada berkas
+   BoQ.xlsx, yaitu antara baris "Nama Perusahaan" dan "(Nama Lengkap)".
+   Ditambah satu baris pada 6 Agu 2026 (semula 3). Berlaku hanya untuk berkas
+   Excel; blok tanda tangan BoQ di dalam klausul TOR memakai TOR_BOQ_TTD_W. */
+const TOR_BOQ_TTD_RUANG = 4;
 const TOR_TABLE   = 'dokumen_tor';
 const TOR_KODE    = 'TOR';                                     /* kode dokumen di nomor */
 const TOR_UNIT    = (typeof PN_UNIT!=='undefined') ? PN_UNIT : 'F17060000';
@@ -69,7 +74,10 @@ const TOR_KLAS_OPTS = (typeof PN_KLAS_OPTS!=='undefined' && PN_KLAS_OPTS.length)
   {kode:'DAN.01.02', label:'DAN.01.02 — Pengadaan Jasa'},
   {kode:'DAN.01.03', label:'DAN.01.03 — Pengadaan Barang dan Jasa'}
 ];
-/* Jenis pengadaan yang otomatis mengikuti kode klasifikasi terpilih */
+/* Jenis pengadaan yang DITURUNKAN dari kode klasifikasi terpilih.
+   Sejak field "Jenis Pengadaan" dihapus (6 Agu 2026) peta ini tidak lagi
+   mengisi data tersimpan, melainkan dipakai torExtendCtx untuk menyediakan
+   kode isian {{jenis_pengadaan}}. */
 const TOR_KLAS_JENIS = {
   'DAN.01.01':'Barang', 'DAN.01.02':'Jasa', 'DAN.01.03':'Barang dan Jasa'
 };
@@ -77,7 +85,8 @@ const TOR_BIDANG_OPTS = (typeof BIDANG_OPTS!=='undefined' && BIDANG_OPTS.length)
                       : ((typeof PN_BIDANG_OPTS!=='undefined') ? PN_BIDANG_OPTS : []);
 const TOR_RISIKO_OPTS  = ['Risiko Rendah','Risiko Menengah','Risiko Tinggi'];
 const TOR_ANGGARAN_OPTS= ['Investasi','Operasi'];
-const TOR_METODE_OPTS  = ['Pengadaan Langsung','Penunjukan Langsung','Tender Terbatas','Tender Terbuka','Seleksi Umum','Seleksi Terbatas','Tender Cepat'];
+/* TOR_METODE_OPTS dihapus 6 Agu 2026 bersama field "Metode Pengadaan" \u2014
+   tidak ada lagi yang memakainya di modul ini. */
 
 /* ---- Identitas unit: BAKU, bukan isian ----
    Dulu tersedia sebagai kartu "Unit Pelaksana" pada form. Karena nilainya
@@ -355,15 +364,27 @@ const TOR_FIELD_GROUPS = [
     {k:'kode_klasifikasi', l:'Kode Klasifikasi', t:'select',
       opts:TOR_KLAS_OPTS.map(o=>({v:o.kode, l:o.label})), reNo:true, def:''},
     {k:'pelaksana', l:'Bidang Pelaksana', t:'select', opts:TOR_BIDANG_OPTS, def:''},
-    {k:'jenis_pengadaan', l:'Jenis Pengadaan', t:'select', opts:['Barang','Jasa','Barang dan Jasa'], def:''},
-    {k:'metode_pengadaan', l:'Metode Pengadaan', t:'select', opts:TOR_METODE_OPTS, def:''},
+    /* DIHAPUS 6 Agu 2026: "Jenis Pengadaan" & "Metode Pengadaan".
+       Keduanya tidak dirujuk satu pun bagian dokumen TOR/KAK maupun Pakta
+       Integritas. Nilai Jenis Pengadaan sendiri tidak pernah diketik — ia
+       selalu ikut Kode Klasifikasi — jadi sekarang cukup DITURUNKAN di
+       torExtendCtx dan tetap tersedia sebagai kode isian {{jenis_pengadaan}}
+       tanpa memakan satu kotak isian di form. Metode Pengadaan dibuang
+       seluruhnya karena tidak punya sumber lain (modul Pengadaan Langsung &
+       Tender di app.js punya field bernama sama, tetapi itu record yang
+       berbeda dan tidak tersentuh). */
     {k:'level_risiko', l:'Level Risiko Pekerjaan', t:'select', opts:TOR_RISIKO_OPTS, def:''},
     /* Jangka Waktu Pelaksanaan pindah ke sini dari kartu "Pelaksanaan &
-       Pembayaran" yang dihapus. Terbilangnya tetap otomatis
-       ({{jangka_waktu_terbilang}}) dan ikut tampil di sampul dokumen. */
+       Pembayaran" yang dihapus. */
     {k:'jangka_waktu', l:'Jangka Waktu Pelaksanaan (hari)', t:'number', def:''},
-    /* Terbilangnya TIDAK dijadikan field — dihitung otomatis saat dokumen
-       dibangun ({{nilai_pekerjaan_terbilang}}). */
+    /* Terbilang jangka waktu: field TERKUNCI yang mengikuti pola Terbilang
+       nilai di bawahnya — tidak disimpan sebagai data, melainkan dihitung
+       ulang torRefreshAuto() pada tiap ketikan di kotak "Jangka Waktu".
+       Isinya SENGAJA sama persis dengan {{jangka_waktu_terbilang}} (angka
+       terbilang saja, tanpa "Hari Kalender") supaya yang terlihat di form =
+       yang tercetak di klausul. Untuk versi berakhiran "Hari Kalender",
+       klausul dapat memakai {{auto_terbilang_jangka}}. */
+    {k:'jangka_waktu_terbilang', l:'Terbilang', t:'text', auto:'terbilang_jangka_polos'},
     {k:'nilai_pekerjaan', l:'Perkiraan Nilai Pekerjaan (+ PPN)', t:'rupiah', def:''},
     /* Terbilang TIDAK disimpan sebagai data \u2014 ia diturunkan dari Perkiraan
        Nilai Pekerjaan lewat torAutoVal('terbilang_nilai'). Field ber-atribut
@@ -516,12 +537,11 @@ function torBlankState(){
   d.bentuk_kontrak='SPK';          /* dipakai mesin SPK: tata letak & inden SPK */
   d.tahun_dokumen=String(torYearNow());
   /* Bawaan Kode Klasifikasi sengaja KOSONG ("— pilih —"): dokumen baru
-     tidak lagi otomatis dianggap DAN.01.03. Jenis Pengadaan ikut kosong dan
-     baru terisi sendiri begitu klasifikasinya dipilih (lihat torSet). */
+     tidak lagi otomatis dianggap DAN.01.03. Kode isian {{jenis_pengadaan}}
+     ikut kosong sampai klasifikasinya dipilih (diturunkan di torExtendCtx). */
   d.kode_klasifikasi=d.kode_klasifikasi||'';
   /* Pengguna Barang/Jasa: bawaan = data terakhir disimpan (lihat torApplyLastPengguna) */
   torApplyLastPengguna(d);
-  d.jenis_pengadaan=d.kode_klasifikasi ? (TOR_KLAS_JENIS[d.kode_klasifikasi]||'') : '';
   d.tgl_dokumen=d.tgl_dokumen||torTodayISO();
   d.no_urut=0; d.no_dokumen='';
   d.__klausulLib=torKlausulDefault();
@@ -578,6 +598,10 @@ function torAutoVal(kind, d){
     if(kind==='no_dokumen')         return d.no_dokumen || '';
     if(kind==='terbilang_nilai')    return (d.nilai_pekerjaan!=='' && d.nilai_pekerjaan!=null) ? spkTerbilangRupiah(d.nilai_pekerjaan) : '';
     if(kind==='terbilang_jangka')   return d.jangka_waktu ? (spkTerbilang(d.jangka_waktu)+' Hari Kalender') : '';
+    /* Versi POLOS (tanpa "Hari Kalender") — dipakai field "Terbilang" di bawah
+       Jangka Waktu Pelaksanaan, dan HARUS sama dengan ctx.jangka_waktu_terbilang
+       di torExtendCtx supaya tampilan form = hasil cetak. */
+    if(kind==='terbilang_jangka_polos') return d.jangka_waktu ? spkTerbilang(d.jangka_waktu) : '';
   }catch(e){}
   return '';
 }
@@ -602,6 +626,10 @@ function torExtendCtx(ctx, d){
   ctx.no_urut           = d.no_urut ? torPad4(d.no_urut) : '';
   ctx.tahun_dokumen     = d.tahun_dokumen||String(torYearNow());
   ctx.kode_klasifikasi  = d.kode_klasifikasi||'';
+  /* {{jenis_pengadaan}} DITURUNKAN dari Kode Klasifikasi, bukan lagi dari field
+     isian yang dihapus 6 Agu 2026. Ditulis di sini supaya klausul lama yang
+     terlanjur memakai kodenya tetap terisi tanpa perlu diedit. */
+  ctx.jenis_pengadaan   = d.kode_klasifikasi ? (TOR_KLAS_JENIS[d.kode_klasifikasi]||'') : '';
   ctx.kode_unit         = TOR_UNIT;
   ctx.dok_label         = TOR_DOK_LABEL;
   ctx.dok_title         = TOR_DOK_TITLE;
@@ -829,10 +857,6 @@ function torKopCssPatch(){
 function torSet(k,v){
   if(!torState) return;
   torState.data[k]=v;
-  if(k==='kode_klasifikasi'){
-    /* Kembali ke "— pilih —" -> Jenis Pengadaan ikut dikosongkan. */
-    torState.data.jenis_pengadaan = v ? (TOR_KLAS_JENIS[v]||'') : '';
-  }
   const f=TOR_FIELDS_FLAT.filter(x=>x.k===k)[0];
   if(f && f.reNo){ torState.data.no_urut=0; torSyncNomor(); renderTorSusun(); return; }
   /* "Perubahan Pengguna?" dikembalikan ke Tidak -> Nama/Jabatan/NIP Pengguna
@@ -969,8 +993,11 @@ const TOR_KODE_AUTO = [
   ['tahun_dokumen','Tahun dokumen'],
   ['tgl_dokumen','Tanggal dokumen (panjang)'],
   ['hari_dokumen','Nama hari tanggal dokumen'],
-  ['nilai_pekerjaan_terbilang','Terbilang perkiraan nilai pekerjaan'],
-  ['jangka_waktu_terbilang','Terbilang jangka waktu'],
+  /* nilai_pekerjaan_terbilang & jangka_waktu_terbilang TIDAK didaftar di sini:
+     keduanya sudah tampil sebagai field "Terbilang" pada bagian Informasi
+     Pengadaan, jadi mencantumkannya lagi membuat kodenya muncul dua kali. */
+  ['jenis_pengadaan','Jenis pengadaan (ikut Kode Klasifikasi)'],
+  ['auto_terbilang_jangka','Terbilang jangka waktu + "Hari Kalender"'],
   ['tahun_anggaran','Tahun anggaran (= tahun berjalan)'],
   ['sumber_dana','APLN Tahun … Anggaran Investasi/Operasi'],
   ['no_prk_baris','Nomor PRK, satu per baris'],
@@ -997,7 +1024,8 @@ function torFieldInput(f){
   if(f.auto) return locked(torAutoVal(f.auto, d),
     (f.auto==='no_dokumen')      ? 'Nomor depan digenerate otomatis sesuai urutan dokumen (mulai 0001)' :
     (f.auto==='terbilang_nilai') ? 'Terisi otomatis dari Perkiraan Nilai Pekerjaan' :
-    (f.auto==='terbilang_jangka')? 'Terisi otomatis dari Jangka Waktu Pelaksanaan' : '');
+    (f.auto==='terbilang_jangka'|| f.auto==='terbilang_jangka_polos')
+                                 ? 'Terisi otomatis dari Jangka Waktu Pelaksanaan' : '');
   /* Field yang dikunci oleh sebuah sakelar (lockedBy). Selama sakelarnya
      bukan "Ya", isian ditampilkan namun tidak dapat diubah — nilai yang
      sudah tersimpan tetap terbaca, tidak terlihat seolah terhapus. */
@@ -1178,26 +1206,44 @@ function torEnsureStyle(){
     '.tor-dk-ov{position:fixed;inset:0;z-index:9000;display:none;align-items:center;justify-content:center;'+
       'background:rgba(12,28,38,.45);padding:20px}'+
     '.tor-dk-ov.show{display:flex}'+
-    '.tor-dk-mdl{width:min(560px,100%);background:#fff;border-radius:16px;overflow:hidden;'+
-      'box-shadow:0 24px 60px rgba(10,30,40,.28)}'+
-    '.tor-dk-hd{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;'+
+    /* max-width + min-width:0 menahan lebar modal pada jatah overlay: tanpa
+       keduanya, isi kepala yang panjang bisa MELEBARKAN modal sehingga tombol
+       di kanan atas terdorong keluar layar. */
+    '.tor-dk-mdl{width:min(560px,100%);max-width:100%;min-width:0;background:#fff;'+
+      'border-radius:16px;overflow:hidden;box-shadow:0 24px 60px rgba(10,30,40,.28)}'+
+    /* align-items:flex-start (bukan center): begitu nama pekerjaan melipat jadi
+       dua-tiga baris, tombol Cetak & tutup TETAP menempel di sudut KANAN ATAS,
+       tidak ikut melorot ke tengah tinggi kepala (ketentuan 6 Agu 2026). */
+    '.tor-dk-hd{display:flex;flex-wrap:nowrap;align-items:flex-start;'+
+      'justify-content:space-between;gap:12px;padding:16px 18px;'+
       'background:linear-gradient(90deg,#0E7C86,#12A0A8);color:#fff}'+
     /* Judul MELIPAT, tombol TIDAK MENGECIL (ketentuan 6 Agu 2026: "tombol x
        sepertinya gepeng karena nama pekerjaan terlalu panjang"). Penyebabnya
        flex-shrink bawaan: tombol ikut menyusut saat judul mendesak. Kolom judul
        diberi flex:1 1 auto + min-width:0 supaya DIA yang melipat, sedangkan
-       kelompok tombol dikunci flex:none. */
-    '.tor-dk-hd .jd{flex:1 1 auto;min-width:0}'+
+       kelompok tombol dikunci flex:none.
+
+       min-width:0 + overflow-wrap:anywhere adalah PASANGAN yang wajib: tanpa
+       min-width:0 sebuah kata panjang (nama pekerjaan tanpa spasi) memaksa
+       kolom judul melebihi jatahnya lalu MENDORONG tombol keluar layar;
+       tanpa overflow-wrap:anywhere kata itu tidak mau dipenggal sama sekali. */
+    '.tor-dk-hd .jd{flex:1 1 auto;min-width:0;max-width:100%}'+
     '.tor-dk-hd b{display:block;font-size:14px;line-height:1.35;'+
-      'white-space:normal;overflow-wrap:anywhere;word-break:normal}'+
-    '.tor-dk-hd .act{flex:0 0 auto;display:flex;align-items:center;gap:8px}'+
-    '.tor-dk-hd .x,.tor-dk-hd .pr{border:0;background:rgba(255,255,255,.18);color:#fff;'+
+      'white-space:normal;overflow-wrap:anywhere;word-break:break-word}'+
+    /* margin-top negatif tipis: menyamakan titik tengah tombol dengan titik
+       tengah BARIS PERTAMA judul, supaya sudut kanan atas terlihat presisi. */
+    '.tor-dk-hd .act{flex:0 0 auto;display:flex;align-items:center;gap:10px;margin-top:-3px}'+
+    /* IKON PUTIH POLOS (ketentuan 6 Agu 2026: "cetak dan x berwarna putih
+       saja"): kotak latar rgba putih dihapus, yang tersisa hanya guratan
+       ikonnya. Umpan balik sorot memakai opacity — tidak menambah warna baru. */
+    '.tor-dk-hd .x,.tor-dk-hd .pr{border:0;background:transparent;color:#fff;'+
       'width:28px;height:28px;flex:0 0 28px;border-radius:8px;line-height:1;cursor:pointer;'+
       'display:flex;align-items:center;justify-content:center;padding:0;'+
-      'transition:background .15s ease}'+
-    '.tor-dk-hd .x{font-size:18px}'+
-    '.tor-dk-hd .x:hover,.tor-dk-hd .pr:hover{background:rgba(255,255,255,.34)}'+
-    '.tor-dk-hd .pr svg{width:15px;height:15px}'+
+      'opacity:.92;transition:opacity .15s ease}'+
+    '.tor-dk-hd .x{font-size:20px}'+
+    '.tor-dk-hd .x:hover,.tor-dk-hd .pr:hover{opacity:1;background:transparent}'+
+    '.tor-dk-hd .x:focus-visible,.tor-dk-hd .pr:focus-visible{outline:2px solid #fff;outline-offset:2px}'+
+    '.tor-dk-hd .pr svg{width:17px;height:17px}'+
     '.tor-dk-bd{padding:12px;display:flex;flex-direction:column;gap:8px;max-height:70vh;overflow:auto}'+
     '.tor-dk-row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 14px;'+
       'border:1px solid #E3EAF2;border-radius:12px;background:#fff;cursor:pointer;'+
@@ -2183,6 +2229,11 @@ function torDocCss(wKl, wBab){
      bukan rata kanan lembar — supaya sejajar dengan penanda tangan di bawahnya. */
   '.tor-ttd .tgl{width:'+_ttdW.w+'%;margin:0 0 10pt auto;text-align:center}'+
   '.tor-ttd table.tt{width:100%;border-collapse:collapse;table-layout:fixed}'+
+  /* padding:0 WAJIB tetap nol: sejak blok ini disusun EMPAT BARIS (cap /
+     jabatan / ruang ttd / nama — lihat torTtdTabel), padding sel apa pun akan
+     terhitung empat kali dan merenggangkan blok. vertical-align:top membuat
+     jabatan satu baris menempel ke atas barisnya, sehingga selisih tingginya
+     jatuh SEBAGAI RUANG KOSONG di bawah — bukan menggeser nama. */
   '.tor-ttd table.tt td{border:0;padding:0;vertical-align:top}'+
   '.tor-ttd td.kol{text-align:center}'+
   /* Lebar sel — lihat torTtdCols() untuk asal-usul angkanya.
@@ -2543,24 +2594,54 @@ function torTtdHtml(ctx){
   const pgwN=nm(ctx.nama_pengawas), pgwJ=String(ctx.jabatan_pengawas||'').trim();
   const pguN=nm(ctx.nama_pengguna), pguJ=String(ctx.jabatan_pengguna||'').trim();
   const adaPgw=!!(pgwN||pgwJ);
-  const kolom=(cap,jab,nama)=>'<td class="kol sisi">'+
-      '<div class="cap">'+esc(cap)+'</div>'+
-      '<div class="jab">'+esc(jab||'\u2014')+'</div>'+
-      '<div class="sp"></div>'+
-      '<div class="nm">'+esc(nama||'\u2014')+'</div>'+
-    '</td>';
-  const tabel=(cls,isi)=>'<table class="tt '+cls+'"><tbody><tr>'+isi+'</tr></tbody></table>';
+  /* Satu penanda tangan dinyatakan sebagai OBJEK, bukan potongan <td> jadi —
+     karena tiap unsurnya (cap / jabatan / ruang / nama) kini tersebar ke BARIS
+     yang berbeda, lihat torTtdTabel(). */
+  const kolom=(cap,jab,nama)=>({cap:cap, jab:jab||'\u2014', nama:nama||'\u2014'});
+  const gap=(cls)=>({gap:cls});
+  const tabel=(cls,isi)=>torTtdTabel(cls,isi);
   /* Baris atas: dua penanda tangan bila ada Pengawas, satu bila tidak.
      Tanpa Pengawas, penanda tangan tunggal tetap jatuh di kolom KANAN dan
      penyeimbang kirinya selebar sisi+celah (kelas .sisi2). */
   const atas = adaPgw
-    ? tabel('tt-a', kolom('Diperiksa oleh;',dirJ,dirN)+'<td class="gap celah"></td>'+kolom('Disusun oleh;',pgwJ,pgwN))
-    : tabel('tt-a', '<td class="gap sisi2"></td>'+kolom('Disusun oleh;',dirJ,dirN));
-  const bawah = tabel('tt-b', '<td class="gap tepi"></td>'+kolom('Disahkan oleh;',pguJ,pguN)+'<td class="gap tepi"></td>');
+    ? tabel('tt-a', [kolom('Diperiksa oleh;',dirJ,dirN), gap('celah'), kolom('Disusun oleh;',pgwJ,pgwN)])
+    : tabel('tt-a', [gap('sisi2'), kolom('Disusun oleh;',dirJ,dirN)]);
+  const bawah = tabel('tt-b', [gap('tepi'), kolom('Disahkan oleh;',pguJ,pguN), gap('tepi')]);
   return '<div class="tor-ttd spk-keep">'+
     '<div class="tgl">'+esc(ctx.tempat_tanggal||'')+'</div>'+
     atas+bawah+
   '</div>';
+}
+/* ---- KERANGKA TABEL PENANDA TANGAN: SATU UNSUR = SATU BARIS ----
+   KETENTUAN 6 Agu 2026: "posisi nama di kiri dan kanan tidak sejajar secara
+   horizontal ... ikuti saja posisi mana teks yang terdapat 2 baris pada
+   jabatan sehingga namanya terdorong karena jarak".
+
+   Sebelumnya tiap penanda tangan adalah SATU sel yang isinya ditumpuk
+   (cap -> jabatan -> ruang -> nama). Begitu jabatan salah satu kolom melipat
+   jadi dua baris, hanya nama DI KOLOM ITU yang ikut turun; kolom sebelahnya
+   tetap di atas, sehingga kedua nama tidak sebaris.
+
+   Sekarang unsur yang sama diletakkan pada BARIS TABEL yang sama: tinggi satu
+   baris selalu = isi tertinggi di baris itu, jadi baris jabatan otomatis
+   setinggi jabatan terpanjang dan baris nama SELALU mulai pada garis yang
+   sama di kedua kolom. Berapa pun jumlah baris jabatannya (dua, tiga, ...)
+   tidak perlu ditebak lagi — tidak ada tinggi yang dipatok di CSS.
+
+   `kolom` = daftar penanda tangan/penyeimbang dari kiri ke kanan:
+     {cap, jab, nama} -> sel penanda tangan   |   {gap:'celah'} -> sel kosong  */
+function torTtdTabel(cls, kolom){
+  const esc=fkEsc;
+  const baris=(kls, isi)=>'<tr class="'+kls+'">'+kolom.map(function(k){
+      return k.gap ? '<td class="gap '+k.gap+'"></td>'
+                   : '<td class="kol sisi">'+isi(k)+'</td>';
+    }).join('')+'</tr>';
+  return '<table class="tt '+cls+'"><tbody>'+
+    baris('br-cap', k=>'<div class="cap">'+esc(k.cap)+'</div>')+
+    baris('br-jab', k=>'<div class="jab">'+esc(k.jab)+'</div>')+
+    baris('br-sp',  k=>'<div class="sp"></div>')+
+    baris('br-nm',  k=>'<div class="nm">'+esc(k.nama)+'</div>')+
+  '</tbody></table>';
 }
 /* ===================== 10b. PERAPIAN KLAUSUL KHUSUS TOR/KAK =====================
    Dua ketentuan tata letak TOR/KAK yang BERBEDA dari Surat Perintah Kerja, jadi
@@ -2896,17 +2977,31 @@ function torTtdRabHtml(data){
   const pgwN=up(data.nama_pengawas), pgwJ=String(data.jabatan_pengawas||'').trim();
   const pguN=up(data.nama_pengguna), pguJ=String(data.jabatan_pengguna||'').trim();
   const adaPgw=!!(pgwN||pgwJ);
-  const kol=(cap,jab,nama)=>'<td class="sisi"><div class="hps-topgap"></div>'+
-      '<div class="role">'+esc(cap)+'</div>'+
-      '<div class="role2">'+esc(jab||'\u2014')+'</div>'+
-      '<div class="gap"></div>'+
-      '<div class="nm nm-up">'+esc(nama||'(..........................)')+'</div></td>';
-  const kosong=(cls)=>'<td class="kosong '+cls+'"></td>';
-  const tabel=(cls,isi)=>'<table class="ttd ttd3 '+cls+'"><tbody><tr>'+isi+'</tr></tbody></table>';
+  const kol=(cap,jab,nama)=>({cap:cap, jab:jab||'\u2014',
+                              nama:nama||'(..........................)'});
+  const kosong=(cls)=>({gap:cls});
+  /* SATU UNSUR = SATU BARIS, alasannya sama persis dengan torTtdTabel() pada
+     TOR/KAK: jabatan dua baris di salah satu kolom tidak boleh membuat nama di
+     kolom itu turun sendirian. Kerangkanya ditulis ulang di sini (bukan memakai
+     torTtdTabel) karena nama kelasnya berbeda — RAB menumpang gaya sel milik
+     HPS (.hps-topgap/.role/.role2/.gap/.nm), bukan gaya .tor-ttd. */
+  const tabel=(cls,kolom)=>{
+    const baris=(isi)=>'<tr>'+kolom.map(function(k){
+        return k.gap ? '<td class="kosong '+k.gap+'"></td>'
+                     : '<td class="sisi">'+isi(k)+'</td>';
+      }).join('')+'</tr>';
+    return '<table class="ttd ttd3 '+cls+'"><tbody>'+
+      baris(k=>'<div class="hps-topgap"></div>')+
+      baris(k=>'<div class="role">'+esc(k.cap)+'</div>')+
+      baris(k=>'<div class="role2">'+esc(k.jab)+'</div>')+
+      baris(k=>'<div class="gap"></div>')+
+      baris(k=>'<div class="nm nm-up">'+esc(k.nama)+'</div>')+
+    '</tbody></table>';
+  };
   const atas = adaPgw
-    ? tabel('ttd-a', kol('Diperiksa oleh;',dirJ,dirN)+kosong('celah')+kol('Disusun oleh;',pgwJ,pgwN))
-    : tabel('ttd-a', kosong('sisi2')+kol('Disusun oleh;',dirJ,dirN));
-  const bawah = tabel('ttd-b', kosong('tepi')+kol('Disahkan oleh;',pguJ,pguN)+kosong('tepi'));
+    ? tabel('ttd-a', [kol('Diperiksa oleh;',dirJ,dirN), kosong('celah'), kol('Disusun oleh;',pgwJ,pgwN)])
+    : tabel('ttd-a', [kosong('sisi2'), kol('Disusun oleh;',dirJ,dirN)]);
+  const bawah = tabel('ttd-b', [kosong('tepi'), kol('Disahkan oleh;',pguJ,pguN), kosong('tepi')]);
   const tgl=TOR_KOTA_TTD+', '+(typeof spkDateLong==='function'?spkDateLong(data.tgl_dokumen):'');
   return '<div class="rab-ttd">'+
     '<div class="ttd-date rab-tgl">'+esc(tgl)+'</div>'+
@@ -3110,17 +3205,33 @@ const TOR_PI_TUTUP = [
 /* Jarak antar-baris blok "label : nilai" — berlaku untuk KEDUA blok
    (Nama/NIP/Jabatan dan Satuan Kerja s.d. No. PRK), pt. */
 const TOR_PI_JARAK_BARIS_PT = 6;
-/* Margin lembar Pakta Integritas (mm) = padding `.spk-page` pada isi klausul
-   TOR/KAK, supaya lebar kolom teks kedua dokumen persis sama. */
+/* Margin KIRI-KANAN lembar Pakta Integritas (mm) = padding `.spk-page` pada isi
+   klausul TOR/KAK, supaya lebar kolom teks kedua dokumen persis sama. */
 const TOR_PI_MARGIN_MM = 25.4;
+/* Margin ATAS-BAWAH lembar Pakta Integritas (mm).
+   KETENTUAN 6 Agu 2026: "margin atas dan bawah saja pada Pakta Integritas
+   mengikuti margin atas dan bawah pada Form Pembukaan Penawaran". Form itu
+   memakai kerangka cetak umum `.fkl-sheet` yang ber-padding 12mm atas-bawah
+   (lihat fklSheetCss() di app.js), jadi angka di bawah HARUS sama dengannya.
+   Margin kiri-kanan TIDAK ikut berubah — tetap 25,4mm mengikuti TOR/KAK. */
+const TOR_PI_MARGIN_TB_MM = 12;
 /* Jeda kotak nomor -> teks pada daftar komitmen (cm). SENGAJA lebih longgar
    dari SPK_NUM_GAP milik TOR/KAK (ketentuan 6 Agu 2026: "penomoran pada Pakta
    Integritas agak sedikit jauh dari teksnya"). Lebar kotak nomor & inden blok
    "label : nilai" ikut terhitung dari angka ini, jadi cukup diubah di sini. */
 const TOR_PI_NUM_GAP_CM = 0.30;
+/* INDEN BLOK BERNOMOR (cm) — jarak kolom NOMOR dari margin kiri.
+   KETENTUAN 6 Agu 2026: "inden penomoran pada Pakta Integritas terlalu ke
+   kanan, geser sedikit ke kiri". Sebelumnya nilai ini dipinjam dari
+   SPK_PK_LEAD_JUDUL milik TOR/KAK; sekarang jadi tetapan sendiri supaya bisa
+   digeser tanpa menyentuh dokumen lain. 0 = nomor lurus dengan tepi kiri
+   paragraf pengantar "Dengan ini saya menyatakan dan berkomitmen untuk:".
+   Naikkan angkanya bila suatu saat ingin dijorokkan lagi. */
+const TOR_PI_INDEN_CM = 0;
 /* Ruang kosong untuk membubuhkan tanda tangan, antara baris "Masohi, <tanggal>"
-   dan nama penanda tangan (pt). */
-const TOR_PI_TTD_TINGGI_PT = 54;
+   dan nama penanda tangan (pt). Dilonggarkan 6 Agu 2026 ("berikan sedikit ruang
+   dari baris Masohi, tanggal ke nama pegawai"). */
+const TOR_PI_TTD_TINGGI_PT = 66;
 function torPiKertasCss(){
   var LH=(typeof spkLHCss==='function') ? (spkLHCss(1.15)||'1.39') : '1.39';
   /* Lebar kotak nomor diukur dengan fungsi yang SAMA dengan spkNumberFix pada
@@ -3129,11 +3240,12 @@ function torPiKertasCss(){
   var W=Math.round((0.26+GAP)*100)/100;
   try{ if(typeof spkNumTokWidthCm==='function')
         W=Math.max(0.4, Math.round((spkNumTokWidthCm('1.')+GAP)*100)/100); }catch(e){}
-  var M=TOR_PI_MARGIN_MM, BD=Math.round((297-2*M)*100)/100;
-  /* Deret bernomor MENJOROK SEDIKIT dari kalimat pengantar "Dengan ini saya
-     menyatakan dan berkomitmen untuk:" \u2014 memakai langkah inden yang sama
-     dengan TOR/KAK (SPK_PK_LEAD_JUDUL) supaya kedua dokumen sekeluarga. */
-  var LEAD=(typeof SPK_PK_LEAD_JUDUL!=='undefined') ? SPK_PK_LEAD_JUDUL : 0.15;
+  /* M = margin kiri-kanan, MT = margin atas-bawah (dua-duanya beda sumber,
+     lihat tetapannya). BD = tinggi badan lembar = 297mm - margin atas - bawah. */
+  var M=TOR_PI_MARGIN_MM, MT=TOR_PI_MARGIN_TB_MM, BD=Math.round((297-2*MT)*100)/100;
+  /* Inden kolom NOMOR diambil dari tetapan sendiri (TOR_PI_INDEN_CM), bukan
+     lagi dari SPK_PK_LEAD_JUDUL milik TOR/KAK — lihat catatan pada tetapannya. */
+  var LEAD=TOR_PI_INDEN_CM;
   var KOL=Math.round((LEAD+W)*100)/100;
   /* LEBAR KOLOM LABEL SERAGAM untuk KEDUA blok "label : nilai" (ketentuan
      6 Agu 2026: "titik : pada Nama, NIP dan Jabatan sejajar dengan titik :
@@ -3223,10 +3335,12 @@ function torPiKertasCss(){
        `!important` — yang MENGALAHKAN gaya sebaris buatan paginator. Paginator
        memutuskan lembar penuh lewat `body.scrollHeight > body.clientHeight`,
        jadi ia otomatis mengikuti tinggi baru ini; tak ada satu baris pun app.js
-       yang perlu diubah. Padding lembar + tinggi badan HARUS selalu berjumlah
-       297mm, karena itu keduanya diturunkan dari satu tetapan TOR_PI_MARGIN_MM.
+       yang perlu diubah. Padding ATAS+BAWAH lembar + tinggi badan HARUS selalu
+       berjumlah 297mm, karena itu keduanya diturunkan dari SATU tetapan yang
+       sama: TOR_PI_MARGIN_TB_MM. TOR_PI_MARGIN_MM kini hanya mengatur sisi
+       kiri-kanan dan TIDAK ikut menentukan tinggi badan lembar.
        Sisa 6px meniru kelonggaran yang sudah dipakai paginator (PH-6). */
-    '.fkl-sheet{padding:'+M+'mm !important}'+
+    '.fkl-sheet{padding:'+MT+'mm '+M+'mm !important}'+
     '.fkl-sheet-bd{height:calc('+BD+'mm - 6px) !important}'+
     /* --- BLOK TANDA TANGAN (ketentuan 6 Agu 2026) ---
        Baris "Yang menyatakan," + jabatan DIBUANG. Yang tersisa hanya
@@ -3236,10 +3350,18 @@ function torPiKertasCss(){
        terpanjang, `margin-left:auto` menempelkan sisi kanannya ke margin, dan
        `text-align:center` membuat tanggal & nama lurus satu kolom. */
     '.fkl-doc .pi-sign{display:table;margin:14px 0 0 auto;text-align:center;'+
+      'max-width:100%;'+
       'page-break-inside:avoid;break-inside:avoid}'+
     '.fkl-doc .pi-sign .pi-tgl{text-align:center;margin:0;white-space:nowrap}'+
     '.fkl-doc .pi-ttdgap{height:'+TOR_PI_TTD_TINGGI_PT+'pt}'+
-    '.fkl-doc .pi-nm{text-transform:uppercase;white-space:nowrap}'+
+    /* white-space:normal (dulu nowrap) + max-width:100% di atas: NAMA PANJANG
+       melipat ke baris berikutnya alih-alih meluber melewati margin kanan.
+       Sisi kanan blok TETAP menempel margin (margin-left:auto), dan karena
+       "Masohi, <tanggal>" berada di dalam blok yang sama dengan text-align
+       center, tanggal itu OTOMATIS ikut bergeser agar rata tengah terhadap
+       nama — berapa pun panjang namanya (ketentuan 6 Agu 2026). */
+    '.fkl-doc .pi-nm{text-transform:uppercase;white-space:normal;'+
+      'overflow-wrap:break-word;word-break:normal}'+
     '';
 }
 
@@ -3679,7 +3801,52 @@ async function torBoqExcel(id){
     await withActionLoader('Menyiapkan BoQ', async()=>{
       const wb=new ExcelJS.Workbook();
       const ws=wb.addWorksheet('BoQ',{pageSetup:{paperSize:9,orientation:'portrait',fitToPage:true,fitToWidth:1,fitToHeight:0,margins:{left:0.4,right:0.4,top:0.5,bottom:0.5,header:0.2,footer:0.2}}});
-      ws.columns=[{width:5},{width:44},{width:7},{width:7},{width:15},{width:15},{width:15},{width:15},{width:16}];
+      /* ---- TAMPILAN LEMBAR: TANPA GARIS KISI ----
+         Hanya tampilan bawaan yang dimatikan (showGridLines), BUKAN garis
+         tabel: garis tabel datang dari border tiap sel (kotak) sehingga tetap
+         terlihat dan tetap ikut tercetak. */
+      ws.views=[{showGridLines:false}];
+      /* ---- KISI KOLOM ----
+         Dua kolom BARU dibanding rancangan lama (ketentuan 6 Agu 2026):
+           A (lebar 3)  : kolom sela di tepi kiri — tabel tidak lagi menempel
+                          ke pinggir lembar.
+           C (lebar 12) : kolom penampung label "Pekerjaan :" / "Lokasi :".
+                          DI DALAM TABEL kolom ini selalu digabung dengan D,
+                          sehingga kolom Uraian Pekerjaan tetap selebar 44
+                          seperti semula (12 + 32) dan tidak ada kolom kosong
+                          yang mengganggu.
+         Nomor kolom FISIK dipakai di seluruh fungsi di bawah lewat tetapan K_*
+         supaya penambahan/pemindahan kolom berikutnya cukup diubah di sini. */
+      ws.columns=[{width:3},{width:5},{width:12},{width:32},{width:7},{width:7},
+                  {width:15},{width:15},{width:15},{width:15},{width:16}];
+      const K_NO=2, K_URA=3, K_URA2=4, K_SAT=5, K_VOL=6,
+            K_HB=7, K_HJ=8, K_JB=9, K_JJ=10, K_TOT=11;
+      const K_KIRI=K_NO, K_KANAN=K_TOT;          /* batas kiri-kanan tabel */
+      /* Huruf kolom untuk RUMUS — diturunkan dari nomor di atas, jadi mustahil
+         tertinggal bila kisi kolom digeser lagi. */
+      const HRF=(n)=>String.fromCharCode(64+n);
+      const L_VOL=HRF(K_VOL), L_HB=HRF(K_HB), L_HJ=HRF(K_HJ),
+            L_JB=HRF(K_JB),   L_JJ=HRF(K_JJ), L_TOT=HRF(K_TOT);
+      /* ---- TINGGI BARIS ----
+         Ketentuan 6 Agu 2026: semua baris tabel 20, kecuali baris penomoran
+         kolom ("1, 2, 3, 4, …") yang dibuat tipis 6, dan satu baris sela di
+         paling atas setinggi 15.
+         Baris Uraian yang teksnya melipat memakai KELIPATAN dari 20 (2 baris
+         teks -> 40, 3 baris -> 60) supaya tetap seirama tetapi tulisannya tidak
+         terpotong — tinggi baris gabungan (merge) TIDAK bisa dihitung sendiri
+         oleh Excel, jadi harus ditentukan di sini. */
+      const T_BARIS=20, T_BARIS_NUM=6, T_BARIS_ATAS=15;
+      const tinggi=(r,h)=>{ ws.getRow(r).height=(h==null?T_BARIS:h); };
+      /* Perkiraan jumlah baris teks pada kolom Uraian (lebar gabungan C+D). */
+      const LEBAR_URA=(12+32)-2;
+      const barisTeks=(txt)=>{
+        const s=String(txt==null?'':txt);
+        let n=0;
+        s.split(/\r?\n/).forEach(function(seg){
+          n += Math.max(1, Math.ceil(seg.length/LEBAR_URA));
+        });
+        return Math.max(1, n);
+      };
       /* ---- Palet & garis: SALINAN PERSIS gaya cetak RAB (hpsExtraDocCss,
          selektor table.hps-doc-tbl di app.js). Bila warna di sana diubah,
          ubah juga di sini supaya BoQ tetap kembar dengan RAB. ---- */
@@ -3704,116 +3871,153 @@ async function torBoqExcel(id){
         if(opt&&opt.fmt) cell.numFmt=opt.fmt;
         if(opt&&opt.bg) cell.fill=isi(opt.bg);
         return cell; };
-      /* Warnai seluruh 9 kolom sebuah baris sekaligus (sel kosong pun ikut,
-         supaya pita warnanya utuh seperti di cetakan RAB). */
-      const warnai=(r,bg)=>{ for(let c=1;c<=9;c++){ const cell=ws.getCell(r,c);
+      /* Warnai seluruh lebar tabel sekaligus (sel kosong pun ikut, supaya pita
+         warnanya utuh seperti di cetakan RAB). Kolom sela A sengaja DILEWATI. */
+      const warnai=(r,bg)=>{ for(let c=K_KIRI;c<=K_KANAN;c++){ const cell=ws.getCell(r,c);
         cell.fill=isi(bg); cell.border=kotak; } };
-      let R=1;
+      /* Sel Uraian selalu gabungan C+D — lihat catatan kisi kolom di atas. */
+      const gabungUraian=(r)=>{ ws.mergeCells(r,K_URA,r,K_URA2); };
+      /* ---- Baris sela paling atas (ketentuan 6 Agu 2026) ---- */
+      tinggi(1,T_BARIS_ATAS);
+      let R=2;
       /* --- Kepala --- */
-      ws.mergeCells(R,1,R,9);
-      tulis(R,1,'(KOP PERUSAHAAN)',{b:true,al:{horizontal:'center'},font:{bold:true,size:12,color:{argb:'FF0070C0'}}}); R+=2;
-      ws.mergeCells(R,1,R,9);
-      tulis(R,1,'Bill of Quantity (BoQ)',{b:true,al:{horizontal:'center'},font:{bold:true,size:12,underline:true}}); R+=2;
-      tulis(R,2,'Pekerjaan',{b:true}); tulis(R,3,':'); ws.mergeCells(R,4,R,9);
-      tulis(R,4,data.nama_pekerjaan||'-'); R++;
-      tulis(R,2,'Lokasi',{b:true}); tulis(R,3,':'); ws.mergeCells(R,4,R,9);
-      tulis(R,4,data.lokasi_pekerjaan||'-'); R+=2;
+      ws.mergeCells(R,K_KIRI,R,K_KANAN);
+      tulis(R,K_KIRI,'(KOP PERUSAHAAN)',{b:true,al:{horizontal:'center'},font:{bold:true,size:12,color:{argb:'FF0070C0'}}}); tinggi(R); R++;
+      tinggi(R); R++;
+      ws.mergeCells(R,K_KIRI,R,K_KANAN);
+      tulis(R,K_KIRI,'Bill of Quantity (BoQ)',{b:true,al:{horizontal:'center'},font:{bold:true,size:12,underline:true}}); tinggi(R); R++;
+      tinggi(R); R++;
+      /* --- Pekerjaan & Lokasi: DUA sel saja per baris ---
+         Ketentuan 6 Agu 2026: "jarak dari Pekerjaan ke titik : ke nama
+         pekerjaan sangat jauh". Dulu label ditulis di kolom Uraian yang
+         selebar 44, tanda ":" di kolom terpisah, lalu nilainya baru mulai di
+         kolom berikutnya — itulah sumber jaraknya.
+         Sekarang label DAN titik dua menjadi SATU sel gabungan (B+C) yang
+         DIRATAKAN KE KANAN, sehingga titik dua "Pekerjaan :" dan "Lokasi :"
+         jatuh pada satu garis lurus; nilainya menempati satu sel gabungan
+         berikutnya (D s.d. K) dengan indent 1 karakter sebagai jaraknya. */
+      const infoBaris=(label,nilai)=>{
+        ws.mergeCells(R,K_NO,R,K_URA);
+        tulis(R,K_NO,label+' :',{b:true,al:{horizontal:'right',vertical:'middle'}});
+        ws.mergeCells(R,K_URA2,R,K_KANAN);
+        tulis(R,K_URA2,nilai||'-',{al:{horizontal:'left',indent:1}});
+        tinggi(R); R++;
+      };
+      infoBaris('Pekerjaan', data.nama_pekerjaan);
+      infoBaris('Lokasi',    data.lokasi_pekerjaan);
+      tinggi(R); R++;
       /* --- Kepala tabel (tiga baris, sama dengan cetakan HPS) --- */
       const H=R;
-      ws.mergeCells(H,1,H+1,1); ws.mergeCells(H,2,H+1,2);
-      ws.mergeCells(H,3,H+1,3); ws.mergeCells(H,4,H+1,4);
-      ws.mergeCells(H,5,H,6);   ws.mergeCells(H,7,H,8);   ws.mergeCells(H,9,H+1,9);
+      ws.mergeCells(H,K_NO,H+1,K_NO);
+      ws.mergeCells(H,K_URA,H+1,K_URA2);          /* Uraian: 2 kolom x 2 baris */
+      ws.mergeCells(H,K_SAT,H+1,K_SAT); ws.mergeCells(H,K_VOL,H+1,K_VOL);
+      ws.mergeCells(H,K_HB,H,K_HJ);     ws.mergeCells(H,K_JB,H,K_JJ);
+      ws.mergeCells(H,K_TOT,H+1,K_TOT);
       const tengah={horizontal:'center',vertical:'middle',wrapText:true};
       const fKop={bold:true,color:{argb:T_KOP}};
       const kop=(r,c,t)=>tulis(r,c,t,{al:tengah,box:true,bg:C_KOP,font:fKop});
       /* Judul kolom "Barang (Rp)" (bukan "Material") agar 100% sama dengan
          cetakan RAB & dokumen HPS. */
       warnai(H,C_KOP); warnai(H+1,C_KOP);
-      kop(H,1,'No.');  kop(H,2,'Uraian Pekerjaan'); kop(H,3,'Sat'); kop(H,4,'Vol');
-      kop(H,5,'Harga Satuan'); kop(H,7,'Jumlah Harga'); kop(H,9,'Jumlah Total\n(Rp)');
-      ['','','','','Barang (Rp)','Jasa (Rp)','Barang (Rp)','Jasa (Rp)',''].forEach((t,i)=>{
-        kop(H+1,i+1,t||null); });
-      warnai(H+2,C_NUMH);
-      ['1','2','3','4','5','6','7 = 4 x 5','8 = 4 x 6','9 = 7 + 8'].forEach((t,i)=>{
-        tulis(H+2,i+1,t,{al:tengah,box:true,bg:C_NUMH,font:{bold:true,italic:true,color:{argb:T_NUMH}}}); });
+      kop(H,K_NO,'No.');  kop(H,K_URA,'Uraian Pekerjaan'); kop(H,K_SAT,'Sat'); kop(H,K_VOL,'Vol');
+      kop(H,K_HB,'Harga Satuan'); kop(H,K_JB,'Jumlah Harga'); kop(H,K_TOT,'Jumlah Total\n(Rp)');
+      kop(H+1,K_HB,'Barang (Rp)'); kop(H+1,K_HJ,'Jasa (Rp)');
+      kop(H+1,K_JB,'Barang (Rp)'); kop(H+1,K_JJ,'Jasa (Rp)');
+      tinggi(H); tinggi(H+1);
+      warnai(H+2,C_NUMH); gabungUraian(H+2);
+      [[K_NO,'1'],[K_URA,'2'],[K_SAT,'3'],[K_VOL,'4'],[K_HB,'5'],[K_HJ,'6'],
+       [K_JB,'7 = 4 x 5'],[K_JJ,'8 = 4 x 6'],[K_TOT,'9 = 7 + 8']].forEach(([c,t])=>{
+        tulis(H+2,c,t,{al:tengah,box:true,bg:C_NUMH,font:{bold:true,italic:true,color:{argb:T_NUMH}}}); });
+      tinggi(H+2,T_BARIS_NUM);
       R=H+3;
       /* --- Baris isi (judul / sub-judul / barang), penomoran = jsWalk --- */
       const barisAngka=[];
-      const kosongkan=(r)=>{ for(let c=1;c<=9;c++) tulis(r,c,null,{box:true}); };
+      const kosongkan=(r)=>{ for(let c=K_KIRI;c<=K_KANAN;c++) tulis(r,c,null,{box:true}); };
       /* Rumusnya dibiarkan POLOS (tanpa pembungkus IF(...)="") supaya hasilnya
          angka 0, bukan teks kosong \u2014 format accounting-lah yang menampilkan
          nol sebagai "-" persis seperti kolom harga di cetakan RAB. */
       const rumusBaris=(r,bg)=>{
         const o={al:{horizontal:'right'},box:true,fmt:RP,bg:bg};
-        tulis(r,7,{formula:'ROUND(D'+r+'*E'+r+',0)'},o);
-        tulis(r,8,{formula:'ROUND(D'+r+'*F'+r+',0)'},o);
-        /* Kolom 9 tebal & bertinta gelap \u2014 sama seperti td.num.tot di RAB. */
-        tulis(r,9,{formula:'G'+r+'+H'+r},
+        tulis(r,K_JB,{formula:'ROUND('+L_VOL+r+'*'+L_HB+r+',0)'},o);
+        tulis(r,K_JJ,{formula:'ROUND('+L_VOL+r+'*'+L_HJ+r+',0)'},o);
+        /* Kolom Jumlah Total tebal & bertinta gelap \u2014 sama seperti td.num.tot di RAB. */
+        tulis(r,K_TOT,{formula:L_JB+r+'+'+L_JJ+r},
           {al:{horizontal:'right'},box:true,fmt:RP,bg:bg,font:{bold:true,color:{argb:T_GRP}}});
       };
       /* Harga satuan Barang & Jasa SELALU 0 (permintaan user): BoQ = RAB tanpa
-         harga. Nilainya angka 0, bukan sel kosong, supaya rumus di kolom 7-9
-         ikut menghasilkan 0 dan tampil "-" oleh format accounting. */
+         harga. Nilainya angka 0, bukan sel kosong, supaya rumus di kolom
+         Jumlah Harga & Jumlah Total ikut menghasilkan 0 dan tampil "-". */
       const hargaNol=(r,bg)=>{
-        tulis(r,5,0,{al:{horizontal:'right'},box:true,fmt:RP,bg:bg});
-        tulis(r,6,0,{al:{horizontal:'right'},box:true,fmt:RP,bg:bg});
+        tulis(r,K_HB,0,{al:{horizontal:'right'},box:true,fmt:RP,bg:bg});
+        tulis(r,K_HJ,0,{al:{horizontal:'right'},box:true,fmt:RP,bg:bg});
       };
       jsWalk(items, cfg, {
-        judul:(no,txt,it)=>{ kosongkan(R); warnai(R,C_GRP);
+        judul:(no,txt,it)=>{ kosongkan(R); warnai(R,C_GRP); gabungUraian(R);
           const f={bold:true,color:{argb:T_GRP}};
-          tulis(R,1,no,{al:{horizontal:'center'},box:true,bg:C_GRP,font:f});
-          tulis(R,2,String(txt||'').toUpperCase(),{box:true,bg:C_GRP,font:f});
-          if(it){ tulis(R,3,it.sat||'',{al:{horizontal:'center'},box:true,bg:C_GRP,font:f});
-                  tulis(R,4,jsVolNum(it.vol)||null,{al:{horizontal:'center'},box:true,bg:C_GRP,font:f});
+          const t=String(txt||'').toUpperCase();
+          tulis(R,K_NO,no,{al:{horizontal:'center'},box:true,bg:C_GRP,font:f});
+          tulis(R,K_URA,t,{box:true,bg:C_GRP,font:f});
+          if(it){ tulis(R,K_SAT,it.sat||'',{al:{horizontal:'center'},box:true,bg:C_GRP,font:f});
+                  tulis(R,K_VOL,jsVolNum(it.vol)||null,{al:{horizontal:'center'},box:true,bg:C_GRP,font:f});
                   hargaNol(R,C_GRP); rumusBaris(R,C_GRP); barisAngka.push(R); }
-          R++; },
-        sub:(no,txt,it)=>{ kosongkan(R); warnai(R,C_SUB);
+          tinggi(R, T_BARIS*barisTeks(t)); R++; },
+        sub:(no,txt,it)=>{ kosongkan(R); warnai(R,C_SUB); gabungUraian(R);
           const f={bold:true,italic:true,color:{argb:T_GRP}};
-          tulis(R,1,no,{al:{horizontal:'center'},box:true,bg:C_SUB,font:f});
-          tulis(R,2,'   '+txt,{box:true,bg:C_SUB,font:f});
-          if(it){ tulis(R,3,it.sat||'',{al:{horizontal:'center'},box:true,bg:C_SUB,font:f});
-                  tulis(R,4,jsVolNum(it.vol)||null,{al:{horizontal:'center'},box:true,bg:C_SUB,font:f});
+          const t='   '+txt;
+          tulis(R,K_NO,no,{al:{horizontal:'center'},box:true,bg:C_SUB,font:f});
+          tulis(R,K_URA,t,{box:true,bg:C_SUB,font:f});
+          if(it){ tulis(R,K_SAT,it.sat||'',{al:{horizontal:'center'},box:true,bg:C_SUB,font:f});
+                  tulis(R,K_VOL,jsVolNum(it.vol)||null,{al:{horizontal:'center'},box:true,bg:C_SUB,font:f});
                   hargaNol(R,C_SUB); rumusBaris(R,C_SUB); barisAngka.push(R); }
-          R++; },
-        item:(noInGroup,it,idx)=>{ kosongkan(R);
-          tulis(R,1,noInGroup,{al:{horizontal:'center'},box:true});
-          tulis(R,2,(it.uraian&&String(it.uraian).trim())?it.uraian:('Barang/Jasa '+(idx+1)),{box:true});
-          tulis(R,3,it.sat||'',{al:{horizontal:'center'},box:true});
-          tulis(R,4,jsVolNum(it.vol)||null,{al:{horizontal:'center'},box:true});
+          tinggi(R, T_BARIS*barisTeks(t)); R++; },
+        item:(noInGroup,it,idx)=>{ kosongkan(R); gabungUraian(R);
+          const t=(it.uraian&&String(it.uraian).trim())?it.uraian:('Barang/Jasa '+(idx+1));
+          tulis(R,K_NO,noInGroup,{al:{horizontal:'center'},box:true});
+          tulis(R,K_URA,t,{box:true});
+          tulis(R,K_SAT,it.sat||'',{al:{horizontal:'center'},box:true});
+          tulis(R,K_VOL,jsVolNum(it.vol)||null,{al:{horizontal:'center'},box:true});
           hargaNol(R); rumusBaris(R); barisAngka.push(R);
-          R++; }
+          tinggi(R, T_BARIS*barisTeks(t)); R++; }
       });
       const r1=H+3, r2=R-1;
       /* --- Rekap: cermin hpsSummary() --- */
-      const rekap=(label, f7, f8, f9, tebal)=>{
+      const rekap=(label, fB, fJ, fT, tebal)=>{
         const bg=tebal?C_TOT:C_SUM, tl=tebal?T_TOT:T_SUML, tn=tebal?T_TOT:T_SUMN;
         warnai(R,bg);
-        ws.mergeCells(R,1,R,6);
-        tulis(R,1,label,{al:{horizontal:'right'},box:true,bg:bg,font:{bold:true,color:{argb:tl}}});
-        [[7,f7],[8,f8],[9,f9]].forEach(([c,f])=>
+        ws.mergeCells(R,K_KIRI,R,K_HJ);
+        tulis(R,K_KIRI,label,{al:{horizontal:'right'},box:true,bg:bg,font:{bold:true,color:{argb:tl}}});
+        [[K_JB,fB],[K_JJ,fJ],[K_TOT,fT]].forEach(([c,f])=>
           tulis(R,c,{formula:f},{al:{horizontal:'right'},box:true,fmt:RP,bg:bg,
             font:{bold:true,color:{argb:tn}}}));
-        R++;
+        tinggi(R); R++;
       };
       const rJml=R;
-      rekap('Jumlah','SUM(G'+r1+':G'+r2+')','SUM(H'+r1+':H'+r2+')','SUM(I'+r1+':I'+r2+')');
+      rekap('Jumlah','SUM('+L_JB+r1+':'+L_JB+r2+')','SUM('+L_JJ+r1+':'+L_JJ+r2+')','SUM('+L_TOT+r1+':'+L_TOT+r2+')');
       const rDpp=R;
-      rekap('DPP','ROUND(G'+rJml+'*11/12,0)','ROUND(H'+rJml+'*11/12,0)','ROUND(I'+rJml+'*11/12,0)');
+      rekap('DPP','ROUND('+L_JB+rJml+'*11/12,0)','ROUND('+L_JJ+rJml+'*11/12,0)','ROUND('+L_TOT+rJml+'*11/12,0)');
       const rPpn=R;
-      rekap('PPn 12%','ROUND(G'+rDpp+'*0.12,0)','ROUND(H'+rDpp+'*0.12,0)','ROUND(I'+rDpp+'*0.12,0)');
+      rekap('PPn 12%','ROUND('+L_JB+rDpp+'*0.12,0)','ROUND('+L_JJ+rDpp+'*0.12,0)','ROUND('+L_TOT+rDpp+'*0.12,0)');
       const rTot=R;
-      rekap('Jumlah Total','G'+rJml+'+G'+rPpn,'H'+rJml+'+H'+rPpn,'I'+rJml+'+I'+rPpn, true);
+      rekap('Jumlah Total',L_JB+rJml+'+'+L_JB+rPpn,L_JJ+rJml+'+'+L_JJ+rPpn,L_TOT+rJml+'+'+L_TOT+rPpn, true);
       /* --- Terbilang: rumus yang mengikuti sel Jumlah Total --- */
       warnai(R,C_TERB);
-      ws.mergeCells(R,1,R,9);
-      tulis(R,1,{formula:torBoqTerbilangRumus('I'+rTot)},
+      ws.mergeCells(R,K_KIRI,R,K_KANAN);
+      tulis(R,K_KIRI,{formula:torBoqTerbilangRumus(L_TOT+rTot)},
         {al:{horizontal:'left'},box:true,bg:C_TERB,font:{bold:true,color:{argb:T_TERB}}});
-      /* --- Tanda tangan penyedia --- */
-      R+=3;
-      ws.mergeCells(R,6,R,9); tulis(R,6,'Kota/Kabupaten,....., Tanggal.....',{al:{horizontal:'center'}}); R++;
-      ws.mergeCells(R,6,R,9); tulis(R,6,'Nama Perusahaan',{b:true,al:{horizontal:'center'}}); R+=4;
-      ws.mergeCells(R,6,R,9); tulis(R,6,'(Nama Lengkap)',{b:true,al:{horizontal:'center'},font:{bold:true,underline:true}}); R++;
-      ws.mergeCells(R,6,R,9); tulis(R,6,'Jabatan',{b:true,al:{horizontal:'center'}});
+      tinggi(R);
+      /* --- Tanda tangan penyedia ---
+         TOR_BOQ_TTD_RUANG = jumlah baris kosong untuk membubuhkan tanda tangan
+         & cap. Ditambah satu baris pada 6 Agu 2026 atas permintaan pengguna. */
+      /* Tiga baris sela antara Terbilang dan blok tanda tangan \u2014 tingginya
+         ikut diseragamkan supaya tidak ada baris "bawaan" di tengah lembar. */
+      for(let i=0;i<3;i++){ R++; tinggi(R); }
+      const ttdBaris=(teks,opt)=>{ ws.mergeCells(R,K_JB,R,K_KANAN);
+        tulis(R,K_JB,teks,opt); tinggi(R); R++; };
+      ttdBaris('Kota/Kabupaten,....., Tanggal.....',{al:{horizontal:'center'}});
+      ttdBaris('Nama Perusahaan',{b:true,al:{horizontal:'center'}});
+      for(let i=0;i<TOR_BOQ_TTD_RUANG;i++){ tinggi(R); R++; }
+      ttdBaris('(Nama Lengkap)',{b:true,al:{horizontal:'center'},font:{bold:true,underline:true}});
+      ttdBaris('Jabatan',{b:true,al:{horizontal:'center'}});
       const nm=('BoQ - '+(data.nama_pekerjaan||'Pekerjaan')).replace(/[\\/:*?"<>|]/g,'-').slice(0,90);
       const buf=await wb.xlsx.writeBuffer();
       const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
