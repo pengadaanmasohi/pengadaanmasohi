@@ -2867,6 +2867,9 @@ function torJudulDokHtml(judul, nomor){
     '<div class="fkl-doc-titlegap"></div>';
 }
 /* Blok tanda tangan gaya HPS \u2014 dipakai RAB & Pakta Integritas. */
+/* CATATAN 6 Agu 2026: sejak blok tanda tangan Pakta Integritas diganti
+   (.pi-sign), fungsi ini TIDAK dipakai modul mana pun lagi. Dipertahankan
+   karena bentuk dua-kolomnya bisa diperlukan dokumen berikutnya. */
 function torTtdHpsHtml(kiri, kanan){
   const esc=fkEsc, sel=(o)=> o ? ('<td><div class="hps-topgap"></div>'+
       '<div class="role">'+esc(o.cap||'')+'</div>'+
@@ -3104,16 +3107,29 @@ const TOR_PI_TUTUP = [
    Muka huruf Inter DITANAM ulang lewat spkInterFontFace() karena berkas ini
    dokumen terpisah yang tidak mewarisi <style> halaman aplikasi — persis
    sebagaimana torDocHtml melakukannya untuk TOR/KAK. */
-/* Jarak antar-baris blok "Satuan / Unit Kerja" s.d. "No. PRK" (pt). */
+/* Jarak antar-baris blok "label : nilai" — berlaku untuk KEDUA blok
+   (Nama/NIP/Jabatan dan Satuan Kerja s.d. No. PRK), pt. */
 const TOR_PI_JARAK_BARIS_PT = 6;
+/* Margin lembar Pakta Integritas (mm) = padding `.spk-page` pada isi klausul
+   TOR/KAK, supaya lebar kolom teks kedua dokumen persis sama. */
+const TOR_PI_MARGIN_MM = 25.4;
+/* Jeda kotak nomor -> teks pada daftar komitmen (cm). SENGAJA lebih longgar
+   dari SPK_NUM_GAP milik TOR/KAK (ketentuan 6 Agu 2026: "penomoran pada Pakta
+   Integritas agak sedikit jauh dari teksnya"). Lebar kotak nomor & inden blok
+   "label : nilai" ikut terhitung dari angka ini, jadi cukup diubah di sini. */
+const TOR_PI_NUM_GAP_CM = 0.30;
+/* Ruang kosong untuk membubuhkan tanda tangan, antara baris "Masohi, <tanggal>"
+   dan nama penanda tangan (pt). */
+const TOR_PI_TTD_TINGGI_PT = 54;
 function torPiKertasCss(){
   var LH=(typeof spkLHCss==='function') ? (spkLHCss(1.15)||'1.39') : '1.39';
-  /* Lebar kotak nomor & jeda ke teks — diukur dengan fungsi yang SAMA dengan
-     spkNumberFix pada TOR/KAK, jadi hasilnya tidak mungkin berbeda. */
-  var GAP=(typeof SPK_NUM_GAP!=='undefined') ? SPK_NUM_GAP : 0.12;
-  var W=0.44;
+  /* Lebar kotak nomor diukur dengan fungsi yang SAMA dengan spkNumberFix pada
+     TOR/KAK; hanya jedanya yang dilonggarkan (TOR_PI_NUM_GAP_CM). */
+  var GAP=TOR_PI_NUM_GAP_CM;
+  var W=Math.round((0.26+GAP)*100)/100;
   try{ if(typeof spkNumTokWidthCm==='function')
         W=Math.max(0.4, Math.round((spkNumTokWidthCm('1.')+GAP)*100)/100); }catch(e){}
+  var M=TOR_PI_MARGIN_MM, BD=Math.round((297-2*M)*100)/100;
   /* Deret bernomor MENJOROK SEDIKIT dari kalimat pengantar "Dengan ini saya
      menyatakan dan berkomitmen untuk:" \u2014 memakai langkah inden yang sama
      dengan TOR/KAK (SPK_PK_LEAD_JUDUL) supaya kedua dokumen sekeluarga. */
@@ -3144,7 +3160,7 @@ function torPiKertasCss(){
        elemen kepala yang ukurannya memang dirancang sendiri, sama seperti judul
        klausul pada TOR/KAK yang juga bukan 11pt. */
     '.fkl-doc .pi-p,.fkl-doc .pi-tb td,.fkl-doc .pi-ol li,'+
-    '.fkl-doc .pi-ck,.fkl-doc .pi-tgl{font-size:11pt;line-height:'+LH+'}'+
+    '.fkl-doc .pi-ck,.fkl-doc .pi-tgl,.fkl-doc .pi-nm{font-size:11pt;line-height:'+LH+'}'+
     /* --- WARNA HURUF HITAM ---
        Kerangka cetak umum memakai abu-abu kebiruan (#22343a untuk isi, #54666c
        untuk label, #7c8a8f untuk baris alamat). Pada Pakta Integritas seluruh
@@ -3189,16 +3205,41 @@ function torPiKertasCss(){
     '.fkl-doc .pi-ol li .pin{'+
       'flex:0 0 '+W+'cm;box-sizing:border-box;width:'+W+'cm;padding-right:'+GAP+'cm;'+
       'text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}'+
-    /* --- KERTAS & MARGIN: KEMBALI KE BAWAAN KERANGKA CETAK (6 Agu 2026) ---
-       Penimpaan margin 2,54cm DIBATALKAN atas permintaan pengguna. Selain
-       memang tidak dikehendaki, penimpaan itu berbahaya: fklPageScript
-       memecah dokumen memakai tetapan tinggi badan lembar 273mm (297-12-12)
-       yang dipasang SEBARIS, sedangkan CSS tadi menyusutkan kotaknya menjadi
-       246,2mm lewat !important. Paginator menata isi untuk 273mm, kotaknya
-       cuma 246,2mm, dan selisih ~27mm di dasar tiap lembar TERPOTONG diam-diam
-       oleh .fkl-sheet{overflow:hidden} \u2014 itulah sebabnya blok tanggal
-       ("Masohi, ...") dan baris "Yang menyatakan," hilang dari cetakan.
-       Dengan dikembalikan ke bawaan, geometri paginator kembali utuh. */
+    /* --- KERTAS & MARGIN: DISAMAKAN DENGAN ISI KLAUSUL TOR/KAK (6 Agu 2026) ---
+       Ketentuan pengguna: "margin pada Pakta Integritas sama seperti pada isian
+       klausul TOR/KAK". Lembar isi TOR/KAK adalah `.spk-page.spk-sheet` yang
+       ber-padding 25,4mm, sedangkan kerangka cetak umum memakai 12mm/15mm —
+       itulah sebabnya baris Pakta Integritas terlihat lebih lebar.
+
+       BACA INI SEBELUM MENGUBAH ANGKANYA. Percobaan terdahulu menaikkan margin
+       lewat padding `.fkl-sheet` SAJA, dan hasilnya blok "Masohi, ..." serta
+       baris tanda tangan HILANG dari cetakan. Sebabnya: fklPageScript (app.js)
+       menghitung tinggi badan lembar dari tetapan `PH=mm2px(273)` (297-12-12)
+       lalu memasangnya SEBARIS pada `.fkl-sheet-bd`. Begitu padding lembar
+       dinaikkan, kotaknya menyusut tetapi paginator tetap menata isi untuk
+       273mm, dan selisihnya terpotong diam-diam oleh `overflow:hidden`.
+
+       KUNCI PERBAIKANNYA: tinggi `.fkl-sheet-bd` ikut diturunkan lewat CSS
+       `!important` — yang MENGALAHKAN gaya sebaris buatan paginator. Paginator
+       memutuskan lembar penuh lewat `body.scrollHeight > body.clientHeight`,
+       jadi ia otomatis mengikuti tinggi baru ini; tak ada satu baris pun app.js
+       yang perlu diubah. Padding lembar + tinggi badan HARUS selalu berjumlah
+       297mm, karena itu keduanya diturunkan dari satu tetapan TOR_PI_MARGIN_MM.
+       Sisa 6px meniru kelonggaran yang sudah dipakai paginator (PH-6). */
+    '.fkl-sheet{padding:'+M+'mm !important}'+
+    '.fkl-sheet-bd{height:calc('+BD+'mm - 6px) !important}'+
+    /* --- BLOK TANDA TANGAN (ketentuan 6 Agu 2026) ---
+       Baris "Yang menyatakan," + jabatan DIBUANG. Yang tersisa hanya
+       "Masohi, <tanggal>", ruang tanda tangan, lalu NAMA penanda tangan dengan
+       HURUF BESAR SEMUA — nama yang sama dengan blok identitas di kepala
+       dokumen. `display:table` membuat blok menyusut selebar barisnya yang
+       terpanjang, `margin-left:auto` menempelkan sisi kanannya ke margin, dan
+       `text-align:center` membuat tanggal & nama lurus satu kolom. */
+    '.fkl-doc .pi-sign{display:table;margin:14px 0 0 auto;text-align:center;'+
+      'page-break-inside:avoid;break-inside:avoid}'+
+    '.fkl-doc .pi-sign .pi-tgl{text-align:center;margin:0;white-space:nowrap}'+
+    '.fkl-doc .pi-ttdgap{height:'+TOR_PI_TTD_TINGGI_PT+'pt}'+
+    '.fkl-doc .pi-nm{text-transform:uppercase;white-space:nowrap}'+
     '';
 }
 
@@ -3265,9 +3306,14 @@ function torPiDocHtml(data, peran){
        itu membuat penomoran mulai dari 1 lagi di halaman berikutnya. */
     '<ol class="pi-ol">'+TOR_PI_KOMITMEN.map((t,i)=>'<li><span class="pin">'+(i+1)+'.</span>'+esc(t)+'</li>').join('')+'</ol>'+
     TOR_PI_TUTUP.map(t=>'<p class="pi-p">'+esc(t)+'</p>').join('')+
-    '<div class="pi-tgl">'+esc(ctx.tempat_tanggal||'')+'</div>'+
-    '<div class="pi-ttd">'+torTtdHpsHtml(null,
-      {cap:'Yang menyatakan,', jab:org.jab, nama:org.nama})+'</div>'+
+    /* Blok tanda tangan: tanggal -> ruang tanda tangan -> NAMA (huruf besar).
+       Nama diambil dari `org` yang sama dengan blok identitas di kepala
+       dokumen, jadi mustahil berbeda dengan baris "Nama" di atas. */
+    '<div class="pi-sign">'+
+      '<div class="pi-tgl">'+esc(ctx.tempat_tanggal||'')+'</div>'+
+      '<div class="pi-ttdgap"></div>'+
+      '<div class="pi-nm">'+esc(String(org.nama||'\u2014').toUpperCase())+'</div>'+
+    '</div>'+
   '</div>';
   return fklDocShell(hpsExtraDocCss()+torPiKertasCss()+
     /* ---- JUDUL & SUB-JUDUL SATU TINGKAT (ketentuan 6 Agu 2026) ----
@@ -3291,7 +3337,11 @@ function torPiDocHtml(data, peran){
     '.fkl-doc .fkl-doc-titlegap{height:0}'+
     '.pi-p{margin:0 0 6px;text-align:justify}'+
     '.pi-tb{border-collapse:collapse;margin:0 0 8px}'+
-    '.pi-tb td{border:0;padding:1px 0;vertical-align:top}'+
+    /* Jarak antar-baris 6 pt berlaku untuk KEDUA blok "label : nilai"
+       (ketentuan 6 Agu 2026: "jarak dari Nama, NIP dan Jabatan masing-masing
+       baris adalah 6 pt"). Sebelumnya blok atas dipatok 1px sementara blok
+       bawah sudah 6 pt, sehingga keduanya tidak seirama. */
+    '.pi-tb td{border:0;padding:0 0 '+TOR_PI_JARAK_BARIS_PT+'pt;vertical-align:top}'+
     /* ---- BLOK "Satuan / Unit Kerja" s.d. "No. PRK" ----
        Jarak antar-baris 2 pt, dan kolom ":" DIRAPATKAN ke kiri hingga hampir
        menempel label terpanjang ("Perkiraan Pekerjaan"). Caranya bukan menebak
@@ -3305,7 +3355,7 @@ function torPiDocHtml(data, peran){
        label-labelnya lurus dengan teks daftar komitmen di bawah \u2014 bukan
        angka pilihan bebas. Lebar tabel dikurangi sebanyak itu supaya sisi
        kanannya tetap berhenti tepat di margin. */
-    '.pi-tb.pi-tb2 td{padding:0 0 '+TOR_PI_JARAK_BARIS_PT+'pt}'+
+    /* (.pi-tb2 tak perlu aturan sendiri lagi: jarak 6 pt sudah di .pi-tb td) */
     /* KETENTUAN 6 Agu 2026: keempat pilihan peran TIDAK lagi dibagi dua kolom
        kiri-kanan (dua baris), melainkan SATU kolom berisi empat baris berurutan
        ke bawah — lebih mudah dibaca dan tanda centangnya sejajar dalam satu
@@ -3316,9 +3366,9 @@ function torPiDocHtml(data, peran){
     '.pi-ck .bx{font-size:1.15em;line-height:1}'+
     '.pi-ol{margin:0 0 8px;padding-left:1.05cm}'+
     '.pi-ol li{margin:0 0 5px;text-align:justify}'+
-    '.pi-tgl{text-align:right;margin:14px 0 0}'+
-    '.pi-ttd{page-break-inside:avoid;break-inside:avoid}'+
-    '.pi-ttd table.ttd{width:100%}'
+    /* Gaya blok tanda tangan (.pi-sign/.pi-tgl/.pi-ttdgap/.pi-nm)
+       ditulis di torPiKertasCss bersama margin lembar. */
+    ''
   , isi);
 }
 
@@ -3851,8 +3901,14 @@ const TOR_IC_CETAK =
   '<path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>'+
   '<rect x="6" y="14" width="12" height="8"/></svg>';
 /* Beri AWALAN pada seluruh selektor sebuah daftar aturan CSS. @font-face, @page,
-   dan @keyframes dibiarkan apa adanya (tak punya selektor elemen). */
-function torCssBerawalan(rules, pfx){
+   dan @keyframes dibiarkan apa adanya (tak punya selektor elemen).
+
+   `sudah` (opsional) = Set penampung @font-face yang SUDAH pernah ditulis. Muka
+   huruf Inter ditanam sebagai base64 (spkInterFontFace) dan dipakai oleh TOR/KAK
+   maupun kedua Pakta Integritas, jadi tanpa penyaring ini berkas gabungan memuat
+   blok base64 yang sama beberapa kali (ratusan KB percuma, memperlambat pratinjau
+   cetak). Aturannya identik, jadi cukup yang pertama. */
+function torCssBerawalan(rules, pfx, sudah){
   var out='';
   for(var i=0;i<rules.length;i++){
     var r=rules[i];
@@ -3867,28 +3923,48 @@ function torCssBerawalan(rules, pfx){
         }).join(',');
         out+=sel+'{'+r.style.cssText+'}';
       }else if(r.type===4){                             /* CSSMediaRule */
-        out+='@media '+r.media.mediaText+'{'+torCssBerawalan(r.cssRules, pfx)+'}';
+        out+='@media '+r.media.mediaText+'{'+torCssBerawalan(r.cssRules, pfx, sudah)+'}';
       }else if(r.type===12){                            /* CSSSupportsRule */
-        out+='@supports '+r.conditionText+'{'+torCssBerawalan(r.cssRules, pfx)+'}';
+        out+='@supports '+r.conditionText+'{'+torCssBerawalan(r.cssRules, pfx, sudah)+'}';
+      }else if(r.type===5){                             /* CSSFontFaceRule */
+        var ff=r.cssText;
+        if(sudah){ if(sudah.has(ff)) continue; sudah.add(ff); }
+        out+=ff;
       }else{
-        out+=r.cssText;                                 /* @font-face, @page, dst. */
+        out+=r.cssText;                                 /* @page, @keyframes, dst. */
       }
     }catch(e){}
   }
   return out;
 }
+/* Kumpulkan <link rel="stylesheet"> dari sebuah dokumen bingkai.
+
+   PENTING — INI SUMBER BEDA TAMPILAN CETAK GABUNGAN vs SATUAN: berkas gaya dari
+   domain lain (Google Fonts) TIDAK bisa dibaca lewat CSSOM — `ss.cssRules`
+   melempar SecurityError, sehingga aturan @font-face 'Plus Jakarta Sans' & 'Inter'
+   (Google) diam-diam hilang saat dipanen. Inter selamat karena ada versi tertanam
+   base64 ("Inter Local"), tetapi Plus Jakarta Sans — yang dipakai sampul & daftar
+   isi TOR/KAK, kop/kaki halaman, serta seluruh dokumen RAB — jatuh ke Segoe UI /
+   Arial. Karena itu <link>-nya dibawa APA ADANYA ke berkas gabungan. */
+function torPanenLink(d){
+  var out=[], el=d.querySelectorAll('link[rel~="stylesheet"],link[rel~="preconnect"]');
+  for(var i=0;i<el.length;i++){
+    try{ if(el[i].getAttribute('href')) out.push(el[i].outerHTML); }catch(e){}
+  }
+  return out;
+}
 /* Panen satu bingkai yang paginasinya sudah selesai */
-function torPanenBingkai(ifr, kelas){
+function torPanenBingkai(ifr, kelas, sudahFF){
   var w=ifr.contentWindow, d=w.document, css='';
   var ss=d.styleSheets;
   for(var i=0;i<ss.length;i++){
     var rl=null; try{ rl=ss[i].cssRules; }catch(e){ rl=null; }
-    if(rl) css+=torCssBerawalan(rl, '.'+kelas);
+    if(rl) css+=torCssBerawalan(rl, '.'+kelas, sudahFF);
   }
   var body=d.body.cloneNode(true);
   var sc=body.querySelectorAll('script');
   for(var j=sc.length-1;j>=0;j--) sc[j].parentNode.removeChild(sc[j]);
-  return {css:css, html:body.innerHTML};
+  return {css:css, html:body.innerHTML, links:torPanenLink(d)};
 }
 /* Tunggu paginasi sebuah bingkai selesai (kedua mesin cetak). */
 function torTungguPaginasi(ifr, sisa, lanjut){
@@ -3900,6 +3976,19 @@ function torTungguPaginasi(ifr, sisa, lanjut){
   }catch(e){ siap=true; }
   if(siap || sisa<=0){ setTimeout(lanjut, 80); return; }
   setTimeout(function(){ torTungguPaginasi(ifr, sisa-80, lanjut); }, 80);
+}
+/* Tunggu seluruh muka huruf pada sebuah bingkai selesai dimuat, lalu jalankan
+   `lanjut`. Selalu dijalankan tepat SEKALI, walau document.fonts tak tersedia,
+   walau pemuatan gagal, dan walau melewati batas waktu. */
+function torTungguFont(ifr, batas, lanjut){
+  var jalan=false;
+  var go=function(){ if(jalan) return; jalan=true; setTimeout(lanjut, 60); };
+  setTimeout(go, Math.max(300, batas|0));
+  try{
+    var d=ifr.contentWindow.document;
+    if(d.fonts && d.fonts.ready && d.fonts.ready.then) d.fonts.ready.then(go, go);
+    else setTimeout(go, 400);
+  }catch(e){ setTimeout(go, 400); }
 }
 function torCetakGabung(id){
   var rec=(records_tor||[]).find(function(r){ return String(r.id)===String(id); });
@@ -3927,17 +4016,21 @@ function torCetakGabung(id){
   });
   var pesan=(typeof withActionLoader==='function');
   var selesai=function(){
-    var css='', isi='';
+    var css='', isi='', link='', sudahFF=new Set(), sudahLink=new Set();
     bingkai.forEach(function(f,i){
       var k='cetak-d'+(i+1);
-      var p; try{ p=torPanenBingkai(f, k); }catch(e){ console.error('panen:', e); return; }
+      var p; try{ p=torPanenBingkai(f, k, sudahFF); }catch(e){ console.error('panen:', e); return; }
       css+=p.css;
+      (p.links||[]).forEach(function(t){ if(!sudahLink.has(t)){ sudahLink.add(t); link+=t; } });
       isi+='<div class="cetak-doc '+k+'">'+p.html+'</div>';
     });
     wadah.remove();
     if(!isi){ toast('Gagal menyiapkan cetak gabungan','err'); return; }
+    /* Cadangan bila panen <link> gagal (mis. bingkai keburu dibongkar): muka huruf
+       yang dipakai keempat dokumen tetap dijamin ada. */
+    if(!link && typeof fklDocFontLink==='function') link=fklDocFontLink();
     var html='<!DOCTYPE html><html lang="id"><head><meta charset="utf-8">'+
-      '<title>&#8203;</title><style>'+css+
+      '<title>&#8203;</title>'+link+'<style>'+css+
       'html,body{margin:0;padding:0;background:#fff}'+
       '.cetak-doc{break-after:page;page-break-after:always}'+
       '.cetak-doc:last-child{break-after:auto;page-break-after:auto}'+
@@ -3948,12 +4041,15 @@ function torCetakGabung(id){
     ifr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
     document.body.appendChild(ifr);
     var d=ifr.contentWindow.document; d.open(); d.write(html); d.close();
-    setTimeout(function(){
+    /* Muka huruf dari <link> diunduh dari jaringan, jadi mencetak setelah jeda tetap
+       saja bisa kebagian huruf cadangan. Tunggu document.fonts.ready (dibatasi 3
+       detik supaya tak menggantung bila Google Fonts diblokir). */
+    torTungguFont(ifr, 3000, function(){
       var run=function(){ try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }
                           catch(e){ try{ window.print(); }catch(_){} } };
       if(typeof withHiddenPageTitle==='function') withHiddenPageTitle(run); else run();
       setTimeout(function(){ var f=document.getElementById('tor-print-frame'); if(f) f.remove(); }, 1500);
-    }, 400);
+    });
   };
   var sisa=bingkai.length;
   bingkai.forEach(function(f){
