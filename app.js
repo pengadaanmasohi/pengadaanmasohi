@@ -7118,7 +7118,7 @@ function jpOpenPreview(html, nama){
     const btn=document.createElement('button');
     btn.id='jp-preview-print'; btn.className='btn btn-teal';
     btn.style.padding='8px 14px'; btn.style.fontSize='11px';
-    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>Cetak / PDF';
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>Cetak / PDF';
     /* Teksnya disembunyikan (tombol kini ikon saja, lihat #pn-preview-ikon
        di index.html), jadi judulnya dipindah ke atribut title supaya
        maksudnya tetap terbaca saat disorot. */
@@ -12496,7 +12496,7 @@ function fklOpenPreview(){
     const btn=document.createElement('button');
     btn.id='fkl-preview-print'; btn.className='btn btn-teal';
     btn.style.padding='8px 14px'; btn.style.fontSize='11px';
-    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>Cetak / PDF';
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>Cetak / PDF';
     /* Teksnya disembunyikan (tombol kini ikon saja, lihat #pn-preview-ikon
        di index.html), jadi judulnya dipindah ke atribut title supaya
        maksudnya tetap terbaca saat disorot. */
@@ -13857,7 +13857,7 @@ function pnwOpenPreview(){
     const btn=document.createElement('button');
     btn.id='pnw-preview-print'; btn.className='btn btn-teal';
     btn.style.padding='8px 14px'; btn.style.fontSize='11px';
-    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>Cetak / PDF';
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>Cetak / PDF';
     /* Teksnya disembunyikan (tombol kini ikon saja, lihat #pn-preview-ikon
        di index.html), jadi judulnya dipindah ke atribut title supaya
        maksudnya tetap terbaca saat disorot. */
@@ -14976,7 +14976,7 @@ function rhoOpenPreview(){
     const btn=document.createElement('button');
     btn.id='rho-preview-print'; btn.className='btn btn-teal';
     btn.style.padding='8px 14px'; btn.style.fontSize='11px';
-    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>Cetak / PDF';
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>Cetak / PDF';
     /* Teksnya disembunyikan (tombol kini ikon saja, lihat #pn-preview-ikon
        di index.html), jadi judulnya dipindah ke atribut title supaya
        maksudnya tetap terbaca saat disorot. */
@@ -16944,7 +16944,7 @@ function hpsOpenPreview(){
     const btn=document.createElement('button');
     btn.id='hps-preview-print'; btn.className='btn btn-teal';
     btn.style.padding='8px 14px'; btn.style.fontSize='11px';
-    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>Cetak / PDF';
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>Cetak / PDF';
     /* Teksnya disembunyikan (tombol kini ikon saja, lihat #pn-preview-ikon
        di index.html), jadi judulnya dipindah ke atribut title supaya
        maksudnya tetap terbaca saat disorot. */
@@ -17387,7 +17387,7 @@ function anaOnKonSumberRef(el){ const i=+el.dataset.i; const st=anaState.konstru
 /* ============= PEKERJAAN KONSTRUKSI — BAGIAN 3: ANALISA HARGA SATUAN PEKERJAAN (AHSP) =============
    Setiap "layer" adalah SATU analisa lengkap untuk SATU pekerjaan (judul + A/B/C + ROK).
    Tombol "+ Tambah Layer" menambah analisa untuk pekerjaan berikutnya, dst. */
-const ANA_IC_VIEW='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+const ANA_IC_VIEW='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>';
 function anaAhspRokFieldHtml(li,layer){
   const cur=(layer.rok!==''&&layer.rok!=null)?String(anaNum(layer.rok)):'';
   let opts='<option value=""'+(cur===''?' selected':'')+'>ROK — Tidak ada</option>';
@@ -18629,7 +18629,7 @@ function anaOpenPreview(section){
     const btn=document.createElement('button');
     btn.id='ana-preview-print'; btn.className='btn btn-teal';
     btn.style.padding='8px 14px'; btn.style.fontSize='11px';
-    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>Cetak / PDF';
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>Cetak / PDF';
     /* Teksnya disembunyikan (tombol kini ikon saja, lihat #pn-preview-ikon
        di index.html), jadi judulnya dipindah ke atribut title supaya
        maksudnya tetap terbaca saat disorot. */
@@ -19168,7 +19168,7 @@ function hpscOpenPreview(html, nama){
     const btn=document.createElement('button');
     btn.id='hpsc-preview-print'; btn.className='btn btn-teal';
     btn.style.padding='8px 14px'; btn.style.fontSize='11px';
-    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>Cetak / PDF';
+    btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>Cetak / PDF';
     /* Teksnya disembunyikan (tombol kini ikon saja, lihat #pn-preview-ikon
        di index.html), jadi judulnya dipindah ke atribut title supaya
        maksudnya tetap terbaca saat disorot. */

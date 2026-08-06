@@ -189,25 +189,28 @@
    !important diperlukan: kesembilan modul itu menuliskan padding & font-size
    sebagai GAYA SEBARIS (btn.style.fontSize='11px'), yang mengalahkan CSS biasa. */
 #pn-preview-overlay .detail-head .btn,
-#pn-preview-overlay .pn-preview-head-actions .btn{
+#pn-preview-overlay .pn-preview-head-actions .btn,
+#pn-preview-overlay .detail-head .detail-close{
   font-size:0 !important;
   padding:0 !important;
   gap:0 !important;
-  width:38px;height:38px;flex:0 0 38px;
+  width:32px;height:32px;flex:0 0 32px;
   display:inline-flex;align-items:center;justify-content:center}
+/* SATU ukuran & satu ketebalan gurat untuk KETIGA ikon, supaya berat
+   visualnya sama. 15px pada kotak 32px menyisakan ruang napas 8,5px di
+   tiap sisi — ikon terbaca kecil & rapi, bukan memenuhi kotaknya. */
 #pn-preview-overlay .detail-head .btn svg,
-#pn-preview-overlay .pn-preview-head-actions .btn svg{
-  width:18px !important;height:18px !important;flex:none}
+#pn-preview-overlay .pn-preview-head-actions .btn svg,
+#pn-preview-overlay .detail-head .detail-close svg{
+  width:15px !important;height:15px !important;flex:none;
+  display:block;stroke-width:2}
 /* Label "Layar Penuh"/"Keluar Layar Penuh" berupa <span> ber-id — dilepas
    sepenuhnya. Nama tombolnya sudah dibawa atribut title di index.html. */
 #pn-preview-overlay #pn-preview-fs-label{display:none}
-/* Tombol tutup dibuat persegi supaya silangnya benar-benar di tengah kotak.
-   font-size-nya DISEBUT ULANG karena silang "x" adalah teks, bukan ikon SVG —
-   tanpa ini ia ikut lenyap oleh font-size:0 di atas. */
-#pn-preview-overlay .detail-head .detail-close{
-  width:38px;height:38px;padding:0;display:inline-flex;
-  align-items:center;justify-content:center;line-height:1;
-  font-size:22px !important}
+/* Tombol tutup kini berisi SVG (lihat markup-nya), jadi ia ikut aturan yang
+   sama dengan dua tombol lain: ukuran kotak, ukuran ikon, dan ketebalan gurat
+   semuanya seragam. line-height:0 membuang sisa ruang baris teks. */
+#pn-preview-overlay .detail-head .detail-close{line-height:0}
 /* Kejelasan saat disorot/ditekan: kotaknya menebal, bukan berganti warna
    gelap yang justru menenggelamkan ikonnya. */
 #pn-preview-overlay .detail-head .btn:hover,
@@ -2334,7 +2337,16 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
           <svg id="pn-preview-fs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7.5 7.5"/><path d="M3 21l7.5-7.5"/></svg>
           <span id="pn-preview-fs-label">Layar Penuh</span>
         </button>
-        <button class="detail-close" onclick="closePnPreview()">&times;</button>
+        <!-- Silang digambar sebagai SVG, bukan karakter &times;. Karakter itu
+             punya tinggi & sisi kosong (bearing) yang berbeda-beda menurut
+             muka hurufnya, jadi mustahil benar-benar berada di tengah kotak
+             tombol tanpa menambal margin secara coba-coba. Sebagai SVG, ia
+             memakai kotak pandang 24x24 yang simetris — titik tengahnya
+             pasti — dan ketebalan guratnya sama persis dengan ikon printer
+             & layar penuh di sebelahnya. -->
+        <button class="detail-close" onclick="closePnPreview()" title="Tutup" aria-label="Tutup">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
       </div>
     </div>
     <div class="pn-preview-body" id="pn-preview-body"></div>
