@@ -30,6 +30,13 @@ const TOR_RAB_JUDUL_W = 240;
 /* Lebar minimum kolom "Jumlah Total (Rp)" pada cetakan RAB, dalam PERSEN
    lebar tabel — lihat alasannya di torRabDocHtml. */
 const TOR_RAB_JT_MIN  = 11.5;
+/* Lebar tiap kolom penanda tangan pada blok pengesahan (PERSEN lebar lembar).
+   Dulu 33,33% (tiga kolom sama rata) sehingga nama panjang seperti
+   "LUTHER RANSKIE WASILANE" (±159pt pada Arial tebal 11pt) pecah dua baris.
+   44% dari lebar isi A4 (±451pt) = ±198pt, cukup untuk nama terpanjang yang
+   wajar. Nilai HARUS di antara 33,4 dan 50: di bawah 33,4 kisi lima kolomnya
+   (lihat torTtdCols) jadi negatif, di 50 celah tengahnya habis. */
+const TOR_TTD_KOL_W   = 44;
 const TOR_TABLE   = 'dokumen_tor';
 const TOR_KODE    = 'TOR';                                     /* kode dokumen di nomor */
 const TOR_UNIT    = (typeof PN_UNIT!=='undefined') ? PN_UNIT : 'F17060000';
@@ -1782,6 +1789,8 @@ function torDocCss(wKl, wBab){
      bukan di bawah penanda "I."-nya. Itulah pola inden bertingkat Word:
      penomoran tingkat 2 sejajar dengan TEKS tingkat 1, bukan dengan nomornya. */
   const LV2=WB;
+  /* Lebar kisi blok pengesahan tanda tangan (lihat torTtdCols). */
+  const _ttdW=torTtdCols();
   return ''+
   /* ================= PENOMORAN MENGIKUTI TEMPLATE WORD =================
      Bawaan mesin SPK menomori judul klausul lewat penghitung CSS
@@ -1863,10 +1872,19 @@ function torDocCss(wKl, wBab){
     'background:#14346B;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   '.tor-cv .tor-th span{font-size:7pt;font-weight:600;letter-spacing:.18em;opacity:.75}'+
   '.tor-cv .tor-th b{font-size:11pt;font-weight:700;letter-spacing:.02em}'+
+  /* Garis pemisah di bawah kop DAN garis di atas kaki halaman sengaja ditulis
+     sebagai SATU aturan: keduanya harus terlihat seragam, dan menyatukannya
+     membuat perubahan berikutnya mustahil menyimpang di salah satu sisi. */
+  '.tor-cv .tor-kop-g,.tor-cv .tor-kaki-g{height:.75pt;background:#E3E8F1;'+
+    '-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  /* Jaraknya mencerminkan kaki halaman: di sana 16pt sebelum garis lalu 12pt
+     sesudahnya. Di kop angkanya sedikit lebih longgar (15 / 26) karena yang
+     mengikuti garis adalah blok judul, bukan satu baris teks. */
+  '.tor-cv .tor-kop-g{margin-top:15pt}'+
   /* Rancangan ini TIDAK memakai garis kuning pendek di bawah judul — garis itu
      sudah diwakili ujung atas batang tegak, jadi nomor dokumen langsung
      menempel di bawah judul. */
-  '.tor-cv .tor-judul{margin-top:32pt}'+
+  '.tor-cv .tor-judul{margin-top:26pt}'+
   '.tor-cv .tor-kelopak{font-size:8pt;font-weight:600;letter-spacing:.22em;color:#2F5698;margin-bottom:10pt}'+
   '.tor-cv h1.tor-tt{margin:0;font-size:29pt;font-weight:700;line-height:1.16;'+
     'letter-spacing:-.02em;color:#14346B}'+
@@ -1894,7 +1912,6 @@ function torDocCss(wKl, wBab){
   '.tor-cv .ko.tor-terb .ko-isi{font-style:italic;font-weight:400;font-size:10pt}'+
   /* margin-top:auto mendorong kaki ke dasar kertas berapa pun panjang isinya. */
   '.tor-cv .tor-kaki{margin-top:auto;padding-top:16pt}'+
-  '.tor-cv .tor-kaki-g{height:.75pt;background:#E3E8F1;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   '.tor-cv .tor-unit{margin-top:12pt;font-size:9.4pt;font-weight:700;line-height:1.45;'+
     'letter-spacing:.05em;text-transform:uppercase}'+
   /* Alamat kantor: keterangan, bukan judul — bobot normal & warna abu. */
@@ -1996,11 +2013,16 @@ function torDocCss(wKl, wBab){
      di tengah lembar. Nama TIDAK digarisbawahi — mengikuti berkas Word yang
      hanya menebalkannya. */
   '.tor-ttd{margin-top:24pt;font-size:11pt;line-height:'+spkLHCss(1.15)+';color:#000}'+
-  '.tor-ttd .tgl{text-align:right;margin-bottom:10pt}'+
+  /* Tempat & tanggal DUDUK DI ATAS kolom kanan dan rata tengah terhadapnya —
+     bukan rata kanan lembar — supaya sejajar dengan penanda tangan di bawahnya. */
+  '.tor-ttd .tgl{width:'+_ttdW.w+'%;margin:0 0 10pt auto;text-align:center}'+
   '.tor-ttd table.tt{width:100%;border-collapse:collapse;table-layout:fixed}'+
   '.tor-ttd table.tt td{border:0;padding:0;vertical-align:top}'+
   '.tor-ttd td.kol{text-align:center}'+
-  '.tor-ttd td.gap{width:33.33%}'+
+  /* Kisi lima kolom — lihat torTtdCols() untuk asal-usul angkanya. */
+  '.tor-ttd table.tt col.k1,.tor-ttd table.tt col.k5{width:'+_ttdW.a+'%}'+
+  '.tor-ttd table.tt col.k2,.tor-ttd table.tt col.k4{width:'+_ttdW.b+'%}'+
+  '.tor-ttd table.tt col.k3{width:'+_ttdW.c+'%}'+
   '.tor-ttd .cap{margin-bottom:2pt}'+
   '.tor-ttd .jab{font-weight:700}'+
   /* Ruang bubuh tanda tangan & cap */
@@ -2062,6 +2084,7 @@ function torCoverHtml(data, ctx){
         '<div class="tor-kop-sp"></div>'+
         '<div class="tor-th"><span>TAHUN</span><b>'+esc(ctx.tahun_dokumen||'')+'</b></div>'+
       '</div>'+
+      '<div class="tor-kop-g"></div>'+
 
       '<div class="tor-judul">'+
         '<div class="tor-kelopak">DOKUMEN PENGADAAN BARANG/JASA</div>'+
@@ -2204,10 +2227,24 @@ function torPenutupHtml(){
     '<div class="spk-cl"><p class="kl0">'+fkEsc(TOR_PENUTUP_TEKS)+'</p></div>'+
   '</div>';
 }
+/* ---- Kisi LIMA kolom untuk blok tanda tangan ----
+   Tabelnya harus melayani dua bentuk baris sekaligus:
+     baris atas  : penanda tangan KIRI (lebar W) | celah | penanda tangan KANAN (W)
+     baris bawah : pengesah TUNGGAL selebar W, tepat di TENGAH lembar
+   Dengan tiga kolom sama rata keduanya kebetulan pas, tapi begitu W dilebarkan
+   melewati 33,33% batas kolomnya tidak lagi berimpit. Karena itu lembar dibagi
+   lima kolom pada SEMUA titik potong yang dibutuhkan (0, 50-W/2, W, 100-W,
+   50+W/2, 100), lalu tiap sel memakai colspan:
+     kiri = k1+k2 | celah = k3 | kanan = k4+k5 | pengesah = k2+k3+k4
+   Semua lebar diturunkan dari satu angka W supaya tetap simetris. */
+function torTtdCols(){
+  const w=TOR_TTD_KOL_W;
+  return { w:w, a:(50-w/2), b:(1.5*w-50), c:(100-2*w) };
+}
 /* ---- BLOK PENGESAHAN TANDA TANGAN ----
    Susunannya mengikuti lampiran TOR/KAK (tabel 3 kolom di akhir dokumen):
 
-       Masohi, <tanggal dokumen>                    <- rata kanan
+       Masohi, <tanggal dokumen>          <- rata TENGAH atas kolom kanan
        Diperiksa oleh;                Disusun oleh;
        <jabatan direksi>              <jabatan pengawas>      (tebal)
        [ruang tanda tangan]
@@ -2223,6 +2260,10 @@ function torPenutupHtml(){
    dan "Disusun oleh" jatuh ke Direksi Pekerjaan supaya tidak ada kotak tanda
    tangan tanpa nama.
 
+   Lebar tiap kolom penanda tangan = TOR_TTD_KOL_W (44%), bukan sepertiga
+   lembar, supaya nama panjang seperti "LUTHER RANSKIE WASILANE" muat satu
+   baris. Kisi kolomnya dihitung torTtdCols().
+
    Kelas .spk-keep membuat paginator memperlakukan blok ini sebagai SATU
    kesatuan: bila sisa lembar tidak cukup, seluruhnya turun bersama ke lembar
    berikutnya — tanda tangan tidak pernah terpisah dari nama & jabatannya. */
@@ -2233,20 +2274,24 @@ function torTtdHtml(ctx){
   const pgwN=nm(ctx.nama_pengawas), pgwJ=String(ctx.jabatan_pengawas||'').trim();
   const pguN=nm(ctx.nama_pengguna), pguJ=String(ctx.jabatan_pengguna||'').trim();
   const adaPgw=!!(pgwN||pgwJ);
-  const kolom=(cap,jab,nama)=>'<td class="kol">'+
+  const kolom=(cap,jab,nama,cs)=>'<td class="kol" colspan="'+cs+'">'+
       '<div class="cap">'+esc(cap)+'</div>'+
       '<div class="jab">'+esc(jab||'\u2014')+'</div>'+
       '<div class="sp"></div>'+
       '<div class="nm">'+esc(nama||'\u2014')+'</div>'+
     '</td>';
-  /* Baris atas: dua penanda tangan bila ada Pengawas, satu bila tidak. */
+  /* Baris atas: dua penanda tangan bila ada Pengawas, satu bila tidak.
+     Tanpa Pengawas, penanda tangan tunggal tetap jatuh di kolom KANAN — celah
+     kirinya cukup satu sel colspan 3 (k1+k2+k3). */
   const atas = adaPgw
-    ? '<tr>'+kolom('Diperiksa oleh;',dirJ,dirN)+'<td class="gap"></td>'+kolom('Disusun oleh;',pgwJ,pgwN)+'</tr>'
-    : '<tr><td class="gap"></td><td class="gap"></td>'+kolom('Disusun oleh;',dirJ,dirN)+'</tr>';
+    ? '<tr>'+kolom('Diperiksa oleh;',dirJ,dirN,2)+'<td class="gap"></td>'+kolom('Disusun oleh;',pgwJ,pgwN,2)+'</tr>'
+    : '<tr><td class="gap" colspan="3"></td>'+kolom('Disusun oleh;',dirJ,dirN,2)+'</tr>';
+  const cg='<colgroup><col class="k1"><col class="k2"><col class="k3">'+
+    '<col class="k4"><col class="k5"></colgroup>';
   return '<div class="tor-ttd spk-keep">'+
     '<div class="tgl">'+esc(ctx.tempat_tanggal||'')+'</div>'+
-    '<table class="tt"><tbody>'+atas+
-      '<tr><td class="gap"></td>'+kolom('Disahkan oleh;',pguJ,pguN)+'<td class="gap"></td></tr>'+
+    '<table class="tt">'+cg+'<tbody>'+atas+
+      '<tr><td class="gap"></td>'+kolom('Disahkan oleh;',pguJ,pguN,3)+'<td class="gap"></td></tr>'+
     '</tbody></table>'+
   '</div>';
 }
@@ -2371,7 +2416,7 @@ function torTtdHpsHtml(kiri, kanan){
 }
 
 /* Blok tanda tangan RAB \u2014 FORMASI-nya mengikuti dokumen TOR/KAK
-   (lihat torTtdHtml): tanggal rata kanan, lalu tabel 3 kolom berisi
+   (lihat torTtdHtml): tanggal rata tengah di atas kolom kanan, lalu tabel
      baris 1 : "Diperiksa oleh;" (Direksi)  +  "Disusun oleh;" (Pengawas)
      baris 2 : "Disahkan oleh;" (Pengguna) di TENGAH
    Bila Pengawas Pekerjaan tidak ada, baris 1 menyusut jadi satu penanda
@@ -2386,20 +2431,22 @@ function torTtdRabHtml(data){
   const pgwN=up(data.nama_pengawas), pgwJ=String(data.jabatan_pengawas||'').trim();
   const pguN=up(data.nama_pengguna), pguJ=String(data.jabatan_pengguna||'').trim();
   const adaPgw=!!(pgwN||pgwJ);
-  const kol=(cap,jab,nama)=>'<td><div class="hps-topgap"></div>'+
+  const kol=(cap,jab,nama,cs)=>'<td colspan="'+cs+'"><div class="hps-topgap"></div>'+
       '<div class="role">'+esc(cap)+'</div>'+
       '<div class="role2">'+esc(jab||'\u2014')+'</div>'+
       '<div class="gap"></div>'+
       '<div class="nm nm-up">'+esc(nama||'(..........................)')+'</div></td>';
-  const kosong='<td class="kosong"></td>';
+  const kosong=(cs)=>'<td class="kosong" colspan="'+cs+'"></td>';
   const atas = adaPgw
-    ? '<tr>'+kol('Diperiksa oleh;',dirJ,dirN)+kosong+kol('Disusun oleh;',pgwJ,pgwN)+'</tr>'
-    : '<tr>'+kosong+kosong+kol('Disusun oleh;',dirJ,dirN)+'</tr>';
+    ? '<tr>'+kol('Diperiksa oleh;',dirJ,dirN,2)+kosong(1)+kol('Disusun oleh;',pgwJ,pgwN,2)+'</tr>'
+    : '<tr>'+kosong(3)+kol('Disusun oleh;',dirJ,dirN,2)+'</tr>';
+  const cg='<colgroup><col class="k1"><col class="k2"><col class="k3">'+
+    '<col class="k4"><col class="k5"></colgroup>';
   const tgl=TOR_KOTA_TTD+', '+(typeof spkDateLong==='function'?spkDateLong(data.tgl_dokumen):'');
   return '<div class="rab-ttd">'+
     '<div class="ttd-date rab-tgl">'+esc(tgl)+'</div>'+
-    '<table class="ttd ttd3"><tbody>'+atas+
-      '<tr>'+kosong+kol('Disahkan oleh;',pguJ,pguN)+kosong+'</tr>'+
+    '<table class="ttd ttd3">'+cg+'<tbody>'+atas+
+      '<tr>'+kosong(1)+kol('Disahkan oleh;',pguJ,pguN,3)+kosong(1)+'</tr>'+
     '</tbody></table></div>';
 }
 
@@ -2512,18 +2559,27 @@ function torRabDocHtml(data){
     '</tbody></table>'+
     tbl+
   '</div>';
+  const _ttdW=torTtdCols();
   return fklDocShell(hpsExtraDocCss()+
     '.rab-jd{margin:16px 0 4px}'+
     '.rab-jd .fkl-doc-titlegap{height:6px}'+
     /* Jarak Nama/Lokasi Pekerjaan ke tabel rincian */
     'table.fkl-info.rab-info{margin-bottom:12px}'+
     /* --- Tanda tangan 3 kolom (formasi TOR/KAK) ---
-       `tr.ttd-row .ttd td{width:50%}` bawaan gaya HPS dibuat untuk DUA kolom,
-       jadi varian .ttd3 memakai sepertiga lebar & kolom penyeimbang kosong. */
-    'tr.ttd-row .ttd.ttd3 td{width:33.33%}'+
+       `tr.ttd-row .ttd td{width:50%}` bawaan gaya HPS dibuat untuk DUA kolom.
+       Varian .ttd3 memakai kisi LIMA kolom yang sama dengan blok tanda tangan
+       TOR/KAK (lihat torTtdCols) supaya kolom penanda tangan bisa dilebarkan
+       melewati sepertiga lembar tanpa merusak letak pengesah di tengah.
+       `table-layout:fixed` WAJIB — tanpa itu lebar <col> hanya jadi usulan dan
+       kolom penyeimbang yang kosong akan menyusut sendiri. */
+    'tr.ttd-row .ttd.ttd3{table-layout:fixed;width:100%}'+
+    'tr.ttd-row .ttd.ttd3 col.k1,tr.ttd-row .ttd.ttd3 col.k5{width:'+_ttdW.a+'%}'+
+    'tr.ttd-row .ttd.ttd3 col.k2,tr.ttd-row .ttd.ttd3 col.k4{width:'+_ttdW.b+'%}'+
+    'tr.ttd-row .ttd.ttd3 col.k3{width:'+_ttdW.c+'%}'+
     'tr.ttd-row .ttd.ttd3 td.kosong{padding:0}'+
     'tr.ttd-row .ttd.ttd3 tr + tr td{padding-top:10px}'+
-    '.rab-ttd .rab-tgl{text-align:right;margin:0 12px 6px 0}'+
+    /* Tempat & tanggal rata tengah DI ATAS kolom kanan, sama seperti TOR/KAK. */
+    '.rab-ttd .rab-tgl{text-align:center;width:'+_ttdW.w+'%;margin:0 0 6px auto}'+
     /* "Jumlah Total" satu baris; satu-satunya pemenggalan datang dari <br>
        sebelum "(Rp)". Menimpa aturan bawaan thead th{overflow-wrap:break-word}. */
     'table.hps-doc-tbl thead th.jt{white-space:nowrap;overflow-wrap:normal;word-break:keep-all}', isi);
