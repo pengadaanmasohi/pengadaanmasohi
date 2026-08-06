@@ -30,6 +30,8 @@ const TOR_RAB_JUDUL_W = 240;
 /* Lebar minimum kolom "Jumlah Total (Rp)" pada cetakan RAB, dalam PERSEN
    lebar tabel — lihat alasannya di torRabDocHtml. */
 const TOR_RAB_JT_MIN  = 11.5;
+/* Jarak (px) dari baris nomor dokumen ke baris "Nama Pekerjaan" pada cetakan RAB. */
+const TOR_RAB_GAP_NODOK = 16;
 /* Lebar tiap kolom penanda tangan pada blok pengesahan (PERSEN lebar lembar).
    Dulu 33,33% (tiga kolom sama rata) sehingga nama panjang seperti
    "LUTHER RANSKIE WASILANE" (±159pt pada Arial tebal 11pt) pecah dua baris.
@@ -48,6 +50,14 @@ const TOR_TTD_KOL_W   = 44;
    12,5px tebal). Pada t=9 sisanya ±221px. Lembar TOR/KAK TIDAK diberi tepi ini
    karena di sana cadangannya sudah tipis. */
 const TOR_TTD_RAB_TEPI = 9;
+/* Lebar blok tanda tangan penyedia pada lembar BoQ di dalam klausul TOR
+   (PERSEN lebar badan klausul). Di berkas BoQ.xlsx blok itu menempati kolom
+   6 sampai 9 dari 9 kolom — kira-kira 45% lembar, rata tengah di dalamnya —
+   dan angka di bawah meniru proporsi tersebut. */
+const TOR_BOQ_TTD_W = 46;
+/* Jarak (pt) dari klausul Bill of Quantity ke klausul sesudahnya. Lihat aturan
+   .tor-boq-cl di torDocCss untuk alasan jaraknya dipasang sebagai margin BAWAH. */
+const TOR_BOQ_JARAK_PT = 24;
 const TOR_TABLE   = 'dokumen_tor';
 const TOR_KODE    = 'TOR';                                     /* kode dokumen di nomor */
 const TOR_UNIT    = (typeof PN_UNIT!=='undefined') ? PN_UNIT : 'F17060000';
@@ -693,6 +703,128 @@ function torExtendCtx(ctx, d){
   };
 })();
 
+/* ===================== 6b. SPASI DI SEKITAR TEKS MIRING TIDAK HILANG =====
+   LAPORAN 6 Agu 2026: "beberapa kalimat, terutama yang italic, di template ada
+   spasi tetapi saat dirender ke klausul kalimatnya nyambung"
+   (mis. "melalui Online Single Submission" -> "melaluiOnline Single Submission").
+
+   SEBABNYA. Pembaca .docx (spkWpText) membungkus SETIAP run Word tersendiri.
+   Word kerap menyimpan spasi pemisah sebagai RUN SENDIRI dengan format yang
+   sama seperti tetangganya — jadi spasi di sebelah kata miring keluar sebagai
+   `<i> </i>`, dan spasi di sebelah kata tebal sebagai `<b> </b>`. Lalu pada
+   spkMerge() (susun-kontrak.js) ada pembersih pembungkus hampa:
+
+       out.replace(/<(b|i|u|strong|em)>\s*<\/\1>/gi, '')
+
+   Pola `\s*` di situ IKUT MENELAN spasinya, sehingga pembungkus DAN spasinya
+   terhapus sekaligus dan dua kata menempel. Gejalanya paling sering terlihat
+   pada istilah asing karena istilah asing-lah yang dimiringkan.
+
+   PENAWARNYA (fungsi di bawah): SEBELUM isi masuk spkMerge, spasi dipindahkan
+   KELUAR dari pembungkus <b>/<i>/<u>/<strong>/<em>:
+     - pembungkus yang isinya HANYA spasi   -> dibuka, spasinya jadi teks biasa;
+     - spasi di TEPI DALAM pembungkus        -> dikeluarkan ke sebelahnya.
+   Hasilnya: pembersih pembungkus hampa di spkMerge tetap bekerja (pembungkus
+   yang benar-benar kosong, mis. `<b>{{kode_kosong}}</b>`, tetap terbuang) tanpa
+   pernah ikut memakan spasi. Tampilan tebal/miring TIDAK berubah sama sekali —
+   spasi memang tak punya bentuk miring.
+
+   Dipasang sebagai tempelan spkMerge (pola yang sama dengan spkBuildCtx di
+   atas) supaya berlaku untuk SELURUH dokumen — TOR/KAK, Surat Perintah Kerja,
+   maupun Perjanjian/Kontrak — tanpa menyentuh susun-kontrak.js. */
+function torSpasiAman(html){
+  var s=String(html==null?'':html);
+  if(s.indexOf('<')<0) return s;
+  if(!/<(?:b|i|u|strong|em)\b/i.test(s)) return s;
+  try{
+    var box=document.createElement('div'); box.innerHTML=s;
+    var els=box.querySelectorAll('b,i,u,strong,em'), i, el;
+    /* Dari BELAKANG = dari pembungkus terdalam lebih dulu (urutan dokumen
+       menempatkan induk sebelum anaknya), jadi membuka pembungkus luar tidak
+       pernah membatalkan pekerjaan pada pembungkus di dalamnya. */
+    for(i=els.length-1;i>=0;i--){
+      el=els[i];
+      if(!el.parentNode) continue;                       /* leluhurnya sudah dibuka */
+      var teks=el.textContent||'';
+      if(teks==='') continue;                            /* benar-benar kosong: biar spkMerge yang buang */
+      if(!/[^\s\u00A0]/.test(teks)){                     /* isinya HANYA spasi -> buka bungkusnya */
+        el.parentNode.insertBefore(document.createTextNode(teks), el);
+        el.parentNode.removeChild(el);
+        continue;
+      }
+      /* --- spasi di tepi DALAM dikeluarkan --- */
+      var n1=el.firstChild;
+      while(n1 && n1.nodeType===1) n1=n1.firstChild;
+      if(n1 && n1.nodeType===3 && n1.nodeValue){
+        var m1=/^[\s\u00A0]+/.exec(n1.nodeValue);
+        if(m1){
+          n1.nodeValue=n1.nodeValue.slice(m1[0].length);
+          el.parentNode.insertBefore(document.createTextNode(m1[0]), el);
+        }
+      }
+      var n2=el.lastChild;
+      while(n2 && n2.nodeType===1) n2=n2.lastChild;
+      if(n2 && n2.nodeType===3 && n2.nodeValue){
+        var m2=/[\s\u00A0]+$/.exec(n2.nodeValue);
+        if(m2){
+          n2.nodeValue=n2.nodeValue.slice(0, n2.nodeValue.length-m2[0].length);
+          if(el.nextSibling) el.parentNode.insertBefore(document.createTextNode(m2[0]), el.nextSibling);
+          else el.parentNode.appendChild(document.createTextNode(m2[0]));
+        }
+      }
+    }
+    return box.innerHTML;
+  }catch(e){ return s; }
+}
+/* ===================== 6c. JARAK BARIS "PT PLN (PERSERO)" PADA KOP =====================
+   KETENTUAN 6 Agu 2026: pada kop dokumen (blok .fkl-doc-head — logo PLN, tiga
+   baris identitas unit, lalu pita pemisah), baris "PT PLN (PERSERO)" dinaikkan
+   sedikit sehingga ada jarak antara baris itu dengan "UNIT PELAKSANA PELAYANAN
+   PELANGGAN MASOHI" di bawahnya. Sebelumnya ketiga baris hanya dipisahkan
+   line-height 1,3 sehingga baris nama perusahaan tampak menempel ke baris unit.
+
+   Dipasang sebagai tempelan fklDocCssPatch() — fungsi di app.js yang isinya
+   memang "penyesuaian yang berlaku untuk SEMUA dokumen cetak". Dengan begitu
+   satu perubahan ini langsung berlaku di SETIAP dokumen yang memakai kop
+   tersebut (RAB, Pakta Integritas, HPS, Analisa, Jadwal, Form Kelengkapan,
+   Dokumen Pengadaan, dst.) tanpa menyentuh app.js maupun index.html.
+
+   Kop berjalan pada TOR/KAK memakai kerangka lain (.spk-rhd, dua baris rapat di
+   sudut lembar), jadi tidak ikut berubah — memang bukan kop yang dimaksud. */
+const TOR_KOP_L1_NAIK  = 2;   /* px — seberapa jauh "PT PLN (PERSERO)" naik */
+const TOR_KOP_L1_JARAK = 4;   /* px — jarak yang dibuka ke baris di bawahnya */
+function torKopCssPatch(){
+  return '.fkl-doc-org .l1{margin-top:-'+TOR_KOP_L1_NAIK+'px;'+
+    'margin-bottom:'+TOR_KOP_L1_JARAK+'px}';
+}
+(function(){
+  if(typeof fklDocCssPatch!=='function') return;
+  if(fklDocCssPatch.__torKop) return;                    /* jangan bertumpuk */
+  var _asliPatch = fklDocCssPatch;
+  var _tempel = function(){
+    var css='';
+    try{ css=_asliPatch.apply(null, arguments)||''; }catch(e){ css=''; }
+    /* ditaruh SESUDAH aturan asal supaya menimpanya pada kekhususan yang sama */
+    return css + torKopCssPatch();
+  };
+  _tempel.__torKop = true;
+  window.fklDocCssPatch = _tempel;
+})();
+
+/* --- TEMPELAN spkMerge: spasi tepi diselamatkan sebelum penggabungan --- */
+(function(){
+  if(typeof spkMerge!=='function') return;
+  if(spkMerge.__torSpasi) return;                        /* jangan bertumpuk */
+  var _asliMerge = spkMerge;
+  var _tempel = function(tpl, ctx){
+    var t=tpl;
+    try{ t=torSpasiAman(tpl); }catch(e){ t=tpl; }
+    return _asliMerge(t, ctx);
+  };
+  _tempel.__torSpasi = true;
+  window.spkMerge = _tempel;
+})();
+
 /* ===================== 7. FORM — ISIAN FIELD ===================== */
 function torSet(k,v){
   if(!torState) return;
@@ -1050,10 +1182,22 @@ function torEnsureStyle(){
       'box-shadow:0 24px 60px rgba(10,30,40,.28)}'+
     '.tor-dk-hd{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;'+
       'background:linear-gradient(90deg,#0E7C86,#12A0A8);color:#fff}'+
-    '.tor-dk-hd b{display:block;font-size:14px}'+
-    '.tor-dk-hd i{display:block;font-style:normal;font-size:11.5px;opacity:.85;margin-top:2px}'+
-    '.tor-dk-hd .x{border:0;background:rgba(255,255,255,.18);color:#fff;width:28px;height:28px;'+
-      'border-radius:8px;font-size:18px;line-height:1;cursor:pointer;flex:none}'+
+    /* Judul MELIPAT, tombol TIDAK MENGECIL (ketentuan 6 Agu 2026: "tombol x
+       sepertinya gepeng karena nama pekerjaan terlalu panjang"). Penyebabnya
+       flex-shrink bawaan: tombol ikut menyusut saat judul mendesak. Kolom judul
+       diberi flex:1 1 auto + min-width:0 supaya DIA yang melipat, sedangkan
+       kelompok tombol dikunci flex:none. */
+    '.tor-dk-hd .jd{flex:1 1 auto;min-width:0}'+
+    '.tor-dk-hd b{display:block;font-size:14px;line-height:1.35;'+
+      'white-space:normal;overflow-wrap:anywhere;word-break:normal}'+
+    '.tor-dk-hd .act{flex:0 0 auto;display:flex;align-items:center;gap:8px}'+
+    '.tor-dk-hd .x,.tor-dk-hd .pr{border:0;background:rgba(255,255,255,.18);color:#fff;'+
+      'width:28px;height:28px;flex:0 0 28px;border-radius:8px;line-height:1;cursor:pointer;'+
+      'display:flex;align-items:center;justify-content:center;padding:0;'+
+      'transition:background .15s ease}'+
+    '.tor-dk-hd .x{font-size:18px}'+
+    '.tor-dk-hd .x:hover,.tor-dk-hd .pr:hover{background:rgba(255,255,255,.34)}'+
+    '.tor-dk-hd .pr svg{width:15px;height:15px}'+
     '.tor-dk-bd{padding:12px;display:flex;flex-direction:column;gap:8px;max-height:70vh;overflow:auto}'+
     '.tor-dk-row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 14px;'+
       'border:1px solid #E3EAF2;border-radius:12px;background:#fff;cursor:pointer;'+
@@ -2055,7 +2199,102 @@ function torDocCss(wKl, wBab){
   '.tor-ttd .sp{height:2.2cm}'+
   '.tor-ttd .nm{font-weight:700}'+
   /* Jarak antara tabel penanda tangan atas dengan tabel pengesah */
-  '.tor-ttd table.tt.tt-b{margin-top:14pt}';
+  '.tor-ttd table.tt.tt-b{margin-top:14pt}'+
+  /* ---- Tabel Bill of Quantity di dalam klausul (lihat torBoqTabelHtml) ----
+     Gaya tabelnya sendiri (warna kop, garis, baris rekap) sudah datang dari
+     hpsExtraDocCss() yang ikut disisipkan torDocHtml, jadi di sini hanya
+     posisinya yang diatur: lurus dengan kolom teks klausul (margin-left
+     diwarisi dari .spk-cl), diberi jarak dari kalimat di atasnya, dan
+     text-indent klausul dinolkan supaya tabel tidak tertarik menjorok. */
+  /* ---- LEBAR BLOK BoQ = LEBAR BIDANG CETAK HALAMAN ----
+     KETENTUAN 6 Agu 2026: "batas kanan tabel BoQ mengikuti margin yang telah
+     ditentukan pada halaman". Badan klausul (.spk-cl) menjorok LV2 cm dari
+     bidang cetak karena harus sejajar dengan teks judul bab; bila tabel 9 kolom
+     ikut menjorok, sisi kirinya masuk ke dalam sedangkan sisi kanannya sudah
+     mentok margin — tabelnya jadi sempit sebelah dan kolom harga terjepit.
+     Jorokan itu ditarik balik dengan margin kiri NEGATIF sebesar LV2, lalu
+     lebarnya ditambah sebanyak itu pula, sehingga blok BoQ terbentang PERSIS
+     dari margin kiri sampai margin kanan halaman — sama seperti lembar
+     BoQ.xlsx yang selama ini ditempel sebagai gambar. */
+  '.spk-cl .tor-boq{margin:2pt 0 2pt -'+LV2.toFixed(2)+'cm;'+
+    'width:calc(100% + '+LV2.toFixed(2)+'cm);max-width:none;text-indent:0;text-align:left}'+
+  /* Tabel Pekerjaan/Lokasi tidak boleh melebar melewati bidang cetak walau
+     nama pekerjaannya panjang — nilainya melipat, bukan meluber. */
+  '.spk-cl .tor-boq table.boq-info{max-width:100%}'+
+  /* ---- JARAK KLAUSUL BoQ KE KLAUSUL SESUDAHNYA ----
+     KETENTUAN 6 Agu 2026: beri jarak TOR_BOQ_JARAK_PT (24 pt) supaya batas
+     antara lembar BoQ dan klausul berikutnya terlihat jelas — tanpa jarak itu
+     judul klausul berikutnya menempel ke garis bawah tabel.
+
+     DIPASANG SEBAGAI MARGIN BAWAH PADA KLAUSUL BoQ, BUKAN MARGIN ATAS PADA
+     KLAUSUL BERIKUTNYA. Inilah kunci syarat kedua ("saat klausul ini hanya muat
+     satu halaman, jarak 24 pt itu tidak boleh mendorong klausul selanjutnya
+     yang berada di awal halaman baru"):
+
+       - klausul berikutnya SEHALAMAN dengan BoQ -> BoQ bukan anak terakhir,
+         margin bawahnya ikut terhitung -> jarak 24 pt tampil, dan paginator pun
+         memperhitungkannya saat menguji apakah klausul itu masih muat;
+       - BoQ menutup halaman (klausul berikutnya mulai di halaman baru) -> BoQ
+         menjadi anak TERAKHIR badan lembar, dan scrollHeight sebuah wadah
+         ber-overflow:hidden TIDAK menghitung margin bawah anak terakhirnya.
+         Jadi 24 pt itu lenyap dengan sendirinya: tidak menambah tinggi halaman,
+         tidak membuat BoQ dinilai "tidak muat", dan tidak menggeser apa pun di
+         halaman berikutnya.
+
+     Kalau jaraknya ditaruh sebagai margin ATAS klausul berikutnya, di halaman
+     baru ia akan tetap memakan 24 pt di puncak lembar saat paginasi berlangsung
+     (rapikanAtasLembar baru menolkannya SESUDAH halaman dipecah), persis yang
+     tidak dikehendaki. */
+  '.spk-doc.spk-spk .spk-clause.tor-boq-cl{margin-bottom:'+TOR_BOQ_JARAK_PT+'pt}'+
+  '.spk-cl .tor-boq table.hps-doc-tbl{margin:0}'+
+  /* ---- Kepala lembar BoQ: kop penyedia + judul + Pekerjaan/Lokasi ---- */
+  /* Semua ukuran huruf di blok ini WAJIB ber-!important dengan selektor yang
+     lebih khusus: mesin dokumen SPK memaksa `.spk-doc .spk-cl *{font-size:11pt
+     !important}` ke seluruh isi klausul. Pemilih `*` dipakai supaya anak-anak
+     tiap blok (bukan hanya wadahnya) ikut terkena. */
+  '.spk-cl .tor-boq .boq-kop{margin:0 0 6px}'+
+  '.spk-cl .tor-boq .boq-kop,'+
+  '.spk-cl .tor-boq .boq-kop *{font-size:9.2px !important}'+
+  '.spk-cl .tor-boq .boq-kop .kp,'+
+  '.spk-cl .tor-boq .boq-kop .jd{font-size:11px !important}'+
+  '.spk-cl .tor-boq .boq-kop .kp{text-align:center;font-weight:700;color:#0070C0;'+
+    'margin:0 0 10px;-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
+  '.spk-cl .tor-boq .boq-kop .jd{text-align:center;font-weight:700;'+
+    'text-decoration:underline;margin:0 0 10px}'+
+  '.spk-cl .tor-boq table.boq-info{border-collapse:collapse;table-layout:auto;'+
+    'width:auto;margin:0 0 8px 6%}'+
+  '.spk-cl .tor-boq table.boq-info td{border:0;padding:0 0 2px;vertical-align:top;'+
+    'line-height:1.35}'+
+  '.spk-cl .tor-boq table.boq-info td.k{font-weight:700;white-space:nowrap;'+
+    'padding-right:2.6cm}'+
+  '.spk-cl .tor-boq table.boq-info td.s{padding-right:.45cm}'+
+  '.spk-cl .tor-boq table.boq-info td.v{text-align:left}'+
+  /* ---- Tanda tangan penyedia: paruh kanan lembar, rata tengah ---- */
+  '.spk-cl .tor-boq .boq-ttd,'+
+  '.spk-cl .tor-boq .boq-ttd *{font-size:9.2px !important}'+
+  '.spk-cl .tor-boq .boq-ttd{width:'+TOR_BOQ_TTD_W+'%;margin:14px 0 0 auto;'+
+    'text-align:center;line-height:1.4}'+
+  '.spk-cl .tor-boq .boq-ttd .pr,'+
+  '.spk-cl .tor-boq .boq-ttd .nm,'+
+  '.spk-cl .tor-boq .boq-ttd .jb{font-weight:700}'+
+  '.spk-cl .tor-boq .boq-ttd .nm{text-decoration:underline}'+
+  /* Ruang bubuh tanda tangan & cap — setara 4 baris kosong di berkas .xlsx. */
+  '.spk-cl .tor-boq .boq-ttd .sp{height:1.9cm}'+
+  /* UKURAN HURUF TABEL HARUS DITULIS ULANG DI SINI — DAN DENGAN !important.
+     Mesin dokumen SPK memaksa SELURUH isi klausul memakai 11pt lewat aturan
+     ber-!important (`.spk-doc .spk-cl *`, `.spk-flow .spk-cl *`,
+     `.spk-sheet .spk-cl *` di spkDocCss/spkDocCss2). Tanpa penimpaan di sini,
+     tabel 9 kolom ikut tercetak 11pt: judul kolom pecah di tengah kata dan
+     kolom terakhir terpotong tepi kertas. Selektor di bawah lebih khusus
+     daripada ketiganya, dan torDocCss() memang blok CSS terakhir. */
+  '.spk-cl .tor-boq table.hps-doc-tbl,'+
+  '.spk-cl .tor-boq table.hps-doc-tbl *{font-size:8.7px !important}'+
+  '.spk-cl .tor-boq table.hps-doc-tbl th,'+
+  '.spk-cl .tor-boq table.hps-doc-tbl td{line-height:1.3;padding:3px 5px}'+
+  /* Judul kolom memenggal antar-KATA saja, bukan di tengah kata
+     ("Barang" tidak boleh jadi "Bara/ng"). */
+  '.spk-cl .tor-boq table.hps-doc-tbl thead th{overflow-wrap:break-word;'+
+    'word-break:normal;hyphens:none}';
 }
 /* ---- Klausul OVERVIEW PEKERJAAN: tanpa cetak tebal ----
    Nilai "Direksi Pekerjaan" & "Pengawas Pekerjaan" tampil tebal karena template
@@ -2323,6 +2562,163 @@ function torTtdHtml(ctx){
     atas+bawah+
   '</div>';
 }
+/* ===================== 10b. PERAPIAN KLAUSUL KHUSUS TOR/KAK =====================
+   Dua ketentuan tata letak TOR/KAK yang BERBEDA dari Surat Perintah Kerja, jadi
+   dikerjakan di sini (susun-kontrak.js tidak disentuh).
+
+   (1) PENOMORAN SUB-BUTIR MENGIKUTI INDUKNYA — "1." lalu "1.1., 1.2., …"
+       Laporan 6 Agu 2026 pada klausul II.7 KUALIFIKASI PENYEDIA BARANG/JASA:
+       di bawah butir "1. Administrasi" sub-butirnya tercetak "7.1., 7.2., 7.3."
+       (ikut nomor klausul) padahal seharusnya "1.1., 1.2., 1.3."; begitu pula
+       di bawah butir "2." seharusnya "2.1., 2.2., …".
+       Mesinnya SUDAH ADA di susun-kontrak.js: spkPkSubNumberFix() menyusun ulang
+       nomor majemuk dari SILSILAH butirnya, bukan dari angka yang tertulis di
+       template. Hanya saja spkPkTidy() memanggilnya PADA CABANG isPk saja —
+       cabang !isPk (yang dipakai SPK dan, karena dipakai ulang, TOR/KAK) langsung
+       ke spkPkIndentStd. Di sini fungsi itu dijalankan lebih dulu KHUSUS untuk
+       TOR/KAK; dokumen SPK & PK tidak berubah perilakunya.
+       spkPkBoxMark() dipanggil duluan karena spkPkSubNumberFix hanya mengenali
+       penanda yang SUDAH dikotakkan (<span class="n">); memanggilnya dua kali
+       aman — paragraf yang sudah punya kotak nomor dilewati.
+
+   (2) TINGKAT TANPA PENOMORAN SEJAJAR JUDUL KLAUSUL
+       Ketentuan 6 Agu 2026: bila sebuah tingkat hanya berupa TEKS tanpa
+       penomoran sedangkan tingkat di bawahnya bernomor (mis. II.4 PENGENDALIAN
+       PEKERJAAN: paragraf "Dalam rangka pengendalian pekerjaan …" lalu butir
+       "1.", "a."), paragraf tanpa nomor itu dirender seperti KLAUSUL TANPA
+       PENOMORAN — teksnya lurus dengan teks judul klausul, sehingga "Dalam
+       rangka" sejajar dengan "PENGENDALIAN PEKERJAAN".
+       spkPkIndentStd() sendiri sudah punya perlakuan itu, tetapi HANYA ketika
+       klausulnya sama sekali tidak punya butir bernomor (_pureNarasi); bila ada
+       butir bernomor, blok pengantar sengaja dijorokkan tipis SPK_PK_LEAD_JUDUL
+       (0,15 cm) darinya. Di sini jorokan tipis itu dinolkan untuk TOR/KAK.
+       Deret bernomor di bawahnya TIDAK ikut bergeser — titik tolaknya (LEAD)
+       tetap dihitung spkPkIndentStd seperti biasa. */
+function torJudulX(){
+  var _D=(typeof spkDX==='function')?spkDX():null;
+  if(typeof SPK_JH_OVR!=='undefined' && SPK_JH_OVR>0) return SPK_JH_OVR;
+  return _D ? Math.round((_D.JUDUL_HANG/566.929)*100)/100 : 0.65;
+}
+/* Luruskan blok PENGANTAR (sebelum butir bernomor pertama) ke kolom teks judul. */
+function torIntroSejajar(html, judulX){
+  var s=String(html==null?'':html);
+  if(!(judulX>0)) return s;
+  try{
+    var box=document.createElement('div'); box.innerHTML=s;
+    var tepi=judulX.toFixed(2)+'cm', anak=box.children, i, el;
+    for(i=0;i<anak.length;i++){
+      el=anak[i];
+      /* berhenti di butir bernomor PERTAMA — sisanya milik mesin inden */
+      if(el.tagName==='P' && el.querySelector && el.querySelector('span.n')) break;
+      if(!(el.textContent||'').replace(/[\s\u00A0]/g,'')) continue;      /* baris kosong */
+      if(el.classList && (el.classList.contains('spk-cl-h')||el.classList.contains('spk-bab')||
+         el.classList.contains('spk-ph'))) continue;
+      el.style.marginLeft=tepi;
+      el.style.paddingLeft='0cm';
+      if(parseFloat(el.style.textIndent)<0) el.style.textIndent='0cm';
+      if(typeof spkKvResetInner==='function') spkKvResetInner(el);
+    }
+    return box.innerHTML;
+  }catch(e){ return s; }
+}
+function torKlTidy(html){
+  var h=String(html==null?'':html);
+  try{ h=spkPkSubNumberFix(spkPkBoxMark(h)); }catch(e){}
+  var out=spkPkTidy(h, false);
+  try{ out=torIntroSejajar(out, torJudulX()); }catch(e){}
+  return out;
+}
+
+/* ===================== 10c. BoQ SELALU UTUH DALAM SATU HALAMAN =====================
+   KETENTUAN 6 Agu 2026: "BoQ ditampilkan di satu halaman penuh; apabila tidak
+   muat, dialihkan ke halaman berikutnya".
+
+   Paginator (spkPageScript) sudah punya mekanismenya: blok ber-kelas `spk-keep`
+   diperlakukan ATOM — tidak pernah dipenggal, dan bila sisa ruang di halaman
+   berjalan tidak cukup, seluruhnya dipindah ke halaman berikutnya.
+
+   MENGAPA KELASNYA DIPASANG LEWAT SKRIP, BUKAN LANGSUNG DI HTML.
+   Pada paginator itu, blok atom yang ternyata LEBIH TINGGI daripada satu
+   halaman tidak punya jalan keluar: ia ditempel apa adanya ke lembar kosong
+   (lihat cabang `if(kosong())` di put()), sedangkan badan lembar ber-
+   `overflow:hidden` — jadi kelebihannya TERPOTONG DIAM-DIAM. Untuk BoQ, itu
+   berarti baris-baris terakhir beserta rekap & tanda tangannya bisa raib tanpa
+   peringatan — bahaya nyata pada dokumen pengadaan.
+
+   Karena itu tinggi blok DIUKUR dulu di peramban:
+     muat dalam satu halaman  -> diberi `spk-keep` (pindah utuh, sesuai
+                                 permintaan);
+     lebih tinggi dari halaman -> `spk-keep` DILEPAS, blok kembali boleh
+                                 terpenggal seperti sebelumnya — kepala tabel
+                                 diulang di halaman lanjutan dan rekap +
+                                 tanda tangan tetap menyatu (tbody.hps-tail
+                                 sudah atom sejak semula).
+
+   Tinggi halaman dihitung dengan rumus yang SAMA PERSIS dengan spkPageScript:
+   246,2mm (A4 dikurangi margin 2,54cm) + 26,8mm yang direbut kembali oleh
+   margin negatif kop/kaki, dikurangi tinggi kop & kaki berjalan.
+
+   Skrip ini WAJIB diletakkan SEBELUM spkPageScript di dalam <body>: keduanya
+   menunggu document.fonts.ready, dan callback promise berjalan menurut urutan
+   pendaftaran — jadi pengukuran di sini selalu selesai sebelum halaman dipecah. */
+function torBoqFitScript(){
+  var js=[
+    '(function(){',
+    'var SUDAH=false;',
+    'function mm2px(mm){var d=document.createElement("div");',
+    ' d.style.cssText="position:absolute;visibility:hidden;left:-9999px;height:"+mm+"mm";',
+    ' document.body.appendChild(d);var h=d.getBoundingClientRect().height;',
+    ' d.parentNode.removeChild(d);return h;}',
+    'function jalan(){',
+    ' if(SUDAH) return;',
+    ' try{',
+    '  var bq=document.querySelectorAll(".spk-doc .tor-boq");',
+    '  if(!bq.length){ SUDAH=true; return; }',
+    /* 246,2 + 26,8 — lihat PH & EXPK di spkPageScript */
+    '  var PH=mm2px(273);',
+    '  if(!PH||PH<200) return;',                       /* CSS/font belum siap: tunggu panggilan berikutnya */
+    '  var hh=0, fh=0;',
+    '  var sec=document.querySelector(".spk-doc .spk-page.spk-flow");',
+    '  if(sec){',
+    '   var run=sec.querySelector("table.spk-run");',
+    '   if(run){',
+    '    var th=run.querySelector("thead > tr > td"), tf=run.querySelector("tfoot > tr > td");',
+    '    if(th) hh=th.getBoundingClientRect().height;',
+    '    if(tf) fh=tf.getBoundingClientRect().height;',
+    '   }',
+    '  }',
+    /* CADANGAN 8mm. Tinggi kop & kaki di sini diukur dari sel <td> di dalam
+       table.spk-run, sedangkan paginator memakai tinggi <div class="sh-hd/ft">
+       hasil salinan sel itu — keduanya berdekatan tapi tidak identik (terukur
+       selisih ~18px pada BoQ yang panjangnya pas-pasan, dan blok itu lalu
+       terpotong diam-diam). Ambang sengaja dibuat PELIT: salah menilai "tidak
+       muat" hanya membuat BoQ terpenggal seperti perilaku lama, sedangkan
+       salah menilai "muat" berarti barisnya hilang dari dokumen. */
+    '  var muat=PH-hh-fh-6-mm2px(8);',
+    '  for(var i=0;i<bq.length;i++){',
+    '   var h=bq[i].getBoundingClientRect().height;',
+    '   if(h>0 && h<=muat) bq[i].classList.add("spk-keep");',
+    '   else bq[i].classList.remove("spk-keep");',
+    '  }',
+    '  SUDAH=true;',
+    ' }catch(e){ SUDAH=true; try{ console.error("tor boq fit:", e); }catch(_){} }',
+    '}',
+    'function pasang(){',
+    ' try{',
+    '  if(document.fonts && document.fonts.ready && document.fonts.ready.then){',
+    '   document.fonts.ready.then(jalan);',
+    '   setTimeout(jalan, 2900);',                     /* cadangan, mendahului 3000ms milik paginator */
+    '   return;',
+    '  }',
+    ' }catch(e){}',
+    ' jalan();',
+    '}',
+    'if(document.readyState==="loading") window.addEventListener("load", pasang); else pasang();',
+    '})();'
+  ].join('\n');
+  return '<scr'+'ipt>'+js+'</scr'+'ipt>';
+}
+
 /* ---- Dokumen lengkap ----
    Pipeline & KISI INDEN dipakai ulang dari Surat Perintah Kerja (bungkus
    .spk-doc.spk-spk), sehingga inden klausul TOR = inden SPK. */
@@ -2356,7 +2752,38 @@ function torDocHtml(data, klausul){
   const babHead=(s)=>'<div class="spk-cl-h tor-babh"><span class="n" data-no="'+fkEsc(s.rom)+'."></span>'+
     fkEsc(s.babNama)+'</div>';
   const clauses=klausul.map((k,i)=>{
-    const s=str[i], inner=spkPkTidy(pre[i], false);
+    const s=str[i];
+    let inner=torKlTidy(pre[i]);
+    /* ---- Klausul BILL OF QUANTITY ----
+       Isinya dibangkitkan seluruhnya dari RAB (torBoqBlokHtml), sehingga selalu
+       mengikuti RAB tanpa perlu menempel gambar lagi.
+
+       TEKS KLAUSULNYA SENDIRI TIDAK IKUT KE DOKUMEN (ketentuan 6 Agu 2026:
+       "hapus tulisan Sesuai RAB (tanpa nilai)"). Penyusun bebas menulis catatan
+       di klausul itu pada template Word (mis. "Data mengikuti dokumen Bill of
+       Quantity.xlsx"); catatannya tetap tersimpan di pustaka klausul dan tetap
+       terbaca di template .docx maupun di "Lihat Klausul", tetapi TIDAK pernah
+       masuk ke badan dokumen.
+
+       DIBUANG, BUKAN SEKADAR DISEMBUNYIKAN (perbaikan 6 Agu 2026). Percobaan
+       pertama membungkusnya dengan .tor-boq-nota ber-display:none. Tampilannya
+       memang benar, tetapi teks itu masih ada di DOM — dan itu merusak NOMOR
+       HALAMAN DAFTAR ISI: saat blok BoQ pindah ke lembar berikutnya, cangkang
+       .spk-clause yang ditinggalkan di lembar sebelumnya masih berisi teks
+       catatan, sehingga tidak terhapus oleh pembersih cangkang kosong di
+       paginator dan tetap terhitung oleh nomorToc() — daftar isi menunjuk
+       lembar yang salah (BoQ tertulis hal. 1 padahal tercetak di hal. 2).
+       Dengan teksnya benar-benar tidak diikutkan, cangkang itu kosong,
+       terhapus sendiri, dan nomor daftar isi kembali tepat.
+
+       Bila RAB masih kosong, teks klausul TETAP dicetak seperti biasa supaya
+       klausulnya tidak tampil kosong sama sekali. */
+    let klBoq=false;
+    if(torIsBoq(k.judul)){
+      let blok='';
+      try{ blok=torBoqBlokHtml(data); }catch(eB){ console.error('torBoqBlokHtml:', eB); }
+      if(blok){ inner=blok; klBoq=true; }
+    }
     let out='';
     /* Bab I & II: judul bab berdiri sendiri di atas klausul pertamanya. */
     if(s.awal && !s.lebur) out+='<div class="spk-clause tor-babonly">'+babHead(s)+'</div>';
@@ -2367,7 +2794,11 @@ function torDocHtml(data, klausul){
       : '<div class="spk-cl-h"><span class="n" data-no="'+fkEsc(s.no)+'."></span>'+spkFmtJudul(k.judul)+'</div>';
     /* Bab lebur (III. PENUTUP) memakai .tor-babisi; klausul biasa .tor-lv2.
        Keduanya digeser sejauh WB, bedanya hanya asal judulnya. */
-    out+='<div class="spk-clause'+(s.lebur?' tor-babisi':' tor-lv2')+'">'+head+
+    /* .tor-boq-cl = penanda klausul BILL OF QUANTITY. Dipakai torDocCss untuk
+       memberi JARAK BAWAH 24 pt ke klausul sesudahnya — lihat catatannya di
+       sana (termasuk alasan jaraknya dipasang sebagai margin BAWAH, bukan
+       margin atas pada klausul berikutnya). */
+    out+='<div class="spk-clause'+(s.lebur?' tor-babisi':' tor-lv2')+(klBoq?' tor-boq-cl':'')+'">'+head+
       '<div class="spk-cl'+spkLeadIndentCls(inner)+'">'+inner+'</div></div>';
     return out;
   }).join('');
@@ -2405,7 +2836,8 @@ function torDocHtml(data, klausul){
     (typeof hpsExtraDocCss==='function'?hpsExtraDocCss():'')+
     spkDocCss()+spkDocCss2()+spkClHeadCss(klausul.length,false)+torDocCss(wKl, wBab)+
     '</style></head><body><div id="spk-docs">'+body+'</div>'+
-    spkKisiScript()+spkPageScript()+fklFitScript()+'</body></html>';
+    /* torBoqFitScript WAJIB mendahului spkPageScript — lihat catatan di sana. */
+    torBoqFitScript()+spkKisiScript()+spkPageScript()+fklFitScript()+'</body></html>';
 }
 
 /* ===================== 11a. KOP & KERANGKA GAYA HPS =====================
@@ -2590,7 +3022,11 @@ function torRabDocHtml(data){
   const _ttdW=torTtdCols();
   return fklDocShell(hpsExtraDocCss()+
     '.rab-jd{margin:16px 0 4px}'+
-    '.rab-jd .fkl-doc-titlegap{height:6px}'+
+    /* Jarak dari baris NOMOR DOKUMEN ke baris "Nama Pekerjaan" (ketentuan
+       6 Agu 2026: "ditambahkan jaraknya sedikit biar kelihatan rapi").
+       Sebelumnya 6px sehingga nomor dokumen tampak menempel ke blok data
+       pekerjaan di bawahnya. */
+    '.rab-jd .fkl-doc-titlegap{height:'+TOR_RAB_GAP_NODOK+'px}'+
     /* Jarak Nama/Lokasi Pekerjaan ke tabel rincian */
     'table.fkl-info.rab-info{margin-bottom:12px}'+
     /* --- Tanda tangan formasi TOR/KAK pada cetakan RAB ---
@@ -2651,6 +3087,121 @@ const TOR_PI_TUTUP = [
   'Pakta Integritas ini saya tandatangani dengan penuh kesadaran, tanpa paksaan dari pihak mana pun, sebagai bentuk komitmen pribadi terhadap penerapan integritas dan pencegahan penyuapan dalam setiap proyek.',
   'Pakta Integritas ini berlaku sejak tanggal ditandatangani dan menjadi bagian yang tidak terpisahkan dari dokumen proyek/paket pekerjaan yang bersangkutan.'
 ];
+/* ---- KERTAS, MARGIN & HURUF PAKTA INTEGRITAS ----
+   KETENTUAN 6 Agu 2026: Pakta Integritas memakai huruf yang SAMA dengan isi
+   klausul TOR/KAK — jenis maupun ukurannya — serta kertas A4 bermargin normal.
+
+   Sebelumnya dokumen ini mewarisi kerangka cetak umum: huruf 'Plus Jakarta Sans'
+   (lihat .fkl-doc di index.html) dengan margin 15mm kiri-kanan & 12mm atas-bawah,
+   sedangkan isi klausul TOR/KAK memakai Inter 11pt bermargin 2,54cm. Dua dokumen
+   dari satu paket pengadaan jadi terlihat berbeda huruf.
+
+   Aman ditulis sebagai penimpaan biasa: fklDocShell() menghasilkan BERKAS HTML
+   MANDIRI untuk tiap dokumen, dan CSS ini hanya disisipkan pada berkas Pakta
+   Integritas — dokumen lain (RAB, HPS, Jadwal, Form Kelengkapan, dsb.) tidak
+   tersentuh sama sekali.
+
+   Muka huruf Inter DITANAM ulang lewat spkInterFontFace() karena berkas ini
+   dokumen terpisah yang tidak mewarisi <style> halaman aplikasi — persis
+   sebagaimana torDocHtml melakukannya untuk TOR/KAK. */
+const TOR_PI_MARGIN_MM = 25.4;    /* margin normal Word = 2,54 cm */
+function torPiKertasCss(){
+  var LH=(typeof spkLHCss==='function') ? (spkLHCss(1.15)||'1.39') : '1.39';
+  var M=TOR_PI_MARGIN_MM, BADAN=Math.round((297-2*M)*10)/10;
+  /* Lebar kotak nomor & jeda ke teks — diukur dengan fungsi yang SAMA dengan
+     spkNumberFix pada TOR/KAK, jadi hasilnya tidak mungkin berbeda. */
+  var GAP=(typeof SPK_NUM_GAP!=='undefined') ? SPK_NUM_GAP : 0.12;
+  var W=0.44;
+  try{ if(typeof spkNumTokWidthCm==='function')
+        W=Math.max(0.4, Math.round((spkNumTokWidthCm('1.')+GAP)*100)/100); }catch(e){}
+  /* Deret bernomor MENJOROK SEDIKIT dari kalimat pengantar "Dengan ini saya
+     menyatakan dan berkomitmen untuk:" \u2014 memakai langkah inden yang sama
+     dengan TOR/KAK (SPK_PK_LEAD_JUDUL) supaya kedua dokumen sekeluarga. */
+  var LEAD=(typeof SPK_PK_LEAD_JUDUL!=='undefined') ? SPK_PK_LEAD_JUDUL : 0.15;
+  var KOL=Math.round((LEAD+W)*100)/100;
+  /* LEBAR KOLOM LABEL SERAGAM untuk KEDUA blok "label : nilai" (ketentuan
+     6 Agu 2026: "titik : pada Nama, NIP dan Jabatan sejajar dengan titik :
+     Satuan / Unit Kerja"). Keduanya tabel terpisah, jadi shrink-to-fit
+     menghasilkan lebar berbeda \u2014 label terpanjang blok atas cuma "Jabatan".
+     Lebarnya dihitung SEKALI dari label TERPANJANG di antara semua label,
+     memakai pengukur teks 11pt Inter yang sama dengan mesin inden TOR/KAK,
+     lalu dipakai oleh dua-duanya. Menambah/mengubah label cukup di daftar ini. */
+  var LABEL=['Nama','NIP','Jabatan','Satuan / Unit Kerja','Nama Pekerjaan',
+             'Perkiraan Pekerjaan','No. Anggaran','No. PRK'];
+  var WL=4.05;
+  try{
+    if(typeof spkPkTextWidthCm==='function'){
+      var mx=0; LABEL.forEach(function(t){ var w=spkPkTextWidthCm(t); if(w>mx) mx=w; });
+      if(mx>0) WL=Math.round((mx+0.18)*100)/100;
+    }
+  }catch(e){}
+  return ''+
+    (typeof spkInterFontFace==='function' ? spkInterFontFace() : '')+
+    /* --- jenis huruf: seluruh dokumen memakai Inter --- */
+    '.fkl-doc,.fkl-doc *{font-family:"Inter Local","Inter","Segoe UI",Arial,sans-serif}'+
+    /* --- ukuran & spasi baris ISI = isi klausul TOR/KAK (11pt) ---
+       Kop, judul dokumen, dan sub-judul SMAP sengaja TIDAK diikutkan: ketiganya
+       elemen kepala yang ukurannya memang dirancang sendiri, sama seperti judul
+       klausul pada TOR/KAK yang juga bukan 11pt. */
+    '.fkl-doc .pi-p,.fkl-doc .pi-tb td,.fkl-doc .pi-ol li,'+
+    '.fkl-doc .pi-ck,.fkl-doc .pi-tgl{font-size:11pt;line-height:'+LH+'}'+
+    /* --- WARNA HURUF HITAM ---
+       Kerangka cetak umum memakai abu-abu kebiruan (#22343a untuk isi, #54666c
+       untuk label, #7c8a8f untuk baris alamat). Pada Pakta Integritas seluruh
+       tulisan dihitamkan (ketentuan 6 Agu 2026). KOP DIKECUALIKAN: tiga baris
+       identitas unit adalah bagian dari kepala surat dan warnanya memang bagian
+       dari rancangannya — sama persis dengan dokumen lain yang memakai kop itu. */
+    '.fkl-doc,.fkl-doc *{color:#000}'+
+    '.fkl-doc .fkl-doc-head .l1{color:#0E7C86}'+
+    '.fkl-doc .fkl-doc-head .l2{color:#22343a}'+
+    '.fkl-doc .fkl-doc-head .l3{color:#7c8a8f}'+
+    /* --- DAFTAR KOMITMEN: GEOMETRI PENOMORAN = TOR/KAK ---
+       Ketentuan 6 Agu 2026: "jarak dari penomoran ke teks, inden bertingkat di
+       Pakta Integritas sama seperti pada TOR/KAK".
+
+       Pada TOR/KAK tiap butir memakai KOTAK NOMOR selebar W: nomornya
+       dirata-KANANkan di dalam kotak dan kotak itu ber-padding-kanan SPK_NUM_GAP,
+       sehingga jarak nomor->teks SELALU sama berapa pun lebar angkanya, dan
+       baris ke-2 menggantung tepat di bawah huruf pertama (margin-left:W dengan
+       text-indent:-W). Di sini pola itu ditiru persis memakai penghitung CSS,
+       dengan W & jeda diambil dari fungsi ukur yang SAMA (spkNumTokWidthCm +
+       SPK_NUM_GAP) supaya kedua dokumen tidak mungkin berbeda.
+
+       <ol> bawaan tidak dipakai lagi (list-style:none): penanda bawaan peramban
+       rata kiri dan jaraknya ke teks ikut melar mengikuti lebar angka. */
+    '.fkl-doc .pi-tb{width:calc(100% - '+KOL+'cm);margin-left:'+KOL+'cm;table-layout:fixed}'+
+    '.fkl-doc .pi-tb td.l{width:'+WL+'cm;white-space:nowrap}'+
+    '.fkl-doc .pi-tb td.s{width:.3cm;white-space:nowrap}'+
+    '.fkl-doc .pi-tb td.v{width:auto}'+
+    '.fkl-doc .pi-ol{list-style:none;margin:0 0 8px;padding:0;counter-reset:pikom}'+
+    '.fkl-doc .pi-ol li{counter-increment:pikom;margin:0 0 5px;text-align:justify;'+
+      'margin-left:'+KOL+'cm;text-indent:-'+W+'cm;padding-left:0}'+
+    '.fkl-doc .pi-ol li::before{content:counter(pikom) ".";display:inline-block;'+
+      'box-sizing:border-box;min-width:'+W+'cm;padding-right:'+GAP+'cm;'+
+      'text-align:right;text-indent:0;white-space:nowrap;'+
+      'font-variant-numeric:tabular-nums}'+
+    /* --- kertas A4 & margin normal 2,54 cm ---
+       Dokumen ini dipecah menjadi lembar A4 oleh fklPageScript: .fkl-print-page
+       yang memanjang diubah menjadi deretan .fkl-sheet, dan tinggi badan tiap
+       lembar (.fkl-sheet-bd) dipasang SEBARIS dari tetapan 273mm (= 297 - 12 - 12,
+       margin bawaan kerangka cetak). Karena marginnya kini 2,54cm, tinggi badan
+       itu harus ikut disesuaikan menjadi 297 - 2 x 25,4 = 246,2mm — dan WAJIB
+       ber-!important supaya menang atas gaya sebaris tersebut. Tanpa itu, isi
+       setinggi 273mm dijejalkan ke lembar yang ruangnya tinggal 246,2mm dan
+       kelebihannya terpotong oleh .fkl-sheet{overflow:hidden}. */
+    '.fkl-print-page{width:210mm;min-height:297mm;padding:'+M+'mm}'+
+    '.fkl-sheet{padding:'+M+'mm}'+
+    '.fkl-sheet-bd{height:'+BADAN+'mm !important}'+
+    '@media print{'+
+      '@page{size:A4;margin:0}'+
+      /* Margin atas & bawah pada cetakan datang dari .fkl-vspace di thead/tfoot
+         tabel pembungkus — itulah yang membuatnya berulang di TIAP lembar. */
+      '.fkl-vspace{height:'+M+'mm}'+
+      '.fkl-print-page{width:auto;min-height:0;margin:0;padding:0 '+M+'mm;box-shadow:none}'+
+      '.fkl-sheet{height:296.6mm;padding:'+M+'mm}'+
+    '}';
+}
+
 /* Penanda tangan sesuai peran */
 function torPiOrang(data, peran){
   const d=data||{};
@@ -2688,7 +3239,7 @@ function torPiDocHtml(data, peran){
       '<span class="bx">'+(pr[0]===peran?'\u2611':'\u2610')+'</span>'+esc(pr[1])+'</span>').join('');
   const angg = esc(data.no_anggaran||'\u2014') +
     (data.tgl_anggaran ? '<br>Tanggal, '+esc(spkDateLong(data.tgl_anggaran)) : '');
-  const isi='<div class="fkl-doc pnw-doc hps-doc">'+
+  const isi='<div class="fkl-doc pnw-doc hps-doc pi-doc">'+
     torKopHtml()+
     torJudulDokHtml('PAKTA INTEGRITAS','')+
     '<div class="pi-sub">SISTEM MANAJEMEN ANTI PENYUAPAN (SMAP)</div>'+
@@ -2700,8 +3251,8 @@ function torPiDocHtml(data, peran){
     '</tbody></table>'+
     '<p class="pi-p">dalam hal ini sebagai :</p>'+
     '<div class="pi-cks">'+cek+'</div>'+
-    '<table class="pi-tb"><tbody>'+
-      brs('Satuan/ Unit Kerja', esc(ctx.unit_lengkap||TOR_NAMA_UNIT||''))+
+    '<table class="pi-tb pi-tb2"><tbody>'+
+      brs('Satuan / Unit Kerja', esc(ctx.unit_lengkap||TOR_NAMA_UNIT||''))+
       brs('Nama Pekerjaan', esc(data.nama_pekerjaan||'\u2014'))+
       brs('Perkiraan Pekerjaan', esc(rp(torPiNilai(data))))+
       brs('No. Anggaran', angg)+
@@ -2715,14 +3266,50 @@ function torPiDocHtml(data, peran){
     '<div class="pi-ttd">'+torTtdHpsHtml(null,
       {cap:'Yang menyatakan,', jab:org.jab, nama:org.nama})+'</div>'+
   '</div>';
-  return fklDocShell(hpsExtraDocCss()+
-    '.pi-sub{text-align:center;font-weight:700;font-size:11px;margin:-4px 0 10px;letter-spacing:.02em}'+
+  return fklDocShell(hpsExtraDocCss()+torPiKertasCss()+
+    /* ---- JUDUL & SUB-JUDUL SATU TINGKAT (ketentuan 6 Agu 2026) ----
+       "PAKTA INTEGRITAS" dan "SISTEM MANAJEMEN ANTI PENYUAPAN (SMAP)" adalah
+       satu tingkat, jadi UKURAN HURUFNYA SAMA \u2014 sub-judul mewarisi ukuran
+       .fkl-doc-title (bukan lagi 11px). Jaraknya: judul -> sub-judul 3 pt,
+       sub-judul -> baris berikutnya 12 pt. Garis bawah tetap hanya di bawah
+       judul, sesuai rancangan .fkl-doc-title.has-rule. */
+    /* Garis bawah pada "PAKTA INTEGRITAS" DIBUANG (ketentuan 6 Agu 2026):
+       judul & sub-judul adalah satu kesatuan, garis itu justru memisahkan
+       keduanya. padding-bawah bawaan .has-rule ikut dinolkan supaya jarak
+       3 pt benar-benar 3 pt. */
+    '.fkl-doc .fkl-doc-title.has-rule{margin:0 auto 3pt;border-bottom:0;padding-bottom:0}'+
+    /* Blok "label : nilai": menjorok KOL (= kolom teks butir bernomor) supaya
+       lurus dengan daftar komitmen, kolom label selebar label TERPANJANG di
+       antara KEDUA blok (WL) sehingga titik duanya sebaris, dan sisi kanan
+       tabel tetap berhenti di margin. */
+    '.fkl-doc .pi-sub{text-align:center;font-weight:800;font-size:19px;'+
+      'line-height:1.28;letter-spacing:.6px;text-transform:uppercase;'+
+      'margin:0 0 12pt}'+
+    '.fkl-doc .fkl-doc-titlegap{height:0}'+
     '.pi-p{margin:0 0 6px;text-align:justify}'+
     '.pi-tb{border-collapse:collapse;margin:0 0 8px}'+
     '.pi-tb td{border:0;padding:1px 0;vertical-align:top}'+
-    '.pi-tb td.l{width:4.6cm}.pi-tb td.s{width:.45cm}'+
-    '.pi-cks{display:flex;flex-wrap:wrap;gap:3px 18px;margin:0 0 9px 1cm}'+
-    '.pi-ck{flex:0 0 45%;display:flex;gap:6px;align-items:flex-start}'+
+    /* ---- BLOK "Satuan / Unit Kerja" s.d. "No. PRK" ----
+       Jarak antar-baris 2 pt, dan kolom ":" DIRAPATKAN ke kiri hingga hampir
+       menempel label terpanjang ("Perkiraan Pekerjaan"). Caranya bukan menebak
+       lebar dalam cm (label bisa berubah), melainkan width:1% + nowrap pada
+       tabel selebar 100%: kolom label MENYUSUT tepat selebar label terpanjang,
+       lalu seluruh sisa lebar diberikan ke kolom nilai. Pola yang sama dipakai
+       fklDocCssPatch() untuk tabel .fkl-info di dokumen cetak lain. */
+    /* Blok "label : nilai" MENJOROK SEDIKIT dari paragraf di atasnya (ketentuan
+       6 Agu 2026: "agak sedikit masuk ke kanan ... agar terlihat cantik").
+       Besarnya = kolom teks butir bernomor (LEAD + lebar kotak nomor), jadi
+       label-labelnya lurus dengan teks daftar komitmen di bawah \u2014 bukan
+       angka pilihan bebas. Lebar tabel dikurangi sebanyak itu supaya sisi
+       kanannya tetap berhenti tepat di margin. */
+    '.pi-tb.pi-tb2 td{padding:0 0 2pt}'+
+    /* KETENTUAN 6 Agu 2026: keempat pilihan peran TIDAK lagi dibagi dua kolom
+       kiri-kanan (dua baris), melainkan SATU kolom berisi empat baris berurutan
+       ke bawah — lebih mudah dibaca dan tanda centangnya sejajar dalam satu
+       garis lurus. flex-direction:column menggantikan flex-wrap + flex:0 0 45%. */
+    '.pi-cks{display:flex;flex-direction:column;align-items:flex-start;'+
+      'gap:3px;margin:0 0 9px 1cm}'+
+    '.pi-ck{flex:0 0 auto;display:flex;gap:6px;align-items:flex-start}'+
     '.pi-ck .bx{font-size:1.15em;line-height:1}'+
     '.pi-ol{margin:0 0 8px;padding-left:1.05cm}'+
     '.pi-ol li{margin:0 0 5px;text-align:justify}'+
@@ -2843,6 +3430,161 @@ function torViewRows(){
     String(r.bidang_pelaksana||'').toLowerCase().includes(fs));
   return rows;
 }
+/* ===================== 11d. KLAUSUL BILL OF QUANTITY (BoQ) =====================
+   KETENTUAN 6 Agu 2026. Klausul "II.8 BILL OF QUANTITY (BoQ)" di template Word
+   hanya berisi kalimat "Sesuai RAB (tanpa nilai)"; isi sesungguhnya selama ini
+   berupa TEMPELAN GAMBAR tangkapan layar berkas BoQ Excel. Akibatnya setiap kali
+   RAB diubah, gambar itu harus ditempel ulang — dan bila lupa, TOR mencetak angka
+   yang sudah usang.
+
+   Sekarang tabelnya DIBANGKITKAN dari data yang sama dengan berkas BoQ Excel
+   (torBoqExcel), jadi klausul ini SELALU mengikuti RAB tanpa perlu disentuh:
+     - sumber baris   : data.__rab sepanjang "Jumlah Barang/Jasa" (jumlah_bj)
+     - penomoran      : jsWalk + cfg judul/sub-judul yang sama persis
+     - harga satuan   : SELALU 0 -> tampil "-" (BoQ = RAB tanpa nilai)
+     - rekap          : Jumlah / DPP / PPn 12% / Jumlah Total, semuanya 0
+     - terbilang      : mengikuti Jumlah Total (nol)
+   Susunan kolom, urutan baris, dan nama judul kolomnya sengaja disalin dari
+   torBoqExcel() supaya tabel di TOR dan berkas .xlsx yang diunduh penyedia tidak
+   mungkin berbeda. Bila kolom di torBoqExcel diubah, ubah juga di sini.
+
+   TIDAK PERLU KODE ISIAN. Klausulnya dikenali dari JUDULNYA (torIsBoq), lalu
+   tabel disisipkan tepat SESUDAH teks klausul. Alasannya: <table> tidak sah
+   berada di dalam <p>, sehingga menaruhnya lewat placeholder {{...}} di tengah
+   paragraf akan dipecah peramban dan merusak inden klausul. */
+function torIsBoq(judul){
+  var t=(typeof spkJudulPlain==='function') ? spkJudulPlain(judul) : String(judul||'');
+  t=String(t||'').replace(/[\s\u00A0]+/g,' ').trim();
+  return /bill\s*of\s*quantity/i.test(t) || /(^|[^a-z])bo\s*q([^a-z]|$)/i.test(t);
+}
+/* Baris RAB yang ikut tercetak — SAMA dengan torBoqExcel() */
+function torBoqItems(data){
+  var semua=(data && Array.isArray(data.__rab)) ? data.__rab : [];
+  var n=Math.max(1, parseInt((data||{}).jumlah_bj,10) || semua.length || 1);
+  return semua.slice(0, n);
+}
+function torBoqCfg(data){
+  var d=data||{};
+  return {
+    judulOn:    String(d.rab_judul_on||'')==='Ya',
+    judulNum:   String(d.rab_judul_num||''),
+    subjudulOn: String(d.rab_subjudul_on||'')==='Ya',
+    subjudulNum:String(d.rab_subjudul_num||'')
+  };
+}
+function torBoqTabelHtml(data){
+  data=data||{};
+  var items=torBoqItems(data);
+  if(!items.length) return '';
+  var esc=fkEsc, cfg=torBoqCfg(data);
+  var NOL=hpsRpDoc(0);                       /* "-" (format accounting, sama dgn BoQ .xlsx) */
+  /* Baris judul / sub-judul: bila baris itu SEKALIGUS membawa Sat/Vol (item
+     tanpa Uraian), kolom angkanya ikut diisi — persis perilaku torBoqExcel. */
+  var grpRow=function(cls,no,txt,it){
+    if(!it) return '<tr class="'+cls+'"><td class="no">'+esc(no)+'</td>'+
+      '<td class="gname" colspan="8">'+esc(txt)+'</td></tr>';
+    return '<tr class="'+cls+' has-val"><td class="no">'+esc(no)+'</td>'+
+      '<td class="gname ur">'+esc(txt)+'</td>'+
+      '<td class="st">'+esc(String(it.sat||'-'))+'</td>'+
+      '<td class="vl">'+esc(String(jsVolDoc(it.vol)))+'</td>'+
+      '<td class="num">'+NOL+'</td><td class="num">'+NOL+'</td>'+
+      '<td class="num">'+NOL+'</td><td class="num">'+NOL+'</td>'+
+      '<td class="num tot">'+NOL+'</td></tr>';
+  };
+  var bodyRows='';
+  jsWalk(items, cfg, {
+    judul:function(no,txt,it){ bodyRows+=grpRow('grp',no,txt,it); },
+    sub:  function(no,txt,it){ bodyRows+=grpRow('grp sub',no,txt,it); },
+    item: function(noInGroup,it,idx){
+      bodyRows+='<tr>'+
+        '<td class="no">'+noInGroup+'</td>'+
+        '<td class="ur">'+esc((it.uraian&&String(it.uraian).trim())?it.uraian:('Barang/Jasa '+(idx+1)))+'</td>'+
+        '<td class="st">'+esc(String(it.sat||'-'))+'</td>'+
+        '<td class="vl">'+esc(String(jsVolDoc(it.vol)))+'</td>'+
+        '<td class="num">'+NOL+'</td><td class="num">'+NOL+'</td>'+
+        '<td class="num">'+NOL+'</td><td class="num">'+NOL+'</td>'+
+        '<td class="num tot">'+NOL+'</td></tr>';
+    }
+  });
+  var sumRow=function(lbl,cls){
+    return '<tr class="sum'+(cls?' '+cls:'')+'">'+
+      '<td class="sum-lbl" colspan="6">'+esc(lbl)+'</td>'+
+      '<td class="num">'+NOL+'</td><td class="num">'+NOL+'</td><td class="num">'+NOL+'</td></tr>';
+  };
+  /* Lebar kolom: pemakai fungsi yang sama dengan cetakan RAB. Karena seluruh
+     kolom harga berisi "-", jsHpsHargaPct jatuh ke lantainya (9%) sehingga sisa
+     lebar mengalir ke kolom Uraian Pekerjaan — pas untuk lembar TOR yang lebih
+     sempit daripada lembar RAB. */
+  var cw=jsHpsColPct(items, cfg, jsHpsHargaPct(String(NOL||'').length));
+  var jt=Math.max(cw.hg, TOR_RAB_JT_MIN);
+  var ur=Math.max(14, Math.round((cw.ur-(jt-cw.hg))*10)/10);
+  return ''+
+    '<table class="hps-doc-tbl">'+
+    '<colgroup><col style="width:'+cw.no+'%"><col style="width:'+ur+'%"><col style="width:'+cw.sat+'%">'+
+      '<col style="width:'+cw.vol+'%"><col style="width:'+cw.hg+'%"><col style="width:'+cw.hg+'%">'+
+      '<col style="width:'+cw.hg+'%"><col style="width:'+cw.hg+'%"><col style="width:'+jt+'%"></colgroup>'+
+    '<thead>'+
+      '<tr><th class="no" rowspan="2">No</th><th class="ur" rowspan="2">Uraian Pekerjaan</th>'+
+        '<th class="st" rowspan="2">Sat</th><th class="vl" rowspan="2">Vol</th>'+
+        '<th colspan="2">Harga Satuan</th><th colspan="2">Jumlah Harga</th>'+
+        '<th class="jt" rowspan="2">Jumlah Total<br>(Rp)</th></tr>'+
+      '<tr><th>Barang (Rp)</th><th>Jasa (Rp)</th><th>Barang (Rp)</th><th>Jasa (Rp)</th></tr>'+
+      '<tr class="numh"><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td>'+
+        '<td>7 = 4 x 5</td><td>8 = 4 x 6</td><td>9 = 7 + 8</td></tr>'+
+    '</thead><tbody>'+bodyRows+'</tbody>'+
+    '<tbody class="hps-tail">'+
+      sumRow('Jumlah')+sumRow('DPP')+sumRow('PPn 12%')+sumRow('Jumlah Total','grand')+
+      '<tr class="terb"><td colspan="9"><b>Terbilang :</b> '+esc(hpsTerbilangRupiah(0))+'</td></tr>'+
+    '</tbody></table>';
+}
+/* ---- BLOK BoQ UTUH (kop -> judul -> Pekerjaan/Lokasi -> tabel -> tanda tangan) ----
+   KETENTUAN 6 Agu 2026: "klausul BoQ bukan hanya tabel tapi keseluruhan seperti
+   pada gambar". Yang dimaksud gambar adalah TAMPILAN BERKAS BoQ.xlsx yang selama
+   ini ditempel sebagai gambar ke dalam klausul. Jadi seluruh bagian lembar itu
+   dibangun ulang di sini, urut & sama persis dengan torBoqExcel():
+
+     (KOP PERUSAHAAN)            — biru, tebal, rata tengah (tempat kop penyedia)
+     Bill of Quantity (BoQ)      — tebal, bergaris bawah, rata tengah
+     Pekerjaan / Lokasi          — dua baris "label : nilai"
+     tabel rincian               — torBoqTabelHtml()
+     blok tanda tangan penyedia  — Kota/Kabupaten,....., Tanggal..... /
+                                   Nama Perusahaan / (Nama Lengkap) / Jabatan
+
+   Isinya diambil dari data dokumen yang sama, jadi berubah otomatis mengikuti
+   RAB & identitas pekerjaan. Bila susunan di torBoqExcel diubah, ubah juga di
+   sini supaya tampilan di TOR dan berkas .xlsx tetap kembar. */
+function torBoqBlokHtml(data){
+  data=data||{};
+  var tbl=torBoqTabelHtml(data);
+  if(!tbl) return '';
+  var esc=fkEsc;
+  var baris=function(k,v){
+    return '<tr><td class="k">'+esc(k)+'</td><td class="s">:</td><td class="v">'+esc(v||'-')+'</td></tr>';
+  };
+  /* Blok tanda tangan penyedia — di berkas .xlsx menempati kolom 6-9 (paruh
+     kanan lembar) dan rata tengah di dalamnya; di sini ditiru dengan kotak
+     selebar TOR_BOQ_TTD_W% yang didorong ke kanan. .spk-keep menjaga blok ini
+     tidak pernah terpenggal paginator. */
+  var ttd='<div class="boq-ttd spk-keep">'+
+      '<div class="tg">Kota/Kabupaten,....., Tanggal.....</div>'+
+      '<div class="pr">Nama Perusahaan</div>'+
+      '<div class="sp"></div>'+
+      '<div class="nm">(Nama Lengkap)</div>'+
+      '<div class="jb">Jabatan</div>'+
+    '</div>';
+  return '<div class="tor-boq">'+
+      '<div class="boq-kop spk-keep">'+
+        '<div class="kp">(KOP PERUSAHAAN)</div>'+
+        '<div class="jd">Bill of Quantity (BoQ)</div>'+
+        '<table class="boq-info"><tbody>'+
+          baris('Pekerjaan', data.nama_pekerjaan)+
+          baris('Lokasi', data.lokasi_pekerjaan)+
+        '</tbody></table>'+
+      '</div>'+
+      tbl+ttd+
+    '</div>';
+}
+
 /* ===================== 11e. BILL OF QUANTITY (EXCEL) =====================
    Berkas .xlsx yang SUDAH BERUMUS \u2014 penyedia tinggal mengisi Harga Satuan
    (kolom 5 & 6), sisanya menghitung sendiri. Rumusnya cermin persis
@@ -3062,14 +3804,160 @@ function torOpenDokList(id){
     ov.addEventListener('mousedown', function(e){ if(e.target===ov) torCloseDokList(); });
     document.body.appendChild(ov);
   }
+  /* Nomor dokumen TIDAK lagi ditampilkan di bawah nama pekerjaan (ketentuan
+     6 Agu 2026) \u2014 nomornya sudah tercetak di tiap dokumen. */
   ov.innerHTML='<div class="tor-dk-mdl">'+
-    '<div class="tor-dk-hd"><div><b>'+esc(rec.nama_pekerjaan||'Dokumen Pengadaan')+'</b>'+
-      '<i>'+esc(rec.no_dokumen||'')+'</i></div>'+
-      '<button type="button" class="x" onclick="torCloseDokList()" aria-label="Tutup">\u00d7</button></div>'+
+    '<div class="tor-dk-hd">'+
+      '<div class="jd"><b>'+esc(rec.nama_pekerjaan||'Dokumen Pengadaan')+'</b></div>'+
+      '<div class="act">'+
+        '<button type="button" class="pr" onclick="torCetakGabung(\''+rid+'\')" '+
+          'title="Cetak gabungan: TOR/KAK + RAB + kedua Pakta Integritas" '+
+          'aria-label="Cetak gabungan">'+TOR_IC_CETAK+'</button>'+
+        '<button type="button" class="x" onclick="torCloseDokList()" aria-label="Tutup">\u00d7</button>'+
+      '</div>'+
+    '</div>'+
     '<div class="tor-dk-bd">'+baris+'</div></div>';
   ov.classList.add('show');
 }
 function torCloseDokList(){ const ov=document.getElementById('tor-dk-ov'); if(ov) ov.classList.remove('show'); }
+
+/* ===================== 11c-b. CETAK GABUNGAN =====================
+   KETENTUAN 6 Agu 2026: satu tombol untuk mencetak TOR/KAK + RAB + KEDUA Pakta
+   Integritas sekaligus (BoQ .xlsx tidak ikut — ia berkas Excel, bukan cetakan).
+
+   MASALAHNYA: keempat berkas itu memakai DUA mesin cetak yang berbeda —
+   TOR/KAK memakai mesin dokumen SPK (.spk-doc + spkPageScript), sedangkan RAB &
+   Pakta Integritas memakai kerangka cetak umum (.fkl-print-page + fklPageScript).
+   Menggabungkan mentah-mentah tidak bisa: gaya keduanya saling menimpa (mis.
+   aturan huruf/margin khusus Pakta Integritas akan ikut mengubah RAB), dan tiap
+   pemecah halaman hanya mengenali dokumen PERTAMA yang ditemuinya.
+
+   CARANYA: tiap dokumen dibiarkan PAGINASI SENDIRI di dalam bingkai tersembunyi
+   miliknya, seperti saat dicetak satuan. Sesudah selesai, hasilnya DIPANEN:
+     - seluruh aturan CSS-nya dibaca lewat CSSOM lalu SELEKTORNYA DIBERI AWALAN
+       kelas pembungkus dokumen itu (.cetak-d1, .cetak-d2, ...), sehingga gaya
+       satu dokumen mustahil bocor ke dokumen lain;
+     - badan halamannya disalin TANPA <script> (paginasinya sudah selesai —
+       kalau ikut, skripnya jalan lagi dan menata ulang dokumen yang sudah jadi).
+   Berkas gabungan lalu berisi lembar-lembar A4 yang sudah matang, siap dicetak
+   dalam satu perintah. */
+const TOR_GABUNG_MODE = ['tor','rab','pi-pengguna','pi-direksi'];
+const TOR_IC_CETAK =
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '+
+  'stroke-linecap="round" stroke-linejoin="round">'+
+  '<path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>'+
+  '<rect x="6" y="14" width="12" height="8"/></svg>';
+/* Beri AWALAN pada seluruh selektor sebuah daftar aturan CSS. @font-face, @page,
+   dan @keyframes dibiarkan apa adanya (tak punya selektor elemen). */
+function torCssBerawalan(rules, pfx){
+  var out='';
+  for(var i=0;i<rules.length;i++){
+    var r=rules[i];
+    try{
+      if(r.type===1){                                   /* CSSStyleRule */
+        var sel=String(r.selectorText||'').split(',').map(function(x){
+          x=x.trim();
+          if(!x) return x;
+          if(x==='html'||x==='body'||x===':root') return pfx;
+          if(/^(html|body)\b/.test(x)) return pfx+x.replace(/^(html|body)/,'');
+          return pfx+' '+x;
+        }).join(',');
+        out+=sel+'{'+r.style.cssText+'}';
+      }else if(r.type===4){                             /* CSSMediaRule */
+        out+='@media '+r.media.mediaText+'{'+torCssBerawalan(r.cssRules, pfx)+'}';
+      }else if(r.type===12){                            /* CSSSupportsRule */
+        out+='@supports '+r.conditionText+'{'+torCssBerawalan(r.cssRules, pfx)+'}';
+      }else{
+        out+=r.cssText;                                 /* @font-face, @page, dst. */
+      }
+    }catch(e){}
+  }
+  return out;
+}
+/* Panen satu bingkai yang paginasinya sudah selesai */
+function torPanenBingkai(ifr, kelas){
+  var w=ifr.contentWindow, d=w.document, css='';
+  var ss=d.styleSheets;
+  for(var i=0;i<ss.length;i++){
+    var rl=null; try{ rl=ss[i].cssRules; }catch(e){ rl=null; }
+    if(rl) css+=torCssBerawalan(rl, '.'+kelas);
+  }
+  var body=d.body.cloneNode(true);
+  var sc=body.querySelectorAll('script');
+  for(var j=sc.length-1;j>=0;j--) sc[j].parentNode.removeChild(sc[j]);
+  return {css:css, html:body.innerHTML};
+}
+/* Tunggu paginasi sebuah bingkai selesai (kedua mesin cetak). */
+function torTungguPaginasi(ifr, sisa, lanjut){
+  var siap=false;
+  try{
+    var w=ifr.contentWindow, d=w.document;
+    siap = !!w.__spkPaged || !!d.querySelector('.fkl-sheet') ||
+           (!d.querySelector('.spk-page.spk-flow') && !d.querySelector('.fkl-print-page'));
+  }catch(e){ siap=true; }
+  if(siap || sisa<=0){ setTimeout(lanjut, 80); return; }
+  setTimeout(function(){ torTungguPaginasi(ifr, sisa-80, lanjut); }, 80);
+}
+function torCetakGabung(id){
+  var rec=(records_tor||[]).find(function(r){ return String(r.id)===String(id); });
+  if(!rec){ toast('Dokumen tidak ditemukan','warn'); return; }
+  torCloseDokList();
+  var data=rec.data||{}, kl=(Array.isArray(rec.klausul)?rec.klausul:[]);
+  var simpan=torPreviewMode;
+  var doks=TOR_GABUNG_MODE.map(function(m){
+    torPreviewMode=m;
+    try{ return torDokHtmlAktif(data, kl); }catch(e){ console.error('cetak gabungan/'+m+':', e); return ''; }
+  }).filter(Boolean);
+  torPreviewMode=simpan;
+  if(!doks.length){ toast('Tidak ada dokumen untuk dicetak','warn'); return; }
+  var wadah=document.getElementById('tor-gabung-wrap');
+  if(wadah) wadah.remove();
+  wadah=document.createElement('div'); wadah.id='tor-gabung-wrap';
+  wadah.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;overflow:hidden;visibility:hidden';
+  document.body.appendChild(wadah);
+  var bingkai=doks.map(function(html){
+    var f=document.createElement('iframe');
+    f.style.cssText='width:1200px;height:1600px;border:0';
+    wadah.appendChild(f);
+    var d=f.contentWindow.document; d.open(); d.write(html); d.close();
+    return f;
+  });
+  var pesan=(typeof withActionLoader==='function');
+  var selesai=function(){
+    var css='', isi='';
+    bingkai.forEach(function(f,i){
+      var k='cetak-d'+(i+1);
+      var p; try{ p=torPanenBingkai(f, k); }catch(e){ console.error('panen:', e); return; }
+      css+=p.css;
+      isi+='<div class="cetak-doc '+k+'">'+p.html+'</div>';
+    });
+    wadah.remove();
+    if(!isi){ toast('Gagal menyiapkan cetak gabungan','err'); return; }
+    var html='<!DOCTYPE html><html lang="id"><head><meta charset="utf-8">'+
+      '<title>&#8203;</title><style>'+css+
+      'html,body{margin:0;padding:0;background:#fff}'+
+      '.cetak-doc{break-after:page;page-break-after:always}'+
+      '.cetak-doc:last-child{break-after:auto;page-break-after:auto}'+
+      '</style></head><body>'+isi+'</body></html>';
+    var old=document.getElementById('tor-print-frame'); if(old) old.remove();
+    var ifr=document.createElement('iframe'); ifr.id='tor-print-frame';
+    ifr.setAttribute('aria-hidden','true');
+    ifr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+    document.body.appendChild(ifr);
+    var d=ifr.contentWindow.document; d.open(); d.write(html); d.close();
+    setTimeout(function(){
+      var run=function(){ try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }
+                          catch(e){ try{ window.print(); }catch(_){} } };
+      if(typeof withHiddenPageTitle==='function') withHiddenPageTitle(run); else run();
+      setTimeout(function(){ var f=document.getElementById('tor-print-frame'); if(f) f.remove(); }, 1500);
+    }, 400);
+  };
+  var sisa=bingkai.length;
+  bingkai.forEach(function(f){
+    torTungguPaginasi(f, 6000, function(){ if(--sisa<=0) selesai(); });
+  });
+  if(pesan) try{ toast('Menyiapkan cetak gabungan…','ok'); }catch(e){}
+}
 function torDokPilih(id, mode){
   torCloseDokList();
   /* BoQ bukan dokumen cetak melainkan UNDUHAN .xlsx, jadi tidak lewat pratinjau. */
