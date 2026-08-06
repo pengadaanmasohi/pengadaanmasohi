@@ -1826,9 +1826,15 @@ function torDocCss(wKl, wBab){
      dan tampak terlepas dari judul induknya. Yang digeser BLOKNYA, bukan tiap
      tingkat sendiri-sendiri — jenjang 3 -> 4 di dalam blok sudah diatur
      spkPkIndentStd dan tidak boleh diutak-atik ulang, cukup ikut bergeser.
-     Bab yang judul klausulnya dilebur jadi judul bab (III. PENUTUP) TIDAK
-     diberi kelas tor-lv2, jadi isinya tetap rata dengan judul babnya. */
-  '.spk-doc.spk-spk .spk-clause.tor-lv2 > .spk-cl{margin-left:'+LV2.toFixed(2)+'cm}'+
+
+     BAB YANG JUDUL KLAUSULNYA DILEBUR (III. PENUTUP) ikut digeser sejauh yang
+     sama lewat kelas .tor-babisi (6 Agu 2026). Dulu bab lebur sengaja
+     dibiarkan rata dengan kotak nomor bab, sehingga kata "Demikian" berdiri
+     tepat di bawah "III." dan terlihat terlepas dari judulnya. Sekarang ia
+     mulai di bawah kata "PENUTUP" — aturan inden yang sama dengan klausul
+     tingkat 2, sebab jaraknya memang sama-sama selebar kotak nomor bab (WB). */
+  '.spk-doc.spk-spk .spk-clause.tor-lv2 > .spk-cl,'+
+    '.spk-doc.spk-spk .spk-clause.tor-babisi > .spk-cl{margin-left:'+LV2.toFixed(2)+'cm}'+
   '.spk-doc.spk-spk .spk-cl-h{padding-left:'+WK.toFixed(2)+'cm;text-indent:-'+WK.toFixed(2)+'cm}'+
   '.spk-doc.spk-spk .spk-cl-h .n{min-width:'+WK.toFixed(2)+'cm;width:auto;text-align:left;'+
     'padding-right:'+GAP+'cm;box-sizing:border-box}'+
@@ -2242,7 +2248,7 @@ function torRunFootHtml(data){
    tidak ada klausul yang menempati bab III (lihat torStruktur). */
 function torPenutupHtml(){
   const B=TOR_BAB[TOR_BAB.length-1];
-  return '<div class="spk-clause">'+
+  return '<div class="spk-clause tor-babisi">'+
     '<div class="spk-cl-h tor-babh"><span class="n" data-no="'+fkEsc(B.rom)+'."></span>'+fkEsc(B.nama)+'</div>'+
     '<div class="spk-cl"><p class="kl0">'+fkEsc(TOR_PENUTUP_TEKS)+'</p></div>'+
   '</div>';
@@ -2359,7 +2365,9 @@ function torDocHtml(data, klausul){
        seperti lampiran TOR Word. */
     const head = s.lebur ? babHead(s)
       : '<div class="spk-cl-h"><span class="n" data-no="'+fkEsc(s.no)+'."></span>'+spkFmtJudul(k.judul)+'</div>';
-    out+='<div class="spk-clause'+(s.lebur?'':' tor-lv2')+'">'+head+
+    /* Bab lebur (III. PENUTUP) memakai .tor-babisi; klausul biasa .tor-lv2.
+       Keduanya digeser sejauh WB, bedanya hanya asal judulnya. */
+    out+='<div class="spk-clause'+(s.lebur?' tor-babisi':' tor-lv2')+'">'+head+
       '<div class="spk-cl'+spkLeadIndentCls(inner)+'">'+inner+'</div></div>';
     return out;
   }).join('');
