@@ -7107,9 +7107,7 @@ function jpOpenPreview(html, nama){
     }catch(e){ console.warn('jpOpenPreview/pdf:', e); }
   }
   const actions=document.querySelector('#pn-preview-overlay .pn-preview-head-actions');
-  ['fkl-preview-print','pnw-preview-print','rho-preview-print','hps-preview-print',
-   'hpsc-preview-print','ana-preview-print','spk-preview-print','spk-preview-khs']
-    .forEach(function(bid){ const b=document.getElementById(bid); if(b) b.remove(); });
+  pnPreviewClearActions();   /* buang tombol sisipan modul lain — lihat definisinya */
   if(actions && !document.getElementById('jp-preview-print')){
     const btn=document.createElement('button');
     btn.id='jp-preview-print'; btn.className='btn btn-teal';
@@ -8972,6 +8970,29 @@ function pnPreviewResetMaxBtn(){
   const lbl=document.getElementById('pn-preview-max-label'); if(lbl) lbl.textContent='Perbesar';
   const icon=document.getElementById('pn-preview-max-icon');
   if(icon) icon.innerHTML='<path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>';  // maximize
+}
+/* ---- Bersihkan tombol aksi sisipan pada kepala pratinjau ----
+   Modal pratinjau dipakai BERSAMA oleh seluruh modul (FKL, PNW, RHO, HPS,
+   Analisa, HPS Cetak, Jadwal Pelaksanaan, SPK/Perjanjian, TOR/KAK). Dulu tiap
+   modul menghapus tombol modul LAIN lewat daftar id yang ditulis tangan,
+   sehingga setiap kali ada modul baru seluruh daftar lama harus ikut
+   diperbarui. Begitu satu daftar terlewat — persis yang terjadi saat modul
+   TOR/KAK ditambahkan — tombol "Cetak / PDF" modul sebelumnya tertinggal di
+   kepala modal dan tampil DUA KALI.
+
+   Di sini pembersihan dibalik: yang dipertahankan hanya dua tombol tetap milik
+   modal (Layar Penuh & tombol tutup), sisanya dibuang apa pun idnya. Modul baru
+   otomatis ikut terlayani tanpa menyentuh modul mana pun. */
+function pnPreviewClearActions(){
+  var box=document.querySelector('#pn-preview-overlay .pn-preview-head-actions');
+  if(!box) return;
+  var kids=Array.prototype.slice.call(box.children), i, el;
+  for(i=0;i<kids.length;i++){
+    el=kids[i];
+    if(el.id==='pn-preview-fs') continue;                                  /* Layar Penuh */
+    if(el.classList && el.classList.contains('detail-close')) continue;    /* tombol tutup */
+    if(el.parentNode) el.parentNode.removeChild(el);
+  }
 }
 function closePnPreview(){ const ov=document.getElementById('pn-preview-overlay'); if(ov) ov.classList.remove('show'); const modal=ov&&ov.querySelector('.pn-preview-modal'); if(modal) modal.classList.remove('is-max'); pnPreviewResetMaxBtn(); const b=document.getElementById('pn-preview-body'); if(b){ b.innerHTML=''; b.classList.remove('fkl-preview-body'); b.classList.remove('has-tabs'); } const fp=document.getElementById('fkl-preview-print'); if(fp) fp.remove(); const pp=document.getElementById('pnw-preview-print'); if(pp) pp.remove(); const rp=document.getElementById('rho-preview-print'); if(rp) rp.remove(); const hp=document.getElementById('hps-preview-print'); if(hp) hp.remove(); const cp=document.getElementById('hpsc-preview-print'); if(cp) cp.remove(); const ap=document.getElementById('ana-preview-print'); if(ap) ap.remove(); const jpb=document.getElementById('jp-preview-print'); if(jpb) jpb.remove(); const sp=document.getElementById('spk-preview-print'); if(sp) sp.remove(); if(typeof fklPreviewState!=='undefined') fklPreviewState=null; if(typeof pnwPreviewState!=='undefined') pnwPreviewState=null; if(typeof rhoPreviewState!=='undefined') rhoPreviewState=null; if(typeof hpsPreviewState!=='undefined') hpsPreviewState=null; if(typeof anaPreviewState!=='undefined') anaPreviewState=null; pnCleanupPreview(); }
 
@@ -12454,9 +12475,7 @@ function fklOpenPreview(){
   }
   /* Tombol aksi pada header pratinjau: sisipkan tombol Cetak khusus FKL bila belum ada */
   const actions=document.querySelector('#pn-preview-overlay .pn-preview-head-actions');
-  { const _c=document.getElementById('hpsc-preview-print'); if(_c) _c.remove(); }
-  const _oldPnw=document.getElementById('pnw-preview-print'); if(_oldPnw) _oldPnw.remove();
-  const _oldHpsc=document.getElementById('hpsc-preview-print'); if(_oldHpsc) _oldHpsc.remove();
+  pnPreviewClearActions();   /* buang tombol sisipan modul lain — lihat definisinya */
   if(actions && !document.getElementById('fkl-preview-print')){
     const btn=document.createElement('button');
     btn.id='fkl-preview-print'; btn.className='btn btn-teal';
@@ -13807,9 +13826,7 @@ function pnwOpenPreview(){
     docPdfUpgrade('pnw-preview-frame', pnwStandaloneDocHtml, 'Form Pembukaan Penawaran.pdf');
   }
   const actions=document.querySelector('#pn-preview-overlay .pn-preview-head-actions');
-  { const _c=document.getElementById('hpsc-preview-print'); if(_c) _c.remove(); }
-  // hapus tombol cetak FKL bila ada agar tidak bentrok
-  const oldFkl=document.getElementById('fkl-preview-print'); if(oldFkl) oldFkl.remove();
+  pnPreviewClearActions();   /* buang tombol sisipan modul lain — lihat definisinya */
   if(actions && !document.getElementById('pnw-preview-print')){
     const btn=document.createElement('button');
     btn.id='pnw-preview-print'; btn.className='btn btn-teal';
@@ -14912,9 +14929,7 @@ function rhoOpenPreview(){
     docPdfUpgrade('rho-preview-frame', rhoStandaloneDocHtml, 'Referensi Harga Online.pdf');
   }
   const actions=document.querySelector('#pn-preview-overlay .pn-preview-head-actions');
-  { const _c=document.getElementById('hpsc-preview-print'); if(_c) _c.remove(); }
-  const oldFkl=document.getElementById('fkl-preview-print'); if(oldFkl) oldFkl.remove();
-  const oldPnw=document.getElementById('pnw-preview-print'); if(oldPnw) oldPnw.remove();
+  pnPreviewClearActions();   /* buang tombol sisipan modul lain — lihat definisinya */
   if(actions && !document.getElementById('rho-preview-print')){
     const btn=document.createElement('button');
     btn.id='rho-preview-print'; btn.className='btn btn-teal';
@@ -16866,10 +16881,7 @@ function hpsOpenPreview(){
     docPdfUpgrade('hps-preview-frame', hpsStandaloneDocHtml, 'Perhitungan HPS.pdf');
   }
   const actions=document.querySelector('#pn-preview-overlay .pn-preview-head-actions');
-  { const _c=document.getElementById('hpsc-preview-print'); if(_c) _c.remove(); }
-  const oldFkl=document.getElementById('fkl-preview-print'); if(oldFkl) oldFkl.remove();
-  const oldPnw=document.getElementById('pnw-preview-print'); if(oldPnw) oldPnw.remove();
-  const oldRho=document.getElementById('rho-preview-print'); if(oldRho) oldRho.remove();
+  pnPreviewClearActions();   /* buang tombol sisipan modul lain — lihat definisinya */
   if(actions && !document.getElementById('hps-preview-print')){
     const btn=document.createElement('button');
     btn.id='hps-preview-print'; btn.className='btn btn-teal';
@@ -18544,8 +18556,7 @@ function anaOpenPreview(section){
     docPdfUpgrade('ana-preview-frame', ()=>anaStandaloneDocHtml(anaPreviewSection), 'Analisa Harga Satuan.pdf');
   }
   const actions=document.querySelector('#pn-preview-overlay .pn-preview-head-actions');
-  { const _c=document.getElementById('hpsc-preview-print'); if(_c) _c.remove(); }
-  ['fkl-preview-print','pnw-preview-print','rho-preview-print','hps-preview-print'].forEach(id=>{ const b=document.getElementById(id); if(b) b.remove(); });
+  pnPreviewClearActions();   /* buang tombol sisipan modul lain — lihat definisinya */
   if(actions && !document.getElementById('ana-preview-print')){
     const btn=document.createElement('button');
     btn.id='ana-preview-print'; btn.className='btn btn-teal';
@@ -19074,7 +19085,7 @@ function hpscOpenPreview(html, nama){
   }
   // Tombol cetak modul lain dibersihkan agar tidak muncul dua tombol berdampingan
   const actions=document.querySelector('#pn-preview-overlay .pn-preview-head-actions');
-  ['fkl-preview-print','pnw-preview-print','rho-preview-print','hps-preview-print','ana-preview-print','hpsc-preview-print'].forEach(bid=>{ const b=document.getElementById(bid); if(b) b.remove(); });
+  pnPreviewClearActions();   /* buang tombol sisipan modul lain — lihat definisinya */
   if(actions){
     const btn=document.createElement('button');
     btn.id='hpsc-preview-print'; btn.className='btn btn-teal';

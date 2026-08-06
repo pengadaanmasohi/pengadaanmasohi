@@ -3312,7 +3312,12 @@ function spkDocCss(){
   /* Blok tanda tangan akhir */
   '.spk-sign{margin-top:30px;width:100%;border-collapse:collapse}'+
   '.spk-sign td{width:50%;text-align:center;vertical-align:top;font-size:11pt;padding:4px}'+
-  '.spk-sign .role{font-weight:700}.spk-sign .nm{font-weight:700;text-decoration:underline;margin-top:88px}'+
+  /* "PIHAK PERTAMA" / "PIHAK KEDUA" TIDAK ditebalkan: ia label penanda kolom,
+     sedangkan yang perlu menonjol adalah nama instansi (.org) & nama penanda
+     tangan (.nm) di bawahnya — keduanya tetap 700. Dengan bobot 500 (sama
+     dengan baris tanggal) susunan kolomnya terbaca bertingkat, bukan tiga baris
+     tebal berturut-turut. Berlaku untuk tanda tangan SPK maupun Lampiran. */
+  '.spk-sign .role{font-weight:500}.spk-sign .nm{font-weight:700;text-decoration:underline;margin-top:88px}'+
   /* Baris kepala (PIHAK … + nama instansi) dan baris nama/jabatan dipisah menjadi
      dua <tr>. Karena tinggi satu baris tabel berlaku sama untuk KEDUA kolom, blok
      nama & jabatan selalu mulai pada garis yang sama — tidak lagi melorot mengikuti
@@ -3395,6 +3400,9 @@ function spkDocCss2(){
   '.spk-cover .cv-accent{width:56px;border-top:4px solid #F6B40E;margin-top:38px}'+
   '.spk-cover .cv-eyebrow{margin-top:16px;font-size:9px;font-weight:700;letter-spacing:.22em;color:#1B3A6B}'+
   '.spk-cover .cv-title{margin:15px 0 0;font-size:60px;line-height:.98;font-weight:800;letter-spacing:-.03em;color:#1B3A6B;max-width:66%}'+
+  /* Tanpa baris .cv-eyebrow di atasnya, judul naik ~27px (16px margin eyebrow +
+     tinggi barisnya). Jarak aksen kuning -> judul dikembalikan ke nilai semula. */
+  '.spk-cover .cv-title.cv-title-solo{margin-top:42px}'+
   '.spk-cover .cv-title span{display:inline}'+
   /* Kata terakhir judul diberi warna emas PLN sebagai aksen (mis. "Lampiran SPK",
      "Surat Perintah Kerja") agar judul lebih hidup namun tetap resmi. */
@@ -3481,9 +3489,21 @@ function spkDocCss2(){
   '.spk-tocpage{font-family:'+G+';color:#201E1D}'+
   '.spk-tocpage .toc-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px}'+
   '.spk-tocpage h1{margin:0;font-size:46px;font-weight:800;letter-spacing:-.025em;color:#201E1D}'+
-  '.spk-tocpage .toc-meta{text-align:right;line-height:1.6}'+
-  '.spk-tocpage .toc-meta b{display:block;font-size:9px;font-weight:700;letter-spacing:.18em;color:#1B3A6B}'+
-  '.spk-tocpage .toc-meta span{display:block;font-size:8.5px;font-weight:700;letter-spacing:.14em;color:#1B3A6B}'+
+  /* ---- Keterangan dokumen di sisi kanan judul "Daftar Isi" ----
+     Dulu kedua barisnya sama-sama tebal, sama-sama biru tua, dan sama-sama
+     berjarak huruf lebar (0,18em / 0,14em) pada 9px & 8,5px. Akibatnya nama
+     dokumen dan nomornya saling bersaing, keduanya kekecilan di samping judul
+     46px, dan jarak huruf yang lebar justru membuat NOMOR paling sulit dibaca
+     — pada deretan angka & garis miring, jarak huruf memecah kelompok yang
+     seharusnya menyatu.
+     Sekarang keduanya dibedakan perannya: nama dokumen jadi label yang tenang
+     (abu, tetap berjarak huruf lebar karena memang kapital pendek), nomor jadi
+     isi utama (lebih besar, biru tua, jarak huruf normal, angka tabular). */
+  '.spk-tocpage .toc-meta{text-align:right;line-height:1.35}'+
+  '.spk-tocpage .toc-meta b{display:block;font-size:9.5px;font-weight:700;letter-spacing:.16em;'+
+    'color:#8F8E8E;margin-bottom:4px}'+
+  '.spk-tocpage .toc-meta span{display:block;font-size:14px;font-weight:800;letter-spacing:.005em;'+
+    'color:#1B3A6B;font-variant-numeric:tabular-nums}'+
   '.spk-tocpage .toc-accent{width:56px;border-top:4px solid #F6B40E;margin-bottom:14px}'+
   '.spk-tocpage .toc-rule{border-top:2px solid #201E1D;margin:16px 0 6px}'+
   /* ---- Kotak pembungkus + dua kolom bergaris tegak ----
@@ -3746,7 +3766,7 @@ function spkDocCss2(){
      Sebelumnya ".role" diam-diam kena aturan bawaan HPS 'tr.ttd-row .role{font-size:12px}'
      — yang mulai berlaku sejak blok ini dipindah ke DALAM tabel — sehingga
      "PIHAK PERTAMA" terlihat lebih kecil dari "PT PLN (Persero)". */
-  '.spk-lampsign .role{font-size:var(--spk-lamp-fs);font-weight:700;color:#1a2b31}'+
+  '.spk-lampsign .role{font-size:var(--spk-lamp-fs);font-weight:500;color:#1a2b31}'+
   '.spk-lampsign .org{font-size:var(--spk-lamp-fs);font-weight:700;color:#1a2b31;line-height:1.4;text-wrap:balance}'+
   '.spk-lampsign .nm{font-size:var(--spk-lamp-fs);font-weight:700;color:#1a2b31;text-decoration:underline;margin-top:78px}'+
   '.spk-lampsign .jab{font-size:var(--spk-lamp-fs);font-weight:700;color:#1a2b31}'+
@@ -8336,12 +8356,15 @@ function spkCoverHtml(data, ctx, judulBaris){
       '<div class="cv-brand">'+logo+
         '<div class="cv-org"><span>PT PLN (PERSERO)</span><b>UP3 Masohi</b></div>'+
       '</div>'+
-      '<div class="cv-kind">'+esc(kind)+'</div>'+
+      /* Chip kanan atas memuat METODE PENGADAAN ("Pengadaan Langsung", "Tender"),
+         bukan lagi nama dokumen — nama dokumen sudah menjadi judul besar tepat di
+         bawahnya, jadi dulu tertulis dua kali. Baris .cv-eyebrow yang dahulu
+         memuat metode pengadaan ikut dibuang karena isinya pindah ke sini. */
+      '<div class="cv-kind">'+esc(String(spkMetodeLabel(data)||'').toUpperCase())+'</div>'+
     '</div>'+
     '<div class="cv-rule"></div>'+
     '<div class="cv-accent"></div>'+
-    '<div class="cv-eyebrow">'+esc(spkMetodeLabel(data))+'</div>'+
-    '<h1 class="cv-title">'+judulHtml+'</h1>'+
+    '<h1 class="cv-title cv-title-solo">'+judulHtml+'</h1>'+
     '<div class="cv-rule2"></div>'+
     '<div class="cv-parties">'+
       '<div class="p"><div class="pl">'+lbl1+'</div><div class="pn">PT PLN (Persero)</div><div class="ps">'+esc(unit)+'</div></div>'+
@@ -9798,7 +9821,11 @@ function spkOpenPreview(data, klausul){
   }
   // Sisipkan tombol Cetak/PDF khusus SPK ke header modal bersama (hapus tombol modul lain)
   const actions=document.querySelector('#pn-preview-overlay .pn-preview-head-actions');
-  ['fkl-preview-print','pnw-preview-print','rho-preview-print','hps-preview-print','ana-preview-print','hpsc-preview-print','spk-preview-print','spk-preview-khs'].forEach(bid=>{ const b=document.getElementById(bid); if(b) b.remove(); });
+  /* Tombol sisipan modul lain dibersihkan lewat penolong bersama di app.js
+     (pnPreviewClearActions). Daftar id yang dulu ditulis tangan di sini selalu
+     tertinggal begitu ada modul pratinjau baru, sehingga tombol "Cetak / PDF"
+     modul sebelumnya tersisa dan tampil dua kali. */
+  if(typeof pnPreviewClearActions==='function') pnPreviewClearActions();
   /* ---- Pemilih SHEET PENYEDIA (khusus Perjanjian/Kontrak KHS) ----
      "Semua Penyedia" menampilkan seluruh dokumen berurutan; memilih satu
      penyedia menyembunyikan sisanya di pratinjau DAN membuat Cetak/PDF hanya
@@ -10753,6 +10780,26 @@ function spkKvCellXml(w, runsXml, sp){
    (menjorok 0,75 cm). Kolom: label | : | nilai. Round-trip dari tampilan web. */
 function spkKvTableXml(rows){
   var W1=1247, W2=283, W3=7000, i;
+  /* Lebar kolom label MENGIKUTI LABEL TERPANJANG (dulu selalu 1247 twip =
+     2,2 cm). Label seperti "Nilai Pekerjaan (+ PPN)" atau "Pengguna
+     Barang/Jasa" lebih lebar dari itu, sehingga di berkas Word hasil unduhan
+     ia melipat jadi dua baris walaupun di pratinjau web tampak satu baris.
+     1247 twip dipertahankan sebagai lantai supaya dokumen berlabel pendek
+     tidak berubah sama sekali; batas atas 4000 twip (7,05 cm) menjaga kolom
+     nilai tetap kebagian tempat. */
+  try{
+    var _ukur=(typeof spkPkTextWidthCm==='function') ? spkPkTextWidthCm : spkTextWidthCm;
+    var _maxCm=0, _t;
+    for(i=0;i<rows.length;i++){
+      _t=String(rows[i].k||'').replace(/<[^>]*>/g,'')
+           .replace(/&nbsp;|&#160;/gi,' ').replace(/&amp;/gi,'&')
+           .replace(/\s+/g,' ').trim();
+      if(_t) _maxCm=Math.max(_maxCm, _ukur(_t));
+    }
+    /* +0,25 cm = jeda label -> tanda ":" (sama dengan w:right cellMar 108 twip
+       ditambah kelonggaran glif). */
+    if(_maxCm>0) W1=Math.min(4000, Math.max(W1, Math.round((_maxCm+0.25)*566.93)));
+  }catch(eKw){}
   var borders='<w:tblBorders>'+
     ['top','left','bottom','right','insideH','insideV'].map(function(s){
       return '<w:'+s+' w:val="none" w:sz="0" w:space="0" w:color="auto"/>'; }).join('')+
@@ -11176,7 +11223,14 @@ function spkWTblToHtml(tbl){
   var twCm=function(tw){ tw=+tw||0; return tw>0 ? (Math.round(tw/566.93*100)/100)+'cm' : ''; };
   var kw=gc.length>0 ? twCm(gc[0].getAttributeNS(SPK_W_NS,'w')) : '';
   var sw=gc.length>1 ? twCm(gc[1].getAttributeNS(SPK_W_NS,'w')) : '';
-  var kStyle=kw?(' style="flex:0 0 '+kw+';max-width:'+kw+'"'):'';
+  /* PERBAIKAN: lebar kolom Word dipakai sebagai lebar MINIMUM, bukan lebar mati.
+     Dengan max-width, label yang lebih panjang daripada kolom di berkas Word
+     (mis. "Nilai Pekerjaan (+ PPN)" pada tabel Overview Pekerjaan yang kolomnya
+     dibuat sempit) DIPAKSA melipat jadi dua baris, dan seluruh blok terlihat
+     berantakan. min-width mempertahankan posisi ":" persis seperti tabel yang
+     dibuat di Word untuk label yang muat, sekaligus membiarkan kolomnya
+     melebar seperlunya untuk label yang tidak muat. */
+  var kStyle=kw?(' style="flex:0 0 auto;min-width:'+kw+'"'):'';
   var sStyle=sw?(' style="flex:0 0 '+sw+';width:'+sw+'"'):'';
   for(i=0;i<trs.length;i++){
     var tcs=[], kids=trs[i].childNodes;

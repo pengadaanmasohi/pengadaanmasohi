@@ -1775,6 +1775,8 @@ async function torSaveDokumen(){
 function torDocCss(wKl, wBab){
   const WK=(wKl>0?wKl:0.65), WB=(wBab>0?wBab:0.55);
   const GAP=(typeof SPK_NUM_GAP!=='undefined') ? SPK_NUM_GAP : 0.18;
+  /* Langkah inden tingkat 1 -> tingkat 2 = setengah kolom teks judul bab. */
+  const LV2=Math.round(((WB+GAP)/2)*100)/100;
   return ''+
   /* ================= PENOMORAN MENGIKUTI TEMPLATE WORD =================
      Bawaan mesin SPK menomori judul klausul lewat penghitung CSS
@@ -1787,6 +1789,14 @@ function torDocCss(wKl, wBab){
      spkDocCss/spkClHeadCss karena kekhususannya lebih tinggi DAN dipasang
      paling akhir di <style> dokumen. Susun Kontrak tidak tersentuh. */
   '.spk-doc.spk-spk .spk-cl-h .n::before{content:attr(data-no)}'+
+  /* ---- Inden bertingkat tingkat 1 -> tingkat 2 ----
+     Judul bab ("I. PENDAHULUAN") mulai di batas margin; judul klausul
+     ("I.1. OVERVIEW PEKERJAAN") digeser SEDIKIT ke kanan supaya susunan
+     bertingkatnya terlihat — tidak sampai sejajar kata "PENDAHULUAN", cukup
+     setengah kolom teks bab. Nilainya diturunkan dari lebar kotak nomor bab
+     supaya ikut menyesuaikan bila labelnya melebar ("VIII."). Judul bab
+     dikecualikan lewat :not(.tor-babh). */
+  '.spk-doc.spk-spk .spk-cl-h:not(.tor-babh){margin-left:'+LV2.toFixed(2)+'cm}'+
   '.spk-doc.spk-spk .spk-cl-h{padding-left:'+WK.toFixed(2)+'cm;text-indent:-'+WK.toFixed(2)+'cm}'+
   '.spk-doc.spk-spk .spk-cl-h .n{min-width:'+WK.toFixed(2)+'cm;width:auto;text-align:left;'+
     'padding-right:'+GAP+'cm;box-sizing:border-box}'+
@@ -1943,6 +1953,20 @@ function torDocCss(wKl, wBab){
   '.tor-di .spk-toc2.tor-toc.d3 .row .no{width:29pt}'+
   '.tor-di .spk-toc2.tor-toc.d3 .row.bab{padding:5pt 0 3.5pt;margin:8pt 0 2pt}'+
   '.tor-di .spk-toc2.tor-toc.d3 .row.bab .no{width:25pt}'+
+  /* ---- Blok "Label : nilai" (Overview Pekerjaan) ----
+     Baris ini berasal dari TABEL 2/3 kolom pada template Word; spkWTblToHtml
+     menyalin lebar kolom Word apa adanya sebagai gaya sebaris pada <span
+     class="k">. Bila kolom di berkas Word lebih sempit daripada label
+     terpanjang ("Nilai Pekerjaan (+ PPN)"), labelnya melipat jadi dua baris.
+     Di sini lebar kolom dilepas dan pelipatan dimatikan, sehingga kolom label
+     kembali diukur oleh grid .spk-kvgrp (max-content) = selebar label
+     TERPANJANG, dan seluruh tanda ":" tetap lurus satu garis.
+     !important diperlukan karena yang ditimpa adalah gaya sebaris. */
+  '.spk-cl .spk-kv .k{max-width:none !important;white-space:nowrap}'+
+  '.spk-cl .spk-kvgrp .spk-kv .k{flex:none !important;padding-right:.5cm}'+
+  /* Cadangan bila baris kv TIDAK sempat dikelompokkan (mis. disela paragraf):
+     kolom persentase 34% diganti lebar isi supaya tetap tidak melipat. */
+  '.spk-cl > .spk-kv .k{flex:0 0 auto !important;padding-right:.5cm}'+
   /* ---- Kaki halaman isi TOR/KAK ----
      Kop & kaki memakai kelas milik Surat Perintah Kerja (.spk-rhd / .spk-rft /
      .ft-row / .ln / .ft-unit / .ft-pg dari spkDocCss2) supaya tampilannya
@@ -1972,6 +1996,21 @@ function torDocCss(wKl, wBab){
   '.tor-ttd .nm{font-weight:700}'+
   /* Jarak antara baris penanda tangan atas dengan baris pengesah */
   '.tor-ttd table.tt tr + tr td{padding-top:14pt}';
+}
+/* ---- Klausul OVERVIEW PEKERJAAN: tanpa cetak tebal ----
+   Nilai "Direksi Pekerjaan" & "Pengawas Pekerjaan" tampil tebal karena template
+   Word-nya memang menebalkan sel itu — bukan hasil olahan aplikasi. Karena
+   blok Overview seluruhnya berupa data (bukan penegasan), penebalannya dibuang
+   di sini: tag <b>/<strong> dilepas dan deklarasi font-weight tebal pada gaya
+   sebaris dinolkan. Klausul lain TIDAK tersentuh. */
+function torIsOverview(judul){
+  var t=(typeof spkJudulPlain==='function') ? spkJudulPlain(judul) : String(judul||'');
+  return /overview/i.test(t);
+}
+function torTanpaTebal(html){
+  return String(html==null?'':html)
+    .replace(/<\/?(?:b|strong)\b[^>]*>/gi,'')
+    .replace(/font-weight\s*:\s*(?:bold(?:er)?|[5-9]00)\s*;?/gi,'');
 }
 /* ---- Sampul (rancangan "garis tegak") ----
    Tata letaknya memakai aliran normal (flex column) dengan kaki dikunci
@@ -2218,7 +2257,10 @@ function torDocHtml(data, klausul){
      klausul berbentuk "II.3" dan butir di dalamnya bernomor mulai 1 lagi
      (persis lampiran TOR Word). Nomor butir dibiarkan apa adanya dari template. */
   const pre=klausul.map((k,i)=> spkKvGroup(spkKlItalicAsing(spkBoldPihak(spkNomorToNo(spkNumberFix(spkTidyKeyValue(
-      spkStripFontStyle(spkPruneKlausul(spkMerge(spkSortDefinisiIf(k.judul, k.isi||''), ctx), str[i].urut, data))
+      spkStripFontStyle(spkPruneKlausul(spkMerge(
+        torIsOverview(k.judul) ? torTanpaTebal(spkSortDefinisiIf(k.judul, k.isi||''))
+                               : spkSortDefinisiIf(k.judul, k.isi||''),
+        ctx), str[i].urut, data))
     )))))));
   try{ SPK_HANG_OVR = spkKumpulHang(pre.map(function(x){ try{ return spkPkBoxMark(x); }catch(e2){ return x; } })); }
   catch(e){ SPK_HANG_OVR=null; }
@@ -2248,8 +2290,11 @@ function torDocHtml(data, klausul){
      selain itu dibangkitkan otomatis dari teks baku lampiran TOR. */
   const babAkhir=TOR_BAB.length;
   const adaPenutup=str.some(s=>s.bab===babAkhir);
+  /* Judul "TERM OF REFERENCE (TOR)/KERANGKA ACUAN KERJA (KAK)" + nomor dokumen
+     yang dahulu dicetak di kepala badan dokumen DIBUANG: keduanya sudah tampil
+     di sampul dan di kop yang berulang tiap lembar, jadi di sini hanya
+     mengulang. Halaman isi kini langsung dibuka oleh judul bab I. */
   const isiBody=
-    '<div class="spk-bab"><b>'+fkEsc(TOR_DOK_LABEL)+'</b><span>'+fkEsc(data.no_dokumen||'')+'</span></div>'+
     clauses+
     (adaPenutup ? '' : torPenutupHtml())+
     torTtdHtml(ctx);
@@ -2626,10 +2671,11 @@ function torOpenPreview(data, klausul){
     torPreviewRender();
   }
   const actions=document.querySelector('#pn-preview-overlay .pn-preview-head-actions');
-  ['fkl-preview-print','pnw-preview-print','rho-preview-print','hps-preview-print','ana-preview-print',
-   'hpsc-preview-print','spk-preview-print','spk-preview-khs','tor-preview-print'].forEach(bid=>{
-    const b=document.getElementById(bid); if(b) b.remove();
-  });
+  /* Tombol sisipan modul lain dibersihkan lewat penolong bersama di app.js
+     (pnPreviewClearActions). Daftar id yang dulu ditulis tangan di sini selalu
+     tertinggal begitu ada modul pratinjau baru, sehingga tombol "Cetak / PDF"
+     modul sebelumnya tersisa dan tampil dua kali. */
+  if(typeof pnPreviewClearActions==='function') pnPreviewClearActions();
   if(actions){
     const btn=document.createElement('button');
     btn.id='tor-preview-print'; btn.className='btn btn-teal';
