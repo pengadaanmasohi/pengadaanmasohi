@@ -1849,10 +1849,16 @@ function torDocCss(wKl, wBab){
   '.tor-cv h1.tor-tt{margin:0;font-size:29pt;font-weight:700;line-height:1.16;'+
     'letter-spacing:-.02em;color:#14346B}'+
   '.tor-cv h1.tor-tt i{font-style:italic}'+
-  '.tor-cv .tor-no{margin-top:20pt;font-size:10pt;font-weight:600;letter-spacing:.04em;'+
-    'color:#2F5698;font-variant-numeric:tabular-nums}'+
+  /* Nomor dokumen dibuat LENCANA berlatar kuning (warna yang sama dengan ujung
+     batang tegak) supaya menjadi titik henti mata antara judul dan kotak
+     keterangan. display:inline-block WAJIB — sebagai blok, latar kuningnya akan
+     memanjang selebar kertas. Jaraknya ke kotak PEKERJAAN diatur di .tor-set. */
+  '.tor-cv .tor-no{display:inline-block;margin-top:22pt;padding:5.5pt 12pt;border-radius:4pt;'+
+    'background:#F6B21B;color:#14346B;font-size:10.5pt;font-weight:700;letter-spacing:.04em;'+
+    'font-variant-numeric:tabular-nums;'+
+    '-webkit-print-color-adjust:exact;print-color-adjust:exact}'+
   /* Kotak keterangan: garis tipis mengelilingi, garis atas tebal navy. */
-  '.tor-cv .tor-set{margin-top:18pt;display:flex;flex-direction:column;gap:10pt}'+
+  '.tor-cv .tor-set{margin-top:28pt;display:flex;flex-direction:column;gap:10pt}'+
   '.tor-cv .ko{border:.75pt solid #E3E8F1;border-top:2.5pt solid #14346B;padding:9pt 13pt 10pt}'+
   '.tor-cv .ko-lb{font-size:7.2pt;font-weight:600;letter-spacing:.2em;color:#2F5698;margin-bottom:5pt}'+
   '.tor-cv .ko-isi{font-size:11.5pt;font-weight:700;line-height:1.42;color:#14346B}'+
@@ -1884,13 +1890,13 @@ function torDocCss(wKl, wBab){
      kolom nomor 44px, titik-titik border-dotted) DINETRALKAN di sini. */
   '.tor-di .spk-toc2.tor-toc{margin-top:26pt}'+
   '.tor-di .spk-toc2.tor-toc .row{display:flex;align-items:baseline;border:0;margin:0;'+
-    'padding:4.6pt 0 4.6pt 24pt;font-size:9.6pt;line-height:1.35;font-weight:400;color:#33415C}'+
+    'padding:4.8pt 0 4.8pt 24pt;font-size:11pt;line-height:1.35;font-weight:400;color:#33415C}'+
   '.tor-di .spk-toc2.tor-toc .row:first-child,.tor-di .spk-toc2.tor-toc .row:last-child{border:0}'+
   /* Ukuran huruf anak baris dibuat mewarisi .row supaya pengaturan kerapatan
      (d1/d2/d3) cukup mengubah SATU nilai, tidak empat. */
   '.tor-di .spk-toc2.tor-toc .row .no,.tor-di .spk-toc2.tor-toc .row .nm,'+
     '.tor-di .spk-toc2.tor-toc .row .dot,.tor-di .spk-toc2.tor-toc .row .pg{font-size:inherit}'+
-  '.tor-di .spk-toc2.tor-toc .row .no{flex:0 0 auto;width:34pt;font-weight:400;color:#33415C;'+
+  '.tor-di .spk-toc2.tor-toc .row .no{flex:0 0 auto;width:40pt;font-weight:400;color:#33415C;'+
     'font-variant-numeric:tabular-nums}'+
   /* flex:0 0 auto WAJIB. Dengan flex-shrink aktif, span titik (yang isinya
      ratusan karakter) membuat peramban ikut menyusutkan judul di sebelahnya
@@ -1911,24 +1917,32 @@ function torDocCss(wKl, wBab){
   '.tor-di .spk-toc2.tor-toc .row.bab{font-weight:700;text-transform:uppercase;letter-spacing:.04em;'+
     'border-top:1.5pt solid #14346B;padding:8pt 0 6pt;margin:14pt 0 4pt;color:#14346B}'+
   '.tor-di .spk-toc2.tor-toc .row.bab:first-child{margin-top:0}'+
-  '.tor-di .spk-toc2.tor-toc .row.bab .no{width:30pt;font-weight:700;color:#B57C05}'+
+  '.tor-di .spk-toc2.tor-toc .row.bab .no{width:34pt;font-weight:700;color:#B57C05}'+
   '.tor-di .spk-toc2.tor-toc .row.bab .nm{font-weight:700;color:#14346B;text-transform:uppercase;max-width:80%}'+
   '.tor-di .spk-toc2.tor-toc .row.bab .dot{visibility:hidden}'+
   '.tor-di .spk-toc2.tor-toc .row.bab .pg{font-weight:700}'+
-  /* ---- Kerapatan otomatis (kelas dari spkTocDensity: d1 >16, d2 >22, d3 >28)
-     Daftar isi TOR/KAK harus tetap SATU lembar; karena kelas .spk-tocpage tidak
-     lagi dipakai, aturan kerapatan bawaan tidak berlaku dan ditulis ulang di
-     sini — termasuk jarak baris bab, yang paling banyak memakan tinggi. */
-  '.tor-di .spk-toc2.tor-toc.d1{margin-top:20pt}'+
-  '.tor-di .spk-toc2.tor-toc.d1 .row{padding:3.6pt 0 3.6pt 20pt;font-size:9pt}'+
-  '.tor-di .spk-toc2.tor-toc.d1 .row.bab{padding:7pt 0 5pt;margin:11pt 0 3pt}'+
-  '.tor-di .spk-toc2.tor-toc.d2{margin-top:16pt}'+
-  '.tor-di .spk-toc2.tor-toc.d2 .row{padding:2.8pt 0 2.8pt 18pt;font-size:8.4pt}'+
-  '.tor-di .spk-toc2.tor-toc.d2 .row.bab{padding:6pt 0 4pt;margin:9pt 0 3pt}'+
-  '.tor-di .spk-toc2.tor-toc.d3{margin-top:13pt}'+
-  '.tor-di .spk-toc2.tor-toc.d3{column-count:1}'+
-  '.tor-di .spk-toc2.tor-toc.d3 .row{padding:2.1pt 0 2.1pt 16pt;font-size:7.8pt}'+
-  '.tor-di .spk-toc2.tor-toc.d3 .row.bab{padding:5pt 0 3.5pt;margin:7pt 0 2pt}'+
+  /* ---- Kerapatan otomatis (kelas dari torTocDensity, BUKAN spkTocDensity) ----
+     Ambang bawaan milik SPK (d1 >16) memaksa daftar isi TOR/KAK mengecil pada
+     18 baris, padahal tinggi lembar masih sisa banyak — itulah sebabnya
+     hurufnya terlihat kekecilan. Ambang di torTocDensity dihitung ulang dari
+     tinggi bidang isi (~638pt) supaya huruf baru turun saat memang perlu.
+     Ukuran di bawah juga ikut naik; jarak baris bab dipangkas lebih dulu karena
+     ia penyumbang tinggi terbesar. */
+  '.tor-di .spk-toc2.tor-toc.d1{margin-top:22pt}'+
+  '.tor-di .spk-toc2.tor-toc.d1 .row{padding:4pt 0 4pt 21pt;font-size:10pt}'+
+  '.tor-di .spk-toc2.tor-toc.d1 .row .no{width:37pt}'+
+  '.tor-di .spk-toc2.tor-toc.d1 .row.bab{padding:7pt 0 5pt;margin:12pt 0 3pt}'+
+  '.tor-di .spk-toc2.tor-toc.d1 .row.bab .no{width:31pt}'+
+  '.tor-di .spk-toc2.tor-toc.d2{margin-top:18pt}'+
+  '.tor-di .spk-toc2.tor-toc.d2 .row{padding:2.9pt 0 2.9pt 18pt;font-size:9pt}'+
+  '.tor-di .spk-toc2.tor-toc.d2 .row .no{width:33pt}'+
+  '.tor-di .spk-toc2.tor-toc.d2 .row.bab{padding:6pt 0 4pt;margin:10pt 0 3pt}'+
+  '.tor-di .spk-toc2.tor-toc.d2 .row.bab .no{width:28pt}'+
+  '.tor-di .spk-toc2.tor-toc.d3{margin-top:14pt;column-count:1}'+
+  '.tor-di .spk-toc2.tor-toc.d3 .row{padding:2pt 0 2pt 16pt;font-size:7.8pt}'+
+  '.tor-di .spk-toc2.tor-toc.d3 .row .no{width:29pt}'+
+  '.tor-di .spk-toc2.tor-toc.d3 .row.bab{padding:5pt 0 3.5pt;margin:8pt 0 2pt}'+
+  '.tor-di .spk-toc2.tor-toc.d3 .row.bab .no{width:25pt}'+
   /* ---- Kaki halaman isi TOR/KAK ----
      Kop & kaki memakai kelas milik Surat Perintah Kerja (.spk-rhd / .spk-rft /
      .ft-row / .ln / .ft-unit / .ft-pg dari spkDocCss2) supaya tampilannya
@@ -2029,6 +2043,21 @@ function torCoverHtml(data, ctx){
     '</div>'+
   '</section>';
 }
+/* ---- Kerapatan daftar isi TOR/KAK ----
+   spkTocDensity() milik Susun Kontrak TIDAK dipakai di sini: ambangnya
+   (d1 >16) dihitung untuk daftar pasal SPK yang tiap barisnya bergaris dan
+   jauh lebih tinggi. Pada daftar isi TOR/KAK ambang itu membuat huruf mengecil
+   terlalu dini. Angka di bawah diturunkan dari tinggi bidang isi lembar
+   (297mm - 2 x 20mm, dikurangi kop + judul + garis ~ 90pt, sisa ~638pt) dibagi
+   tinggi satu baris pada tiap ukuran, dengan cadangan ~5%.
+   Baris bab ikut terhitung dalam n (lihat torTocHtml). */
+function torTocDensity(n){
+  n = Number(n)||0;
+  if(n > 32) return ' d3';   /* 7,8pt */
+  if(n > 26) return ' d2';   /* 9pt   */
+  if(n > 20) return ' d1';   /* 10pt  */
+  return '';                 /* 11pt  */
+}
 /* ---- Daftar Isi (struktur .spk-toc2 .pg WAJIB: diisi oleh paginator) ---- */
 function torTocHtml(data, klausul){
   const esc=fkEsc, list=klausul||[];
@@ -2078,7 +2107,7 @@ function torTocHtml(data, klausul){
         '<span>'+esc(TOR_SINGKATAN_UNIT.toUpperCase())+'</span></div>'+
       '<div class="di-judul">Daftar Isi</div>'+
       '<div class="di-rule"></div>'+
-      '<div class="spk-toc2 tor-toc'+spkTocDensity(n)+'">'+rows+'</div>'+
+      '<div class="spk-toc2 tor-toc'+torTocDensity(n)+'">'+rows+'</div>'+
     '</div>'+
   '</section>';
 }
