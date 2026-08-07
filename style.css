@@ -1075,8 +1075,12 @@ tbody.tbody-reveal>tr:nth-child(10){animation-delay:.29s}
 }
 @media(max-width:760px){ .login-tilt{max-width:430px} }
 
-/* ---- Panel kiri: branding ---- */
-.login-brandside{position:relative;padding:44px 38px;color:#eafafb;display:flex;flex-direction:column;justify-content:space-between;
+/* ---- Panel kiri: branding ----
+   Padding & jarak dirapatkan setelah tombol "Masuk sebagai Tamu" dihapus.
+   Tinggi kartu ditentukan panel yang paling tinggi; karena panel form kini
+   satu tombol lebih pendek, panel kiri ikut dirapatkan supaya tinggi kartu
+   benar-benar menurun dan tetap seimbang antara kedua sisi. */
+.login-brandside{position:relative;padding:38px 36px;color:#eafafb;display:flex;flex-direction:column;justify-content:space-between;
   background:
     radial-gradient(520px 320px at 12% 0%, rgba(22,169,181,.55), transparent 62%),
     linear-gradient(158deg,rgba(7,63,69,.92),rgba(9,94,102,.88) 55%,rgba(14,124,134,.86));
@@ -1091,18 +1095,18 @@ tbody.tbody-reveal>tr:nth-child(10){animation-delay:.29s}
 .brandside-logo svg{width:32px;height:32px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.15))}
 .brandside-top .bt-txt h3{font-family:'Plus Jakarta Sans';font-weight:800;font-size:13px;letter-spacing:.4px;line-height:1.2;color:#fff}
 .brandside-top .bt-txt span{font-size:8.5px;font-weight:600;letter-spacing:1.8px;text-transform:uppercase;color:rgba(223,243,244,.85)}
-.brandside-mid{position:relative;z-index:2;margin:26px 0}
+.brandside-mid{position:relative;z-index:2;margin:20px 0}
 .brandside-mid h2{font-family:'Plus Jakarta Sans';font-weight:800;font-size:26px;line-height:1.2;letter-spacing:.2px;color:#fff}
 .brandside-mid h2 b{color:var(--yellow);font-weight:800}
 .brandside-mid p{margin-top:12px;font-size:12px;line-height:1.65;color:rgba(223,243,244,.82);max-width:300px}
-.brandside-feats{position:relative;z-index:2;display:flex;flex-direction:column;gap:11px}
+.brandside-feats{position:relative;z-index:2;display:flex;flex-direction:column;gap:10px}
 .brandside-feat{display:flex;align-items:center;gap:11px;font-size:11.5px;font-weight:600;color:rgba(234,250,251,.92)}
 .brandside-feat .bf-ic{width:28px;height:28px;flex:0 0 28px;border-radius:9px;display:grid;place-items:center;
   background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.18)}
 .brandside-feat .bf-ic svg{width:15px;height:15px;color:var(--yellow)}
 
 /* ---- Panel kanan: form ---- */
-.login-formside{position:relative;padding:40px 40px 30px;background:rgba(255,255,255,.98);
+.login-formside{position:relative;padding:34px 40px 28px;background:rgba(255,255,255,.98);
   display:flex;flex-direction:column;justify-content:center}
 .login-logo{display:none} /* logo lama tak dipakai di layout baru */
 .login-title{text-align:left;font-family:'Plus Jakarta Sans';font-weight:800;font-size:19px;color:var(--ink);letter-spacing:.1px;line-height:1.25}
@@ -1149,11 +1153,9 @@ tbody.tbody-reveal>tr:nth-child(10){animation-delay:.29s}
 .login-btn:hover::after{left:130%}
 .login-btn:active{transform:translateY(0)}
 .login-btn svg{width:18px;height:18px;position:relative;z-index:1}
-.login-btn.guest{background:linear-gradient(135deg,#556974,#7c8d96);box-shadow:0 10px 26px rgba(85,105,116,.4)}
-.login-btn.guest:hover{box-shadow:0 16px 34px rgba(85,105,116,.5)}
-.login-guest-note{text-align:left;color:var(--muted);font-size:10.5px;margin-top:12px;line-height:1.6;
-  background:var(--teal-soft);border:1px solid #cfe8ea;border-radius:11px;padding:11px 13px}
-.login-foot{text-align:center;color:var(--muted);font-size:9.5px;margin-top:20px;letter-spacing:.3px;opacity:.9}
+/* Gaya .login-btn.guest & .login-guest-note DIHAPUS bersama tombol
+   "Masuk sebagai Tamu" — tidak ada lagi elemen yang memakainya. */
+.login-foot{text-align:center;color:var(--muted);font-size:9.5px;margin-top:16px;letter-spacing:.3px;opacity:.9}
 .role-pane{display:none}.role-pane.active{display:block;animation:paneFade .28s ease}
 @keyframes paneFade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
@@ -1246,7 +1248,6 @@ tbody.tbody-reveal>tr:nth-child(10){animation-delay:.29s}
 .user-role-ic{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.18);box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)}
 .user-role-ic svg{width:14px;height:14px;color:#fff;display:block}
 .user-role-ic.admin{background:linear-gradient(135deg,rgba(246,180,14,.5),rgba(246,180,14,.22))}.user-role-ic.admin svg{color:#ffe08a}
-.user-role-ic.guest{background:linear-gradient(135deg,rgba(255,209,102,.46),rgba(255,209,102,.2))}.user-role-ic.guest svg{color:#ffe9bc}
 .topbar-user .logout-btn{display:inline-flex;align-items:center;gap:7px;background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.06));color:#fff;border:1px solid rgba(255,255,255,.22);padding:8px 15px;border-radius:11px;font-family:'Plus Jakarta Sans';font-size:11.5px;font-weight:700;cursor:pointer;transition:background .18s ease,border-color .18s ease,transform .16s cubic-bezier(.16,1,.3,1),box-shadow .2s ease;box-shadow:inset 0 1px 0 rgba(255,255,255,.2)}
 .topbar-user .logout-btn:hover{background:linear-gradient(135deg,var(--red),#e25151);border-color:transparent;transform:translateY(-2px);box-shadow:0 6px 18px rgba(211,58,58,.4)}
 .topbar-user .logout-btn:active{transform:translateY(0) scale(.98)}
@@ -1266,7 +1267,7 @@ tbody.tbody-reveal>tr:nth-child(10){animation-delay:.29s}
 .settings-account .user-chip{background:linear-gradient(135deg,var(--teal),var(--cyan));border:none;color:#fff;padding:5px 12px 5px 6px;font-size:11.5px;box-shadow:0 3px 10px rgba(14,124,134,.28)}
 .settings-account .user-role-ic{width:22px;height:22px;background:rgba(255,255,255,.22);box-shadow:inset 0 0 0 1px rgba(255,255,255,.3)}
 .settings-account .user-role-ic svg{color:#fff}
-.settings-account .user-role-ic.admin svg,.settings-account .user-role-ic.guest svg{color:#fff}
+.settings-account .user-role-ic.admin svg{color:#fff}
 .settings-sep{height:1px;background:linear-gradient(90deg,transparent,rgba(20,50,60,.1),transparent);margin:7px 4px}
 .settings-item{display:flex;align-items:center;gap:11px;width:100%;padding:10px 11px;border:none;background:none;border-radius:10px;font-family:'Plus Jakarta Sans';font-size:12.5px;font-weight:700;color:#22343a;cursor:pointer;text-align:left;transition:background .15s ease,color .15s ease}
 .settings-item svg{width:17px;height:17px;flex:0 0 auto;color:#54666c;transition:color .15s ease}

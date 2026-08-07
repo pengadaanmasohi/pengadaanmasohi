@@ -250,7 +250,9 @@ if (USE_SUPABASE && window.supabase) {
    dipakai akun "dummy" agar bisa menguji aplikasi tanpa menyentuh database.
    Semuanya dibuang: `db` kini SELALU client Supabase asli, tidak pernah
    ditukar, sehingga tidak ada lagi jalur tulis-data yang berjalan di memori.
-   Peran yang tersisa di aplikasi HANYA: 'admin' dan 'guest' (Tamu).
+   Peran 'guest' (Tamu) JUGA SUDAH DIHAPUS TOTAL: tombol "Masuk sebagai Tamu"
+   beserta fungsi doLoginGuest() dibuang, dan sesi lama berperan 'guest' tidak
+   lagi dipulihkan. Peran yang tersisa di aplikasi HANYA: 'admin' dan 'user'.
    ============================================================================ */
 
 /* ============ STATE ============ */
@@ -838,7 +840,6 @@ const ACCT_VOL = '#,##0.00;-#,##0.00;"-";@';
      user  : akun operasional yang dibuat Admin lewat menu "Kelola Akun".
              Menunya sama dengan admin KECUALI menu sistem di atas, tetapi hak
              ubah/hapusnya dibatasi oleh BIDANG yang dipilih saat akun dibuat.
-     guest : Tamu — murni pembaca (Dashboard & Monitoring saja).
 
    Seluruh aturan akun USER dikumpulkan di USER_RULES supaya cukup diubah di
    SATU tempat bila kebijakan berubah:
@@ -925,7 +926,7 @@ function inBidang(rec){
 /* ---- Penilai izin tunggal: area = kunci USER_RULES, act = 'edit' | 'del' ---- */
 function areaTerkunci(area, act){ const r=USER_RULES[area]; return !!(r && r[act]===false); }
 function userCan(area, act, rec){
-  if(!isUser()) return true;                       // admin penuh; tamu tersaring di canInput()
+  if(!isUser()) return true;                       // admin penuh
   const rule=USER_RULES[area]; if(!rule) return true;
   const v=rule[act];
   if(v===false) return false;
@@ -994,8 +995,8 @@ function fkRequireDelete(modul, recordId){
   return false;
 }
 
-/* Login satu halaman — username + kata sandi. Hanya peran ADMIN yang punya
-   kredensial; Tamu masuk tanpa kata sandi lewat doLoginGuest(). */
+/* Login satu halaman — username + kata sandi. Tidak ada lagi jalur masuk tanpa
+   kata sandi: setiap pengguna wajib memakai kredensial. */
 function resetLoginForm(){
   ['login-user','login-pass'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
   const e=document.getElementById('login-error'); if(e) e.textContent='';
@@ -1052,6 +1053,8 @@ async function doLogin(){
     showLoginError('Gagal terhubung ke server. Periksa koneksi lalu coba lagi.');
     return;
   }
+  /* Penjaga: bila database masih mengembalikan 'guest' untuk akun tanpa peran,
+     login DITOLAK — peran Tamu sudah tidak berlaku di aplikasi. */
   if(!role || role==='guest'){ showLoginError('Username atau kata sandi salah.'); return; }
   /* PENJAGA PASCA-PEMBERSIHAN: peran 'user' & 'demo' sudah tidak ada di aplikasi.
      Bila database masih menyimpan baris lama bertipe itu, login DITOLAK di sini
@@ -1068,19 +1071,10 @@ async function doLogin(){
      autoRefreshToken. */
   playLoginAnim(role, ()=>enterApp(role));
 }
-/* Masuk sebagai Tamu (tanpa kata sandi) */
-function doLoginGuest(){
-  showLoginError('');
-  /* Tamu TIDAK punya akun Supabase Auth — permintaannya datang sebagai `anon`,
-     sama seperti sebelum migrasi. Sesi apa pun yang masih menempel dibuang
-     lebih dulu supaya Tamu tidak diam-diam mewarisi hak akun sebelumnya. */
-  try{ if(db) db.auth.signOut().catch(()=>{}); }catch(e){}
-  sbSession = null;
-  currentUsername = null;
-  ssSet(ROLE_KEY, 'guest'); ssDel(USER_KEY);
-  ssSet(LOGIN_TIME_KEY, String(Date.now())); ssSet(LAST_ACTIVE_KEY, String(Date.now()));
-  playLoginAnim('guest', ()=>enterApp('guest'));
-}
+/* CATATAN: fungsi doLoginGuest() (masuk sebagai Tamu tanpa kata sandi) SUDAH
+   DIHAPUS TOTAL beserta tombolnya di layar login. Satu-satunya pintu masuk ke
+   aplikasi kini adalah doLogin() dengan username + kata sandi. */
+
 /* ====== GANTI KATA SANDI (via Supabase) ====== */
 function openChangePass(){
   if(currentRole!=='admin' || !currentUsername){ toast('Fitur ini hanya untuk akun admin','warn'); return; }
@@ -1162,7 +1156,7 @@ function playLoginAnim(role, done){
   const loginScreen=document.getElementById('login-screen');
   if(loginScreen) loginScreen.style.display='none';
   // Subteks sesuai peran
-  const subs={admin:'Masuk sebagai Admin',user:'Masuk sebagai User',guest:'Masuk sebagai Tamu'};
+  const subs={admin:'Masuk sebagai Admin',user:'Masuk sebagai User'};
   const sub=document.getElementById('login-anim-sub');
   if(sub) sub.textContent=subs[role]||'';
   const finish=()=>{
@@ -1184,7 +1178,7 @@ function playLoginAnim(role, done){
 /* Muat ulang SELURUH data saat sesi baru dimulai.
    Dulu fungsi ini juga bertugas menukar isi array saat `db` berpindah ke sandbox
    akun dummy; sandbox itu sudah dihapus, jadi sekarang perannya murni menyegarkan
-   data dari Supabase begitu pengguna masuk (admin maupun Tamu). */
+   data dari Supabase begitu pengguna masuk. */
 function reloadAllDataForRole(){
   try{ if(typeof pnLoadConfig==='function') pnLoadConfig(); }catch(e){}
   /* Materi & Peraturan dimuat malas (saat menunya dibuka). Penandanya dilepas
@@ -1240,7 +1234,7 @@ function applyRole(role){
     const anyVisible=[...items].some(it=>it.style.display!=='none');
     g.style.display = anyVisible ? '' : 'none';
   });
-  const labels={admin:'Admin',user:'User',guest:'Tamu'};
+  const labels={admin:'Admin',user:'User'};
   const ul=document.getElementById('user-label');
   if(ul){
     ul.textContent = labels[role]||'—';
@@ -1249,8 +1243,7 @@ function applyRole(role){
   }
   const ROLE_ICONS={
     admin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
-    user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
-    guest:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>'
+    user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'
   };
   const ic=document.getElementById('user-role-ic');
   if(ic){ ic.className='user-role-ic '+(role||''); ic.innerHTML=ROLE_ICONS[role]||''; }
@@ -8204,8 +8197,8 @@ function openFkInput(modul){
   fkState.input.modul=modul; showView('fk-input');
 }
 function openFkView(modul){
-  // Akun TAMU tidak berhak membuka menu Dokumen (termasuk Perjanjian/Kontrak).
-  if(!canInput()){ toast('Menu ini tidak tersedia untuk akun Tamu','warn'); return; }
+  // Penjaga akses menu Dokumen (termasuk Perjanjian/Kontrak).
+  if(!canInput()){ toast('Menu ini tidak tersedia untuk akun Anda','warn'); return; }
   if(!FK_MODULES[modul]) modul='kr';
   if(fkState.view.modul!==modul){ fkState.view.page=1; fkClearFilters('view'); }
   fkState.view.modul=modul; showView('fk-view');
@@ -20139,7 +20132,10 @@ resetLoginForm();
   const lastActiveAt=parseInt(ssGet(LAST_ACTIVE_KEY)||'0',10);
   const tooOldSession = loginAt>0 && (now-loginAt) > SESSION_MAX_MS;
   const tooLongIdle = IDLE_LOGOUT_ENABLED && lastActiveAt>0 && (now-lastActiveAt) > IDLE_LIMIT_MS;
-  const hasRole = (role==='admin' || role==='user' || role==='guest');
+  /* Peran 'guest' (Tamu) SUDAH DIHAPUS. Sesi lama yang masih menyimpannya di
+     sessionStorage sengaja TIDAK dipulihkan supaya tidak ada sesi berperan
+     hantu yang lolos masuk setelah pembaruan ini. */
+  const hasRole = (role==='admin' || role==='user');
   if(hasRole && !tooOldSession && !tooLongIdle){
     currentUsername = uname || null;
     // Refresh: kembali ke halaman terakhir (data di halaman itu di-refresh), bukan ke dashboard.
@@ -20150,8 +20146,7 @@ resetLoginForm();
       // Masuk aplikasi dulu (tanpa pindah halaman), lalu pulihkan form dari draft
       // sehingga data yang sedang diketik / diubah TIDAK hilang saat refresh.
       enterApp(role, 'dashboard');
-      const canInput = (role!=='guest');
-      if(canInput && draft && draft.kind===view && restoreDraft(draft)){
+      if(draft && draft.kind===view && restoreDraft(draft)){
         // berhasil dipulihkan (termasuk mode Ubah Data)
       }else{
         clearDraft();
@@ -20159,11 +20154,8 @@ resetLoginForm();
         inputOpener[view] && inputOpener[view]();
       }
     }else{
-      // Akun TAMU hanya boleh berada di Dashboard & Monitoring — halaman lain
-      // (mis. Dokumen) tidak boleh ikut dipulihkan setelah refresh.
-      const guestAllowed=['dashboard','list','list-pl','list-tender','track-view'];
-      const pool = (role==='guest') ? guestAllowed : allowed;   // admin & user memakai daftar yang sama
-      const target = pool.includes(view) ? view : 'dashboard';
+      // Admin & user memakai daftar halaman yang sama.
+      const target = allowed.includes(view) ? view : 'dashboard';
       enterApp(role, target);   // langsung masuk aplikasi tanpa login ulang (filter default)
     }
   }else{
