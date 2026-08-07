@@ -1486,11 +1486,49 @@ td{padding:2px 4px}
 /* Section title form: aksen lebih rapi */
 .form-section-title{letter-spacing:.4px}
 
-/* Scrollbar halus (WebKit) */
-.table-wrap::-webkit-scrollbar{height:10px;width:10px}
-.table-wrap::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#bcd6d9,#a9cace);border-radius:20px;border:2px solid #eef4f5}
-.table-wrap::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,#9cc3c7,#8bbabf)}
-.table-wrap::-webkit-scrollbar-track{background:#f0f5f6;border-radius:20px}
+/* ============================================================
+   BATANG GULIR TABEL — KEMBALI KE BATANG BAWAAN PERAMBAN (8 Agu 2026)
+   ------------------------------------------------------------
+   GEJALA: menyeret batang gulir tabel (mendatar maupun tegak) tersendat,
+   PADAHAL menggulir dengan roda tetikus di tabel yang sama mulus.
+
+   Asimetri itulah petunjuknya, dan penyebabnya ada di empat baris di bawah
+   komentar ini — bukan di JavaScript.
+
+   Begitu sebuah penggulir diberi aturan ::-webkit-scrollbar, Chromium
+   berhenti memakai batang gulir BAWAAN SISTEM dan menggambar sendiri batang
+   "custom" itu. Konsekuensinya bukan sekadar tampilan:
+
+     - Roda tetikus digulirkan oleh COMPOSITOR THREAD. Ia tidak menunggu
+       thread utama, jadi tetap mulus walau thread utama sedang sibuk —
+       persis yang Anda alami.
+     - Menyeret batang gulir CUSTOM harus ditangani THREAD UTAMA: tiap gerakan
+       tetikus dihitung, batangnya digambar ulang, lalu isi tabel dicat ulang,
+       semuanya dalam satu frame. Batang bawaan tidak begitu; Chromium bisa
+       menyeretnya di compositor.
+
+   Beratnya cat ulang itu memperparah keadaan, dan tabel Monitoring adalah
+   kasus terberat di aplikasi ini: baris judul menempel di atas (th sticky),
+   kolom No. & Nama Pekerjaan menempel di kiri (sticky), masing-masing dengan
+   empat inset box-shadow pemalsu garis dan satu pseudo-element ::before
+   ber-z-index -1 sebagai latar. Semua itu harus dicat ulang tiap frame seretan.
+
+   Karena itu penggayaannya dipindah ke properti BAKU — scrollbar-width &
+   scrollbar-color. Keduanya hanya MENIPISKAN dan MEWARNAI batang bawaan;
+   batangnya tetap batang sistem, jadi jalur cepat compositor tidak hilang.
+   Warnanya sengaja diambil dari gradasi lama (#a9cace di atas #f0f5f6) supaya
+   tampilannya nyaris tidak berubah. Yang hilang hanya gradasi, sudut membulat,
+   dan efek sorot pada batang — tiga hal yang tidak sebanding dengan gulir
+   yang tersendat.
+
+   Peramban lama yang belum mengenal kedua properti ini akan menampilkan batang
+   gulir bawaan apa adanya: tetap benar, tetap cepat, hanya tanpa warna.
+
+   CATATAN: #topnav (bagian 7250) juga memakai ::-webkit-scrollbar, tetapi
+   SENGAJA dibiarkan — daftar menu pendek, isinya ringan, dan batangnya nyaris
+   tidak pernah diseret. Yang bermasalah hanya penggulir yang isinya berat.
+   ============================================================ */
+.table-wrap{scrollbar-width:thin;scrollbar-color:#a9cace #f0f5f6}
 
 /* ============================================================
    #4 · ANIMASI TOMBOL AKSI (Edit / Lihat / Hapus)
@@ -9154,3 +9192,117 @@ html.mode-rail .wrap{padding-left:24px;padding-right:24px}
   .toolbar .filter-field > select[id$="bidang"]{
     text-overflow:ellipsis; overflow:hidden; white-space:nowrap}
 }
+
+
+/* ============================================================
+   TOMBOL AKSI & KOLOM AKSI — SATU UKURAN UNTUK SELURUH APLIKASI
+   (8 Agu 2026)
+   ------------------------------------------------------------
+   Dipasang PALING AKHIR agar menimpa angka-angka lama yang tersebar di
+   banyak bagian berkas ini, tanpa harus membongkar tiap bagian itu.
+
+   1) UKURAN TOMBOL — 32x32 px, ikon 15 px.
+      Itu ukuran baku .act (bagian #4) dan yang dipakai di Monitoring.
+      Yang menyimpang:
+        .fk-act-icon  36x36 / ikon 16  -> File Kontrak & Dokumen Pengadaan;
+                                          inilah "tombol yang terlalu besar".
+        .pn-actions   29x29            -> Penetapan Nomor; menyimpang ke arah
+                                          sebaliknya, tetap disamakan supaya
+                                          benar-benar satu ukuran.
+      Ponsel (<=640px) DIKECUALIKAN: di sana tombol tetap 34 px sebagai sasaran
+      sentuh jari, bukan karena kelalaian.
+
+   2) LEBAR KOLOM AKSI — "sepanjang deretan tombol ATAU sepanjang judulnya,
+      mana yang lebih dulu tercapai".
+      Itu persis perilaku `width:1%` + `white-space:nowrap` pada tabel
+      table-layout:auto: peramban menyusutkan kolom sampai sesempit ISI
+      TERLEBARNYA yang tidak boleh terpotong — dan sel judul ikut dihitung
+      sebagai isi. Jadi kolomnya berhenti di deretan tombol bila tombolnya
+      lebih lebar, atau di kata "Aksi" bila judulnya yang lebih lebar.
+
+      Tiga hal harus dinolkan agar itu bekerja:
+        - `th{min-width:82px}` (aturan dasar) memberi lantai 82 px; untuk kolom
+          berisi satu tombol saja itu jauh terlalu lebar;
+        - lebar tetap pada .pn-col-aksi (150 px);
+        - min-width sebaris pada beberapa <th> Aksi — yang ini sudah dibereskan
+          di sumbernya: seluruh <th>Aksi</th> kini memakai kelas .col-aksi,
+          bukan style sebaris.
+
+      Sel datanya dijangkau lewat :has(): banyak <td> aksi tidak berkelas, dan
+      menambah kelas ke setiap pembuat baris di app.js/susun-*.js jauh lebih
+      rapuh daripada satu selektor yang mengenali "sel yang isinya deretan
+      tombol". Pola :has() sudah dipakai di berkas ini (lihat filter Bidang).
+   ============================================================ */
+.act,
+.pn-aksi-item .pn-actions .act{width:32px;height:32px}
+.act svg,
+.pn-aksi-item .pn-actions .act svg{width:15px;height:15px}
+/* .fk-act-icon menumpang kelas .fk-act (tombol berlabel). padding & border-radius
+   miliknya harus ikut dinolkan/diselaraskan, kalau tidak kotaknya tetap terasa
+   lebih besar & lebih tumpul daripada .act di sebelahnya. */
+.fk-act-icon{width:32px;height:32px;padding:0;border-radius:10px;flex:0 0 auto;justify-content:center;gap:0}
+.fk-act-icon svg{width:15px;height:15px}
+/* Ponsel (<=640px): sasaran sentuh dikembalikan ke 34 px. Aturan aslinya ada di
+   media query bagian atas berkas; karena blok ini berada JAUH di bawahnya dan
+   bobot selektornya sama, tanpa pengulangan di sini aturan 32 px akan menang
+   dan tombolnya ikut mengecil di ponsel — media query TIDAK menambah bobot,
+   hanya urutan yang menentukan. */
+@media(max-width:640px){
+  .act,
+  .pn-aksi-item .pn-actions .act,
+  .fk-act-icon{width:34px;height:34px}
+}
+
+.table-wrap th.col-aksi,.table-wrap td.col-aksi,
+.table-wrap th.pn-col-aksi,.table-wrap td.pn-col-aksi,
+.table-wrap th.pnw-col-aksi,.table-wrap td.pnw-col-aksi,
+.table-wrap th.col-spk-aksi,.table-wrap td.col-spk-aksi,
+.table-wrap td:has(> .action-cell),
+.table-wrap td:has(> .pn-actions){
+  width:1%;min-width:0;max-width:none;
+  white-space:nowrap;text-align:center;
+  padding-left:10px;padding-right:10px;
+}
+/* Deretan tombol tidak pernah turun baris — kalau ia melipat, kolomnya justru
+   menyempit di bawah lebar sebenarnya dan tombolnya menumpuk ke bawah. */
+.table-wrap .action-cell,
+.table-wrap .pn-actions{flex-wrap:nowrap}
+
+
+/* ============================================================
+   HASIL ANALISA HARGA SATUAN — GARIS PEMISAH PUTIH (8 Agu 2026)
+   ------------------------------------------------------------
+   Tabel ini satu-satunya yang tampil TANPA kisi: aturannya di bagian
+   Analisa memang sengaja menghapusnya —
+
+       table.ana-res th, table.ana-res td { border:none }
+       table.ana-res tbody td { border-bottom:1px solid #e8f0f1 }
+
+   — meniru tabel isian (ana-uraian) yang memang bergaya "hanya garis
+   horizontal tipis". Untuk tabel HASIL pilihan itu keliru: ia dibaca
+   berdampingan dengan tabel lain di aplikasi yang semuanya memakai kisi
+   putih tegas, sehingga kolomnya terasa mengambang dan angka Harga Satuan
+   Barang & Jasa sulit dipisahkan sekilas.
+
+   Sekarang disamakan dengan tabel lain: border 1px putih pada seluruh sel,
+   horizontal DAN vertikal. Warna putih terbaca karena baris tabel ini
+   berlatar teduh (#eef4f6 / #f8fbfc) dan kepala tabel berlatar teal —
+   sama persis dengan cara kisi putih bekerja di tabel Monitoring.
+
+   Kepala kartu ("Hasil Analisa Harga Satuan") diberi garis putih di
+   bawahnya, lalu border ATAS sel judul dihapus. Keduanya harus berpasangan:
+   bila dua-duanya dipasang, garisnya menebal jadi 2 px dan terlihat seperti
+   celah, bukan pemisah.
+   ============================================================ */
+.ana-res-head{border-bottom:1px solid #fff}
+table.ana-res th,table.ana-res td,
+table.ana-res tbody td,
+table.ana-res tbody tr:last-child td{border:1px solid #fff}
+table.ana-res thead th{border-top:none}
+
+/* Bilah Kategori Materi ikut disamakan (8 Agu 2026). Bobot selektornya lebih
+   tinggi daripada aturan .act di atas, jadi ia harus disebut sendiri —
+   kalau tidak, satu-satunya tombol aksi yang tersisa 31px/ikon 14px justru
+   ada di sini. */
+.materi-kat-bar .act{width:32px;height:32px;border-radius:10px}
+.materi-kat-bar .act svg{width:15px;height:15px}

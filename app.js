@@ -702,6 +702,66 @@ const BIDANG_KEY = 'mon_bidang';            // bidang akun kustom (__akses__) di
    untuk mematikan jedanya sama sekali (animasinya tetap tampil sekejap). */
 const SESI_ANIM_MS = 900;
 /* ============================================================================
+   JEDA SESI MENUNGGU HALAMAN TUJUAN BENAR-BENAR SIAP (8 Agu 2026)
+   ----------------------------------------------------------------------------
+   KETENTUAN: "berikan jeda login hingga dashboard menyiapkan tampilannya, agar
+   saat masuk dashboard sudah siap; begitupun logout, agar halaman login sudah
+   selesai di-render baru keluar".
+
+   Dulu SESI_ANIM_MS adalah SATU-SATUNYA penentu. Lapisan animasi diangkat tepat
+   900 ms sesudah ditampilkan, tanpa peduli halaman di baliknya sudah jadi atau
+   belum. Akibatnya:
+     - MASUK: enterApp() baru dipanggil SESUDAH 900 ms, lalu ia menembak
+       refreshData* ke Supabase dan LANGSUNG menggambar Dashboard. Angka-angka
+       kartu masih 0, grafik masih kosong, dan animasi "count up" megah
+       (playGrandDashEntrance) ikut berjalan di atas data kosong — beberapa
+       ratus milidetik kemudian data tiba dan angkanya melompat begitu saja.
+     - KELUAR: layar login ditampilkan lalu lapisan langsung memudar pada tick
+       yang sama, sehingga kartu login sempat terlihat setengah jadi.
+
+   Sekarang jedanya = MAKSIMUM dari dua hal:
+     1. SESI_ANIM_MS      — supaya animasi & nadanya tetap terdengar utuh,
+     2. kesiapan tujuan   — data sesi selesai dimuat (masuk) / layar login
+                            selesai digambar (keluar).
+
+   SESI_TUNGGU_MAKS adalah pagar pengamannya: bila jaringan lambat atau satu
+   permintaan menggantung, pengguna TETAP masuk sesudah batas ini. Lebih baik
+   Dashboard tampil dengan sebagian data daripada pengguna terkurung di balik
+   lapisan "Selamat Datang" tanpa jalan keluar. */
+const SESI_TUNGGU_MAKS = 4000;
+/* Jalankan `fn` SESUDAH peramban benar-benar menggambar perubahan DOM terakhir.
+   Dua requestAnimationFrame bertingkat: yang pertama dipanggil SEBELUM lukisan
+   berikutnya, yang kedua sesudahnya — inilah titik paling awal di mana kita
+   yakin isi halaman sudah terlihat.
+   setTimeout di bawahnya bukan hiasan: pada tab yang tersembunyi peramban
+   membekukan requestAnimationFrame, jadi tanpa cadangan ini lapisan sesi tidak
+   akan pernah terangkat bila pengguna berpindah tab saat masuk/keluar. */
+function setelahLukis(fn){
+  let jalan=false;
+  const go=function(){ if(jalan) return; jalan=true; try{ fn(); }catch(e){ console.error('setelahLukis:', e); } };
+  try{
+    requestAnimationFrame(function(){ requestAnimationFrame(go); });
+  }catch(e){ /* peramban tanpa rAF -> jatuh ke cadangan di bawah */ }
+  setTimeout(go, 300);
+}
+/* Tunggu SEKALIGUS: jeda minimum (animasi) DAN kesiapan tujuan — mana yang
+   paling lama. `janji` boleh null/bukan Promise; keduanya dianggap "sudah
+   siap". Kegagalan pemuatan TIDAK menahan pengguna: .catch dijadikan resolve,
+   karena galat datanya sudah ditangani (dan dicatat) di tempatnya sendiri. */
+function tungguSesiSiap(janji, minMs){
+  const tMin = new Promise(function(r){ setTimeout(r, Math.max(0, minMs|0)); });
+  const tSiap = new Promise(function(r){
+    let selesai=false;
+    const go=function(){ if(selesai) return; selesai=true; r(); };
+    setTimeout(go, SESI_TUNGGU_MAKS);          // pagar pengaman
+    try{
+      if(janji && typeof janji.then==='function') janji.then(go, go);
+      else go();
+    }catch(e){ go(); }
+  });
+  return Promise.all([tMin, tSiap]);
+}
+/* ============================================================================
    PENYIMPANAN BERKAS — SUPABASE STORAGE
    ----------------------------------------------------------------------------
    Cloudflare R2 dan Worker `pln-file-gateway` sudah DIBONGKAR SELURUHNYA.
@@ -1159,21 +1219,36 @@ function playLoginAnim(role, done){
   const subs={admin:'Masuk sebagai Admin',user:'Masuk sebagai User'};
   const sub=document.getElementById('login-anim-sub');
   if(sub) sub.textContent=subs[role]||'';
+  /* URUTANNYA PENTING: done() (enterApp) dipanggil SESUDAH data sesi siap,
+     lalu lapisan baru diangkat SESUDAH Dashboard benar-benar tergambar.
+     Dua langkah terpisah, bukan satu:
+       - menunggu data  -> angka kartu & grafik sudah benar sejak lukisan
+                           pertama, dan animasi count-up megah menghitung
+                           menuju angka yang benar (dulu menghitung dari 0
+                           menuju 0, lalu melompat saat data menyusul);
+       - menunggu lukisan -> lapisan tidak pernah terangkat di atas layar yang
+                           masih kosong, walau hanya satu frame. */
   const finish=()=>{
     done&&done();                              // masuk ke aplikasi (enterApp)
-    if(anim){
+    if(!anim) return;
+    setelahLukis(()=>{
       anim.classList.add('fade-out');
       /* 450 ms = tepat durasi @keyframes loOut, sama dengan animasi keluar
          (performLogout). Dulu 500 ms — sisa dari animasi liOut yang sudah
          dihapus, sehingga lapisannya menggantung 50 ms lebih lama. */
       setTimeout(()=>{ anim.classList.remove('show','fade-out'); }, 450);
-    }
+    });
   };
   if(anim){
     anim.classList.remove('fade-out');
     anim.classList.add('show');
     sfxSession('in');             // arpeggio naik, seiring animasi "Selamat Datang"
-    setTimeout(finish, SESI_ANIM_MS);
+    /* Pemuatan data DITEMBAK SEKARANG, bukan sesudah jeda: selama 900 ms
+       animasi berjalan, permintaan ke Supabase sudah dalam perjalanan. Pada
+       jaringan yang wajar keduanya selesai bersamaan, jadi jeda yang dirasakan
+       pengguna TIDAK bertambah sama sekali — yang berubah hanyalah Dashboard
+       kini sudah berisi saat lapisannya terangkat. */
+    tungguSesiSiap(mulaiPrefetchSesi(role), SESI_ANIM_MS).then(finish, finish);
   }else{
     finish();
   }
@@ -1188,12 +1263,44 @@ function reloadAllDataForRole(){
      di sini supaya data sesi sebelumnya tidak tertinggal saat peran berganti. */
   try{ if(typeof materiLoaded!=='undefined'){ materiLoaded=false; records_materi=[]; } }catch(e){}
   try{ if(typeof materiKatLoaded!=='undefined'){ materiKatLoaded=false; materiKatSiap=false; materiKatSeeded=false; records_materi_kat=[]; } }catch(e){}
+  /* Janji tiap pemuatan DIKUMPULKAN dan dikembalikan sebagai satu janji.
+     Dulu hasilnya dibuang begitu saja, sehingga tidak ada satu pun tempat di
+     aplikasi yang bisa tahu kapan data sesi selesai dimuat — itulah sebabnya
+     Dashboard sempat tampil kosong sesudah login. Perilaku lamanya tidak
+     berubah sedikit pun: tiap janji tetap memicu rerenderActiveView sendiri
+     begitu selesai, jadi pemanggil yang TIDAK peduli kesiapan (mis.
+     restoreSession) boleh mengabaikan nilai kembaliannya seperti dulu. */
+  const janji=[];
   [ refreshData, refreshDataPl, refreshDataTender, refreshDataPenetapan,
     refreshDataKelengkapan, refreshDataPembukaan, refreshDataRho,
     refreshDataHps, refreshDataAnalisa, refreshDataJadwal
   ].forEach(function(fn){
-    try{ var p=fn(); if(p && p.then) p.then(rerenderActiveView).catch(function(){}); }catch(e){}
+    try{
+      var p=fn();
+      if(p && p.then){
+        p.then(rerenderActiveView).catch(function(){});
+        /* Kegagalan SATU tabel tidak boleh menggagalkan seluruh sesi, jadi tiap
+           janji diredam lebih dulu menjadi "selesai" apa pun hasilnya. */
+        janji.push(p.then(function(){}, function(){}));
+      }
+    }catch(e){ console.error('reloadAllDataForRole:', e); }
   });
+  return janji.length ? Promise.all(janji) : Promise.resolve();
+}
+/* Janji pemuatan data yang sudah ditembak LEBIH DULU oleh playLoginAnim, supaya
+   datanya tiba selagi animasi "Selamat Datang" berjalan. enterApp membacanya
+   agar tidak memuat ulang tabel yang sama untuk kedua kalinya. */
+let __sesiPrefetch = null;
+/* Mulai memuat data sesi di balik lapisan animasi.
+   currentRole & currentBidang WAJIB ditetapkan lebih dulu: sebagian refreshData*
+   menyaring baris menurut cakupan bidang, jadi memuat sebelum keduanya diisi
+   akan menghasilkan data yang salah untuk akun user. Keduanya diisi ulang
+   (dengan nilai yang sama) di enterApp, jadi tidak ada yang berubah artinya. */
+function mulaiPrefetchSesi(role){
+  currentRole = role;
+  currentBidang = (role==='user' ? (ssGet(BIDANG_KEY)||BIDANG_ALL) : BIDANG_ALL);
+  __sesiPrefetch = reloadAllDataForRole();
+  return __sesiPrefetch;
 }
 function enterApp(role, view){
   currentRole=role;
@@ -1204,7 +1311,13 @@ function enterApp(role, view){
   /* Cakupan bidang dipulihkan dari sessionStorage supaya tetap benar baik saat
      login biasa maupun saat halaman di-refresh (restoreSession juga lewat sini). */
   currentBidang = (role==='user' ? (ssGet(BIDANG_KEY)||BIDANG_ALL) : BIDANG_ALL);
-  reloadAllDataForRole();   // baca ulang data dari Supabase untuk sesi baru
+  /* Data sesi biasanya SUDAH dimuat lebih dulu oleh playLoginAnim, selagi
+     animasi "Selamat Datang" berjalan — jadi Dashboard di bawah ini digambar
+     dengan angka yang sudah benar sejak lukisan pertama. Bila enterApp dipanggil
+     dari jalur lain yang tidak melewati animasi (restoreSession saat halaman
+     dimuat ulang), penandanya kosong dan datanya dimuat di sini seperti dulu. */
+  if(__sesiPrefetch){ __sesiPrefetch = null; }
+  else reloadAllDataForRole();   // baca ulang data dari Supabase untuk sesi baru
   if(typeof fkResetCache==='function') fkResetCache();
   applyRole(role);
   document.getElementById('login-screen').style.display='none';
@@ -1653,10 +1766,16 @@ function performLogout(){
     try{ syncPageTitle(); }catch(e){}      // judul tab kembali ke "Halaman Login"
     try{ replayLoginZoom(); }catch(e){}
     try{ resetLoginForm(); }catch(e){}
-    if(anim){
+    if(!anim) return;
+    /* Lapisan "Sedang Keluar" baru diangkat SESUDAH layar login benar-benar
+       tergambar (ketentuan 8 Agu 2026). Dulu fade-out dimulai pada tick yang
+       sama dengan penampilan layar login, sehingga kartu login sempat terlihat
+       setengah jadi — animasi zoom-nya (replayLoginZoom) sudah berjalan
+       beberapa frame sebelum lapisannya sempat menyingkir. */
+    setelahLukis(()=>{
       anim.classList.add('fade-out');
       setTimeout(()=>{ anim.classList.remove('show','fade-out'); }, 450);
-    }
+    });
   };
   const finish=()=>{
     try{
@@ -1667,6 +1786,9 @@ function performLogout(){
       sbSession=null;
       ssDel(ROLE_KEY); ssDel(USER_KEY); ssDel(VIEW_KEY); ssDel(DRAFT_KEY); ssDel(LOGIN_TIME_KEY); ssDel(LAST_ACTIVE_KEY); ssDel(TOKEN_KEY); ssDel(BIDANG_KEY);
       currentRole=null; currentUsername=null;
+      /* Penanda prefetch dinolkan supaya tidak ada sisa dari sesi ini yang
+         membuat enterApp sesi BERIKUTNYA mengira datanya sudah dimuat. */
+      __sesiPrefetch = null;
       try{ resetAllFilters(); }catch(e){}
     }catch(e){
       /* Dicatat, tidak ditelan diam-diam: pengguna tetap keluar, tetapi
@@ -1680,6 +1802,9 @@ function performLogout(){
     anim.classList.remove('fade-out');
     anim.classList.add('show');
     sfxSession('out');            // arpeggio turun, seiring animasi keluar
+    /* Keluar tidak menunggu jaringan — tidak ada yang perlu diambil, hanya
+       sesi yang dibersihkan. Jadi jedanya tetap SESI_ANIM_MS, dan kesiapan
+       tujuan diurus di ujung sana oleh setelahLukis() di tampilkanLayarLogin. */
     setTimeout(finish, SESI_ANIM_MS);
   }else{
     finish();
@@ -2271,7 +2396,7 @@ function editRecord(rid){
 const ICONS={
   save:`<svg viewBox="0 0 24 24" fill="none" stroke="#1E9E5A" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>`,
   back:`<svg viewBox="0 0 24 24" fill="none" stroke="#D33A3A" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>`,
-  del:`<svg viewBox="0 0 24 24" fill="none" stroke="#D33A3A" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,
+  del:`<svg viewBox="0 0 24 24" fill="none" stroke="#D33A3A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9h13l-1 11.2A2 2 0 0 1 15.5 22h-7a2 2 0 0 1-2-1.8L5.5 9z"/><path d="M3 7.4 21 3.6"/><path d="M9.7 5.9 9.4 4.4a1 1 0 0 1 .8-1.2l3.3-.7a1 1 0 0 1 1.2.8l.3 1.5"/><path d="M10 12.5v6M14 12.5v6"/></svg>`,
   warn:`<svg viewBox="0 0 24 24" fill="none" stroke="#C98A00" stroke-width="2.1"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4M12 17h.01"/></svg>`,
   /* KELUAR — bingkai pintu di kiri, panah melangkah keluar ke kanan
      (pilihan D, ketentuan 8 Agu 2026).
@@ -2728,13 +2853,13 @@ function renderTable(){
       <td>
         <div class="action-cell">
           ${canEditRec('mon_kr',r)?`<button class="act act-edit" title="Ubah" onclick="editRecord('${r.id}')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 21h17"/><path d="M20.4 3.6a1.9 1.9 0 0 0-2.7 0l-4 4 2.7 2.7 4-4a1.9 1.9 0 0 0 0-2.7z"/><path d="M13.7 7.6 10 11.3a3.2 3.2 0 0 0-.9 2.2v.8H6A2.5 2.5 0 0 0 3.5 16.8V18.4h9a3.2 3.2 0 0 0 2.3-.9l3.6-3.6z"/><path d="M9.1 14.3h5.5"/></svg>
           </button>`:''}
           <button class="act act-view" title="Lihat" onclick="viewRecord('${r.id}')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10s3.2-5.8 8-5.8 8 5.8 8 5.8-3.2 5.8-8 5.8S2 10 2 10z"/><circle cx="10" cy="10" r="2.5"/><path d="M16.4 15.4 21.5 20.5"/></svg>
           </button>
           ${canDelRec('mon_kr',r)?`<button class="act act-del" title="Hapus" onclick="askDelete('${r.id}')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9h13l-1 11.2A2 2 0 0 1 15.5 22h-7a2 2 0 0 1-2-1.8L5.5 9z"/><path d="M3 7.4 21 3.6"/><path d="M9.7 5.9 9.4 4.4a1 1 0 0 1 .8-1.2l3.3-.7a1 1 0 0 1 1.2.8l.3 1.5"/><path d="M10 12.5v6M14 12.5v6"/></svg>
           </button>`:''}
         </div>
       </td>
@@ -2958,7 +3083,7 @@ function initDashTilt(){
    file audio). AudioContext hanya bisa berbunyi setelah ada interaksi pengguna
    (kebijakan browser), jadi di-"unlock" pada gesture pertama (klik/tekan). */
 /* EFEK SUARA DIMATIKAN SELURUHNYA atas permintaan pengguna.
-   _dashMuted=true menutup dashBlip(), dashWhoosh(), dan segSelectSound();
+   _dashMuted=true menutup dashBlip() dan dashWhoosh();
    dashAC() yang selalu mengembalikan null memastikan AudioContext tidak
    pernah dibuat sama sekali, jadi tidak ada sisa beban di memori.
    Untuk mengaktifkan kembali: kembalikan _dashMuted ke false dan pulihkan
@@ -3119,28 +3244,32 @@ function initTopnavFx(){
 }
 /* ============================================================
    EFEK 3D + SUARA TAB SEGMEN (SPBJ/Kontrak Rinci · Pengadaan Langsung · Tender)
-   - Hover: bunyi "tik" halus.
-   - Pilih (klik): chime konfirmasi 2 nada + animasi "pop 3D" (tab terangkat &
-     menekan dalam perspektif). Delegasi pada document agar mencakup semua
-     kontrol .fk-seg di berbagai halaman. */
+   - Pilih (klik): nada navigasi + animasi "pop 3D" (tab terangkat & menekan
+     dalam perspektif). Delegasi pada document agar mencakup SEMUA kontrol
+     .fk-seg di berbagai halaman — termasuk yang dibuat belakangan.
+
+   BUNYI PINDAH TAB (ketentuan 8 Agu 2026).
+   Mesin bunyinya SUDAH ADA di sini sejak awal (segSelectSound: chime C5→G5),
+   tetapi tidak pernah terdengar: ia menumpang AudioContext milik efek suara
+   Dashboard, dan seluruh keluarga itu DIMATIKAN atas permintaan sebelumnya
+   (_dashMuted=true, dashAC() mengembalikan null — lihat blok "EFEK SUARA HOVER
+   DASHBOARD" di atas). Membalik _dashMuted bukan jawabannya: itu akan
+   menghidupkan lagi bunyi hover kartu & bar Dashboard yang justru diminta
+   dibungkam karena berondongannya mengganggu.
+
+   Karena itu bunyinya dipindah ke mesin suara yang MASIH HIDUP, yaitu keluarga
+   sfx* — mesin yang sama dipakai menu atas, tombol, dan nada sesi. Untungnya:
+     - ia menghormati sakelar "Bunyi Notifikasi" di menu Pengaturan
+       (sfxEnabled), sedangkan segSelectSound dulu tidak;
+     - nadanya sudah punya arti tetap di aplikasi ini.
+   Yang dipakai sfxNav() — dua nada naik D6→G6, nada yang sama dengan memilih
+   menu di bilah atas. Pindah tab segmen memang BERGANTI HALAMAN
+   (showView('list-pl') dsb), jadi ia layak berbunyi seperti menu, bukan seperti
+   tombol biasa.
+
+   segSelectSound() DIHAPUS: fungsinya digantikan, dan menyimpan dua sumber
+   bunyi untuk satu kejadian hanya membuat keduanya berpeluang berbeda kelak. */
 let _segHoverEl=null;
-function segSelectSound(){
-  if(_dashMuted) return;
-  var c=dashAC(); if(!c) return;
-  if(c.state==='suspended'){ try{ c.resume(); }catch(e){} }
-  try{
-    var t=c.currentTime;
-    [[523.25,0],[783.99,0.07]].forEach(function(p){       /* C5 → G5: konfirmasi lembut */
-      var o=c.createOscillator(), g=c.createGain();
-      o.type='triangle'; o.frequency.setValueAtTime(p[0],t+p[1]);
-      g.gain.setValueAtTime(0.0001,t+p[1]);
-      g.gain.exponentialRampToValueAtTime(0.06,t+p[1]+0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001,t+p[1]+0.24);
-      o.connect(g); g.connect(c.destination);
-      o.start(t+p[1]); o.stop(t+p[1]+0.28);
-    });
-  }catch(e){}
-}
 function initSegFx(){
   if(document.__segFxReady) return; document.__segFxReady=true;
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -3158,14 +3287,30 @@ function initSegFx(){
   document.addEventListener('click', function(ev){
     var b=ev.target.closest ? ev.target.closest('.fk-seg-btn') : null;
     if(!b) return;
-    try{ segSelectSound(); }catch(e){}
+    /* Hanya berbunyi saat BENAR-BENAR berpindah. Mengklik tab yang sedang aktif
+       tidak mengubah apa pun di layar, jadi membunyikannya akan terdengar
+       seperti umpan balik palsu — dan pengguna yang mengetuk tab yang sama
+       berkali-kali akan dihujani nada tanpa sebab.
+
+       INILAH SEBABNYA PENANGAN DI BAWAH MEMAKAI FASE CAPTURE.
+       onclick tiap tab dipasang langsung pada tombolnya, jadi pada fase bubble
+       ia sudah selesai berjalan — dan sebagian di antaranya (openFkInput /
+       openFkView → fkMarkActive) menukar kelas .active SECARA LANGSUNG di sana.
+       Dibaca pada fase bubble, tab yang baru saja diklik sudah terlanjur
+       ber-.active, sehingga pemeriksaan ini akan selalu gagal dan tab modul
+       File Kontrak menjadi satu-satunya yang bisu. Pada fase capture penanda
+       .active masih bernilai LAMA, jadi pemeriksaannya berlaku seragam untuk
+       SEMUA kontrol segmen. */
+    if(!b.classList.contains('active') && typeof sfxNav==='function'){
+      try{ sfxNav(); }catch(e){}
+    }
     if(!reduce){
       b.classList.remove('seg-pop'); void b.offsetWidth; b.classList.add('seg-pop');
       b.addEventListener('animationend', function h(e){
         if(e.animationName==='segPop'){ b.classList.remove('seg-pop'); b.removeEventListener('animationend',h); }
       });
     }
-  });
+  }, true);
 }
 if(typeof document!=='undefined'){
   if(document.readyState!=='loading'){ try{ initTopnavFx(); initSegFx(); }catch(e){} }
@@ -4378,7 +4523,7 @@ function indepFieldHTMLPl(f){
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M12 5v14M5 12h14"/></svg>Tambah
         </button>
         <button type="button" class="indep-del-btn" id="indepdel_pl_${f.key}" onclick="removeIndepRowPl('${f.key}')" title="Hapus isian terakhir">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>Hapus
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9h13l-1 11.2A2 2 0 0 1 15.5 22h-7a2 2 0 0 1-2-1.8L5.5 9z"/><path d="M3 7.4 21 3.6"/><path d="M9.7 5.9 9.4 4.4a1 1 0 0 1 .8-1.2l3.3-.7a1 1 0 0 1 1.2.8l.3 1.5"/><path d="M10 12.5v6M14 12.5v6"/></svg>Hapus
         </button>
       </div>
     </div>
@@ -4661,7 +4806,7 @@ function pynSave(id){
 
 /* ---- Ikon editor ---- */
 const PYN_ICON_GRP='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>';
-const PYN_ICON_TRASH='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+const PYN_ICON_TRASH='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9h13l-1 11.2A2 2 0 0 1 15.5 22h-7a2 2 0 0 1-2-1.8L5.5 9z"/><path d="M3 7.4 21 3.6"/><path d="M9.7 5.9 9.4 4.4a1 1 0 0 1 .8-1.2l3.3-.7a1 1 0 0 1 1.2.8l.3 1.5"/><path d="M10 12.5v6M14 12.5v6"/></svg>';
 const PYN_ICON_PLUS='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>';
 const PYN_ICON_RESET='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>';
 const PYN_ICON_GRIP='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="6" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="18" r="1"/><circle cx="15" cy="6" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="18" r="1"/></svg>';
@@ -4991,13 +5136,13 @@ function renderTablePl(){
       <td>
         <div class="action-cell">
           ${canEditRec('mon_pl',r)?`<button class="act act-edit" title="Ubah" onclick="editRecordPl('${r.id}')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 21h17"/><path d="M20.4 3.6a1.9 1.9 0 0 0-2.7 0l-4 4 2.7 2.7 4-4a1.9 1.9 0 0 0 0-2.7z"/><path d="M13.7 7.6 10 11.3a3.2 3.2 0 0 0-.9 2.2v.8H6A2.5 2.5 0 0 0 3.5 16.8V18.4h9a3.2 3.2 0 0 0 2.3-.9l3.6-3.6z"/><path d="M9.1 14.3h5.5"/></svg>
           </button>`:''}
           <button class="act act-view" title="Lihat" onclick="viewRecordPl('${r.id}')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10s3.2-5.8 8-5.8 8 5.8 8 5.8-3.2 5.8-8 5.8S2 10 2 10z"/><circle cx="10" cy="10" r="2.5"/><path d="M16.4 15.4 21.5 20.5"/></svg>
           </button>
           ${canDelRec('mon_pl',r)?`<button class="act act-del" title="Hapus" onclick="askDeletePl('${r.id}')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9h13l-1 11.2A2 2 0 0 1 15.5 22h-7a2 2 0 0 1-2-1.8L5.5 9z"/><path d="M3 7.4 21 3.6"/><path d="M9.7 5.9 9.4 4.4a1 1 0 0 1 .8-1.2l3.3-.7a1 1 0 0 1 1.2.8l.3 1.5"/><path d="M10 12.5v6M14 12.5v6"/></svg>
           </button>`:''}
         </div>
       </td>
@@ -6100,7 +6245,7 @@ function indepFieldHTML(f){
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M12 5v14M5 12h14"/></svg>Tambah
         </button>
         <button type="button" class="indep-del-btn" id="indepdel_${f.key}" onclick="removeIndepRow('${f.key}')" title="Hapus isian terakhir">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>Hapus
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9h13l-1 11.2A2 2 0 0 1 15.5 22h-7a2 2 0 0 1-2-1.8L5.5 9z"/><path d="M3 7.4 21 3.6"/><path d="M9.7 5.9 9.4 4.4a1 1 0 0 1 .8-1.2l3.3-.7a1 1 0 0 1 1.2.8l.3 1.5"/><path d="M10 12.5v6M14 12.5v6"/></svg>Hapus
         </button>
       </div>
     </div>
@@ -6425,13 +6570,13 @@ function renderTableTender(){
       <td>
         <div class="action-cell">
           ${canEditRec('mon_tender',r)?`<button class="act act-edit" title="Ubah" onclick="editRecordTender('${r.id}')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 21h17"/><path d="M20.4 3.6a1.9 1.9 0 0 0-2.7 0l-4 4 2.7 2.7 4-4a1.9 1.9 0 0 0 0-2.7z"/><path d="M13.7 7.6 10 11.3a3.2 3.2 0 0 0-.9 2.2v.8H6A2.5 2.5 0 0 0 3.5 16.8V18.4h9a3.2 3.2 0 0 0 2.3-.9l3.6-3.6z"/><path d="M9.1 14.3h5.5"/></svg>
           </button>`:''}
           <button class="act act-view" title="Lihat" onclick="viewRecordTender('${r.id}')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10s3.2-5.8 8-5.8 8 5.8 8 5.8-3.2 5.8-8 5.8S2 10 2 10z"/><circle cx="10" cy="10" r="2.5"/><path d="M16.4 15.4 21.5 20.5"/></svg>
           </button>
           ${canDelRec('mon_tender',r)?`<button class="act act-del" title="Hapus" onclick="askDeleteTender('${r.id}')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9h13l-1 11.2A2 2 0 0 1 15.5 22h-7a2 2 0 0 1-2-1.8L5.5 9z"/><path d="M3 7.4 21 3.6"/><path d="M9.7 5.9 9.4 4.4a1 1 0 0 1 .8-1.2l3.3-.7a1 1 0 0 1 1.2.8l.3 1.5"/><path d="M10 12.5v6M14 12.5v6"/></svg>
           </button>`:''}
         </div>
       </td>
@@ -6765,7 +6910,7 @@ function renderHariLibur(){
       '<td class="col-date">'+fkEsc(fmtDate(r.tgl))+'</td>'+
       '<td>'+HARI_NAMA[dow]+'</td>'+
       '<td class="wrap-cell">'+fkEsc(r.keterangan||'—')+'</td>'+
-      '<td style="text-align:center"><button class="fk-act fk-act-del fk-act-icon" title="Hapus" onclick="hlDelete(\''+r.id+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></td>'+
+      '<td style="text-align:center"><button class="fk-act fk-act-del fk-act-icon" title="Hapus" onclick="hlDelete(\''+r.id+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9h13l-1 11.2A2 2 0 0 1 15.5 22h-7a2 2 0 0 1-2-1.8L5.5 9z"/><path d="M3 7.4 21 3.6"/><path d="M9.7 5.9 9.4 4.4a1 1 0 0 1 .8-1.2l3.3-.7a1 1 0 0 1 1.2.8l.3 1.5"/><path d="M10 12.5v6M14 12.5v6"/></svg></button></td>'+
     '</tr>';
   }).join('') : hlEmptyRow();
 
@@ -6799,7 +6944,7 @@ function renderHariLibur(){
     '</div>'+
     '<div class="panel" style="margin-top:16px">'+
       '<div class="table-wrap"><table>'+
-        '<thead><tr><th class="col-no">No</th><th class="col-date">Tanggal</th><th>Hari</th><th>Keterangan</th><th style="text-align:center;width:80px">Aksi</th></tr></thead>'+
+        '<thead><tr><th class="col-no">No</th><th class="col-date">Tanggal</th><th>Hari</th><th>Keterangan</th><th class="col-aksi">Aksi</th></tr></thead>'+
         '<tbody>'+rows+'</tbody>'+
       '</table></div>'+
     '</div>'+
@@ -7125,7 +7270,7 @@ function renderJadwalKerja(){
       '<td class="jp-aksi">'+
         '<button type="button" title="Naik" onclick="jpMoveTahap('+i+',-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M18 15l-6-6-6 6"/></svg></button>'+
         '<button type="button" title="Turun" onclick="jpMoveTahap('+i+',1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg></button>'+
-        '<button type="button" title="Hapus" onclick="jpDelTahap('+i+')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>'+
+        '<button type="button" title="Hapus" onclick="jpDelTahap('+i+')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9h13l-1 11.2A2 2 0 0 1 15.5 22h-7a2 2 0 0 1-2-1.8L5.5 9z"/><path d="M3 7.4 21 3.6"/><path d="M9.7 5.9 9.4 4.4a1 1 0 0 1 .8-1.2l3.3-.7a1 1 0 0 1 1.2.8l.3 1.5"/><path d="M10 12.5v6M14 12.5v6"/></svg></button>'+
       '</td>'+
     '</tr>';
   }).join('');
@@ -7172,7 +7317,7 @@ function renderJadwalKerja(){
     summaryHtml+
     '<div class="panel" style="margin-top:16px">'+
       '<div class="table-wrap"><table class="jp-table">'+
-        '<thead><tr><th class="col-no">No</th><th>Tahapan Pengadaan</th><th>Awal</th><th>Akhir</th><th>Keterangan</th><th style="width:104px">Aksi</th></tr></thead>'+
+        '<thead><tr><th class="col-no">No</th><th>Tahapan Pengadaan</th><th>Awal</th><th>Akhir</th><th>Keterangan</th><th class="col-aksi">Aksi</th></tr></thead>'+
         '<tbody>'+bodyRows+'</tbody>'+
       '</table></div>'+
       '<div class="jp-actions">'+
@@ -7675,9 +7820,9 @@ function renderJadwalView(){
       '<td class="col-date">'+fkEsc(r.tgl_mulai?pnwDateShort(r.tgl_mulai):'—')+'</td>'+
       '<td class="col-date">'+fkEsc(r.tgl_selesai?pnwDateShort(r.tgl_selesai):'—')+'</td>'+
       '<td class="col-aksi"><div class="action-cell">'+
-        '<button class="act act-edit" title="Ubah" onclick="openJadwalKerja(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
-        '<button class="act act-view" title="Lihat" onclick="jadwalPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
-        '<button class="act act-del" title="Hapus" onclick="jadwalDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>'+
+        '<button class="act act-edit" title="Ubah" onclick="openJadwalKerja(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 21h17"/><path d="M20.4 3.6a1.9 1.9 0 0 0-2.7 0l-4 4 2.7 2.7 4-4a1.9 1.9 0 0 0 0-2.7z"/><path d="M13.7 7.6 10 11.3a3.2 3.2 0 0 0-.9 2.2v.8H6A2.5 2.5 0 0 0 3.5 16.8V18.4h9a3.2 3.2 0 0 0 2.3-.9l3.6-3.6z"/><path d="M9.1 14.3h5.5"/></svg></button>'+
+        '<button class="act act-view" title="Lihat" onclick="jadwalPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10s3.2-5.8 8-5.8 8 5.8 8 5.8-3.2 5.8-8 5.8S2 10 2 10z"/><circle cx="10" cy="10" r="2.5"/><path d="M16.4 15.4 21.5 20.5"/></svg></button>'+
+        '<button class="act act-del" title="Hapus" onclick="jadwalDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9h13l-1 11.2A2 2 0 0 1 15.5 22h-7a2 2 0 0 1-2-1.8L5.5 9z"/><path d="M3 7.4 21 3.6"/><path d="M9.7 5.9 9.4 4.4a1 1 0 0 1 .8-1.2l3.3-.7a1 1 0 0 1 1.2.8l.3 1.5"/><path d="M10 12.5v6M14 12.5v6"/></svg></button>'+
       '</div></td>'+
     '</tr>';
   }).join('');
@@ -8384,8 +8529,8 @@ function fkViewActionHtml(modul, rid, f, rec){
   if(!f){
     return `<span class="fk-none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>Data tidak tersedia</span>`;
   }
-  const view=`<button class="fk-act fk-act-view fk-act-icon" title="Lihat" aria-label="Lihat" onclick="fkPreview('${modul}','${rid}',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>`;
-  const del=fkCanDelete(modul, rec)?`<button class="fk-act fk-act-del fk-act-icon" title="Hapus" aria-label="Hapus" onclick="fkDelete('${modul}','${rid}',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>`:'';
+  const view=`<button class="fk-act fk-act-view fk-act-icon" title="Lihat" aria-label="Lihat" onclick="fkPreview('${modul}','${rid}',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10s3.2-5.8 8-5.8 8 5.8 8 5.8-3.2 5.8-8 5.8S2 10 2 10z"/><circle cx="10" cy="10" r="2.5"/><path d="M16.4 15.4 21.5 20.5"/></svg></button>`;
+  const del=fkCanDelete(modul, rec)?`<button class="fk-act fk-act-del fk-act-icon" title="Hapus" aria-label="Hapus" onclick="fkDelete('${modul}','${rid}',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9h13l-1 11.2A2 2 0 0 1 15.5 22h-7a2 2 0 0 1-2-1.8L5.5 9z"/><path d="M3 7.4 21 3.6"/><path d="M9.7 5.9 9.4 4.4a1 1 0 0 1 .8-1.2l3.3-.7a1 1 0 0 1 1.2.8l.3 1.5"/><path d="M10 12.5v6M14 12.5v6"/></svg></button>`:'';
   return view+del;
 }
 
@@ -9307,7 +9452,7 @@ function pnActionCellHtml(r){
   const docs=Array.isArray(r.dokumen)?r.dokumen:[];
   if(!docs.length) return '—';
   const allow=canInput();
-  const delIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6M14 11v6"/></svg>';
+  const delIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9h13l-1 11.2A2 2 0 0 1 15.5 22h-7a2 2 0 0 1-2-1.8L5.5 9z"/><path d="M3 7.4 21 3.6"/><path d="M9.7 5.9 9.4 4.4a1 1 0 0 1 .8-1.2l3.3-.7a1 1 0 0 1 1.2.8l.3 1.5"/><path d="M10 12.5v6M14 12.5v6"/><path d="M10 11v6M14 11v6"/></svg>';
   const rid=fkEsc(String(r.id));
   return '<div class="pn-nomor-list">'+docs.map(d=>{
     const dk=fkEsc(String(d.key));
@@ -9965,9 +10110,9 @@ const dpengState = {
 
 /* ---- Ikon ---- */
 const DPENG_IC_UP   = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v13"/></svg>';
-const DPENG_IC_VIEW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+const DPENG_IC_VIEW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10s3.2-5.8 8-5.8 8 5.8 8 5.8-3.2 5.8-8 5.8S2 10 2 10z"/><circle cx="10" cy="10" r="2.5"/><path d="M16.4 15.4 21.5 20.5"/></svg>';
 const DPENG_IC_DL   = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>';
-const DPENG_IC_DEL  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
+const DPENG_IC_DEL  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9h13l-1 11.2A2 2 0 0 1 15.5 22h-7a2 2 0 0 1-2-1.8L5.5 9z"/><path d="M3 7.4 21 3.6"/><path d="M9.7 5.9 9.4 4.4a1 1 0 0 1 .8-1.2l3.3-.7a1 1 0 0 1 1.2.8l.3 1.5"/><path d="M10 12.5v6M14 12.5v6"/></svg>';
 const DPENG_IC_DOC  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/></svg>';
 
 /* ==================================================================
@@ -10127,7 +10272,7 @@ function dpengEmptyRow(msg){
     '<div>'+fkEsc(msg||'Data tidak tersedia')+'</div></div></td></tr>';
 }
 /* Ikon Edit (pensil) untuk kolom Aksi — mengarah ke halaman Unggah Dokumen. */
-const DPENG_IC_EDIT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
+const DPENG_IC_EDIT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 21h17"/><path d="M20.4 3.6a1.9 1.9 0 0 0-2.7 0l-4 4 2.7 2.7 4-4a1.9 1.9 0 0 0 0-2.7z"/><path d="M13.7 7.6 10 11.3a3.2 3.2 0 0 0-.9 2.2v.8H6A2.5 2.5 0 0 0 3.5 16.8V18.4h9a3.2 3.2 0 0 0 2.3-.9l3.6-3.6z"/><path d="M9.1 14.3h5.5"/></svg>';
 /* Daftar dokumen satu pekerjaan, DIURUTKAN sesuai daftar baku DPENG_DOCS
    (grup PL dahulu, lalu Tender; di dalam grup mengikuti nomor urut). */
 function dpengDocSorted(rec){
@@ -11117,7 +11262,7 @@ function materiKatIzin(){
 
 /* ---- Pop up Buat / Ubah Nama Kategori ---- */
 const MATERI_IC_KAT_ADD  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1h-7.6L10.5 4H4a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1z"/><path d="M12 11v6M9 14h6"/></svg>';
-const MATERI_IC_KAT_EDIT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
+const MATERI_IC_KAT_EDIT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 21h17"/><path d="M20.4 3.6a1.9 1.9 0 0 0-2.7 0l-4 4 2.7 2.7 4-4a1.9 1.9 0 0 0 0-2.7z"/><path d="M13.7 7.6 10 11.3a3.2 3.2 0 0 0-.9 2.2v.8H6A2.5 2.5 0 0 0 3.5 16.8V18.4h9a3.2 3.2 0 0 0 2.3-.9l3.6-3.6z"/><path d="M9.1 14.3h5.5"/></svg>';
 function materiKatOverlay(inner){
   let ov=document.getElementById('materi-kat-ov');
   if(!ov){
@@ -12154,9 +12299,9 @@ function renderFklView(){
       '<td class="col-metode">'+fkEsc(fklMetodeShort(metode))+'</td>'+
       '<td class="col-rab">'+hpsRp(rab)+'</td>'+
       '<td class="col-aksi"><div class="action-cell">'+
-        '<button class="act act-edit" title="Ubah" onclick="openFklInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
-        '<button class="act act-view" title="Lihat" onclick="fklPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
-        '<button class="act act-del" title="Hapus" onclick="fklDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>'+
+        '<button class="act act-edit" title="Ubah" onclick="openFklInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 21h17"/><path d="M20.4 3.6a1.9 1.9 0 0 0-2.7 0l-4 4 2.7 2.7 4-4a1.9 1.9 0 0 0 0-2.7z"/><path d="M13.7 7.6 10 11.3a3.2 3.2 0 0 0-.9 2.2v.8H6A2.5 2.5 0 0 0 3.5 16.8V18.4h9a3.2 3.2 0 0 0 2.3-.9l3.6-3.6z"/><path d="M9.1 14.3h5.5"/></svg></button>'+
+        '<button class="act act-view" title="Lihat" onclick="fklPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10s3.2-5.8 8-5.8 8 5.8 8 5.8-3.2 5.8-8 5.8S2 10 2 10z"/><circle cx="10" cy="10" r="2.5"/><path d="M16.4 15.4 21.5 20.5"/></svg></button>'+
+        '<button class="act act-del" title="Hapus" onclick="fklDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9h13l-1 11.2A2 2 0 0 1 15.5 22h-7a2 2 0 0 1-2-1.8L5.5 9z"/><path d="M3 7.4 21 3.6"/><path d="M9.7 5.9 9.4 4.4a1 1 0 0 1 .8-1.2l3.3-.7a1 1 0 0 1 1.2.8l.3 1.5"/><path d="M10 12.5v6M14 12.5v6"/></svg></button>'+
       '</div></td>'+
     '</tr>';
   }).join('');
@@ -13505,7 +13650,7 @@ function pnwSyaratGroupHtml(sk){
       }
       return '<div class="pnw-syarat-row"><span class="pnw-syarat-no">'+(i+1)+'</span>'+
         '<input type="text" data-sk="'+sk+'" data-kat="'+fkEsc(kat)+'" data-i="'+i+'" placeholder="Uraian persyaratan" value="'+fkEsc(val)+'" oninput="pnwOnSyaratInput(this)">'+
-        '<button type="button" class="pnw-syarat-del" title="Hapus baris" onclick="pnwSyaratDel(\''+sk+'\',\''+fkEscJs(kat)+'\','+i+')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></div>';
+        '<button type="button" class="pnw-syarat-del" title="Hapus baris" onclick="pnwSyaratDel(\''+sk+'\',\''+fkEscJs(kat)+'\','+i+')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9h13l-1 11.2A2 2 0 0 1 15.5 22h-7a2 2 0 0 1-2-1.8L5.5 9z"/><path d="M3 7.4 21 3.6"/><path d="M9.7 5.9 9.4 4.4a1 1 0 0 1 .8-1.2l3.3-.7a1 1 0 0 1 1.2.8l.3 1.5"/><path d="M10 12.5v6M14 12.5v6"/></svg></button></div>';
     }).join('');
     const addBtn = locked ? '' : '<button type="button" class="pnw-syarat-add" onclick="pnwSyaratAdd(\''+sk+'\',\''+fkEscJs(kat)+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>Tambah Persyaratan</button>';
     const lockNote = locked ? '<div class="pnw-lock-note">Kategori Penawaran Harga terkunci: Surat Penawaran, Nilai RAB, dan Jangka Waktu Pelaksanaan.</div>' : '';
@@ -14278,9 +14423,9 @@ function renderPnwView(){
     const jenisCell = fkEsc(metodeKirim)
       + ((two && s2Kosong) ? '<span class="pnw-s2-tag">Sampul Dua belum diisi</span>' : '');
     const actions='<div class="action-cell" style="justify-content:center">'+
-        '<button class="act act-edit" title="Ubah" onclick="openPnwInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
-        '<button class="act act-view" title="Lihat" onclick="pnwPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
-        '<button class="act act-del" title="Hapus" onclick="pnwDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>'+
+        '<button class="act act-edit" title="Ubah" onclick="openPnwInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 21h17"/><path d="M20.4 3.6a1.9 1.9 0 0 0-2.7 0l-4 4 2.7 2.7 4-4a1.9 1.9 0 0 0 0-2.7z"/><path d="M13.7 7.6 10 11.3a3.2 3.2 0 0 0-.9 2.2v.8H6A2.5 2.5 0 0 0 3.5 16.8V18.4h9a3.2 3.2 0 0 0 2.3-.9l3.6-3.6z"/><path d="M9.1 14.3h5.5"/></svg></button>'+
+        '<button class="act act-view" title="Lihat" onclick="pnwPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10s3.2-5.8 8-5.8 8 5.8 8 5.8-3.2 5.8-8 5.8S2 10 2 10z"/><circle cx="10" cy="10" r="2.5"/><path d="M16.4 15.4 21.5 20.5"/></svg></button>'+
+        '<button class="act act-del" title="Hapus" onclick="pnwDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9h13l-1 11.2A2 2 0 0 1 15.5 22h-7a2 2 0 0 1-2-1.8L5.5 9z"/><path d="M3 7.4 21 3.6"/><path d="M9.7 5.9 9.4 4.4a1 1 0 0 1 .8-1.2l3.3-.7a1 1 0 0 1 1.2.8l.3 1.5"/><path d="M10 12.5v6M14 12.5v6"/></svg></button>'+
       '</div>';
     return '<tr>'+
       '<td class="col-no">'+(start+i+1)+'</td>'+
@@ -14874,7 +15019,7 @@ function rhoItemListHtml(){
   const many=st.items.length>1;
   const rows=st.items.map((nm,i)=>'<div class="rho-item-row"><span class="rho-item-no">'+(i+1)+'</span>'+
     '<input type="text" data-i="'+i+'" placeholder="Nama barang/material ke-'+(i+1)+'" value="'+fkEsc(nm||'')+'" oninput="rhoOnItemNama(this)">'+
-    '<button type="button" class="rho-item-del" title="Hapus barang/material ini"'+(many?'':' disabled')+' onclick="rhoDeleteItem('+i+')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button></div>').join('');
+    '<button type="button" class="rho-item-del" title="Hapus barang/material ini"'+(many?'':' disabled')+' onclick="rhoDeleteItem('+i+')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9h13l-1 11.2A2 2 0 0 1 15.5 22h-7a2 2 0 0 1-2-1.8L5.5 9z"/><path d="M3 7.4 21 3.6"/><path d="M9.7 5.9 9.4 4.4a1 1 0 0 1 .8-1.2l3.3-.7a1 1 0 0 1 1.2.8l.3 1.5"/><path d="M10 12.5v6M14 12.5v6"/><path d="M10 11v6M14 11v6"/></svg></button></div>').join('');
   return '<div class="rho-item-list">'+rows+'</div>';
 }
 /* Label kolom referensi: nama sumber yg diinput (fallback "Referensi N") */
@@ -15010,7 +15155,7 @@ function rhoFotoGagal(img,i,r){
   }
 }
 function rhoFotoInnerImg(url,i,r){
-  return '<img src="'+url+'" alt="Foto produk" onerror="rhoFotoGagal(this,'+i+','+r+')"><div class="rho-foto-actions"><button type="button" title="Hapus foto" onclick="rhoClearFoto(event,'+i+','+r+')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button></div>';
+  return '<img src="'+url+'" alt="Foto produk" onerror="rhoFotoGagal(this,'+i+','+r+')"><div class="rho-foto-actions"><button type="button" title="Hapus foto" onclick="rhoClearFoto(event,'+i+','+r+')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9h13l-1 11.2A2 2 0 0 1 15.5 22h-7a2 2 0 0 1-2-1.8L5.5 9z"/><path d="M3 7.4 21 3.6"/><path d="M9.7 5.9 9.4 4.4a1 1 0 0 1 .8-1.2l3.3-.7a1 1 0 0 1 1.2.8l.3 1.5"/><path d="M10 12.5v6M14 12.5v6"/></svg></button></div>';
 }
 function rhoFotoCellHtml(i,r){
   const st=rhoState; const cell=(st.refs[i]&&st.refs[i][r])?st.refs[i][r]:{}; const foto=rhoFotoSrc(cell);
@@ -15548,9 +15693,9 @@ function renderRhoView(){
          dalam DOKUMEN, tempat ejaan bulan memang dikehendaki. */
       '<td class="col-date">'+fkEsc(tgl?fmtDate(tgl):'—')+'</td>'+
       '<td><div class="action-cell" style="justify-content:center">'+
-        '<button class="act act-edit" title="Ubah" onclick="openRhoInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
-        '<button class="act act-view" title="Lihat" onclick="rhoPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
-        '<button class="act act-del" title="Hapus" onclick="rhoDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>'+
+        '<button class="act act-edit" title="Ubah" onclick="openRhoInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 21h17"/><path d="M20.4 3.6a1.9 1.9 0 0 0-2.7 0l-4 4 2.7 2.7 4-4a1.9 1.9 0 0 0 0-2.7z"/><path d="M13.7 7.6 10 11.3a3.2 3.2 0 0 0-.9 2.2v.8H6A2.5 2.5 0 0 0 3.5 16.8V18.4h9a3.2 3.2 0 0 0 2.3-.9l3.6-3.6z"/><path d="M9.1 14.3h5.5"/></svg></button>'+
+        '<button class="act act-view" title="Lihat" onclick="rhoPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10s3.2-5.8 8-5.8 8 5.8 8 5.8-3.2 5.8-8 5.8S2 10 2 10z"/><circle cx="10" cy="10" r="2.5"/><path d="M16.4 15.4 21.5 20.5"/></svg></button>'+
+        '<button class="act act-del" title="Hapus" onclick="rhoDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9h13l-1 11.2A2 2 0 0 1 15.5 22h-7a2 2 0 0 1-2-1.8L5.5 9z"/><path d="M3 7.4 21 3.6"/><path d="M9.7 5.9 9.4 4.4a1 1 0 0 1 .8-1.2l3.3-.7a1 1 0 0 1 1.2.8l.3 1.5"/><path d="M10 12.5v6M14 12.5v6"/></svg></button>'+
       '</div></td>'+
     '</tr>';
   }).join('');
@@ -15990,8 +16135,8 @@ function renderDpView(){
       '<td class="col-bidang-pel">'+fkEsc(dpBidangPelaksana(r)||'—')+'</td>'+
       '<td class="col-rab">'+hpsRp(r.nilai)+'</td>'+
       '<td class="col-aksi"><div class="action-cell">'+
-        '<button class="act act-edit" title="Ubah" onclick="openDpInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
-        '<button class="act act-del" title="Hapus" onclick="dpDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>'+
+        '<button class="act act-edit" title="Ubah" onclick="openDpInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 21h17"/><path d="M20.4 3.6a1.9 1.9 0 0 0-2.7 0l-4 4 2.7 2.7 4-4a1.9 1.9 0 0 0 0-2.7z"/><path d="M13.7 7.6 10 11.3a3.2 3.2 0 0 0-.9 2.2v.8H6A2.5 2.5 0 0 0 3.5 16.8V18.4h9a3.2 3.2 0 0 0 2.3-.9l3.6-3.6z"/><path d="M9.1 14.3h5.5"/></svg></button>'+
+        '<button class="act act-del" title="Hapus" onclick="dpDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9h13l-1 11.2A2 2 0 0 1 15.5 22h-7a2 2 0 0 1-2-1.8L5.5 9z"/><path d="M3 7.4 21 3.6"/><path d="M9.7 5.9 9.4 4.4a1 1 0 0 1 .8-1.2l3.3-.7a1 1 0 0 1 1.2.8l.3 1.5"/><path d="M10 12.5v6M14 12.5v6"/></svg></button>'+
       '</div></td>'+
     '</tr>';
   }).join('');
@@ -17241,10 +17386,10 @@ function renderHpsView(){
       '<td class="col-num" style="text-align:right">'+hpsRp(sum.jJ)+'</td>'+
       '<td class="col-num" style="text-align:right;white-space:nowrap">'+hpsRp(nilai)+'</td>'+
       '<td><div class="action-cell" style="justify-content:center">'+
-        '<button class="act act-edit" title="Ubah" onclick="openHpsInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
-        '<button class="act act-view" title="Lihat" onclick="hpsPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
+        '<button class="act act-edit" title="Ubah" onclick="openHpsInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 21h17"/><path d="M20.4 3.6a1.9 1.9 0 0 0-2.7 0l-4 4 2.7 2.7 4-4a1.9 1.9 0 0 0 0-2.7z"/><path d="M13.7 7.6 10 11.3a3.2 3.2 0 0 0-.9 2.2v.8H6A2.5 2.5 0 0 0 3.5 16.8V18.4h9a3.2 3.2 0 0 0 2.3-.9l3.6-3.6z"/><path d="M9.1 14.3h5.5"/></svg></button>'+
+        '<button class="act act-view" title="Lihat" onclick="hpsPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10s3.2-5.8 8-5.8 8 5.8 8 5.8-3.2 5.8-8 5.8S2 10 2 10z"/><circle cx="10" cy="10" r="2.5"/><path d="M16.4 15.4 21.5 20.5"/></svg></button>'+
         '<button class="act act-excel" title="Export Excel" style="background:#1E7145;color:#fff" onclick="hpsExportExcelRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 8l6 8M15 8l-6 8"/></svg></button>'+
-        '<button class="act act-del" title="Hapus" onclick="hpsDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>'+
+        '<button class="act act-del" title="Hapus" onclick="hpsDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9h13l-1 11.2A2 2 0 0 1 15.5 22h-7a2 2 0 0 1-2-1.8L5.5 9z"/><path d="M3 7.4 21 3.6"/><path d="M9.7 5.9 9.4 4.4a1 1 0 0 1 .8-1.2l3.3-.7a1 1 0 0 1 1.2.8l.3 1.5"/><path d="M10 12.5v6M14 12.5v6"/></svg></button>'+
       '</div></td>'+
     '</tr>';
   }).join('');
@@ -19026,9 +19171,9 @@ function renderAnalisaView(){
       '<td style="text-align:center">'+ji+'</td>'+
       '<td style="text-align:center">'+jr+'</td>'+
       '<td><div class="action-cell" style="justify-content:center">'+
-        '<button class="act act-edit" title="Ubah" onclick="openAnalisaInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'+
-        '<button class="act act-view" title="Lihat" onclick="anaPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>'+
-        '<button class="act act-del" title="Hapus" onclick="anaDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>'+
+        '<button class="act act-edit" title="Ubah" onclick="openAnalisaInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 21h17"/><path d="M20.4 3.6a1.9 1.9 0 0 0-2.7 0l-4 4 2.7 2.7 4-4a1.9 1.9 0 0 0 0-2.7z"/><path d="M13.7 7.6 10 11.3a3.2 3.2 0 0 0-.9 2.2v.8H6A2.5 2.5 0 0 0 3.5 16.8V18.4h9a3.2 3.2 0 0 0 2.3-.9l3.6-3.6z"/><path d="M9.1 14.3h5.5"/></svg></button>'+
+        '<button class="act act-view" title="Lihat" onclick="anaPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10s3.2-5.8 8-5.8 8 5.8 8 5.8-3.2 5.8-8 5.8S2 10 2 10z"/><circle cx="10" cy="10" r="2.5"/><path d="M16.4 15.4 21.5 20.5"/></svg></button>'+
+        '<button class="act act-del" title="Hapus" onclick="anaDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9h13l-1 11.2A2 2 0 0 1 15.5 22h-7a2 2 0 0 1-2-1.8L5.5 9z"/><path d="M3 7.4 21 3.6"/><path d="M9.7 5.9 9.4 4.4a1 1 0 0 1 .8-1.2l3.3-.7a1 1 0 0 1 1.2.8l.3 1.5"/><path d="M10 12.5v6M14 12.5v6"/></svg></button>'+
       '</div></td>'+
     '</tr>';
   }).join('');
@@ -19471,7 +19616,7 @@ function rekapTampilkan(){
       '</table></div>'+
     '</div>'+
     '<div class="jp-actions"><button class="btn btn-teal" onclick="rekapPrint()">'+
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg> Lihat Pdf'+
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10s3.2-5.8 8-5.8 8 5.8 8 5.8-3.2 5.8-8 5.8S2 10 2 10z"/><circle cx="10" cy="10" r="2.5"/><path d="M16.4 15.4 21.5 20.5"/></svg> Lihat Pdf'+
     '</button></div>';
 }
 /* ================= COMPOSITE HPS PDF (Tampilkan HPS) ================= */

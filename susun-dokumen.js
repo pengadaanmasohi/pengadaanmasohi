@@ -1174,7 +1174,7 @@ function torFieldInput(f){
           '<button type="button" class="tor-ml-btn tor-ml-add" onclick="torMultiAdd(\''+f.k+'\')" title="Tambah isian">'+
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg>Tambah</button>'+
           '<button type="button" class="tor-ml-btn tor-ml-del" onclick="torMultiDel(\''+f.k+'\')"'+(arr.length<=1?' disabled':'')+' title="Hapus isian terakhir">'+
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>Hapus</button>'+
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9h13l-1 11.2A2 2 0 0 1 15.5 22h-7a2 2 0 0 1-2-1.8L5.5 9z"/><path d="M3 7.4 21 3.6"/><path d="M9.7 5.9 9.4 4.4a1 1 0 0 1 .8-1.2l3.3-.7a1 1 0 0 1 1.2.8l.3 1.5"/><path d="M10 12.5v6M14 12.5v6"/></svg>Hapus</button>'+
         '</div>'+
         '<div class="tor-ml-list" id="tor-ml-'+f.k+'">'+rows+'</div>'+
       '</div>';
@@ -1631,7 +1631,7 @@ function renderTorSusun(){
         '<button class="btn btn-ghost" onclick="torGoStep(3)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 12H5M11 6l-6 6 6 6"/></svg> Kembali</button>'+
         '<span style="display:flex;gap:10px">'+
           btnBatal+
-          '<button class="btn btn-teal" onclick="torPreviewCurrent()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg> Pratinjau / Cetak</button>'+
+          '<button class="btn btn-teal" onclick="torPreviewCurrent()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10s3.2-5.8 8-5.8 8 5.8 8 5.8-3.2 5.8-8 5.8S2 10 2 10z"/><circle cx="10" cy="10" r="2.5"/><path d="M16.4 15.4 21.5 20.5"/></svg> Pratinjau / Cetak</button>'+
           '<button class="btn btn-green" onclick="torSaveDokumen()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg> Simpan</button>'+
         '</span>'+
       '</div>';
@@ -5360,16 +5360,19 @@ function torDokPilih(id, mode){
 /* Ikon kolom Aksi — mengambil tetapan milik Dokumen Pengadaan agar seragam.
    Cadangan dipakai hanya bila app.js belum sempat termuat. */
 const TOR_IC_CADANGAN = {
-  VIEW:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
-  EDIT:'<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
-  DEL :'<path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>'
+  VIEW:'<path d="M2 10s3.2-5.8 8-5.8 8 5.8 8 5.8-3.2 5.8-8 5.8S2 10 2 10z"/><circle cx="10" cy="10" r="2.5"/><path d="M16.4 15.4 21.5 20.5"/>',
+  EDIT:'<path d="M3.5 21h17"/><path d="M20.4 3.6a1.9 1.9 0 0 0-2.7 0l-4 4 2.7 2.7 4-4a1.9 1.9 0 0 0 0-2.7z"/><path d="M13.7 7.6 10 11.3a3.2 3.2 0 0 0-.9 2.2v.8H6A2.5 2.5 0 0 0 3.5 16.8V18.4h9a3.2 3.2 0 0 0 2.3-.9l3.6-3.6z"/><path d="M9.1 14.3h5.5"/>',
+  DEL :'<path d="M5.5 9h13l-1 11.2A2 2 0 0 1 15.5 22h-7a2 2 0 0 1-2-1.8L5.5 9z"/><path d="M3 7.4 21 3.6"/><path d="M9.7 5.9 9.4 4.4a1 1 0 0 1 .8-1.2l3.3-.7a1 1 0 0 1 1.2.8l.3 1.5"/><path d="M10 12.5v6M14 12.5v6"/>'
 };
 function torIcAksi(k){
   try{
     const v = (k==='EDIT') ? DPENG_IC_EDIT : (k==='DEL') ? DPENG_IC_DEL : DPENG_IC_VIEW;
     if(typeof v==='string' && v) return v;
   }catch(e){}
-  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">'+TOR_IC_CADANGAN[k]+'</svg>';
+  /* stroke-linecap/linejoin round WAJIB ada: ikon Ubah yang baru (tangan
+     menggenggam pena) punya banyak sudut; tanpa keduanya sudut kepalan
+     tangannya menjadi runcing dan bentuknya tidak lagi terbaca. */
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+TOR_IC_CADANGAN[k]+'</svg>';
 }
 
 function renderTorView(){

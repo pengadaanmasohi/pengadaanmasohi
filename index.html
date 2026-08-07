@@ -287,10 +287,14 @@
    mendatar tidak muncul lagi. */
 #view-pn-lihat .table-wrap table{width:100% !important;min-width:0 !important;table-layout:auto}
 #view-pn-lihat .table-wrap th,#view-pn-lihat .table-wrap td{min-width:0}
-/* Aksi: separuh lebar semula. min-width 88px menjaga tombol hapus tetap lega
-   saat jendela peramban dipersempit. */
+/* Aksi: selebar deretan tombolnya, atau selebar judul "Aksi" — mana yang lebih
+   dulu tercapai (ketentuan 8 Agu 2026). Dulu dipatok 7,2% dengan lantai 88px;
+   persentase membuat kolom ikut MELEBAR saat jendela dilebarkan, padahal isinya
+   tidak pernah bertambah. width:1% pada tabel table-layout:auto menyusutkannya
+   sampai sepas isi terlebarnya — sel judul ikut dihitung sebagai isi, jadi
+   judulnya tidak akan pernah terpotong. */
 #view-pn-lihat .table-wrap th.pn-col-aksi,
-#view-pn-lihat .table-wrap td.pn-col-aksi{width:7.2% !important;min-width:88px !important;text-align:center}
+#view-pn-lihat .table-wrap td.pn-col-aksi{width:1% !important;min-width:0 !important;white-space:nowrap;text-align:center}
 /* Nama Pekerjaan: satu-satunya kolom lentur, jadi ruang yang dilepas kolom Aksi
    otomatis jatuh ke sini. Kolom Jenis Dokumen, No. Dokumen & Tgl. Terbit sengaja
    TIDAK diubah. */
@@ -754,7 +758,7 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
               <span id="sfx-ic"></span><span id="sfx-lbl">Bunyi Notifikasi</span>
             </button>
             <button class="topnav-item" id="btn-bersih-kontrak" onclick="openBersihKontrak()" style="display:none">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>Bersihkan Daftar Kontrak
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9h13l-1 11.2A2 2 0 0 1 15.5 22h-7a2 2 0 0 1-2-1.8L5.5 9z"/><path d="M3 7.4 21 3.6"/><path d="M9.7 5.9 9.4 4.4a1 1 0 0 1 .8-1.2l3.3-.7a1 1 0 0 1 1.2.8l.3 1.5"/><path d="M10 12.5v6M14 12.5v6"/></svg>Bersihkan Daftar Kontrak
             </button>
           </div>
         </div>
@@ -890,7 +894,7 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
     </div>
 
     <div id="edit-banner" class="mode-banner" style="display:none">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 21h17"/><path d="M20.4 3.6a1.9 1.9 0 0 0-2.7 0l-4 4 2.7 2.7 4-4a1.9 1.9 0 0 0 0-2.7z"/><path d="M13.7 7.6 10 11.3a3.2 3.2 0 0 0-.9 2.2v.8H6A2.5 2.5 0 0 0 3.5 16.8V18.4h9a3.2 3.2 0 0 0 2.3-.9l3.6-3.6z"/><path d="M9.1 14.3h5.5"/></svg>
       <span id="edit-banner-text">Mode Ubah Data</span>
     </div>
 
@@ -1011,7 +1015,7 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
               <th class="col-penyedia">Penyedia</th>
               <th class="col-nilai">Nilai Pekerjaan</th>
               <th>Status</th>
-              <th style="text-align:center">Aksi</th>
+              <th class="col-aksi">Aksi</th>
             </tr>
           </thead>
           <tbody id="table-body"></tbody>
@@ -1040,7 +1044,7 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
     </div>
 
     <div id="edit-banner-pl" class="mode-banner" style="display:none">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 21h17"/><path d="M20.4 3.6a1.9 1.9 0 0 0-2.7 0l-4 4 2.7 2.7 4-4a1.9 1.9 0 0 0 0-2.7z"/><path d="M13.7 7.6 10 11.3a3.2 3.2 0 0 0-.9 2.2v.8H6A2.5 2.5 0 0 0 3.5 16.8V18.4h9a3.2 3.2 0 0 0 2.3-.9l3.6-3.6z"/><path d="M9.1 14.3h5.5"/></svg>
       <span id="edit-banner-pl-text">Mode Ubah Data</span>
     </div>
 
@@ -1162,7 +1166,7 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
               <th class="col-penyedia">Penyedia</th>
               <th class="col-nilai">Nilai Pekerjaan</th>
               <th>Status</th>
-              <th style="text-align:center">Aksi</th>
+              <th class="col-aksi">Aksi</th>
             </tr>
           </thead>
           <tbody id="table-pl-body"></tbody>
@@ -1192,7 +1196,7 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
     </div>
 
     <div id="edit-banner-tender" class="mode-banner" style="display:none">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 21h17"/><path d="M20.4 3.6a1.9 1.9 0 0 0-2.7 0l-4 4 2.7 2.7 4-4a1.9 1.9 0 0 0 0-2.7z"/><path d="M13.7 7.6 10 11.3a3.2 3.2 0 0 0-.9 2.2v.8H6A2.5 2.5 0 0 0 3.5 16.8V18.4h9a3.2 3.2 0 0 0 2.3-.9l3.6-3.6z"/><path d="M9.1 14.3h5.5"/></svg>
       <span id="edit-banner-tender-text">Mode Ubah Data</span>
     </div>
 
@@ -1315,7 +1319,7 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
               <th class="col-nilai">Nilai Pekerjaan</th>
               <th>Metode Pengadaan</th>
               <th>Status</th>
-              <th style="text-align:center">Aksi</th>
+              <th class="col-aksi">Aksi</th>
             </tr>
           </thead>
           <tbody id="table-tender-body"></tbody>
@@ -1382,7 +1386,7 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
               <th class="col-kontrak" style="text-align:left" id="fk-input-th-nok">No. Kontrak</th>
               <th class="col-date">Tgl. Terbit Kontrak</th>
               <th class="fk-col-bidang">Bidang Pelaksana</th>
-              <th style="text-align:center">Aksi</th>
+              <th class="col-aksi">Aksi</th>
             </tr>
           </thead>
           <tbody id="fk-input-body"></tbody>
@@ -1452,7 +1456,7 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
               <th class="col-kontrak" style="text-align:left" id="fk-view-th-nok">No. Kontrak</th>
               <th class="col-date">Tgl. Terbit Kontrak</th>
               <th class="fk-col-bidang">Bidang Pelaksana</th>
-              <th style="text-align:center">Aksi</th>
+              <th class="col-aksi">Aksi</th>
             </tr>
           </thead>
           <tbody id="fk-view-body"></tbody>
@@ -1516,7 +1520,7 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
               <th class="fk-col-bidang">Bidang Pelaksana</th>
               <th class="col-date">Tgl. Terima Dokumen</th>
               <th class="dpeng-col-status">Status</th>
-              <th style="text-align:center">Aksi</th>
+              <th class="col-aksi">Aksi</th>
             </tr>
           </thead>
           <tbody id="dpeng-view-body"></tbody>
@@ -1581,7 +1585,7 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
               <th class="materi-col-kat">Kategori</th>
               <th class="col-nama-freeze">Nama Materi / Peraturan</th>
               <th class="col-date">Tgl. Terbit</th>
-              <th style="text-align:center">Aksi</th>
+              <th class="col-aksi">Aksi</th>
             </tr>
           </thead>
           <tbody id="materi-view-body"></tbody>
@@ -1800,7 +1804,7 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
               <th style="text-align:center">Jumlah Item</th>
               <th style="text-align:center">Jumlah Referensi</th>
               <th class="col-date">Tgl. Input</th>
-              <th style="text-align:center;min-width:170px">Aksi</th>
+              <th class="col-aksi">Aksi</th>
             </tr>
           </thead>
           <tbody id="rho-view-body"></tbody>
@@ -1904,7 +1908,7 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
               <th class="col-num" style="text-align:right">Harga Barang</th>
               <th class="col-num" style="text-align:right">Harga Jasa</th>
               <th class="col-num" style="text-align:right;white-space:normal;width:1%">Harga Total HPS (PPN)</th>
-              <th style="text-align:center;min-width:170px">Aksi</th>
+              <th class="col-aksi">Aksi</th>
             </tr>
           </thead>
           <tbody id="hps-view-body"></tbody>
@@ -1953,7 +1957,7 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
               <th>Metode Pengadaan</th>
               <th style="text-align:center">Jml Barang/Jasa</th>
               <th style="text-align:center">Jml Referensi</th>
-              <th style="text-align:center;min-width:150px">Aksi</th>
+              <th class="col-aksi">Aksi</th>
             </tr>
           </thead>
           <tbody id="ana-view-body"></tbody>
@@ -1987,7 +1991,7 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
         </div>
       </div>
       <button class="btn btn-teal head-add-btn" data-role="admin" onclick="openJadwalKerja()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 21h17"/><path d="M20.4 3.6a1.9 1.9 0 0 0-2.7 0l-4 4 2.7 2.7 4-4a1.9 1.9 0 0 0 0-2.7z"/><path d="M13.7 7.6 10 11.3a3.2 3.2 0 0 0-.9 2.2v.8H6A2.5 2.5 0 0 0 3.5 16.8V18.4h9a3.2 3.2 0 0 0 2.3-.9l3.6-3.6z"/><path d="M9.1 14.3h5.5"/></svg>
         Jadwal
       </button>
       <button class="btn btn-teal head-add-btn" data-role="admin" onclick="openHariLibur()">
@@ -2036,7 +2040,7 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
         <h2>Tracking Pengadaan</h2>
       </div>
       <button class="btn btn-teal head-add-btn" data-role="admin" onclick="openTrackKelola()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 21h17"/><path d="M20.4 3.6a1.9 1.9 0 0 0-2.7 0l-4 4 2.7 2.7 4-4a1.9 1.9 0 0 0 0-2.7z"/><path d="M13.7 7.6 10 11.3a3.2 3.2 0 0 0-.9 2.2v.8H6A2.5 2.5 0 0 0 3.5 16.8V18.4h9a3.2 3.2 0 0 0 2.3-.9l3.6-3.6z"/><path d="M9.1 14.3h5.5"/></svg>
         Kelola Tracking
       </button>
     </div>
@@ -2231,7 +2235,7 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
 <div class="overlay" id="bersih-overlay">
   <div class="modal">
     <div class="modal-icon" style="background:#fbe0e0">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#D33A3A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="#D33A3A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9h13l-1 11.2A2 2 0 0 1 15.5 22h-7a2 2 0 0 1-2-1.8L5.5 9z"/><path d="M3 7.4 21 3.6"/><path d="M9.7 5.9 9.4 4.4a1 1 0 0 1 .8-1.2l3.3-.7a1 1 0 0 1 1.2.8l.3 1.5"/><path d="M10 12.5v6M14 12.5v6"/></svg>
     </div>
     <div class="modal-body">
       <h3>Bersihkan Daftar Kontrak</h3>
