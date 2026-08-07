@@ -4747,13 +4747,31 @@ const TOAST_MS_UPLOAD  = 5000;
    notifikasi visual tetap tampil apa pun yang terjadi pada audio. */
 const SFX_KEY='fkl_sfx_off';
 let _sfxCtx=null;
-/* EFEK SUARA DIMATIKAN SELURUHNYA atas permintaan pengguna.
-   sfxEnabled() yang selalu false menutup SEMUA pemanggilnya sekaligus:
-   sfxPlay, sfxClick, sfxHover, sfxNav, sfxSession, dan sfxGear — masing-masing
-   sudah memeriksanya di baris pertama, jadi tidak ada AudioContext yang dibuat.
-   Untuk mengaktifkan kembali: pulihkan isi aslinya, yaitu
-     try{ return localStorage.getItem(SFX_KEY)!=='1'; }catch(e){ return true; } */
-function sfxEnabled(){ return false; }
+/* EFEK SUARA DIHIDUPKAN KEMBALI (ketentuan 6 Agu 2026: "buatkan efek bunyi
+   untuk login & logout, dan bunyi saat klik tombol dan pilih menu").
+
+   TIDAK ADA MESIN SUARA BARU YANG DITULIS. Seluruhnya sudah ada dan sudah
+   terpasang di aplikasi ini sejak semula — yang terjadi hanyalah satu baris di
+   bawah pernah diubah menjadi `return false`, dan itu mematikan SEMUA
+   pemanggilnya sekaligus (sfxPlay, sfxClick, sfxHover, sfxNav, sfxSession,
+   sfxGear) karena masing-masing memeriksanya di baris pertama.
+
+   Yang kini terdengar kembali:
+     masuk aplikasi   -> sfxSession('in')  arpeggio NAIK, seiring animasi selamat datang
+     keluar aplikasi  -> sfxSession('out') arpeggio TURUN, seiring animasi keluar
+     klik tombol      -> sfxClick()        satu tik pendek
+     pilih menu       -> sfxNav()          dua nada naik, terasa "berpindah halaman"
+     roda pengaturan  -> sfxGear()         bunyi putaran
+     pesan (toast)    -> sfxPlay(jenis)    nada berbeda untuk ok / warn / err
+   Semuanya dipicu satu penyimak klik bersama di bagian 1160-an; tombol Masuk &
+   Keluar sengaja dikecualikan di sana supaya nada kliknya tidak bertabrakan
+   dengan arpeggio sesi.
+
+   Pengguna tetap bisa mematikannya: sfxSetEnabled(false) menyimpan penanda di
+   localStorage, dan baris di bawah menghormatinya. Bawaannya HIDUP. */
+function sfxEnabled(){
+  try{ return localStorage.getItem(SFX_KEY)!=='1'; }catch(e){ return true; }
+}
 function sfxSetEnabled(on){
   try{ on ? localStorage.removeItem(SFX_KEY) : localStorage.setItem(SFX_KEY,'1'); }catch(e){}
 }

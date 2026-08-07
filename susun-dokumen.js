@@ -1377,8 +1377,19 @@ function torEnsureStyle(){
       'white-space:normal;overflow-wrap:anywhere;word-break:break-word}'+
     /* margin-top negatif tipis: menyamakan titik tengah tombol dengan titik
        tengah BARIS PERTAMA judul, supaya sudut kanan atas terlihat presisi. */
+    /* ---- AKAR MASALAH "TOMBOL X TERPOTONG" ----
+       style.css memakai kelas `.act` untuk TOMBOL AKSI di tabel:
+         .act{width:30px;height:30px;display:grid;place-items:center;...}
+       Pembungkus tombol di kepala modal ini kebetulan memakai nama kelas yang
+       SAMA, sehingga ia ikut dipatok selebar 30px — padahal isinya dua tombol
+       30px + jarak 10px = 70px. Kotaknya dijangkarkan 14px dari kanan, lalu
+       isinya MELUBER 40px ke kanan dan tombol tutup terpotong tepi modal.
+       Itu sebabnya gejalanya tidak muncul saat diuji tanpa style.css.
+       width/height dinolkan (auto) di sini supaya pembungkusnya kembali
+       selebar isinya. */
     '.tor-dk-hd .act{position:absolute;top:14px;right:14px;margin:0;'+
-      'display:flex;align-items:center;gap:10px}'+
+      'width:auto;height:auto;min-width:0;padding:0;border:0;background:none;'+
+      'box-shadow:none;display:flex;align-items:center;gap:10px}'+
     /* IKON PUTIH POLOS (ketentuan 6 Agu 2026: "cetak dan x berwarna putih
        saja"): kotak latar rgba putih dihapus, yang tersisa hanya guratan
        ikonnya. Umpan balik sorot memakai opacity — tidak menambah warna baru. */
@@ -1399,22 +1410,22 @@ function torEnsureStyle(){
        Karena itu dibalik: KEPINGNYA putih, IKONNYA yang berwarna. Kontrasnya
        maksimal di atas teal apa pun, dan bahasa warnanya tetap sama —
        teal = mencetak, merah = menutup. */
-    '.tor-dk-hd .x,.tor-dk-hd .pr{border:0;background:#fff;'+
-      'width:30px;height:30px;flex:0 0 30px;border-radius:9px;line-height:1;cursor:pointer;'+
+    '.tor-dk-hd .x,.tor-dk-hd .pr{border:0;'+
+      'width:32px;height:32px;flex:0 0 32px;border-radius:9px;line-height:0;cursor:pointer;'+
       'display:flex;align-items:center;justify-content:center;padding:0;'+
-      'box-shadow:0 2px 7px rgba(4,26,32,.30);'+
-      'transition:filter .15s ease,box-shadow .2s ease,transform .15s ease}'+
-    '.tor-dk-hd .pr{color:#0E7C86}'+
-    '.tor-dk-hd .x{color:#D33A3A}'+
-    '.tor-dk-hd .x:hover,.tor-dk-hd .pr:hover{transform:translateY(-1px);'+
-      'box-shadow:0 5px 12px rgba(4,26,32,.36)}'+
+      'color:#fff;box-shadow:0 2px 6px rgba(6,30,36,.30);'+
+      'transition:filter .15s ease,box-shadow .2s ease}'+
+    '.tor-dk-hd .pr{background:linear-gradient(135deg,#0E7C86,#16a9b5)}'+
+    '.tor-dk-hd .x{background:linear-gradient(135deg,#D33A3A,#e25151)}'+
+    '.tor-dk-hd .x:hover,.tor-dk-hd .pr:hover{filter:brightness(1.08);'+
+      'box-shadow:0 4px 10px rgba(6,30,36,.36)}'+
     '.tor-dk-hd .x:focus-visible,.tor-dk-hd .pr:focus-visible{outline:2px solid #fff;outline-offset:2px}'+
     /* Kedua ikon berukuran & berketebalan gurat SAMA; warnanya diwarisi dari
        tombolnya lewat currentColor. Silang digambar sebagai SVG (lihat markup)
        supaya benar-benar di tengah kotak — karakter &times; punya sisi kosong
        yang berbeda menurut muka hurufnya. */
-    '.tor-dk-hd .pr svg,.tor-dk-hd .x svg{width:16px;height:16px;display:block;'+
-      'stroke:currentColor;stroke-width:2.1}'+
+    '.tor-dk-hd .pr svg,.tor-dk-hd .x svg{width:15px;height:15px;display:block;'+
+      'stroke:currentColor;fill:none;stroke-width:2}'+
     '.tor-dk-bd{padding:12px;display:flex;flex-direction:column;gap:8px;max-height:70vh;overflow:auto}'+
     '.tor-dk-row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 14px;'+
       'border:1px solid #E3EAF2;border-radius:12px;background:#fff;cursor:pointer;'+
@@ -4564,30 +4575,85 @@ function torOpenDokList(id){
     '<div class="tor-dk-bd">'+baris+'</div></div>';
   ov.classList.add('show');
 }
-/* Menolak upaya menutup lewat klik di luar kotak: kotaknya digetarkan,
-   tombol tutup disorot, dan bunyi peringatan dibunyikan.
+/* ---- BUNYI "TIDAK BISA" ----
+   TIDAK memakai sfxPlay() milik app.js. Sekilas itu pilihan yang wajar, tetapi
+   di berkas ini sfxEnabled() ditulis `return false` — seluruh mesin suara
+   aplikasi memang sedang dimatikan, sehingga sfxPlay tidak pernah berbunyi.
+   Bunyi penolakan ini justru harus terdengar: ia satu-satunya penjelasan
+   mengapa klik pengguna tidak menghasilkan apa-apa.
 
-   Bunyinya MEMAKAI ULANG mesin suara aplikasi (sfxPlay di app.js) — nada yang
-   sama dengan pesan peringatan, jadi tidak ada berkas audio baru yang perlu
-   diunduh dan pengguna langsung mengenalinya. sfxPlay sendiri sudah menghormati
-   setelan suara pengguna (sfxEnabled), jadi yang mematikan suara tidak akan
-   mendengar apa pun — getarannya tetap ada.
+   Nadanya dibangkitkan langsung lewat Web Audio (dua nada turun, seperti bunyi
+   "tidak" pada sistem operasi) — tidak ada berkas audio yang perlu diunduh.
+   AudioContext dibuat sekali lalu dipakai ulang; peramban mengizinkannya karena
+   selalu dipicu oleh klik pengguna. Bila peramban menolak, semuanya dibungkus
+   try/catch sehingga getarannya tetap jalan tanpa bunyi. */
+var _torAC=null;
+function torBunyiTolak(){
+  try{
+    /* Menghormati sakelar suara aplikasi: pengguna yang mematikan bunyi tidak
+       akan mendengar apa pun — getaran & sorot tombol tutup sudah cukup
+       menjelaskan penolakannya. */
+    if(typeof sfxEnabled==='function' && !sfxEnabled()) return;
+    var AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
+    if(!_torAC) _torAC=new AC();
+    var ctx=_torAC;
+    if(ctx.state==='suspended') ctx.resume().catch(function(){});
+    var t0=ctx.currentTime+0.01;
+    [[392.00,t0,0.13],[261.63,t0+0.11,0.22]].forEach(function(n){
+      var o=ctx.createOscillator(), g=ctx.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(n[0], n[1]);
+      g.gain.setValueAtTime(0.0001, n[1]);
+      g.gain.exponentialRampToValueAtTime(0.13, n[1]+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, n[1]+n[2]);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(n[1]); o.stop(n[1]+n[2]+0.02);
+    });
+  }catch(e){}
+}
+/* Menolak upaya menutup lewat klik di luar kotak: kotaknya digetarkan, tombol
+   tutup disorot, bunyi penolakan dibunyikan, dan fokus dipindah ke tombol tutup
+   supaya pengguna papan ketik cukup menekan Enter.
 
-   Kelas .menolak dilepas dulu lalu dipasang lagi pada frame berikutnya; tanpa
-   itu, klik kedua yang cepat tidak memicu animasi apa pun karena kelasnya sudah
-   menempel dan peramban menganggap tidak ada yang berubah. */
-function torDokListTolak(){
-  var ov=document.getElementById('tor-dk-ov'); if(!ov) return;
-  var mdl=ov.querySelector('.tor-dk-mdl'); if(!mdl) return;
-  try{ if(typeof sfxPlay==='function') sfxPlay('warn'); }catch(e){}
+   Ditulis UMUM (menerima elemen mana pun) supaya dipakai bersama oleh pop-up
+   pilih dokumen DAN modal pratinjau — lihat torPasangTolakPratinjau.
+
+   Kelas .menolak dilepas dulu lalu dipasang lagi setelah memaksa perhitungan
+   ulang; tanpa itu, klik kedua yang cepat tidak memicu animasi apa pun karena
+   kelasnya sudah menempel dan peramban menganggap tidak ada yang berubah. */
+function torTolakTutup(mdl, tombolTutup){
+  if(!mdl) return;
+  torBunyiTolak();
   mdl.classList.remove('menolak');
-  void mdl.offsetWidth;                     /* paksa peramban menghitung ulang */
+  void mdl.offsetWidth;
   mdl.classList.add('menolak');
   clearTimeout(mdl.__tolakT);
   mdl.__tolakT=setTimeout(function(){ mdl.classList.remove('menolak'); }, 900);
-  /* Fokus dipindah ke tombol tutup: pengguna papan ketik cukup menekan Enter. */
-  try{ var x=mdl.querySelector('.tor-dk-hd .x'); if(x) x.focus({preventScroll:true}); }catch(e){}
+  try{ if(tombolTutup) tombolTutup.focus({preventScroll:true}); }catch(e){}
 }
+function torDokListTolak(){
+  var ov=document.getElementById('tor-dk-ov'); if(!ov) return;
+  var mdl=ov.querySelector('.tor-dk-mdl'); if(!mdl) return;
+  torTolakTutup(mdl, mdl.querySelector('.tor-dk-hd .x'));
+}
+/* ---- Perlakuan yang sama untuk MODAL PRATINJAU (#pn-preview-overlay) ----
+   Modal itu milik bersama seluruh modul, dan sebelumnya klik di luar kotaknya
+   tidak berakibat apa pun — pengguna tidak tahu apakah kliknya terbaca atau
+   aplikasinya menggantung. Sekarang ia menjawab dengan getaran yang sama.
+   Dipasang dari sini karena berkas inilah yang memuat mesin getar & bunyinya;
+   pemasangannya aman dijalankan berkali-kali (dijaga penanda __tolakPasang). */
+function torPasangTolakPratinjau(){
+  var ov=document.getElementById('pn-preview-overlay');
+  if(!ov || ov.__tolakPasang) return;
+  ov.__tolakPasang=true;
+  ov.addEventListener('mousedown', function(e){
+    if(e.target!==ov) return;                       /* hanya latar, bukan isi modal */
+    if(!ov.classList.contains('show')) return;
+    var mdl=ov.querySelector('.pn-preview-modal');
+    torTolakTutup(mdl, ov.querySelector('.detail-close'));
+  });
+}
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', torPasangTolakPratinjau);
+else torPasangTolakPratinjau();
 function torCloseDokList(){ const ov=document.getElementById('tor-dk-ov'); if(ov) ov.classList.remove('show'); }
 
 /* ===================== 11c-b. CETAK GABUNGAN =====================

@@ -135,95 +135,33 @@
      memakai !important karena sebagian tombol dibangkitkan lewat JS dengan
      gaya sebaris. -->
 <style id="pn-preview-ikon">
-#pn-preview-overlay .detail-head .btn,
-#pn-preview-overlay .detail-head .detail-close,
-#pn-preview-overlay .pn-preview-head-actions .btn,
-#pn-preview-overlay .pn-preview-head-actions .detail-close{color:#fff !important}
-#pn-preview-overlay .detail-head .btn svg,
-#pn-preview-overlay .detail-head .detail-close svg,
-#pn-preview-overlay .pn-preview-head-actions .btn svg,
-#pn-preview-overlay .pn-preview-head-actions .detail-close svg{stroke:#fff !important}
-/* Ikon berjenis SOLID (digambar dengan fill, bukan garis) ikut diputihkan —
-   tanpa ini ikon solid tetap gelap karena tidak memakai stroke sama sekali.
-   Yang ber-fill="none" sengaja dikecualikan agar tidak berubah jadi blok pejal. */
-#pn-preview-overlay .detail-head svg:not([fill="none"]),
-#pn-preview-overlay .pn-preview-head-actions svg:not([fill="none"]){fill:#fff !important}
-/* ---- KOTAK KONTRAS DI BELAKANG IKON ----
-   Ikon putih di atas gradasi teal memang terbaca, tetapi batas tombolnya
-   tidak: yang tampak hanya guratan melayang, sehingga tidak jelas mana yang
-   bisa diklik dan seberapa besar sasaran ketukannya.
+/* ============ TOMBOL KEPALA MODAL PRATINJAU ============
+   KETENTUAN 6 Agu 2026. Tiga tombol (Cetak/PDF, Layar Penuh, Tutup) tampil
+   sebagai KEPING BERWARNA dengan ikon di dalamnya, tanpa tulisan.
 
-   Tiap tombol diberi kotak putih transparan + garis tepi putih. Dipilih putih
-   transparan, BUKAN warna pekat: latar kepala modal berupa GRADASI yang
-   warnanya berubah dari kiri ke kanan, jadi warna tetap apa pun akan cocok di
-   satu sisi dan menabrak di sisi lain. Putih transparan selalu selaras karena
-   ia mencerahkan apa pun yang ada di belakangnya.
+   Warnanya memakai gradasi yang sama dengan tombol aksi di tabel, termasuk
+   pembagian perannya, supaya tidak ada kosakata warna baru:
+     teal   = melihat / mencetak   (seperti .act-view)
+     kuning = mengubah tampilan    (seperti .act-edit)
+     merah  = menutup / mengakhiri (seperti .act-del)
 
-   .pn-fs-btn ("Layar Penuh") punya latar gradasi teal sendiri dari style.css —
-   justru itu yang membuatnya nyaris melebur dengan kepala modal. Latarnya
-   ditimpa di sini supaya ketiga tombol tampil seragam. */
-/* ---- WARNA HIDUP, MENGIKUTI BAHASA TOMBOL AKSI DI TABEL ----
-   KETENTUAN 6 Agu 2026: "warnanya lebih hidup seperti pada ikon-ikon tombol
-   aksi". Tombol aksi pada tabel memakai tiga gradasi yang sudah dikenal
-   pengguna (style.css baris 382):
-     .act-view  teal -> cyan     .act-edit  kuning     .act-del  merah
-   Gradasi yang SAMA PERSIS dipakai di sini, dengan pembagian peran yang juga
-   sama: melihat/mencetak = teal, mengubah tampilan = kuning, menutup = merah.
-   Jadi tidak ada kosakata warna baru yang harus dipelajari — merah selalu
-   berarti "mengakhiri", di tabel maupun di kepala modal.
+   Aturan ini ditulis ULANG SEBAGAI SATU BLOK UTUH, bukan ditambal sedikit demi
+   sedikit. Riwayatnya: pernah dicoba keping putih dengan ikon berwarna, dan
+   sisa aturan `svg{stroke:#fff}` dari percobaan sebelumnya tertinggal — putih
+   di atas putih, ikonnya lenyap dan yang tampak hanya kotak kosong. Menulis
+   ulang satu blok membuat keadaan seperti itu tidak bisa terjadi lagi.
 
-   Gradasi pekat dipilih, BUKAN putih transparan seperti sebelumnya: kepala
-   modal berlatar teal, dan kotak putih transparan di atasnya nyaris melebur.
-   Warna pekat memberi batas tombol yang tegas sekaligus membedakan ketiganya
-   sekali lihat. */
-#pn-preview-overlay .detail-head .btn,
-#pn-preview-overlay .pn-preview-head-actions .btn,
-#pn-preview-overlay .detail-head .detail-close{
-  border:none !important;
-  border-radius:9px;
-  box-shadow:0 2px 6px rgba(6,30,36,.28) !important;
-  transition:transform .15s ease,box-shadow .2s ease,filter .15s ease}
-/* KEPING PUTIH, IKON BERWARNA — bukan sebaliknya.
-   Percobaan pertama memberi tiap tombol latar berwarna penuh meniru tombol
-   aksi di tabel. Untuk tombol kuning & merah itu berhasil, tetapi tombol
-   Cetak/PDF yang teal jatuh di atas kepala modal yang JUGA bergradasi teal —
-   teal di atas teal, tombolnya nyaris lenyap. Warna yang kontras di atas latar
-   putih (tabel) belum tentu kontras di atas latar teal.
-   Karena itu dibalik: kepingnya putih, ikonnya yang berwarna. Ketiganya jadi
-   sama-sama tegas di atas teal, dan bahasa warnanya tetap utuh —
-   teal = mencetak, kuning = mengubah tampilan, merah = menutup. */
-#pn-preview-overlay .detail-head .btn,
-#pn-preview-overlay .pn-preview-head-actions .btn,
-#pn-preview-overlay .detail-head .detail-close{
-  background:#fff !important;
-  box-shadow:0 2px 7px rgba(4,26,32,.30) !important}
-/* Cetak / PDF -> teal (sama dengan tombol "Lihat" di tabel) */
-#pn-preview-overlay .pn-preview-head-actions .btn:not(.pn-fs-btn):not(.detail-close){
-  color:#0E7C86 !important}
-/* Layar Penuh -> kuning tua; kuning muda tidak terbaca di atas putih. */
-#pn-preview-overlay .pn-preview-head-actions .pn-fs-btn{color:#B07C00 !important}
-#pn-preview-overlay .pn-preview-head-actions .pn-fs-btn svg{stroke:currentColor !important}
-/* Tutup -> merah (sama dengan tombol "Hapus") */
-#pn-preview-overlay .detail-head .detail-close{color:#D33A3A !important}
-#pn-preview-overlay .detail-head svg{stroke:currentColor !important}
-/* ---- TOMBOL = IKON SAJA ----
-   KETENTUAN 6 Agu 2026: tulisan "Cetak / PDF" dan "Layar Penuh" dilepas,
-   yang tersisa hanya ikonnya.
+   Berlaku untuk SEMUA dokumen: seluruh modul memakai satu modal bersama
+   #pn-preview-overlay dan menyuntikkan tombol Cetak/PDF-nya ke kepala yang
+   sama, jadi aturan ini cukup ditulis sekali. */
 
-   `font-size:0` dipakai, BUKAN menghapus teksnya dari HTML. Alasannya dua:
-     1. Tulisan itu dibangkitkan sembilan modul yang berbeda lewat
-        btn.innerHTML='<svg ...>Cetak / PDF' — teksnya berupa TEXT NODE polos
-        tanpa pembungkus, jadi tidak ada yang bisa disasar CSS selain ukuran
-        hurufnya. Menyunting kesembilan tempat itu berarti sembilan peluang
-        tertinggal saat modul baru ditambahkan; aturan di sini berlaku untuk
-        semuanya sekaligus, termasuk yang belum ada.
-     2. Teksnya TETAP ADA di pohon aksesibilitas, sehingga pembaca layar masih
-        menyuarakan "Cetak / PDF" — hilang secara visual, bukan secara makna.
-   Judulnya juga dipasang sebagai atribut title (lihat app.js / susun-*.js)
-   supaya maksud tombol terbaca saat disorot kursor.
-
-   !important diperlukan: kesembilan modul itu menuliskan padding & font-size
-   sebagai GAYA SEBARIS (btn.style.fontSize='11px'), yang mengalahkan CSS biasa. */
+/* ---- Bentuk: ikon saja, tanpa tulisan ----
+   `font-size:0` dipakai, bukan menghapus teks dari HTML: tulisan "Cetak / PDF"
+   dibangkitkan sembilan modul lewat btn.innerHTML sebagai TEXT NODE polos yang
+   tidak bisa disasar CSS selain lewat ukuran hurufnya. Teksnya tetap ada di
+   pohon aksesibilitas sehingga pembaca layar masih menyuarakannya.
+   !important diperlukan karena modul-modul itu menulis padding & font-size
+   sebagai gaya sebaris (btn.style.fontSize='11px'). */
 #pn-preview-overlay .detail-head .btn,
 #pn-preview-overlay .pn-preview-head-actions .btn,
 #pn-preview-overlay .detail-head .detail-close{
@@ -231,34 +169,66 @@
   padding:0 !important;
   gap:0 !important;
   width:32px;height:32px;flex:0 0 32px;
-  display:inline-flex;align-items:center;justify-content:center}
-/* SATU ukuran & satu ketebalan gurat untuk KETIGA ikon, supaya berat
-   visualnya sama. 15px pada kotak 32px menyisakan ruang napas 8,5px di
-   tiap sisi — ikon terbaca kecil & rapi, bukan memenuhi kotaknya. */
+  display:inline-flex;align-items:center;justify-content:center;
+  border:none !important;
+  border-radius:9px;
+  box-shadow:0 2px 6px rgba(6,30,36,.30) !important;
+  transition:filter .15s ease,box-shadow .2s ease}
+/* Satu ukuran & satu ketebalan gurat untuk KETIGA ikon. 15px di dalam kotak
+   32px menyisakan napas 8,5px tiap sisi — kecil dan rapi, tidak memenuhi kotak.
+   Warnanya diwarisi dari tombol lewat currentColor: satu-satunya tempat warna
+   ikon ditentukan adalah properti `color` di bawah. */
 #pn-preview-overlay .detail-head .btn svg,
 #pn-preview-overlay .pn-preview-head-actions .btn svg,
 #pn-preview-overlay .detail-head .detail-close svg{
   width:15px !important;height:15px !important;flex:none;
-  display:block;stroke-width:2}
+  display:block;stroke:currentColor !important;fill:none !important;stroke-width:2}
 /* Label "Layar Penuh"/"Keluar Layar Penuh" berupa <span> ber-id — dilepas
-   sepenuhnya. Nama tombolnya sudah dibawa atribut title di index.html. */
+   sepenuhnya. Nama tombolnya dibawa atribut title. */
 #pn-preview-overlay #pn-preview-fs-label{display:none}
-/* Jarak antar tombol dilonggarkan supaya ketiganya terbaca sebagai tiga
-   tindakan terpisah, bukan satu deretan yang menempel. */
+/* Jarak antar tombol: ketiganya terbaca sebagai tiga tindakan terpisah. */
 #pn-preview-overlay .pn-preview-head-actions{gap:10px}
-/* Tombol tutup kini berisi SVG (lihat markup-nya), jadi ia ikut aturan yang
-   sama dengan dua tombol lain: ukuran kotak, ukuran ikon, dan ketebalan gurat
-   semuanya seragam. line-height:0 membuang sisa ruang baris teks. */
-#pn-preview-overlay .detail-head .detail-close{line-height:0}
-/* Kejelasan saat disorot/ditekan: kotaknya menebal, bukan berganti warna
-   gelap yang justru menenggelamkan ikonnya. */
+
+/* ---- Warna ---- */
+/* Cetak / PDF -> teal */
+#pn-preview-overlay .pn-preview-head-actions .btn:not(.pn-fs-btn){
+  background:linear-gradient(135deg,#0E7C86,#16a9b5) !important;color:#fff !important}
+/* Layar Penuh -> kuning; ikonnya bertinta gelap supaya terbaca di atas kuning,
+   persis .act-edit di tabel. */
+#pn-preview-overlay .pn-preview-head-actions .pn-fs-btn{
+  background:linear-gradient(135deg,#F6B40E,#ffca3a) !important;color:#5a3d00 !important}
+/* Tutup -> merah */
+#pn-preview-overlay .detail-head .detail-close{
+  background:linear-gradient(135deg,#D33A3A,#e25151) !important;color:#fff !important;
+  line-height:0}
+/* Tombol tutup dibuat persegi supaya silangnya benar-benar di tengah kotak. */
+#pn-preview-overlay .detail-head .detail-close{padding:0 !important}
 /* Umpan balik sorot memakai kecerahan & angkatan bayangan — cara yang sama
    dengan tombol aksi di tabel, jadi warnanya tidak perlu diubah-ubah. */
 #pn-preview-overlay .detail-head .btn:hover,
 #pn-preview-overlay .pn-preview-head-actions .btn:hover,
 #pn-preview-overlay .detail-head .detail-close:hover{
-  transform:translateY(-1px);
-  box-shadow:0 5px 12px rgba(4,26,32,.36) !important}
+  filter:brightness(1.08);
+  box-shadow:0 4px 10px rgba(6,30,36,.36) !important}
+
+/* ---- GETARAN "TUTUP DULU" pada modal pratinjau ----
+   Sama dengan pop-up pilih dokumen: mengklik latar di luar kotak tidak menutup
+   modal, melainkan menggetarkannya sambil menyorot tombol tutup. */
+@keyframes pn-getar{
+  0%,100%{transform:translateX(0)}
+  15%{transform:translateX(-6px)}30%{transform:translateX(6px)}
+  45%{transform:translateX(-4px)}60%{transform:translateX(4px)}
+  75%{transform:translateX(-2px)}90%{transform:translateX(2px)}}
+@keyframes pn-sorot{
+  0%,100%{box-shadow:0 2px 6px rgba(6,30,36,.30)}
+  50%{box-shadow:0 0 0 4px rgba(255,255,255,.8),0 2px 6px rgba(6,30,36,.30)}}
+#pn-preview-overlay .pn-preview-modal.menolak{
+  animation:pn-getar .4s cubic-bezier(.36,.07,.19,.97) both}
+#pn-preview-overlay .pn-preview-modal.menolak .detail-close{
+  animation:pn-sorot .4s ease-in-out 2}
+@media (prefers-reduced-motion:reduce){
+  #pn-preview-overlay .pn-preview-modal.menolak{animation:none}
+  #pn-preview-overlay .pn-preview-modal.menolak .detail-close{animation:pn-sorot .5s ease-in-out 2}}
 </style>
 
 <!-- ============ LEBAR KOLOM: DAFTAR NOMOR DOKUMEN (Penetapan Nomor) ============
