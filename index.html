@@ -54,6 +54,24 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- CDN cadangan untuk supabase-js.
+
+     Tanpa ini, satu kedipan jaringan saat memuat baris di atas membuat
+     `window.supabase` tidak ada — dan karena app.js hanya mengisi `db` SEKALI
+     saat halaman dimuat, seluruh aplikasi berjalan dengan db = null sampai
+     halaman dimuat ulang. Gejalanya menyebar dan menyesatkan: "Cannot read
+     properties of null (reading 'from')" di satu menu, "Gagal memuat data
+     Tender" di menu lain, "Koneksi Supabase belum siap" di layar login.
+
+     document.write dipakai dengan sengaja (bukan appendChild): ia menyisipkan
+     <script> secara SINKRON selagi dokumen masih diurai, sehingga pustaka
+     cadangan dijamin selesai dimuat sebelum app.js dijalankan. appendChild
+     bersifat asinkron dan app.js akan terlanjur berjalan lebih dulu. -->
+<script>
+  if (!window.supabase) {
+    document.write('<script src="https://unpkg.com/@supabase/supabase-js@2"><\/script>');
+  }
+</script>
 
 <!-- Gaya UI aplikasi dipindah ke berkas eksternal -->
 <!-- ============ MODE TATA LETAK SIDEBAR: DITETAPKAN SEBELUM HALAMAN DIGAMBAR ============
@@ -117,7 +135,7 @@
 })();
 </script>
 
-<link rel="stylesheet" href="style.css?v=20260807e">
+<link rel="stylesheet" href="style.css?v=20260807f">
 
 <!-- ============ IKON KEPALA MODAL PRATINJAU ============
      KETENTUAN 6 Agu 2026: ikon Cetak/PDF (printer/mata), Layar Penuh
@@ -2690,11 +2708,11 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
 
 <!-- app.js dipecah menjadi 3 bagian. URUTAN WAJIB: inti -> susun-kontrak -> lain.
      Memisah "Susun Kontrak" (SPK) agar bisa disunting tanpa memuat seluruh app.js. -->
-<script src="app.js?v=20260807e"></script>
-<script src="susun-kontrak.js?v=20260807e"></script>
-<script src="susun-dokumen.js?v=20260807e"></script>
-<script src="app-lain.js?v=20260807e"></script>
-<script src="ui-sidebar.js?v=20260807e"></script>
+<script src="app.js?v=20260807f"></script>
+<script src="susun-kontrak.js?v=20260807f"></script>
+<script src="susun-dokumen.js?v=20260807f"></script>
+<script src="app-lain.js?v=20260807f"></script>
+<script src="ui-sidebar.js?v=20260807f"></script>
 
 </body>
 </html>

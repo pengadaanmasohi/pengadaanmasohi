@@ -282,16 +282,18 @@
       /* Bilah tab diganti dua tombol di sini. Halaman pertama panel sekarang
          Daftar Akun — yang paling sering dibuka — dan kedua halaman lain
          diperlakukan sebagai tindakan, bukan tab sejajar. */
+      /* Hanya SATU tombol di sini. Reset kata sandi dulu jadi halaman
+         tersendiri, padahal ia tindakan atas SATU akun — tempatnya yang wajar
+         di baris akun itu sendiri, bukan di halaman terpisah yang mengulang
+         seluruh daftar hanya untuk menaruh sebuah kotak isian. */
       +   '<div class="ac-head-act">'
       +     '<button class="ac-hbtn" data-tab="create" type="button" onclick="acTab(\'create\')">+ Buat Akun</button>'
-      +     '<button class="ac-hbtn" data-tab="reset" type="button" onclick="acTab(\'reset\')">Reset Sandi</button>'
       +   '</div>'
       +   '<button class="ac-x" type="button" onclick="acClosePanel()" aria-label="Tutup">&times;</button>'
       + '</div>'
       + '<div class="ac-body">'
       +   '<div class="ac-pane" id="ac-pane-create"></div>'
       +   '<div class="ac-pane" id="ac-pane-list" style="display:none"></div>'
-      +   '<div class="ac-pane" id="ac-pane-reset" style="display:none"></div>'
       + '</div>'
       + '</div>';
     document.body.appendChild(ov);
@@ -307,7 +309,7 @@
   };
   window.acClosePanel=function(){ var ov=document.getElementById('ac-ov'); if(ov) ov.classList.remove('show'); };
   window.acTab=function(t){
-    ['create','list','reset'].forEach(function(k){
+    ['create','list'].forEach(function(k){
       var pane=document.getElementById('ac-pane-'+k); if(pane) pane.style.display=(k===t?'':'none');
     });
     /* Tombol header ikut menyala saat halamannya sedang terbuka. Daftar Akun
@@ -318,7 +320,6 @@
     });
     if(t==='create') acRenderCreate();
     if(t==='list')   acRenderList();
-    if(t==='reset')  acRenderReset();
   };
   /* Tombol kembali ke Daftar Akun — dipasang di kepala halaman Buat Akun &
      Reset Sandi. Wajib ada: sejak bilah tab dihapus, tanpa ini kedua halaman
@@ -449,21 +450,36 @@
     h+='<div class="ac-hint">Login memakai username + kata sandi di daftar ini. Akun <b>Admin Pusat</b> tidak muncul di sini — ia akun bawaan server dan tidak dapat diubah dari panel ini.</div>';
     if(!accs.length){ h+='<div class="ac-empty">Belum ada akun. Tekan <b>+ Buat Akun</b> di kanan atas untuk menambah.</div>'; }
     else {
-      h+='<div class="ac-tablewrap"><table class="ac-list"><thead><tr><th>Username</th><th>Jenis</th><th>Bidang</th><th>Hak Ubah / Hapus</th><th></th></tr></thead><tbody>';
-      accs.forEach(function(a){
+      h+='<div class="ac-tablewrap"><table class="ac-list"><thead><tr>'
+        +'<th>Username</th><th>Jenis</th><th>Bidang</th><th>Hak Ubah / Hapus</th>'
+        +'<th class="ac-col-aksi">Aksi</th></tr></thead><tbody>';
+      accs.forEach(function(a,i){
         var t=acTipe(a);
         var adm=(t===AC_TIPE_ADMIN);
         var semua=adm || (!a.bidang || a.bidang===AC_SEMUA);
-        h+='<tr><td><b>'+escapeHtml(a.username)+'</b></td>'
+        var un=escapeAttr(a.username);
+        h+='<tr'+(i%2?' class="ac-row-alt"':'')+'><td class="ac-cell-user">'+escapeHtml(a.username)+'</td>'
           +'<td><span class="ac-pill '+(adm?'admin':'user')+'">'+acTipeLabel(t)+'</span></td>'
           +'<td>'+(semua?'<span class="ac-pill on">Semua Bidang</span>':escapeHtml(a.bidang))+'</td>'
-          +'<td>'+(adm
+          +'<td class="ac-cell-ket">'+(adm
               ? 'Seluruh data &amp; menu, kecuali Akun &amp; Kontrol'
               : (semua?'Seluruh data monitoring + dokumen SPBJ':'Hanya bidangnya'))+'</td>'
-          +'<td class="ac-rowact">'
-          +'<button class="ac-mini" type="button" onclick="acEditAccount(\''+escapeAttr(a.username)+'\')">Ubah</button>'
-          +'<button class="ac-mini danger" type="button" onclick="acDeleteAccount(\''+escapeAttr(a.username)+'\')">Hapus</button>'
-          +'</td></tr>';
+          +'<td class="ac-col-aksi"><div class="ac-rowact">'
+          +'<button class="ac-mini" type="button" onclick="acEditAccount(\''+un+'\')">Ubah</button>'
+          +'<button class="ac-mini danger" type="button" onclick="acDeleteAccount(\''+un+'\')">Hapus</button>'
+          +'<button class="ac-mini warn" type="button" onclick="acResetBaris('+i+',\''+un+'\')">Reset</button>'
+          +'</div></td></tr>';
+        /* Baris penyetel kata sandi, tersembunyi sampai tombol Reset ditekan.
+           Ditanam di sini (bukan dibuat saat diklik) supaya urutan DOM-nya
+           pasti tepat di bawah barisnya sendiri, apa pun urutan penyortiran. */
+        h+='<tr class="ac-reset-row" id="ac-reset-row-'+i+'" style="display:none"><td colspan="5">'
+          +'<div class="ac-reset-box">'
+          +  '<label for="ac-rpw-'+i+'">Kata sandi baru untuk <b>'+escapeHtml(a.username)+'</b></label>'
+          +  '<input id="ac-rpw-'+i+'" type="text" autocomplete="off" placeholder="min. 4 karakter" '
+          +    'onkeydown="if(event.key===\'Enter\'){event.preventDefault();acResetCustom('+i+',\''+un+'\');}">'
+          +  '<button class="ac-mini warn" type="button" onclick="acResetCustom('+i+',\''+un+'\')">Simpan</button>'
+          +  '<button class="ac-mini" type="button" onclick="acResetBaris('+i+',\''+un+'\',true)">Batal</button>'
+          +'</div></td></tr>';
       });
       h+='</tbody></table></div>';
     }
@@ -509,39 +525,30 @@
     acRenderList();
   };
 
-  /* ---------- Reset Kata Sandi ---------- */
-  function acRenderReset(){
-    var cfg=acGetConfig();
-    var custom=(cfg.accounts||[]);
-    var h=acBackHtml();
-    h+='<div class="ac-hint">Menu ini untuk membantu pengguna yang <b>lupa kata sandi</b>. Admin Pusat dapat menetapkan kata sandi baru. Akun <b>Admin Pusat sendiri tidak dapat direset dari sini</b> demi keamanan.</div>';
-    h+='<div class="ac-sec-title">Akun User &amp; Admin Cabang</div>';
-    if(!custom.length){
-      h+='<div class="ac-empty">Belum ada akun. Buat dulu lewat tombol <b>+ Buat Akun</b> di kanan atas.</div>';
-    }else{
-      h+='<div class="ac-tablewrap"><table class="ac-list"><thead><tr><th>Username</th><th>Jenis</th><th>Bidang</th><th>Kata Sandi Baru</th><th></th></tr></thead><tbody>';
-      custom.forEach(function(a,i){
-        var t=acTipe(a);
-        h+='<tr><td><b>'+escapeHtml(a.username)+'</b></td>'
-          +'<td><span class="ac-pill '+(t===AC_TIPE_ADMIN?'admin':'user')+'">'+acTipeLabel(t)+'</span></td>'
-          +'<td>'+escapeHtml(t===AC_TIPE_ADMIN?'Semua Bidang':acBidangLabel(a.bidang))+'</td>'
-          +'<td><input class="ac-rpw" id="ac-rpw-'+i+'" type="text" autocomplete="off" placeholder="min. 4 karakter"></td>'
-          +'<td class="ac-rowact"><button class="ac-mini" type="button" onclick="acResetCustom('+i+',\''+escapeAttr(a.username)+'\')">Reset</button></td>'
-          +'</tr>';
-      });
-      h+='</tbody></table></div>';
+  /* ---------- Reset Kata Sandi ----------
+     Halaman Reset Sandi DIHAPUS. Ia dulu mengulang seluruh daftar akun hanya
+     untuk menaruh sebuah kotak isian di tiap baris — padahal reset adalah
+     tindakan atas satu akun, dan tempatnya yang wajar di baris akun itu
+     sendiri. Sekarang tombol Reset ada di kolom Aksi pada Daftar Akun, dan
+     kotak isiannya terbuka tepat di bawah baris yang bersangkutan.
+
+     Bagian "Akun Server" ikut hilang bersamanya. Itu disengaja: ia memanggil
+     RPC `admin_reset_password`, yang menurut catatannya sendiri SUDAH DIBUANG
+     dari 01_auth_login.sql — jadi tombolnya tidak pernah bisa berhasil.
+     Akun Admin Pusat sekarang berada di Supabase Auth dan kata sandinya
+     diganti lewat menu "Ganti Kata Sandi". */
+  window.acResetBaris=function(idx, username, tutup){
+    var row=document.getElementById('ac-reset-row-'+idx); if(!row) return;
+    var buka=(row.style.display==='none') && !tutup;
+    /* Hanya satu baris reset terbuka pada satu waktu — dua kotak isian
+       terbuka bersamaan mengundang salah isi ke akun yang keliru. */
+    document.querySelectorAll('#ac-pane-list .ac-reset-row').forEach(function(r){ r.style.display='none'; });
+    row.style.display = buka ? '' : 'none';
+    if(buka){
+      var inp=document.getElementById('ac-rpw-'+idx);
+      if(inp){ inp.value=''; setTimeout(function(){ try{ inp.focus(); }catch(e){} }, 30); }
     }
-    h+='<div class="ac-sec-title" style="margin-top:20px">Akun Server</div>';
-    h+='<div class="ac-note">Untuk akun yang diverifikasi di server, reset memerlukan fungsi Supabase <code>admin_reset_password</code>. Isi username &amp; kata sandi baru lalu tekan Reset; bila fungsi belum ada, ikuti SQL di bawah. Ingat: kata sandi gateway dokumen (Worker) diatur terpisah.</div>';
-    h+='<div class="ac-form"><div class="ac-row2">'
-      +'<div class="ac-fld"><label>Username</label><input id="ac-rs-user" type="text" autocomplete="off" placeholder="username akun server"></div>'
-      +'<div class="ac-fld"><label>Kata Sandi Baru</label><input id="ac-rs-pass" type="text" autocomplete="off" placeholder="min. 6 karakter"></div>'
-      +'</div><div class="ac-actions"><button class="btn btn-teal" type="button" onclick="acResetServer()">Reset Kata Sandi Server</button></div>';
-    h+='<details class="ac-sql"><summary>SQL fungsi reset (jalankan sekali di Supabase)</summary>'
-      +'<pre>create or replace function admin_reset_password(\n  p_username text, p_new text\n) returns boolean language plpgsql security definer as $$\nbegin\n  if lower(p_username) = \'admin\' then\n    return false;              -- akun admin tidak boleh direset di sini\n  end if;\n  update app_users\n     set password_hash = crypt(p_new, gen_salt(\'bf\')),\n         updated_at    = now()\n   where lower(username) = lower(p_username);\n  return found;\nend; $$;</pre>'
-      +'<small>Nama kolom di atas sudah sesuai skema <code>01_auth_login.sql</code> (<code>app_users.password_hash</code>). Catatan: berkas itu SENGAJA membuang <code>admin_reset_password</code> karena seluruh akun kini berperan admin dan akun admin memang tidak boleh direset dari sini \u2014 pasang kembali hanya bila akun non-admin dihidupkan lagi.</small></details></div>';
-    document.getElementById('ac-pane-reset').innerHTML=h;
-  }
+  };
   window.acResetCustom=async function(idx, username){
     var el=document.getElementById('ac-rpw-'+idx);
     var np=((el&&el.value)||'').trim();
@@ -551,30 +558,8 @@
     a.password=np;
     var ok=await acSaveConfig();
     try{ toast('Kata sandi "'+username+'" diperbarui'+(ok?' & tersinkron':' (lokal)'),'ok'); }catch(e){}
-    acRenderReset();
+    acRenderList();   // daftar digambar ulang -> baris reset ikut tertutup
   };
-  window.acResetServer=async function(){
-    var u=((document.getElementById('ac-rs-user')||{}).value||'').trim();
-    var p=((document.getElementById('ac-rs-pass')||{}).value||'');
-    if(!u){ try{ toast('Username wajib diisi','warn'); }catch(e){} return; }
-    if(u.toLowerCase()==='admin'){ try{ toast('Akun admin tidak dapat direset dari sini','warn'); }catch(e){} return; }
-    if((p||'').length<6){ try{ toast('Kata sandi baru minimal 6 karakter','warn'); }catch(e){} return; }
-    if(!_useSupa()){ try{ toast('Reset akun server memerlukan koneksi Supabase','warn'); }catch(e){} return; }
-    try{
-      var res=await _realDb().rpc('admin_reset_password',{ p_username:u, p_new:p });
-      if(res && res.error) throw res.error;
-      if(res && res.data===true){
-        try{ toast('Kata sandi "'+u+'" berhasil direset di server','ok'); }catch(e){}
-        var pe=document.getElementById('ac-rs-pass'); if(pe) pe.value='';
-      }else{
-        try{ toast('Gagal: username tidak ditemukan atau tidak boleh direset','warn'); }catch(e){}
-      }
-    }catch(e){
-      console.error('acResetServer:',e);
-      try{ toast('Fungsi reset server belum tersedia. Lihat SQL di menu ini untuk mengaktifkannya.','warn'); }catch(_){}
-    }
-  };
-
   /* ============================ PANEL PENYIMPANAN ============================ */
   var ST_TABLES=[
     {t:'pekerjaan',              l:'SPBJ / Kontrak Rinci',  grp:'Data Pengadaan'},

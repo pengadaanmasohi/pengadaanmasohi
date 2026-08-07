@@ -193,7 +193,7 @@ const PL_SCHEMA_BASE = { fields: JSON.parse(JSON.stringify(FIELDS_PL)), groups: 
    kunci itu mati dan aplikasi ikut mati bersamanya bila masih terpasang.
    ============================================================ */
 const SUPABASE_URL = 'https://jpqfzbubrnznyqaniskm.supabase.co';   // contoh: https://abcd1234.supabase.co
-const SUPABASE_KEY = 'ISI_PUBLISHABLE_KEY_DI_SINI';    // sb_publishable_... (Project Settings → API Keys)
+const SUPABASE_KEY = 'sb_publishable_V8v3YL7aRuRkvkz9WcRsKQ_LGhdv-40';    // sb_publishable_... (Project Settings → API Keys)
 const TABLE = 'pekerjaan';
 
 // Aktif otomatis bila kedua nilai sudah diisi (bukan placeholder)
@@ -207,6 +207,21 @@ if (SUPABASE_KEY.indexOf('ISI_') === 0) {
   console.error('[KONFIGURASI] SUPABASE_KEY masih berisi penanda. Isi publishable key (sb_publishable_...) di app.js sebelum diunggah.');
 }
 let db = null;
+/* Penanda kegagalan yang dibedakan dari "belum dikonfigurasi".
+
+   PUSTAKANYA GAGAL DIMUAT adalah kegagalan yang paling membingungkan di
+   aplikasi ini, dan penyebabnya sepele: `supabase-js` diambil dari CDN, dan
+   satu kedipan jaringan sudah cukup membuat <script> itu kosong. Ketika itu
+   terjadi, `window.supabase` tidak ada, `db` tetap null — lalu SETIAP menu
+   gagal dengan pesannya masing-masing ("Cannot read properties of null
+   (reading 'from')", "Gagal memuat data Tender", "Koneksi Supabase belum
+   siap"), tak satu pun menyebut sebab sebenarnya.
+
+   Dengan penanda ini, satu penyebab menghasilkan satu pesan yang benar. */
+const SB_LIB_GAGAL = USE_SUPABASE && !window.supabase;
+if (SB_LIB_GAGAL) {
+  console.error('[SUPABASE] Pustaka supabase-js tidak termuat. Periksa koneksi, lalu muat ulang halaman (Ctrl+Shift+R).');
+}
 if (USE_SUPABASE && window.supabase) {
   let cleanUrl = SUPABASE_URL.trim();
   try { cleanUrl = new URL(cleanUrl).origin; } catch(e){ cleanUrl = cleanUrl.replace(/\/+$/,''); }
@@ -951,7 +966,15 @@ async function doLogin(){
   if(!u || !p){ showLoginError('Username dan kata sandi wajib diisi.'); return; }
   const uname=u.toLowerCase();
   showLoginError('');
-  if(!(USE_SUPABASE && db)){ showLoginError('Koneksi Supabase belum siap. Coba lagi sesaat.'); return; }
+  /* Pesan dibedakan menurut sebabnya. Yang lama berbunyi "Coba lagi sesaat" —
+     saran yang keliru: menunggu tidak pernah menolong, karena `db` hanya
+     pernah diisi sekali saat halaman dimuat. Yang menolong hanya memuat ulang. */
+  if(!(USE_SUPABASE && db)){
+    showLoginError(SB_LIB_GAGAL
+      ? 'Pustaka Supabase gagal dimuat. Periksa koneksi lalu muat ulang halaman (Ctrl+Shift+R).'
+      : 'Koneksi Supabase belum dikonfigurasi. Hubungi admin.');
+    return;
+  }
   /* Login lewat SUPABASE AUTH sungguhan (menggantikan RPC verify_login).
      Sesi yang terbentuk inilah yang dibaca policy RLS storage.objects — tanpa
      dia, seluruh berkas akan ditolak 403 walau layar login sudah terlewati.
