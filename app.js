@@ -2525,8 +2525,15 @@ function closeConfirm(){ document.getElementById('confirm-overlay').classList.re
          panggilan openConfirm berikutnya (dinolkan di dalam openConfirm) dan
          dibersihkan lagi di blok finally di bawah. */
       __confirmSkipRe = batal ? /^(?:batal|kembali)/i : /^simpan/i;
+      /* PEMBAKUAN NOTIFIKASI (8 Agu 2026) — lihat modul "NOTIFIKASI BAKU
+         SIMPAN & BATAL" di akhir berkas ini. Jendela dibuka SEBELUM aksinya
+         berjalan supaya toast yang muncul dari dalam handler ikut terjaring. */
+      try{ if(typeof notifAksiMulai==='function') notifAksiMulai(batal?'batal':'simpan'); }catch(_){}
       try{ b.click(); }
-      finally{ __confirmSkipRe=null; }
+      finally{
+        __confirmSkipRe=null;
+        if(batal){ try{ if(typeof notifAksiTutupBatal==='function') notifAksiTutupBatal(); }catch(_){} }
+      }
     }});
   }, true);
 })();
@@ -2853,7 +2860,7 @@ function renderTable(){
       <td>
         <div class="action-cell">
           ${canEditRec('mon_kr',r)?`<button class="act act-edit" title="Ubah" onclick="editRecord('${r.id}')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 21h17"/><path d="M20.4 3.6a1.9 1.9 0 0 0-2.7 0l-4 4 2.7 2.7 4-4a1.9 1.9 0 0 0 0-2.7z"/><path d="M13.7 7.6 10 11.3a3.2 3.2 0 0 0-.9 2.2v.8H6A2.5 2.5 0 0 0 3.5 16.8V18.4h9a3.2 3.2 0 0 0 2.3-.9l3.6-3.6z"/><path d="M9.1 14.3h5.5"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.3 3.5H5.6A2.1 2.1 0 0 0 3.5 5.6v12.8a2.1 2.1 0 0 0 2.1 2.1h12.8a2.1 2.1 0 0 0 2.1-2.1v-6.7"/><path d="M18.38 2.63a1.9 1.9 0 0 1 2.99 3l-9.01 9.01a2 2 0 0 1-.85.51l-2.87.84a.5.5 0 0 1-.62-.62l.84-2.87a2 2 0 0 1 .51-.85z"/><path d="M16.8 4.3 19.8 7.3"/></svg>
           </button>`:''}
           <button class="act act-view" title="Lihat" onclick="viewRecord('${r.id}')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10s3.2-5.8 8-5.8 8 5.8 8 5.8-3.2 5.8-8 5.8S2 10 2 10z"/><circle cx="10" cy="10" r="2.5"/><path d="M16.4 15.4 21.5 20.5"/></svg>
@@ -5136,7 +5143,7 @@ function renderTablePl(){
       <td>
         <div class="action-cell">
           ${canEditRec('mon_pl',r)?`<button class="act act-edit" title="Ubah" onclick="editRecordPl('${r.id}')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 21h17"/><path d="M20.4 3.6a1.9 1.9 0 0 0-2.7 0l-4 4 2.7 2.7 4-4a1.9 1.9 0 0 0 0-2.7z"/><path d="M13.7 7.6 10 11.3a3.2 3.2 0 0 0-.9 2.2v.8H6A2.5 2.5 0 0 0 3.5 16.8V18.4h9a3.2 3.2 0 0 0 2.3-.9l3.6-3.6z"/><path d="M9.1 14.3h5.5"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.3 3.5H5.6A2.1 2.1 0 0 0 3.5 5.6v12.8a2.1 2.1 0 0 0 2.1 2.1h12.8a2.1 2.1 0 0 0 2.1-2.1v-6.7"/><path d="M18.38 2.63a1.9 1.9 0 0 1 2.99 3l-9.01 9.01a2 2 0 0 1-.85.51l-2.87.84a.5.5 0 0 1-.62-.62l.84-2.87a2 2 0 0 1 .51-.85z"/><path d="M16.8 4.3 19.8 7.3"/></svg>
           </button>`:''}
           <button class="act act-view" title="Lihat" onclick="viewRecordPl('${r.id}')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10s3.2-5.8 8-5.8 8 5.8 8 5.8-3.2 5.8-8 5.8S2 10 2 10z"/><circle cx="10" cy="10" r="2.5"/><path d="M16.4 15.4 21.5 20.5"/></svg>
@@ -6570,7 +6577,7 @@ function renderTableTender(){
       <td>
         <div class="action-cell">
           ${canEditRec('mon_tender',r)?`<button class="act act-edit" title="Ubah" onclick="editRecordTender('${r.id}')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 21h17"/><path d="M20.4 3.6a1.9 1.9 0 0 0-2.7 0l-4 4 2.7 2.7 4-4a1.9 1.9 0 0 0 0-2.7z"/><path d="M13.7 7.6 10 11.3a3.2 3.2 0 0 0-.9 2.2v.8H6A2.5 2.5 0 0 0 3.5 16.8V18.4h9a3.2 3.2 0 0 0 2.3-.9l3.6-3.6z"/><path d="M9.1 14.3h5.5"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.3 3.5H5.6A2.1 2.1 0 0 0 3.5 5.6v12.8a2.1 2.1 0 0 0 2.1 2.1h12.8a2.1 2.1 0 0 0 2.1-2.1v-6.7"/><path d="M18.38 2.63a1.9 1.9 0 0 1 2.99 3l-9.01 9.01a2 2 0 0 1-.85.51l-2.87.84a.5.5 0 0 1-.62-.62l.84-2.87a2 2 0 0 1 .51-.85z"/><path d="M16.8 4.3 19.8 7.3"/></svg>
           </button>`:''}
           <button class="act act-view" title="Lihat" onclick="viewRecordTender('${r.id}')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10s3.2-5.8 8-5.8 8 5.8 8 5.8-3.2 5.8-8 5.8S2 10 2 10z"/><circle cx="10" cy="10" r="2.5"/><path d="M16.4 15.4 21.5 20.5"/></svg>
@@ -7282,15 +7289,15 @@ function renderJadwalKerja(){
   const selesai= akhirSemua.length ? new Date(Math.max.apply(null, akhirSemua.map(d=>d.getTime()))) : null;
   const totDur = jpDiffDurasi(mulai, selesai);
   const btnBatal = st.profilLoaded
-    ? '<button type="button" class="jp-profil-btn is-cancel" title="Batalkan Profil" onclick="jpProfilCancel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg><span>Profil</span></button>'
+    ? '<button type="button" class="jp-profil-btn is-cancel" title="Batalkan Profil" onclick="jpProfilCancel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg><span>Batalkan Profil</span></button>'
     : '';
   const summaryHtml = ''+
     '<div class="jp-summary">'+
       '<div class="jp-summary-card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg></div><div class="txt"><b>'+(selesai?fkEsc(jpFmtTglPanjang(selesai)):'—')+'</b><span>Rencana Terkontrak</span></div></div>'+
       '<div class="jp-summary-card"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></div><div class="txt"><b>'+(totDur?fkEsc(jpFmtDurasi(totDur.hari,totDur.jam,totDur.menit)):'0 Jam')+'</b><span>Durasi Pengadaan</span></div></div>'+
       '<div class="jp-summary-card jp-profil-card">'+
-        '<button type="button" class="jp-profil-btn is-save" title="Simpan Profil" onclick="jpProfilOpenSave()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg><span>Profil</span></button>'+
-        '<button type="button" class="jp-profil-btn is-load" title="Muat Profil" onclick="jpProfilOpenLoad()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg><span>Profil</span></button>'+
+        '<button type="button" class="jp-profil-btn is-save" title="Simpan Profil" onclick="jpProfilOpenSave()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg><span>Simpan Profil</span></button>'+
+        '<button type="button" class="jp-profil-btn is-load" title="Muat Profil" onclick="jpProfilOpenLoad()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg><span>Muat Profil</span></button>'+
         btnBatal+
       '</div>'+
     '</div>';
@@ -7820,7 +7827,7 @@ function renderJadwalView(){
       '<td class="col-date">'+fkEsc(r.tgl_mulai?pnwDateShort(r.tgl_mulai):'—')+'</td>'+
       '<td class="col-date">'+fkEsc(r.tgl_selesai?pnwDateShort(r.tgl_selesai):'—')+'</td>'+
       '<td class="col-aksi"><div class="action-cell">'+
-        '<button class="act act-edit" title="Ubah" onclick="openJadwalKerja(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 21h17"/><path d="M20.4 3.6a1.9 1.9 0 0 0-2.7 0l-4 4 2.7 2.7 4-4a1.9 1.9 0 0 0 0-2.7z"/><path d="M13.7 7.6 10 11.3a3.2 3.2 0 0 0-.9 2.2v.8H6A2.5 2.5 0 0 0 3.5 16.8V18.4h9a3.2 3.2 0 0 0 2.3-.9l3.6-3.6z"/><path d="M9.1 14.3h5.5"/></svg></button>'+
+        '<button class="act act-edit" title="Ubah" onclick="openJadwalKerja(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.3 3.5H5.6A2.1 2.1 0 0 0 3.5 5.6v12.8a2.1 2.1 0 0 0 2.1 2.1h12.8a2.1 2.1 0 0 0 2.1-2.1v-6.7"/><path d="M18.38 2.63a1.9 1.9 0 0 1 2.99 3l-9.01 9.01a2 2 0 0 1-.85.51l-2.87.84a.5.5 0 0 1-.62-.62l.84-2.87a2 2 0 0 1 .51-.85z"/><path d="M16.8 4.3 19.8 7.3"/></svg></button>'+
         '<button class="act act-view" title="Lihat" onclick="jadwalPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10s3.2-5.8 8-5.8 8 5.8 8 5.8-3.2 5.8-8 5.8S2 10 2 10z"/><circle cx="10" cy="10" r="2.5"/><path d="M16.4 15.4 21.5 20.5"/></svg></button>'+
         '<button class="act act-del" title="Hapus" onclick="jadwalDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9h13l-1 11.2A2 2 0 0 1 15.5 22h-7a2 2 0 0 1-2-1.8L5.5 9z"/><path d="M3 7.4 21 3.6"/><path d="M9.7 5.9 9.4 4.4a1 1 0 0 1 .8-1.2l3.3-.7a1 1 0 0 1 1.2.8l.3 1.5"/><path d="M10 12.5v6M14 12.5v6"/></svg></button>'+
       '</div></td>'+
@@ -8476,7 +8483,10 @@ async function renderFkView(){
 
 function fkEmptyRow(mode){
   const msg = 'Data tidak tersedia';
-  return `<tr><td colspan="6"><div class="empty">
+  /* Daftar "Dokumen Perjanjian/Kontrak" (view) punya 2 kolom lebih banyak
+     (Penyedia & Nilai Pekerjaan) daripada daftar Input Data. */
+  const kolom = (mode==='view') ? 8 : 6;
+  return `<tr><td colspan="${kolom}"><div class="empty">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
     <div>${msg}</div>
   </div></td></tr>`;
@@ -8504,12 +8514,23 @@ function fkRenderRows(mode, modul, cfg, rows, meta, tb, pg){
     const dropAttrs = (mode==='input' && fkCanModify(modul, r))
       ? ` ondragover="fkRowDragOver(event,this)" ondragleave="fkRowDragLeave(event,this)" ondrop="fkRowDrop(event,'${modul}','${rid}',this)"`
       : '';
+    /* Penyedia & Nilai Pekerjaan HANYA pada daftar "Dokumen Perjanjian/Kontrak"
+       (mode view). Daftar Input Data sengaja dibiarkan ramping — isinya antrean
+       kontrak yang menunggu diunggah, bukan rujukan data kontrak.
+       Kelas selnya sama persis dengan tabel Monitoring supaya lebar & perataan
+       angkanya seragam; `wrap-penyedia` dipakai saat satu pekerjaan punya lebih
+       dari satu penyedia (Tender), yang menumpuk beberapa baris dalam satu sel. */
+    const kolomPenyediaNilai = (mode==='view')
+      ? `<td class="col-penyedia">${cfg.penyediaCell(r)}</td>` +
+        `<td class="${stacked?'wrap-penyedia col-nilai':'col-nilai'}">${cfg.nilai(r)}</td>`
+      : '';
     return `<tr>
       <td class="col-no">${start+i+1}</td>
       <td class="wrap-cell col-nama-freeze fk-namecell">${fkEsc(nama)}</td>
       <td class="${kontrakCls}">${noKontrak}</td>
       <td class="cell-center col-date">${tgl}</td>
       <td class="fk-col-bidang wrap-cell">${fkEsc(bidang)}</td>
+      ${kolomPenyediaNilai}
       <td class="fk-actcell"${dropAttrs}><div class="fk-actions">${aksi}</div></td>
     </tr>`;
   }).join('');
@@ -10272,7 +10293,7 @@ function dpengEmptyRow(msg){
     '<div>'+fkEsc(msg||'Data tidak tersedia')+'</div></div></td></tr>';
 }
 /* Ikon Edit (pensil) untuk kolom Aksi — mengarah ke halaman Unggah Dokumen. */
-const DPENG_IC_EDIT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 21h17"/><path d="M20.4 3.6a1.9 1.9 0 0 0-2.7 0l-4 4 2.7 2.7 4-4a1.9 1.9 0 0 0 0-2.7z"/><path d="M13.7 7.6 10 11.3a3.2 3.2 0 0 0-.9 2.2v.8H6A2.5 2.5 0 0 0 3.5 16.8V18.4h9a3.2 3.2 0 0 0 2.3-.9l3.6-3.6z"/><path d="M9.1 14.3h5.5"/></svg>';
+const DPENG_IC_EDIT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.3 3.5H5.6A2.1 2.1 0 0 0 3.5 5.6v12.8a2.1 2.1 0 0 0 2.1 2.1h12.8a2.1 2.1 0 0 0 2.1-2.1v-6.7"/><path d="M18.38 2.63a1.9 1.9 0 0 1 2.99 3l-9.01 9.01a2 2 0 0 1-.85.51l-2.87.84a.5.5 0 0 1-.62-.62l.84-2.87a2 2 0 0 1 .51-.85z"/><path d="M16.8 4.3 19.8 7.3"/></svg>';
 /* Daftar dokumen satu pekerjaan, DIURUTKAN sesuai daftar baku DPENG_DOCS
    (grup PL dahulu, lalu Tender; di dalam grup mengikuti nomor urut). */
 function dpengDocSorted(rec){
@@ -11262,7 +11283,7 @@ function materiKatIzin(){
 
 /* ---- Pop up Buat / Ubah Nama Kategori ---- */
 const MATERI_IC_KAT_ADD  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1h-7.6L10.5 4H4a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1z"/><path d="M12 11v6M9 14h6"/></svg>';
-const MATERI_IC_KAT_EDIT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 21h17"/><path d="M20.4 3.6a1.9 1.9 0 0 0-2.7 0l-4 4 2.7 2.7 4-4a1.9 1.9 0 0 0 0-2.7z"/><path d="M13.7 7.6 10 11.3a3.2 3.2 0 0 0-.9 2.2v.8H6A2.5 2.5 0 0 0 3.5 16.8V18.4h9a3.2 3.2 0 0 0 2.3-.9l3.6-3.6z"/><path d="M9.1 14.3h5.5"/></svg>';
+const MATERI_IC_KAT_EDIT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.3 3.5H5.6A2.1 2.1 0 0 0 3.5 5.6v12.8a2.1 2.1 0 0 0 2.1 2.1h12.8a2.1 2.1 0 0 0 2.1-2.1v-6.7"/><path d="M18.38 2.63a1.9 1.9 0 0 1 2.99 3l-9.01 9.01a2 2 0 0 1-.85.51l-2.87.84a.5.5 0 0 1-.62-.62l.84-2.87a2 2 0 0 1 .51-.85z"/><path d="M16.8 4.3 19.8 7.3"/></svg>';
 function materiKatOverlay(inner){
   let ov=document.getElementById('materi-kat-ov');
   if(!ov){
@@ -12299,7 +12320,7 @@ function renderFklView(){
       '<td class="col-metode">'+fkEsc(fklMetodeShort(metode))+'</td>'+
       '<td class="col-rab">'+hpsRp(rab)+'</td>'+
       '<td class="col-aksi"><div class="action-cell">'+
-        '<button class="act act-edit" title="Ubah" onclick="openFklInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 21h17"/><path d="M20.4 3.6a1.9 1.9 0 0 0-2.7 0l-4 4 2.7 2.7 4-4a1.9 1.9 0 0 0 0-2.7z"/><path d="M13.7 7.6 10 11.3a3.2 3.2 0 0 0-.9 2.2v.8H6A2.5 2.5 0 0 0 3.5 16.8V18.4h9a3.2 3.2 0 0 0 2.3-.9l3.6-3.6z"/><path d="M9.1 14.3h5.5"/></svg></button>'+
+        '<button class="act act-edit" title="Ubah" onclick="openFklInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.3 3.5H5.6A2.1 2.1 0 0 0 3.5 5.6v12.8a2.1 2.1 0 0 0 2.1 2.1h12.8a2.1 2.1 0 0 0 2.1-2.1v-6.7"/><path d="M18.38 2.63a1.9 1.9 0 0 1 2.99 3l-9.01 9.01a2 2 0 0 1-.85.51l-2.87.84a.5.5 0 0 1-.62-.62l.84-2.87a2 2 0 0 1 .51-.85z"/><path d="M16.8 4.3 19.8 7.3"/></svg></button>'+
         '<button class="act act-view" title="Lihat" onclick="fklPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10s3.2-5.8 8-5.8 8 5.8 8 5.8-3.2 5.8-8 5.8S2 10 2 10z"/><circle cx="10" cy="10" r="2.5"/><path d="M16.4 15.4 21.5 20.5"/></svg></button>'+
         '<button class="act act-del" title="Hapus" onclick="fklDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9h13l-1 11.2A2 2 0 0 1 15.5 22h-7a2 2 0 0 1-2-1.8L5.5 9z"/><path d="M3 7.4 21 3.6"/><path d="M9.7 5.9 9.4 4.4a1 1 0 0 1 .8-1.2l3.3-.7a1 1 0 0 1 1.2.8l.3 1.5"/><path d="M10 12.5v6M14 12.5v6"/></svg></button>'+
       '</div></td>'+
@@ -14423,7 +14444,7 @@ function renderPnwView(){
     const jenisCell = fkEsc(metodeKirim)
       + ((two && s2Kosong) ? '<span class="pnw-s2-tag">Sampul Dua belum diisi</span>' : '');
     const actions='<div class="action-cell" style="justify-content:center">'+
-        '<button class="act act-edit" title="Ubah" onclick="openPnwInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 21h17"/><path d="M20.4 3.6a1.9 1.9 0 0 0-2.7 0l-4 4 2.7 2.7 4-4a1.9 1.9 0 0 0 0-2.7z"/><path d="M13.7 7.6 10 11.3a3.2 3.2 0 0 0-.9 2.2v.8H6A2.5 2.5 0 0 0 3.5 16.8V18.4h9a3.2 3.2 0 0 0 2.3-.9l3.6-3.6z"/><path d="M9.1 14.3h5.5"/></svg></button>'+
+        '<button class="act act-edit" title="Ubah" onclick="openPnwInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.3 3.5H5.6A2.1 2.1 0 0 0 3.5 5.6v12.8a2.1 2.1 0 0 0 2.1 2.1h12.8a2.1 2.1 0 0 0 2.1-2.1v-6.7"/><path d="M18.38 2.63a1.9 1.9 0 0 1 2.99 3l-9.01 9.01a2 2 0 0 1-.85.51l-2.87.84a.5.5 0 0 1-.62-.62l.84-2.87a2 2 0 0 1 .51-.85z"/><path d="M16.8 4.3 19.8 7.3"/></svg></button>'+
         '<button class="act act-view" title="Lihat" onclick="pnwPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10s3.2-5.8 8-5.8 8 5.8 8 5.8-3.2 5.8-8 5.8S2 10 2 10z"/><circle cx="10" cy="10" r="2.5"/><path d="M16.4 15.4 21.5 20.5"/></svg></button>'+
         '<button class="act act-del" title="Hapus" onclick="pnwDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9h13l-1 11.2A2 2 0 0 1 15.5 22h-7a2 2 0 0 1-2-1.8L5.5 9z"/><path d="M3 7.4 21 3.6"/><path d="M9.7 5.9 9.4 4.4a1 1 0 0 1 .8-1.2l3.3-.7a1 1 0 0 1 1.2.8l.3 1.5"/><path d="M10 12.5v6M14 12.5v6"/></svg></button>'+
       '</div>';
@@ -15045,9 +15066,9 @@ function rhoDpBarHtml(){
   const sub = dipilih
     ? ('Data pekerjaan terisi otomatis & terkunci dari: <b style="color:var(--teal-dark)">'+fkEsc(dipilih)+'</b>')
     : 'Opsional — pilih Data Pekerjaan agar kolom Nama/Lokasi/Nilai/No. Anggaran/Tgl. Anggaran/Metode terisi otomatis, atau isi manual pada kolom di bawah.';
-  let btns='<button type="button" class="btn btn-teal" style="padding:8px 14px;font-size:11.5px" onclick="rhoPilihDp()">'+
+  let btns='<button type="button" class="btn btn-teal" onclick="rhoPilihDp()">'+
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>'+(dipilih?'Ganti Data Pekerjaan':'Pilih Data Pekerjaan')+'</button>';
-  if(dipilih) btns+='<button type="button" class="btn btn-unpick" style="padding:8px 14px;font-size:11.5px" onclick="rhoLepasDp()">'+
+  if(dipilih) btns+='<button type="button" class="btn btn-unpick" onclick="rhoLepasDp()">'+
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M18 6 6 18M6 6l12 12"/></svg>Lepas Pilihan</button>';
   return '<div class="hps-analisa-bar">'+
     '<div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg></div>'+
@@ -15693,7 +15714,7 @@ function renderRhoView(){
          dalam DOKUMEN, tempat ejaan bulan memang dikehendaki. */
       '<td class="col-date">'+fkEsc(tgl?fmtDate(tgl):'—')+'</td>'+
       '<td><div class="action-cell" style="justify-content:center">'+
-        '<button class="act act-edit" title="Ubah" onclick="openRhoInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 21h17"/><path d="M20.4 3.6a1.9 1.9 0 0 0-2.7 0l-4 4 2.7 2.7 4-4a1.9 1.9 0 0 0 0-2.7z"/><path d="M13.7 7.6 10 11.3a3.2 3.2 0 0 0-.9 2.2v.8H6A2.5 2.5 0 0 0 3.5 16.8V18.4h9a3.2 3.2 0 0 0 2.3-.9l3.6-3.6z"/><path d="M9.1 14.3h5.5"/></svg></button>'+
+        '<button class="act act-edit" title="Ubah" onclick="openRhoInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.3 3.5H5.6A2.1 2.1 0 0 0 3.5 5.6v12.8a2.1 2.1 0 0 0 2.1 2.1h12.8a2.1 2.1 0 0 0 2.1-2.1v-6.7"/><path d="M18.38 2.63a1.9 1.9 0 0 1 2.99 3l-9.01 9.01a2 2 0 0 1-.85.51l-2.87.84a.5.5 0 0 1-.62-.62l.84-2.87a2 2 0 0 1 .51-.85z"/><path d="M16.8 4.3 19.8 7.3"/></svg></button>'+
         '<button class="act act-view" title="Lihat" onclick="rhoPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10s3.2-5.8 8-5.8 8 5.8 8 5.8-3.2 5.8-8 5.8S2 10 2 10z"/><circle cx="10" cy="10" r="2.5"/><path d="M16.4 15.4 21.5 20.5"/></svg></button>'+
         '<button class="act act-del" title="Hapus" onclick="rhoDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9h13l-1 11.2A2 2 0 0 1 15.5 22h-7a2 2 0 0 1-2-1.8L5.5 9z"/><path d="M3 7.4 21 3.6"/><path d="M9.7 5.9 9.4 4.4a1 1 0 0 1 .8-1.2l3.3-.7a1 1 0 0 1 1.2.8l.3 1.5"/><path d="M10 12.5v6M14 12.5v6"/></svg></button>'+
       '</div></td>'+
@@ -16135,7 +16156,7 @@ function renderDpView(){
       '<td class="col-bidang-pel">'+fkEsc(dpBidangPelaksana(r)||'—')+'</td>'+
       '<td class="col-rab">'+hpsRp(r.nilai)+'</td>'+
       '<td class="col-aksi"><div class="action-cell">'+
-        '<button class="act act-edit" title="Ubah" onclick="openDpInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 21h17"/><path d="M20.4 3.6a1.9 1.9 0 0 0-2.7 0l-4 4 2.7 2.7 4-4a1.9 1.9 0 0 0 0-2.7z"/><path d="M13.7 7.6 10 11.3a3.2 3.2 0 0 0-.9 2.2v.8H6A2.5 2.5 0 0 0 3.5 16.8V18.4h9a3.2 3.2 0 0 0 2.3-.9l3.6-3.6z"/><path d="M9.1 14.3h5.5"/></svg></button>'+
+        '<button class="act act-edit" title="Ubah" onclick="openDpInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.3 3.5H5.6A2.1 2.1 0 0 0 3.5 5.6v12.8a2.1 2.1 0 0 0 2.1 2.1h12.8a2.1 2.1 0 0 0 2.1-2.1v-6.7"/><path d="M18.38 2.63a1.9 1.9 0 0 1 2.99 3l-9.01 9.01a2 2 0 0 1-.85.51l-2.87.84a.5.5 0 0 1-.62-.62l.84-2.87a2 2 0 0 1 .51-.85z"/><path d="M16.8 4.3 19.8 7.3"/></svg></button>'+
         '<button class="act act-del" title="Hapus" onclick="dpDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9h13l-1 11.2A2 2 0 0 1 15.5 22h-7a2 2 0 0 1-2-1.8L5.5 9z"/><path d="M3 7.4 21 3.6"/><path d="M9.7 5.9 9.4 4.4a1 1 0 0 1 .8-1.2l3.3-.7a1 1 0 0 1 1.2.8l.3 1.5"/><path d="M10 12.5v6M14 12.5v6"/></svg></button>'+
       '</div></td>'+
     '</tr>';
@@ -16884,9 +16905,9 @@ function hpsDpBarHtml(){
   const sub = dipilih
     ? ('Data pekerjaan terisi otomatis & terkunci dari: <b style="color:var(--teal-dark)">'+fkEsc(dipilih)+'</b>')
     : 'Opsional — pilih Data Pekerjaan agar kolom Nama/Lokasi/Nilai/No. Anggaran/Tgl. Anggaran/Metode terisi otomatis, atau isi manual pada kolom di bawah.';
-  let btns='<button type="button" class="btn btn-teal" style="padding:8px 14px;font-size:11.5px" onclick="hpsPilihDp()">'+
+  let btns='<button type="button" class="btn btn-teal" onclick="hpsPilihDp()">'+
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>'+(dipilih?'Ganti Data Pekerjaan':'Pilih Data Pekerjaan')+'</button>';
-  if(dipilih) btns+='<button type="button" class="btn btn-unpick" style="padding:8px 14px;font-size:11.5px" onclick="hpsLepasDp()">'+
+  if(dipilih) btns+='<button type="button" class="btn btn-unpick" onclick="hpsLepasDp()">'+
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M18 6 6 18M6 6l12 12"/></svg>Lepas Pilihan</button>';
   return '<div class="hps-analisa-bar">'+
     '<div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg></div>'+
@@ -17133,9 +17154,9 @@ function hpsAnalisaBarHtml(){
         : ('Jumlah Barang/Jasa &amp; Uraian Pekerjaan (Judul/Sub-Judul/Uraian/Sat/Vol) terisi otomatis &amp; terkunci dari analisa: <b style="color:var(--teal-dark)">'+fkEsc(dipilih)+'</b> — kategori <b>'+jenisTxt+'</b> (harga ikut terkunci, sudah termasuk ROK)'))
     : 'Opsional — untuk kategori <b>Pekerjaan Umum</b>, Jumlah Barang/Jasa, Uraian Pekerjaan &amp; harga terisi otomatis dari Analisa Harga tersimpan.';
   let btns='';
-  btns+='<button type="button" class="btn btn-teal" style="padding:8px 14px;font-size:11.5px" onclick="hpsPilihAnalisa()">'+
+  btns+='<button type="button" class="btn btn-teal" onclick="hpsPilihAnalisa()">'+
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.8L7 14.3"/></svg>'+(dipilih?'Ganti Analisa':'Pilih Analisa')+'</button>';
-  if(dipilih) btns+='<button type="button" class="btn btn-unpick" style="padding:8px 14px;font-size:11.5px" onclick="hpsLepasAnalisa()">'+
+  if(dipilih) btns+='<button type="button" class="btn btn-unpick" onclick="hpsLepasAnalisa()">'+
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M18 6 6 18M6 6l12 12"/></svg>Lepas Pilihan</button>';
   return '<div class="hps-analisa-bar" style="justify-content:flex-end">'+btns+
   '</div>';
@@ -17386,7 +17407,7 @@ function renderHpsView(){
       '<td class="col-num" style="text-align:right">'+hpsRp(sum.jJ)+'</td>'+
       '<td class="col-num" style="text-align:right;white-space:nowrap">'+hpsRp(nilai)+'</td>'+
       '<td><div class="action-cell" style="justify-content:center">'+
-        '<button class="act act-edit" title="Ubah" onclick="openHpsInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 21h17"/><path d="M20.4 3.6a1.9 1.9 0 0 0-2.7 0l-4 4 2.7 2.7 4-4a1.9 1.9 0 0 0 0-2.7z"/><path d="M13.7 7.6 10 11.3a3.2 3.2 0 0 0-.9 2.2v.8H6A2.5 2.5 0 0 0 3.5 16.8V18.4h9a3.2 3.2 0 0 0 2.3-.9l3.6-3.6z"/><path d="M9.1 14.3h5.5"/></svg></button>'+
+        '<button class="act act-edit" title="Ubah" onclick="openHpsInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.3 3.5H5.6A2.1 2.1 0 0 0 3.5 5.6v12.8a2.1 2.1 0 0 0 2.1 2.1h12.8a2.1 2.1 0 0 0 2.1-2.1v-6.7"/><path d="M18.38 2.63a1.9 1.9 0 0 1 2.99 3l-9.01 9.01a2 2 0 0 1-.85.51l-2.87.84a.5.5 0 0 1-.62-.62l.84-2.87a2 2 0 0 1 .51-.85z"/><path d="M16.8 4.3 19.8 7.3"/></svg></button>'+
         '<button class="act act-view" title="Lihat" onclick="hpsPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10s3.2-5.8 8-5.8 8 5.8 8 5.8-3.2 5.8-8 5.8S2 10 2 10z"/><circle cx="10" cy="10" r="2.5"/><path d="M16.4 15.4 21.5 20.5"/></svg></button>'+
         '<button class="act act-excel" title="Export Excel" style="background:#1E7145;color:#fff" onclick="hpsExportExcelRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 8l6 8M15 8l-6 8"/></svg></button>'+
         '<button class="act act-del" title="Hapus" onclick="hpsDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9h13l-1 11.2A2 2 0 0 1 15.5 22h-7a2 2 0 0 1-2-1.8L5.5 9z"/><path d="M3 7.4 21 3.6"/><path d="M9.7 5.9 9.4 4.4a1 1 0 0 1 .8-1.2l3.3-.7a1 1 0 0 1 1.2.8l.3 1.5"/><path d="M10 12.5v6M14 12.5v6"/></svg></button>'+
@@ -18171,9 +18192,9 @@ function anaDpBarHtml(){
   const sub = dipilih
     ? ('Data pekerjaan terisi otomatis & terkunci dari: <b style="color:var(--teal-dark)">'+fkEsc(dipilih)+'</b>')
     : 'Opsional — pilih Data Pekerjaan agar kolom Nama/Lokasi/Nilai/No. Anggaran/Tgl. Anggaran/Metode terisi otomatis, atau isi manual pada kolom di bawah.';
-  let btns='<button type="button" class="btn btn-teal" style="padding:8px 14px;font-size:11.5px" onclick="anaPilihDp()">'+
+  let btns='<button type="button" class="btn btn-teal" onclick="anaPilihDp()">'+
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg>'+(dipilih?'Ganti Data Pekerjaan':'Pilih Data Pekerjaan')+'</button>';
-  if(dipilih) btns+='<button type="button" class="btn btn-unpick" style="padding:8px 14px;font-size:11.5px" onclick="anaLepasDp()">'+
+  if(dipilih) btns+='<button type="button" class="btn btn-unpick" onclick="anaLepasDp()">'+
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M18 6 6 18M6 6l12 12"/></svg>Lepas Pilihan</button>';
   return '<div class="hps-analisa-bar">'+
     '<div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h5l2 3h9a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg></div>'+
@@ -19171,7 +19192,7 @@ function renderAnalisaView(){
       '<td style="text-align:center">'+ji+'</td>'+
       '<td style="text-align:center">'+jr+'</td>'+
       '<td><div class="action-cell" style="justify-content:center">'+
-        '<button class="act act-edit" title="Ubah" onclick="openAnalisaInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 21h17"/><path d="M20.4 3.6a1.9 1.9 0 0 0-2.7 0l-4 4 2.7 2.7 4-4a1.9 1.9 0 0 0 0-2.7z"/><path d="M13.7 7.6 10 11.3a3.2 3.2 0 0 0-.9 2.2v.8H6A2.5 2.5 0 0 0 3.5 16.8V18.4h9a3.2 3.2 0 0 0 2.3-.9l3.6-3.6z"/><path d="M9.1 14.3h5.5"/></svg></button>'+
+        '<button class="act act-edit" title="Ubah" onclick="openAnalisaInput(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.3 3.5H5.6A2.1 2.1 0 0 0 3.5 5.6v12.8a2.1 2.1 0 0 0 2.1 2.1h12.8a2.1 2.1 0 0 0 2.1-2.1v-6.7"/><path d="M18.38 2.63a1.9 1.9 0 0 1 2.99 3l-9.01 9.01a2 2 0 0 1-.85.51l-2.87.84a.5.5 0 0 1-.62-.62l.84-2.87a2 2 0 0 1 .51-.85z"/><path d="M16.8 4.3 19.8 7.3"/></svg></button>'+
         '<button class="act act-view" title="Lihat" onclick="anaPreviewRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10s3.2-5.8 8-5.8 8 5.8 8 5.8-3.2 5.8-8 5.8S2 10 2 10z"/><circle cx="10" cy="10" r="2.5"/><path d="M16.4 15.4 21.5 20.5"/></svg></button>'+
         '<button class="act act-del" title="Hapus" onclick="anaDeleteRecord(\''+rid+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9h13l-1 11.2A2 2 0 0 1 15.5 22h-7a2 2 0 0 1-2-1.8L5.5 9z"/><path d="M3 7.4 21 3.6"/><path d="M9.7 5.9 9.4 4.4a1 1 0 0 1 .8-1.2l3.3-.7a1 1 0 0 1 1.2.8l.3 1.5"/><path d="M10 12.5v6M14 12.5v6"/></svg></button>'+
       '</div></td>'+
@@ -20351,3 +20372,88 @@ pasangTolakTutup('dpeng-list-overlay');
 pasangTolakTutup('spk-dok-overlay');   /* pemilih bagian dokumen SPK / Perjanjian-Kontrak */
 
 
+/* ============================================================================
+   NOTIFIKASI BAKU SIMPAN & BATAL                                  — 8 Agu 2026
+   ----------------------------------------------------------------------------
+   Permintaan: di SELURUH menu, tombol Batal memunculkan notifikasi merah
+   "Proses dibatalkan" (ikon silang) dan tombol Simpan memunculkan notifikasi
+   hijau "Proses berhasil disimpan" (ikon centang) — gaya, huruf, dan ukuran
+   keduanya sama persis, masing-masing dengan nada suaranya sendiri.
+
+   Keduanya sudah tersedia di `toast()`: jenis 'err' merah + nada turun,
+   jenis 'ok' hijau + nada naik. Yang belum seragam adalah KALIMATNYA — tiap
+   modul menulis pesannya sendiri ("Penyesuaian dibatalkan", "Data berhasil
+   diperbarui", "Kontrak berhasil disimpan", dan seterusnya).
+
+   Menyunting satu per satu bukan pilihan yang baik: pemanggil `toast` untuk
+   simpan/batal tersebar di puluhan tempat pada empat berkas, dan modul baru
+   berikutnya pasti menulis kalimatnya sendiri lagi. Karena itu penyeragaman
+   dipasang di SATU tempat — pembungkus `toast` yang hanya aktif selama
+   "jendela" sesudah tombol Simpan/Batal terpusat ditekan.
+
+   CARA KERJA
+     Batal  : seluruh toast yang terbit selama handler berjalan DITELAN, lalu
+              satu pesan baku diterbitkan sesudahnya. Penelanan diperlukan agar
+              nadanya tidak berbunyi dua kali (setiap toast memanggil sfxPlay).
+              Jendelanya hanya satu putaran sinkron — dibuka tepat sebelum
+              b.click() dan ditutup di blok finally-nya, jadi pesan yang datang
+              belakangan (mis. galat jaringan) tidak ikut tertelan.
+
+     Simpan : TIDAK boleh memakai cara yang sama. Simpan bisa GAGAL — validasi
+              field wajib, data duplikat, galat jaringan — dan menerbitkan
+              "berhasil disimpan" begitu tombolnya ditekan akan berbohong.
+              Karena itu yang dipakai justru toast milik handler sebagai
+              tanda bahwa penyimpanan benar-benar selesai: toast 'ok' pertama
+              yang terbit di dalam jendela diganti kalimatnya, sedangkan toast
+              'warn'/'err' dibiarkan apa adanya beserta keterangannya.
+
+   YANG SENGAJA DILEWATKAN
+     - Pesan BERBARIS BANYAK (mengandung "\n"), mis. hasil unggah template
+       "2 data ditambahkan / 3 duplikat". Isinya keterangan yang tak tergantikan
+       kalimat baku.
+     - Jendela Simpan kedaluwarsa sendiri setelah 12 detik, supaya tombol Simpan
+       yang justru membuka modal lain (mis. "Kompres Foto Tersimpan") tidak
+       meninggalkan jendela menganga yang menangkap toast tak berhubungan.
+
+   Pembungkus dipasang di AKHIR berkas: `toast` diambil lewat window sehingga
+   yang tersimpan pasti fungsi aslinya, dan seluruh pemanggil `toast(...)` di
+   app.js maupun berkas lain otomatis melewati pembungkus ini.
+   ========================================================================== */
+(function(){
+  'use strict';
+  var TEKS_BATAL  = 'Proses dibatalkan';
+  var TEKS_SIMPAN = 'Proses berhasil disimpan';
+  var JENDELA_MS  = 12000;
+
+  var toastAsli = window.toast;
+  if(typeof toastAsli !== 'function') return;   /* jangan pernah mematikan notifikasi */
+
+  var mode = null, batas = 0;
+
+  window.toast = function(msg, kind, dur){
+    try{
+      if(mode === 'batal') return;              /* ditelan; pesan baku menyusul */
+      if(mode === 'simpan'){
+        if(Date.now() > batas){
+          mode = null;                          /* jendela kedaluwarsa */
+        }else{
+          var k = kind==='warn' ? 'warn' : (kind==='err'||kind==='fail') ? 'err' : 'ok';
+          var satuBaris = String(msg==null?'':msg).indexOf('\n') < 0;
+          mode = null;                          /* cukup toast pertama */
+          if(k==='ok' && satuBaris) msg = TEKS_SIMPAN;
+        }
+      }
+    }catch(_){ mode = null; }
+    return toastAsli.call(this, msg, kind, dur);
+  };
+
+  /* Dipanggil penyadap "KONFIRMASI TOMBOL BATAL / SIMPAN (terpusat)". */
+  window.notifAksiMulai = function(jenis){
+    mode  = (jenis==='batal') ? 'batal' : 'simpan';
+    batas = Date.now() + JENDELA_MS;
+  };
+  window.notifAksiTutupBatal = function(){
+    mode = null;
+    try{ toastAsli(TEKS_BATAL, 'err'); }catch(_){}
+  };
+})();

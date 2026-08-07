@@ -458,7 +458,7 @@
   /* Tombol aksi berupa ikon saja. Memakai kelas .act milik app.js supaya
      bentuk, ukuran, dan gerak hover-nya sama persis dengan tombol aksi di
      tabel-tabel lain — bukan gaya baru yang kebetulan mirip. */
-  var AC_IC_UBAH  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 21h17"/><path d="M20.4 3.6a1.9 1.9 0 0 0-2.7 0l-4 4 2.7 2.7 4-4a1.9 1.9 0 0 0 0-2.7z"/><path d="M13.7 7.6 10 11.3a3.2 3.2 0 0 0-.9 2.2v.8H6A2.5 2.5 0 0 0 3.5 16.8V18.4h9a3.2 3.2 0 0 0 2.3-.9l3.6-3.6z"/><path d="M9.1 14.3h5.5"/></svg>';
+  var AC_IC_UBAH  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.3 3.5H5.6A2.1 2.1 0 0 0 3.5 5.6v12.8a2.1 2.1 0 0 0 2.1 2.1h12.8a2.1 2.1 0 0 0 2.1-2.1v-6.7"/><path d="M18.38 2.63a1.9 1.9 0 0 1 2.99 3l-9.01 9.01a2 2 0 0 1-.85.51l-2.87.84a.5.5 0 0 1-.62-.62l.84-2.87a2 2 0 0 1 .51-.85z"/><path d="M16.8 4.3 19.8 7.3"/></svg>';
   var AC_IC_HAPUS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 9h13l-1 11.2A2 2 0 0 1 15.5 22h-7a2 2 0 0 1-2-1.8L5.5 9z"/><path d="M3 7.4 21 3.6"/><path d="M9.7 5.9 9.4 4.4a1 1 0 0 1 .8-1.2l3.3-.7a1 1 0 0 1 1.2.8l.3 1.5"/><path d="M10 12.5v6M14 12.5v6"/></svg>';
   var AC_IC_RESET = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="3.5"/><path d="M10 13 20 3"/><path d="M17 6l2 2"/><path d="M14 9l2 2"/></svg>';
   function acIkonBtn(cls, judul, aksi, svg){
@@ -1796,4 +1796,292 @@ function renderTrackKelola(keep){
   /* Saat aplikasi dimuat ulang, sesi dipulihkan dari sessionStorage.
      Hash sisa dari kunjungan sebelumnya dibiarkan — showView pertama
      akan menimpanya lewat replaceState di atas. */
+})();
+
+
+/* ============================================================================
+   PETUNJUK TOMBOL AKSI (Ubah / Lihat / Hapus)                     — 8 Agu 2026
+   ----------------------------------------------------------------------------
+   Sebelumnya tombol aksi hanya mengandalkan atribut `title` bawaan peramban:
+   muncul lambat (±1 detik), berwarna kuning sistem, dan letaknya mengikuti
+   kursor — tidak nyambung dengan tampilan aplikasi.
+
+   Modul ini menggantinya dengan satu balon petunjuk milik aplikasi sendiri.
+   Tiga hal yang perlu diketahui bila kelak diubah:
+
+   1) SATU ELEMEN UNTUK SELURUH APLIKASI, ditempel ke <body>.
+      Bukan `::after` pada tombolnya. Alasannya: tombol aksi berada di dalam
+      .table-wrap yang ber-`overflow:auto` — balon berbasis pseudo-element akan
+      TERPOTONG oleh tepi penggulir itu, terutama pada baris terakhir tabel.
+      Elemen `position:fixed` di luar tabel tidak pernah terpotong.
+
+   2) `title` DIPINDAH ke `data-tip` saat tombol pertama kali disorot.
+      Kalau `title` dibiarkan, petunjuk bawaan peramban tetap ikut muncul dan
+      terlihat dua balon bertumpuk. Nilainya disalin ke `aria-label` lebih dulu
+      supaya nama tombol tetap terbaca pembaca layar.
+
+   3) PEMBAKUAN TEKS (permintaan user): "Ubah"/"Edit" -> "Ubah Data",
+      "Lihat" -> "Lihat Data", "Hapus" -> "Hapus Data". Judul yang SUDAH
+      spesifik ("Hapus berkas", "Lihat Dokumen", "Ubah akun", "Hapus Nomor",
+      "Ganti berkas", ...) SENGAJA dibiarkan apa adanya — di sana kata
+      tambahannya justru keterangan yang dibutuhkan.
+
+   Baris tabel dirender ulang berkali-kali (innerHTML diganti), jadi pemasangan
+   dilakukan lewat DELEGASI di document — bukan pendengar per tombol, yang akan
+   hilang setiap kali daftarnya digambar ulang.
+   ========================================================================== */
+(function () {
+  'use strict';
+
+  var SEL = 'button.act, button.fk-act-icon';
+  var JEDA = 110;          // ms sebelum balon muncul — cegah kedip saat kursor lewat
+  var BAKU = {
+    'ubah': 'Ubah Data', 'edit': 'Ubah Data', 'ubah data': 'Ubah Data',
+    'lihat': 'Lihat Data', 'lihat data': 'Lihat Data',
+    'hapus': 'Hapus Data', 'hapus data': 'Hapus Data'
+  };
+
+  var balon = null, aktif = null, timer = 0;
+
+  function el() {
+    if (!balon) {
+      balon = document.createElement('div');
+      balon.className = 'act-tip';
+      balon.id = 'act-tip';
+      balon.setAttribute('role', 'tooltip');
+      document.body.appendChild(balon);
+    }
+    return balon;
+  }
+
+  function teks(b) {
+    var t = b.getAttribute('data-tip');
+    if (t !== null) return t;
+    var asli = (b.getAttribute('title') || b.getAttribute('aria-label') || '').trim();
+    var hasil = BAKU[asli.toLowerCase()] || asli;
+    b.setAttribute('data-tip', hasil);
+    if (hasil && !b.getAttribute('aria-label')) b.setAttribute('aria-label', hasil);
+    if (b.hasAttribute('title')) b.removeAttribute('title');
+    return hasil;
+  }
+
+  function sembunyi() {
+    if (timer) { clearTimeout(timer); timer = 0; }
+    aktif = null;
+    if (balon) balon.classList.remove('tampil');
+  }
+
+  function tampil(b) {
+    var isi = teks(b);
+    if (!isi) return;
+    var t = el();
+    t.textContent = isi;
+    t.classList.remove('atas');
+    /* Diukur dalam keadaan masih transparan: `visibility:hidden` membuat
+       offsetWidth = 0, jadi kelas .tampil dipasang lebih dulu. */
+    t.classList.add('tampil');
+    t.style.left = '0px'; t.style.top = '0px';
+
+    var r = b.getBoundingClientRect();
+    var lb = t.offsetWidth, tg = t.offsetHeight;
+    var vw = document.documentElement.clientWidth;
+    var vh = document.documentElement.clientHeight;
+
+    var x = r.left + r.width / 2 - lb / 2;
+    if (x < 6) x = 6;
+    if (x + lb > vw - 6) x = vw - 6 - lb;
+
+    var y = r.bottom + 9;                       // di bawah tombol
+    if (y + tg > vh - 6) {                      // tidak muat -> pindah ke atas
+      y = r.top - tg - 9;
+      t.classList.add('atas');
+    }
+    if (y < 6) y = 6;
+
+    t.style.left = Math.round(x) + 'px';
+    t.style.top = Math.round(y) + 'px';
+    /* Anak panah menunjuk TENGAH TOMBOL, bukan tengah balon: keduanya berbeda
+       setiap kali balon digeser supaya tidak keluar layar. */
+    var ax = r.left + r.width / 2 - x;
+    if (ax < 12) ax = 12;
+    if (ax > lb - 12) ax = lb - 12;
+    t.style.setProperty('--ax', Math.round(ax) + 'px');
+  }
+
+  function masuk(e) {
+    var b = e.target && e.target.closest ? e.target.closest(SEL) : null;
+    if (!b || b === aktif) return;
+    if (b.disabled) { sembunyi(); return; }
+    aktif = b;
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(function () {
+      timer = 0;
+      if (aktif === b && document.contains(b)) tampil(b);
+    }, JEDA);
+  }
+
+  function keluar(e) {
+    if (!aktif) return;
+    var ke = e.relatedTarget;
+    if (ke && ke.closest && ke.closest(SEL) === aktif) return;   // masih di tombol yang sama
+    sembunyi();
+  }
+
+  document.addEventListener('pointerover', masuk, true);
+  document.addEventListener('pointerout', keluar, true);
+  document.addEventListener('focusin', masuk, true);
+  document.addEventListener('focusout', sembunyi, true);
+  /* Diklik = tombolnya sudah bekerja; balon tidak boleh menggantung di layar
+     sementara daftar di belakangnya berganti. */
+  document.addEventListener('click', sembunyi, true);
+  document.addEventListener('scroll', sembunyi, true);   // capture: termasuk .table-wrap
+  window.addEventListener('resize', sembunyi);
+  window.addEventListener('blur', sembunyi);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') sembunyi();
+  }, true);
+})();
+
+
+/* ============================================================================
+   NAMA ORANG SELALU HURUF KAPITAL                                 — 8 Agu 2026
+   ----------------------------------------------------------------------------
+   Permintaan: kolom yang berisi NAMA ORANG otomatis menjadi HURUF BESAR saat
+   diketik, di seluruh menu, dan huruf besar itu ikut tersimpan ke basis data.
+
+   Cakupannya SENGAJA dibatasi ke nama orang (pilihan user): Yang Menyerahkan,
+   Yang Menerima, Pejabat/Pimpinan, Pengawas Pekerjaan & Lapangan, Pengendali
+   Pekerjaan, Direksi Pekerjaan, PIC, penanda tangan. Nama Pekerjaan, Nama
+   Penyedia, Nama Perusahaan, Nama Unit, dan Nama Bank TIDAK ikut.
+
+   MENGAPA SATU PENYADAP, BUKAN MENYUNTING TIAP KOLOM
+   Kolom-kolom itu dibuat dari beberapa sumber yang berbeda — FIELDS/GROUPS
+   (Monitoring), daftar `l:` (Susun Kontrak & Susun Dokumen), dan markup lepas
+   pada wizard. Menyisipkan `toUpperCase()` satu per satu berarti menyentuh
+   puluhan tempat, dan kolom baru yang dibuat sesudahnya pasti terlewat lagi.
+   Penyadap ini mengenali kolomnya dari LABEL dan ID, jadi kolom baru dengan
+   penamaan yang sama otomatis ikut.
+
+   FASE CAPTURE — WAJIB. Hampir semua kolom menyimpan lewat handler sebaris
+   (`oninput="spkSet(...)"`, `onchange="jpSet(...)"`) yang membaca `this.value`.
+   Handler itu terpasang pada elemennya sendiri (fase target), sedangkan
+   penyadap ini di `document` fase capture — jadi nilainya sudah berhuruf besar
+   SEBELUM handler membacanya. Itulah yang membuat huruf besar ikut tersimpan
+   tanpa menyentuh satu pun fungsi penyimpanan.
+
+   POSISI KURSOR dikembalikan setelah nilai ditulis ulang: mengubah `value`
+   memindahkan kursor ke ujung, sehingga menyunting di tengah teks mustahil.
+   Aman karena huruf besar Latin tidak mengubah panjang teks.
+
+   YANG DIKECUALIKAN: layar login & Kelola Akun (username peka huruf besar-
+   kecil — mengubahnya akan membuat orang gagal masuk), kolom terkunci
+   (readonly/disabled, isinya datang otomatis dari Data Pekerjaan), serta
+   semua jenis masukan selain teks.
+
+   Kolom yang tidak tertangkap pola bisa ditandai manual dengan
+   `data-upper="1"`, dan yang salah tertangkap dimatikan dengan
+   `data-upper="0"` — tanpa mengubah modul ini.
+   ========================================================================== */
+(function () {
+  'use strict';
+
+  /* Label kolom nama orang. Diuji pada label yang sudah dihuruf-kecilkan &
+     dirapikan spasinya; ditambatkan ke AWAL supaya "Jabatan Pejabat Pelaksana"
+     dan "NIP Pejabat Pelaksana" (bukan nama) tidak ikut. */
+  var LABEL_RE = new RegExp(
+    '^(?:' +
+      'yang\\s+(?:menyerahkan|menerima|mengesahkan|membuat|memeriksa|menyetujui|mengetahui)' +
+      '|nama\\s+(?:pejabat|pimpinan|pengguna|direksi|pengawas|pengendali|pic|petugas|direktur|penanda\\s*tangan|penandatangan)' +
+      '|pejabat\\b' +
+      '|pimpinan\\b' +
+      '|pengawas\\s+(?:pekerjaan|lapangan)' +
+      '|pengendali\\s+pekerjaan' +
+      '|direksi\\s+pekerjaan' +
+      '|penanda\\s*tangan|penandatangan' +
+    ')'
+  );
+
+  /* Kunci field (dipakai pada id seperti f_menyerahkan / spk-fld-nama_pimpinan,
+     maupun pada handler sebaris spkSet('nama_pimpinan', …)). */
+  var KEY_RE = new RegExp(
+    '(?:^|[_\\-\'"\\s])(?:' +
+      'menyerahkan|menerima|nama_pic|' +
+      'pengawas_pekerjaan|pengawas_lapangan|pengendali_pekerjaan|' +
+      'nama_pejabat|nama_pimpinan|nama_pengguna|nama_direksi|nama_pengawas|' +
+      'nama_pengendali|penanda_tangan|penandatangan' +
+    ')(?:$|[_\\-\'"\\s,\\)])'
+  );
+  /* Kunci "pejabat" & "pimpinan" TELANJANG sengaja TIDAK dimasukkan: id seperti
+     `jabatan_pimpinan` dan `nip_pejabat` akan ikut tertangkap, padahal isinya
+     jabatan & nomor induk, bukan nama. Keduanya tetap terjaring lewat LABEL
+     ("Pimpinan", "Nama Pejabat Pelaksana Pengadaan") yang ditambatkan ke awal
+     sehingga "Jabatan Pimpinan" & "NIP Pejabat Pelaksana" tidak ikut. */
+
+  var WADAH = '.field,.ac-fld,.jp-start-field,.filter-field,.pn-field,.form-field,label';
+
+  function bersih(s) {
+    return String(s || '')
+      .replace(/\s+/g, ' ')
+      .replace(/[*:?]/g, '')
+      .trim()
+      .toLowerCase();
+  }
+
+  function labelDari(el) {
+    var w = el.closest ? el.closest(WADAH) : null;
+    var lb = w ? (w.tagName === 'LABEL' ? w : w.querySelector('label')) : null;
+    if (lb) {
+      /* Lencana "DARI DATA PEKERJAAN" & tanda wajib ikut terbaca di
+         textContent — dibuang supaya tidak merusak pencocokan. */
+      var t = lb.textContent || '';
+      return bersih(t.replace(/dari data pekerjaan/ig, ''));
+    }
+    return bersih(el.getAttribute('aria-label') || el.getAttribute('placeholder') || '');
+  }
+
+  function dikecualikan(el) {
+    if (el.closest && el.closest('#login-screen,#view-akun,.ac-pane,.login-screen')) return true;
+    var id = el.id || '';
+    if (/^ac-/.test(id) || /^login-/.test(id)) return true;
+    return false;
+  }
+
+  function perluKapital(el) {
+    if (el.__upperCek !== undefined) return el.__upperCek;
+    var hasil = false;
+    var tanda = el.getAttribute('data-upper');
+    if (tanda === '1') hasil = true;
+    else if (tanda === '0') hasil = false;
+    else if (dikecualikan(el)) hasil = false;
+    else {
+      var id = (el.id || '') + ' ' + (el.name || '');
+      var aksi = (el.getAttribute('oninput') || '') + ' ' + (el.getAttribute('onchange') || '');
+      hasil = KEY_RE.test(id.toLowerCase()) ||
+              KEY_RE.test(aksi.toLowerCase()) ||
+              LABEL_RE.test(labelDari(el));
+    }
+    try { el.__upperCek = hasil; } catch (_) {}
+    return hasil;
+  }
+
+  function besarkan(e) {
+    var el = e.target;
+    if (!el || el.tagName !== 'INPUT') return;
+    var t = (el.getAttribute('type') || 'text').toLowerCase();
+    if (t !== 'text' && t !== 'search') return;
+    if (el.readOnly || el.disabled) return;
+    if (!perluKapital(el)) return;
+
+    var v = el.value;
+    var u = v.toUpperCase();
+    if (u === v) return;
+
+    var a = el.selectionStart, b = el.selectionEnd;
+    el.value = u;
+    /* Panjang teks tidak berubah, jadi posisi kursor lama tetap benar. */
+    try { if (a !== null && a !== undefined) el.setSelectionRange(a, b); } catch (_) {}
+  }
+
+  document.addEventListener('input', besarkan, true);
+  document.addEventListener('change', besarkan, true);   /* tempel & isi-otomatis */
 })();

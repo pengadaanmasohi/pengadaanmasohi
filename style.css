@@ -9306,3 +9306,352 @@ table.ana-res thead th{border-top:none}
    ada di sini. */
 .materi-kat-bar .act{width:32px;height:32px;border-radius:10px}
 .materi-kat-bar .act svg{width:15px;height:15px}
+
+
+/* ============================================================
+   TOMBOL AKSI DIPERCANTIK + BALON PETUNJUK (8 Agu 2026)
+   ------------------------------------------------------------
+   Dua permintaan sekaligus:
+
+   1) WARNA & TAMPILAN tombol Ubah/Lihat/Hapus dirapikan.
+      Yang lama: satu gradasi dua-warna datar tanpa tepi, sehingga
+      tombol kuning menyatu dengan latar baris terang dan ikonnya
+      terlihat mengambang. Sekarang tiap tombol memakai gradasi
+      TIGA titik (terang di kiri-atas -> warna inti -> lebih gelap
+      di kanan-bawah), tepi tipis, dan kilau garis di sisi atas.
+      Hasilnya bentuknya tegas di latar terang MAUPUN gelap.
+
+      Warna Ubah digeser dari kuning murni (#F6B40E) ke amber yang
+      lebih pekat. Kuning murni memaksa ikon berwarna cokelat tua
+      supaya terbaca, dan cokelat-di-atas-kuning itu yang membuatnya
+      terlihat kusam di sebelah teal & merah yang berikon putih.
+
+      Selektornya `button.act`, BUKAN `.act`. Sebabnya `.act` juga
+      dipakai sebagai nama pembungkus <div class="act"> pada kepala
+      pop-up Dokumen (index.html & susun-dokumen.js); memakai .act
+      polos akan memberi wadah itu warna & tepi yang tidak diminta.
+      Bobot (0,1,1) sekaligus menang atas seluruh aturan .act lama
+      yang tersebar di berkas ini tanpa perlu !important.
+
+      TIDAK ADA transform di sini — blok 29 & 31 sudah meniadakan
+      efek menonjol/getar saat kursor menyorot, dan itu memang
+      diminta. Yang berubah saat disorot hanya warna & bayangan.
+
+   2) BALON PETUNJUK menggantikan `title` bawaan peramban.
+      Dikendalikan modul di app-lain.js; di sini hanya tampilannya.
+      Ia `position:fixed` dan ditempel ke <body> — kalau dibuat
+      sebagai ::after pada tombolnya, tepi .table-wrap yang
+      ber-overflow:auto akan memotongnya di baris terakhir tabel.
+      Karena berada di luar .view/.modal, aturan menyeluruh blok 31
+      (`*:hover{transform:none}`) tidak menjangkaunya.
+   ============================================================ */
+button.act{
+  border:1px solid rgba(255,255,255,.30);
+  box-shadow:0 1px 2px rgba(16,40,50,.18), inset 0 1px 0 rgba(255,255,255,.34);
+  transition:background .18s ease, box-shadow .2s ease, border-color .18s ease;
+}
+button.act-edit{background:linear-gradient(145deg,#FFD164,#F2A50A 52%,#DE8E00);color:#442D00}
+button.act-view{background:linear-gradient(145deg,#26BAC0,#0E7C86 52%,#0A6772);color:#fff}
+button.act-del {background:linear-gradient(145deg,#F58585,#D33A3A 52%,#B62B2B);color:#fff}
+
+button.act-edit:hover{background:linear-gradient(145deg,#FFDA85,#F5AE1E 52%,#E59500);
+  border-color:rgba(255,255,255,.5);
+  box-shadow:0 3px 11px rgba(206,132,0,.42), inset 0 1px 0 rgba(255,255,255,.5)}
+button.act-view:hover{background:linear-gradient(145deg,#38CBD1,#12909B 52%,#0C7B86);
+  border-color:rgba(255,255,255,.5);
+  box-shadow:0 3px 11px rgba(14,124,134,.42), inset 0 1px 0 rgba(255,255,255,.42)}
+button.act-del:hover{background:linear-gradient(145deg,#FF9A9A,#DE4747 52%,#C43333);
+  border-color:rgba(255,255,255,.5);
+  box-shadow:0 3px 11px rgba(190,45,45,.42), inset 0 1px 0 rgba(255,255,255,.42)}
+
+/* Ditekan: bayangan luar dimatikan & diganti bayangan DALAM, jadi tombolnya
+   terasa masuk ke dalam tanpa perlu menggeser posisinya. */
+button.act:active{box-shadow:inset 0 2px 5px rgba(0,0,0,.26)}
+
+/* Ikon Ubah yang baru (lembar + pensil) punya garis lebih rapat daripada ikon
+   mata & tempat sampah. Pada 15 px, stroke 2 membuat sudut kanan-atas lembar
+   dan badan pensil hampir menyatu — 1.85 mengembalikan celahnya. */
+button.act-edit svg{stroke-width:1.85}
+
+/* Tombol nonaktif (mis. Naikkan/Turunkan pada klausul teratas) tidak boleh
+   ikut berwarna: kalau ikut, tidak ada bedanya dengan tombol yang bisa ditekan. */
+button.act[disabled],button.act[disabled]:hover{
+  background:linear-gradient(145deg,#d6dee2,#c3ced4);color:#fff;
+  border-color:rgba(255,255,255,.35);box-shadow:none;cursor:not-allowed;opacity:.75}
+
+/* ---- Balon petunjuk ---- */
+.act-tip{
+  position:fixed; left:0; top:0; z-index:12000;
+  max-width:230px; padding:6px 11px;
+  border-radius:9px; white-space:nowrap;
+  font-size:12px; font-weight:600; letter-spacing:.1px; line-height:1.3;
+  color:#fff; background:#12414B;
+  box-shadow:0 8px 20px rgba(9,32,38,.30), 0 1px 3px rgba(9,32,38,.22);
+  opacity:0; visibility:hidden; pointer-events:none;
+  transition:opacity .14s ease, visibility .14s ease;
+}
+.act-tip.tampil{opacity:1; visibility:visible}
+/* Anak panah. `--ax` diisi app-lain.js supaya menunjuk tengah TOMBOL, yang
+   tidak selalu sama dengan tengah balon saat balon digeser dari tepi layar. */
+.act-tip::after{
+  content:""; position:absolute; left:var(--ax,50%); margin-left:-6px;
+  border:6px solid transparent;
+}
+.act-tip::after{top:-12px; border-bottom-color:#12414B}
+.act-tip.atas::after{top:auto; bottom:-12px; border-bottom-color:transparent; border-top-color:#12414B}
+
+@media (prefers-reduced-motion: reduce){
+  .act-tip{transition:none}
+}
+@media print{
+  .act-tip{display:none !important}
+}
+
+
+/* ============================================================
+   SIDEBAR — LATAR 80% + SEDIKIT TEMBUS PANDANG (8 Agu 2026)
+   ------------------------------------------------------------
+   Permintaan: turunkan latar sidebar ke 80% dengan sedikit efek
+   transparan, TANPA menyentuh huruf & ikonnya.
+
+   Karena itu `opacity` pada .sidebar-shell TIDAK boleh dipakai:
+   properti itu meredupkan elemen beserta SELURUH isinya, jadi
+   tulisan menu, ikon, logo, dan tombol Keluar ikut pudar —
+   justru bagian yang harus tetap pekat.
+
+   Lapisan pseudo juga tidak tersedia: ::before sudah dipakai
+   pegangan tiga titik (blok 34a) dan ::after garis aksen kanan.
+   Menumpuknya berarti membongkar dua blok yang sudah bekerja.
+
+   Cara yang dipakai: alfa ditulis LANGSUNG pada warna gradasinya.
+   Nilainya sama dengan aslinya, hanya dinyatakan sebagai rgba —
+     --side-1   #052a2f -> rgba(5,42,47,.80)
+     --side-2   #073f45 -> rgba(7,63,69,.80)
+     --teal-dark #095e66 -> rgba(9,94,102,.80)
+     --side-3   #0a6067 -> rgba(10,96,103,.80)
+   dan sorotan radial teal di sudut kiri-atas ikut diturunkan
+   sebanding (.30 -> .24) supaya perbandingannya tidak berubah.
+
+   backdrop-filter menjaga tulisan tetap terbaca saat yang lewat
+   di baliknya adalah tabel padat: yang tertembus jadi kabur, jadi
+   yang terbaca tetap menu — bukan angka di belakangnya. Dibungkus
+   @supports karena peramban lama tidak mengenalnya; tanpa itu pun
+   sidebar tetap benar, hanya tembus tanpa kabur. Aman terhadap
+   tata letak: seluruh isi sidebar berposisi static/absolute
+   (tidak ada position:fixed di dalamnya) sehingga perubahan blok
+   penampung yang dibawa backdrop-filter tidak mengubah apa pun.
+   ============================================================ */
+.sidebar-shell{
+  background:
+    radial-gradient(420px 220px at 20% 0%, rgba(22,169,181,.24), transparent 62%),
+    linear-gradient(168deg,
+      rgba(5,42,47,.80)   0%,
+      rgba(7,63,69,.80)   42%,
+      rgba(9,94,102,.80)  76%,
+      rgba(10,96,103,.80) 100%);
+}
+@supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .sidebar-shell{
+    -webkit-backdrop-filter:blur(9px) saturate(118%);
+    backdrop-filter:blur(9px) saturate(118%);
+  }
+}
+/* Cetak: latar tembus tidak ada gunanya di kertas, dan sidebar memang tidak
+   ikut tercetak — dikembalikan pekat supaya tidak ada perhitungan kabur
+   yang sia-sia bila suatu saat ia ikut terbawa. */
+@media print{
+  .sidebar-shell{-webkit-backdrop-filter:none;backdrop-filter:none}
+}
+
+
+/* ============================================================
+   SATU UKURAN UNTUK SEMUA TOMBOL UTAMA (8 Agu 2026)
+   ------------------------------------------------------------
+   Acuannya tombol "Batal" pada bilah langkah wizard: itu tombol
+   .btn polos — padding 10px 17px, huruf 11.5px, sudut 11px,
+   ikon 16px. Sebagian besar tombol aplikasi memang sudah memakai
+   ukuran itu; yang menyimpang hanya beberapa, dan justru itu yang
+   membuat halaman terasa tidak rata:
+
+     .form-actions .btn   12px 26px / 12px   -> Simpan & Batal pada
+                          form Input Data (SPBJ, Pengadaan Langsung,
+                          Tender) — paling mencolok karena berdiri
+                          sendiri di dasar form.
+     .hps-pick-btn        height:46px        -> tinggi dipatok agar
+                          sejajar kotak isian di sampingnya.
+     .jp-profil-btn       8px 10px (<=1180)  -> mengecil di layar
+                          sedang sementara tetangganya tidak.
+
+   Tombol Pilih/Ganti Data Pekerjaan & Lepas Pilihan pada RHO, HPS,
+   dan Analisa dulu memakai gaya SEBARIS (padding:8px 14px). Gaya
+   sebaris tidak bisa dikalahkan aturan CSS mana pun tanpa
+   !important, jadi kedelapan atribut itu dibuang langsung di
+   app.js — bukan ditimpa dari sini.
+
+   TINGGI DISAMAKAN LEWAT min-height, bukan padding saja. Sebabnya
+   tombol berikon dan tombol tanpa ikon tidak pernah sama tinggi
+   walau padding-nya identik: baris isinya setinggi ikon (16px)
+   pada yang berikon, dan setinggi huruf (~14px) pada yang tidak —
+   selisih 2px yang terlihat begitu keduanya berdampingan.
+
+   .btn-sm SENGAJA DIKECUALIKAN. Ia dipakai di dalam baris tabel
+   dan kartu sempit (mis. tombol pada daftar klausul); menyamakan
+   ukurannya dengan tombol utama akan mendorong tinggi baris tabel.
+
+   Lingkupnya `.view` — yaitu isi halaman. Tombol di dalam pop-up
+   (modal konfirmasi, Pilih Dokumen, pratinjau) ditempel ke <body>
+   di luar .view, dan ukurannya memang sengaja berbeda: di sana
+   tombol berpasangan melebar penuh mengisi kaki modal.
+   ============================================================ */
+.view .form-actions .btn:not(.btn-sm),
+.view .jp-profil-btn,
+.view .dp-pick-btn,
+.view .dp-unpick-btn,
+.view .pnw-profil-btn{
+  padding:10px 17px;
+  font-size:11.5px;
+  gap:8px;
+}
+.view .form-actions .btn:not(.btn-sm) svg,
+.view .jp-profil-btn svg,
+.view .dp-pick-btn svg,
+.view .dp-unpick-btn svg,
+.view .pnw-profil-btn svg{width:16px;height:16px}
+
+/* Tinggi seragam untuk seluruh tombol utama di dalam halaman */
+.view .btn:not(.btn-sm),
+.view .jp-profil-btn,
+.view .dp-pick-btn,
+.view .dp-unpick-btn{min-height:36px}
+
+/* Tinggi tetap 46px dilepas; tombol ini tetap sejajar kotak isian karena
+   barisnya memakai align-items:flex-end. */
+.view .hps-pick-btn{height:auto}
+
+/* Label profil kini lengkap ("Simpan Profil" / "Muat Profil" /
+   "Batalkan Profil"), jadi tiga tombol berdampingan bisa lebih lebar
+   daripada kartunya. Dibiarkan turun baris, bukan meluber. */
+.jp-profil-card{flex-wrap:wrap}
+
+/* ---- Tombol "Kembali" diberi warna sendiri ----
+   .btn-light dulu abu-kebiruan #f1f6f7 di atas kartu putih: nyaris
+   sewarna latarnya sendiri, sehingga tombol Kembali sulit dikenali
+   sebagai tombol. Sekarang grafit kebiruan — jelas terbaca di atas
+   kartu terang, dan tidak tertukar dengan teal (Selanjutnya), merah
+   (Batal), hijau (Simpan), atau kuning (Simpan Profil). */
+.btn.btn-light{
+  background:linear-gradient(135deg,#48606a,#6b848e);
+  color:#fff;border:none;
+  box-shadow:0 4px 14px rgba(45,70,79,.30),inset 0 1px 0 rgba(255,255,255,.22);
+}
+.btn.btn-light svg{color:#fff;stroke:currentColor}
+.btn.btn-light:hover{
+  background:linear-gradient(135deg,#526d78,#78939e);
+  color:#fff;border-color:transparent;
+  box-shadow:0 8px 22px rgba(45,70,79,.42),inset 0 1px 0 rgba(255,255,255,.28);
+  filter:brightness(1.04);
+}
+
+
+/* ============================================================
+   NAVIGASI HALAMAN (PAGINASI) DIBERI WARNA — 8 Agu 2026
+   ------------------------------------------------------------
+   Keluhan: tombolnya putih di atas panel putih, jadi "‹ Sebelumnya"
+   dan "Berikutnya ›" nyaris tidak terlihat sebagai tombol — hanya
+   tulisan mengambang di pojok kanan bawah tabel.
+
+   Tiga peran dibedakan warnanya, memakai dua warna yang memang
+   sudah jadi bahasa aplikasi ini (teal & kuning PLN):
+
+     Sebelumnya / Berikutnya  -> kuning, tulisan cokelat tua.
+        Ini tombol AKSI (berpindah halaman), jadi yang paling
+        menonjol. Dipilih kuning, bukan teal, supaya tidak
+        tertukar dengan penanda halaman aktif di sebelahnya.
+
+     Nomor halaman            -> kartu teal muda bertepi teal.
+        Terbaca sebagai tombol, tetapi tenang — jumlahnya bisa
+        banyak dan tidak boleh meramaikan dasar tabel.
+
+     Nomor halaman AKTIF      -> teal pekat, tulisan putih (tetap
+        seperti semula; sudah paling menonjol di antara nomor).
+
+   Tanpa box-shadow: blok "bayangan diratakan" di atas memasang
+   `box-shadow ... !important` pada .pg-btn, jadi bayangan apa pun
+   yang ditulis di sini akan diabaikan. Keterbacaan dibangun dari
+   warna isi & tepi — bukan bayangan.
+
+   Keadaan MATI (halaman pertama/terakhir) tidak memakai opacity
+   .4 lagi: kuning yang dipudarkan menjadi krem kotor. Diganti
+   abu-abu rata yang jelas terbaca sebagai "tidak bisa ditekan".
+   ============================================================ */
+.pagination .pg-btn{
+  font-weight:700;
+  transition:background .18s ease,color .18s ease,border-color .18s ease;
+}
+/* --- nomor halaman --- */
+.pagination .pg-btn.pg-num{
+  background:linear-gradient(180deg,#f2fafb,#e2f1f3);
+  border:1px solid #b7d7db;
+  color:#0b5a63;
+}
+.pagination .pg-btn.pg-num:hover:not(:disabled):not(.active){
+  background:linear-gradient(180deg,#dcf0f2,#c9e7ea);
+  border-color:var(--teal);
+  color:var(--teal-dark);
+}
+.pagination .pg-btn.pg-num.active{
+  background:linear-gradient(135deg,var(--teal),var(--cyan));
+  border-color:var(--teal);
+  color:#fff;
+}
+/* --- Sebelumnya / Berikutnya --- */
+.pagination .pg-btn:not(.pg-num){
+  background:linear-gradient(135deg,var(--yellow),#ffca3a);
+  border:1px solid #e2a70c;
+  color:#5a3d00;
+}
+.pagination .pg-btn:not(.pg-num):hover:not(:disabled){
+  background:linear-gradient(135deg,#ffc933,#ffd76a);
+  border-color:#caa022;
+  color:#4a3200;
+}
+.pagination .pg-btn:not(.pg-num):disabled{
+  background:#eaeff1;
+  border-color:#d8e1e4;
+  color:#93a3aa;
+  opacity:1;
+  cursor:default;
+}
+
+
+/* ============================================================
+   KOLOM AKSI FILE KONTRAK — TOMBOL TETAP SATU BARIS (8 Agu 2026)
+   ------------------------------------------------------------
+   Gejala: pada "Dokumen Perjanjian/Kontrak" tombol Lihat & Hapus
+   bertumpuk ke bawah, sementara di menu lain berdampingan.
+
+   Sebabnya kolom Aksi di sini memakai nama kelas yang BERBEDA.
+   Blok "TOMBOL AKSI & KOLOM AKSI" di atas menyebut .action-cell
+   dan .pn-actions; File Kontrak memakai `td.fk-actcell` berisi
+   `div.fk-actions` — yang sejak awal ber-`flex-wrap:wrap`.
+
+   Akibatnya lebar TERKECIL sel itu = satu tombol saja. Karena
+   `th.col-aksi` menyuruh kolomnya sesempit mungkin (width:1%),
+   peramban menurutinya sampai selebar satu tombol, lalu tombol
+   kedua turun baris. Yang perlu diperbaiki bukan lebar kolomnya,
+   melainkan izin melipat itu: begitu deretannya nowrap, lebar
+   terkecilnya menjadi selebar KEDUA tombol dan kolomnya berhenti
+   di situ.
+
+   Ini pengingat yang sama seperti pada blok efek 3D: daftar nama
+   kelas tidak pernah lengkap. Karena itu di sini dipakai juga
+   `:has(> .fk-actions)` supaya sel aksi tetap terjaring walau
+   kelas selnya kelak berganti.
+   ============================================================ */
+.table-wrap .fk-actions{flex-wrap:nowrap}
+.table-wrap td.fk-actcell,
+.table-wrap td:has(> .fk-actions){
+  width:1%;min-width:0;max-width:none;
+  white-space:nowrap;text-align:center;
+  padding-left:10px;padding-right:10px;
+}

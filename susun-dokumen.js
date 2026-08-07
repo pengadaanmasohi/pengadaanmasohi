@@ -5361,7 +5361,7 @@ function torDokPilih(id, mode){
    Cadangan dipakai hanya bila app.js belum sempat termuat. */
 const TOR_IC_CADANGAN = {
   VIEW:'<path d="M2 10s3.2-5.8 8-5.8 8 5.8 8 5.8-3.2 5.8-8 5.8S2 10 2 10z"/><circle cx="10" cy="10" r="2.5"/><path d="M16.4 15.4 21.5 20.5"/>',
-  EDIT:'<path d="M3.5 21h17"/><path d="M20.4 3.6a1.9 1.9 0 0 0-2.7 0l-4 4 2.7 2.7 4-4a1.9 1.9 0 0 0 0-2.7z"/><path d="M13.7 7.6 10 11.3a3.2 3.2 0 0 0-.9 2.2v.8H6A2.5 2.5 0 0 0 3.5 16.8V18.4h9a3.2 3.2 0 0 0 2.3-.9l3.6-3.6z"/><path d="M9.1 14.3h5.5"/>',
+  EDIT:'<path d="M12.3 3.5H5.6A2.1 2.1 0 0 0 3.5 5.6v12.8a2.1 2.1 0 0 0 2.1 2.1h12.8a2.1 2.1 0 0 0 2.1-2.1v-6.7"/><path d="M18.38 2.63a1.9 1.9 0 0 1 2.99 3l-9.01 9.01a2 2 0 0 1-.85.51l-2.87.84a.5.5 0 0 1-.62-.62l.84-2.87a2 2 0 0 1 .51-.85z"/><path d="M16.8 4.3 19.8 7.3"/>',
   DEL :'<path d="M5.5 9h13l-1 11.2A2 2 0 0 1 15.5 22h-7a2 2 0 0 1-2-1.8L5.5 9z"/><path d="M3 7.4 21 3.6"/><path d="M9.7 5.9 9.4 4.4a1 1 0 0 1 .8-1.2l3.3-.7a1 1 0 0 1 1.2.8l.3 1.5"/><path d="M10 12.5v6M14 12.5v6"/>'
 };
 function torIcAksi(k){
@@ -5369,9 +5369,9 @@ function torIcAksi(k){
     const v = (k==='EDIT') ? DPENG_IC_EDIT : (k==='DEL') ? DPENG_IC_DEL : DPENG_IC_VIEW;
     if(typeof v==='string' && v) return v;
   }catch(e){}
-  /* stroke-linecap/linejoin round WAJIB ada: ikon Ubah yang baru (tangan
-     menggenggam pena) punya banyak sudut; tanpa keduanya sudut kepalan
-     tangannya menjadi runcing dan bentuknya tidak lagi terbaca. */
+  /* stroke-linecap/linejoin round WAJIB ada: ikon Ubah (lembar + pensil)
+     bertumpu pada sudut-sudut lancip badan pensil; tanpa keduanya ujungnya
+     menjadi runcing dan bentuknya tidak lagi terbaca pada ukuran 15 px. */
   return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+TOR_IC_CADANGAN[k]+'</svg>';
 }
 
