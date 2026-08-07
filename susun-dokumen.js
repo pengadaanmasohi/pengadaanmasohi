@@ -1353,20 +1353,29 @@ function torEnsureStyle(){
     /* IKON PUTIH POLOS (ketentuan 6 Agu 2026: "cetak dan x berwarna putih
        saja"): kotak latar rgba putih dihapus, yang tersisa hanya guratan
        ikonnya. Umpan balik sorot memakai opacity — tidak menambah warna baru. */
-    /* IKON PUTIH POLOS. `background:transparent` ditulis untuk KEDUA keadaan
-       (diam & disorot) supaya kotak latar bawaan tombol .btn tidak menyelinap
-       masuk; umpan balik sorot memakai opacity saja, tidak menambah warna. */
-    '.tor-dk-hd .x,.tor-dk-hd .pr{border:0;background:transparent;color:#fff;'+
-      'width:28px;height:28px;flex:0 0 28px;border-radius:8px;line-height:1;cursor:pointer;'+
+    /* ---- WARNA HIDUP, MENGIKUTI BAHASA TOMBOL AKSI DI TABEL ----
+       KETENTUAN 6 Agu 2026. Gradasi yang dipakai SAMA PERSIS dengan tombol aksi
+       pada tabel (style.css: .act-view teal->cyan, .act-del merah), termasuk
+       pembagian perannya: mencetak = teal, menutup = merah. Dengan begitu merah
+       selalu berarti "mengakhiri" di seluruh aplikasi.
+       Sebelumnya keduanya putih polos tanpa latar — di atas kepala bergradasi
+       teal, batas tombolnya nyaris tidak terlihat dan tombol tutup mudah
+       terlewat. */
+    '.tor-dk-hd .x,.tor-dk-hd .pr{border:0;color:#fff;'+
+      'width:30px;height:30px;flex:0 0 30px;border-radius:9px;line-height:1;cursor:pointer;'+
       'display:flex;align-items:center;justify-content:center;padding:0;'+
-      'box-shadow:none;opacity:.92;transition:opacity .15s ease}'+
-    '.tor-dk-hd .x{font-size:22px;font-weight:400}'+
-    '.tor-dk-hd .x:hover,.tor-dk-hd .pr:hover{opacity:1;background:transparent}'+
+      'box-shadow:0 2px 6px rgba(6,30,36,.28);'+
+      'transition:filter .15s ease,box-shadow .2s ease}'+
+    '.tor-dk-hd .pr{background:linear-gradient(135deg,#0E7C86,#16a9b5)}'+
+    '.tor-dk-hd .x{background:linear-gradient(135deg,#D33A3A,#e25151)}'+
+    '.tor-dk-hd .x:hover,.tor-dk-hd .pr:hover{filter:brightness(1.08);'+
+      'box-shadow:0 4px 10px rgba(6,30,36,.34)}'+
     '.tor-dk-hd .x:focus-visible,.tor-dk-hd .pr:focus-visible{outline:2px solid #fff;outline-offset:2px}'+
-    /* Guratan ikon dipaksa putih. TOR_IC_CETAK memang memakai
-       stroke="currentColor", tetapi menyebutnya di sini membuat ikon tetap putih
-       walau suatu saat ikonnya diganti dengan yang berwarna tetap. */
-    '.tor-dk-hd .pr svg{width:18px;height:18px;stroke:#fff;color:#fff}'+
+    /* Kedua ikon berukuran & berketebalan gurat SAMA. Silang digambar sebagai
+       SVG (lihat markup) supaya benar-benar di tengah kotak — karakter &times;
+       punya sisi kosong yang berbeda menurut muka hurufnya. */
+    '.tor-dk-hd .pr svg,.tor-dk-hd .x svg{width:15px;height:15px;display:block;'+
+      'stroke:#fff;color:#fff;stroke-width:2}'+
     '.tor-dk-bd{padding:12px;display:flex;flex-direction:column;gap:8px;max-height:70vh;overflow:auto}'+
     '.tor-dk-row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 14px;'+
       'border:1px solid #E3EAF2;border-radius:12px;background:#fff;cursor:pointer;'+
@@ -4507,7 +4516,8 @@ function torOpenDokList(id){
         '<button type="button" class="pr" onclick="torCetakGabung(\''+rid+'\')" '+
           'title="Cetak gabungan: TOR/KAK + RAB + kedua Pakta Integritas" '+
           'aria-label="Cetak gabungan">'+TOR_IC_CETAK+'</button>'+
-        '<button type="button" class="x" onclick="torCloseDokList()" aria-label="Tutup">\u00d7</button>'+
+        '<button type="button" class="x" onclick="torCloseDokList()" '+
+          'title="Tutup" aria-label="Tutup">'+TOR_IC_TUTUP+'</button>'+
       '</div>'+
     '</div>'+
     '<div class="tor-dk-bd">'+baris+'</div></div>';
@@ -4536,6 +4546,12 @@ function torCloseDokList(){ const ov=document.getElementById('tor-dk-ov'); if(ov
    Berkas gabungan lalu berisi lembar-lembar A4 yang sudah matang, siap dicetak
    dalam satu perintah. */
 const TOR_GABUNG_MODE = ['tor','rab','pi-pengguna','pi-direksi'];
+/* Silang penutup — SVG, bukan karakter &times;: kotak pandang 24x24 yang
+   simetris membuat titik tengahnya pasti, dan ketebalan guratnya sama persis
+   dengan ikon cetak di sebelahnya. */
+const TOR_IC_TUTUP =
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '+
+  'stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
 const TOR_IC_CETAK =
   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '+
   'stroke-linecap="round" stroke-linejoin="round">'+

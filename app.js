@@ -9204,7 +9204,6 @@ const DPENG_DOCS = {
     'Term of Reference / Kerangka Acuan Kerja',
     'Rencana Anggaran Biaya (RAB)',
     'Surat Anggaran',
-    'Bill of Quantity (excel)',
     'Kajian Kelayakan Proyek (KKP)',
     'Kajian Risiko (KR)',
     'Pakta Integritas Pengguna Barang/Jasa',
@@ -9230,7 +9229,6 @@ const DPENG_DOCS = {
     'Harga Perhitungan Enjiniring (HPE)',
     'Rencana Anggaran Biaya (RAB)',
     'Surat Anggaran',
-    'Bill of Quantity (excel)',
     'Kajian Kelayakan Proyek (KKP)',
     'Kajian Risiko (KR)',
     'Pakta Integritas Pengguna Barang/Jasa',
@@ -9276,6 +9274,41 @@ function dpengDocLabel(group, key){
    Sendiri") menggeser nomor urut: key lama pada data yang sudah tersimpan bisa
    menunjuk ke jenis dokumen yang berbeda. Dengan mencocokkan label lebih dulu,
    centang & berkas milik record lama tetap menempel pada dokumen yang benar. */
+/* ---- JENIS DOKUMEN YANG DIPENSIUNKAN ----
+   KETENTUAN 6 Agu 2026: "Bill of Quantity (excel)" dihapus dari Dokumen
+   Pengadaan — baik pilihannya maupun berkas yang sudah terunggah.
+
+   Membuangnya dari DPENG_DOCS saja TIDAK CUKUP, dan justru berbahaya. Entri
+   dokumen pada data yang sudah tersimpan membawa kunci berupa NOMOR URUT
+   ('pl-5'). dpengResolveKey memang mencocokkan LABEL lebih dulu, tetapi begitu
+   labelnya tidak ada lagi di katalog, ia jatuh kembali ke kunci lama — dan
+   'pl-5' kini menunjuk "Kajian Kelayakan Proyek (KKP)". Akibatnya berkas BoQ
+   lama akan muncul sebagai berkas KKP. Karena itu entrinya harus DISARING,
+   bukan sekadar dibiarkan yatim.
+
+   Penyaringan dilakukan DI MEMORI sesudah data dimuat (lihat refreshDataDpeng),
+   jadi:
+     - jenisnya hilang dari daftar, dari formulir unggah, dan dari hitungan
+       "N dari M dokumen sudah terunggah";
+     - tidak ada satu baris pun yang terhapus dari basis data, sehingga
+       keputusan ini bisa dibatalkan kapan saja hanya dengan mengosongkan
+       daftar di bawah.
+   Objek berkasnya sendiri masih tersimpan di R2 — tidak terlihat, tidak
+   terhitung, dan tidak bisa dibuka dari aplikasi. Penghapusan fisiknya
+   disengaja TIDAK dijalankan otomatis: itu tindakan yang tak bisa dibatalkan
+   dan tidak pantas dikerjakan diam-diam saat halaman dibuka. */
+const DPENG_DOCS_PENSIUN = [/^\s*bill of quantity/i];
+function dpengDocPensiun(d){
+  var lbl=String((d&&d.label)||'').trim();
+  return !!lbl && DPENG_DOCS_PENSIUN.some(function(re){ return re.test(lbl); });
+}
+/* Buang entri dokumen yang jenisnya sudah dipensiunkan dari SATU record. */
+function dpengSaringPensiun(rec){
+  if(!rec || !Array.isArray(rec.dokumen)) return rec;
+  var sisa=rec.dokumen.filter(function(d){ return !dpengDocPensiun(d); });
+  if(sisa.length!==rec.dokumen.length) rec.dokumen=sisa;
+  return rec;
+}
 function dpengResolveKey(d){
   if(!d) return '';
   const group = d.group || String(d.key||'').split('-')[0];
@@ -9349,6 +9382,9 @@ const StoreDpeng = {
 async function refreshDataDpeng(){
   try{ records_dpeng = await StoreDpeng.list(); }
   catch(err){ console.error(err); records_dpeng = records_dpeng||[]; toast('Gagal memuat Dokumen Pengadaan: '+errMsg(err),'err'); }
+  /* Jenis dokumen yang sudah dipensiunkan disaring di sini — SATU pintu masuk
+     data, jadi tidak ada halaman yang bisa terlewat. Lihat DPENG_DOCS_PENSIUN. */
+  try{ (records_dpeng||[]).forEach(dpengSaringPensiun); }catch(e){ console.warn('dpengSaringPensiun:', e); }
 }
 
 /* ---- Utilitas ---- */
@@ -9894,7 +9930,7 @@ function dpengUploadPanelHtml(){
       '<span class="dpeng-up-sub">'+fkEsc(dpengNama(rec)||'')+'</span>'+
       '<span class="dpeng-up-prog">'+terisi+'/'+docs.length+' terunggah</span>'+
     '</div>'+
-    '<div class="dpeng-uphint">Seluruh dokumen berupa PDF; khusus Bill of Quantity berupa Excel • maks. '+DPENG_MAX_MB+' MB per berkas (batas gateway Cloudflare).</div>'+
+    '<div class="dpeng-uphint">Seluruh dokumen berupa PDF • maks. '+DPENG_MAX_MB+' MB per berkas (batas gateway Cloudflare).</div>'+
     '<div class="dpeng-uplist">'+rows+'</div>'+
   '</div>'+
   '<div class="jp-actions" style="justify-content:space-between;margin-top:14px">'+
@@ -9916,11 +9952,13 @@ function dpengUnggahBatal(){
 /* ---- Unggah / lihat / hapus berkas satu dokumen ---- */
 let dpengFileTarget=null;   // {recId, key}
 /* ---- Jenis berkas yang diizinkan PER DOKUMEN ----
-   Seluruh dokumen pengadaan berupa PDF; hanya "Bill of Quantity (excel)" yang
-   memakai berkas Excel. Pencocokan lewat LABEL (bukan nomor urut) agar tetap
-   benar walau daftar baku bergeser karena penyisipan dokumen baru.
-   Tambahkan pola di DPENG_POLA_EXCEL bila ada dokumen Excel lain. */
-const DPENG_POLA_EXCEL = [/bill of quantity/i];
+   Sejak "Bill of Quantity (excel)" dipensiunkan (6 Agu 2026), SELURUH dokumen
+   pengadaan berupa PDF — daftar pola Excel di bawah sengaja dikosongkan, bukan
+   dihapus, supaya jalur Excel-nya tetap ada bila suatu saat diperlukan lagi:
+   cukup tambahkan satu pola dan dokumen itu kembali menerima .xlsx.
+   Pencocokan lewat LABEL (bukan nomor urut) agar tetap benar walau daftar baku
+   bergeser karena penyisipan dokumen baru. */
+const DPENG_POLA_EXCEL = [];
 const DPENG_TIPE_PDF = {
   accept:'application/pdf,.pdf',
   ext:['.pdf'],
