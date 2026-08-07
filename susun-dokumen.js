@@ -3024,8 +3024,26 @@ const TOR_FOTO_TARIK_BARIS = 3;
    fitur foto di bawah bergantung padanya, sehingga Susun Kontrak (SPK &
    Perjanjian/Kontrak) sama sekali tidak berubah perilakunya. */
 function torFotoAktif(){
-  try{ return !!(typeof spkState!=='undefined' && spkState && spkState.data && spkState.data.__doktype==='TOR'); }
-  catch(e){ return false; }
+  try{
+    if(typeof spkState!=='undefined' && spkState && spkState.data && spkState.data.__doktype==='TOR') return true;
+    /* PENGERASAN 7 Agu 2026 — "foto template Word kadang hilang kadang muncul".
+       Penjaga ini dulu HANYA membaca spkState. Padahal tautan spkState->torState
+       dilepas oleh tambalan showView() begitu berpindah ke halaman ber-awalan
+       'spk-' (lihat bagian 15), sedangkan pustaka klausul yang sedang disunting
+       BISA saja masih milik dokumen TOR. Dalam keadaan itu seluruh jalur foto
+       mati diam-diam: gambar di berkas .docx tidak pernah dibaca dan paragrafnya
+       malah berubah menjadi baris kosong — tanpa satu pun pesan galat, sehingga
+       berkas yang sama kadang membawa fotonya kadang tidak.
+
+       Pemeriksaan cadangan memakai IDENTITAS OBJEK: pustaka yang sedang aktif
+       harus benar-benar array milik torState. showView() menukarnya dengan
+       spkKlDefault() saat melepas tautan, jadi pustaka Susun Kontrak tidak akan
+       pernah lolos di sini. */
+    if(typeof torState!=='undefined' && torState && torState.data &&
+       typeof records_klausul!=='undefined' && records_klausul &&
+       records_klausul === torState.data.__klausulLib) return true;
+  }catch(e){}
+  return false;
 }
 function torFotoUid(){
   try{ if(window.crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
@@ -3090,6 +3108,46 @@ function torFotoKompres(file){
     img.src=url;
   });
 }
+/* ---- KUNCI OBJEK = SIDIK JARI ISINYA (content-addressed) ----
+   PERBAIKAN 7 Agu 2026. Dulu kuncinya `<bulan>/<uuid-acak>.<ext>`, sehingga
+   FOTO YANG SAMA menghasilkan objek BARU setiap kali disisipkan: menimpa satu
+   klausul dengan foto yang sama 4x meninggalkan 4 salinan byte-identik di
+   bucket, dan tidak satu pun bisa dikenali sebagai kembaran yang lain.
+
+   Sekarang nama berkas = SHA-256 dari byte yang benar-benar diunggah (hasil
+   torFotoKompres, bukan berkas mentah — dua berkas mentah berbeda yang
+   terkompres jadi byte yang sama memang layak menjadi satu objek). Isi sama =
+   kunci sama, dan r2XhrPut sudah mengirim `x-upsert:true`, jadi unggahan
+   berikutnya MENIMPA objek yang sudah ada alih-alih menambah objek baru.
+   Efek sampingnya menguntungkan: <img src> yang tertulis di klausul pun
+   identik, sehingga pustaka klausul tidak lagi menyimpan URL berbeda-beda
+   untuk gambar yang sama.
+
+   PENGELOMPOKAN PER BULAN DIGANTI 2 HURUF PERTAMA HASH. Pengelompokan bulan
+   akan membatalkan dedup begitu berganti bulan (foto yang sama diunggah 1
+   Sept menjadi objek kedua). Dua huruf heksadesimal membagi isi bucket ke
+   256 map yang rata dan tetap terbaca, sekaligus membuat dedup berlaku
+   SELAMANYA, bukan hanya dalam bulan berjalan.
+
+   CADANGAN. crypto.subtle hanya tersedia di konteks aman (HTTPS/localhost).
+   Bila tidak ada, jalur lama (bulan + uid acak) dipakai kembali — lebih baik
+   menduplikasi objek daripada menolak unggahan. */
+async function torFotoHash(blob){
+  try{
+    if(!(window.crypto && crypto.subtle && crypto.subtle.digest)) return '';
+    var buf = blob.arrayBuffer ? await blob.arrayBuffer()
+                               : await new Response(blob).arrayBuffer();
+    var dg = await crypto.subtle.digest('SHA-256', buf);
+    var b = new Uint8Array(dg), s = '';
+    for(var i=0;i<b.length;i++) s += b[i].toString(16).padStart(2,'0');
+    return s;
+  }catch(e){ return ''; }
+}
+/* hash -> url, sepanjang sesi. Menekan unggahan berulang untuk foto yang sama
+   (mis. satu template .docx yang memuat foto itu di beberapa tempat): tanpa ini
+   byte-nya tetap dikirim ulang walau kuncinya sudah sama. */
+var TOR_FOTO_SUDAH = Object.create(null);
+
 /* Unggah satu foto -> { path, url }. Melempar bila sesi tidak ada. */
 async function torFotoUpload(file){
   if(!(file && file.size)) throw new Error('Berkas foto kosong.');
@@ -3098,11 +3156,21 @@ async function torFotoUpload(file){
   if(typeof fkAuthToken==='function' && !fkAuthToken())
     throw new Error('Sesi berkas tidak tersedia — silakan login ulang.');
   var kecil=await torFotoKompres(file);
-  var d=new Date();
-  var bulan=d.getFullYear()+String(d.getMonth()+1).padStart(2,'0');
-  var path=TOR_FOTO_PREFIX+bulan+'/'+torFotoUid()+'.'+kecil.ext;
+  var hash=await torFotoHash(kecil.blob);
+  var path;
+  if(hash){
+    var sudah=TOR_FOTO_SUDAH[hash];
+    if(sudah) return sudah;                       /* byte identik -> objek yang sudah ada */
+    path=TOR_FOTO_PREFIX+hash.slice(0,2)+'/'+hash+'.'+kecil.ext;
+  }else{
+    var d=new Date();
+    var bulan=d.getFullYear()+String(d.getMonth()+1).padStart(2,'0');
+    path=TOR_FOTO_PREFIX+bulan+'/'+torFotoUid()+'.'+kecil.ext;
+  }
   await r2XhrPut(path, kecil.blob);
-  return { path:path, url:torFotoUrl(path) };
+  var hasil={ path:path, url:torFotoUrl(path) };
+  if(hash) TOR_FOTO_SUDAH[hash]=hasil;
+  return hasil;
 }
 
 /* ---- Sisipkan ke editor klausul ----
@@ -5588,6 +5656,97 @@ const TOR_VIEWS = { 'tor-view':'renderTorView', 'tor-susun':'renderTorSusun' };
     window.spkWEBindDoc.__torf=1;
   }
 
+  /* ---- 3a. Foto ikut terbaca sebagai ISI oleh mesin pemangkas klausul ----
+     PERBAIKAN 7 Agu 2026 — "foto muncul saat unggah klausul, hilang sesudahnya".
+
+     GEJALANYA. Pratinjau di dalam popup unggah (spkKlDocPreview) menampilkan
+     isi klausul APA ADANYA, jadi fotonya terlihat. Pratinjau DOKUMEN memanggil
+     spkPruneKlausul() lebih dulu — dan di sanalah fotonya lenyap. Itu sebabnya
+     foto "sempat muncul di awal lalu hilang".
+
+     SEBABNYA. spkPruneKlausul memutuskan sebuah butir bernomor layak dibuang
+     dengan menggabungkan TEKS seluruh paragraf isinya (`joined`) lalu menguji
+     apakah gabungan itu berbentuk kalimat contoh "(Isi ....)". Paragraf yang
+     isinya hanya <img> tidak menyumbang teks sama sekali, sehingga pada butir
+     yang teks contohnya BELUM diganti, `joined` tetap terbaca sebagai contoh
+     murni — butir dinyatakan kosong dan DIBUANG SELURUHNYA, foto ikut terbawa.
+     Terverifikasi: butir "3.1. Uraian Pekerjaan" + "(Isi uraian pekerjaan.)" +
+     foto -> keluaran spkPruneKlausul tidak lagi memuat <img>.
+
+     CARANYA. spkBlkText() — SATU-SATUNYA pembaca teks yang dipakai
+     spkPruneKlausul & spkIsPhBlock (6 pemanggilan, seluruhnya di dua fungsi
+     itu) — menambahkan U+2063 INVISIBLE SEPARATOR pada blok yang memuat
+     gambar. Idiom yang sama persis dengan tambalan spkWpText di atas: bukan
+     spasi, jadi lolos dari setiap .replace(/\s+/g,'') di pipeline, dan tidak
+     pernah tampak di layar. Akibatnya `joined` tidak lagi berakhir dengan
+     tanda titik/kurung, uji "kalimat contoh" gagal sebagaimana mestinya, dan
+     butir yang memuat foto selalu dihitung sebagai butir berisi.
+
+     Penanda ditempel di UJUNG supaya penguji yang ber-JANGKAR AWAL tidak
+     terganggu: SPK_TOK_BUTIR / SPK_TOK_SUB tetap mengenali "3.1." di awal
+     paragraf yang juga memuat gambar sebaris. */
+  if(typeof spkBlkText==='function' && !spkBlkText.__torf){
+    var _blk=spkBlkText;
+    window.spkBlkText=function(el){
+      var t=_blk.apply(this, arguments);
+      try{ if(el && el.querySelector && el.querySelector('img')) return String(t||'')+'\u2063'; }catch(e){}
+      return t;
+    };
+    window.spkBlkText.__torf=1;
+  }
+
+  /* ---- 3b. Foto yang menempel pada JUDUL BUTIR dipisah jadi blok sendiri ----
+     Celah terakhir dari kelas kesalahan yang sama, dan satu-satunya yang tidak
+     bisa ditutup lewat spkBlkText: spkPruneKlausul menilai "butir ini hanya
+     berisi contoh" dari paragraf ISI-nya saja (`everyBlkPh`), tidak pernah dari
+     paragraf JUDUL-nya. Foto yang ditempel SEBARIS di judul butir — mis.
+     "<p class=kl1>3.1. Uraian <img></p>" dengan isi yang teks contohnya belum
+     diganti — karena itu tetap ikut terbuang bersama butirnya.
+
+     Fotonya DIPINDAH ke paragraf tersendiri tepat di bawah judul, bukan
+     dipertahankan sebaris. Itu memang bentuk yang sudah ditetapkan untuk foto
+     di dokumen ini (lihat torFotoBlokHtml bagian 9b: "Paragraf foto dibuat
+     SEBAGAI BLOK TERSENDIRI ... karena seluruh aturan ukuran yang ditetapkan
+     hanya bermakna untuk blok tersendiri"), sehingga pemisahan ini sekaligus
+     menyeragamkan foto yang masuk dari Word dengan foto yang disisipkan lewat
+     tombol. Setelah dipisah, butirnya punya satu blok isi yang BUKAN contoh,
+     jadi `everyBlkPh` bernilai salah dan butirnya bertahan.
+
+     Hanya paragraf yang BENAR-BENAR judul butir yang disentuh (diawali penanda
+     "3.1." / "a." menurut SPK_TOK_BUTIR & SPK_TOK_SUB — mesin pengenal yang
+     sama dengan yang dipakai spkPruneKlausul), sehingga gambar sebaris di
+     paragraf biasa tidak berubah tempat. */
+  if(typeof spkPruneKlausul==='function' && !spkPruneKlausul.__torf){
+    var _prune=spkPruneKlausul;
+    window.spkPruneKlausul=function(html, klNo, data){
+      var s=String(html==null?'':html);
+      try{
+        if(s.indexOf('<img')>=0 && typeof SPK_TOK_BUTIR!=='undefined' && typeof SPK_TOK_SUB!=='undefined'){
+          var box=document.createElement('div'); box.innerHTML=s;
+          var ubah=false, ps=Array.prototype.slice.call(box.children);
+          for(var i=0;i<ps.length;i++){
+            var p=ps[i];
+            if(!p.querySelector || !p.querySelector('img')) continue;
+            var tx=String(p.textContent||'').replace(/ /g,' ').replace(/\s+/g,' ').trim();
+            if(!tx) continue;                                   /* sudah blok foto tersendiri */
+            if(!(SPK_TOK_BUTIR.test(tx) || SPK_TOK_SUB.test(tx))) continue;   /* bukan judul butir */
+            var np=document.createElement('p');
+            np.className='kl0 tor-foto';
+            /* appendChild MEMINDAHKAN simpul, jadi gambarnya lepas dari judul
+               dan tidak pernah tergandakan. */
+            Array.prototype.slice.call(p.querySelectorAll('img'))
+              .forEach(function(im){ np.appendChild(im); });
+            p.parentNode.insertBefore(np, p.nextSibling);
+            ubah=true;
+          }
+          if(ubah) s=box.innerHTML;
+        }
+      }catch(e){ console.error('tor prune foto:', e); }
+      return _prune.call(this, s, klNo, data);
+    };
+    window.spkPruneKlausul.__torf=1;
+  }
+
   /* ---- 3. Paragraf berisi FOTO bukan "blok contoh" ----
      spkIsPhBlock() menilai kosong/tidaknya sebuah blok dari TEKS-nya saja,
      sehingga paragraf yang isinya hanya <img> terbaca kosong lalu dibuang
@@ -5704,7 +5863,17 @@ const TOR_VIEWS = { 'tor-view':'renderTorView', 'tor-susun':'renderTorSusun' };
     var peta=torRelsMedia(zip), cache={}, i;
     for(i=0;i<tags.length;i++){
       var im=tags[i], rid=im.getAttribute('data-torwrid')||'';
-      var url=cache[rid];
+      /* CACHE DIPATOK PADA BERKAS MEDIA, BUKAN rId (perbaikan 7 Agu 2026).
+         Word membuat relationship BARU setiap kali sebuah gambar disisipkan,
+         tetapi seluruhnya menunjuk ke satu berkas yang sama di word/media/.
+         Satu foto yang ditempel 4x di template berarti 4 rId dengan target
+         identik — dengan kunci rId, cache-nya selalu meleset dan byte yang
+         sama diunggah 4 kali. Kunci sekarang nama berkas medianya, sehingga
+         satu berkas = satu unggahan, apa pun jumlah rId yang menunjuknya.
+         (rId dipakai sebagai kunci cadangan hanya bila relationship-nya tidak
+         terpetakan — di sana memang tidak ada yang bisa dibandingkan.) */
+      var kunci=peta[rid] || ('#'+rid);
+      var url=cache[kunci];
       if(url===undefined){
         url='';
         try{
@@ -5715,7 +5884,7 @@ const TOR_VIEWS = { 'tor-view':'renderTorView', 'tor-susun':'renderTorSusun' };
             url=(await torFotoUpload(bl)).url;
           }
         }catch(err){ console.error('foto .docx:', err); url=''; }
-        cache[rid]=url;
+        cache[kunci]=url;
       }
       if(url){ im.removeAttribute('data-torwrid'); im.setAttribute('src', url); im.setAttribute('alt',''); }
       else if(im.parentNode){ im.parentNode.removeChild(im); }
