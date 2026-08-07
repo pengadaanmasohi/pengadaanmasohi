@@ -9083,3 +9083,63 @@ html.mode-rail .wrap{padding-left:24px;padding-right:24px}
   animation:tor-dk-sorot .4s ease-in-out 2}
 @media (prefers-reduced-motion:reduce){
   .pnw-profil-modal.menolak,.materi-kat-modal.menolak{animation:none} }
+
+
+/* ============================================================
+   BILAH FILTER MONITORING — KEMBALI SATU BARIS (8 Agu 2026)
+   ------------------------------------------------------------
+   Gejala: Reset & Input Data terlempar ke baris kedua, menyisakan
+   ruang kosong lebar di bawah deretan filter.
+
+   Sebabnya bukan tombolnya, melainkan LEBAR DASAR dua isian di
+   kirinya. Kolom Bidang memakai `width:max-content` — selebar
+   pilihan terpanjang ("Keselamatan, Kesehatan Kerja, Lingkungan
+   dan Keamanan", ±370px) — sementara kotak Cari dipatok minimal
+   300px. Dijumlahkan dengan Status, Tahun, jarak antar-isian, dan
+   kedua tombol, angkanya melewati lebar bilah; karena .toolbar
+   memakai flex-wrap:wrap, kelompok tombol turun satu baris.
+
+   Perbaikan: lebar DASAR Bidang dan Cari dipangkas ±30%
+   (370→260px dan 300→210px). Yang dikurangi HANYA lebar minimum
+   yang menentukan pembungkusan baris — kotak Cari tetap boleh
+   memuai (flex-grow) mengisi sisa ruang, jadi tidak muncul celah
+   kosong di tengah bilah dan tombol tetap mentok di kanan.
+
+   Ada tiga rentang, karena angka yang muat di layar 1400px belum
+   tentu muat di 1210px:
+     >1300px  → pemangkasan 30% seperti diminta
+     1201-1300px → dipangkas lebih dalam supaya tetap satu baris
+     768-1200px  → hanya kolom Bidang yang dicegat; sisanya sudah
+                   punya angkanya sendiri di bagian tablet di atas
+   ============================================================ */
+@media (min-width:1301px){
+  .toolbar .filter-field > select[id$="bidang"]{
+    min-width:0; width:max-content; max-width:260px}
+  .toolbar #filter-search,
+  .toolbar #filter-pl-search,
+  .toolbar #filter-tender-search{min-width:210px}
+  .toolbar .toolbar-search{flex:1 1 210px}
+}
+@media (min-width:1201px) and (max-width:1300px){
+  .toolbar .filter-field > select[id$="bidang"]{
+    min-width:0; width:max-content; max-width:220px}
+  .toolbar .filter-field select,
+  .toolbar .filter-field input{min-width:140px;max-width:140px}
+  .toolbar #filter-search,
+  .toolbar #filter-pl-search,
+  .toolbar #filter-tender-search{min-width:170px;max-width:none;width:100%}
+  .toolbar .toolbar-search{flex:1 1 170px}
+}
+@media (min-width:768px) and (max-width:1200px){
+  /* Aturan tablet di bagian sebelumnya sudah mengecilkan Status, Tahun & Cari,
+     tetapi TIDAK menyentuh Bidang — `width:max-content` miliknya lebih kuat.
+     Tanpa batas ini, bilah tetap pecah dua baris di iPad. */
+  .toolbar .filter-field > select[id$="bidang"]{
+    min-width:0; width:max-content; max-width:180px}
+}
+/* Pilihan terpanjang kini lebih lebar daripada kotaknya — dipotong dengan
+   elipsis, bukan dibiarkan terpenggal mentah di tengah huruf. */
+@media (min-width:768px){
+  .toolbar .filter-field > select[id$="bidang"]{
+    text-overflow:ellipsis; overflow:hidden; white-space:nowrap}
+}
