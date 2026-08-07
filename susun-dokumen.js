@@ -4556,7 +4556,14 @@ function torOpenDokList(id){
     ov=document.createElement('div'); ov.id='tor-dk-ov'; ov.className='tor-dk-ov';
     /* Dulu: mengklik latar langsung menutup pop-up. Sekarang DITOLAK — lihat
        torDokListTolak() dan catatan @keyframes tor-dk-getar di torViewCss. */
-    ov.addEventListener('mousedown', function(e){ if(e.target===ov) torDokListTolak(); });
+    ov.addEventListener('mousedown', function(e){
+      if(e.target!==ov) return;
+      /* Klik KEDUA di latar akan ditafsirkan Chrome sebagai "pilih kata" dan
+         memunculkan gelembung Google Terjemahan. Perilaku bawaannya ditahan
+         supaya seleksi itu tidak pernah terbentuk. */
+      if(e.detail>1) e.preventDefault();
+      torDokListTolak();
+    });
     document.body.appendChild(ov);
   }
   /* Nomor dokumen TIDAK lagi ditampilkan di bawah nama pekerjaan (ketentuan

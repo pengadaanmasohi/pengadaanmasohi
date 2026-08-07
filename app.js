@@ -996,6 +996,10 @@ function reloadAllDataForRole(){
 }
 function enterApp(role, view){
   currentRole=role;
+  /* Jaring pengaman: sesi baru selalu dimulai dari layar bersih. Kalau ada
+     pop-up yang lolos dari pembersihan saat sesi sebelumnya berakhir, ia
+     akan menutupi Dashboard dan membuat masuk terasa gagal. */
+  try{ tutupSemuaOverlaySesi(); }catch(e){}
   /* Cakupan bidang dipulihkan dari sessionStorage supaya tetap benar baik saat
      login biasa maupun saat halaman di-refresh (restoreSession juga lewat sini). */
   currentBidang = (role==='user' ? (ssGet(BIDANG_KEY)||BIDANG_ALL) : BIDANG_ALL);
@@ -1249,17 +1253,24 @@ function _sfxPointerFine(){
   try{ return window.matchMedia('(hover:hover) and (pointer:fine)').matches; }
   catch(e){ return true; }
 }
+/* DIMATIKAN atas permintaan pengguna (Agu 2026): bunyi saat kursor sekadar
+   LEWAT di atas menu terasa mengganggu — kursor melintasi banyak menu dalam
+   perjalanan ke tujuannya, sehingga terdengar berondongan nada yang tidak
+   pernah diminta. Bunyi KLIK (sfxClick) dan pilih menu (sfxNav) tetap ada:
+   itu menanggapi niat, bukan lintasan kursor.
+
+   Penangannya sengaja tidak dihapus, hanya dilucuti isinya, supaya bila
+   kelak diminta lagi cukup mengembalikan baris-baris di bawah ini.
 document.addEventListener('mouseover',function(ev){
   if(typeof sfxHover!=='function') return;
   if(!_sfxPointerFine()) return;
   const t=ev.target && ev.target.closest ? ev.target.closest(SFX_MENU_SEL) : null;
   if(!t) return;
   if(t.disabled) return;
-  // Hanya saat benar-benar MASUK ke tombolnya — bukan saat kursor berpindah
-  // antar elemen anak (ikon/teks) di dalam tombol yang sama.
   if(ev.relatedTarget && t.contains(ev.relatedTarget)) return;
   sfxHover();
 });
+*/
 
 /* Memicu ulang animasi zoom-out pada kartu login (dipakai saat login screen
    ditampilkan kembali, mis. setelah logout — CSS animation tidak otomatis
@@ -1273,8 +1284,53 @@ function replayLoginZoom(){
   void card.offsetWidth;
   card.classList.add('go');
 }
+/* ==================================================================
+   MEMBERSIHKAN SELURUH POP-UP SAAT SESI BERAKHIR
+   ------------------------------------------------------------------
+   BUG yang diperbaiki (Agu 2026): bila sesi berakhir otomatis sementara
+   sebuah pop-up sedang terbuka — mis. daftar dokumen (#tor-dk-ov) atau
+   pratinjau dokumen — pop-up itu TETAP menempel di layar. Ia berada pada
+   lapisan yang jauh di atas layar login, jadi yang terlihat pengguna
+   adalah kotak dokumen mengambang di atas halaman masuk; sesudah masuk
+   kembali, Dashboard memang sudah dimuat di belakangnya tetapi tertutup
+   pop-up tadi sehingga terasa "tidak masuk ke dashboard".
+
+   Karena itu setiap pop-up dilepas paksa saat sesi ditutup. Daftarnya
+   ditulis sebagai pemilih (selector) agar modul mana pun yang menambah
+   pop-up baru cukup mengikuti pola penamaan yang sudah ada:
+     .overlay          - pop-up bawaan di index.html
+     .spk-ov / .ac-ov  - pop-up modul SPK/Kontrak & pilih-otomatis
+     .tor-dk-ov        - daftar dokumen pengadaan
+     dan pola id "*-ov" / "*-overlay" sebagai jaring pengaman.
+   ================================================================== */
+const SESI_OVERLAY_SEL = '.overlay, .spk-ov, .ac-ov, .tor-dk-ov, .materi-kat-ov, ' +
+  '.pnw-profil-ov, #pn-preview-overlay, [id$="-ov"], [id$="-overlay"]';
+function tutupSemuaOverlaySesi(){
+  /* Pratinjau ditutup lewat penutup resminya lebih dulu: selain melepas
+     kelas .show ia juga membuang kerangka cetak sementara (#*-preview-print)
+     dan mengosongkan keadaan pratinjau. Melepas kelasnya saja akan
+     meninggalkan sampah itu di dalam halaman. */
+  try{ if(typeof closePnPreview==='function') closePnPreview(); }catch(e){}
+  try{ if(typeof closeConfirm==='function') closeConfirm(); }catch(e){}
+  try{
+    document.querySelectorAll(SESI_OVERLAY_SEL).forEach(function(ov){
+      ov.classList.remove('show');
+      /* Sebagian pop-up lama dibuka dengan style sebaris, bukan kelas. */
+      if(ov.style && ov.style.display && ov.style.display!=='none') ov.style.display='';
+      var mdl=ov.querySelector('.modal, .tor-dk-mdl, .pn-preview-modal');
+      if(mdl) mdl.classList.remove('menolak','is-max');
+    });
+  }catch(e){}
+  /* Kelas penanda pada <body> yang dipasang saat pratinjau/cetak dibuka —
+     bila tertinggal, gaya cetak ikut membekas di layar login. */
+  try{
+    document.body.classList.remove('fkl-preview-body','doc-pdf-mode','no-scroll');
+    document.body.style.overflow='';
+  }catch(e){}
+}
 function performLogout(){
   stopIdleTimer();   // hentikan pemantauan idle
+  tutupSemuaOverlaySesi();   // jangan tinggalkan pop-up mengambang di layar login
   const anim=document.getElementById('logout-anim');
   const finish=()=>{
     ssDel(ROLE_KEY); ssDel(USER_KEY); ssDel(VIEW_KEY); ssDel(DRAFT_KEY); ssDel(LOGIN_TIME_KEY); ssDel(LAST_ACTIVE_KEY); ssDel(TOKEN_KEY); ssDel(BIDANG_KEY);
@@ -4789,6 +4845,17 @@ let _sfxCtx=null;
      pilih menu       -> sfxNav()          dua nada naik, terasa "berpindah halaman"
      roda pengaturan  -> sfxGear()         bunyi putaran
      pesan (toast)    -> sfxPlay(jenis)    nada berbeda untuk ok / warn / err
+
+   Yang sengaja DIBISUKAN (permintaan pengguna, Agu 2026):
+     kursor melintas menu -> sfxHover()   fungsinya masih ada, tetapi penyimak
+                                          'mouseover' di bagian 1250-an sudah
+                                          dijadikan komentar
+     klik di luar pop-up  -> bunyiTolak() masih ada, tetapi tidak lagi dipanggil
+                                          dari tolakTutupModal(); getaran modal
+                                          dan sorot tombol tutup tetap jalan
+   Keduanya dibiarkan berupa fungsi utuh supaya menghidupkannya kembali cukup
+   melepas tanda komentar, bukan menulis ulang.
+
    Semuanya dipicu satu penyimak klik bersama di bagian 1160-an; tombol Masuk &
    Keluar sengaja dikecualikan di sana supaya nada kliknya tidak bertabrakan
    dengan arpeggio sesi.
@@ -4847,7 +4914,12 @@ function tolakTutupModal(ov){
   if(!ov) return;
   const mdl=ov.querySelector('.modal, .tor-dk-mdl, .pn-preview-modal');
   if(!mdl) return;
-  bunyiTolak();
+  /* Bunyi penolakan DIMATIKAN atas permintaan pengguna (Agu 2026).
+     Isyarat visualnya — getaran modal + sorot tombol tutup — sudah cukup
+     jelas, dan nada turun yang berulang terasa menghakimi saat klik meleset
+     terjadi beberapa kali berturut-turut.  Cukup lepas komentar baris di
+     bawah bila kelak diinginkan kembali.
+  bunyiTolak(); */
   mdl.classList.remove('menolak');
   void mdl.offsetWidth;
   mdl.classList.add('menolak');
@@ -4864,6 +4936,15 @@ function pasangTolakTutup(id){
   const ov=document.getElementById(id);
   if(!ov || ov.__tolakPasang) return;
   ov.__tolakPasang=true;
+  /* Klik ganda di latar akan diartikan Chrome sebagai "pilih kata"; begitu ada
+     teks terpilih, gelembung Google Terjemahan menyembul di atas halaman.
+     Menahan perilaku bawaan mousedown pada LATAR (bukan pada isi modal)
+     mencegah seleksi itu terbentuk sejak awal — pasangannya ada di aturan
+     user-select pada blok gaya #pn-preview-ikon di index.html. */
+  ov.addEventListener('mousedown', function(e){
+    if(e.target!==ov) return;
+    if(e.detail>1) e.preventDefault();
+  });
   ov.addEventListener('click', function(e){
     if(e.target!==ov) return;
     if(!ov.classList.contains('show')) return;
