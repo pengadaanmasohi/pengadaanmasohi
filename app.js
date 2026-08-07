@@ -176,28 +176,53 @@ const PL_SCHEMA_BASE = { fields: JSON.parse(JSON.stringify(FIELDS_PL)), groups: 
 
 /* ============================================================
    KONFIGURASI SUPABASE  ← ISI DUA NILAI DI BAWAH INI
-   Ambil dari Supabase: Settings → API
+   Ambil dari Supabase: Project Settings → API Keys
+
+   SUPABASE_KEY WAJIB DIISI SEBELUM BERKAS INI DIUNGGAH.
+   -----------------------------------------------------------
+   Isikan PUBLISHABLE KEY generasi baru — diawali `sb_publishable_`,
+   pendek, dan memang dirancang untuk terbuka di peramban (persis seperti
+   anon key yang dulu ada di sini). Ia TIDAK memberi hak apa pun sendiri:
+   seluruh penjagaan ada di policy RLS, bukan pada kerahasiaan kunci ini.
+
+   JANGAN diisi Secret key (`sb_secret_`) atau service_role (`eyJ...`).
+   Keduanya memberi akses penuh dan akan bocor ke setiap pengunjung.
+
+   Anon key lama SENGAJA sudah dihapus dari berkas ini: begitu tombol
+   "Disable JWT-based API keys" ditekan di Project Settings → API Keys,
+   kunci itu mati dan aplikasi ikut mati bersamanya bila masih terpasang.
    ============================================================ */
 const SUPABASE_URL = 'https://jpqfzbubrnznyqaniskm.supabase.co';   // contoh: https://abcd1234.supabase.co
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpwcWZ6YnVicm56bnlxYW5pc2ttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4MDUzNjEsImV4cCI6MjA5ODM4MTM2MX0.VfRB3H7zjhw0cHcQgFTqQYir1wtGaRmGIk709FaFBXs';    // anon public key (panjang, diawali eyJ...)
+const SUPABASE_KEY = 'sb_publishable_V8v3YL7aRuRkvkz9WcRsKQ_LGhdv-40';    // sb_publishable_... (Project Settings → API Keys)
 const TABLE = 'pekerjaan';
 
 // Aktif otomatis bila kedua nilai sudah diisi (bukan placeholder)
-const USE_SUPABASE = SUPABASE_URL.startsWith('http') && SUPABASE_KEY.length > 20;
+// Penanda ISI_… sengaja ikut diperiksa: panjangnya melebihi 20 karakter, jadi
+// tanpa pemeriksaan ini aplikasi akan mengira dirinya sudah terkonfigurasi dan
+// gagal dengan 401 di setiap permintaan alih-alih jatuh ke mode sandbox.
+const USE_SUPABASE = SUPABASE_URL.startsWith('http')
+                  && SUPABASE_KEY.length > 20
+                  && SUPABASE_KEY.indexOf('ISI_') !== 0;
+if (SUPABASE_KEY.indexOf('ISI_') === 0) {
+  console.error('[KONFIGURASI] SUPABASE_KEY masih berisi penanda. Isi publishable key (sb_publishable_...) di app.js sebelum diunggah.');
+}
 let db = null;
 if (USE_SUPABASE && window.supabase) {
   let cleanUrl = SUPABASE_URL.trim();
   try { cleanUrl = new URL(cleanUrl).origin; } catch(e){ cleanUrl = cleanUrl.replace(/\/+$/,''); }
   db = window.supabase.createClient(cleanUrl, SUPABASE_KEY.trim(), {
     auth: {
-      // Login aplikasi memakai RPC verify_login (bukan Supabase Auth), jadi
-      // client TIDAK boleh menyimpan/menyinkronkan sesi auth apa pun.
-      // Ini memastikan tiap device benar-benar independen: login/logout di
-      // satu perangkat tidak pernah mengeluarkan perangkat lain.
-      persistSession: false,
-      autoRefreshToken: false,
+      // Sejak berkas pindah ke Supabase Storage, aplikasi memakai Supabase Auth
+      // sungguhan — policy Storage membaca JWT-nya, jadi sesi WAJIB terbentuk.
+      //
+      // storage: sessionStorage (BUKAN localStorage bawaan) mempertahankan
+      // perilaku lama: sesi hilang begitu tab/peramban ditutup, dan tiap
+      // perangkat tetap independen karena refresh token-nya masing-masing.
+      persistSession: true,
+      autoRefreshToken: true,
       detectSessionInUrl: false,
-      multiTab: false
+      storageKey: 'mon_sb_auth',
+      storage: (typeof sessionStorage !== 'undefined' ? sessionStorage : undefined)
     }
   });
 }
@@ -635,27 +660,57 @@ const VIEW_KEY = 'mon_view';   // halaman terakhir (untuk dipulihkan saat refres
 const DRAFT_KEY = 'mon_draft'; // draft form input/edit (dipulihkan saat refresh)
 const LOGIN_TIME_KEY = 'mon_login_time';   // timestamp login — dasar batas umur sesi absolut
 const LAST_ACTIVE_KEY = 'mon_last_active'; // timestamp aktivitas terakhir — dasar auto-logout idle
-const TOKEN_KEY = 'mon_file_token';        // token akses dokumen ke Worker (R2 File Gateway)
-const BIDANG_KEY = 'mon_bidang';           // cakupan bidang akun user ('*' = semua bidang)
-/* URL Worker "PLN File Gateway" — penjaga akses dokumen kontrak privat di Cloudflare R2. */
-const R2_GATEWAY_URL = 'https://pln-file-gateway.pln-masohi.workers.dev';
-/* Basis URL PUBLIK bucket R2 `foto-referensi`.
-   Foto Referensi Harga Online dibaca langsung dari sini — tidak lewat Worker —
-   karena sifatnya publik. Unggah & hapusnya TETAP lewat Worker (bertoken).
-   Tanpa garis miring di ujung.
+const TOKEN_KEY = 'mon_sb_auth';            // kunci sesi Supabase Auth di sessionStorage
+/* ============================================================================
+   PENYIMPANAN BERKAS — SUPABASE STORAGE
+   ----------------------------------------------------------------------------
+   Cloudflare R2 dan Worker `pln-file-gateway` sudah DIBONGKAR SELURUHNYA.
+   Yang menggantikan penjagaannya adalah policy RLS pada storage.objects
+   (lihat 03_storage_auth.sql), yang membaca peran dari JWT Supabase Auth.
 
-   Saat ini memakai "Public Development URL" bawaan R2 (pub-*.r2.dev), karena
-   domain pengadaan-masohi.com belum berada di akun Cloudflare ini sehingga
-   Custom Domain tidak dapat dipasang.
+   ATURAN KUNCI OBJEK TIDAK BERUBAH SEDIKIT PUN:
+     path di database = kunci objek di Storage, persis sama, tanpa
+     penerjemahan. Segmen pertama path menentukan bucket — sama seperti
+     ROUTES di Worker dulu. Karena itu tidak ada satu pun baris database
+     yang perlu diubah oleh migrasi ini.
+   ============================================================================ */
+const SB_STORAGE_URL = String(SUPABASE_URL).replace(/\/+$/,'') + '/storage/v1';
+/* Supabase Auth mewajibkan email, sedangkan aplikasi memakai username. Akhiran
+   ini dirakit di sisi klien dan TIDAK PERNAH tampil di layar — pengguna tetap
+   mengetik username saja. Subdomain `akun.` sengaja dipilih supaya jelas bahwa
+   alamat ini tidak pernah menerima surat. Nilainya WAJIB sama persis dengan
+   yang dipakai 04_akun_auth.sql. */
+const AUTH_EMAIL_SUFFIX = '@akun.pengadaan-masohi.com';
+/* Segmen pertama path -> nama bucket. Kembar persis dengan ROUTES lama. */
+const FILE_ROUTES = {
+  'kontrak-rinci':      'file-kontrak',
+  'pengadaan-langsung': 'file-kontrak',
+  'tender':             'file-kontrak',
+  'dokumen-pengadaan':  'dokumen-pengadaan',
+  'materi-peraturan':   'materi-peraturan',
+  'foto-referensi':     'foto-referensi'
+};
+function bucketOf(path){
+  const mod = String(path||'').split('/')[0].toLowerCase();
+  return FILE_ROUTES[mod] || '';
+}
+/* Kunci objek untuk URL. Tiap segmen di-encode terpisah supaya garis miring
+   pemisah folder tidak ikut berubah jadi %2F — Storage memperlakukannya
+   sebagai bagian nama berkas kalau itu terjadi. */
+function encStoragePath(path){
+  return String(path||'').split('/').map(encodeURIComponent).join('/');
+}
+/* Basis URL BACA foto referensi (bucket publik). Tanpa garis miring di ujung. */
+const RHO_PUBLIC_BASE = SB_STORAGE_URL + '/object/public/foto-referensi';
 
-   ⚠ r2.dev punya batas laju (rate limit) dan TIDAK dianjurkan Cloudflare untuk
-     lalu lintas produksi. Begitu domainnya tersedia di Cloudflare:
-       1. R2 -> bucket foto-referensi -> Settings -> Custom Domains -> Add
-       2. ganti nilai di bawah menjadi 'https://foto.pengadaan-masohi.com'
-       3. jalankan ulang UPDATE penyelarasan URL pada referensi_harga_online
-          (lihat 02_database.sql Bagian 18.4)
-     Kunci objeknya tidak berubah, jadi pindah basis URL cukup 3 langkah itu. */
-const RHO_PUBLIC_BASE = 'https://pub-7d5c3b22968d409d866e7ca7469e877f.r2.dev';
+/* Sesi Supabase yang sedang aktif. Disimpan di variabel supaya token-nya bisa
+   dibaca SECARA SINKRON oleh XMLHttpRequest unggahan — db.auth.getSession()
+   bersifat async dan tidak bisa dipakai di dalam setRequestHeader(). */
+let sbSession = null;
+if (USE_SUPABASE && db) {
+  db.auth.getSession().then(r => { sbSession = (r && r.data && r.data.session) || null; }).catch(()=>{});
+  db.auth.onAuthStateChange((_ev, sess) => { sbSession = sess || null; });
+}
 /* Penyimpanan sesi HANYA di sessionStorage.
    sessionStorage otomatis terhapus saat tab/browser ditutup, sehingga
    pengguna otomatis logout ketika browser ditutup. Sesi tetap dipulihkan
@@ -874,19 +929,38 @@ async function doLogin(){
   const uname=u.toLowerCase();
   showLoginError('');
   if(!(USE_SUPABASE && db)){ showLoginError('Koneksi Supabase belum siap. Coba lagi sesaat.'); return; }
-  // Verifikasi ke Supabase: function verify_login mengembalikan peran atau NULL.
-  // Kata sandi TIDAK pernah diunduh ke browser & tidak ada kredensial di file HTML.
+  /* Login lewat SUPABASE AUTH sungguhan (menggantikan RPC verify_login).
+     Sesi yang terbentuk inilah yang dibaca policy RLS storage.objects — tanpa
+     dia, seluruh berkas akan ditolak 403 walau layar login sudah terlewati.
+
+     Username tetap yang diketik pengguna; akhiran email semu ditambahkan di
+     sini dan tidak pernah tampil di layar (lihat 04_akun_auth.sql). */
   let role=null;
   try{
-    const {data,error}=await db.rpc('verify_login',{ p_username:uname, p_password:p });
-    if(error) throw error;
-    role = data || null;
+    const {data,error}=await db.auth.signInWithPassword({
+      email: uname + AUTH_EMAIL_SUFFIX,
+      password: p
+    });
+    if(error){
+      /* Kredensial salah vs server tidak terjangkau perlu dibedakan: yang
+         pertama kesalahan pengguna, yang kedua kesalahan jaringan. */
+      if(/invalid login|credential/i.test(String(error.message||''))){
+        showLoginError('Username atau kata sandi salah.'); return;
+      }
+      throw error;
+    }
+    sbSession = (data && data.session) || null;
+    /* Peran TIDAK diambil dari JWT melainkan dari tabel akun_peran, yang hanya
+       bisa diubah admin (lihat policy akun_peran_kelola_admin). */
+    const {data:pr,error:pe}=await db.rpc('peran_saya');
+    if(pe) throw pe;
+    role = pr || null;
   }catch(err){
     console.error(err);
     showLoginError('Gagal terhubung ke server. Periksa koneksi lalu coba lagi.');
     return;
   }
-  if(!role){ showLoginError('Username atau kata sandi salah.'); return; }
+  if(!role || role==='guest'){ showLoginError('Username atau kata sandi salah.'); return; }
   /* PENJAGA PASCA-PEMBERSIHAN: peran 'user' & 'demo' sudah tidak ada di aplikasi.
      Bila database masih menyimpan baris lama bertipe itu, login DITOLAK di sini
      supaya tidak ada sesi berperan hantu yang lolos ke dalam aplikasi. */
@@ -897,16 +971,19 @@ async function doLogin(){
   currentUsername = uname;
   ssSet(ROLE_KEY, role); ssSet(USER_KEY, uname);
   ssSet(LOGIN_TIME_KEY, String(Date.now())); ssSet(LAST_ACTIVE_KEY, String(Date.now()));
-  // Ambil token akses dokumen dari Worker (untuk baca/tulis file kontrak di R2).
-  // Login tetap dianggap berhasil walau langkah ini gagal; fitur file akan
-  // meminta login ulang bila token tidak tersedia.
-  try{ const tk=await fkFetchToken(uname, p); if(tk) ssSet(TOKEN_KEY, tk); }
-  catch(e){ console.warn('Token file gateway gagal diambil:', e); }
+  /* Tidak ada lagi langkah "ambil token dokumen": access_token dari sesi di
+     atas sudah menjadi token berkasnya, dan diperbarui sendiri oleh
+     autoRefreshToken. */
   playLoginAnim(role, ()=>enterApp(role));
 }
 /* Masuk sebagai Tamu (tanpa kata sandi) */
 function doLoginGuest(){
   showLoginError('');
+  /* Tamu TIDAK punya akun Supabase Auth — permintaannya datang sebagai `anon`,
+     sama seperti sebelum migrasi. Sesi apa pun yang masih menempel dibuang
+     lebih dulu supaya Tamu tidak diam-diam mewarisi hak akun sebelumnya. */
+  try{ if(db) db.auth.signOut().catch(()=>{}); }catch(e){}
+  sbSession = null;
   currentUsername = null;
   ssSet(ROLE_KEY, 'guest'); ssDel(USER_KEY);
   ssSet(LOGIN_TIME_KEY, String(Date.now())); ssSet(LAST_ACTIVE_KEY, String(Date.now()));
@@ -937,14 +1014,18 @@ async function submitChangePass(){
   const btn=document.getElementById('cp-submit');
   if(btn){ btn.disabled=true; btn.textContent='Menyimpan…'; }
   try{
-    const {data,error}=await db.rpc('change_password',{ p_username:currentUsername, p_old:oldP, p_new:newP });
+    /* Kata sandi lama diperiksa dengan mencoba masuk ulang. Supabase Auth
+       tidak menyediakan updateUser yang meminta sandi lama, jadi tanpa langkah
+       ini siapa pun yang menemukan layar terbuka bisa mengganti kata sandi. */
+    const {error:eCek}=await db.auth.signInWithPassword({
+      email: String(currentUsername).toLowerCase() + AUTH_EMAIL_SUFFIX,
+      password: oldP
+    });
+    if(eCek){ setErr('Kata sandi lama salah.'); return; }
+    const {error}=await db.auth.updateUser({ password:newP });
     if(error) throw error;
-    if(data===true){
-      closeChangePass();
-      toast('Kata sandi berhasil diperbarui','ok');
-    }else{
-      setErr('Kata sandi lama salah.');
-    }
+    closeChangePass();
+    toast('Kata sandi berhasil diperbarui','ok');
   }catch(e){
     console.error(e);
     setErr('Gagal menghubungi server. Coba lagi.');
@@ -1333,6 +1414,11 @@ function performLogout(){
   tutupSemuaOverlaySesi();   // jangan tinggalkan pop-up mengambang di layar login
   const anim=document.getElementById('logout-anim');
   const finish=()=>{
+    /* Sesi Supabase HARUS ikut diakhiri. Membuang penanda di sessionStorage
+       saja tidak cukup — refresh token-nya akan tetap hidup dan berkas masih
+       bisa diambil oleh siapa pun yang membuka DevTools di perangkat itu. */
+    try{ if(db) db.auth.signOut().catch(()=>{}); }catch(e){}
+    sbSession=null;
     ssDel(ROLE_KEY); ssDel(USER_KEY); ssDel(VIEW_KEY); ssDel(DRAFT_KEY); ssDel(LOGIN_TIME_KEY); ssDel(LAST_ACTIVE_KEY); ssDel(TOKEN_KEY); ssDel(BIDANG_KEY);
     currentRole=null; currentUsername=null;
     try{ resetAllFilters(); }catch(e){}
@@ -7424,39 +7510,46 @@ const FK_PATH = { kr:'kontrak-rinci', pl:'pengadaan-langsung', tender:'tender' }
    File kontrak privat kini disimpan di Cloudflare R2 dan diakses lewat Worker
    yang memverifikasi token. Metadata (tabel file_kontrak) TETAP di Supabase.
    ============================================================ */
-function fkAuthToken(){ return ssGet(TOKEN_KEY)||''; }
+/* Token akses berkas = access_token JWT milik sesi Supabase Auth.
+   Sengaja dipertahankan namanya supaya seluruh pemanggil lama tidak berubah. */
+function fkAuthToken(){ return (sbSession && sbSession.access_token) || ''; }
 
-/* Minta token akses file ke Worker (dipanggil saat login). Balikan: string token / null. */
-async function fkFetchToken(username, password){
-  const resp=await fetch(R2_GATEWAY_URL+'/api/login',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({username, password})
-  });
-  if(!resp.ok) return null;
-  const j=await resp.json().catch(()=>null);
-  return (j&&j.token)||null;
-}
+/* Unggah bytes ke Supabase Storage memakai XMLHttpRequest, BUKAN fetch dan
+   BUKAN db.storage.upload().
 
-/* Unggah bytes ke Worker R2 memakai XMLHttpRequest, BUKAN fetch.
-   fetch() tidak menyediakan event progres unggah sama sekali, sehingga bar
-   progres sebelumnya hanya angka tetap. XHR memberi loaded/total sungguhan
-   lewat xhr.upload.onprogress. onProgress(loaded,total) opsional. */
+   Alasannya sama seperti dulu, dan masih berlaku: keduanya tidak menyediakan
+   event progres unggah sama sekali, sehingga bar progres hanya akan jadi angka
+   tetap. XHR memberi loaded/total sungguhan lewat xhr.upload.onprogress.
+   onProgress(loaded,total) opsional.
+
+   Endpointnya endpoint Storage resmi — bukan jalan pintas: header Authorization
+   berisi JWT yang sama dengan yang dipakai db.storage, jadi policy RLS di
+   03_storage_auth.sql tetap berlaku penuh. */
 function r2XhrPut(path, file, onProgress){
   return new Promise(function(resolve, reject){
+    const bucket = bucketOf(path);
+    if(!bucket) return reject(new Error('Prefiks path tidak dikenal: '+String(path).split('/')[0]));
+    const tok = fkAuthToken();
+    if(!tok) return reject(new Error('Sesi berkas tidak tersedia — silakan login ulang.'));
     const xhr=new XMLHttpRequest();
-    xhr.open('POST', R2_GATEWAY_URL+'/api/file?path='+encodeURIComponent(path), true);
-    xhr.setRequestHeader('Authorization','Bearer '+fkAuthToken());
-    xhr.setRequestHeader('X-File-Content-Type', file.type||'application/octet-stream');
+    xhr.open('POST', SB_STORAGE_URL+'/object/'+bucket+'/'+encStoragePath(path), true);
+    xhr.setRequestHeader('Authorization','Bearer '+tok);
+    xhr.setRequestHeader('apikey', SUPABASE_KEY);
+    /* Unggah ulang berkas dengan nama sama harus MENIMPA, bukan ditolak 409 —
+       perilaku ini menyamai bucket.put() milik R2 dulu. */
+    xhr.setRequestHeader('x-upsert','true');
+    xhr.setRequestHeader('Content-Type', (file && file.type) || 'application/octet-stream');
     xhr.timeout=0;
     if(xhr.upload && typeof onProgress==='function'){
       xhr.upload.onprogress=function(e){ if(e.lengthComputable) onProgress(e.loaded, e.total); };
     }
     xhr.onload=function(){
       if(xhr.status===401) return reject(new Error('Sesi berakhir — silakan login ulang.'));
-      /* 413 = melampaui batas body permintaan Cloudflare Worker
-         (Free/Pro 100 MB, Business 200 MB, Enterprise 500 MB). */
-      if(xhr.status===413) return reject(new Error('Berkas terlalu besar untuk gateway Cloudflare. Silakan kompres atau pecah berkasnya.'));
+      /* 403 = lolos autentikasi tetapi ditolak policy RLS storage.objects.
+         Dulu ini 403 dari canWrite() di Worker; pesannya disamakan. */
+      if(xhr.status===403) return reject(new Error('Akun ini tidak berhak mengunggah ke bagian tersebut.'));
+      /* 413 = melampaui file_size_limit bucket (50 MB, lihat 03_storage_auth.sql). */
+      if(xhr.status===413) return reject(new Error('Berkas melebihi batas 50 MB. Silakan kompres atau pecah berkasnya.'));
       if(xhr.status<200 || xhr.status>=300) return reject(new Error('Unggah gagal ('+xhr.status+')'));
       if(typeof onProgress==='function') onProgress(file.size, file.size);
       resolve();
@@ -7470,25 +7563,29 @@ async function fkStoragePut(path, file, onProgress){
   await r2XhrPut(path, file, onProgress);
 }
 
-/* Ambil bytes file dari R2 (via Worker). Balikan: Blob / null. */
+/* Ambil bytes berkas dari Supabase Storage. Balikan: Blob / null bila tidak ada.
+   Bucket ditentukan dari segmen pertama path — pemetaan yang sama dengan
+   ROUTES milik Worker dulu, jadi nilai `path` di database tidak berubah. */
 async function fkStorageGet(path){
-  const resp=await fetch(R2_GATEWAY_URL+'/api/file?path='+encodeURIComponent(path),{
-    method:'GET',
-    headers:{'Authorization':'Bearer '+fkAuthToken()}
-  });
-  if(resp.status===401) throw new Error('Sesi berakhir — silakan login ulang.');
-  if(resp.status===404) return null;
-  if(!resp.ok) throw new Error('Unduh gagal ('+resp.status+')');
-  return await resp.blob();
+  const bucket=bucketOf(path);
+  if(!bucket) throw new Error('Prefiks path tidak dikenal: '+String(path).split('/')[0]);
+  const {data,error}=await db.storage.from(bucket).download(path);
+  if(error){
+    const st=Number(error.statusCode||error.status||0);
+    /* 400 & 404 sama-sama dipakai Storage untuk "objek tidak ada". */
+    if(st===404 || st===400 || /not.?found/i.test(String(error.message||''))) return null;
+    if(st===401 || st===403) throw new Error('Sesi berakhir — silakan login ulang.');
+    throw new Error('Unduh gagal ('+(st||error.message)+')');
+  }
+  return data||null;
 }
 
-/* Hapus file di R2 (via Worker). Diam-diam bila gagal. */
+/* Hapus berkas di Supabase Storage. Diam-diam bila gagal. */
 async function fkStorageRemove(path){
   try{
-    await fetch(R2_GATEWAY_URL+'/api/file?path='+encodeURIComponent(path),{
-      method:'DELETE',
-      headers:{'Authorization':'Bearer '+fkAuthToken()}
-    });
+    const bucket=bucketOf(path);
+    if(!bucket) return;
+    await db.storage.from(bucket).remove([path]);
   }catch(e){}
 }
 
@@ -9005,8 +9102,21 @@ function pnCleanupPreview(){ if(pnPreviewCtx && pnPreviewCtx.url){ try{ URL.revo
        aplikasi berperilaku persis seperti sebelumnya.
      - Setel DOC_PDF_ENABLED=false untuk mematikan fitur ini sepenuhnya.
    ============================================================================ */
-const DOC_PDF_ENABLED = true;
-const DOC_PDF_URL     = R2_GATEWAY_URL + '/api/pdf';
+/* DIMATIKAN saat Worker dibongkar (7 Agu 2026).
+   /api/pdf memakai Cloudflare Browser Rendering — merender HTML jadi PDF
+   dengan Chrome sungguhan. Supabase tidak punya padanannya, dan tidak ada
+   layanan lain yang dipasang sebagai gantinya.
+
+   Tidak ada yang rusak karena ini: seluruh jalur peningkatan-ke-PDF memang
+   dirancang aman-mundur sejak awal, jadi pratinjau kembali memakai HTML di
+   dalam iframe seperti sebelum fitur itu ada. Yang hilang hanya bilah menu
+   PDF bawaan peramban; tombol "Cetak / PDF" TIDAK terpengaruh sama sekali.
+
+   Untuk menghidupkannya lagi, sediakan endpoint POST yang menerima HTML dan
+   mengembalikan application/pdf, isikan URL-nya di bawah, lalu setel
+   DOC_PDF_ENABLED = true. */
+const DOC_PDF_ENABLED = false;
+const DOC_PDF_URL     = '';
 const DOC_PDF_TIMEOUT = 45000;          // render dokumen tebal (Rekap HPS) bisa lama
 let docPdfSupported = null;             // null=belum dicoba, true=tersedia, false=tidak ada
 let docPdfSeq = 0;                      // penjaga: pratinjau terbaru saja yang boleh menimpa
@@ -9532,25 +9642,13 @@ const DPENG_IC_DOC  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor
 /* ==================================================================
    Penyimpanan berkas di R2 (lewat Worker, prefiks `dokumen-pengadaan/`)
    ================================================================== */
-async function dpengStoragePut(path, file, onProgress){
-  await r2XhrPut(path, file, onProgress);
-}
-async function dpengStorageGet(path){
-  const resp=await fetch(R2_GATEWAY_URL+'/api/file?path='+encodeURIComponent(path),{
-    method:'GET', headers:{'Authorization':'Bearer '+fkAuthToken()}
-  });
-  if(resp.status===401) throw new Error('Sesi berakhir — silakan login ulang.');
-  if(resp.status===404) return null;
-  if(!resp.ok) throw new Error('Unduh gagal ('+resp.status+')');
-  return await resp.blob();
-}
-async function dpengStorageRemove(path){
-  try{
-    await fetch(R2_GATEWAY_URL+'/api/file?path='+encodeURIComponent(path),{
-      method:'DELETE', headers:{'Authorization':'Bearer '+fkAuthToken()}
-    });
-  }catch(e){}
-}
+/* Dulu ketiganya menyalin isi fkStorage* hanya karena bucket R2-nya berbeda.
+   Sekarang bucket ditentukan bucketOf(path), jadi tidak ada lagi yang perlu
+   dibedakan — ketiganya cukup meneruskan. Dipertahankan sebagai nama supaya
+   seluruh pemanggil di modul Dokumen Pengadaan & Materi tidak perlu diubah. */
+async function dpengStoragePut(path, file, onProgress){ return await r2XhrPut(path, file, onProgress); }
+async function dpengStorageGet(path){ return await fkStorageGet(path); }
+async function dpengStorageRemove(path){ return await fkStorageRemove(path); }
 
 /* ---- Store Supabase (tabel dokumen_pengadaan) ---- */
 const StoreDpeng = {
@@ -14220,50 +14318,92 @@ async function refreshDataRho(){
    mempertahankan base64 sebagai cadangan.
    Unggah & hapus lewat Worker (bertoken); BACA langsung dari custom domain
    publik RHO_PUBLIC_BASE. */
-const RHO_PREFIX = 'foto-referensi/';   // prefiks path = penentu bucket di Worker
+/* Prefiks path (tetap disimpan di database, penentu bucket lewat bucketOf). */
+const RHO_PREFIX = 'foto-referensi/';
 /* Nama bucket R2-nya, dipakai pada pesan diagnosis. Dulu dirujuk di tiga
    tempat (rhoMigrasiFotoStorage) tanpa pernah dideklarasikan — pemanggilnya
    melempar ReferenceError sebelum dialog konfirmasi sempat tampil. */
 const RHO_BUCKET = 'foto-referensi';
 
-/* URL BACA foto — lewat Worker, BUKAN lewat pub-*.r2.dev.
-   Public Development URL R2 punya rate limit dan tidak dianjurkan Cloudflare
-   untuk produksi: begitu ambangnya tersentuh, gambar dijawab 429 dan foto
-   "hilang" dari layar lalu muncul lagi beberapa saat kemudian. Selain itu satu
-   Public Development URL terikat pada SATU bucket, jadi nilai yang tersimpan
-   bisa menunjuk bucket lama tanpa jejak apa pun.
-   Endpoint /api/foto pada Worker hanya-baca, tanpa token (atribut src <img>
-   tidak bisa mengirim header Authorization), dan dibatasi keras pada prefiks
-   foto-referensi saja — lihat PUBLIC_MODULES di worker.js.
+/* URL BACA foto — langsung dari bucket publik Supabase Storage.
+   Tidak ada rate limit ala pub-*.r2.dev, dan tidak ada Worker di tengah.
+   Bucket-nya publik karena atribut src <img> (dan perender PDF) tidak bisa
+   mengirim header Authorization; isinya foto referensi harga, bukan dokumen
+   rahasia. Bucket lain tetap privat dan dijaga policy RLS.
    `v` = penanda versi; berubah tiap foto ditimpa sehingga cache lama terlewati. */
+/* KUNCI OBJEK = `fotoPath` APA ADANYA, TERMASUK SEGMEN 'foto-referensi/'.
+
+   Ini bagian yang paling mudah salah, jadi ditulis panjang sekali.
+
+   Unggahan melewati r2XhrPut(path), yang menentukan bucket dari SEGMEN
+   PERTAMA path lalu memakai SELURUH path sebagai kunci objek. Jadi
+   fotoPath 'foto-referensi/rho_x/r0_i0.jpg' menghasilkan:
+
+       bucket : foto-referensi
+       kunci  : foto-referensi/rho_x/r0_i0.jpg   ← segmennya ikut, tidak dibuang
+
+   Pola berganda itu diwarisi dari R2 (Worker memetakan prefiks ke bucket
+   tanpa memotongnya) dan DIPERTAHANKAN PERSIS oleh migrasi — itu sebabnya
+   storage_rincian() melaporkan 159 berkas di bawah prefiks 'foto-referensi',
+   bukan tersebar sebagai ratusan prefiks 'rho_...'.
+   StoreRhoFoto.removeFolder() pun mendaftar di 'foto-referensi/<key>'.
+
+   Karena itu URL baca TIDAK BOLEH memotong prefiks tersebut. Versi
+   sebelumnya memotongnya, sehingga URL menunjuk objek yang tidak pernah ada
+   dan SETIAP foto berakhir 404 — tanpa satu pun pesan galat di konsol,
+   hanya sel foto yang kosong. */
 function rhoFotoUrl(path, v){
   const p = String(path||'').replace(/^\/+/,'');
   if(!p) return '';
-  return R2_GATEWAY_URL + '/api/foto?path=' + encodeURIComponent(p) + (v ? ('&v=' + v) : '');
+  return RHO_PUBLIC_BASE + '/' + encStoragePath(p) + (v ? ('?v=' + v) : '');
 }
-/* Sumber gambar yang dipakai <img>. Menyembuhkan sendiri record lama yang
-   URL-nya masih menunjuk pub-*.r2.dev: selama fotoPath ada, URL dirakit ulang
-   ke gateway — jadi TIDAK perlu migrasi basis data untuk pindah jalur baca. */
+/* Varian TANPA segmen 'foto-referensi/' di depan kunci — dipakai HANYA
+   sebagai cadangan bila ternyata ada objek lama yang tersimpan tanpa prefiks
+   ganda. Dengan begitu panel tetap menampilkan foto apa pun bentuk kuncinya,
+   dan tidak ada yang perlu ditebak sebelum berkas ini dipasang. */
+function rhoFotoUrlTanpaPrefiks(path, v){
+  const p = String(path||'').replace(/^\/+/,'').replace(/^foto-referensi\//,'');
+  if(!p) return '';
+  return RHO_PUBLIC_BASE + '/' + encStoragePath(p) + (v ? ('?v=' + v) : '');
+}
+/* Sumber gambar yang dipakai <img>.
+
+   Selama `fotoPath` ada, URL SELALU dirakit ulang dari path — nilai `foto`
+   yang tersimpan di database tidak dipercaya. Itu yang membuat record lama
+   berurl pub-*.r2.dev (dan record apa pun yang sempat tersimpan dengan URL
+   keliru) sembuh sendiri tanpa migrasi basis data. */
 function rhoFotoSrc(c){
   if(!c) return '';
   const f = String(c.foto||'');
   if(!f) return '';
   if(rhoIsDataUrl(f)) return f;                       // base64 cadangan: pakai apa adanya
-  if(f.indexOf(R2_GATEWAY_URL) === 0) return f;       // sudah lewat gateway
   const p = String(c.fotoPath||'');
   if(!p) return f;                                    // tak ada path: tak bisa dirakit ulang
   const v = (f.match(/[?&]v=(\d+)/)||[])[1] || '';    // pertahankan penanda versi lama
   return rhoFotoUrl(p, v);
 }
-/* URL cadangan (basis publik lama). Dipakai HANYA bila gateway gagal —
-   mis. Worker versi lama yang belum punya /api/foto. */
+/* URL cadangan, dipakai HANYA bila URL utama gagal dimuat. Urutannya:
+     1. varian kunci tanpa prefiks ganda (objek lama yang tersimpan begitu),
+     2. nilai `foto` apa adanya (record yang belum pernah disegarkan). */
 function rhoFotoSrcAlt(c){
   if(!c) return '';
   const f = String(c.foto||'');
   if(rhoIsDataUrl(f)) return '';
   const p = String(c.fotoPath||'');
-  if(p && RHO_PUBLIC_BASE) return String(RHO_PUBLIC_BASE).replace(/\/+$/,'')+'/'+p;
-  return (f && f.indexOf(R2_GATEWAY_URL)!==0) ? f : '';
+  if(p){
+    const v = (f.match(/[?&]v=(\d+)/)||[])[1] || '';
+    const alt = rhoFotoUrlTanpaPrefiks(p, v);
+    if(alt && alt !== rhoFotoUrl(p, v)) return alt;
+  }
+  return (f && f.indexOf(RHO_PUBLIC_BASE)!==0) ? f : '';
+}
+/* Cadangan TERAKHIR — hanya untuk pratinjau di halaman (bukan iframe PDF):
+   nilai `foto` mentah, dicoba sesudah rhoFotoSrcAlt() ikut gagal. */
+function rhoFotoSrcAlt2(c){
+  if(!c) return '';
+  const f = String(c.foto||'');
+  if(rhoIsDataUrl(f)) return '';
+  return (f && f.indexOf(RHO_PUBLIC_BASE)!==0) ? f : '';
 }
 function rhoUid(){ try{ if(window.crypto&&crypto.randomUUID) return 'rho_'+crypto.randomUUID(); }catch(e){} return 'rho_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,10); }
 function rhoIsDataUrl(s){ return typeof s==='string' && s.indexOf('data:image')===0; }
@@ -14286,15 +14426,24 @@ const StoreRhoFoto = {
     return { url: rhoFotoUrl(path, Date.now()), path };
   },
   /* Hapus seluruh folder foto milik satu record.
-     R2 tidak punya padanan list()+remove() milik Supabase Storage, jadi
-     dipakai endpoint /api/prefix di Worker (admin saja). */
+     Endpoint /api/prefix di Worker dulu ada justru karena R2 tidak punya
+     padanan list()+remove(); Supabase Storage punya, jadi kembali ke sana.
+     list() dibatasi 100 entri per panggilan, karena itu diulang sampai habis. */
   async removeFolder(key){
     if(!key) return;
-    const prefix=RHO_PREFIX+String(key).replace(/^\/+|\/+$/g,'')+'/';
+    const folder=RHO_PREFIX+String(key).replace(/^\/+|\/+$/g,'');
     try{
-      await fetch(R2_GATEWAY_URL+'/api/prefix?prefix='+encodeURIComponent(prefix),{
-        method:'DELETE', headers:{'Authorization':'Bearer '+fkAuthToken()}
-      });
+      for(let putaran=0; putaran<200; putaran++){
+        const {data,error}=await db.storage.from(RHO_BUCKET)
+          .list(folder, {limit:100, sortBy:{column:'name',order:'asc'}});
+        if(error) throw error;
+        const isi=(data||[]).filter(x=>x && x.id);   // entri tanpa id = folder semu
+        if(!isi.length) break;
+        const {error:e2}=await db.storage.from(RHO_BUCKET)
+          .remove(isi.map(x=>folder+'/'+x.name));
+        if(e2) throw e2;
+        if(isi.length<100) break;
+      }
     }catch(e){ console.error('Bersihkan folder foto gagal',e); }
   }
 };
@@ -14490,9 +14639,10 @@ function rhoFotoInnerEmpty(){
    Dulu tidak ada penanganan apa pun: sel jadi kosong tanpa jejak, dan karena
    base64 cadangan sudah dihapus saat migrasi, tidak ada cara mengetahui
    penyebabnya. Sekarang bertahap — (1) coba ulang sekali (kalau sekadar
-   jaringan tersendat), (2) coba basis publik lama (kalau Worker yang terpasang
-   belum punya /api/foto), (3) baru menyerah, sambil menyebut path objeknya
-   supaya bisa langsung dicocokkan dengan isi bucket. */
+   jaringan tersendat), (2) coba kunci tanpa prefiks ganda, (3) coba nilai
+   `foto` mentah (record lama yang belum pernah disegarkan), (4) baru
+   menyerah, sambil menyebut path objeknya supaya bisa langsung dicocokkan
+   dengan isi bucket. */
 function rhoFotoGagal(img,i,r){
   const st=(typeof rhoState!=='undefined' && rhoState) ? rhoState : null;
   const c=(st && st.refs && st.refs[i] && st.refs[i][r]) ? st.refs[i][r] : {};
@@ -14501,6 +14651,12 @@ function rhoFotoGagal(img,i,r){
   if(tahap===2){
     const alt=rhoFotoSrcAlt(c);
     if(alt && alt!==img.src){ img.src=alt; return; }
+    /* Tidak ada varian tanpa prefiks: jatuh langsung ke tahap berikutnya
+       supaya satu kegagalan tidak terbuang sia-sia. */
+  }
+  if(tahap<=3){
+    const alt2=rhoFotoSrcAlt2(c);
+    if(alt2 && alt2!==img.src){ img.__tahap=3; img.src=alt2; return; }
   }
   console.warn('Foto RHO gagal dimuat:', {item:i, ref:r, src:img.src, path:c.fotoPath||null});
   const cell=img.closest ? img.closest('.rho-foto-cell') : null;

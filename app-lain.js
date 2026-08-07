@@ -26,10 +26,13 @@
      1) Akun di sini diverifikasi di SISI KLIEN (cocok untuk alat internal).
         Pembatasan di atas bersifat tampilan; penegakan sesungguhnya harus
         dilakukan lewat RLS Supabase.
-     2) Dokumen di R2 dijaga Worker `pln-file-gateway`. Agar akun user bisa
-        membuka/mengunggah dokumen, username & kata sandi yang sama HARUS
-        terdaftar juga di Worker (endpoint /api/login). Bila belum, aplikasi
-        tetap bisa dipakai tetapi menu dokumen akan menolak.
+     2) Dokumen di Supabase Storage dijaga policy RLS pada storage.objects,
+        yang membaca peran dari JWT Supabase Auth (lihat 03_storage_auth.sql).
+        Agar akun kustom bisa membuka/mengunggah dokumen, akun yang sama HARUS
+        punya baris di auth.users + akun_peran — dibuatkan lewat
+        buat_akun_auth() di 04_akun_auth.sql. Bila belum, aplikasi tetap bisa
+        dipakai tetapi setiap permintaan berkas akan ditolak 403 oleh policy,
+        bukan lagi oleh Worker.
    Seluruh kode dibungkus defensif (try/catch) agar tidak mengganggu alur lama.
    ============================================================================ */
 (function(){
@@ -191,13 +194,30 @@
             ssSet(ROLE_KEY,'user'); ssSet(USER_KEY, acct.username); ssSet(AC_ACCT_KEY, acct.username);
             ssSet(acBidangKey(), acct.bidang||AC_SEMUA);
             ssSet(LOGIN_TIME_KEY,String(Date.now())); ssSet(LAST_ACTIVE_KEY,String(Date.now()));
-            /* Token dokumen R2: hanya berhasil bila akun yang sama juga terdaftar
-               di Worker pln-file-gateway. Kegagalan TIDAK membatalkan login. */
+            /* Sesi Supabase Auth untuk akun kustom. Hanya berhasil bila akun yang
+               sama sudah dipindahkan lewat buat_akun_auth() (04_akun_auth.sql).
+               Kegagalan TIDAK membatalkan login — menu selain Dokumen tetap
+               terbuka, persis seperti perilaku token gateway dulu. */
             try{
-              var tk=await fkFetchToken(acct.username, p);
-              if(tk){ ssSet(TOKEN_KEY, tk); }
-              else { setTimeout(function(){ try{ toast('Akun ini belum terdaftar di gateway dokumen — menu Dokumen mungkin tidak dapat dibuka','warn'); }catch(e){} }, 1200); }
-            }catch(e){ console.warn('Token file gateway gagal diambil:', e); }
+              var au=await db.auth.signInWithPassword({
+                email: String(acct.username).toLowerCase()+AUTH_EMAIL_SUFFIX,
+                password: p
+              });
+              if(au && au.data && au.data.session){ sbSession=au.data.session; }
+              else {
+                /* Gagal masuk TIDAK meninggalkan sesi sebelumnya menempel.
+                   signInWithPassword yang gagal tidak menghapus sesi yang
+                   sudah ada, jadi tanpa baris ini akun kustom bisa mewarisi
+                   hak sesi admin yang belum sempat kedaluwarsa di tab ini. */
+                try{ await db.auth.signOut(); }catch(e2){}
+                sbSession=null;
+                setTimeout(function(){ try{ toast('Akun ini belum dipindahkan ke Supabase Auth — menu Dokumen tidak dapat dibuka','warn'); }catch(e){} }, 1200);
+              }
+            }catch(e){
+              console.warn('Sesi Supabase gagal dibentuk:', e);
+              try{ await db.auth.signOut(); }catch(e2){}
+              sbSession=null;
+            }
             playLoginAnim('user', function(){ enterApp('user'); });
             return;
           }
@@ -280,7 +300,7 @@
     });
     var h='';
     h+='<div class="ac-note">Akun yang dapat dibuat di sini <b>hanya akun User</b> — akun <b>Admin cukup satu</b> (bawaan server) dan tidak dibuat dari sini. '
-      +'Akun diverifikasi di sisi klien; agar menu <b>Dokumen</b> dapat dibuka, daftarkan username &amp; kata sandi yang sama pada Worker <code>pln-file-gateway</code>.</div>';
+      +'Akun diverifikasi di sisi klien; agar menu <b>Dokumen</b> dapat dibuka, akun ini harus dipindahkan ke Supabase Auth lewat <code>buat_akun_auth()</code> (lihat 04_akun_auth.sql).</div>';
     h+='<div class="ac-form">';
     h+='<div class="ac-row2">'
       + '<div class="ac-fld"><label>Username</label><input id="ac-c-user" type="text" autocomplete="off" placeholder="mis. operator1" value="'+(e?escapeHtml(e.username):'')+'"'+(e?' readonly':'')+'></div>'
@@ -477,11 +497,12 @@
     {t:'klausul_spk',            l:'Klausul SPK',           grp:'Kontrak'},
     {t:'app_profiles',           l:'Profil & Konfigurasi',  grp:'Sistem'}
   ];
-  /* Bagian penyimpanan R2, mengikuti tabel ROUTES di Worker.
-     `p` = prefiks path (segmen pertama) = kunci pada objek `rincian` yang
-     dikirim Worker lewat /api/usage. `bk` = bucket R2 tempatnya bermuara —
-     perhatikan tiga prefiks pertama berbagi satu bucket `file-kontrak`,
-     jadi rincian ini LEBIH HALUS daripada daftar bucket di dashboard R2.
+  /* Bagian penyimpanan Supabase Storage, mengikuti FILE_ROUTES di app.js
+     (dulu tabel ROUTES di Worker).
+     `p` = prefiks path (segmen pertama) = kolom `prefiks` yang dikembalikan
+     storage_rincian(). `bk` = bucket tempatnya bermuara — perhatikan tiga
+     prefiks pertama berbagi satu bucket `file-kontrak`, jadi rincian ini
+     LEBIH HALUS daripada daftar bucket di dashboard Supabase.
      Urutan di sini menentukan urutan tampil pada panel. */
   var ST_R2_PARTS=[
     {p:'kontrak-rinci',      bk:'file-kontrak',       l:'SPBJ / Kontrak Rinci'},
@@ -491,16 +512,21 @@
     {p:'materi-peraturan',   bk:'materi-peraturan',   l:'Materi & Peraturan'},
     {p:'foto-referensi',     bk:'foto-referensi',     l:'Foto Referensi Harga'}
   ];
-  /* Bucket Supabase Storage — WARISAN. Aplikasi tidak lagi menulis ke sini
-     (tidak ada satu pun pemanggilan supabase.storage). Barisnya hanya muncul
-     bila katalog storage.objects MASIH berisi objek, sebagai pengingat bahwa
-     cadangan lama belum dihapus. Ukurannya TIDAK ikut dihitung ke kuota R2. */
-  var ST_LEGACY_LABEL={
-    'file-kontrak':'File Kontrak (cadangan lama)',
-    'rho-foto':'Foto Referensi Harga (cadangan lama)'
-  };
-  var ST_DB_QUOTA = 500*1024*1024;      // acuan Free tier Supabase: 0,5 GB database
-  var ST_ST_QUOTA = 10*1024*1024*1024;  // acuan Cloudflare R2 free tier: 10 GB
+  /* Baris "cadangan lama" DIHAPUS bersama migrasi ke Supabase Storage.
+
+     Dulu blok itu memanggil storage_size() — yang mengelompokkan
+     storage.objects per BUCKET — untuk menampilkan sisa cadangan Supabase
+     di samping angka R2 yang jadi sumber utama. Sesudah migrasi, kedua
+     angka itu membaca KATALOG YANG SAMA: setiap bucket aktif akan muncul
+     dua kali, satu sebagai rincian per prefiks dan satu lagi berlabel
+     "cadangan lama", dengan ~1,5 GB terhitung ganda dan `file-kontrak`
+     justru diberi label cadangan padahal ia bucket utama sekarang.
+
+     Bucket generasi lama `rho-foto` sudah dihapus dan `penyimanan-pengadaan`
+     tidak pernah ada di proyek Supabase ini (arsip beku di R2), jadi tidak
+     ada lagi yang perlu ditampilkan sebagai warisan. */
+  var ST_DB_QUOTA = 500*1024*1024;         // acuan Free tier Supabase: 0,5 GB database
+  var ST_ST_QUOTA = 100*1024*1024*1024;    // acuan Supabase Pro: 100 GB storage
 
   function stFmt(b){
     if(b==null || isNaN(b)) return '—';
@@ -591,40 +617,29 @@
      Pada bentuk (c) angkanya GABUNGAN semua bucket, jadi TIDAK boleh dilabeli
      sebagai milik satu bucket saja — itulah asal salah label 689 berkas dulu.
      Balikan: {mode:'rinci',map} | {mode:'agregat',bytes,files} | null */
-  async function stR2Usage(){
+  async function stStorageUsage(){
+    /* Ukuran nyata Supabase Storage, dirinci per PREFIKS (bukan per bucket).
+       Perincian per prefiks penting karena bucket `file-kontrak` menampung
+       tiga prefiks sekaligus (kontrak-rinci, pengadaan-langsung, tender) —
+       angka per bucket saja akan menggabungkan ketiganya jadi satu baris.
+       Sumbernya fungsi storage_rincian() di 05_storage_usage.sql.
+       Balikan: {mode:'rinci',map} | null */
     try{
-      if(typeof R2_GATEWAY_URL==='undefined' || !R2_GATEWAY_URL) return null;
-      var tok=(typeof ssGet==='function'?ssGet('mon_file_token'):null)
-              || (function(){ try{ return sessionStorage.getItem('mon_file_token'); }catch(e){ return null; } })();
-      if(!tok) return null;
-      var resp=await fetch(R2_GATEWAY_URL+'/api/usage', { headers:{'Authorization':'Bearer '+tok} });
-      if(!resp.ok) return null;
-      var j=await resp.json();
-      /* (a) bentuk utama Worker v2 */
-      if(j && j.rincian && typeof j.rincian==='object'){
-        var map={};
-        Object.keys(j.rincian).forEach(function(k){
-          var r=j.rincian[k]||{};
-          map[k]={ bytes:Number(r.bytes||0)||0, files:Number(r.files||0)||0, err:r.error||null };
-        });
-        if(Object.keys(map).length) return { mode:'rinci', map:map };
-      }
-      /* (b) bentuk cadangan */
-      if(j && Array.isArray(j.buckets)){
-        var map2={};
-        j.buckets.forEach(function(r){
-          if(!r) return;
-          var nama=String(r.bucket||r.b||r.name||r.id||'');
-          if(!nama) return;
-          map2[nama]={ bytes:Number(r.bytes||r.size||0)||0, files:Number(r.files||r.objects||r.count||0)||0, err:null };
-        });
-        if(Object.keys(map2).length) return { mode:'rinci', map:map2 };
-      }
-      /* (c) Worker lama */
-      if(j && typeof j.bytes==='number') return { mode:'agregat', bytes:j.bytes, files:Number(j.files||0)||0 };
-    }catch(e){}
-    return null;
+      if(!(typeof db!=='undefined' && db)) return null;
+      var r=await db.rpc('storage_rincian');
+      if(r.error || !Array.isArray(r.data)) return null;
+      var map={};
+      r.data.forEach(function(row){
+        var k=String(row.prefiks||'').replace(/\/+$/,'');
+        if(!k) return;
+        map[k]={ bytes:Number(row.bytes||0)||0, files:Number(row.files||0)||0, err:null };
+      });
+      return Object.keys(map).length ? { mode:'rinci', map:map } : null;
+    }catch(e){ return null; }
   }
+  /* Nama lama dipertahankan supaya pemanggilnya di panel Penyimpanan tidak
+     perlu diubah; isinya tidak lagi menyentuh Cloudflare sama sekali. */
+  var stR2Usage = stStorageUsage;
 
   function stEnsurePanel(){
     if(document.getElementById('st-ov')) return;
@@ -634,7 +649,7 @@
       '<div class="ac-panel st-panel">'
       + '<div class="ac-head">'
       +   '<div class="ac-head-t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>'
-      +     '<div><h3>Penyimpanan</h3><p>Pantau pemakaian database Supabase &amp; storage file (Cloudflare R2).</p></div></div>'
+      +     '<div><h3>Penyimpanan</h3><p>Pantau pemakaian database &amp; storage file di Supabase.</p></div></div>'
       +   '<button class="ac-x" type="button" onclick="stClose()" aria-label="Tutup">&times;</button>'
       + '</div>'
       + '<div class="ac-body"><div class="ac-pane" id="st-pane"></div></div>'
@@ -675,10 +690,11 @@
       else { data.totalBytesDb=data.totalBytesTbl; data.dbExact=false; }
 
       /* --- STORAGE ---
-         Sumber UTAMA kini Cloudflare R2 lewat Worker; Supabase Storage sudah
-         tidak dipakai aplikasi dan hanya tampil sebagai baris warisan. */
+         Satu-satunya sumber sekarang: katalog storage.objects Supabase,
+         dibaca per PREFIKS lewat storage_rincian(). Tidak ada lagi jalur
+         kedua, jadi tidak ada lagi angka yang bisa berselisih. */
       var r2u=null;
-      try{ r2u=await stR2Usage(); }catch(e){ console.error('stR2Usage:',e); }
+      try{ r2u=await stStorageUsage(); }catch(e){ console.error('stStorageUsage:',e); }
 
       if(r2u && r2u.mode==='rinci'){
         data.stExact=true; data.r2Mode='rinci';
@@ -687,7 +703,9 @@
           data.buckets.push({b:x.p, bk:x.bk, l:x.l, bytes:v.bytes, files:v.files, r2:true, unbound:(v.err==='bucket_not_bound')});
           data.totalBytesSt += v.bytes;
         });
-        /* prefiks di luar daftar (bila ROUTES di Worker bertambah) */
+        /* Prefiks di luar daftar. Bukan sekadar jaga-jaga: sisa `pl/` di
+           bucket file-kontrak akan muncul di sini sampai dihapus dengan
+           hapus-prefiks-supabase.mjs — justru berguna sebagai pengingat. */
         Object.keys(r2u.map).forEach(function(nama){
           if(ST_R2_PARTS.some(function(x){ return x.p===nama; })) return;
           var v=r2u.map[nama];
@@ -695,11 +713,11 @@
           data.totalBytesSt += v.bytes;
         });
       } else if(r2u && r2u.mode==='agregat'){
-        /* Worker lama: hanya tahu total. Ditampilkan sebagai SATU baris
-           gabungan — jangan dilabeli file-kontrak, karena angkanya mencakup
-           seluruh binding bucket. */
+        /* Bentuk warisan dari era Worker. storage_rincian() tidak pernah
+           mengembalikannya; dipertahankan hanya agar cabang ini tidak jadi
+           lubang diam bila suatu saat sumbernya diganti lagi. */
         data.stExact=true; data.r2Mode='agregat';
-        data.buckets.push({b:'(gabungan)', l:'Cloudflare R2 — semua bucket', bytes:r2u.bytes, files:r2u.files, r2:true, agg:true});
+        data.buckets.push({b:'(gabungan)', l:'Supabase Storage — semua bucket', bytes:r2u.bytes, files:r2u.files, r2:true, agg:true});
         data.totalBytesSt += r2u.bytes;
       } else {
         data.r2Mode='gagal';
@@ -708,17 +726,11 @@
         });
       }
 
-      /* --- WARISAN: sisa objek di Supabase Storage (kalau ada) ---
-         Tidak ditambahkan ke totalBytesSt agar gauge tetap murni kuota R2. */
+      /* Blok "cadangan lama" sengaja DIHILANGKAN — lihat catatan di dekat
+         ST_R2_PARTS. storage_size() dan storage_rincian() kini membaca
+         katalog yang sama, jadi menampilkan keduanya berarti menghitung
+         setiap bucket aktif dua kali. */
       data.totalBytesLegacy=0;
-      var srows=await stStorageSizes();
-      if(srows){
-        srows.forEach(function(r){
-          if(!r || !r.files) return;   // bucket kosong tak perlu ditampilkan
-          data.buckets.push({b:r.b, l:(ST_LEGACY_LABEL[r.b]||r.b), bytes:r.bytes, files:r.files, r2:false, legacy:true});
-          data.totalBytesLegacy += r.bytes;
-        });
-      }
     }catch(e){ console.error('stScan:',e); }
     stRender(data);
     var btn2=document.getElementById('st-refresh'); if(btn2){ btn2.disabled=false; btn2.textContent='Segarkan'; }
@@ -749,8 +761,10 @@
       return;
     }
     var maxRows=0; data.tables.forEach(function(r){ if(typeof r.rows==='number' && r.rows>maxRows) maxRows=r.rows; });
-    /* Hitungan berkas untuk KPI hanya mencakup R2 (baris warisan dikecualikan
-       supaya konsisten dengan totalBytesSt yang juga R2 saja). */
+    /* Baris warisan tetap dikecualikan agar konsisten dengan totalBytesSt.
+       Sejak blok "cadangan lama" dihapus, tidak ada lagi yang bertanda itu —
+       penjaganya dipertahankan supaya penambahan baris serupa nanti tidak
+       diam-diam mengacaukan KPI. */
     var totalFiles=data.buckets.reduce(function(a,b){return a+(b.legacy?0:(b.files||0));},0);
     var stDenom=(data.totalBytesSt||0)+(data.totalBytesLegacy||0);
     var dbPct = (data.totalBytesDb!=null && ST_DB_QUOTA>0) ? Math.min(100, Math.round(data.totalBytesDb/ST_DB_QUOTA*1000)/10) : null;
@@ -806,26 +820,22 @@
     h+=stBar(data.totalBytesSt, ST_ST_QUOTA, 'st');
     var stKet;
     if(data.r2Mode==='rinci'){
-      stKet='Dibaca langsung dari Cloudflare R2 lewat Worker <code>/api/usage</code>, dirinci per prefiks. '
-           +'Tiga baris pertama berbagi bucket <code>file-kontrak</code>, jadi rincian ini lebih halus daripada daftar bucket di dashboard R2.';
+      stKet='Dibaca langsung dari katalog <code>storage.objects</code> lewat <code>storage_rincian()</code>, dirinci per prefiks. '
+           +'Tiga baris pertama berbagi bucket <code>file-kontrak</code>, jadi rincian ini lebih halus daripada daftar bucket di dashboard Supabase.';
     } else if(data.r2Mode==='agregat'){
-      stKet='Worker <code>/api/usage</code> hanya mengembalikan <b>angka gabungan</b>, '
-           +'sehingga rinciannya belum bisa dipisah. Perbarui Worker agar menyertakan objek '
-           +'<code>rincian</code> untuk melihat angka per prefiks.';
+      stKet='<code>storage_rincian()</code> hanya mengembalikan <b>angka gabungan</b>, '
+           +'sehingga rinciannya belum bisa dipisah.';
     } else {
-      stKet='Angka R2 tidak terbaca \u2014 Worker <code>/api/usage</code> tidak menjawab atau sesi berkas sudah berakhir. Coba login ulang lalu Segarkan.';
+      stKet='Angka penyimpanan tidak terbaca \u2014 fungsi <code>storage_rincian()</code> belum dipasang atau sesi sudah berakhir. Jalankan 05_storage_usage.sql lalu Segarkan.';
     }
     h+='<div class="st-hint">'+stKet
-      + ' Dashboard R2 di Cloudflare <b>tidak real-time</b> (metrik bucket dihitung ulang sekali sehari), jadi wajar bila angkanya tertinggal dari panel ini.'
-      + ((data.totalBytesLegacy>0)
-          ? ' <b>Baris bertanda <i>cadangan lama</i></b> masih tersimpan di Supabase Storage dan sudah tidak dipakai aplikasi; ukurannya sengaja tidak dihitung ke kuota R2. Hapus setelah migrasi dipastikan aman.'
-          : '')
+      + ' Angkanya dihitung dari katalog saat ini juga, jadi <b>selalu mutakhir</b> \u2014 berbeda dengan angka di dashboard yang disegarkan berkala.'
       + '</div>';
     h+='<div class="st-list">';
     data.buckets.forEach(function(b){
       var pct = stDenom>0 ? Math.round((b.bytes||0)/stDenom*100) : 0;
       var extra=' <code>'+b.b+'</code>'
-        + ' &middot; '+(b.r2?('R2 \u00b7 '+(b.bk||b.b)):'Supabase')
+        + ' &middot; bucket '+(b.bk||b.b)
         + (b.agg?' <span class="st-na">gabungan</span>':'')
         + (b.legacy?' <span class="st-na">cadangan lama</span>':'')
         + (b.unbound?' <span class="st-na">binding belum dipasang</span>':'')
