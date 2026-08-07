@@ -193,7 +193,7 @@ const PL_SCHEMA_BASE = { fields: JSON.parse(JSON.stringify(FIELDS_PL)), groups: 
    kunci itu mati dan aplikasi ikut mati bersamanya bila masih terpasang.
    ============================================================ */
 const SUPABASE_URL = 'https://jpqfzbubrnznyqaniskm.supabase.co';   // contoh: https://abcd1234.supabase.co
-const SUPABASE_KEY = 'sb_publishable_V8v3YL7aRuRkvkz9WcRsKQ_LGhdv-40';    // sb_publishable_... (Project Settings → API Keys)
+const SUPABASE_KEY = 'ISI_PUBLISHABLE_KEY_DI_SINI';    // sb_publishable_... (Project Settings → API Keys)
 const TABLE = 'pekerjaan';
 
 // Aktif otomatis bila kedua nilai sudah diisi (bukan placeholder)

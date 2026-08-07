@@ -4346,6 +4346,31 @@ body.ac-no-gantisandi #btn-change-pass{ display:none !important; }
 .ac-x{ background:rgba(255,255,255,.14); border:0; color:#fff; width:34px; height:34px; border-radius:10px;
   font-size:1.4rem; line-height:1; cursor:pointer; transition:background .15s; }
 .ac-x:hover{ background:rgba(255,255,255,.28); }
+/* --- Tombol aksi di kanan atas panel Akun & Kontrol ---
+   Menggantikan bilah tab: halaman pertama panel kini Daftar Akun, dan kedua
+   halaman lain dibuka dari sini. `margin-left:auto` yang mendorongnya ke kanan
+   — .ac-head sudah flex, jadi tombol × tetap di ujung tanpa perubahan lain.
+   Di layar sempit kelompok ini turun ke baris berikutnya (lihat blok
+   @media di bawah) supaya judul panel tidak ikut terhimpit. */
+.ac-head-act{ display:flex; align-items:center; gap:8px; margin-left:auto; }
+.ac-hbtn{ background:rgba(255,255,255,.14); border:0; color:#fff; padding:8px 14px; border-radius:10px;
+  font-size:.82rem; font-weight:700; line-height:1; cursor:pointer; white-space:nowrap;
+  transition:background .15s, transform .12s; }
+.ac-hbtn:hover{ background:rgba(255,255,255,.28); }
+.ac-hbtn:active{ transform:translateY(1px); }
+.ac-hbtn.active{ background:#fff; color:#0a5e66; }
+/* Tombol kembali ke Daftar Akun, dipasang di atas halaman Buat Akun & Reset
+   Sandi. Tanpa ini kedua halaman itu tidak punya jalan keluar sejak bilah tab
+   dihapus — satu-satunya cara kembali adalah menutup seluruh panel. */
+.ac-back{ display:inline-flex; align-items:center; gap:7px; background:transparent; border:0; cursor:pointer;
+  color:#0E7C86; font-weight:700; font-size:.85rem; padding:2px 0 12px; }
+.ac-back:hover{ color:#0a5e66; text-decoration:underline; }
+.ac-back svg{ width:16px; height:16px; }
+@media (max-width:640px){
+  .ac-head{ flex-wrap:wrap; }
+  .ac-head-act{ order:3; width:100%; margin-left:0; }
+  .ac-hbtn{ flex:1; text-align:center; }
+}
 .ac-tabs{ display:flex; gap:4px; padding:10px 16px 0; background:#f2f7f8; border-bottom:1px solid #dfeaec; }
 .ac-tab{ border:0; background:transparent; padding:10px 16px; font-weight:700; font-size:.86rem; color:#5b7176;
   cursor:pointer; border-radius:10px 10px 0 0; border-bottom:3px solid transparent; }
@@ -4484,6 +4509,9 @@ input.ac-rpw{ padding:8px 10px; border:1px solid #cddcde; border-radius:8px; fon
 .ac-sum-chip{ font-size:.8rem; color:#3a5257; background:#eef6f7; border:1px solid #d5e7e9; border-radius:20px; padding:5px 13px; }
 .ac-sum-chip b{ color:#0a5e66; font-size:.92rem; }
 .ac-sum-chip.user{ background:#dcecff; border-color:#bcd8f5; } .ac-sum-chip.user b{ color:#1c4e80; }
+/* Ungu, disamakan dengan .ac-pill.admin supaya jenis akun dikenali dari warna
+   yang sama di ringkasan maupun di dalam tabel. */
+.ac-sum-chip.admin{ background:#e5e0ff; border-color:#cdc3f5; } .ac-sum-chip.admin b{ color:#4b2a8a; }
 .ac-sum-chip.dummy{ background:#e7eef0; border-color:#d3dfe1; } .ac-sum-chip.dummy b{ color:#4a6065; }
 
 /* ===== Panel Penyimpanan — kartu 3D ===== */
@@ -4650,6 +4678,7 @@ table.ac-matrix tbody tr:hover td.ac-cell.alt{ background:#e0f4f4 !important; }
   transition:transform .15s, box-shadow .15s; }
 .ac-sum-chip:hover{ transform:translateY(-1px); box-shadow:0 8px 17px rgba(9,60,66,.13); }
 .ac-sum-chip.user{ background:linear-gradient(180deg,#e7f1ff,#d5e6fb); }
+.ac-sum-chip.admin{ background:linear-gradient(180deg,#ece7ff,#ded5fb); }
 .ac-sum-chip.dummy{ background:linear-gradient(180deg,#eef4f5,#dfe9eb); }
 
 /* Panel "Sedang Aktif" + baris live */
