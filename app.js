@@ -844,16 +844,53 @@ let currentBidang = '*';          // cakupan bidang akun yang sedang masuk
 const BIDANG_ALL = '*';           // penanda "semua bidang"
 
 const USER_RULES = {
-  /* Monitoring — ubah & hapus hanya pada bidang sendiri; bidang lain lihat saja */
+  /* Monitoring SPBJ / Kontrak Rinci — satu-satunya modul yang boleh diurus
+     akun user, dan hanya pada bidangnya sendiri. */
   mon_kr:     { edit:'bidang', del:'bidang' },
-  mon_pl:     { edit:'bidang', del:'bidang' },
-  mon_tender: { edit:'bidang', del:'bidang' },
+  /* Pengadaan Langsung & Tender — LIHAT SAJA, tanpa kecuali.
+     Perhatikan: `false`, bukan `'bidang'`. Larangannya berlaku bahkan untuk
+     data yang bidangnya sama dengan akun. Kedua modul ini urusan pusat; user
+     bidang hanya perlu memantaunya. */
+  mon_pl:     { edit:false,    del:false },
+  mon_tender: { edit:false,    del:false },
   /* Dokumen > Perjanjian/Kontrak — SPBJ boleh diurus (bidang sendiri saja),
      Pengadaan Langsung & Tender HANYA BISA DILIHAT. */
   dok_kr:     { edit:'bidang', del:'bidang' },
   dok_pl:     { edit:false,    del:false },
   dok_tender: { edit:false,    del:false }
 };
+
+/* ============================================================================
+   BAGIAN ANTARMUKA YANG DITUTUP UNTUK AKUN USER
+   ----------------------------------------------------------------------------
+   Kenapa daftar pemilih (selector), bukan atribut data-role di index.html:
+   applyRole() memetakan peran 'user' menjadi navRole 'admin' (lihat awal
+   fungsinya), supaya susunan menu tidak perlu ditulis dua kali. Akibatnya
+   data-role="admin" TIDAK BISA dipakai untuk menyembunyikan sesuatu dari user
+   — ia justru ikut lolos. Menambah data-role="admin user" ke puluhan elemen
+   yang boleh dilihat user akan menyebar aturannya ke seluruh index.html, dan
+   satu yang terlewat berarti kebocoran yang sulit terlihat.
+
+   Dengan tabel ini, seluruh pembatasan tampilan akun user terbaca di SATU
+   layar dan mudah dicocokkan dengan kebijakan tertulis.
+   ============================================================================ */
+const USER_UI_TERTUTUP = [
+  /* --- Menu samping --- */
+  '.topnav-group[data-group="form"]',          // grup Form (Data Pekerjaan, HPS, Analisa, dst.)
+  '.topnav-link[data-view="pn-lihat"]',        // Penetapan
+  '.topnav-item[data-view="fk-view"]',         // Dokumen > Perjanjian/Kontrak
+  '.topnav-item[data-view="materi-view"]',     // Dokumen > Materi & Peraturan
+  '.topnav-item[data-view="spk-view"]',        // Penyusunan Dokumen > Kontrak
+
+  /* --- Tombol dalam halaman --- */
+  '#view-track-view .head-add-btn',            // "Kelola Tracking" — user memantau, tidak mengelola
+  /* Seluruh pintu masuk input Pengadaan Langsung & Tender, di mana pun ia
+     berada: segmen pemilih modul di halaman input maupun tombol "Input Data"
+     di halaman daftar masing-masing. Dipilih lewat onclick supaya tidak ada
+     yang terlewat kalau tombolnya dipindah atau ditambah. */
+  '[onclick*="newRecordPl"]',
+  '[onclick*="newRecordTender"]'
+];
 
 function isAdminMurni(){ return currentRole==='admin'; }   // hak kelola sistem
 function isUser(){ return currentRole==='user'; }
@@ -1053,14 +1090,45 @@ async function submitChangePass(){
   const newP=document.getElementById('cp-new').value||'';
   const new2=document.getElementById('cp-new2').value||'';
   if(!oldP || !newP || !new2){ setErr('Semua kolom wajib diisi.'); return; }
-  if(newP.length<6){ setErr('Kata sandi baru minimal 6 karakter.'); return; }
+  if(newP.length<4){ setErr('Kata sandi baru minimal 4 karakter.'); return; }
   if(newP!==new2){ setErr('Konfirmasi kata sandi baru tidak sama.'); return; }
   if(newP===oldP){ setErr('Kata sandi baru harus berbeda dari yang lama.'); return; }
   if(!(USE_SUPABASE && db)){ setErr('Ganti kata sandi memerlukan koneksi Supabase.'); return; }
   const btn=document.getElementById('cp-submit');
   if(btn){ btn.disabled=true; btn.textContent='Menyimpan…'; }
   try{
-    /* Kata sandi lama diperiksa dengan mencoba masuk ulang. Supabase Auth
+    /* ---- AKUN KUSTOM (User & Admin Cabang) ----
+       Kata sandinya TIDAK tinggal di Supabase Auth melainkan di app_profiles,
+       dan itulah yang dicocokkan lebih dulu oleh penyadap doLogin di
+       app-lain.js. Mengubahnya lewat auth.updateUser() saja akan membuat
+       keduanya berselisih: sandi lama tetap diterima lewat jalur teks biasa,
+       sandi baru hanya berlaku di jalur Supabase Auth. Karena itu KEDUANYA
+       ditulis — app_profiles sebagai sumber yang menentukan, Supabase Auth
+       supaya akses berkas ikut memakai sandi yang sama. */
+    const ac = window.__ac;
+    const acct = (ac && typeof ac.findAcct==='function') ? ac.findAcct(currentUsername) : null;
+    if(acct){
+      if(String(acct.password||'') !== oldP){ setErr('Kata sandi lama salah.'); return; }
+      acct.password = newP;
+      const ok = await ac.saveConfig();
+      if(!ok){ setErr('Gagal menyimpan ke server. Coba lagi.'); return; }
+      /* Sisi Supabase Auth menyusul. Kegagalannya TIDAK membatalkan
+         penggantian — akun bisa saja memang belum dipindahkan ke Auth — tetapi
+         harus diberitahukan, sebab akibatnya nyata: menu Dokumen akan menolak
+         sampai Admin Pusat memindahkannya. */
+      let authOk = true;
+      try{
+        const {error:eAuth}=await db.auth.updateUser({ password:newP });
+        if(eAuth) authOk=false;
+      }catch(e){ authOk=false; }
+      closeChangePass();
+      toast(authOk ? 'Kata sandi berhasil diperbarui'
+                   : 'Kata sandi diperbarui, tetapi akses berkas belum ikut berubah — hubungi Admin Pusat','ok');
+      return;
+    }
+
+    /* ---- AKUN SERVER (Admin Pusat) ----
+       Kata sandi lama diperiksa dengan mencoba masuk ulang. Supabase Auth
        tidak menyediakan updateUser yang meminta sandi lama, jadi tanpa langkah
        ini siapa pun yang menemukan layar terbuka bisa mengganti kata sandi. */
     const {error:eCek}=await db.auth.signInWithPassword({
@@ -1177,12 +1245,35 @@ function applyRole(role){
   };
   const ic=document.getElementById('user-role-ic');
   if(ic){ ic.className='user-role-ic '+(role||''); ic.innerHTML=ROLE_ICONS[role]||''; }
-  // Ganti Kata Sandi: hanya admin (satu-satunya peran yang punya akun server).
+  /* Menu Pengaturan tetap terbuka untuk akun user, tetapi isinya menyusut jadi
+     dua: Ganti Kata Sandi & Bersihkan Daftar Kontrak. Sisanya (Akun & Kontrol,
+     Penyimpanan, Penyesuaian Form) disembunyikan di tempat lain. */
   const cpBtn=document.getElementById('btn-change-pass');
-  if(cpBtn) cpBtn.style.display = (role==='admin' && USE_SUPABASE) ? '' : 'none';
-  // "Bersihkan Daftar Kontrak": hanya admin.
+  if(cpBtn) cpBtn.style.display = ((role==='admin'||role==='user') && USE_SUPABASE) ? '' : 'none';
   const bkBtn=document.getElementById('btn-bersih-kontrak');
-  if(bkBtn) bkBtn.style.display = (role==='admin') ? '' : 'none';
+  if(bkBtn) bkBtn.style.display = (role==='admin'||role==='user') ? '' : 'none';
+
+  /* Pembatasan khusus akun USER — dijalankan SESUDAH penyaringan data-role di
+     atas, supaya keputusannya yang terakhir berlaku. Untuk peran lain daftar
+     ini justru harus MENGEMBALIKAN tampilan, sebab elemen yang sama mungkin
+     baru saja disembunyikan saat akun user keluar dan admin masuk di tab yang
+     sama tanpa halaman dimuat ulang. */
+  USER_UI_TERTUTUP.forEach(sel=>{
+    document.querySelectorAll(sel).forEach(el=>{
+      if(role==='user') el.style.display='none';
+      else if(el.style.display==='none' && !el.hasAttribute('data-role')) el.style.display='';
+    });
+  });
+  /* Grup menu dihitung ulang: menyembunyikan isi terakhir sebuah grup harus
+     ikut menyembunyikan judul grupnya, kalau tidak akan tersisa tajuk yang
+     membuka ruang kosong. */
+  document.querySelectorAll('.topnav-group').forEach(g=>{
+    const items=g.querySelectorAll('.topnav-item');
+    if(!items.length) return;
+    const ada=[...items].some(it=>it.style.display!=='none');
+    g.style.display = ada ? '' : 'none';
+  });
+
   renderTable();
   renderTablePl();
   renderTableTender();
@@ -1238,9 +1329,26 @@ function bkCatInfo(cat){
   }
   return null;
 }
+/* Baris yang BOLEH dihapus oleh akun yang sedang masuk.
+   Admin: semuanya. User: hanya bidangnya sendiri — inBidang() memakai
+   currentBidang, jadi tidak ada jalan memperluasnya dari layar. */
+function bkRowsBoleh(info){
+  const rows=info.rows()||[];
+  if(!isUser()) return rows;
+  return rows.filter(r=>inBidang(r));
+}
 function openBersihKontrak(){
   const catSel=document.getElementById('bersih-cat');
   const ySel=document.getElementById('bersih-year');
+  /* Akun user hanya boleh membersihkan SPBJ / Kontrak Rinci. Pilihan lain
+     dilepas dari daftar — bukan sekadar dinonaktifkan — supaya tidak ada yang
+     mengira modul itu ada tapi sedang rusak. */
+  if(catSel){
+    [...catSel.options].forEach(o=>{
+      o.hidden = isUser() && o.value!=='kr';
+      o.disabled = o.hidden;
+    });
+  }
   if(ySel){
     const now=String(new Date().getFullYear());
     ySel.innerHTML = TAHUN_OPTS.map(y=>`<option value="${y}">${y}</option>`).join('')
@@ -1258,11 +1366,13 @@ function confirmBersihKontrak(){
   const cat=(document.getElementById('bersih-cat')||{}).value;
   const year=(document.getElementById('bersih-year')||{}).value;
   const info=bkCatInfo(cat); if(!info) return;
+  if(isUser() && cat!=='kr'){ toast('Akun Anda hanya dapat membersihkan SPBJ / Kontrak Rinci','warn'); return; }
   const all=(year==='__all__' || year==='');
-  const rows=info.rows()||[];
+  const rows=bkRowsBoleh(info);
   const count = all ? rows.length : rows.filter(r=>String(info.yearFn(r))===String(year)).length;
   if(count===0){ toast('Tidak ada data untuk dihapus','warn'); return; }
-  const scope = all ? `${info.label} (semua tahun)` : `${info.label} tahun ${year}`;
+  const bid = isUser() && !bidangSemua() ? ` pada bidang ${bidangLabel()}` : '';
+  const scope = (all ? `${info.label} (semua tahun)` : `${info.label} tahun ${year}`) + bid;
   closeBersihKontrak();
   openConfirm({
     icon:'del', title:'Bersihkan Daftar Kontrak',
@@ -1272,14 +1382,18 @@ function confirmBersihKontrak(){
 }
 async function doBersihKontrak(cat, year){
   const info=bkCatInfo(cat); if(!info) return;
+  if(isUser() && cat!=='kr'){ toast('Akun Anda hanya dapat membersihkan SPBJ / Kontrak Rinci','warn'); return; }
   const all=(year==='__all__' || year==='');
   try{
     await withActionLoader('Menghapus', async()=>{
-      if(all){
+      /* removeAll() mengosongkan SELURUH tabel — tidak pernah boleh dipakai
+         akun berbidang, bahkan saat memilih "Semua Tahun". Untuk user, semua
+         jalur berakhir di penghapusan per-id atas baris yang lolos bkRowsBoleh. */
+      if(all && !isUser()){
         await info.removeAll();
       }else{
-        const ids=(info.rows()||[])
-          .filter(r=>String(info.yearFn(r))===String(year))
+        const ids=bkRowsBoleh(info)
+          .filter(r=>all || String(info.yearFn(r))===String(year))
           .map(r=>r.id).filter(v=>v!=null);
         // Hapus per-batch (maks 100 id/permintaan) agar aman untuk URL PostgREST.
         for(let i=0;i<ids.length;i+=100){
@@ -2035,7 +2149,44 @@ function newRecord(){
   document.getElementById('input-title').textContent='Input Kontrak Rinci';
   document.getElementById('edit-banner').style.display='none';
   document.getElementById('io-tpl-kr').style.display='';
+  kunciBidangPelaksana();
   showView('input'); saveDraft('input');
+}
+/* Bidang Pelaksana dikunci pada bidang akun.
+
+   Bukan sekadar diisi lalu dibiarkan bisa diubah: nilainya DIPAKSA dan
+   pilihannya dilepas, sehingga tidak ada jalan bagi akun berbidang untuk
+   menyimpan data atas nama bidang lain — yang, karena daftar kini disaring
+   per bidang, akan langsung lenyap dari layarnya sendiri begitu tersimpan.
+
+   Dipanggil pada newRecord() maupun editRecord(); untuk admin ia melepas
+   kembali kuncinya, sebab elemen yang sama dipakai bergantian di tab yang
+   sama tanpa halaman dimuat ulang. */
+function kunciBidangPelaksana(){
+  const el=document.getElementById('f_bidang_pelaksana');
+  if(!el) return;
+  const kunci = isUser() && !bidangSemua();
+  if(kunci){
+    el.value = currentBidang;
+    /* `disabled` TIDAK dipakai: kontrol yang disabled tidak ikut terbaca oleh
+       pengumpul nilai formulir, sehingga bidangnya justru tersimpan kosong.
+       Dengan pointer-events + tabindex, nilainya tetap terbaca seperti biasa. */
+    el.style.pointerEvents='none';
+    el.style.background='#eef3f4';
+    el.style.color='#5b7176';
+    el.setAttribute('tabindex','-1');
+    el.setAttribute('aria-readonly','true');
+    el.title='Terkunci pada bidang akun Anda: '+bidangLabel();
+    [...el.options].forEach(o=>{ o.hidden = (o.value!==currentBidang); });
+  }else{
+    el.style.pointerEvents='';
+    el.style.background='';
+    el.style.color='';
+    el.removeAttribute('tabindex');
+    el.removeAttribute('aria-readonly');
+    el.title='';
+    [...el.options].forEach(o=>{ o.hidden=false; });
+  }
 }
 function editRecord(rid){
   if(!requireInput()) return;
@@ -2043,6 +2194,7 @@ function editRecord(rid){
   const rec=records.find(r=>r.id===rid); if(!rec) return;
   if(!requireEditRec('mon_kr',rec)) return;
   editingId=rid; krReturnView='list'; buildFormKr(); fillForm(rec);
+  kunciBidangPelaksana();
   document.getElementById('input-title').textContent='Ubah Data Pekerjaan';
   const b=document.getElementById('edit-banner'); b.style.display='flex';
   document.getElementById('edit-banner-text').textContent='Mode Ubah Data';
@@ -2435,6 +2587,15 @@ function getFilteredRecords(){
   const ft=ftEl?ftEl.value:'';
   const fs=document.getElementById('filter-search').value.toLowerCase().trim();
   return records.filter(r=>{
+    /* CAKUPAN BIDANG AKUN — penyaring pertama, sebelum filter apa pun yang
+       dipilih pengguna di layar.
+
+       Akun user berbidang hanya melihat datanya sendiri: baris bidang lain
+       tidak lagi muncul sebagai baris "lihat saja", melainkan tidak ada sama
+       sekali. Ditempatkan di sini, di SATU pintu masuk daftar, supaya tabel,
+       paginasi, hitungan, dan ekspor Excel semuanya memakai himpunan yang
+       sama — tidak ada satu pun jalur yang bisa lupa menyaring. */
+    if(!inBidang(r)) return false;
     if(fb && r.bidang_pelaksana!==fb) return false;
     if(fst && r.status!==fst) return false;
     if(ft && contractYear(r)!==ft) return false;
@@ -4694,6 +4855,15 @@ function getFilteredRecordsPl(){
   const fyr=document.getElementById('filter-pl-tahun')?.value||'';
   const fs=document.getElementById('filter-pl-search').value.toLowerCase().trim();
   return records_pl.filter(r=>{
+    /* CAKUPAN BIDANG AKUN — penyaring pertama, sebelum filter apa pun yang
+       dipilih pengguna di layar.
+
+       Akun user berbidang hanya melihat datanya sendiri: baris bidang lain
+       tidak lagi muncul sebagai baris "lihat saja", melainkan tidak ada sama
+       sekali. Ditempatkan di sini, di SATU pintu masuk daftar, supaya tabel,
+       paginasi, hitungan, dan ekspor Excel semuanya memakai himpunan yang
+       sama — tidak ada satu pun jalur yang bisa lupa menyaring. */
+    if(!inBidang(r)) return false;
     if(fb && r.bidang_pelaksana!==fb) return false;
     if(!matchTahapanFilter(r.tahapan, ftp)) return false;
     if(fyr && yearPengadaan(r)!==fyr) return false;
@@ -6112,6 +6282,15 @@ function getFilteredRecordsTender(){
   const fyr=document.getElementById('filter-tender-tahun')?.value||'';
   const fs=document.getElementById('filter-tender-search').value.toLowerCase().trim();
   return records_tender.filter(r=>{
+    /* CAKUPAN BIDANG AKUN — penyaring pertama, sebelum filter apa pun yang
+       dipilih pengguna di layar.
+
+       Akun user berbidang hanya melihat datanya sendiri: baris bidang lain
+       tidak lagi muncul sebagai baris "lihat saja", melainkan tidak ada sama
+       sekali. Ditempatkan di sini, di SATU pintu masuk daftar, supaya tabel,
+       paginasi, hitungan, dan ekspor Excel semuanya memakai himpunan yang
+       sama — tidak ada satu pun jalur yang bisa lupa menyaring. */
+    if(!inBidang(r)) return false;
     if(fb && r.bidang_pelaksana!==fb) return false;
     if(!matchTahapanFilter(r.tahapan, ftp)) return false;
     if(fyr && yearPengadaan(r)!==fyr) return false;

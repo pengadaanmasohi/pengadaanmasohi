@@ -134,19 +134,16 @@
        data siapa pun, dan Admin Cabang memang perlu tahu sisa kuota. */
     var bs=document.getElementById('btn-storage');     if(bs) bs.style.display = adminApaPun ? '' : 'none';
 
-    /* Ganti Kata Sandi: HANYA Admin Pusat — dan ini mencegah kunci pintu
-       tertinggal di dalam.
+    /* Ganti Kata Sandi TERBUKA untuk semua peran yang punya akun — termasuk
+       akun kustom. Ia sempat ditutup di sini karena submitChangePass() hanya
+       menulis ke Supabase Auth, sedangkan kata sandi akun kustom tinggal di
+       app_profiles; keduanya akan berselisih. Sejak submitChangePass()
+       menangani kedua tempat itu, penutupannya tidak lagi diperlukan —
+       justru berbahaya, karena kata sandi hasil Reset bernilai tetap dan
+       pemiliknya harus punya cara menggantinya sendiri.
 
-       submitChangePass() mengubah kata sandi lewat supabase.auth.updateUser().
-       Kata sandi akun kustom TIDAK tinggal di sana: ia tersimpan sebagai teks
-       biasa di app_profiles dan itulah yang dicocokkan lebih dulu oleh
-       penyadap doLogin di berkas ini. Kalau Admin Cabang menggantinya, yang
-       berubah hanya sisi Supabase Auth — pencocokan teks biasa jadi gagal,
-       dan akunnya berpindah jalur login tanpa ada yang tahu.
-       Reset kata sandi akun kustom dilakukan Admin Pusat lewat tab Reset
-       Sandi, yang menulis ke tempat yang benar. */
-    var cp=document.getElementById('btn-change-pass');
-    if(cp) cp.style.display = (pusat && typeof USE_SUPABASE!=='undefined' && USE_SUPABASE) ? '' : 'none';
+       Pengaturan visibilitasnya diserahkan sepenuhnya ke applyRole() di
+       app.js supaya keputusannya hanya ada di satu tempat. */
   }
   function acApply(){ try{ if(typeof currentRole!=='undefined' && currentRole) applyRole(currentRole); }catch(e){} }
 
