@@ -135,7 +135,7 @@
 })();
 </script>
 
-<link rel="stylesheet" href="style.css?v=20260807i">
+<link rel="stylesheet" href="style.css?v=20260807k">
 
 <!-- ============ IKON KEPALA MODAL PRATINJAU ============
      KETENTUAN 6 Agu 2026: ikon Cetak/PDF (printer/mata), Layar Penuh
@@ -2244,6 +2244,13 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
           <option value="tender">Tender</option>
         </select>
       </div>
+      <!-- Pilihannya diisi openBersihKontrak() dari BIDANG_OPTS di app.js,
+           supaya daftar bidang hanya ditulis di satu tempat. Untuk akun user
+           ia dikunci pada bidang akunnya. -->
+      <div class="bk-field">
+        <label for="bersih-bidang">Bidang</label>
+        <select id="bersih-bidang"></select>
+      </div>
       <div class="bk-field">
         <label for="bersih-year">Tahun</label>
         <select id="bersih-year"></select>
@@ -2708,11 +2715,11 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
 
 <!-- app.js dipecah menjadi 3 bagian. URUTAN WAJIB: inti -> susun-kontrak -> lain.
      Memisah "Susun Kontrak" (SPK) agar bisa disunting tanpa memuat seluruh app.js. -->
-<script src="app.js?v=20260807i"></script>
-<script src="susun-kontrak.js?v=20260807i"></script>
-<script src="susun-dokumen.js?v=20260807i"></script>
-<script src="app-lain.js?v=20260807i"></script>
-<script src="ui-sidebar.js?v=20260807i"></script>
+<script src="app.js?v=20260807k"></script>
+<script src="susun-kontrak.js?v=20260807k"></script>
+<script src="susun-dokumen.js?v=20260807k"></script>
+<script src="app-lain.js?v=20260807k"></script>
+<script src="ui-sidebar.js?v=20260807k"></script>
 
 </body>
 </html>

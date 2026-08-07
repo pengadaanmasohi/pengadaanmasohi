@@ -552,6 +552,13 @@ function syncSections(){
    walau seluruh isinya sudah disembunyikan. Dihitung ulang di sini, sesudahnya. */
 function syncGroups(){
   document.querySelectorAll('#topnav .topnav-group').forEach(function(g){
+    /* Grup yang ditutup TEGAS oleh aturan hak akses (USER_UI_TERTUTUP di
+       app.js) tidak boleh dihitung ulang di sini. Grup seperti "Form" ditutup
+       sebagai WADAH — isinya sengaja tidak ikut disembunyikan satu per satu,
+       jadi perhitungan di bawah akan menyimpulkan grupnya berisi lalu
+       membukanya kembali. Fungsi ini berjalan SESUDAH applyRole(), sehingga
+       ia yang akan menang bila tidak dijaga. */
+    if(g.hasAttribute('data-akses-tertutup')) return;
     var items=g.querySelectorAll('.topnav-item');
     if(!items.length) return;
     var any=Array.prototype.some.call(items,function(it){

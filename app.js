@@ -878,8 +878,11 @@ const USER_UI_TERTUTUP = [
   /* --- Menu samping --- */
   '.topnav-group[data-group="form"]',          // grup Form (Data Pekerjaan, HPS, Analisa, dst.)
   '.topnav-link[data-view="pn-lihat"]',        // Penetapan
-  '.topnav-item[data-view="fk-view"]',         // Dokumen > Perjanjian/Kontrak
+  /* Dokumen > yang TERSISA untuk user hanyalah Perjanjian/Kontrak (fk-view);
+     ia memang dipakai user untuk mengurus berkas SPBJ bidangnya. */
+  '.topnav-item[data-view="dpeng-view"]',      // Dokumen > Dokumen Pengadaan
   '.topnav-item[data-view="materi-view"]',     // Dokumen > Materi & Peraturan
+  /* Penyusunan Dokumen > yang tersisa hanyalah Dokumen Pengadaan (tor-view). */
   '.topnav-item[data-view="spk-view"]',        // Penyusunan Dokumen > Kontrak
 
   /* --- Tombol dalam halaman --- */
@@ -1258,16 +1261,47 @@ function applyRole(role){
      ini justru harus MENGEMBALIKAN tampilan, sebab elemen yang sama mungkin
      baru saja disembunyikan saat akun user keluar dan admin masuk di tab yang
      sama tanpa halaman dimuat ulang. */
+  const ditutupTegas=new Set();
   USER_UI_TERTUTUP.forEach(sel=>{
-    document.querySelectorAll(sel).forEach(el=>{
-      if(role==='user') el.style.display='none';
-      else if(el.style.display==='none' && !el.hasAttribute('data-role')) el.style.display='';
+    const el2=document.querySelectorAll(sel);
+    /* PENJAGA GAGAL-TERBUKA.
+       Aturan di USER_UI_TERTUTUP mengikat lewat data-view/data-group/onclick,
+       bukan lewat teks yang tampil — jadi mengganti NAMA menu aman. Tetapi
+       bila suatu saat atributnya diubah atau elemennya dipindah, pemilihnya
+       berhenti cocok TANPA galat, dan menu itu justru menjadi TERLIHAT oleh
+       akun user. Peringatan ini membuat kerusakan semacam itu ketahuan pada
+       hari yang sama, bukan berbulan-bulan kemudian. */
+    if(!el2.length && role==='user'){
+      console.warn('[HAK AKSES] Pemilih tidak menemukan elemen apa pun — menu ini mungkin kini TERBUKA bagi akun user:', sel);
+    }
+    el2.forEach(el=>{
+      if(role==='user'){
+        el.style.display='none';
+        ditutupTegas.add(el);
+        /* Penanda pada elemennya sendiri, bukan sekadar variabel lokal.
+           ui-sidebar.js membungkus window.applyRole dan menjalankan
+           syncGroups() SESUDAH fungsi ini selesai — perhitungan yang sama
+           persis, yang tanpa penanda ini akan membuka kembali grup yang baru
+           saja ditutup. Variabel lokal tidak terjangkau dari sana; atribut
+           DOM terjangkau. */
+        el.setAttribute('data-akses-tertutup','1');
+      }else{
+        el.removeAttribute('data-akses-tertutup');
+        if(el.style.display==='none' && !el.hasAttribute('data-role')) el.style.display='';
+      }
     });
   });
-  /* Grup menu dihitung ulang: menyembunyikan isi terakhir sebuah grup harus
-     ikut menyembunyikan judul grupnya, kalau tidak akan tersisa tajuk yang
-     membuka ruang kosong. */
+  /* Grup menu dihitung ulang: menyembunyikan item terakhir sebuah grup harus
+     ikut menyembunyikan judul grupnya, kalau tidak tersisa tajuk yang membuka
+     ruang kosong.
+
+     `ditutupTegas` WAJIB dihormati di sini. Grup seperti "Form" ditutup
+     sebagai WADAH — item di dalamnya tidak ikut disembunyikan satu per satu,
+     sebab tidak perlu. Tanpa penjagaan ini, perhitungan di bawah melihat
+     item-itemnya masih terlihat, menyimpulkan grupnya berisi, lalu MEMBUKA
+     KEMBALI grup yang baru saja ditutup dua baris sebelumnya. */
   document.querySelectorAll('.topnav-group').forEach(g=>{
+    if(ditutupTegas.has(g) || g.hasAttribute('data-akses-tertutup')) return;
     const items=g.querySelectorAll('.topnav-item');
     if(!items.length) return;
     const ada=[...items].some(it=>it.style.display!=='none');
@@ -1332,10 +1366,16 @@ function bkCatInfo(cat){
 /* Baris yang BOLEH dihapus oleh akun yang sedang masuk.
    Admin: semuanya. User: hanya bidangnya sendiri — inBidang() memakai
    currentBidang, jadi tidak ada jalan memperluasnya dari layar. */
-function bkRowsBoleh(info){
-  const rows=info.rows()||[];
-  if(!isUser()) return rows;
-  return rows.filter(r=>inBidang(r));
+function bkRowsBoleh(info, bidangPilih){
+  let rows=info.rows()||[];
+  /* Pagar hak akses: akun user tidak pernah bisa melampaui bidangnya sendiri,
+     apa pun yang dipilih di layar. */
+  if(isUser()) rows=rows.filter(r=>inBidang(r));
+  /* Pilihan Bidang di dialog — penyempit tambahan, bukan pengganti pagar. */
+  if(bidangPilih && bidangPilih!=='__all__'){
+    rows=rows.filter(r=>normBidang(recBidang(r))===normBidang(bidangPilih));
+  }
+  return rows;
 }
 function openBersihKontrak(){
   const catSel=document.getElementById('bersih-cat');
@@ -1356,6 +1396,23 @@ function openBersihKontrak(){
     ySel.value = TAHUN_OPTS.includes(now) ? now : TAHUN_OPTS[0];
   }
   if(catSel) catSel.value='kr';
+
+  /* Dropdown Bidang. Untuk akun user hanya berisi bidangnya sendiri dan
+     terkunci — bukan sekadar terpilih, sebab pilihan yang bisa diubah akan
+     memberi kesan ia boleh menghapus data bidang lain, padahal bkRowsBoleh
+     akan menolaknya diam-diam dan hasilnya membingungkan. */
+  const bSel=document.getElementById('bersih-bidang');
+  if(bSel){
+    const kunci = isUser() && !bidangSemua();
+    bSel.innerHTML = (kunci ? '' : '<option value="__all__">Semua Bidang</option>')
+      + BIDANG_OPTS.filter(b=>!kunci || b===currentBidang)
+                   .map(b=>`<option value="${b}">${b}</option>`).join('');
+    bSel.value = kunci ? currentBidang : '__all__';
+    bSel.style.pointerEvents = kunci ? 'none' : '';
+    bSel.style.background    = kunci ? '#eef3f4' : '';
+    bSel.title = kunci ? ('Terkunci pada bidang akun Anda: '+bidangLabel()) : '';
+  }
+
   const ov=document.getElementById('bersih-overlay'); if(ov) ov.classList.add('show');
 }
 function closeBersihKontrak(){
@@ -1365,34 +1422,40 @@ function closeBersihKontrak(){
 function confirmBersihKontrak(){
   const cat=(document.getElementById('bersih-cat')||{}).value;
   const year=(document.getElementById('bersih-year')||{}).value;
+  const bidang=(document.getElementById('bersih-bidang')||{}).value||'__all__';
   const info=bkCatInfo(cat); if(!info) return;
   if(isUser() && cat!=='kr'){ toast('Akun Anda hanya dapat membersihkan SPBJ / Kontrak Rinci','warn'); return; }
   const all=(year==='__all__' || year==='');
-  const rows=bkRowsBoleh(info);
+  const rows=bkRowsBoleh(info, bidang);
   const count = all ? rows.length : rows.filter(r=>String(info.yearFn(r))===String(year)).length;
   if(count===0){ toast('Tidak ada data untuk dihapus','warn'); return; }
-  const bid = isUser() && !bidangSemua() ? ` pada bidang ${bidangLabel()}` : '';
+  const bid = (bidang && bidang!=='__all__') ? ` pada bidang ${bidang}` : ' (semua bidang)';
   const scope = (all ? `${info.label} (semua tahun)` : `${info.label} tahun ${year}`) + bid;
   closeBersihKontrak();
   openConfirm({
     icon:'del', title:'Bersihkan Daftar Kontrak',
     text:`Ingin menghapus semua daftar kontrak ${scope}? ${count} data akan dihapus dan tidak dapat dikembalikan.`,
-    onYes:()=>doBersihKontrak(cat, year)
+    onYes:()=>doBersihKontrak(cat, year, bidang)
   });
 }
-async function doBersihKontrak(cat, year){
+async function doBersihKontrak(cat, year, bidang){
   const info=bkCatInfo(cat); if(!info) return;
   if(isUser() && cat!=='kr'){ toast('Akun Anda hanya dapat membersihkan SPBJ / Kontrak Rinci','warn'); return; }
   const all=(year==='__all__' || year==='');
+  const semuaBidang=(!bidang || bidang==='__all__');
   try{
     await withActionLoader('Menghapus', async()=>{
       /* removeAll() mengosongkan SELURUH tabel — tidak pernah boleh dipakai
          akun berbidang, bahkan saat memilih "Semua Tahun". Untuk user, semua
          jalur berakhir di penghapusan per-id atas baris yang lolos bkRowsBoleh. */
-      if(all && !isUser()){
+      /* removeAll() mengosongkan SELURUH tabel. Ia hanya boleh dipakai bila
+         cakupannya memang benar-benar seluruh tabel: admin, semua tahun, DAN
+         semua bidang. Kalau salah satu saja dipersempit, penghapusan harus
+         lewat daftar id. */
+      if(all && semuaBidang && !isUser()){
         await info.removeAll();
       }else{
-        const ids=bkRowsBoleh(info)
+        const ids=bkRowsBoleh(info, bidang)
           .filter(r=>all || String(info.yearFn(r))===String(year))
           .map(r=>r.id).filter(v=>v!=null);
         // Hapus per-batch (maks 100 id/permintaan) agar aman untuk URL PostgREST.
