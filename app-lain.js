@@ -173,20 +173,25 @@
   }
   async function acEndBeat(){
     try{ if(window.__acBeatIv){ clearInterval(window.__acBeatIv); window.__acBeatIv=null; } }catch(e){}
-    if(!_useSupa()) return;
-    try{ await _realDb().from(_tbl()).delete().eq('kind',AC_PRES_KIND).eq('name',String(acWho())); }catch(e){}
+    /* BARIS PRESENCE TIDAK DIHAPUS SAAT KELUAR.
+
+       Dulu ia dihapus supaya daftar "Sedang Aktif" tidak menampilkan sesi
+       basi — padahal penyaring 5 menit di acLoadPresence sudah mengurus itu,
+       jadi penghapusannya tidak pernah benar-benar diperlukan. Yang hilang
+       justru mahal: begitu barisnya lenyap, TIDAK ADA LAGI catatan kapan
+       orang itu terakhir masuk, dan kolom Status Online mustahil dihitung.
+       Sekarang barisnya dibiarkan sebagai jejak "terakhir terlihat". */
+    try{ await acBeat(); }catch(e){}   // stempel terakhir sebelum sesi ditutup
   }
   async function acLoadPresence(){
     if(!_useSupa()) return [];
     try{
       var res=await _realDb().from(_tbl()).select('name,payload,updated_at').eq('kind',AC_PRES_KIND);
       if(res && !res.error && res.data){
-        var now=Date.now();
         return res.data.map(function(r){
             var p=r.payload; if(typeof p==='string'){ try{p=JSON.parse(p);}catch(e){p={};} }
             return { name:r.name, role:(p&&p.role)||'', bidang:(p&&p.bidang)||'', ts:(p&&p.ts)|| (Date.parse(r.updated_at)||0) };
           })
-          .filter(function(x){ return (now-x.ts) < 5*60*1000; })
           .sort(function(a,b){ return b.ts-a.ts; });
       }
     }catch(e){}
@@ -286,9 +291,6 @@
          tersendiri, padahal ia tindakan atas SATU akun — tempatnya yang wajar
          di baris akun itu sendiri, bukan di halaman terpisah yang mengulang
          seluruh daftar hanya untuk menaruh sebuah kotak isian. */
-      +   '<div class="ac-head-act">'
-      +     '<button class="ac-hbtn" data-tab="create" type="button" onclick="acTab(\'create\')">+ Buat Akun</button>'
-      +   '</div>'
       +   '<button class="ac-x" type="button" onclick="acClosePanel()" aria-label="Tutup">&times;</button>'
       + '</div>'
       + '<div class="ac-body">'
@@ -433,14 +435,16 @@
     acTab('list');
   };
 
-  /* -------- Daftar akun + sesi aktif -------- */
+  /* -------- Daftar akun --------
+     Blok "Sedang Aktif" DIHAPUS: kolom Status Online di tabel ini memuat
+     keterangan yang sama untuk SETIAP akun, bukan hanya yang kebetulan sedang
+     online — jadi daftar terpisah itu hanya mengulang sebagian informasi yang
+     sudah ada, di tempat yang lebih jauh dari akunnya. */
   function acRenderList(){
     var cfg=acGetConfig(); var accs=cfg.accounts||[];
     var jmlAdmin=accs.filter(function(a){ return acTipe(a)===AC_TIPE_ADMIN; }).length;
     var terbatas=accs.filter(function(a){ return acTipe(a)===AC_TIPE_USER && a.bidang && a.bidang!==AC_SEMUA; });
     var h='';
-    h+='<div class="ac-active-wrap"><div class="ac-sec-title"><span class="ac-live-ic"></span>Sedang Aktif</div>'
-      +'<div id="ac-active" class="ac-active"><div class="ac-muted">Memeriksa sesi aktif…</div></div></div>';
     h+='<div class="ac-sum">'
       +'<span class="ac-sum-chip"><b>'+accs.length+'</b> Total akun</span>'
       +'<span class="ac-sum-chip admin"><b>'+jmlAdmin+'</b> Admin Cabang</span>'
@@ -448,70 +452,91 @@
       +'<span class="ac-sum-chip"><b>'+terbatas.length+'</b> Terbatas bidang</span>'
       +'</div>';
     h+='<div class="ac-hint">Login memakai username + kata sandi di daftar ini. Akun <b>Admin Pusat</b> tidak muncul di sini — ia akun bawaan server dan tidak dapat diubah dari panel ini.</div>';
-    if(!accs.length){ h+='<div class="ac-empty">Belum ada akun. Tekan <b>+ Buat Akun</b> di kanan atas untuk menambah.</div>'; }
+    if(!accs.length){ h+='<div class="ac-empty">Belum ada akun. Tekan <b>+ Buat Akun Baru</b> di bawah untuk menambah.</div>'; }
     else {
       h+='<div class="ac-tablewrap"><table class="ac-list"><thead><tr>'
         +'<th>Username</th><th>Jenis</th><th>Bidang</th><th>Hak Ubah / Hapus</th>'
-        +'<th class="ac-col-aksi">Aksi</th></tr></thead><tbody>';
-      accs.forEach(function(a,i){
+        +'<th>Status Online</th><th>Aksi</th></tr></thead><tbody>';
+      accs.forEach(function(a){
         var t=acTipe(a);
         var adm=(t===AC_TIPE_ADMIN);
         var semua=adm || (!a.bidang || a.bidang===AC_SEMUA);
         var un=escapeAttr(a.username);
-        h+='<tr'+(i%2?' class="ac-row-alt"':'')+'><td class="ac-cell-user">'+escapeHtml(a.username)+'</td>'
+        h+='<tr><td class="ac-cell-user">'+escapeHtml(a.username)+'</td>'
           +'<td><span class="ac-pill '+(adm?'admin':'user')+'">'+acTipeLabel(t)+'</span></td>'
           +'<td>'+(semua?'<span class="ac-pill on">Semua Bidang</span>':escapeHtml(a.bidang))+'</td>'
           +'<td class="ac-cell-ket">'+(adm
               ? 'Seluruh data &amp; menu, kecuali Akun &amp; Kontrol'
               : (semua?'Seluruh data monitoring + dokumen SPBJ':'Hanya bidangnya'))+'</td>'
+          /* Diisi belakangan oleh acFillStatus(): angkanya datang dari tabel
+             presence lewat jaringan, dan render daftar tidak boleh menunggu. */
+          +'<td class="ac-cell-status" data-user="'+un+'"><span class="ac-muted">memeriksa…</span></td>'
           +'<td class="ac-col-aksi"><div class="ac-rowact">'
-          +'<button class="ac-mini" type="button" onclick="acEditAccount(\''+un+'\')">Ubah</button>'
-          +'<button class="ac-mini danger" type="button" onclick="acDeleteAccount(\''+un+'\')">Hapus</button>'
-          +'<button class="ac-mini warn" type="button" onclick="acResetBaris('+i+',\''+un+'\')">Reset</button>'
-          +'</div></td></tr>';
-        /* Baris penyetel kata sandi, tersembunyi sampai tombol Reset ditekan.
-           Ditanam di sini (bukan dibuat saat diklik) supaya urutan DOM-nya
-           pasti tepat di bawah barisnya sendiri, apa pun urutan penyortiran. */
-        h+='<tr class="ac-reset-row" id="ac-reset-row-'+i+'" style="display:none"><td colspan="5">'
-          +'<div class="ac-reset-box">'
-          +  '<label for="ac-rpw-'+i+'">Kata sandi baru untuk <b>'+escapeHtml(a.username)+'</b></label>'
-          +  '<input id="ac-rpw-'+i+'" type="text" autocomplete="off" placeholder="min. 4 karakter" '
-          +    'onkeydown="if(event.key===\'Enter\'){event.preventDefault();acResetCustom('+i+',\''+un+'\');}">'
-          +  '<button class="ac-mini warn" type="button" onclick="acResetCustom('+i+',\''+un+'\')">Simpan</button>'
-          +  '<button class="ac-mini" type="button" onclick="acResetBaris('+i+',\''+un+'\',true)">Batal</button>'
+          +  acIkonBtn('act-edit',  'Ubah akun',        "acEditAccount('"+un+"')",   AC_IC_UBAH)
+          +  acIkonBtn('act-del',   'Hapus akun',       "acDeleteAccount('"+un+"')", AC_IC_HAPUS)
+          +  acIkonBtn('act-reset', 'Reset kata sandi', "acResetSandi('"+un+"')",    AC_IC_RESET)
           +'</div></td></tr>';
       });
       h+='</tbody></table></div>';
     }
     h+='<div class="ac-actions"><button class="btn btn-teal" type="button" onclick="acTab(\'create\')">+ Buat Akun Baru</button></div>';
     document.getElementById('ac-pane-list').innerHTML=h;
-    acFillActive();
+    acFillStatus();
   }
-  async function acFillActive(){
-    var el=document.getElementById('ac-active'); if(!el) return;
+
+  /* Tombol aksi berupa ikon saja. Memakai kelas .act milik app.js supaya
+     bentuk, ukuran, dan gerak hover-nya sama persis dengan tombol aksi di
+     tabel-tabel lain — bukan gaya baru yang kebetulan mirip. */
+  var AC_IC_UBAH  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
+  var AC_IC_HAPUS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+  var AC_IC_RESET = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="3.5"/><path d="M10 13 20 3"/><path d="M17 6l2 2"/><path d="M14 9l2 2"/></svg>';
+  function acIkonBtn(cls, judul, aksi, svg){
+    return '<button class="act '+cls+'" type="button" title="'+judul+'" aria-label="'+judul+'" onclick="'+aksi+'">'+svg+'</button>';
+  }
+
+  /* ---- Status Online ----
+     Sumbernya stempel waktu terakhir di tabel presence. Sejak acEndBeat tidak
+     lagi menghapus barisnya, stempel itu bertahan setelah orangnya keluar —
+     itulah yang membuat "1 minggu yang lalu" mungkin dihitung.
+
+     Ambang "Sedang aktif" 2 menit, bukan 5: detak presence berjalan tiap 60
+     detik, jadi 2 menit memberi kelonggaran satu detak yang terlewat tanpa
+     membuat orang yang sudah menutup peramban tetap tampak menyala lama. */
+  function acStatusOnline(ts){
+    if(!ts) return { cls:'never', label:'Belum pernah masuk' };
+    var d=Date.now()-ts;
+    if(d < 0) d=0;                                  // jam perangkat berbeda
+    if(d < 2*60*1000)   return { cls:'on',     label:'Sedang aktif' };
+    var menit=Math.floor(d/60000);
+    if(menit < 60)      return { cls:'baru',   label:menit+' menit yang lalu' };
+    var jam=Math.floor(menit/60);
+    if(jam < 24)        return { cls:'baru',   label:jam+' jam yang lalu' };
+    var hari=Math.floor(jam/24);
+    if(hari < 7)        return { cls:'jeda',   label:hari+' hari yang lalu' };
+    if(hari < 30)       return { cls:'jeda',   label:Math.floor(hari/7)+' minggu yang lalu' };
+    if(hari < 365)      return { cls:'jeda',   label:Math.floor(hari/30)+' bulan yang lalu' };
+    if(hari < 730)      return { cls:'lama',   label:'1 tahun yang lalu' };
+    return { cls:'lama', label:'Tidak aktif > 1 tahun' };
+  }
+  async function acFillStatus(){
+    var sel=document.querySelectorAll('#ac-pane-list .ac-cell-status');
+    if(!sel.length) return;
     if(!_useSupa()){
-      el.innerHTML='<div class="ac-muted">Deteksi sesi antar-perangkat memerlukan koneksi Supabase. Sesi ini: <b>'+escapeHtml(String(acWho()))+'</b>.</div>';
+      sel.forEach(function(td){ td.innerHTML='<span class="ac-muted">perlu koneksi</span>'; });
       return;
     }
     var list=await acLoadPresence();
-    if(!el || !document.body.contains(el)) return;
-    if(!list.length){ el.innerHTML='<div class="ac-muted">Tidak ada sesi aktif terdeteksi dalam 5 menit terakhir.</div>'; return; }
-    var me=String(acWho()).toLowerCase();
-    var h='';
-    list.forEach(function(p){
-      var mine=String(p.name).toLowerCase()===me;
-      var roleLbl=p.role==='admin'?'Admin':(p.role==='guest'?'Tamu':'User');
-      var pillCls=p.role==='admin'?'admin':(p.role==='guest'?'off':'user');
-      var mins=Math.max(0,Math.round((Date.now()-p.ts)/60000));
-      h+='<div class="ac-live'+(mine?' me':'')+'"><span class="ac-dot"></span>'
-        +'<b>'+escapeHtml(p.name)+'</b>'
-        +'<span class="ac-pill '+pillCls+'">'+roleLbl+'</span>'
-        +((p.role==='user' && p.bidang && p.bidang!==AC_SEMUA)?'<span class="ac-live-t">'+escapeHtml(p.bidang)+'</span>':'')
-        +(mine?'<span class="ac-live-you">sesi ini</span>':'')
-        +'<span class="ac-live-t">'+(mins<=1?'baru saja':(mins+' mnt lalu'))+'</span></div>';
+    /* Daftar bisa saja sudah digambar ulang selagi permintaan ini berjalan. */
+    if(!document.body.contains(sel[0])) return;
+    var peta={};
+    list.forEach(function(p){ peta[String(p.name).toLowerCase()]=p.ts; });
+    sel.forEach(function(td){
+      var u=String(td.getAttribute('data-user')||'').toLowerCase();
+      var st=acStatusOnline(peta[u]);
+      td.innerHTML='<span class="ac-stat '+st.cls+'"><i></i>'+st.label+'</span>';
     });
-    el.innerHTML=h;
   }
+
   window.acEditAccount=function(username){
     var a=acFindAcct(username); if(!a) return;
     acTab('create'); acRenderCreate(a);
@@ -528,38 +553,41 @@
   /* ---------- Reset Kata Sandi ----------
      Halaman Reset Sandi DIHAPUS. Ia dulu mengulang seluruh daftar akun hanya
      untuk menaruh sebuah kotak isian di tiap baris — padahal reset adalah
-     tindakan atas satu akun, dan tempatnya yang wajar di baris akun itu
-     sendiri. Sekarang tombol Reset ada di kolom Aksi pada Daftar Akun, dan
-     kotak isiannya terbuka tepat di bawah baris yang bersangkutan.
+     tindakan atas satu akun. Sekarang tombolnya ada di kolom Aksi.
 
-     Bagian "Akun Server" ikut hilang bersamanya. Itu disengaja: ia memanggil
-     RPC `admin_reset_password`, yang menurut catatannya sendiri SUDAH DIBUANG
-     dari 01_auth_login.sql — jadi tombolnya tidak pernah bisa berhasil.
-     Akun Admin Pusat sekarang berada di Supabase Auth dan kata sandinya
-     diganti lewat menu "Ganti Kata Sandi". */
-  window.acResetBaris=function(idx, username, tutup){
-    var row=document.getElementById('ac-reset-row-'+idx); if(!row) return;
-    var buka=(row.style.display==='none') && !tutup;
-    /* Hanya satu baris reset terbuka pada satu waktu — dua kotak isian
-       terbuka bersamaan mengundang salah isi ke akun yang keliru. */
-    document.querySelectorAll('#ac-pane-list .ac-reset-row').forEach(function(r){ r.style.display='none'; });
-    row.style.display = buka ? '' : 'none';
-    if(buka){
-      var inp=document.getElementById('ac-rpw-'+idx);
-      if(inp){ inp.value=''; setTimeout(function(){ try{ inp.focus(); }catch(e){} }, 30); }
-    }
-  };
-  window.acResetCustom=async function(idx, username){
-    var el=document.getElementById('ac-rpw-'+idx);
-    var np=((el&&el.value)||'').trim();
-    if(np.length<4){ try{ toast('Kata sandi baru minimal 4 karakter','warn'); }catch(e){} return; }
+     Bagian "Akun Server" ikut hilang. Itu disengaja: ia memanggil RPC
+     `admin_reset_password`, yang menurut catatannya sendiri SUDAH DIBUANG dari
+     01_auth_login.sql — jadi tombolnya tidak pernah bisa berhasil. Kata sandi
+     Admin Pusat kini diganti lewat menu "Ganti Kata Sandi".
+
+     KATA SANDI RESET BERSIFAT TETAP. Admin tidak mengarang kata sandi baru
+     tiap kali; reset selalu mengembalikannya ke nilai di bawah, sehingga yang
+     perlu disampaikan kepada pengguna selalu sama dan tidak mungkin salah
+     dibacakan. Konsekuensinya nilai ini praktis diketahui umum — karena itu
+     ia kata sandi SEMENTARA: pengguna wajib segera menggantinya. */
+  var AC_SANDI_RESET = 'masohi123';
+
+  window.acResetSandi=function(username){
     var a=acFindAcct(username);
     if(!a){ try{ toast('Akun tidak ditemukan','warn'); }catch(e){} return; }
-    a.password=np;
-    var ok=await acSaveConfig();
-    try{ toast('Kata sandi "'+username+'" diperbarui'+(ok?' & tersinkron':' (lokal)'),'ok'); }catch(e){}
-    acRenderList();   // daftar digambar ulang -> baris reset ikut tertutup
+    var lakukan=async function(){
+      a.password=AC_SANDI_RESET;
+      var ok=await acSaveConfig();
+      try{ toast('Kata sandi "'+username+'" direset ke '+AC_SANDI_RESET+(ok?'':' (lokal)'),'ok'); }catch(e){}
+      acRenderList();
+    };
+    /* openConfirm milik app.js dipakai supaya tampilannya seragam dengan
+       konfirmasi lain. Bila belum ada (mis. app.js gagal dimuat), jatuh ke
+       confirm() bawaan — lebih baik jelek daripada tombol yang diam saja. */
+    var pesan='Kata sandi akun "'+username+'" akan disetel ulang menjadi '+AC_SANDI_RESET
+            + '. Sampaikan kepada pemiliknya dan minta segera menggantinya.';
+    if(typeof openConfirm==='function'){
+      openConfirm({ icon:'warn', title:'Reset Kata Sandi', text:pesan, onYes:lakukan });
+    }else if(confirm(pesan)){
+      lakukan();
+    }
   };
+
   /* ============================ PANEL PENYIMPANAN ============================ */
   var ST_TABLES=[
     {t:'pekerjaan',              l:'SPBJ / Kontrak Rinci',  grp:'Data Pengadaan'},
