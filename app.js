@@ -661,6 +661,29 @@ const DRAFT_KEY = 'mon_draft'; // draft form input/edit (dipulihkan saat refresh
 const LOGIN_TIME_KEY = 'mon_login_time';   // timestamp login — dasar batas umur sesi absolut
 const LAST_ACTIVE_KEY = 'mon_last_active'; // timestamp aktivitas terakhir — dasar auto-logout idle
 const TOKEN_KEY = 'mon_sb_auth';            // kunci sesi Supabase Auth di sessionStorage
+/* BIDANG_KEY DULU TIDAK PERNAH ADA — inilah sebabnya layar "Sedang Keluar"
+   menggantung selamanya.
+
+   Nama ini dipakai di tiga tempat (enterApp, performLogout, pemulih sesi saat
+   halaman dimuat) tetapi tidak pernah dideklarasikan, sehingga setiap kali
+   dibaca ia melempar ReferenceError. Yang paling merusak ada di dalam finish()
+   milik performLogout: begitu `ssDel(BIDANG_KEY)` melempar, SELURUH baris
+   sesudahnya ikut dilewati — termasuk yang menampilkan kembali #login-screen.
+   Akibatnya lapisan keluar tidak pernah pergi dan aplikasi tampak menggantung,
+   padahal sesinya sendiri sudah bersih.
+
+   Nilainya WAJIB 'mon_bidang', sama persis dengan cadangan di acBidangKey()
+   pada app-lain.js — di sanalah bidang akun kustom benar-benar ditulis. Kalau
+   berbeda, bidang yang tersimpan tidak akan pernah terbaca kembali. */
+const BIDANG_KEY = 'mon_bidang';            // bidang akun kustom (__akses__) di sessionStorage
+/* Lama tayang lapisan "Selamat Datang" & "Sedang Keluar", dalam milidetik.
+   Dulu angka 2000 ditulis terpisah di playLoginAnim() dan performLogout();
+   disatukan di sini supaya keduanya tidak bisa lagi berbeda diam-diam.
+
+   900 ms dipilih karena nada arpeggio masuk/keluar berdurasi ±800 ms — cukup
+   untuk terdengar utuh, tanpa membuat pengguna menunggu. Turunkan sampai 0
+   untuk mematikan jedanya sama sekali (animasinya tetap tampil sekejap). */
+const SESI_ANIM_MS = 900;
 /* ============================================================================
    PENYIMPANAN BERKAS — SUPABASE STORAGE
    ----------------------------------------------------------------------------
@@ -1052,8 +1075,8 @@ function playLoginAnim(role, done){
   if(anim){
     anim.classList.remove('fade-out');
     anim.classList.add('show');
-    sfxSession('in');           // arpeggio naik, seiring animasi "Selamat Datang"
-    setTimeout(finish, 2000);   // mainkan animasi ± 2 detik sebelum masuk aplikasi
+    sfxSession('in');             // arpeggio naik, seiring animasi "Selamat Datang"
+    setTimeout(finish, SESI_ANIM_MS);
   }else{
     finish();
   }
@@ -1413,30 +1436,49 @@ function performLogout(){
   stopIdleTimer();   // hentikan pemantauan idle
   tutupSemuaOverlaySesi();   // jangan tinggalkan pop-up mengambang di layar login
   const anim=document.getElementById('logout-anim');
-  const finish=()=>{
-    /* Sesi Supabase HARUS ikut diakhiri. Membuang penanda di sessionStorage
-       saja tidak cukup — refresh token-nya akan tetap hidup dan berkas masih
-       bisa diambil oleh siapa pun yang membuka DevTools di perangkat itu. */
-    try{ if(db) db.auth.signOut().catch(()=>{}); }catch(e){}
-    sbSession=null;
-    ssDel(ROLE_KEY); ssDel(USER_KEY); ssDel(VIEW_KEY); ssDel(DRAFT_KEY); ssDel(LOGIN_TIME_KEY); ssDel(LAST_ACTIVE_KEY); ssDel(TOKEN_KEY); ssDel(BIDANG_KEY);
-    currentRole=null; currentUsername=null;
-    try{ resetAllFilters(); }catch(e){}
-    document.getElementById('topbar-user').style.display='none';
-    document.getElementById('login-screen').style.display='flex';
-    syncPageTitle();          // judul tab kembali ke "Halaman Login"
-    replayLoginZoom();
-    resetLoginForm();
+  /* Menampilkan kembali layar login DIPISAH dan dijalankan paling akhir di
+     dalam `finally`.
+
+     Susunan ini bukan gaya penulisan, melainkan perbaikan bug: dulu seluruh
+     pembersihan dan penampilan layar login berjalan dalam satu rangkaian
+     tanpa penjaga, sehingga SATU baris yang melempar cukup untuk melewati
+     semua sisanya — lapisan "Sedang Keluar" tinggal menggantung selamanya
+     tanpa cara keluar selain memuat ulang halaman. Sekarang apa pun yang
+     terjadi di atas, layar login tetap muncul. */
+  const tampilkanLayarLogin=()=>{
+    try{ const tb=document.getElementById('topbar-user'); if(tb) tb.style.display='none'; }catch(e){}
+    try{ const ls=document.getElementById('login-screen'); if(ls) ls.style.display='flex'; }catch(e){}
+    try{ syncPageTitle(); }catch(e){}      // judul tab kembali ke "Halaman Login"
+    try{ replayLoginZoom(); }catch(e){}
+    try{ resetLoginForm(); }catch(e){}
     if(anim){
       anim.classList.add('fade-out');
       setTimeout(()=>{ anim.classList.remove('show','fade-out'); }, 450);
     }
   };
+  const finish=()=>{
+    try{
+      /* Sesi Supabase HARUS ikut diakhiri. Membuang penanda di sessionStorage
+         saja tidak cukup — refresh token-nya akan tetap hidup dan berkas masih
+         bisa diambil oleh siapa pun yang membuka DevTools di perangkat itu. */
+      try{ if(db) db.auth.signOut().catch(()=>{}); }catch(e){}
+      sbSession=null;
+      ssDel(ROLE_KEY); ssDel(USER_KEY); ssDel(VIEW_KEY); ssDel(DRAFT_KEY); ssDel(LOGIN_TIME_KEY); ssDel(LAST_ACTIVE_KEY); ssDel(TOKEN_KEY); ssDel(BIDANG_KEY);
+      currentRole=null; currentUsername=null;
+      try{ resetAllFilters(); }catch(e){}
+    }catch(e){
+      /* Dicatat, tidak ditelan diam-diam: pengguna tetap keluar, tetapi
+         penyebabnya harus tetap bisa dilacak di konsol. */
+      console.error('performLogout:', e);
+    }finally{
+      tampilkanLayarLogin();
+    }
+  };
   if(anim){
     anim.classList.remove('fade-out');
     anim.classList.add('show');
-    sfxSession('out');          // arpeggio turun, seiring animasi keluar
-    setTimeout(finish, 2000);   // mainkan animasi ± 2 detik sebelum ke layar login
+    sfxSession('out');            // arpeggio turun, seiring animasi keluar
+    setTimeout(finish, SESI_ANIM_MS);
   }else{
     finish();
   }
