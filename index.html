@@ -183,17 +183,29 @@
   border-radius:9px;
   box-shadow:0 2px 6px rgba(6,30,36,.28) !important;
   transition:transform .15s ease,box-shadow .2s ease,filter .15s ease}
+/* KEPING PUTIH, IKON BERWARNA — bukan sebaliknya.
+   Percobaan pertama memberi tiap tombol latar berwarna penuh meniru tombol
+   aksi di tabel. Untuk tombol kuning & merah itu berhasil, tetapi tombol
+   Cetak/PDF yang teal jatuh di atas kepala modal yang JUGA bergradasi teal —
+   teal di atas teal, tombolnya nyaris lenyap. Warna yang kontras di atas latar
+   putih (tabel) belum tentu kontras di atas latar teal.
+   Karena itu dibalik: kepingnya putih, ikonnya yang berwarna. Ketiganya jadi
+   sama-sama tegas di atas teal, dan bahasa warnanya tetap utuh —
+   teal = mencetak, kuning = mengubah tampilan, merah = menutup. */
+#pn-preview-overlay .detail-head .btn,
+#pn-preview-overlay .pn-preview-head-actions .btn,
+#pn-preview-overlay .detail-head .detail-close{
+  background:#fff !important;
+  box-shadow:0 2px 7px rgba(4,26,32,.30) !important}
 /* Cetak / PDF -> teal (sama dengan tombol "Lihat" di tabel) */
 #pn-preview-overlay .pn-preview-head-actions .btn:not(.pn-fs-btn):not(.detail-close){
-  background:linear-gradient(135deg,#0E7C86,#16a9b5) !important;color:#fff !important}
-/* Layar Penuh -> kuning (sama dengan tombol "Ubah"); ikonnya bertinta gelap
-   supaya terbaca di atas kuning, persis .act-edit. */
-#pn-preview-overlay .pn-preview-head-actions .pn-fs-btn{
-  background:linear-gradient(135deg,#F6B40E,#ffca3a) !important;color:#5a3d00 !important}
-#pn-preview-overlay .pn-preview-head-actions .pn-fs-btn svg{stroke:#5a3d00 !important}
+  color:#0E7C86 !important}
+/* Layar Penuh -> kuning tua; kuning muda tidak terbaca di atas putih. */
+#pn-preview-overlay .pn-preview-head-actions .pn-fs-btn{color:#B07C00 !important}
+#pn-preview-overlay .pn-preview-head-actions .pn-fs-btn svg{stroke:currentColor !important}
 /* Tutup -> merah (sama dengan tombol "Hapus") */
-#pn-preview-overlay .detail-head .detail-close{
-  background:linear-gradient(135deg,#D33A3A,#e25151) !important;color:#fff !important}
+#pn-preview-overlay .detail-head .detail-close{color:#D33A3A !important}
+#pn-preview-overlay .detail-head svg{stroke:currentColor !important}
 /* ---- TOMBOL = IKON SAJA ----
    KETENTUAN 6 Agu 2026: tulisan "Cetak / PDF" dan "Layar Penuh" dilepas,
    yang tersisa hanya ikonnya.
@@ -245,8 +257,8 @@
 #pn-preview-overlay .detail-head .btn:hover,
 #pn-preview-overlay .pn-preview-head-actions .btn:hover,
 #pn-preview-overlay .detail-head .detail-close:hover{
-  filter:brightness(1.08);
-  box-shadow:0 4px 10px rgba(6,30,36,.34) !important}
+  transform:translateY(-1px);
+  box-shadow:0 5px 12px rgba(4,26,32,.36) !important}
 </style>
 
 <!-- ============ LEBAR KOLOM: DAFTAR NOMOR DOKUMEN (Penetapan Nomor) ============

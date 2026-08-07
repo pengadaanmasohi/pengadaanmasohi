@@ -1306,6 +1306,35 @@ function torEnsureStyle(){
     '.tor-dk-ov{position:fixed;inset:0;z-index:9000;display:none;align-items:center;justify-content:center;'+
       'background:rgba(12,28,38,.45);padding:20px}'+
     '.tor-dk-ov.show{display:flex}'+
+    /* ---- GETARAN "TUTUP DULU" ----
+       KETENTUAN 6 Agu 2026: mengklik di luar kotak TIDAK LAGI menutup pop-up.
+       Sebagai gantinya kotaknya bergetar dan berbunyi, meniru jendela modal
+       peramban — isyarat bahwa pop-up ini harus ditutup lebih dulu.
+
+       Kenapa getaran mendatar, bukan sekadar kedipan: gerak mendatar singkat
+       adalah bahasa "tidak bisa" yang sudah dikenal luas (sistem operasi
+       memakainya untuk kata sandi salah), dan ia tidak mengubah tata letak
+       sehingga tidak menggeser apa pun di dalam kotak.
+       Jaraknya sengaja kecil (6px) dan cepat (0,4 detik) — cukup terasa,
+       tidak sampai mengganggu.
+
+       Tombol tutup ikut disorot cincin putih pada saat yang sama, supaya
+       pengguna tidak hanya tahu "tidak bisa" tetapi juga TAHU HARUS KE MANA. */
+    '@keyframes tor-dk-getar{'+
+      '0%,100%{transform:translateX(0)}'+
+      '15%{transform:translateX(-6px)}30%{transform:translateX(6px)}'+
+      '45%{transform:translateX(-4px)}60%{transform:translateX(4px)}'+
+      '75%{transform:translateX(-2px)}90%{transform:translateX(2px)}}'+
+    '@keyframes tor-dk-sorot{'+
+      '0%,100%{box-shadow:0 2px 7px rgba(4,26,32,.30)}'+
+      '50%{box-shadow:0 0 0 4px rgba(255,255,255,.75),0 2px 7px rgba(4,26,32,.30)}}'+
+    '.tor-dk-mdl.menolak{animation:tor-dk-getar .4s cubic-bezier(.36,.07,.19,.97) both}'+
+    '.tor-dk-mdl.menolak .tor-dk-hd .x{animation:tor-dk-sorot .4s ease-in-out 2}'+
+    /* Pengguna yang meminta gerak dikurangi tetap mendapat isyarat, hanya
+       tanpa guncangan: cincin pada tombol tutup saja. */
+    '@media (prefers-reduced-motion:reduce){'+
+      '.tor-dk-mdl.menolak{animation:none}'+
+      '.tor-dk-mdl.menolak .tor-dk-hd .x{animation:tor-dk-sorot .5s ease-in-out 2}}'+
     /* max-width + min-width:0 menahan lebar modal pada jatah overlay: tanpa
        keduanya, isi kepala yang panjang bisa MELEBARKAN modal sehingga tombol
        di kanan atas terdorong keluar layar. */
@@ -1361,21 +1390,31 @@ function torEnsureStyle(){
        Sebelumnya keduanya putih polos tanpa latar — di atas kepala bergradasi
        teal, batas tombolnya nyaris tidak terlihat dan tombol tutup mudah
        terlewat. */
-    '.tor-dk-hd .x,.tor-dk-hd .pr{border:0;color:#fff;'+
+    /* KEPING PUTIH, IKON BERWARNA — bukan sebaliknya.
+       Percobaan pertama memberi tombol latar teal (meniru .act-view di tabel).
+       Hasilnya keliru: kepala modal ini SENDIRI bergradasi teal #0E7C86 -> #12A0A8,
+       dan tombol di ujung kanan jatuh tepat di bagian paling terang gradasi itu —
+       teal di atas teal, tombolnya nyaris lenyap. Warna yang bagus di atas latar
+       putih (tabel) belum tentu bagus di atas latar teal.
+       Karena itu dibalik: KEPINGNYA putih, IKONNYA yang berwarna. Kontrasnya
+       maksimal di atas teal apa pun, dan bahasa warnanya tetap sama —
+       teal = mencetak, merah = menutup. */
+    '.tor-dk-hd .x,.tor-dk-hd .pr{border:0;background:#fff;'+
       'width:30px;height:30px;flex:0 0 30px;border-radius:9px;line-height:1;cursor:pointer;'+
       'display:flex;align-items:center;justify-content:center;padding:0;'+
-      'box-shadow:0 2px 6px rgba(6,30,36,.28);'+
-      'transition:filter .15s ease,box-shadow .2s ease}'+
-    '.tor-dk-hd .pr{background:linear-gradient(135deg,#0E7C86,#16a9b5)}'+
-    '.tor-dk-hd .x{background:linear-gradient(135deg,#D33A3A,#e25151)}'+
-    '.tor-dk-hd .x:hover,.tor-dk-hd .pr:hover{filter:brightness(1.08);'+
-      'box-shadow:0 4px 10px rgba(6,30,36,.34)}'+
+      'box-shadow:0 2px 7px rgba(4,26,32,.30);'+
+      'transition:filter .15s ease,box-shadow .2s ease,transform .15s ease}'+
+    '.tor-dk-hd .pr{color:#0E7C86}'+
+    '.tor-dk-hd .x{color:#D33A3A}'+
+    '.tor-dk-hd .x:hover,.tor-dk-hd .pr:hover{transform:translateY(-1px);'+
+      'box-shadow:0 5px 12px rgba(4,26,32,.36)}'+
     '.tor-dk-hd .x:focus-visible,.tor-dk-hd .pr:focus-visible{outline:2px solid #fff;outline-offset:2px}'+
-    /* Kedua ikon berukuran & berketebalan gurat SAMA. Silang digambar sebagai
-       SVG (lihat markup) supaya benar-benar di tengah kotak — karakter &times;
-       punya sisi kosong yang berbeda menurut muka hurufnya. */
-    '.tor-dk-hd .pr svg,.tor-dk-hd .x svg{width:15px;height:15px;display:block;'+
-      'stroke:#fff;color:#fff;stroke-width:2}'+
+    /* Kedua ikon berukuran & berketebalan gurat SAMA; warnanya diwarisi dari
+       tombolnya lewat currentColor. Silang digambar sebagai SVG (lihat markup)
+       supaya benar-benar di tengah kotak — karakter &times; punya sisi kosong
+       yang berbeda menurut muka hurufnya. */
+    '.tor-dk-hd .pr svg,.tor-dk-hd .x svg{width:16px;height:16px;display:block;'+
+      'stroke:currentColor;stroke-width:2.1}'+
     '.tor-dk-bd{padding:12px;display:flex;flex-direction:column;gap:8px;max-height:70vh;overflow:auto}'+
     '.tor-dk-row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 14px;'+
       'border:1px solid #E3EAF2;border-radius:12px;background:#fff;cursor:pointer;'+
@@ -4504,7 +4543,9 @@ function torOpenDokList(id){
   let ov=document.getElementById('tor-dk-ov');
   if(!ov){
     ov=document.createElement('div'); ov.id='tor-dk-ov'; ov.className='tor-dk-ov';
-    ov.addEventListener('mousedown', function(e){ if(e.target===ov) torCloseDokList(); });
+    /* Dulu: mengklik latar langsung menutup pop-up. Sekarang DITOLAK — lihat
+       torDokListTolak() dan catatan @keyframes tor-dk-getar di torViewCss. */
+    ov.addEventListener('mousedown', function(e){ if(e.target===ov) torDokListTolak(); });
     document.body.appendChild(ov);
   }
   /* Nomor dokumen TIDAK lagi ditampilkan di bawah nama pekerjaan (ketentuan
@@ -4522,6 +4563,30 @@ function torOpenDokList(id){
     '</div>'+
     '<div class="tor-dk-bd">'+baris+'</div></div>';
   ov.classList.add('show');
+}
+/* Menolak upaya menutup lewat klik di luar kotak: kotaknya digetarkan,
+   tombol tutup disorot, dan bunyi peringatan dibunyikan.
+
+   Bunyinya MEMAKAI ULANG mesin suara aplikasi (sfxPlay di app.js) — nada yang
+   sama dengan pesan peringatan, jadi tidak ada berkas audio baru yang perlu
+   diunduh dan pengguna langsung mengenalinya. sfxPlay sendiri sudah menghormati
+   setelan suara pengguna (sfxEnabled), jadi yang mematikan suara tidak akan
+   mendengar apa pun — getarannya tetap ada.
+
+   Kelas .menolak dilepas dulu lalu dipasang lagi pada frame berikutnya; tanpa
+   itu, klik kedua yang cepat tidak memicu animasi apa pun karena kelasnya sudah
+   menempel dan peramban menganggap tidak ada yang berubah. */
+function torDokListTolak(){
+  var ov=document.getElementById('tor-dk-ov'); if(!ov) return;
+  var mdl=ov.querySelector('.tor-dk-mdl'); if(!mdl) return;
+  try{ if(typeof sfxPlay==='function') sfxPlay('warn'); }catch(e){}
+  mdl.classList.remove('menolak');
+  void mdl.offsetWidth;                     /* paksa peramban menghitung ulang */
+  mdl.classList.add('menolak');
+  clearTimeout(mdl.__tolakT);
+  mdl.__tolakT=setTimeout(function(){ mdl.classList.remove('menolak'); }, 900);
+  /* Fokus dipindah ke tombol tutup: pengguna papan ketik cukup menekan Enter. */
+  try{ var x=mdl.querySelector('.tor-dk-hd .x'); if(x) x.focus({preventScroll:true}); }catch(e){}
 }
 function torCloseDokList(){ const ov=document.getElementById('tor-dk-ov'); if(ov) ov.classList.remove('show'); }
 
