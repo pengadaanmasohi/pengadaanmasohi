@@ -9655,3 +9655,97 @@ button.act[disabled],button.act[disabled]:hover{
   white-space:nowrap;text-align:center;
   padding-left:10px;padding-right:10px;
 }
+
+
+/* ============================================================
+   TOMBOL KEMBALI TIMBUL (RELIEF) — 8 Agu 2026
+   ------------------------------------------------------------
+   Permintaan: semua tombol diberi efek timbul seperti contoh
+   (kotak berwarna dengan tepi atas mengilap, tepi bawah gelap,
+   dan bayangan jatuh ke permukaan di bawahnya).
+
+   Ini MEMBALIK "TAMBALAN TAJAM — BAGIAN E" (3 Agu 2026) yang
+   dulu meratakan bayangan tombol menjadi satu lapis tipis.
+   Pembalikannya SENGAJA dibatasi pada bayangan DIAM saja:
+   yang dikeluhkan waktu itu adalah tulisan & ikon yang bergetar
+   dan menonjol SAAT KURSOR MENGENAINYA. Blok 29 & 31 yang
+   mematikan transform serta text-shadow TIDAK disentuh — tombol
+   di sini timbul tanpa bergerak sedikit pun.
+
+   Empat lapis penyusun reliefnya:
+     inset 0 0 0 1px  putih  -> cincin tepi, memisahkan dari latar
+     inset 0 1px 0    putih  -> kilau di bibir ATAS
+     inset 0 -2px 0   hitam  -> bibir BAWAH gelap = ketebalan benda
+     0 2px 0 + 0 6px 14px    -> lipatan & bayangan jatuh
+
+   BOBOT PEMILIH — `:not(#_a):not(#_b)` WAJIB. Aturan pendataran
+   di bagian E memakai !important, dan !important TIDAK
+   membatalkan perhitungan bobot; ia hanya menaikkan lapisan.
+   Lawan terberatnya `.overlay:not(#pn-preview-overlay) .act:not([disabled])`
+   berbobot (1,3,0), jadi `.act` polos (0,1,0) — bahkan dengan
+   !important — akan kalah. Dua `:not()` ber-ID palsu menaikkannya
+   ke (2,1,0) tanpa mengubah elemen mana pun yang terpilih. Pola
+   yang sama sudah dipakai di blok 31.
+
+   Tombol MATI dikecualikan: benda yang tidak bisa ditekan tidak
+   boleh terlihat menonjol. Saat DITEKAN reliefnya dibalik menjadi
+   bayangan ke dalam — itu yang membuat tombol terasa masuk tanpa
+   perlu digeser posisinya.
+   ============================================================ */
+.btn:not(#_a):not(#_b):not([disabled]),
+button.act:not(#_a):not(#_b):not([disabled]),
+.fk-act:not(#_a):not(#_b):not([disabled]),
+.pg-btn:not(#_a):not(#_b):not(:disabled),
+.jp-profil-btn:not(#_a):not(#_b),
+.dp-pick-btn:not(#_a):not(#_b),
+.dp-unpick-btn:not(#_a):not(#_b),
+.login-btn:not(#_a):not(#_b),
+.logout-btn:not(#_a):not(#_b){
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.30),
+    inset 0 1px 0 rgba(255,255,255,.45),
+    inset 0 -2px 0 rgba(0,0,0,.17),
+    0 2px 0 rgba(16,40,50,.10),
+    0 6px 14px rgba(16,40,50,.20) !important;
+}
+.btn:not(#_a):not(#_b):not([disabled]):hover,
+button.act:not(#_a):not(#_b):not([disabled]):hover,
+.fk-act:not(#_a):not(#_b):not([disabled]):hover,
+.pg-btn:not(#_a):not(#_b):not(:disabled):hover,
+.jp-profil-btn:not(#_a):not(#_b):hover,
+.dp-pick-btn:not(#_a):not(#_b):hover,
+.dp-unpick-btn:not(#_a):not(#_b):hover,
+.login-btn:not(#_a):not(#_b):hover,
+.logout-btn:not(#_a):not(#_b):hover{
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.40),
+    inset 0 1px 0 rgba(255,255,255,.55),
+    inset 0 -2px 0 rgba(0,0,0,.19),
+    0 3px 0 rgba(16,40,50,.12),
+    0 9px 20px rgba(16,40,50,.26) !important;
+}
+/* Ditekan: relief dibalik ke dalam. Lipatan & bayangan jatuh dihapus supaya
+   permukaannya benar-benar terbaca turun, bukan sekadar menggelap. */
+.btn:not(#_a):not(#_b):not([disabled]):active,
+button.act:not(#_a):not(#_b):not([disabled]):active,
+.fk-act:not(#_a):not(#_b):not([disabled]):active,
+.pg-btn:not(#_a):not(#_b):not(:disabled):active,
+.jp-profil-btn:not(#_a):not(#_b):active,
+.dp-pick-btn:not(#_a):not(#_b):active,
+.dp-unpick-btn:not(#_a):not(#_b):active,
+.login-btn:not(#_a):not(#_b):active,
+.logout-btn:not(#_a):not(#_b):active{
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.22),
+    inset 0 2px 6px rgba(0,0,0,.30) !important;
+}
+/* Tombol mati tetap rata — tidak boleh mengundang ditekan. */
+.btn[disabled]:not(#_a):not(#_b),
+button.act[disabled]:not(#_a):not(#_b),
+.fk-act[disabled]:not(#_a):not(#_b),
+.pg-btn:disabled:not(#_a):not(#_b){
+  box-shadow:none !important;
+}
+@media print{
+  .btn:not(#_a),button.act:not(#_a),.fk-act:not(#_a),.pg-btn:not(#_a){box-shadow:none !important}
+}
