@@ -365,7 +365,7 @@
       opts+='<option value="'+escapeHtml(b)+'"'+(String(curBid)===String(b)?' selected':'')+'>'+escapeHtml(b)+'</option>';
     });
     var h=acBackHtml();
-    h+='<div class="ac-note">Akun di sini diverifikasi di sisi klien. Agar menu <b>Dokumen</b> dapat dibuka, akun ini harus dipindahkan ke Supabase Auth lewat <code>buat_akun_auth()</code> (lihat 04_akun_auth.sql) — tanpa itu akun tetap bisa masuk, tetapi setiap berkas ditolak.</div>';
+    h+='<div class="ac-note">Akun disimpan di aplikasi <b>dan</b> didaftarkan ke Supabase Auth secara otomatis, sehingga menu <b>Dokumen</b> langsung dapat dibuka. Bila pendaftaran itu gagal, pesan peringatan akan muncul \u2014 akunnya tetap terbentuk, tetapi berkas akan ditolak sampai Admin Pusat menjalankan <code>08_akun_kustom_auth.sql</code>.</div>';
     h+='<div class="ac-form">';
     h+='<div class="ac-row2">'
       + '<div class="ac-fld"><label>Username</label><input id="ac-c-user" type="text" autocomplete="off" placeholder="mis. operator1" value="'+(e?escapeHtml(e.username):'')+'"'+(e?' readonly':'')+'></div>'
@@ -420,15 +420,16 @@
     var idx=cfg.accounts.findIndex(function(x){ return String(x.username).toLowerCase()===u.toLowerCase(); });
     if(idx>=0){ cfg.accounts[idx]=acct; } else { cfg.accounts.push(acct); }
 
-    var serverMsg='';
-    if(_useSupa()){
-      try{
-        var res=await _realDb().rpc('create_user',{ p_username:u, p_password:p, p_role:tipe });
-        if(res && !res.error && res.data===true){ serverMsg=' + akun server dibuat'; }
-      }catch(e){ /* RPC tidak ada -> akun tetap lokal */ }
-    }
     var ok=await acSaveConfig();
-    try{ toast((idx>=0?'Akun diperbarui':'Akun dibuat')+(serverMsg||(ok?' & tersinkron':' (lokal)')),'ok'); }catch(e){}
+    var auth=await acSalurkanKeAuth(u, p, tipe, bidang);
+    try{
+      toast(
+        (idx>=0?'Akun diperbarui':'Akun dibuat')
+        + (ok?'':' (lokal)')
+        + (auth.ok ? ' & terhubung ke Supabase Auth'
+                   : ' — TETAPI belum terhubung ke Supabase Auth, menu Dokumen akan ditolak ('+auth.pesan+')'),
+        auth.ok?'ok':'warn');
+    }catch(e){}
     acTab('list');
   };
 
@@ -543,7 +544,17 @@
     if(!confirm('Hapus akun "'+username+'"? Tindakan ini tidak dapat dibatalkan.')) return;
     cfg.accounts=(cfg.accounts||[]).filter(function(x){ return String(x.username).toLowerCase()!==String(username).toLowerCase(); });
     await acSaveConfig();
-    try{ toast('Akun dihapus','ok'); }catch(e){}
+    /* Akun Auth-nya ikut dihapus. Tanpa ini, akun yang "dihapus" dari panel
+       masih bisa login lewat Supabase Auth — perannya saja yang hilang,
+       sehingga ia jatuh jadi 'guest' dan tetap memegang sesi yang sah. */
+    var authPesan='';
+    if(_useSupa()){
+      try{
+        var res=await _realDb().rpc('hapus_akun_auth',{ p_username:username });
+        if(res && res.error) authPesan=' — akun Supabase Auth belum terhapus ('+(res.error.message||'ditolak')+')';
+      }catch(e){ authPesan=' — akun Supabase Auth belum terhapus'; }
+    }
+    try{ toast('Akun dihapus'+authPesan, authPesan?'warn':'ok'); }catch(e){}
     acRenderList();
   };
 
@@ -564,13 +575,45 @@
      ia kata sandi SEMENTARA: pengguna wajib segera menggantinya. */
   var AC_SANDI_RESET = 'masohi123';
 
+  /* Menyalurkan akun ke Supabase Auth lewat RPC kelola_akun_auth
+     (08_akun_kustom_auth.sql). Tanpa langkah ini akun tetap bisa login —
+     pencocokannya teks biasa di peramban — tetapi tidak punya JWT, sehingga
+     SETIAP berkas ditolak policy Storage dengan 403 tanpa penjelasan yang
+     berarti bagi penggunanya.
+
+     Balikan: {ok:true} | {ok:false, pesan:'…'}. Kegagalannya TIDAK pernah
+     membatalkan penyimpanan ke app_profiles — akun tetap terbentuk dan bisa
+     dipakai untuk menu selain Dokumen — tetapi harus SELALU diberitahukan,
+     sebab akibatnya tidak terlihat sampai orangnya mencoba membuka berkas. */
+  async function acSalurkanKeAuth(username, password, tipe, bidang){
+    if(!_useSupa()) return { ok:false, pesan:'tidak ada koneksi Supabase' };
+    try{
+      var res=await _realDb().rpc('kelola_akun_auth',{
+        p_username:username, p_password:password,
+        p_peran:(tipe===AC_TIPE_ADMIN?'admin':'user'),
+        p_bidang:(tipe===AC_TIPE_ADMIN?AC_SEMUA:(bidang||AC_SEMUA))
+      });
+      if(res && res.error) return { ok:false, pesan:(res.error.message||'ditolak server') };
+      return { ok:true };
+    }catch(e){ return { ok:false, pesan:String((e&&e.message)||e) }; }
+  }
+
   window.acResetSandi=function(username){
     var a=acFindAcct(username);
     if(!a){ try{ toast('Akun tidak ditemukan','warn'); }catch(e){} return; }
     var lakukan=async function(){
       a.password=AC_SANDI_RESET;
       var ok=await acSaveConfig();
-      try{ toast('Kata sandi "'+username+'" direset ke '+AC_SANDI_RESET+(ok?'':' (lokal)'),'ok'); }catch(e){}
+      /* Supabase Auth WAJIB ikut diperbarui. Kalau tidak, orangnya bisa masuk
+         dengan masohi123 (cocok teks biasa) tetapi sesi Auth gagal terbentuk
+         memakai sandi lama — dan berkas kembali ditolak tanpa sebab yang
+         terlihat. Ini persis lubang yang dulu ada di sini. */
+      var auth=await acSalurkanKeAuth(username, AC_SANDI_RESET, acTipe(a), a.bidang);
+      try{
+        toast('Kata sandi "'+username+'" direset ke '+AC_SANDI_RESET+(ok?'':' (lokal)')
+              + (auth.ok?'':' — Supabase Auth GAGAL diperbarui ('+auth.pesan+')'),
+              auth.ok?'ok':'warn');
+      }catch(e){}
       acRenderList();
     };
     /* openConfirm milik app.js dipakai supaya tampilannya seragam dengan
