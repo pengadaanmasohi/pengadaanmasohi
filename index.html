@@ -2484,24 +2484,37 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
      Menampilkan SELURUH jenis dokumen milik satu pekerjaan secara berurutan.
      Dokumen yang berkasnya sudah ada tampil biru & dapat diklik untuk membuka
      pratinjau; yang belum diunggah tampil redup dan tidak dapat diklik. -->
-<!-- ===== Pemilih bagian dokumen SPK / Perjanjian-Kontrak (7 Agu 2026) =====
-     Dokumen kontrak kini terbit sebagai TIGA bagian terpisah, sejajar dengan
-     cara TOR/KAK menyajikan dokumennya. Sengaja MEMAKAI ULANG kelas
-     .dpeng-list-* : keduanya adalah daftar-pilih-dokumen yang sama persis
-     perilakunya (seluruh baris dapat diklik, panah di ujung kanan, tombol
-     tutup merah, klik latar menggetarkan), jadi satu bahasa visual — bukan dua
-     yang mirip-mirip. Nama kelasnya memang bersejarah dari Dokumen Pengadaan;
-     gayanya sendiri tidak mengandung apa pun yang khas modul itu. -->
-<div class="overlay" id="spk-dok-overlay">
-  <div class="modal wide dpeng-list-modal">
-    <div class="detail-head">
-      <div class="dpeng-list-head-txt">
-        <h3 id="spk-dok-title">Dokumen Kontrak</h3>
-        <p class="dpeng-list-sub" id="spk-dok-sub"></p>
+<!-- ===== Pemilih bagian dokumen SPK / Perjanjian-Kontrak =====
+     KETENTUAN 8 Agu 2026: tampilannya disamakan dengan pemilih dokumen pada
+     Penyusunan Dokumen Pengadaan (.tor-dk-*). Sebelumnya pop-up ini memakai
+     kelas .dpeng-list-* — kepala putih, judul + anak judul, tombol tutup
+     berupa karakter &times;, tanpa tombol cetak — sementara pemilih dokumen
+     pengadaan sudah memakai kepala bergradasi teal, dua tombol bulat (cetak
+     teal & tutup merah) dengan ikon SVG, dan baris dokumen berikon. Dua
+     pemilih yang tugasnya sama persis tidak boleh terlihat berbeda.
+
+     Kepala kini HANYA memuat nama pekerjaan (anak judul "nomor kontrak ·
+     jenis dokumen" dihapus): nomor itu sudah tercetak di tiap dokumennya,
+     dan judul dua baris membuat tinggi kepala berubah-ubah menurut panjang
+     nomor.
+
+     Isi kepala & badan diisi oleh spkOpenDokList() di susun-kontrak.js.
+     Gaya .tor-dk-* disuntikkan torEnsureStyle() (susun-dokumen.js) — dipanggil
+     dari spkOpenDokList supaya tetap benar walau halaman TOR/KAK belum pernah
+     dibuka sama sekali dalam sesi ini. -->
+<div class="tor-dk-ov" id="spk-dok-overlay">
+  <div class="tor-dk-mdl">
+    <div class="tor-dk-hd">
+      <div class="jd"><b id="spk-dok-title">Dokumen Kontrak</b></div>
+      <div class="act">
+        <button type="button" class="pr" id="spk-dok-print" onclick="spkCetakGabung()"
+          title="Cetak gabungan: Kontrak + Lampiran + Pakta Integritas"
+          aria-label="Cetak gabungan"></button>
+        <button type="button" class="x" id="spk-dok-close" onclick="spkCloseDokList()"
+          title="Tutup" aria-label="Tutup"></button>
       </div>
-      <button class="detail-close" onclick="spkCloseDokList()" title="Tutup" aria-label="Tutup">&times;</button>
     </div>
-    <div class="dpeng-list-body" id="spk-dok-body"></div>
+    <div class="tor-dk-bd" id="spk-dok-body"></div>
   </div>
 </div>
 
@@ -2689,21 +2702,24 @@ table.fkl-page-wrap > tfoot > tr > td{padding:0;border:0;background:transparent}
 
 <div class="toast" id="toast"></div>
 
-<!-- ====== ANIMASI LOGIN ====== -->
+<!-- ====== ANIMASI LOGIN ======
+     KETENTUAN 8 Agu 2026: susunannya dibuat PERSIS SAMA dengan Animasi Logout
+     di bawah — satu-satunya perbedaan adalah ARAH IKON PANAH: di sini pintu
+     berada di KANAN dan panah menuju masuk ke dalamnya, kebalikan dari animasi
+     keluar (pintu di kiri, panah menuju keluar).
+     Percikan (.li-spark), lencana petir/centang (.li-bolt/.li-check) dan judul
+     bergradasi (.li-title) DIHAPUS: itulah yang dulu membuat kedua animasi
+     terasa berasal dari dua aplikasi berbeda. -->
 <div class="login-anim" id="login-anim" aria-hidden="true">
-  <span class="li-spark s1"></span><span class="li-spark s2"></span>
-  <span class="li-spark s3"></span><span class="li-spark s4"></span>
-  <span class="li-spark s5"></span><span class="li-spark s6"></span>
   <div class="lo-box">
     <div class="lo-ring">
       <svg class="lo-spin" viewBox="0 0 120 120"><circle cx="60" cy="60" r="52"/><circle class="lo-arc" cx="60" cy="60" r="52"/></svg>
-      <div class="lo-badge li-badge">
-        <svg class="li-bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/></svg>
-        <svg class="li-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+      <div class="lo-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
       </div>
     </div>
     <div>
-      <div class="lo-title li-title" id="login-anim-title">Selamat Datang<span class="lo-dots"></span></div>
+      <div class="lo-title" id="login-anim-title">Selamat Datang<span class="lo-dots"></span></div>
       <div class="lo-sub" id="login-anim-sub"></div>
     </div>
   </div>

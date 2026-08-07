@@ -1163,7 +1163,10 @@ function playLoginAnim(role, done){
     done&&done();                              // masuk ke aplikasi (enterApp)
     if(anim){
       anim.classList.add('fade-out');
-      setTimeout(()=>{ anim.classList.remove('show','fade-out'); }, 500);
+      /* 450 ms = tepat durasi @keyframes loOut, sama dengan animasi keluar
+         (performLogout). Dulu 500 ms — sisa dari animasi liOut yang sudah
+         dihapus, sehingga lapisannya menggantung 50 ms lebih lama. */
+      setTimeout(()=>{ anim.classList.remove('show','fade-out'); }, 450);
     }
   };
   if(anim){
@@ -1726,7 +1729,7 @@ function syncPageTitle(){
 })();
 function logout(){
   openConfirm({
-    icon:'back', title:'Keluar',
+    icon:'keluar', title:'Keluar',
     text:'Apakah anda yakin ingin keluar?',
     sfxNone:true,          // "Ya" langsung disusul nada keluar (sfxSession('out'))
     onYes:performLogout
@@ -2269,9 +2272,25 @@ const ICONS={
   save:`<svg viewBox="0 0 24 24" fill="none" stroke="#1E9E5A" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>`,
   back:`<svg viewBox="0 0 24 24" fill="none" stroke="#D33A3A" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>`,
   del:`<svg viewBox="0 0 24 24" fill="none" stroke="#D33A3A" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,
-  warn:`<svg viewBox="0 0 24 24" fill="none" stroke="#C98A00" stroke-width="2.1"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4M12 17h.01"/></svg>`
+  warn:`<svg viewBox="0 0 24 24" fill="none" stroke="#C98A00" stroke-width="2.1"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4M12 17h.01"/></svg>`,
+  /* KELUAR — bingkai pintu di kiri, panah melangkah keluar ke kanan
+     (pilihan D, ketentuan 8 Agu 2026).
+
+     Dulu konfirmasi Keluar memakai ikon `back`, yaitu SILANG merah. Silang itu
+     dipakai di seluruh aplikasi dengan arti "batalkan / tutup" — persis lawan
+     dari maksud dialog ini. Akibatnya tombol yang benar-benar mengakhiri sesi
+     tampil dengan lambang yang biasanya berarti "tidak jadi".
+
+     Ikonnya sengaja SAMA PERSIS dengan lencana pada animasi "Sedang Keluar"
+     (index.html #logout-anim), jadi bentuk yang dilihat pengguna saat menyetujui
+     adalah bentuk yang sama dengan yang muncul sesudahnya. Bedanya hanya warna:
+     merah di dialog (peringatan), putih di atas lapisan teal.
+
+     `back` TIDAK diubah — belasan dialog "Batalkan ..." masih memakainya dan
+     memang seharusnya bersilang. */
+  keluar:`<svg viewBox="0 0 24 24" fill="none" stroke="#D33A3A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>`
 };
-const ICON_BG={save:'#d8f0e3',back:'#fbe0e0',del:'#fbe0e0',warn:'#fdf0d6'};
+const ICON_BG={save:'#d8f0e3',back:'#fbe0e0',del:'#fbe0e0',warn:'#fdf0d6',keluar:'#fbe0e0'};
 /* sfxNone:true -> tombol "Ya" tidak membunyikan nada klik, dipakai oleh
    konfirmasi Keluar yang sudah punya nada sesi sendiri. Penanda dipasang
    per-pemakaian & selalu dibersihkan, karena modal ini dipakai bersama

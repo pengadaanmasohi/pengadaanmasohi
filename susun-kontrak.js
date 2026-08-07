@@ -2938,32 +2938,141 @@ function spkDokBagianList(data){
       ket:'SMAP — ditandatangani Pejabat Pelaksana Pengadaan' }
   ];
 }
+/* Ikon kepala pop-up. Diambil dari tetapan milik pemilih Dokumen Pengadaan
+   (TOR_IC_CETAK / TOR_IC_TUTUP di susun-dokumen.js) supaya guratan, ukuran,
+   dan bentuknya DIJAMIN sama — bukan disalin jadi versi kedua yang lambat laun
+   berbeda sendiri. Cadangan dipakai hanya bila susun-dokumen.js belum termuat. */
+function spkIcDok(nama){
+  try{
+    var v=(nama==='cetak') ? TOR_IC_CETAK : TOR_IC_TUTUP;
+    if(typeof v==='string' && v) return v;
+  }catch(e){}
+  return (nama==='cetak')
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+}
 function spkOpenDokList(data, klausul){
   spkDokPilih={ data:data||{}, klausul:klausul||[] };
   const ov=document.getElementById('spk-dok-overlay');
   if(!ov){ spkOpenPreview(data, klausul, 'utama'); return; }   /* cadangan bila markup tak ada */
+  /* Gaya .tor-dk-* hidup di dalam <style id="tor-style"> yang disuntikkan
+     torEnsureStyle(). Fungsi itu idempoten (langsung keluar bila sudah ada),
+     jadi memanggilnya di sini aman — dan WAJIB: tanpa ini pop-up tampil tanpa
+     gaya sama sekali bila pengguna belum pernah membuka halaman TOR/KAK. */
+  try{ if(typeof torEnsureStyle==='function') torEnsureStyle(); }catch(e){}
+  /* Kepala: NAMA PEKERJAAN saja (ketentuan 8 Agu 2026). */
   const t=document.getElementById('spk-dok-title');
-  const sub=document.getElementById('spk-dok-sub');
   const body=document.getElementById('spk-dok-body');
   if(t) t.textContent=(data&&data.nama_pekerjaan)||spkDokTitle(data)||'Dokumen Kontrak';
-  if(sub) sub.textContent=[(data&&data.nomor_kontrak)||'', spkDokTitle(data)].filter(Boolean).join(' · ');
+  const pr=document.getElementById('spk-dok-print');
+  if(pr) pr.innerHTML=spkIcDok('cetak');
+  const xb=document.getElementById('spk-dok-close');
+  if(xb) xb.innerHTML=spkIcDok('tutup');
   if(body){
-    body.innerHTML='<div class="dpeng-list-hint">Klik bagian dokumen untuk membuka pratinjaunya.</div>'+
-      '<ol class="dpeng-list-items">'+spkDokBagianList(data).map(function(b,i){
-        const buka="spkDokBuka('"+b.mode+"')";
-        return '<li class="dpeng-list-item has-file" tabindex="0" role="button"'+
-          ' title="Klik untuk membuka pratinjau" onclick="'+buka+'"'+
-          ' onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();'+buka+';}">'+
-          '<span class="dpeng-list-no">'+(i+1)+'</span>'+
-          '<span class="dpeng-list-main"><span class="dpeng-list-label">'+fkEsc(b.judul)+'</span>'+
-            '<span class="dpeng-list-file">'+fkEsc(b.ket)+'</span></span>'+
-          '<span class="dpeng-list-go" aria-hidden="true">&rsaquo;</span></li>';
-      }).join('')+'</ol>';
+    /* Baris memakai <button> + kelas .tor-dk-row, sama persis dengan pemilih
+       Dokumen Pengadaan: ikon di kiri, judul + keterangan di tengah, panah
+       tunggal di kanan. Nomor urut (.dpeng-list-no) dan kalimat petunjuk di
+       atas daftar sengaja tidak dibawa — keduanya tidak ada di pemilih yang
+       ditiru, dan daftar tiga baris ini sudah terbaca tanpa penomoran. */
+    body.innerHTML=spkDokBagianList(data).map(function(b){
+      const buka="spkDokBuka('"+b.mode+"')";
+      return '<button type="button" class="tor-dk-row" onclick="'+buka+'">'+
+        '<span class="ic">\u25A4</span>'+
+        '<span class="tx"><b>'+fkEsc(b.judul)+'</b><i>'+fkEsc(b.ket)+'</i></span>'+
+        '<span class="go">\u203A</span></button>';
+    }).join('');
   }
   ov.classList.add('show');
 }
 function spkCloseDokList(){
   const ov=document.getElementById('spk-dok-overlay'); if(ov) ov.classList.remove('show');
+}
+/* ===================== CETAK GABUNGAN KONTRAK (8 Agu 2026) =====================
+   Pasangan dari torCetakGabung(): satu perintah mencetak KETIGA bagian dokumen
+   kontrak berurutan dalam satu berkas.
+
+   Persoalannya sama seperti di TOR/KAK: bagian Kontrak & Lampiran digambar
+   mesin cetak SPK (.spk-page + spkPageScript), sedangkan Pakta Integritas
+   memakai kerangka cetak umum (.fkl-print-page). Menggabungkan mentah-mentah
+   membuat gaya keduanya saling menimpa. Karena itu tiap bagian dibiarkan
+   PAGINASI SENDIRI di bingkai tersembunyi, lalu lembar-lembar yang sudah matang
+   dipanen dengan gaya BERAWALAN kelas per-dokumen.
+
+   Seluruh penolongnya (torPanenBingkai, torTungguPaginasi, torTungguFont) sudah
+   sadar mesin cetak SPK — lihat pemeriksaan __spkPaged di dalamnya — jadi tidak
+   ada yang perlu ditulis ulang di sini. */
+function spkCetakGabung(){
+  const data=(spkDokPilih&&spkDokPilih.data)||null;
+  if(!data){ if(typeof toast==='function') toast('Dokumen tidak ditemukan','warn'); return; }
+  const kl=(spkDokPilih&&spkDokPilih.klausul)||[];
+  if(typeof torPanenBingkai!=='function' || typeof torTungguPaginasi!=='function'){
+    /* Penolong belum termuat -> jangan diam-diam gagal; cetak bagian utama saja. */
+    spkDokBuka('utama'); return;
+  }
+  spkCloseDokList();
+  /* Perjanjian/Kontrak KHS: cetak gabungan selalu memuat SELURUH penyedia.
+     Nilai ini global dan dibaca spkDocHtml, jadi dikembalikan setelah dipakai. */
+  const khsSimpan=(typeof SPK_KHS_ONLY!=='undefined') ? SPK_KHS_ONLY : 0;
+  const doks=['utama','lampiran','pakta'].map(function(m){
+    try{
+      if(m==='pakta') return torPiDocHtml(data,'pelaksana');
+      try{ SPK_KHS_ONLY=0; }catch(e){}
+      SPK_BAGIAN=m; const h=spkDocHtml(data, kl); SPK_BAGIAN='';
+      return h;
+    }catch(e){ console.error('cetak gabungan kontrak/'+m+':', e); SPK_BAGIAN=''; return ''; }
+  }).filter(Boolean);
+  try{ SPK_KHS_ONLY=khsSimpan; }catch(e){}
+  if(!doks.length){ if(typeof toast==='function') toast('Tidak ada dokumen untuk dicetak','warn'); return; }
+
+  let wadah=document.getElementById('spk-gabung-wrap');
+  if(wadah) wadah.remove();
+  wadah=document.createElement('div'); wadah.id='spk-gabung-wrap';
+  wadah.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;overflow:hidden;visibility:hidden';
+  document.body.appendChild(wadah);
+  const bingkai=doks.map(function(html){
+    const f=document.createElement('iframe');
+    f.style.cssText='width:1200px;height:1600px;border:0';
+    wadah.appendChild(f);
+    const d=f.contentWindow.document; d.open(); d.write(html); d.close();
+    return f;
+  });
+  const selesai=function(){
+    let css='', isi='', link='', sudahFF=new Set(), sudahLink=new Set();
+    bingkai.forEach(function(f,i){
+      const k='cetak-k'+(i+1);
+      let p; try{ p=torPanenBingkai(f, k, sudahFF); }catch(e){ console.error('panen kontrak:', e); return; }
+      css+=p.css;
+      (p.links||[]).forEach(function(t){ if(!sudahLink.has(t)){ sudahLink.add(t); link+=t; } });
+      isi+='<div class="cetak-doc '+k+'">'+p.html+'</div>';
+    });
+    wadah.remove();
+    if(!isi){ if(typeof toast==='function') toast('Gagal menyiapkan cetak gabungan','warn'); return; }
+    if(!link && typeof fklDocFontLink==='function') link=fklDocFontLink();
+    const html='<!DOCTYPE html><html lang="id"><head><meta charset="utf-8">'+
+      '<title>&#8203;</title>'+link+'<style>'+css+
+      'html,body{margin:0;padding:0;background:#fff}'+
+      '.cetak-doc{break-after:page;page-break-after:always}'+
+      '.cetak-doc:last-child{break-after:auto;page-break-after:auto}'+
+      '</style></head><body>'+isi+'</body></html>';
+    const old=document.getElementById('spk-gabung-frame'); if(old) old.remove();
+    const ifr=document.createElement('iframe'); ifr.id='spk-gabung-frame';
+    ifr.setAttribute('aria-hidden','true');
+    ifr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+    document.body.appendChild(ifr);
+    const d=ifr.contentWindow.document; d.open(); d.write(html); d.close();
+    const cetak=function(){
+      const run=function(){ try{ ifr.contentWindow.focus(); ifr.contentWindow.print(); }
+                            catch(e){ console.warn('spkCetakGabung:', e); } };
+      if(typeof withHiddenPageTitle==='function') withHiddenPageTitle(run); else run();
+      setTimeout(function(){ const f=document.getElementById('spk-gabung-frame'); if(f) f.remove(); }, 1500);
+    };
+    if(typeof torTungguFont==='function') torTungguFont(ifr, 3000, cetak); else setTimeout(cetak, 400);
+  };
+  let sisa=bingkai.length;
+  bingkai.forEach(function(f){
+    torTungguPaginasi(f, 6000, function(){ if(--sisa<=0) selesai(); });
+  });
+  if(typeof toast==='function') try{ toast('Menyiapkan cetak gabungan\u2026','ok'); }catch(e){}
 }
 function spkDokBuka(mode){
   const d=spkDokPilih.data||{}, kl=spkDokPilih.klausul||[];

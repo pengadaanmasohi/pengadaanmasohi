@@ -908,35 +908,31 @@ td.cell-center{text-align:center}
 .lo-sub{font-size:11.5px;opacity:.85;letter-spacing:2px;text-transform:uppercase;font-weight:600;margin-top:5px}
 .lo-dots::after{content:'';animation:rl-dots 1.4s steps(4,end) infinite}
 
-/* ---------- Animasi Login (mirror logout) ---------- */
+/* ---------- Animasi Login — KEMBAR PERSIS DENGAN ANIMASI LOGOUT ----------
+   KETENTUAN 8 Agu 2026: "animasi saat keluar sangat bagus, harusnya animasi
+   saat login persis seperti itu tapi dengan arah panah kebalikan".
+
+   Sebelumnya keduanya hanya MIRIP: login memakai latar yang sedikit lebih
+   terang, animasi masuk berskala (liIn/liOut), lencana petir yang berganti
+   menjadi centang, judul bergradasi berkilau, dan enam percikan yang melayang.
+   Logout tidak punya satu pun dari itu. Hasilnya dua momen yang seharusnya
+   berpasangan justru terasa berasal dari dua aplikasi berbeda.
+
+   Sekarang seluruh nilainya disamakan dengan .logout-anim; yang membedakan
+   HANYA ikon di dalam lencana (lihat markup di index.html) — pintu di kanan
+   dengan panah masuk, cermin dari pintu di kiri dengan panah keluar.
+   Aturan .li-* (percikan, petir/centang, judul berkilau) DIHAPUS karena tidak
+   ada lagi elemen yang memakainya. z-index tetap 410 supaya lapisan masuk
+   selalu di atas lapisan keluar bila keduanya sempat bertumpuk. */
 .login-anim{position:fixed;inset:0;z-index:410;display:none;align-items:center;justify-content:center;color:#fff;overflow:hidden;
   background:
-    radial-gradient(900px 500px at 85% -10%, rgba(22,169,181,.40), transparent 60%),
-    radial-gradient(700px 480px at -8% 8%, rgba(246,180,14,.22), transparent 55%),
+    radial-gradient(900px 500px at 85% -10%, rgba(22,169,181,.35), transparent 60%),
+    radial-gradient(700px 480px at -8% 8%, rgba(246,180,14,.18), transparent 55%),
     linear-gradient(135deg,#073f45,#095e66 45%,#0E7C86 100%);}
-.login-anim.show{display:flex;animation:liIn .5s cubic-bezier(.2,.8,.2,1)}
-.login-anim.fade-out{animation:liOut .5s ease forwards}
-@keyframes liIn{from{opacity:0;transform:scale(1.04)}to{opacity:1;transform:none}}
-@keyframes liOut{to{opacity:0;transform:scale(.98)}}
+.login-anim.show{display:flex;animation:loIn .42s ease}
+.login-anim.fade-out{animation:loOut .45s ease forwards}
 .login-anim::before{content:"";position:absolute;inset:0;opacity:.5;background-image:radial-gradient(rgba(255,255,255,.10) 1px,transparent 1px);background-size:22px 22px;pointer-events:none}
-.login-anim::after{content:"";position:absolute;width:560px;height:560px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.12),transparent 62%);animation:loRipple 2.2s ease-out infinite}
-.login-anim .lo-badge{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.4)}
-.li-badge{position:relative}
-.li-badge svg{position:absolute;width:38px;height:38px;color:#fff}
-.li-bolt{fill:var(--yellow);stroke:#fff;stroke-width:1;animation:liBolt 2.1s ease-in-out infinite}
-.li-check{opacity:0;transform:scale(.4);animation:liCheck 2.1s ease-in-out infinite}
-@keyframes liBolt{0%,42%{opacity:1;transform:scale(1) rotate(0)}52%,90%{opacity:0;transform:scale(.5) rotate(-12deg)}100%{opacity:1;transform:scale(1)}}
-@keyframes liCheck{0%,42%{opacity:0;transform:scale(.4)}56%,88%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(.4)}}
-.li-title{background:linear-gradient(90deg,#fff,#ffe9a8,#fff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;background-size:200% 100%;animation:liSheen 2.4s linear infinite}
-@keyframes liSheen{to{background-position:200% 0}}
-.li-spark{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--yellow);box-shadow:0 0 12px 2px rgba(246,180,14,.7);opacity:0;animation:liSpark 2.2s ease-in-out infinite}
-.li-spark.s1{top:26%;left:30%;animation-delay:.0s}
-.li-spark.s2{top:34%;left:70%;background:#7CFFDf;box-shadow:0 0 12px 2px rgba(124,255,223,.7);animation-delay:.35s}
-.li-spark.s3{top:66%;left:24%;background:#bfe6ff;box-shadow:0 0 12px 2px rgba(191,230,255,.7);animation-delay:.7s}
-.li-spark.s4{top:70%;left:74%;animation-delay:.5s}
-.li-spark.s5{top:20%;left:54%;background:#7CFFDf;box-shadow:0 0 12px 2px rgba(124,255,223,.6);animation-delay:.9s}
-.li-spark.s6{top:78%;left:48%;background:#bfe6ff;box-shadow:0 0 12px 2px rgba(191,230,255,.6);animation-delay:.2s}
-@keyframes liSpark{0%{opacity:0;transform:translateY(6px) scale(.6)}30%{opacity:1;transform:translateY(-4px) scale(1)}70%{opacity:.6}100%{opacity:0;transform:translateY(-16px) scale(.5)}}
+.login-anim::after{content:"";position:absolute;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.10),transparent 62%);animation:loRipple 2.4s ease-out infinite}
 
 
 /* ---------- Route Loader (transisi antar menu) — elegan ---------- */
@@ -1090,9 +1086,25 @@ tbody.tbody-reveal>tr:nth-child(10){animation-delay:.29s}
   animation:brandSpin 26s linear infinite;pointer-events:none}
 @keyframes brandSpin{to{transform:rotate(360deg)}}
 .brandside-top{position:relative;z-index:2;display:flex;align-items:center;gap:13px}
-.brandside-logo{width:56px;height:56px;flex:0 0 56px;border-radius:16px;display:grid;place-items:center;
+/* ---- UKURAN LOGO PLN DISELARASKAN DENGAN TEKSNYA (8 Agu 2026) ----
+   56px membuat logo hampir DUA KALI tinggi blok teks di sebelahnya
+   ("MONITORING PENGADAAN" 13px + "PT PLN (PERSERO) UP3 MASOHI" 8,5px
+   = ±27px). Karena .brandside-top memakai align-items:center, kelebihan
+   tinggi itu menjulur ±15px ke atas DAN ke bawah teks, sehingga logo
+   terbaca lebih dominan daripada nama aplikasinya sendiri.
+
+   46px menyisakan tonjolan ±9px di tiap sisi — logo tetap menjadi
+   jangkar visual, tetapi tidak lagi menenggelamkan teksnya.
+   border-radius & ukuran svg ikut diperkecil dengan rasio yang sama
+   (16→13, 32→26) supaya lengkung sudut dan isi lambangnya tidak
+   berubah proporsi, hanya skalanya.
+
+   Efek sampingnya sengaja: .brandside-top ikut memendek 10px, jadi
+   tinggi kartu login kembali menyusut sedikit — searah dengan
+   permintaan sebelumnya. */
+.brandside-logo{width:46px;height:46px;flex:0 0 46px;border-radius:13px;display:grid;place-items:center;
   background:transparent;box-shadow:none}
-.brandside-logo svg{width:32px;height:32px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.15))}
+.brandside-logo svg{width:26px;height:26px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.15))}
 .brandside-top .bt-txt h3{font-family:'Plus Jakarta Sans';font-weight:800;font-size:13px;letter-spacing:.4px;line-height:1.2;color:#fff}
 .brandside-top .bt-txt span{font-size:8.5px;font-weight:600;letter-spacing:1.8px;text-transform:uppercase;color:rgba(223,243,244,.85)}
 .brandside-mid{position:relative;z-index:2;margin:20px 0}
@@ -6183,7 +6195,6 @@ table tfoot tr:hover td{ background:inherit !important; color:inherit; }
 #view-dashboard .page-head h2,
 .view .page-head h2[style*="text-fill"],
 .view .card .v,
-.view .li-title,
 .view .rl-text{ text-shadow:none }
 
 /* ---------- Kolom isian: sedikit cekung agar kontras dgn kartu timbul ---------- */
