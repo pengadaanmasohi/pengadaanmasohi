@@ -222,12 +222,20 @@
 @keyframes pn-sorot{
   0%,100%{box-shadow:0 2px 6px rgba(6,30,36,.30)}
   50%{box-shadow:0 0 0 4px rgba(255,255,255,.8),0 2px 6px rgba(6,30,36,.30)}}
+/* Berlaku untuk SETIAP kotak modal yang diberi kelas .menolak — pratinjau
+   dokumen, modal "Lihat" pada Monitoring & Daftar Pekerjaan, dan modal apa pun
+   yang didaftarkan lewat pasangTolakTutup() di app.js. Ditulis umum supaya
+   modal berikutnya tidak perlu aturan gaya baru. */
+.overlay .modal.menolak,
 #pn-preview-overlay .pn-preview-modal.menolak{
   animation:pn-getar .4s cubic-bezier(.36,.07,.19,.97) both}
+.overlay .modal.menolak .detail-close,
 #pn-preview-overlay .pn-preview-modal.menolak .detail-close{
   animation:pn-sorot .4s ease-in-out 2}
 @media (prefers-reduced-motion:reduce){
+  .overlay .modal.menolak,
   #pn-preview-overlay .pn-preview-modal.menolak{animation:none}
+  .overlay .modal.menolak .detail-close,
   #pn-preview-overlay .pn-preview-modal.menolak .detail-close{animation:pn-sorot .5s ease-in-out 2}}
 </style>
 

@@ -11,12 +11,19 @@
 const TAHUN_OPTS = Array.from({length:11},(_,i)=>String(2024+i));
 /* Kontrol "Tahun" yang tampil di kanan atas baris judul kelompok I. Informasi Pekerjaan.
    inputId = id elemen select agar konsisten dengan helper input tiap form. */
+/* TIDAK DIPAKAI LAGI sejak kolom Tahun dihapus dari SPBJ/Kontrak Rinci
+   (6 Agu 2026). Dipertahankan — bukan dihapus — karena bentuk "pemilih tahun
+   di baris judul kartu" ini bisa diperlukan kembali oleh formulir lain. */
 function yearControlHTML(inputId){
   const opts='<option value="">— Pilih —</option>'+TAHUN_OPTS.map(y=>`<option>${y}</option>`).join('');
   return `<div class="year-control"><label for="${inputId}">Tahun</label><select id="${inputId}">${opts}</select></div>`;
 }
+/* CATATAN 6 Agu 2026: field {key:'tahun'} DIHAPUS dari daftar ini. Karena
+   FIELDS adalah satu-satunya sumber susunan formulir, kolom ekspor, dan kolom
+   template unggah, membuangnya di sini sekaligus menghilangkan kolom "Tahun"
+   dari ketiganya. Tahunnya kini diturunkan dari Tanggal Terbit Kontrak Rinci
+   — lihat contractYear(). */
 const FIELDS = [
-  {key:'tahun',            label:'Tahun',                           input:'f_tahun',            type:'select', options:TAHUN_OPTS},
   {key:'no_prk',           label:'No. PRK',                         input:'f_no_prk',           type:'text', req:true, ph:'cth. 2025.MMU.AO-ADM.01.01'},
   {key:'no_anggaran',      label:'No. Anggaran',                    input:'f_no_anggaran',      type:'text', req:true, ph:'cth. 001/SKKO/GM.MMU/ADM.NIAGA/MSH/2025/R1'},
   {key:'no_pr',            label:'No. PR',                          input:'f_no_pr',            type:'text', ph:'cth. 3002518656'},
@@ -43,7 +50,7 @@ const FIELDS = [
   {key:'status',           label:'Status',                          input:'f_status',           type:'select', options:['On Progress','Selesai'], req:true},
 ];
 const GROUPS = [
-  {title:'Informasi Umum', cols:4, keys:['tahun','no_prk','no_anggaran','tgl_anggaran','jenis_anggaran','no_eproc','no_pr','no_po','bidang_pelaksana','status']},
+  {title:'Informasi Umum', cols:4, keys:['no_prk','no_anggaran','tgl_anggaran','jenis_anggaran','no_eproc','no_pr','no_po','bidang_pelaksana','status']},
   {title:'Kesepakatan Harga Satuan (KHS)', cols:3, keys:['no_kontrak_khs','nama_pekerjaan_khs','lokasi_pekerjaan_khs','tgl_terbit_khs','tgl_berakhir_khs','nilai_kontrak_khs','pelaksana_khs']},
   {title:'SPBJ / Kontrak Rinci', cols:3, keys:['no_spbj','nama_pekerjaan_kr','lokasi_pekerjaan_kr','tgl_terbit_kr','tgl_berakhir_kr','nilai_kontrak_kr','nama_penyedia','alamat_penyedia']},
 ];
@@ -501,8 +508,26 @@ function yearOf(r, fallbackDate){
   const p=String(fallbackDate||'').split('-');
   return (p[0]&&p[0].length===4)?p[0]:'';
 }
+/* TAHUN ACUAN SPBJ/KONTRAK RINCI = TAHUN PADA TANGGAL TERBIT KONTRAK RINCI.
+   KETENTUAN 6 Agu 2026: kolom "Tahun" dihapus sebagai isian tersendiri —
+   satu data yang sama tidak boleh punya dua sumber kebenaran. Dulu tahun
+   diketik manual dan tanggal terbit diisi terpisah, sehingga keduanya bisa
+   bertentangan (mis. tahun 2025 padahal kontraknya terbit Januari 2026) dan
+   tidak ada cara mengetahui mana yang benar.
+
+   Pola ini MENGIKUTI yang sudah diberlakukan pada Pengadaan Langsung & Tender,
+   yang lebih dulu membuang kolom Tahun dan menurunkannya dari tgl_terima_dok
+   (lihat yearPengadaan) — jadi ketiga daftar kini seragam.
+
+   yearOf() TETAP dipakai sebagai CADANGAN, bukan sebagai sumber utama: data
+   LAMA yang terlanjur menyimpan `tahun` tetapi belum mengisi tanggal terbit
+   masih ikut tersaring dengan benar dan tidak hilang dari filter maupun
+   dashboard. Begitu tanggal terbitnya diisi, angka itulah yang menang. */
 function contractYear(r){
-  return yearOf(r, r.tgl_terbit_kr);
+  if(!r) return '';
+  const p=String(r.tgl_terbit_kr||'').split('-');
+  if(p[0] && p[0].length===4) return p[0];
+  return yearOf(r, '');
 }
 /* TAHUN sebuah pekerjaan PENGADAAN (Pengadaan Langsung & Tender).
    ATURAN 24 Jul 2026 (permintaan user): acuannya **Tgl. Diterima Dokumen
@@ -1738,14 +1763,11 @@ function buildFormKr(){
   let html='';
   GROUPS.forEach((g,gi)=>{
     const cols=pynGroupCols(g);
+    /* Dulu kelompok pertama menempelkan pemilih Tahun di baris judulnya.
+       Kolom itu sudah dihapus (lihat FIELDS), jadi baris judulnya kembali polos. */
     let titleExtra='';
-    if(gi===0 && g.keys.includes('tahun')){
-      const tf=FIELDS.find(x=>x.key==='tahun');
-      titleExtra=`<div class="title-controls">${yearControlHTML(krInputId(tf))}</div>`;
-    }
     html+=`<div class="form-card"><div class="form-section-title">${KR_SECTION_ICON}${g.title}${titleExtra}</div><div class="form-flow" style="--cols:${cols}">`;
     g.keys.forEach(k=>{
-      if(gi===0 && k==='tahun') return; // Tahun sudah dipindah ke baris judul
       const f=FIELDS.find(x=>x.key===k); if(!f) return;
       const id=krInputId(f);
       const req=f.req?' <span class="req">*</span>':'';
@@ -3239,10 +3261,10 @@ async function spkFinishTemplate(wsD, COLS, OPSI, isStackFn, ROWS, WAJIB){
   //     kolom itu dibiarkan kosong. Aturan ini keras — saat diunggah, satu baris
   //     kosong membatalkan SELURUH berkas. Sorotan ini agar ketahuan sejak di
   //     Excel, bukan setelah ditolak aplikasi.
-  //     Parameter WAJIB berisi daftar key; bawaan ['tahun'] (dipakai SPBJ/Kontrak
-  //     Rinci). Pengadaan Langsung & Tender memakai ['tgl_terima_dok'] sejak
-  //     kolom Tahun dihapus (lihat yearPengadaan).
-  ((Array.isArray(WAJIB) && WAJIB.length) ? WAJIB : ['tahun']).forEach(function(wk){
+  //     Parameter WAJIB berisi daftar key; bawaan ['tgl_terbit_kr'] (dipakai
+  //     SPBJ/Kontrak Rinci sejak kolom Tahun dihapus 6 Agu 2026 — lihat
+  //     contractYear). Pengadaan Langsung & Tender memakai ['tgl_terima_dok'].
+  ((Array.isArray(WAJIB) && WAJIB.length) ? WAJIB : ['tgl_terbit_kr']).forEach(function(wk){
     const thC = colOf[wk];
     if(!thC) return;
     const LT = spkColLetterTpl(thC);
@@ -3648,7 +3670,11 @@ function handleUpload(ev){
           toast(spkFmtBadMsg(fmtBadCells, xlRow),'err', TOAST_MS_UPLOAD);
           ev.target.value=''; return;
         }
-        if(!String(rec.tahun||'').trim()){ const xlRow=r+1; console.warn('[SPK] Upload SPBJ/Kontrak Rinci — kolom Tahun kosong di baris '+xlRow); toast(spkMissingMsg(['tahun'], map, FIELDS, xlRow),'warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
+        /* Dulu yang diwajibkan kolom "Tahun". Kolom itu sudah dihapus; yang kini
+           menentukan tahun sebuah kontrak adalah TANGGAL TERBIT KONTRAK RINCI,
+           jadi kolom itulah yang wajib terisi — tanpa ia, barisnya tidak akan
+           pernah muncul di filter tahun maupun dashboard. */
+        if(!String(rec.tgl_terbit_kr||'').trim()){ const xlRow=r+1; console.warn('[SPK] Upload SPBJ/Kontrak Rinci — kolom Tgl. Terbit Kontrak Rinci kosong di baris '+xlRow); toast(spkMissingMsg(['tgl_terbit_kr'], map, FIELDS, xlRow),'warn', TOAST_MS_UPLOAD); ev.target.value=''; return; }
         { const miss=validateRequiredKr(rec); if(miss.length){ const xlRow=r+1; console.warn('[SPK] Upload SPBJ — kolom wajib kosong di baris '+xlRow+':', miss); toast(spkMissingMsg(miss, map, FIELDS, xlRow),'warn', TOAST_MS_UPLOAD); ev.target.value=''; return; } }
         rec.__xlRow = r+1;   // nomor baris di Excel, dipakai pesan duplikat
         batch.push(rec);
@@ -4776,6 +4802,74 @@ function sfxSetEnabled(on){
   try{ on ? localStorage.removeItem(SFX_KEY) : localStorage.setItem(SFX_KEY,'1'); }catch(e){}
 }
 function sfxToggle(){ const on=!sfxEnabled(); sfxSetEnabled(on); return on; }
+
+/* ============================================================
+   TOLAK-TUTUP: klik di luar kotak TIDAK menutup modal
+   ------------------------------------------------------------
+   KETENTUAN 6 Agu 2026. Modal pratinjau dokumen & modal "Lihat" pada
+   Monitoring/Daftar Pekerjaan sebelumnya menutup begitu latarnya diklik.
+   Itu mudah terjadi tanpa sengaja — satu klik meleset dan pratinjau yang
+   baru dibuka lenyap. Sekarang modalnya BERGETAR sambil menyorot tombol
+   tutup dan membunyikan nada penolakan, meniru jendela modal peramban:
+   isyarat bahwa modal ini harus ditutup lewat tombolnya.
+
+   Ditulis UMUM di sini (bukan per modal) supaya modal berikutnya cukup
+   didaftarkan lewat pasangTolakTutup('id-overlay') satu baris.
+   ============================================================ */
+let _tolakAC=null;
+/* Nada "tidak bisa": dua nada turun. Dibangkitkan langsung lewat Web Audio,
+   jadi tidak ada berkas audio yang perlu diunduh. Menghormati sakelar suara
+   aplikasi — yang mematikan bunyi tetap mendapat getaran & sorot tombol. */
+function bunyiTolak(){
+  if(!sfxEnabled()) return;
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
+    if(!_tolakAC) _tolakAC=new AC();
+    const ctx=_tolakAC;
+    if(ctx.state==='suspended') ctx.resume().catch(()=>{});
+    const t0=ctx.currentTime+0.01;
+    [[392.00,t0,0.13],[261.63,t0+0.11,0.22]].forEach(n=>{
+      const o=ctx.createOscillator(), g=ctx.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(n[0], n[1]);
+      g.gain.setValueAtTime(0.0001, n[1]);
+      g.gain.exponentialRampToValueAtTime(0.12, n[1]+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, n[1]+n[2]);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(n[1]); o.stop(n[1]+n[2]+0.02);
+    });
+  }catch(e){}
+}
+/* Menggetarkan kotak modal di dalam sebuah overlay.
+   Kelas .menolak dilepas dulu lalu dipasang lagi sesudah memaksa perhitungan
+   ulang; tanpa itu, klik kedua yang cepat tidak memicu animasi apa pun karena
+   kelasnya sudah menempel dan peramban menganggap tidak ada yang berubah. */
+function tolakTutupModal(ov){
+  if(!ov) return;
+  const mdl=ov.querySelector('.modal, .tor-dk-mdl, .pn-preview-modal');
+  if(!mdl) return;
+  bunyiTolak();
+  mdl.classList.remove('menolak');
+  void mdl.offsetWidth;
+  mdl.classList.add('menolak');
+  clearTimeout(mdl.__tolakT);
+  mdl.__tolakT=setTimeout(()=>mdl.classList.remove('menolak'), 900);
+  /* Fokus ke tombol tutup: pengguna papan ketik cukup menekan Enter. */
+  try{
+    const x=mdl.querySelector('.detail-close, .tor-dk-hd .x, [aria-label="Tutup"]');
+    if(x) x.focus({preventScroll:true});
+  }catch(e){}
+}
+/* Mendaftarkan sebuah overlay: klik pada LATARNYA (bukan isinya) ditolak. */
+function pasangTolakTutup(id){
+  const ov=document.getElementById(id);
+  if(!ov || ov.__tolakPasang) return;
+  ov.__tolakPasang=true;
+  ov.addEventListener('click', function(e){
+    if(e.target!==ov) return;
+    if(!ov.classList.contains('show')) return;
+    tolakTutupModal(ov);
+  });
+}
 /* Satu nada: osilator + amplop naik-turun agar tidak terdengar "klik" di ujungnya. */
 function _sfxTone(ctx, freq, startAt, dur, peak){
   const osc=ctx.createOscillator(), gain=ctx.createGain();
@@ -19514,11 +19608,16 @@ resetLoginForm();
 })();
 // close modal on overlay click
 document.getElementById('confirm-overlay').addEventListener('click',e=>{ if(e.target.id==='confirm-overlay')closeConfirm(); });
-document.getElementById('detail-overlay').addEventListener('click',e=>{ if(e.target.id==='detail-overlay')closeDetail(); });
+/* Modal "Lihat" (Monitoring, Daftar Pekerjaan, Kontrak Rinci) — klik di luar
+   kotak TIDAK menutup, melainkan menggetarkan. Lihat pasangTolakTutup. */
+pasangTolakTutup('detail-overlay');
 document.getElementById('cp-overlay').addEventListener('click',e=>{ if(e.target.id==='cp-overlay')closeChangePass(); });
 document.getElementById('pn-doc-overlay').addEventListener('click',e=>{ if(e.target.id==='pn-doc-overlay')pnDocModalCancel(); });
 document.getElementById('hps-ana-overlay').addEventListener('click',e=>{ if(e.target.id==='hps-ana-overlay')closeHpsAnaPicker(); });
 document.getElementById('dp-picker-overlay').addEventListener('click',e=>{ if(e.target.id==='dp-picker-overlay')closeDpPicker(); });
-document.getElementById('pn-preview-overlay').addEventListener('click',e=>{ if(e.target.id==='pn-preview-overlay')closePnPreview(); });
+/* Modal PRATINJAU DOKUMEN — dipakai bersama SELURUH modul (TOR/KAK, RAB,
+   Pakta Integritas, SPK/Kontrak, HPS, Analisa, Jadwal, Kelengkapan Dokumen),
+   jadi satu baris ini berlaku untuk pratinjau di semua menu. */
+pasangTolakTutup('pn-preview-overlay');
 
 

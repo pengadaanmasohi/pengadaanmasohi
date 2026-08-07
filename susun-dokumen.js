@@ -4575,85 +4575,19 @@ function torOpenDokList(id){
     '<div class="tor-dk-bd">'+baris+'</div></div>';
   ov.classList.add('show');
 }
-/* ---- BUNYI "TIDAK BISA" ----
-   TIDAK memakai sfxPlay() milik app.js. Sekilas itu pilihan yang wajar, tetapi
-   di berkas ini sfxEnabled() ditulis `return false` — seluruh mesin suara
-   aplikasi memang sedang dimatikan, sehingga sfxPlay tidak pernah berbunyi.
-   Bunyi penolakan ini justru harus terdengar: ia satu-satunya penjelasan
-   mengapa klik pengguna tidak menghasilkan apa-apa.
-
-   Nadanya dibangkitkan langsung lewat Web Audio (dua nada turun, seperti bunyi
-   "tidak" pada sistem operasi) — tidak ada berkas audio yang perlu diunduh.
-   AudioContext dibuat sekali lalu dipakai ulang; peramban mengizinkannya karena
-   selalu dipicu oleh klik pengguna. Bila peramban menolak, semuanya dibungkus
-   try/catch sehingga getarannya tetap jalan tanpa bunyi. */
-var _torAC=null;
-function torBunyiTolak(){
-  try{
-    /* Menghormati sakelar suara aplikasi: pengguna yang mematikan bunyi tidak
-       akan mendengar apa pun — getaran & sorot tombol tutup sudah cukup
-       menjelaskan penolakannya. */
-    if(typeof sfxEnabled==='function' && !sfxEnabled()) return;
-    var AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
-    if(!_torAC) _torAC=new AC();
-    var ctx=_torAC;
-    if(ctx.state==='suspended') ctx.resume().catch(function(){});
-    var t0=ctx.currentTime+0.01;
-    [[392.00,t0,0.13],[261.63,t0+0.11,0.22]].forEach(function(n){
-      var o=ctx.createOscillator(), g=ctx.createGain();
-      o.type='sine'; o.frequency.setValueAtTime(n[0], n[1]);
-      g.gain.setValueAtTime(0.0001, n[1]);
-      g.gain.exponentialRampToValueAtTime(0.13, n[1]+0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, n[1]+n[2]);
-      o.connect(g); g.connect(ctx.destination);
-      o.start(n[1]); o.stop(n[1]+n[2]+0.02);
-    });
-  }catch(e){}
-}
-/* Menolak upaya menutup lewat klik di luar kotak: kotaknya digetarkan, tombol
-   tutup disorot, bunyi penolakan dibunyikan, dan fokus dipindah ke tombol tutup
-   supaya pengguna papan ketik cukup menekan Enter.
-
-   Ditulis UMUM (menerima elemen mana pun) supaya dipakai bersama oleh pop-up
-   pilih dokumen DAN modal pratinjau — lihat torPasangTolakPratinjau.
-
-   Kelas .menolak dilepas dulu lalu dipasang lagi setelah memaksa perhitungan
-   ulang; tanpa itu, klik kedua yang cepat tidak memicu animasi apa pun karena
-   kelasnya sudah menempel dan peramban menganggap tidak ada yang berubah. */
-function torTolakTutup(mdl, tombolTutup){
-  if(!mdl) return;
-  torBunyiTolak();
-  mdl.classList.remove('menolak');
-  void mdl.offsetWidth;
-  mdl.classList.add('menolak');
-  clearTimeout(mdl.__tolakT);
-  mdl.__tolakT=setTimeout(function(){ mdl.classList.remove('menolak'); }, 900);
-  try{ if(tombolTutup) tombolTutup.focus({preventScroll:true}); }catch(e){}
-}
+/* Penolakan klik-di-luar untuk pop-up ini MEMAKAI MESIN BERSAMA di app.js
+   (bunyiTolak + tolakTutupModal + pasangTolakTutup). Dulu mesinnya ditulis
+   ulang di sini; sesudah modal pratinjau & modal "Lihat" ikut memakainya,
+   menyimpan dua salinan hanya membuat keduanya berpeluang berbeda perilaku.
+   Cadangan sederhana disediakan seandainya app.js belum termuat. */
 function torDokListTolak(){
   var ov=document.getElementById('tor-dk-ov'); if(!ov) return;
+  if(typeof tolakTutupModal==='function'){ tolakTutupModal(ov); return; }
   var mdl=ov.querySelector('.tor-dk-mdl'); if(!mdl) return;
-  torTolakTutup(mdl, mdl.querySelector('.tor-dk-hd .x'));
+  mdl.classList.remove('menolak'); void mdl.offsetWidth; mdl.classList.add('menolak');
+  clearTimeout(mdl.__tolakT);
+  mdl.__tolakT=setTimeout(function(){ mdl.classList.remove('menolak'); }, 900);
 }
-/* ---- Perlakuan yang sama untuk MODAL PRATINJAU (#pn-preview-overlay) ----
-   Modal itu milik bersama seluruh modul, dan sebelumnya klik di luar kotaknya
-   tidak berakibat apa pun — pengguna tidak tahu apakah kliknya terbaca atau
-   aplikasinya menggantung. Sekarang ia menjawab dengan getaran yang sama.
-   Dipasang dari sini karena berkas inilah yang memuat mesin getar & bunyinya;
-   pemasangannya aman dijalankan berkali-kali (dijaga penanda __tolakPasang). */
-function torPasangTolakPratinjau(){
-  var ov=document.getElementById('pn-preview-overlay');
-  if(!ov || ov.__tolakPasang) return;
-  ov.__tolakPasang=true;
-  ov.addEventListener('mousedown', function(e){
-    if(e.target!==ov) return;                       /* hanya latar, bukan isi modal */
-    if(!ov.classList.contains('show')) return;
-    var mdl=ov.querySelector('.pn-preview-modal');
-    torTolakTutup(mdl, ov.querySelector('.detail-close'));
-  });
-}
-if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', torPasangTolakPratinjau);
-else torPasangTolakPratinjau();
 function torCloseDokList(){ const ov=document.getElementById('tor-dk-ov'); if(ov) ov.classList.remove('show'); }
 
 /* ===================== 11c-b. CETAK GABUNGAN =====================
