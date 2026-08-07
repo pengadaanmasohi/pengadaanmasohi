@@ -10987,6 +10987,9 @@ function spkWOn(el, name){                      // <w:b/> aktif? (w:val="0"/"fal
    nilai 700/1100 (kisi SPK) tidak salah membaca kisi PK yang lebih rapat:
      SPK -> tingkat-1 850, tingkat-2 1276  => ambang ~1063 / dasar 425
      PK  -> tingkat-1 374, tingkat-2  799  => ambang ~586  / dasar 0    */
+/* TIDAK DIPAKAI LAGI sejak 7 Agu 2026 (geometri Word diabaikan; lihat
+   spkWordXmlToKlausul). Dipertahankan sebagai rujukan & jalan mundur bila
+   suatu saat mode WYSIWYG dihidupkan lagi. */
 function spkIndClass(left, hang, first){
   left=+left||0; hang=+hang||0; first=+first||0;
   var D=spkDX(), lv1=700, lv2=1100;                  // ambang SPK — TIDAK BERUBAH
@@ -11092,25 +11095,20 @@ function spkBulletChar(s){
 /* Properti efektif -> style inline. Margin kiri dihitung RELATIF terhadap
    dasar klausul (0,75 cm) karena kontainer .spk-cl sudah menjorok 0,75 cm. */
 function spkParaCss(eff, noInd){
-  var css='';
-  if(!noInd){
-    var left=+eff.ind.left||0, hang=+eff.ind.hanging||0, first=+eff.ind.firstLine||0;
-    css+='margin-left:'+spkTwCm(left-spkWxBase())+'cm;';
-    if(hang>0) css+='text-indent:-'+spkTwCm(hang)+'cm;';
-    else if(first>0) css+='text-indent:'+spkTwCm(first)+'cm;';
-    else css+='text-indent:0;';
-  }
-  css+='margin-top:'+spkTwPt(eff.sp.before||0)+'pt;';
-  css+='margin-bottom:'+spkTwPt(eff.sp.after||0)+'pt;';
+  /* GEOMETRI WORD TIDAK DIPAKAI (7 Agu 2026) — lihat catatan panjang di
+     spkWordXmlToKlausul. Yang tersisa dari berkas Word hanyalah JARAK BARIS.
+
+     Inden kiri, inden gantung, inden baris pertama, perataan, serta spasi
+     sebelum & sesudah paragraf sengaja TIDAK dikembalikan lagi: semuanya
+     ditentukan CSS dokumen (.spk-cl p) dan mesin perapian penomoran, sehingga
+     template seberantakan apa pun menghasilkan dokumen yang satu bentuk.
+
+     Argumen `noInd` dipertahankan agar tanda tangan fungsi tidak berubah;
+     nilainya kini tidak berpengaruh karena indent memang tidak pernah ditulis. */
   var line=+eff.sp.line||240, lr=eff.sp.lineRule||'auto';
   /* Word "auto" (kelipatan) -> line-height CSS DENGAN koreksi SPK_LH_K, sama seperti
      isi kontrak lainnya, supaya "1,15" di Word tampil "1,15" di web (bukan spasi tunggal). */
-  css+='line-height:'+((lr==='auto') ? (Math.round(line/240*SPK_LH_K*1000)/1000) : (spkTwPt(line)+'pt'))+';';
-  if(eff.jc){
-    var jm={both:'justify',center:'center',right:'right',left:'left',start:'left',end:'right'};
-    if(jm[eff.jc]) css+='text-align:'+jm[eff.jc]+';';
-  }
-  return css;
+  return 'line-height:'+((lr==='auto') ? (Math.round(line/240*SPK_LH_K*1000)/1000) : (spkTwPt(line)+'pt'))+';';
 }
 /* Kotak nomor = PERSIS seperti Word:
      - RATA KANAN (w:lvlJc=right): lebar kotak TETAP selebar hanging Word. Nomor
@@ -11119,6 +11117,9 @@ function spkParaCss(eff, noInd){
      - RATA KIRI (bawaan): lebar MINIMAL selebar hanging; bila nomornya lebih lebar
        (mis. "3.1.4."), kotak melebar dan teks terdorong — sama seperti Word.
    Perataan diambil dari w:lvlJc pada numbering.xml, bukan tebakan aplikasi. */
+/* TIDAK DIPAKAI LAGI sejak 7 Agu 2026 (geometri Word diabaikan; lihat
+   spkWordXmlToKlausul). Dipertahankan sebagai rujukan & jalan mundur bila
+   suatu saat mode WYSIWYG dihidupkan lagi. */
 function spkNumBox(txt, hangCm, jc){
   var isNum=/^(?:[0-9]+[.)])+$/.test(String(txt||'').trim());
   /* ANGKA -> selalu RATA KANAN dengan lebar kotak TETAP (= hanging Word):
@@ -11404,6 +11405,9 @@ function spkNumberer(numbering){
    seperti biasa; yang dikembalikan hanya isi ketikan pengguna.
    ========================================================================= */
 /* Deretan spasi -> &nbsp; (hanya pada bagian TEKS; isi tag HTML tak disentuh) */
+/* TIDAK DIPAKAI LAGI sejak 7 Agu 2026 (geometri Word diabaikan; lihat
+   spkWordXmlToKlausul). Dipertahankan sebagai rujukan & jalan mundur bila
+   suatu saat mode WYSIWYG dihidupkan lagi. */
 function spkKeepWS(html){
   var s=String(html==null?'':html);
   if(s.indexOf(' ')<0) return s;
@@ -11551,77 +11555,75 @@ function spkWordXmlToKlausul(xmlText, stylesXml, numberingXml){
     }
     var dir=spkReadPPr(b.pPr);
     Object.assign(eff.ind, dir.ind); Object.assign(eff.sp, dir.sp); if(dir.jc) eff.jc=dir.jc;
-    var cls=SPK_STY2CLS[key];
-    if(!cls){ cls=spkIndClass(eff.ind.left, eff.ind.hanging, eff.ind.firstLine); }
+    /* ================= GEOMETRI WORD DIABAIKAN (7 Agu 2026) =================
+       KETENTUAN: template yang diunggah boleh BERANTAKAN — hasil rendernya
+       tetap rapi menurut aturan inden, penomoran, dan paragraf milik aplikasi.
+       Dari berkas Word yang MASIH dibaca hanya:
+         - baris kosong (Enter)      -> ditahan _flushBlank di atas
+         - jarak baris (line spacing)-> spkParaCss
+         - tebal / miring / garis bawah -> spkWpText
+       Yang TIDAK lagi dibaca: inden kiri, inden gantung, inden baris pertama,
+       perataan (justify/center/right), spasi sebelum & sesudah paragraf, serta
+       spasi yang diketik di awal baris sebagai inden palsu.
+
+       INI PEMBALIKAN SADAR dari perilaku WYSIWYG 22-28 Jul 2026. Alasannya:
+       template disusun banyak orang dengan kerapian yang berbeda-beda,
+       sedangkan dokumen keluaran harus satu bentuk. Menyalin geometri Word
+       apa adanya berarti menyalin ketidakrapiannya juga.
+
+       KONSEKUENSI yang disengaja & saling terkait — jangan diubah sebagian:
+       (a) Kelas paragraf TIDAK lagi ditebak dari indent Word (spkIndClass),
+           melainkan dari PENANDA NOMOR di awal teks — aturan yang sama persis
+           dengan jalur tempel (spkWEBlocksToHtml). Gaya template bawaan
+           aplikasi (SPK_STY2CLS: KlausulIsi/KlausulParagraf/...) tetap
+           dihormati karena itu memang aturan kita sendiri.
+       (b) Nomor TIDAK lagi dikotakkan di sini memakai lebar gantungan Word
+           (spkNumBox). Nomor ditulis sebagai TEKS BIASA di awal paragraf, lalu
+           spkNumberFix / spkNumUniform / spkPkIndentStd yang mengotakkan dan
+           meratakannya — mesin yang sama dengan klausul buatan aplikasi.
+           Karena itu jalur "plainNumFallback" kini menjadi SATU-SATUNYA jalur.
+       (c) Kelas .spk-wx DIBUANG. Kelas itu menandai "butir dari Word" dan
+           dipakai spkPkIndentStd untuk MEMPERTAHANKAN margin-left asli Word
+           (spkPkIndentStd ~4069). Tanpa margin Word, penanda itu justru akan
+           membuat kelompok butir memakai margin kosong; dengan dibuang,
+           kelompok jatuh ke kolom kisi aplikasi (_colU.ml) — yang memang
+           tujuannya.
+       (d) Atribut data-wleft DIBUANG. Nilainya dipakai spkPkIndentStd untuk
+           menentukan KEDALAMAN butir dari peringkat kolom indent Word
+           (~4658). Pada template berantakan, indent itu justru sumber
+           kesalahannya. Kedalaman kini selalu diturunkan dari SILSILAH NOMOR
+           ("2." -> "2.1." -> "a."), jalur yang sudah ada di fungsi yang sama.
+           data-wnum (numId) TETAP ditanam: itu identitas DAFTAR, bukan
+           geometri, dan dipakai memisahkan silsilah antar-daftar. */
+    var cls=SPK_STY2CLS[key] || '';
     var out=t.html;
-    var hangCm=spkTwCm(eff.ind.hanging||0);
-    var wrapped=false, plainNumFallback=false;
-    if(numStr){
-      /* paragraf bernomor otomatis: nomor ditaruh dalam kotak selebar hanging
-         indent Word -> jarak nomor->teks & baris lanjutan SAMA seperti Word. */
-      if(cls!=='kl1' && cls!=='kl2') cls=((+b.ilvl)>=1)?'kl2':'kl1';
-      if(hangCm>=0.2){
-        var lvlJc=(lvlDef2 && lvlDef2.jc) ? lvlDef2.jc : 'left';   /* perataan nomor dari Word */
-        out=spkNumBox(spkXmlEsc(numStr), hangCm, lvlJc)+out.replace(/^[\t ]+/,'');
-        wrapped=true;
-      }else{
-        out=spkXmlEsc(numStr)+' '+out;
-        plainNumFallback=true;
-      }
-    }else{
-      /* nomor yang DIKETIK manual (mis. "2.1." lalu TAB/spasi) di paragraf
-         yang punya hanging indent -> perlakukan sama seperti nomor otomatis */
-      /* PERBAIKAN 28 Jul 2026 — penanda yang DIKETIK TEBAL/MIRING di Word
-         (mis. "4.3." bold lalu TAB): pola lama hanya menerima penanda yang
-         langsung diikuti spasi/TAB, sehingga "<b>4.3.</b>\tTeks" tak pernah
-         cocok → penanda tidak dikotakkan, butirnya tak dikenali mesin perapian,
-         dan tampil memakai geometri bawaan Word (melenceng dari butir lain).
-         Kini tag PENUTUP di antara penanda & spasinya ikut diterima; kotak
-         nomor tetap di DALAM pembungkusnya supaya tebalnya tidak hilang. */
-      var mm=/^((?:<(?:b|i|u)>)*)[\t ]*((?:\d+\.)+|\d+\)|[A-Za-z][.)])((?:[\t\u00a0 ]*<\/(?:b|i|u)>)+[\t\u00a0 ]*|[\t\u00a0 ]+)/.exec(out);
-      if(mm && hangCm>=0.2 && !/^(CV|CD|MM|DVD|DIV|MMC|LC|DC|ID|IL|IM)[.)]$/i.test(mm[2])){
-        if(cls!=='kl1' && cls!=='kl2') cls=((+eff.ind.left||0)>=1100)?'kl2':'kl1';
-        var _tutup=String(mm[3]||'').replace(/[\t\u00a0 ]+/g,'');   /* tag penutup, tanpa spasi */
-        out=mm[1]+spkNumBox(mm[2], hangCm, (lvlDef2&&lvlDef2.jc)||'left')+_tutup+out.slice(mm[0].length);
-        wrapped=true;
-      }else{
-        if(cls==='kl0'||cls==='kldesc'){                    // deteksi nomor yang diketik manual
-          if(/^[\t ]*(?:\d+\.)+[\s\u00a0]/.test(t.plain)) cls='kl1';
-          else if(/^[\t ]*[A-Za-z][.)][\s\u00a0]/.test(t.plain)) cls='kl2';
-          if(cls==='kl1'||cls==='kl2') plainNumFallback=true;
-        }
-        /* Spasi di AWAL baris (mis. 5 spasi sebagai inden ketikan).
-           DULU: spasinya dibuang lalu diganti inden baris pertama 0,75 cm yang
-           seragam — akibatnya tampilan web tak pernah sama dengan Word (dan
-           inden itu pun dihapus lagi oleh perapian lanjutan butir).
-           SEKARANG (28 Jul 2026): spasinya DIPERTAHANKAN apa adanya lewat
-           spkKeepWS() di bawah, jadi lebar indennya persis seperti di Word.
-           Yang tetap dilakukan hanya penggolongan kelas paragrafnya. */
-        var lead=out.match(/^([ \u00a0]+)/);
-        if(lead && !(eff.ind.hanging>0)){
-          if(cls==='kldesc'||cls==='kl0') cls='klp';
-        }
-      }
+
+    /* Inden palsu berupa SPASI di awal baris dibuang, dan deretan spasi di
+       tengah kalimat dirapatkan jadi satu. Tag pembuka <b>/<i>/<u> yang berada
+       sebelum spasi dipertahankan supaya penekanan tidak ikut hilang. */
+    out=out.replace(/^((?:<(?:b|i|u)>)*)[\s\u00a0]+/, '$1');
+    out=out.replace(/\t/g,' ').replace(/[ \u00a0]{2,}/g,' ');
+
+    /* Nomor OTOMATIS Word ditulis sebagai teks biasa; pengotakannya diserahkan
+       ke spkNumberFix, persis seperti nomor yang diketik manual. */
+    if(numStr) out=spkXmlEsc(numStr)+' '+out.replace(/^[\t ]+/,'');
+
+    /* Kelas paragraf dari PENANDA di awal teks (aturan aplikasi). */
+    if(!cls){
+      var tokTeks=String(out).replace(/<[^>]+>/g,'').replace(/\u00a0/g,' ').replace(/^\s+/,'');
+      if(/^(?:\d+\.)+[\s]/.test(tokTeks) || /^\d+[.)][\s]/.test(tokTeks)) cls='kl1';
+      else if(/^[A-Za-z][.)][\s]/.test(tokTeks)) cls='kl2';
+      else cls='kl0';
     }
-    out=out.replace(/\t/g,' ');
-    /* rapikan spasi bekas TAB sesudah nomor menjadi satu spasi */
-    out=out.replace(/^(\s*(?:(?:\d+\.)+|\d+\)|[A-Za-z][.)]))[ \u00a0]{2,}/, '$1 ');
-    /* spasi ganda / spasi awal yang diketik pengguna dipertahankan */
-    out=spkKeepWS(out);
-    /* Style inline dari Word. Bila nomor dibiarkan polos (fallback), indentasi
-       diserahkan ke spkNumberFix agar kotak nomornya tetap rapi. */
-    var css=spkParaCss(eff, plainNumFallback);
-    /* Tanam identitas DAFTAR Word (numId) + indent-kiri asli Word (data-wleft, twip)
-       agar spkPkIndentStd bisa: (1) memisahkan silsilah nomor antar-daftar, dan
-       (2) menetapkan kedalaman butir PERSIS menurut indent Word (mode WORD). */
+
+    /* Style inline: HANYA jarak baris. Inden, perataan, dan spasi
+       sebelum/sesudah sengaja diserahkan ke CSS dokumen. */
+    var css=spkParaCss(eff, true);
+    /* Identitas DAFTAR Word (numId) — bukan geometri; dipakai spkPkIndentStd
+       untuk memisahkan silsilah nomor antar-daftar. */
     var wnAttr=(b.numId?(' data-wnum="'+spkXmlEsc(String(b.numId))+'"'):'');
-    var wlAttr=(typeof eff.ind.left==='number'?(' data-wleft="'+Math.round(eff.ind.left)+'"'):'');
     _flushBlank();                                          /* baris kosong sebelum blok ini */
-    if(plainNumFallback){
-      html += '<p class="'+cls+'"'+wnAttr+wlAttr+' style="'+css+'">'+out+'</p>';
-    }else{
-      html += '<p class="'+cls+' spk-wx'+(wrapped?' spk-sl':'')+'"'+wnAttr+wlAttr+' style="'+css+'">'+out+'</p>';
-    }
+    html += '<p class="'+cls+'"'+wnAttr+' style="'+css+'">'+out+'</p>';
   }
   return { judul:judul, html:html };
 }

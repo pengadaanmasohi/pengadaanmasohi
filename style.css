@@ -3240,6 +3240,18 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
 .spk-we-doc p.kldesc{margin-left:.75cm;text-indent:0}
 .spk-we-doc p .n{display:inline-block;box-sizing:border-box;text-indent:0;text-align:left;white-space:nowrap}
 .spk-we-doc p .n:not([style]){min-width:.75cm}
+/* ---- Foto di dalam klausul TOR/KAK (editor) ----
+   Tampilan di editor sengaja dibuat sedekat mungkin dengan hasil cetak: blok
+   tersendiri, tak pernah melebihi lebar kertas, rasio asli terjaga, dan
+   berjarak 6pt dari teks di atasnya. Angka pastinya (batas kiri mengikuti
+   kolom teks paragraf di atasnya) dihitung ulang di dokumen oleh
+   torFotoFitScript(); di sini nilai itu hanya disalin saat foto disisipkan. */
+.spk-we-doc p.tor-foto{margin-top:6pt;text-indent:0;text-align:left}
+.spk-we-doc p.tor-foto img{display:block;width:auto;height:auto;max-width:100%}
+.spk-we-doc p.tor-foto span.n{display:none}
+/* Sorotan tipis saat foto diklik supaya jelas ia satu blok yang bisa dihapus
+   dengan satu kali Backspace. */
+.spk-we-doc p.tor-foto img:hover{outline:2px solid rgba(11,106,115,.35);outline-offset:2px}
 .spk-we-doc i{font-style:italic}
 .spk-we-doc b{font-weight:700}
 .spk-we-doc.fp-active{cursor:crosshair}

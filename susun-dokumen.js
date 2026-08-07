@@ -2972,6 +2972,230 @@ function torKlTidy(html){
   return out;
 }
 
+/* ===================== 9b. FOTO DI DALAM KLAUSUL TOR/KAK =====================
+   Foto yang ditempel di klausul TIDAK PERNAH disimpan sebagai base64.
+
+   Alasannya struktural, bukan selera: pustaka klausul TOR disalin ke DUA
+   tempat yang keduanya kolom JSONB —
+     1. `torState.data.__klausulLib`  (ikut tiap baris dokumen_tor), dan
+     2. profil `app_profiles` kind 'klausul_tor'.
+   Satu foto 300 KB yang ditulis base64 (~400 KB) akan tergandakan di setiap
+   dokumen TOR yang pernah dibuat. Pola kegagalan itu sudah pernah terjadi pada
+   foto RHO dan diselesaikan dengan cara yang sama: byte-nya pindah ke Storage,
+   yang tersimpan di klausul hanya <img src="...">.
+
+   Bucket `foto-tor` sengaja PUBLIK — persis alasan `foto-referensi`: atribut
+   src <img> tidak bisa mengirim header Authorization, dan iframe cetak pun
+   tidak. Isinya foto pendukung uraian pekerjaan, bukan dokumen rahasia.
+
+   KUNCI OBJEK MEMBAWA SEGMEN 'foto-tor/' DI DEPAN — sama seperti seluruh
+   berkas lain di aplikasi ini. r2XhrPut() menentukan bucket dari segmen
+   pertama path lalu memakai SELURUH path sebagai kunci; memotong prefiksnya
+   akan membuat setiap foto 404 tanpa satu pun pesan galat.
+
+   Foto TIDAK diikat ke id dokumen: satu klausul bisa dipakai ulang di banyak
+   dokumen dan bisa disalin lewat Profil Klausul, jadi masa hidupnya tidak
+   sama dengan masa hidup dokumen. Kuncinya dikelompokkan per BULAN unggah
+   supaya daftar bucket tetap terbaca. */
+const TOR_FOTO_BUCKET = 'foto-tor';
+const TOR_FOTO_PREFIX = 'foto-tor/';
+const TOR_FOTO_BASE   = (typeof SB_STORAGE_URL!=='undefined' ? SB_STORAGE_URL : '') + '/object/public/' + TOR_FOTO_BUCKET;
+/* Batas sisi terpanjang (px). Lebar teks lembar A4 bermargin 2,54 cm hanya
+   ±16 cm; pada 300 dpi cetak itu setara ±1890 px, jadi 1800 px sudah melebihi
+   kebutuhan resolusi tertinggi yang bisa ditampilkan halaman. */
+const TOR_FOTO_MAX_PX   = 1800;
+const TOR_FOTO_Q_START  = 0.88;
+const TOR_FOTO_Q_MIN    = 0.62;
+const TOR_FOTO_TARGET   = 400*1024;   /* target lunak per foto (~400 KB) */
+const TOR_FOTO_MAX_MB   = 25;         /* penolakan berkas mentah yang tak masuk akal */
+/* Jarak dari teks di atasnya ke foto (ketentuan 7 Agu 2026). Dipasang sebagai
+   margin-ATAS; karena paragraf di atasnya bermargin-bawah 6pt dan margin CSS
+   bersebelahan MENGGABUNG (ambil yang terbesar), hasil akhirnya tetap 6pt —
+   bukan 12pt. */
+const TOR_FOTO_JARAK_PT = 6;
+/* Berapa baris teks di atas foto yang ikut diboyong bila foto tidak muat di
+   sisa halaman. Ketentuan user: "pindahkan dengan teks baris diatasnya".
+   Paragraf yang lebih tinggi dari ini dibiarkan terpenggal seperti biasa —
+   memboyong paragraf 10 baris hanya demi menemani foto akan meninggalkan
+   ruang kosong yang jauh lebih buruk daripada masalah yang diperbaiki. */
+const TOR_FOTO_TARIK_BARIS = 3;
+
+/* Benar hanya bila mesin klausul sedang dipinjam dokumen TOR/KAK. Seluruh
+   fitur foto di bawah bergantung padanya, sehingga Susun Kontrak (SPK &
+   Perjanjian/Kontrak) sama sekali tidak berubah perilakunya. */
+function torFotoAktif(){
+  try{ return !!(typeof spkState!=='undefined' && spkState && spkState.data && spkState.data.__doktype==='TOR'); }
+  catch(e){ return false; }
+}
+function torFotoUid(){
+  try{ if(window.crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
+  return Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,10);
+}
+function torFotoUrl(path){
+  var p=String(path||'').replace(/^\/+/,''); if(!p) return '';
+  return TOR_FOTO_BASE + '/' + encStoragePath(p);
+}
+/* Kunci objek dari sebuah URL foto-tor (untuk penghapusan). '' bila bukan
+   milik bucket ini. */
+function torFotoPathDariUrl(url){
+  var u=String(url||'');
+  if(u.indexOf(TOR_FOTO_BASE+'/')!==0) return '';
+  try{ return decodeURIComponent(u.slice(TOR_FOTO_BASE.length+1).split('?')[0]); }
+  catch(e){ return ''; }
+}
+
+/* ---- Perkecil & kompres ----
+   Selalu mempertahankan RASIO dan tidak pernah memperbesar. Kualitas JPEG
+   diturunkan bertahap sampai di bawah target ukuran, seperti rhoEncodeCanvas.
+   PNG kecil (mis. tangkapan layar berteks tajam) dibiarkan apa adanya karena
+   JPEG justru merusaknya. */
+function torFotoKompres(file){
+  return new Promise(function(resolve){
+    var asli={ blob:file, ext:(/png$/i.test(file.type||'')?'png':'jpg') };
+    var url;
+    try{ url=URL.createObjectURL(file); }catch(e){ resolve(asli); return; }
+    var img=new Image();
+    img.onload=function(){
+      try{
+        var w=img.naturalWidth||img.width||1, h=img.naturalHeight||img.height||1;
+        var s=Math.min(1, TOR_FOTO_MAX_PX/Math.max(w,h));
+        var pngKecil = /png/i.test(file.type||'') && s>=1 && file.size<=TOR_FOTO_TARGET;
+        if(pngKecil){ URL.revokeObjectURL(url); resolve(asli); return; }
+        var cw=Math.max(1,Math.round(w*s)), ch=Math.max(1,Math.round(h*s));
+        var cv=document.createElement('canvas'); cv.width=cw; cv.height=ch;
+        var cx=cv.getContext('2d');
+        try{ cx.imageSmoothingQuality='high'; }catch(e){}
+        /* Latar putih: foto ber-alpha (PNG) yang diubah ke JPEG akan berlatar
+           HITAM tanpa ini — JPEG tidak punya kanal alpha. */
+        cx.fillStyle='#fff'; cx.fillRect(0,0,cw,ch);
+        cx.drawImage(img,0,0,cw,ch);
+        var q=TOR_FOTO_Q_START, out=null;
+        var coba=function(){
+          cv.toBlob(function(bl){
+            if(!bl){ URL.revokeObjectURL(url); resolve(asli); return; }
+            out=bl;
+            if(bl.size>TOR_FOTO_TARGET && q>TOR_FOTO_Q_MIN){
+              q=Math.max(TOR_FOTO_Q_MIN, Math.round((q-0.08)*100)/100);
+              coba(); return;
+            }
+            URL.revokeObjectURL(url);
+            /* Hasil kompresi yang justru lebih besar dari aslinya dibuang. */
+            resolve((out && out.size < file.size) ? { blob:out, ext:'jpg' } : asli);
+          }, 'image/jpeg', q);
+        };
+        coba();
+      }catch(err){ try{ URL.revokeObjectURL(url); }catch(e2){} resolve(asli); }
+    };
+    img.onerror=function(){ try{ URL.revokeObjectURL(url); }catch(e){} resolve(asli); };
+    img.src=url;
+  });
+}
+/* Unggah satu foto -> { path, url }. Melempar bila sesi tidak ada. */
+async function torFotoUpload(file){
+  if(!(file && file.size)) throw new Error('Berkas foto kosong.');
+  if(file.size > TOR_FOTO_MAX_MB*1024*1024)
+    throw new Error('Ukuran foto melebihi '+TOR_FOTO_MAX_MB+' MB.');
+  if(typeof fkAuthToken==='function' && !fkAuthToken())
+    throw new Error('Sesi berkas tidak tersedia — silakan login ulang.');
+  var kecil=await torFotoKompres(file);
+  var d=new Date();
+  var bulan=d.getFullYear()+String(d.getMonth()+1).padStart(2,'0');
+  var path=TOR_FOTO_PREFIX+bulan+'/'+torFotoUid()+'.'+kecil.ext;
+  await r2XhrPut(path, kecil.blob);
+  return { path:path, url:torFotoUrl(path) };
+}
+
+/* ---- Sisipkan ke editor klausul ----
+   Paragraf foto dibuat SEBAGAI BLOK TERSENDIRI (<p class="kl0 tor-foto">),
+   bukan gambar sebaris di tengah kalimat, karena seluruh aturan ukuran yang
+   ditetapkan (batas kiri mengikuti teks di atasnya, batas kanan di margin)
+   hanya bermakna untuk blok tersendiri.
+
+   Inden awalnya DISALIN dari paragraf di atas kursor supaya tampilan editor
+   sudah mendekati hasil cetak; nilai persisnya dihitung ulang di dokumen oleh
+   torFotoFitScript(). */
+function torFotoBlokHtml(url){
+  return '<p class="kl0 tor-foto"><img src="'+fkEsc(url)+'" alt=""></p>';
+}
+function torFotoBlokSebelum(node){
+  var p=node;
+  while(p && !(p.nodeType===1 && /^(P|DIV|LI)$/.test(p.tagName))) p=p.parentNode;
+  return p || null;
+}
+/* Samakan margin kiri paragraf foto dengan KOLOM TEKS paragraf di atasnya.
+   Untuk paragraf ber-inden gantung (margin-left = base+W, text-indent = -W),
+   kolom teksnya persis di tepi kiri kotak paragraf — jadi yang disalin adalah
+   margin-left-nya, dan text-indent dinolkan. */
+function torFotoIkutInden(pFoto, pAtas){
+  if(!pFoto) return;
+  try{
+    pFoto.style.textIndent='0';
+    pFoto.style.marginTop=TOR_FOTO_JARAK_PT+'pt';
+    if(!pAtas) return;
+    var cs=window.getComputedStyle(pAtas);
+    if(cs && cs.marginLeft) pFoto.style.marginLeft=cs.marginLeft;
+  }catch(e){}
+}
+function torFotoSisipkanHtml(url){
+  var doc=document.getElementById('spk-we-doc'); if(!doc) return;
+  var html=torFotoBlokHtml(url);
+  try{ doc.focus(); }catch(e){}
+  var sel=window.getSelection();
+  var acuan=null;
+  if(sel && sel.rangeCount && doc.contains(sel.getRangeAt(0).commonAncestorContainer))
+    acuan=torFotoBlokSebelum(sel.getRangeAt(0).startContainer);
+  var ok=false;
+  try{ ok=document.execCommand('insertHTML', false, html); }catch(e){ ok=false; }
+  if(!ok){
+    var tmp=document.createElement('div'); tmp.innerHTML=html;
+    var p=tmp.firstChild;
+    if(acuan && acuan.parentNode) acuan.parentNode.insertBefore(p, acuan.nextSibling);
+    else doc.appendChild(p);
+  }
+  /* Paragraf foto yang baru masuk = yang belum pernah ditandai. */
+  var baru=doc.querySelector('p.tor-foto:not([data-torf])');
+  if(baru){
+    baru.setAttribute('data-torf','1');
+    torFotoIkutInden(baru, baru.previousElementSibling || acuan);
+  }
+  try{ spkWECount(); }catch(e){}
+  try{ spkWEPaginateSoon(); }catch(e){}
+}
+/* Tombol "Sisipkan Foto" pada toolbar editor klausul. */
+function torFotoPilih(){
+  if(!torFotoAktif()){ toast('Sisip foto hanya tersedia pada Dokumen TOR/KAK','warn'); return; }
+  var inp=document.getElementById('tor-foto-file');
+  if(!inp){
+    inp=document.createElement('input');
+    inp.type='file'; inp.id='tor-foto-file'; inp.accept='image/*'; inp.multiple=true;
+    inp.style.display='none';
+    inp.addEventListener('change', function(ev){
+      var fs=Array.prototype.slice.call((ev.target && ev.target.files) || []);
+      ev.target.value='';
+      torFotoTerima(fs);
+    });
+    document.body.appendChild(inp);
+  }
+  inp.click();
+}
+/* Jalur bersama tombol Sisipkan Foto & tempel (Ctrl+V). */
+async function torFotoTerima(files){
+  var fs=(files||[]).filter(function(f){ return f && /^image\//i.test(f.type||''); });
+  if(!fs.length){ toast('Tidak ada gambar yang bisa disisipkan','warn'); return; }
+  for(var i=0;i<fs.length;i++){
+    try{
+      var hasil=await withActionLoader('Mengunggah foto'+(fs.length>1?(' '+(i+1)+'/'+fs.length):''),
+        function(){ return torFotoUpload(fs[i]); });
+      torFotoSisipkanHtml(hasil.url);
+    }catch(err){
+      console.error('torFotoTerima:', err);
+      toast('Gagal mengunggah foto: '+errMsg(err),'err');
+      return;
+    }
+  }
+  toast(fs.length>1 ? (fs.length+' foto disisipkan') : 'Foto disisipkan','ok');
+}
+
 /* ===================== 10c. BoQ SELALU UTUH DALAM SATU HALAMAN =====================
    KETENTUAN 6 Agu 2026: "BoQ ditampilkan di satu halaman penuh; apabila tidak
    muat, dialihkan ke halaman berikutnya".
@@ -3166,11 +3390,204 @@ function torAkhirKeepScript(){
   return '<scr'+'ipt>'+js+'</scr'+'ipt>';
 }
 
+
+/* ===================== 10e. UKURAN & POSISI FOTO DI DOKUMEN =====================
+   ATURAN yang ditetapkan (7 Agu 2026), diterapkan seluruhnya di sini:
+
+     batas KIRI  = batas kiri TEKS paragraf di atasnya. Bila paragraf itu
+                   bernomor, yang diikuti adalah TEKSNYA, bukan nomornya.
+     batas KANAN = margin kanan halaman.
+     jarak ATAS  = 6 pt dari teks di atasnya.
+     batas BAWAH = mengikuti rasio asli foto.
+
+   MENGAPA "batas kiri paragraf" SAMA DENGAN "kolom teksnya".
+   Paragraf bernomor di dokumen ini memakai inden GANTUNG: margin-left =
+   base + W (W = lebar kotak nomor) dan text-indent = -W. Artinya kotak
+   paragraf mulai di kolom TEKS, sedangkan nomor menjulur ke kiri keluar dari
+   kotak itu lewat text-indent negatif. Jadi getBoundingClientRect().left
+   sebuah paragraf SUDAH merupakan kolom teksnya — nomor tidak pernah ikut
+   terhitung. Hal yang sama berlaku untuk paragraf ber-inden baris pertama
+   (klp): baris kedua dan seterusnya rata di tepi kotak.
+
+   MENGAPA DIUKUR DI PERAMBAN, BUKAN DIHITUNG DI CSS.
+   Lebar kotak nomor tidak tetap: ia dihitung ulang per deret oleh
+   spkKisiScript/spkPkIndentStd sesuai nomor terlebar di deret itu. Nilai
+   akhirnya baru ada setelah gaya & font termuat, jadi satu-satunya sumber
+   yang benar adalah pengukuran nyata. Karena itu skrip ini WAJIB diletakkan
+   SESUDAH spkKisiScript dan SEBELUM spkPageScript: ketiganya menunggu
+   document.fonts.ready dan callback promise berjalan menurut urutan
+   pendaftaran.
+
+   BATAS KANAN & RASIO. Lebar foto dibatasi max-width:100% terhadap paragraf
+   yang tepi kirinya sudah digeser ke kolom teks — sisi kanan paragraf itu
+   sendiri adalah margin kanan halaman. Tinggi dibiarkan auto sehingga rasio
+   asli terjaga: foto yang lebih sempit dari ruang yang tersedia TIDAK
+   diregangkan sampai mentok margin (sesuai ketentuan), foto yang lebih lebar
+   diperkecil proporsional.
+
+   TIDAK MUAT DI SISA HALAMAN -> PINDAH BERSAMA TEKS DI ATASNYA.
+   Foto beserta paragraf di atasnya dibungkus <div class="spk-keep">, yang oleh
+   paginator (spkPageScript -> atom()) diperlakukan sebagai satu blok utuh:
+   bila sisa ruang tidak cukup, seluruhnya turun ke lembar berikutnya.
+
+   DUA PENGAMAN yang tidak boleh dilepas:
+   (a) Paragraf di atasnya hanya ikut diboyong bila TINGGINYA WAJAR (<= ±3
+       baris). Memboyong paragraf sepuluh baris hanya demi menemani foto akan
+       meninggalkan lubang kosong yang jauh lebih buruk daripada masalah yang
+       sedang diperbaiki.
+   (b) Blok ber-spk-keep yang LEBIH TINGGI dari satu halaman ditempel apa
+       adanya ke lembar kosong oleh paginator, sedangkan badan lembar
+       ber-overflow:hidden — kelebihannya TERPOTONG DIAM-DIAM. Karena itu
+       tinggi diukur lebih dulu; foto yang melampaui tinggi halaman DIPERKECIL
+       (max-height) sampai muat, dan pembungkus keep baru dipasang setelah
+       dipastikan cukup. Lebih baik foto sedikit lebih kecil daripada sebagian
+       gambarnya hilang tanpa peringatan. */
+function torFotoDocCss(){
+  return (
+  /* text-indent dipaksa 0: paragraf foto bisa mewarisi inden gantung dari
+     kelas kl1/kl2 yang tersalin saat disisipkan di editor. */
+  '.spk-cl p.tor-foto{margin-top:'+TOR_FOTO_JARAK_PT+'pt;text-indent:0;text-align:left}'+
+  '.spk-cl p.tor-foto img{display:block;width:auto;height:auto;max-width:100%}'+
+  /* Kotak nomor tidak pernah relevan pada paragraf foto. */
+  '.spk-cl p.tor-foto span.n{display:none}'+
+  '.tor-foto-keep{margin:0;padding:0}'
+  );
+}
+function torFotoFitScript(){
+  var js=[
+    '(function(){',
+    'var SUDAH=false;',
+    'var JARAK='+TOR_FOTO_JARAK_PT+';',
+    'function mm2px(mm){var d=document.createElement("div");',
+    ' d.style.cssText="position:absolute;visibility:hidden;left:-9999px;height:"+mm+"mm";',
+    ' document.body.appendChild(d);var h=d.getBoundingClientRect().height;',
+    ' d.parentNode.removeChild(d);return h;}',
+    'function pt2px(pt){return pt/72*96;}',
+    /* Blok pemilik gambar = leluhur terdekat yang menjadi anak langsung .spk-cl
+       (atau paragraf tempat gambar berada, mana yang lebih dulu ditemui). */
+    'function blokOf(img, cl){',
+    ' var n=img.parentNode;',
+    ' while(n && n!==cl && n.parentNode!==cl) n=n.parentNode;',
+    ' return (n && n!==cl) ? n : null;',
+    '}',
+    /* Teks blok TANPA menghitung gambar. Blok yang masih berisi kalimat
+       dibiarkan apa adanya: aturan ukuran ini hanya untuk foto yang berdiri
+       sebagai blok tersendiri. */
+    'function adaTeks(b){ return !!String(b.textContent||"").replace(/[\\s\\u00A0]/g,""); }',
+    /* Saudara SEBELUMNYA yang benar-benar tampil (lewati blok kosong & foto). */
+    'function sebelum(b){',
+    ' var p=b.previousElementSibling;',
+    ' while(p){',
+    '  if(!(p.classList&&p.classList.contains("tor-foto")) && p.getBoundingClientRect().height>0.5) return p;',
+    '  p=p.previousElementSibling;',
+    ' }',
+    ' return null;',
+    '}',
+    'function jalan(){',
+    ' if(SUDAH) return;',
+    ' try{',
+    '  var doc=document.querySelector(".spk-doc"); if(!doc){ SUDAH=true; return; }',
+    '  var imgs=doc.querySelectorAll(".spk-cl img");',
+    '  if(!imgs.length){ SUDAH=true; return; }',
+    /* Tinggi halaman: 246,2 + 26,8 mm — rumus yang sama dengan spkPageScript,
+       torBoqFitScript, dan torAkhirKeepScript. */
+    '  var PH=mm2px(273);',
+    '  if(!PH||PH<200) return;',                       /* gaya belum siap -> tunggu panggilan berikutnya */
+    '  var sec=doc.querySelector(".spk-page.spk-flow");',
+    '  var hh=0, fh=0;',
+    '  var run=sec?sec.querySelector("table.spk-run"):null;',
+    '  if(run){',
+    '   var th=run.querySelector("thead > tr > td"), tf=run.querySelector("tfoot > tr > td");',
+    '   if(th) hh=th.getBoundingClientRect().height;',
+    '   if(tf) fh=tf.getBoundingClientRect().height;',
+    '  }',
+    /* Cadangan 8mm: kop & kaki di sini diukur dari <td> table.spk-run,
+       sedangkan paginator memakai salinannya (.sh-hd/.sh-ft) yang tidak persis
+       sama tingginya. Ambang sengaja PELIT — salah menilai "muat" berarti
+       gambar terpotong diam-diam. */
+    '  var MUAT=PH-hh-fh-6-mm2px(8);',
+    '  var MINKEEP=mm2px(14);',                        /* ±3 baris, patokan yang sama dengan paginator */
+    '  var daftar=[], i;',
+    '  for(i=0;i<imgs.length;i++){',
+    '   var im=imgs[i];',
+    '   var cl=im.closest?im.closest(".spk-cl"):null; if(!cl) continue;',
+    '   var b=blokOf(im, cl); if(!b) continue;',
+    '   if(adaTeks(b)) continue;',                     /* gambar menyatu dengan kalimat -> jangan diusik */
+    '   if(b.classList) b.classList.add("tor-foto");',
+    '   if(daftar.indexOf(b)<0) daftar.push(b);',
+    '  }',
+    '  for(i=0;i<daftar.length;i++){',
+    '   var blok=daftar[i];',
+    '   var gb=blok.querySelector("img"); if(!gb) continue;',
+    '   gb.style.display="block"; gb.style.width="auto"; gb.style.height="auto";',
+    '   gb.style.maxWidth="100%"; gb.style.maxHeight="none";',
+    '   blok.style.textIndent="0";',
+    '   blok.style.marginTop=JARAK+"pt";',
+    /* --- BATAS KIRI --- */
+    '   blok.style.marginLeft="0px";',
+    '   var alam=blok.getBoundingClientRect().left;',   /* tepi kiri alami di dalam .spk-cl */
+    '   var atas=sebelum(blok);',
+    '   var kolom=atas?atas.getBoundingClientRect().left:alam;',
+    '   var geser=kolom-alam;',
+    '   if(!(geser>0.5)) geser=0;',
+    '   blok.style.marginLeft=geser.toFixed(2)+"px";',
+    /* --- BATAS BAWAH: rasio dijaga; hanya diperkecil bila melampaui halaman --- */
+    '   var ruang=MUAT-pt2px(JARAK);',
+    '   if(ruang>40 && gb.getBoundingClientRect().height>ruang){',
+    '    gb.style.maxHeight=Math.floor(ruang)+"px";',
+    '   }',
+    /* --- PINDAH BERSAMA TEKS DI ATASNYA --- */
+    '   var pasangan=null;',
+    '   if(atas && atas.parentNode===blok.parentNode && atas.getBoundingClientRect().height<=MINKEEP)',
+    '    pasangan=atas;',
+    '   var mulai=pasangan||blok;',
+    '   var tinggi=blok.getBoundingClientRect().bottom-mulai.getBoundingClientRect().top;',
+    '   if(pasangan && tinggi>MUAT){ pasangan=null; mulai=blok;',
+    '    tinggi=blok.getBoundingClientRect().bottom-blok.getBoundingClientRect().top; }',
+    '   if(tinggi>0 && tinggi<=MUAT){',
+    '    var box=document.createElement("div");',
+    '    box.className="spk-keep tor-foto-keep";',
+    '    mulai.parentNode.insertBefore(box, mulai);',
+    '    if(pasangan) box.appendChild(pasangan);',
+    '    box.appendChild(blok);',
+    '   }',
+    '  }',
+    '  SUDAH=true;',
+    ' }catch(e){ SUDAH=true; try{ console.error("tor foto fit:", e); }catch(_){} }',
+    '}',
+    'function pasang(){',
+    ' try{',
+    '  if(document.fonts && document.fonts.ready && document.fonts.ready.then){',
+    '   document.fonts.ready.then(jalan);',
+    '   setTimeout(jalan, 2900);',                     /* cadangan, mendahului 3000ms milik paginator */
+    '   return;',
+    '  }',
+    ' }catch(e){}',
+    ' jalan();',
+    '}',
+    'if(document.readyState==="loading") window.addEventListener("load", pasang); else pasang();',
+    '})();'
+  ].join('\n');
+  return '<scr'+'ipt>'+js+'</scr'+'ipt>';
+}
+
 /* ---- Dokumen lengkap ----
    Pipeline & KISI INDEN dipakai ulang dari Surat Perintah Kerja (bungkus
    .spk-doc.spk-spk), sehingga inden klausul TOR = inden SPK. */
-function torDocHtml(data, klausul){
-  data=data||{}; klausul=klausul||[];
+function torDocHtml(data, klausul, opts){
+  data=data||{}; klausul=klausul||[]; opts=opts||{};
+  /* ---- MODE FOKUS (7 Agu 2026) ----
+     opts.focusId diisi -> hanya SATU klausul yang dirakit, tanpa sampul, daftar
+     isi, penutup, dan tanda tangan. Dipakai popup "Lihat Klausul" pada dokumen
+     TOR/KAK.
+
+     KUNCINYA: `klausul` yang masuk tetap DAFTAR PENUH. Nomor bab/klausul
+     (torStruktur) dan kisi lebar kotak nomor (wKl/wBab) dihitung dari daftar
+     penuh itu, lalu hanya blok yang dipilih yang ikut dikeluarkan — sehingga
+     nomor & inden di pratinjau klausul PERSIS sama dengan di dokumen. Dulu
+     popup ini memakai spkClauseDocHtml milik Susun Kontrak yang menomori
+     klausul secara berurut 1,2,3... sehingga "II.1." tampil sebagai "7.". */
+  const fokus=(opts.focusId!=null) ? String(opts.focusId) : null;
   const ctx=spkBuildCtx(data);
   /* Peta bab/nomor dokumen ini — dipakai bersama daftar isi (torTocHtml). */
   const str=torStruktur(klausul);
@@ -3200,6 +3617,7 @@ function torDocHtml(data, klausul){
     fkEsc(s.babNama)+'</div>';
   const clauses=klausul.map((k,i)=>{
     const s=str[i];
+    if(fokus!=null && String(k.id)!==fokus) return '';
     let inner=torKlTidy(pre[i]);
     /* ---- Klausul BILL OF QUANTITY ----
        Isinya dibangkitkan seluruhnya dari RAB (torBoqBlokHtml), sehingga selalu
@@ -3239,7 +3657,7 @@ function torDocHtml(data, klausul){
        lebih dari satu klausul pun ikut terbawa utuh. */
     const akhir = (s.bab===TOR_BAB.length) ? ' tor-akhir' : '';
     /* Bab I & II: judul bab berdiri sendiri di atas klausul pertamanya. */
-    if(s.awal && !s.lebur) out+='<div class="spk-clause tor-babonly'+akhir+'">'+babHead(s)+'</div>';
+    if(s.awal && !s.lebur && fokus==null) out+='<div class="spk-clause tor-babonly'+akhir+'">'+babHead(s)+'</div>';
     /* Bab bertanda `tunggal` yang hanya berisi satu klausul (III. PENUTUP):
        judul klausul DILEBUR jadi judul bab, isinya langsung menempel — sama
        seperti lampiran TOR Word. */
@@ -3265,7 +3683,7 @@ function torDocHtml(data, klausul){
      yang dahulu dicetak di kepala badan dokumen DIBUANG: keduanya sudah tampil
      di sampul dan di kop yang berulang tiap lembar, jadi di sini hanya
      mengulang. Halaman isi kini langsung dibuka oleh judul bab I. */
-  const isiBody=
+  const isiBody= fokus!=null ? clauses :
     clauses+
     (adaPenutup ? '' : torPenutupHtml())+
     torTtdHtml(ctx);
@@ -3277,7 +3695,7 @@ function torDocHtml(data, klausul){
     '</section>';
 
   const body='<div class="spk-doc spk-spk">'+
-    spkKlItalicAsing(torCoverHtml(data,ctx)+torTocHtml(data,klausul)+isi)+
+    spkKlItalicAsing((fokus!=null ? '' : (torCoverHtml(data,ctx)+torTocHtml(data,klausul)))+isi)+
   '</div>';
 
   return '<!DOCTYPE html><html lang="id"><head><meta charset="utf-8">'+
@@ -3287,11 +3705,11 @@ function torDocHtml(data, klausul){
     '<style>'+
     (typeof fklDocBaseCss==='function'?fklDocBaseCss():'')+
     (typeof hpsExtraDocCss==='function'?hpsExtraDocCss():'')+
-    spkDocCss()+spkDocCss2()+spkClHeadCss(klausul.length,false)+torDocCss(wKl, wBab)+
+    spkDocCss()+spkDocCss2()+spkClHeadCss(klausul.length,false)+torDocCss(wKl, wBab)+torFotoDocCss()+
     '</style></head><body><div id="spk-docs">'+body+'</div>'+
     /* torBoqFitScript & torAkhirKeepScript WAJIB mendahului spkPageScript —
        lihat catatan di masing-masing fungsi. */
-    torBoqFitScript()+torAkhirKeepScript()+spkKisiScript()+spkPageScript()+fklFitScript()+'</body></html>';
+    torBoqFitScript()+torAkhirKeepScript()+spkKisiScript()+torFotoFitScript()+spkPageScript()+fklFitScript()+'</body></html>';
 }
 
 /* ===================== 11a. KOP & KERANGKA GAYA HPS =====================
@@ -5008,6 +5426,63 @@ const TOR_VIEWS = { 'tor-view':'renderTorView', 'tor-susun':'renderTorSusun' };
     window.spkKlProfilSnapshot.__tor=1;
   }
 
+
+  /* ---- 5. Popup "Lihat Klausul" memakai penomoran DOKUMEN TOR/KAK ----
+     LAPORAN 7 Agu 2026: judul klausul di popup tertulis "7. LINGKUP PEKERJAAN"
+     padahal di pratinjau dokumen klausul yang sama bernomor "II.1.".
+
+     SEBAB: spkKlausulView() merender lewat spkClauseDocHtml() milik Susun
+     Kontrak. Di sana nomor judul dibangkitkan CSS counter dari KEDUDUKAN
+     klausul dalam daftar (1, 2, 3, ...), sedangkan TOR/KAK bernomor
+     <bab romawi>.<urut dalam bab> yang hanya diketahui torStruktur(). Kopnya
+     pun ikut milik SPK ("SURAT PERINTAH KERJA") karena spkRunHeadHtml yang
+     dipakai.
+
+     Keduanya sembuh sekaligus dengan mengalihkan pembangkitan dokumen ke
+     torDocHtml() mode fokus — jalur yang SAMA PERSIS dengan pratinjau dokumen,
+     jadi nomor, kop, kisi inden, dan CSS-nya tidak mungkin berbeda lagi.
+
+     DAFTAR KLAUSUL DIBANGUN ULANG DI SINI, argumen `klausul` dari pemanggil
+     sengaja diabaikan. Alasannya: spkKlausulView menyusun daftarnya lewat
+     spkSelectedClauses() yang membaca spkState.sel — mekanisme pemilihan milik
+     SPK. TOR memakai penanda `aktif` per klausul, sehingga sel selalu kosong
+     dan daftar mundur ke seluruh pustaka TANPA membawa penanda `bab`. Tanpa
+     bab, torStruktur() menaruh semuanya di bab I dan nomornya salah lagi. */
+  function torBasisKlausul(fokusId){
+    var lib=(records_klausul||[]).filter(function(k){ return k && !k.sys; });
+    var salin=function(k){
+      var o={ id:String(k.id), judul:k.judul||'', isi:k.isi||'' };
+      var b=parseInt(k.bab,10); if(b>=1 && b<=TOR_BAB.length) o.bab=b;
+      return o;
+    };
+    var basis=lib.filter(function(k){ return k.aktif!==false; }).map(salin);
+    if(fokusId==null) return basis;
+    var ada=basis.some(function(x){ return String(x.id)===String(fokusId); });
+    if(ada) return basis;
+    /* Klausul yang sedang dilihat belum tercentang di Langkah 3. Disisipkan
+       pada KEDUDUKAN PUSTAKANYA supaya nomornya tetap masuk akal — sama seperti
+       yang dilakukan spkKlausulView untuk SPK. */
+    var pos=-1; for(var i=0;i<lib.length;i++){ if(String(lib[i].id)===String(fokusId)){ pos=i; break; } }
+    if(pos<0) return basis;
+    var idx=0; for(var j=0;j<pos;j++){ if(lib[j].aktif!==false) idx++; }
+    basis.splice(idx, 0, salin(lib[pos]));
+    return basis;
+  }
+  if(typeof spkClauseDocHtml==='function' && !spkClauseDocHtml.__tor){
+    var _cdh=spkClauseDocHtml;
+    window.spkClauseDocHtml=function(data, klausul, opts){
+      if(!torPinjam()) return _cdh.apply(this, arguments);
+      try{
+        var fokus=(opts && opts.focusId!=null) ? String(opts.focusId) : null;
+        return torDocHtml((data||{}), torBasisKlausul(fokus), { focusId:fokus });
+      }catch(e){
+        console.error('torClauseDoc:', e);
+        return _cdh.apply(this, arguments);      /* mundur aman ke jalur lama */
+      }
+    };
+    window.spkClauseDocHtml.__tor=1;
+  }
+
   if(typeof spkKlProfilWrite==='function' && !spkKlProfilWrite.__tor){
     var _write=spkKlProfilWrite;
     window.spkKlProfilWrite=function(items){
@@ -5026,6 +5501,256 @@ const TOR_VIEWS = { 'tor-view':'renderTorView', 'tor-susun':'renderTorSusun' };
       });
     };
     window.spkKlProfilWrite.__tor=1;
+  }
+})();
+
+
+/* ===================== 15b. FOTO: TEMPELAN KE MESIN KLAUSUL =====================
+   Seluruh dukungan foto dipasang dari SINI sebagai tempelan, bukan dengan
+   menyunting susun-kontrak.js. Alasannya sama dengan tempelan bab di atas:
+   modul Susun Kontrak dipelihara sebagai unit yang bisa diambil utuh dari
+   versi lain, jadi fitur khas TOR/KAK tidak boleh menumpang di dalamnya.
+
+   Tiap tempelan berpenjaga __torf supaya aman bila berkas ini termuat dua
+   kali, dan seluruhnya bersyarat torFotoAktif() — Surat Perintah Kerja &
+   Perjanjian/Kontrak berjalan persis seperti sebelumnya. */
+(function(){
+
+  /* ---- 1. Tombol "Sisipkan Foto" pada toolbar editor klausul ---- */
+  if(typeof spkWEToolbarHtml==='function' && !spkWEToolbarHtml.__torf){
+    var _tb=spkWEToolbarHtml;
+    var TOMBOL=
+      '<span class="spk-we-sep"></span>'+
+      '<div class="spk-we-grp">'+
+        '<button type="button" id="tor-we-foto" title="Sisipkan Foto — bisa juga langsung tempel (Ctrl+V) dari papan klip" '+
+        'onmousedown="return spkWEmd(event)" onclick="torFotoPilih()">'+
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" style="width:15px;height:15px">'+
+          '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/>'+
+          '<path d="m21 16-4.5-4.5L9 19"/></svg> Foto</button>'+
+      '</div>';
+    /* Penanda sisip = grup "Penggaris" pada baris toolbar kedua. Dipilih karena
+       string-nya khas & hanya muncul sekali; bila suatu saat berubah, tombol
+       cukup tidak tampil — tidak ada yang rusak. */
+    var TANDA='<div class="spk-we-grp"><label class="spk-we-check" title="Tampilkan / sembunyikan penggaris">';
+    window.spkWEToolbarHtml=function(){
+      var h=_tb.apply(this, arguments);
+      try{
+        if(torFotoAktif() && h.indexOf(TANDA)>=0) h=h.replace(TANDA, TOMBOL+TANDA);
+      }catch(e){}
+      return h;
+    };
+    window.spkWEToolbarHtml.__torf=1;
+  }
+
+  /* ---- 2. Tempel (Ctrl+V) gambar dari papan klip ----
+     Penangan asli (spkWEOnPaste) membaca text/html & text/plain saja; gambar
+     di papan klip tidak punya keduanya, sehingga tempelan gambar selama ini
+     berakhir tanpa hasil.
+
+     Pendengar dipasang pada INDUK kanvas dengan capture=true, BUKAN pada
+     kanvasnya sendiri. Sebabnya halus tapi menentukan: pada elemen yang
+     menjadi target peristiwa, pendengar capture & bubble dijalankan menurut
+     URUTAN PENDAFTARAN — jadi pendengar di kanvas akan selalu berjalan
+     SESUDAH milik editor. Pendaftaran di leluhur membuat fase capture betul-
+     betul mendahuluinya, sehingga stopPropagation() sempat mencegah penangan
+     asli menyisipkan apa pun. */
+  if(typeof spkWEBindDoc==='function' && !spkWEBindDoc.__torf){
+    var _bind=spkWEBindDoc;
+    window.spkWEBindDoc=function(doc){
+      var r=_bind.apply(this, arguments);
+      try{
+        var induk=doc && doc.parentNode;
+        if(induk && !induk.__torfPaste){
+          induk.__torfPaste=1;
+          induk.addEventListener('paste', function(e){
+            if(!torFotoAktif()) return;
+            var dt=e.clipboardData||window.clipboardData; if(!dt) return;
+            var fs=[], i;
+            if(dt.files && dt.files.length){
+              for(i=0;i<dt.files.length;i++) fs.push(dt.files[i]);
+            }else if(dt.items){
+              for(i=0;i<dt.items.length;i++){
+                var it=dt.items[i];
+                if(it && it.kind==='file' && /^image\//i.test(it.type||'')){
+                  var f=it.getAsFile(); if(f) fs.push(f);
+                }
+              }
+            }
+            fs=fs.filter(function(f){ return f && /^image\//i.test(f.type||''); });
+            if(!fs.length) return;                 /* tempelan teks biasa -> biarkan penangan asli */
+            e.preventDefault(); e.stopPropagation();
+            torFotoTerima(fs);
+          }, true);
+        }
+      }catch(e){}
+      return r;
+    };
+    window.spkWEBindDoc.__torf=1;
+  }
+
+  /* ---- 3. Paragraf berisi FOTO bukan "blok contoh" ----
+     spkIsPhBlock() menilai kosong/tidaknya sebuah blok dari TEKS-nya saja,
+     sehingga paragraf yang isinya hanya <img> terbaca kosong lalu dibuang
+     spkPruneKlausul() — foto akan hilang dari dokumen tanpa pesan apa pun.
+     Berlaku untuk SEMUA bentuk dokumen dengan sengaja: membuang gambar
+     diam-diam tidak pernah menjadi perilaku yang diinginkan di mana pun. */
+  if(typeof spkIsPhBlock==='function' && !spkIsPhBlock.__torf){
+    var _ph=spkIsPhBlock;
+    window.spkIsPhBlock=function(el){
+      try{ if(el && el.querySelector && el.querySelector('img')) return false; }catch(e){}
+      return _ph.apply(this, arguments);
+    };
+    window.spkIsPhBlock.__torf=1;
+  }
+
+  /* ---- 4. Gambar dari template .docx ----
+     Jalur baca Word (spkWpText) hanya membaca w:t / w:tab / w:br, sehingga
+     w:drawing (gambar modern) & w:pict (gambar warisan) diabaikan — gambar
+     pada template hilang di web meski byte .docx aslinya tetap tersimpan di
+     rec.isi_docx dan muncul kembali saat template diunduh. Beda perilaku itu
+     menyesatkan; di sini gambarnya benar-benar ikut masuk.
+
+     Prosesnya dua tahap karena unggahan bersifat async sedangkan pembaca XML
+     sinkron:
+       tahap 1 (sinkron) : gambar ditulis sebagai penanda <img data-torwrid>
+       tahap 2 (async)   : byte media diambil dari zip, diunggah, penanda
+                           ditukar dengan URL-nya.
+     Berkas .zip hasil bacaan disimpan sebentar lewat tempelan spkUnzip —
+     spkKlDocReadFile membongkarnya sendiri di dalam dan tidak menyediakan
+     jalan lain untuk melihat isi word/media. */
+  var R_NS='http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+  var _zipTerakhir=null;
+
+  if(typeof spkUnzip==='function' && !spkUnzip.__torf){
+    var _unzip=spkUnzip;
+    window.spkUnzip=function(){
+      return Promise.resolve(_unzip.apply(this, arguments)).then(function(z){
+        try{ if(z && z['word/document.xml']) _zipTerakhir=z; }catch(e){}
+        return z;
+      });
+    };
+    window.spkUnzip.__torf=1;
+  }
+
+  /* rId gambar di dalam satu paragraf Word, menurut urutan kemunculannya. */
+  function torWRid(p){
+    var out=[];
+    try{
+      var all=p.getElementsByTagName('*');
+      for(var i=0;i<all.length;i++){
+        var n=all[i], ln=n.localName, id='';
+        if(ln==='blip')          id=n.getAttributeNS(R_NS,'embed')||n.getAttribute('r:embed')||'';
+        else if(ln==='imagedata')id=n.getAttributeNS(R_NS,'id')   ||n.getAttribute('r:id')   ||'';
+        if(id && out.indexOf(id)<0) out.push(id);
+      }
+    }catch(e){}
+    return out;
+  }
+  if(typeof spkWpText==='function' && !spkWpText.__torf){
+    var _wp=spkWpText;
+    window.spkWpText=function(p){
+      var t=_wp.apply(this, arguments);
+      try{
+        if(!torFotoAktif()) return t;
+        var ids=torWRid(p);
+        if(!ids.length) return t;
+        for(var i=0;i<ids.length;i++) t.html += '<img data-torwrid="'+fkEsc(ids[i])+'" alt="">';
+        /* U+2063 (INVISIBLE SEPARATOR) — bukan spasi, jadi lolos dari
+           .replace(/\s+/g,'').trim() di seluruh penyaring "paragraf kosong"
+           tanpa pernah tampak di layar. Tanpa ini paragraf yang isinya hanya
+           gambar dianggap baris kosong dan dibuang sebelum sempat dirender. */
+        t.plain = (t.plain||'') + '\u2063';
+      }catch(e){}
+      return t;
+    };
+    window.spkWpText.__torf=1;
+  }
+
+  function torMimeDari(nama){
+    var e=String(nama||'').toLowerCase().split('.').pop();
+    if(e==='png') return 'image/png';
+    if(e==='gif') return 'image/gif';
+    if(e==='bmp') return 'image/bmp';
+    if(e==='webp')return 'image/webp';
+    if(e==='tif'||e==='tiff') return 'image/tiff';
+    if(e==='emf'||e==='wmf')  return '';     /* metafile: peramban tak bisa membacanya */
+    return 'image/jpeg';
+  }
+  /* Peta rId -> berkas media di dalam zip */
+  function torRelsMedia(zip){
+    var peta={};
+    try{
+      var rel=zip && zip['word/_rels/document.xml.rels']; if(!rel) return peta;
+      var xml=new TextDecoder().decode(rel);
+      var d=new DOMParser().parseFromString(xml,'application/xml');
+      var rs=d.getElementsByTagName('Relationship');
+      for(var i=0;i<rs.length;i++){
+        var id=rs[i].getAttribute('Id')||'';
+        var tgt=String(rs[i].getAttribute('Target')||'').replace(/^\/+/,'');
+        if(!id || !/media\//i.test(tgt)) continue;
+        peta[id]='word/'+tgt.replace(/^word\//i,'');
+      }
+    }catch(e){}
+    return peta;
+  }
+  /* Tukar seluruh penanda <img data-torwrid> dengan URL hasil unggahan.
+     Penanda yang gagal diunggah DIBUANG, bukan dibiarkan jadi gambar rusak. */
+  async function torFotoDariDocx(html, zip){
+    var s=String(html||'');
+    if(s.indexOf('data-torwrid')<0) return s;
+    var box=document.createElement('div'); box.innerHTML=s;
+    var tags=box.querySelectorAll('img[data-torwrid]');
+    if(!tags.length) return s;
+    var peta=torRelsMedia(zip), cache={}, i;
+    for(i=0;i<tags.length;i++){
+      var im=tags[i], rid=im.getAttribute('data-torwrid')||'';
+      var url=cache[rid];
+      if(url===undefined){
+        url='';
+        try{
+          var nama=peta[rid], byte=nama?zip[nama]:null, mime=nama?torMimeDari(nama):'';
+          if(byte && mime){
+            var bl=new Blob([byte], {type:mime});
+            bl.name=nama.split('/').pop();
+            url=(await torFotoUpload(bl)).url;
+          }
+        }catch(err){ console.error('foto .docx:', err); url=''; }
+        cache[rid]=url;
+      }
+      if(url){ im.removeAttribute('data-torwrid'); im.setAttribute('src', url); im.setAttribute('alt',''); }
+      else if(im.parentNode){ im.parentNode.removeChild(im); }
+    }
+    /* Paragraf yang gambarnya gagal diunggah kini benar-benar kosong -> buang,
+       supaya tidak menyisakan baris hampa di tengah klausul. */
+    var ps=box.querySelectorAll('p');
+    for(i=0;i<ps.length;i++){
+      var pp=ps[i];
+      if(pp.querySelector('img')) continue;
+      if(pp.getAttribute('data-blank')==='1') continue;
+      if(!String(pp.textContent||'').replace(/[\s\u00A0\u2063]/g,'') && pp.parentNode) pp.parentNode.removeChild(pp);
+    }
+    return box.innerHTML;
+  }
+
+  if(typeof spkKlDocReadFile==='function' && !spkKlDocReadFile.__torf){
+    var _baca=spkKlDocReadFile;
+    window.spkKlDocReadFile=async function(file){
+      _zipTerakhir=null;
+      var r=await _baca.apply(this, arguments);
+      try{
+        if(!torFotoAktif()) return r;
+        if(!_zipTerakhir || !spkKlDoc || String(spkKlDoc.isi||'').indexOf('data-torwrid')<0) return r;
+        var zip=_zipTerakhir;
+        var jml=(String(spkKlDoc.isi).match(/data-torwrid/g)||[]).length;
+        spkKlDoc.isi = await withActionLoader('Mengunggah '+jml+' gambar dari template',
+          function(){ return torFotoDariDocx(spkKlDoc.isi, zip); });
+        try{ spkKlDocHead(); spkKlDocPreview(); }catch(e){}
+        toast(jml>1 ? (jml+' gambar template ikut disimpan') : 'Gambar template ikut disimpan','ok');
+      }catch(err){ console.error('spkKlDocReadFile foto:', err); }
+      finally{ _zipTerakhir=null; }
+      return r;
+    };
+    window.spkKlDocReadFile.__torf=1;
   }
 })();
 

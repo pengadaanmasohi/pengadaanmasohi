@@ -726,7 +726,13 @@ const FILE_ROUTES = {
   'tender':             'file-kontrak',
   'dokumen-pengadaan':  'dokumen-pengadaan',
   'materi-peraturan':   'materi-peraturan',
-  'foto-referensi':     'foto-referensi'
+  'foto-referensi':     'foto-referensi',
+  /* Foto yang ditempel di dalam klausul Dokumen TOR/KAK. Bucket PUBLIK —
+     alasannya sama persis dengan foto-referensi: atribut src <img> (dan
+     perender cetak) tidak bisa mengirim header Authorization. Isinya foto
+     pendukung uraian pekerjaan, bukan dokumen rahasia. Helper-nya ada di
+     susun-dokumen.js (torFoto*). */
+  'foto-tor':           'foto-tor'
 };
 function bucketOf(path){
   const mod = String(path||'').split('/')[0].toLowerCase();
