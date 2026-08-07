@@ -5,7 +5,7 @@
 /* ============================================================================
    ==================  PUSAT KONTROL AKUN  (fitur tambahan)  ==================
    ----------------------------------------------------------------------------
-   Menu "Akun & Kontrol" (khusus Admin bawaan/terverifikasi server).
+   Menu "Kelola Akun" (khusus Admin bawaan/terverifikasi server).
    Sejak penyederhanaan ini, matriks "Kontrol Akses" DIHAPUS: hak akses akun
    user tidak lagi dicentang satu per satu, melainkan sudah BAKU di USER_RULES
    (lihat app.js) dan hanya dibatasi oleh BIDANG yang dipilih saat akun dibuat:
@@ -17,7 +17,7 @@
          SPBJ              : unggah & hapus hanya pada bidangnya
          Pengadaan Langsung: lihat saja
          Tender            : lihat saja
-     - Menu sistem (Akun & Kontrol, Penyimpanan, Bersihkan Daftar Kontrak,
+     - Menu sistem (Kelola Akun, Penyimpanan, Bersihkan Daftar Kontrak,
        Ganti Kata Sandi, Penyesuaian Form) tetap KHUSUS Admin.
 
    Yang tersisa di panel ini: Buat Akun, Daftar Akun, dan Reset Sandi.
@@ -44,7 +44,7 @@
   var AC_SEMUA      = '*';                     // penanda "semua bidang"
   /* Jenis akun yang bisa dibuat dari panel ini.
      'admin' = ADMIN CABANG: hak datanya sama persis dengan Admin Pusat
-     (peran 'admin' di app.js), hanya menu Akun & Kontrol yang ditutup — lihat
+     (peran 'admin' di app.js), hanya menu Kelola Akun yang ditutup — lihat
      acUnrestricted(). Admin Pusat sendiri TIDAK tersimpan di sini; ia akun
      bawaan di Supabase Auth dan tidak pernah muncul di daftar. */
   var AC_TIPE_USER  = 'user';
@@ -125,7 +125,7 @@
     var pusat  = acUnrestricted();                 // Admin Pusat saja (bukan akun kustom)
     var adminApaPun = (role==='admin');            // Admin Pusat ATAU Admin Cabang
 
-    /* Akun & Kontrol: HANYA Admin Pusat. Inilah satu-satunya pembeda antara
+    /* Kelola Akun: HANYA Admin Pusat. Inilah satu-satunya pembeda antara
        kedua jenis admin — tanpa batasan ini Admin Cabang bisa membuat Admin
        Cabang lain, dan kendali atas siapa yang punya akses penuh menyebar. */
     var b=document.getElementById('btn-akun-kontrol'); if(b) b.style.display = pusat ? '' : 'none';
@@ -225,7 +225,7 @@
             acActiveProfile = acct;
             /* Peran diambil dari jenis akun. Admin Cabang masuk sebagai peran
                'admin' — hak datanya memang sama persis dengan Admin Pusat;
-               yang membedakan hanya menu Akun & Kontrol, yang ditutup lewat
+               yang membedakan hanya menu Kelola Akun, yang ditutup lewat
                acUnrestricted() karena acActiveProfile terisi. */
             var peran = acTipe(acct);
             var bid   = (peran===AC_TIPE_ADMIN) ? AC_SEMUA : (acct.bidang||AC_SEMUA);
@@ -280,7 +280,7 @@
       '<div class="ac-panel">'
       + '<div class="ac-head">'
       +   '<div class="ac-head-t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>'
-      +     '<div><h3>Akun &amp; Kontrol</h3><p>Kelola akun User &amp; Admin Cabang beserta bidangnya.</p></div></div>'
+      +     '<div><h3>Kelola Akun</h3><p>Kelola akun pengguna beserta bidangnya.</p></div></div>'
       /* Bilah tab diganti dua tombol di sini. Halaman pertama panel sekarang
          Daftar Akun — yang paling sering dibuka — dan kedua halaman lain
          diperlakukan sebagai tindakan, bukan tab sejajar. */
@@ -296,7 +296,16 @@
       + '</div>'
       + '</div>';
     document.body.appendChild(ov);
-    ov.addEventListener('mousedown', function(e){ if(e.target===ov) acClosePanel(); });
+    /* KLIK DI LUAR TIDAK MENUTUP, MELAINKAN MENGGETARKAN (7 Agu 2026).
+       Dulu penutupnya dipasang pada MOUSEDOWN. Itu sumber gejala "setelah klik
+       ganda di luar, panelnya seperti muncul lagi": tekanan pertama menutup
+       panel, lalu tekanan kedua dari klik-ganda yang sama jatuh ke elemen yang
+       kini terbuka di bawahnya — item menu "Kelola Akun" — dan membukanya
+       kembali, lengkap dengan animasi acFade yang berulang.
+       Mekanismenya dipinjam utuh dari pratinjau TOR/KAK lewat
+       pasangTolakTutup(): latar tidak lagi menutup apa pun, sehingga tidak ada
+       lagi tekanan kedua yang bisa jatuh ke menu di belakangnya. */
+    try{ if(typeof pasangTolakTutup==='function') pasangTolakTutup('ac-ov'); }catch(e){}
   }
 
   window.openAkunKontrol=async function(){
@@ -329,37 +338,14 @@
       + 'Daftar Akun</button>';
   }
 
-  /* Ringkasan hak akun user — ditampilkan di form supaya Admin tidak perlu
-     menebak apa saja yang bisa dilakukan akun yang sedang dibuatnya. */
-  function acHakHtml(tipe){
-    if(tipe===AC_TIPE_ADMIN){
-      return '<div class="ac-note"><b>Hak akun Admin Cabang:</b>'
-        + '<ul style="margin:8px 0 0 18px;padding:0;line-height:1.7">'
-        +   '<li>Seluruh menu data terbuka untuk <b>semua bidang</b> — sama persis dengan Admin Pusat.</li>'
-        +   '<li>Penyimpanan, Bersihkan Daftar Kontrak, Ganti Kata Sandi &amp; Penyesuaian Form <b>tersedia</b>.</li>'
-        +   '<li>Menu <b>Akun &amp; Kontrol tidak tersedia</b> — hanya Admin Pusat yang dapat membuat, mengubah, atau menghapus akun.</li>'
-        + '</ul>'
-        + '<div style="margin-top:8px">Batasan itu disengaja: tanpanya, Admin Cabang dapat membuat Admin Cabang lain dan kendali atas siapa saja yang punya akses penuh ikut menyebar.</div>'
-        + '</div>';
-    }
-    return '<div class="ac-note"><b>Hak akun User (baku, tidak dapat diubah per akun):</b>'
-      + '<ul style="margin:8px 0 0 18px;padding:0;line-height:1.7">'
-      +   '<li>Monitoring SPBJ, Pengadaan Langsung &amp; Tender — <b>ubah &amp; hapus hanya pada bidangnya</b>; bidang lain dapat dilihat saja.</li>'
-      +   '<li>Dokumen Perjanjian/Kontrak — <b>Pengadaan Langsung &amp; Tender: lihat saja</b>.</li>'
-      +   '<li>Dokumen <b>SPBJ</b> — unggah &amp; hapus <b>hanya pada bidangnya</b>.</li>'
-      +   '<li>Menu Admin (Akun &amp; Kontrol, Penyimpanan, Bersihkan Daftar Kontrak, Ganti Kata Sandi, Penyesuaian Form) <b>tidak tersedia</b>.</li>'
-      + '</ul>'
-      + '<div style="margin-top:8px">Bila bidang diisi <b>Semua Bidang</b>, batasan bidang tidak berlaku — akun tetap tidak bisa membuka menu Admin.</div>'
-      + '</div>';
-  }
+  /* acHakHtml() DIHAPUS 7 Agu 2026 bersama pemilih Jenis Akun: ringkasan hak
+     itu hanya tampil di dalam form pembuatan akun, dan separuh isinya
+     menerangkan Admin Cabang yang kini tidak dapat dibuat lagi. */
 
   function acRenderCreate(edit){
     var e=edit||null;
-    var tipe=e?acTipe(e):AC_TIPE_USER;
-    /* Admin Cabang selalu berlaku untuk semua bidang — bukan pilihan yang
-       kebetulan bawaannya begitu, melainkan konsekuensi perannya. Karena itu
-       nilainya dipaksa di sini, bukan sekadar dipilih di layar. */
-    var curBid=(tipe===AC_TIPE_ADMIN) ? AC_SEMUA : ((e&&e.bidang)||AC_SEMUA);
+    var tipe=AC_TIPE_USER;                 /* pemilih jenis akun sudah dihapus */
+    var curBid=((e&&e.bidang)||AC_SEMUA);
     var opts='<option value="'+AC_SEMUA+'"'+(curBid===AC_SEMUA?' selected':'')+'>Semua Bidang</option>';
     acBidangOpts().forEach(function(b){
       opts+='<option value="'+escapeHtml(b)+'"'+(String(curBid)===String(b)?' selected':'')+'>'+escapeHtml(b)+'</option>';
@@ -371,15 +357,19 @@
       + '<div class="ac-fld"><label>Username</label><input id="ac-c-user" type="text" autocomplete="off" placeholder="mis. operator1" value="'+(e?escapeHtml(e.username):'')+'"'+(e?' readonly':'')+'></div>'
       + '<div class="ac-fld"><label>Kata Sandi</label><input id="ac-c-pass" type="text" autocomplete="off" placeholder="min. 4 karakter" value="'+(e?escapeHtml(e.password||''):'')+'"></div>'
       + '</div>';
+    /* PILIHAN "Admin Cabang" DIHAPUS DARI LAYAR (7 Agu 2026) — beserta pemilih
+       Jenis Akun (kini hanya ada satu jenis), catatan "Admin Cabang selalu
+       mencakup semua bidang", dan ringkasan haknya. Akun yang dibuat dari
+       panel ini selalu bertipe User.
+
+       LAPISAN DATANYA SENGAJA TIDAK DIBONGKAR. acTipe/AC_TIPE_ADMIN tetap ada
+       karena akun bertipe 'admin' yang SUDAH TERSIMPAN masih harus dikenali
+       saat login (pemetaan peran di acTerapkanPeran) — mencabutnya berarti
+       menurunkan hak akun yang sudah berjalan tanpa satu pun peringatan. Yang
+       hilang hanyalah cara MEMBUAT yang baru. */
     h+='<div class="ac-row2">'
-      + '<div class="ac-fld"><label>Jenis Akun</label><select id="ac-c-tipe" onchange="acTipeBerubah()">'
-      +   '<option value="'+AC_TIPE_USER+'"'+(tipe===AC_TIPE_USER?' selected':'')+'>User</option>'
-      +   '<option value="'+AC_TIPE_ADMIN+'"'+(tipe===AC_TIPE_ADMIN?' selected':'')+'>Admin Cabang</option>'
-      + '</select></div>'
-      + '<div class="ac-fld"><label>Bidang</label><select id="ac-c-bidang"'+(tipe===AC_TIPE_ADMIN?' disabled':'')+'>'+opts+'</select>'
-      +   '<small id="ac-c-bidang-note" class="ac-muted" style="display:'+(tipe===AC_TIPE_ADMIN?'block':'none')+';margin-top:6px">Admin Cabang selalu mencakup semua bidang.</small></div>'
+      + '<div class="ac-fld"><label>Bidang</label><select id="ac-c-bidang">'+opts+'</select></div>'
       + '</div>';
-    h+='<div id="ac-c-hak">'+acHakHtml(tipe)+'</div>';
     h+='<div class="ac-actions">'
       + (e?'<button class="btn btn-red" type="button" data-modal onclick="acTab(\'list\')">'+BTN_IC_BATAL+'Batal</button>':'')
       + '<button class="btn btn-green" type="button" data-modal onclick="acCreateAccount('+(e?'true':'false')+')">'+(e?BTN_IC_SIMPAN+'Simpan':'+ Buat Akun')+'</button></div>';
@@ -389,29 +379,13 @@
   /* Jenis akun diubah -> bidang dikunci/dilepas & ringkasan haknya ikut ganti.
      Ditulis sebagai penyunting DOM, bukan render ulang seluruh halaman, supaya
      username & kata sandi yang sudah diketik tidak ikut hilang. */
-  window.acTipeBerubah=function(){
-    var t=((document.getElementById('ac-c-tipe')||{}).value)||AC_TIPE_USER;
-    var sel=document.getElementById('ac-c-bidang');
-    var note=document.getElementById('ac-c-bidang-note');
-    var hak=document.getElementById('ac-c-hak');
-    if(sel){
-      if(t===AC_TIPE_ADMIN){ sel.value=AC_SEMUA; sel.disabled=true; }
-      else { sel.disabled=false; }
-    }
-    if(note) note.style.display=(t===AC_TIPE_ADMIN?'block':'none');
-    if(hak)  hak.innerHTML=acHakHtml(t);
-  };
 
   window.acCreateAccount=async function(isEdit){
     var cfg=acGetConfig();
     var u=((document.getElementById('ac-c-user')||{}).value||'').trim();
     var p=((document.getElementById('ac-c-pass')||{}).value||'');
-    var tipe=(((document.getElementById('ac-c-tipe')||{}).value)===AC_TIPE_ADMIN)?AC_TIPE_ADMIN:AC_TIPE_USER;
+    var tipe=AC_TIPE_USER;                 /* satu-satunya jenis yang bisa dibuat dari panel ini */
     var bidang=((document.getElementById('ac-c-bidang')||{}).value||AC_SEMUA);
-    /* Dipaksa lagi di sini, bukan hanya di layar. Select yang `disabled` tetap
-       bisa diubah lewat DevTools, dan Admin Cabang berbidang tunggal akan
-       menghasilkan akun yang perannya bertabrakan dengan cakupannya. */
-    if(tipe===AC_TIPE_ADMIN) bidang=AC_SEMUA;
     if(!u){ try{ toast('Username wajib diisi','warn'); }catch(e){} return; }
     if(!isEdit && RESERVED.indexOf(u.toLowerCase())>=0){ try{ toast('Username "'+u+'" sudah dipakai peran bawaan. Pilih nama lain.','warn'); }catch(e){} return; }
     if((p||'').length<4){ try{ toast('Kata sandi minimal 4 karakter','warn'); }catch(e){} return; }
@@ -440,16 +414,15 @@
      sudah ada, di tempat yang lebih jauh dari akunnya. */
   function acRenderList(){
     var cfg=acGetConfig(); var accs=cfg.accounts||[];
-    var jmlAdmin=accs.filter(function(a){ return acTipe(a)===AC_TIPE_ADMIN; }).length;
-    var terbatas=accs.filter(function(a){ return acTipe(a)===AC_TIPE_USER && a.bidang && a.bidang!==AC_SEMUA; });
+    /* LENCANA RINGKASAN & CATATAN "Admin Pusat" DIHAPUS (7 Agu 2026).
+       Keduanya mengulang apa yang sudah terbaca langsung dari tabel di
+       bawahnya: jumlah akun tinggal dihitung dari barisnya, jenis akun sudah
+       ditandai lencana pada tiap baris, dan ketiadaan Admin Pusat justru
+       terlihat dari daftarnya sendiri. Menghapusnya membuat daftar akun mulai
+       tepat di bawah judul panel.
+       Dua perhitungan yang hanya melayani lencana itu (jmlAdmin & terbatas)
+       ikut dibuang, bukan ditinggal menganggur. */
     var h='';
-    h+='<div class="ac-sum">'
-      +'<span class="ac-sum-chip"><b>'+accs.length+'</b> Total akun</span>'
-      +'<span class="ac-sum-chip admin"><b>'+jmlAdmin+'</b> Admin Cabang</span>'
-      +'<span class="ac-sum-chip user"><b>'+(accs.length-jmlAdmin)+'</b> User</span>'
-      +'<span class="ac-sum-chip"><b>'+terbatas.length+'</b> Terbatas bidang</span>'
-      +'</div>';
-    h+='<div class="ac-hint">Login memakai username + kata sandi di daftar ini. Akun <b>Admin Pusat</b> tidak muncul di sini — ia akun bawaan server dan tidak dapat diubah dari panel ini.</div>';
     if(!accs.length){ h+='<div class="ac-empty">Belum ada akun. Tekan <b>+ Buat Akun Baru</b> di bawah untuk menambah.</div>'; }
     else {
       h+='<div class="ac-tablewrap"><table class="ac-list"><thead><tr>'
@@ -464,7 +437,7 @@
           +'<td><span class="ac-pill '+(adm?'admin':'user')+'">'+acTipeLabel(t)+'</span></td>'
           +'<td>'+(semua?'<span class="ac-pill on">Semua Bidang</span>':escapeHtml(a.bidang))+'</td>'
           +'<td class="ac-cell-ket">'+(adm
-              ? 'Seluruh data &amp; menu, kecuali Akun &amp; Kontrol'
+              ? 'Seluruh data &amp; menu, kecuali Kelola Akun'
               : (semua?'Seluruh data monitoring + dokumen SPBJ':'Hanya bidangnya'))+'</td>'
           /* Diisi belakangan oleh acFillStatus(): angkanya datang dari tabel
              presence lewat jaringan, dan render daftar tidak boleh menunggu. */
@@ -809,7 +782,7 @@
       + '<div class="ac-body"><div class="ac-pane" id="st-pane"></div></div>'
       + '</div>';
     document.body.appendChild(ov);
-    ov.addEventListener('mousedown', function(e){ if(e.target===ov) stClose(); });
+    try{ if(typeof pasangTolakTutup==='function') pasangTolakTutup('st-ov'); }catch(e){}
   }
   window.stClose=function(){ var ov=document.getElementById('st-ov'); if(ov) ov.classList.remove('show'); };
   window.openStoragePanel=async function(){

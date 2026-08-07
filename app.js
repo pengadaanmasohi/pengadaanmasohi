@@ -833,9 +833,9 @@ const ACCT_VOL = '#,##0.00;-#,##0.00;"-";@';
    ----------------------------------------------------------------------------
    Peran yang berlaku:
      admin : pengelola sistem. Akses penuh tanpa batas bidang, PLUS menu sistem
-             (Akun & Kontrol, Penyimpanan, Bersihkan Kontrak, Ganti Kata Sandi,
+             (Kelola Akun, Penyimpanan, Bersihkan Kontrak, Ganti Kata Sandi,
              Penyesuaian Form).
-     user  : akun operasional yang dibuat Admin lewat menu "Akun & Kontrol".
+     user  : akun operasional yang dibuat Admin lewat menu "Kelola Akun".
              Menunya sama dengan admin KECUALI menu sistem di atas, tetapi hak
              ubah/hapusnya dibatasi oleh BIDANG yang dipilih saat akun dibuat.
      guest : Tamu — murni pembaca (Dashboard & Monitoring saja).
@@ -1255,7 +1255,7 @@ function applyRole(role){
   const ic=document.getElementById('user-role-ic');
   if(ic){ ic.className='user-role-ic '+(role||''); ic.innerHTML=ROLE_ICONS[role]||''; }
   /* Menu Pengaturan tetap terbuka untuk akun user, tetapi isinya menyusut jadi
-     dua: Ganti Kata Sandi & Bersihkan Daftar Kontrak. Sisanya (Akun & Kontrol,
+     dua: Ganti Kata Sandi & Bersihkan Daftar Kontrak. Sisanya (Kelola Akun,
      Penyimpanan, Penyesuaian Form) disembunyikan di tempat lain. */
   const cpBtn=document.getElementById('btn-change-pass');
   if(cpBtn) cpBtn.style.display = ((role==='admin'||role==='user') && USE_SUPABASE) ? '' : 'none';
@@ -5302,7 +5302,7 @@ function bunyiTolak(){
    kelasnya sudah menempel dan peramban menganggap tidak ada yang berubah. */
 function tolakTutupModal(ov){
   if(!ov) return;
-  const mdl=ov.querySelector('.modal, .tor-dk-mdl, .pn-preview-modal');
+  const mdl=ov.querySelector('.modal, .tor-dk-mdl, .pn-preview-modal, .ac-panel, .st-panel, .pnw-profil-modal, .materi-kat-modal');
   if(!mdl) return;
   /* Bunyi penolakan DIMATIKAN atas permintaan pengguna (Agu 2026).
      Isyarat visualnya — getaran modal + sorot tombol tutup — sudah cukup
@@ -5337,7 +5337,13 @@ function pasangTolakTutup(id){
   });
   ov.addEventListener('click', function(e){
     if(e.target!==ov) return;
-    if(!ov.classList.contains('show')) return;
+    /* Sebagian overlay ditampilkan lewat kelas .show, sebagian lain langsung
+       lewat style.display (pop-up Profil & Kategori Materi). Memakai kelas saja
+       membuat pop-up jenis kedua tidak pernah bergetar — terlihat seolah klik
+       di latar tidak berbuat apa-apa sama sekali. */
+    var tampil = ov.classList.contains('show');
+    if(!tampil){ try{ tampil = getComputedStyle(ov).display !== 'none'; }catch(e2){ tampil=true; } }
+    if(!tampil) return;
     tolakTutupModal(ov);
   });
 }
@@ -7243,7 +7249,7 @@ function jpProfilSnapshot(){
 function jpProfilOverlay(inner){
   let ov=document.getElementById('pnw-profil-ov');
   if(!ov){ ov=document.createElement('div'); ov.id='pnw-profil-ov'; ov.className='pnw-profil-ov'; document.body.appendChild(ov); }
-  ov.onclick=(e)=>{ if(e.target===ov) jpProfilClose(); };
+  pasangTolakTutup('pnw-profil-ov');   /* klik latar -> bergetar, tidak menutup */
   ov.innerHTML='<div class="pnw-profil-modal" role="dialog">'+inner+'</div>'; ov.style.display='flex';
 }
 function jpProfilClose(){ const ov=document.getElementById('pnw-profil-ov'); if(ov) ov.style.display='none'; }
@@ -7916,7 +7922,7 @@ function fkStatusOk(modul, r){
 const FK_MODULES = {
   kr: {
     label:'SPBJ / Kontrak Rinci',
-    title:'Daftar Kontrak Rinci',
+    title:'Dokumen Kontrak Rinci',
     noKontrakLabel:'No. SPBJ / Kontrak Rinci',
     stacked:false,
     list: ()=> [...records].filter(r=>fkStatusOk('kr',r)).sort(makeWorkComparator(
@@ -7933,7 +7939,7 @@ const FK_MODULES = {
   },
   pl: {
     label:'Pengadaan Langsung',
-    title:'Daftar Surat Perintah Kerja',
+    title:'Dokumen Surat Perintah Kerja',
     noKontrakLabel:'No. Kontrak',
     stacked:false,
     list: ()=> [...records_pl].filter(r=>fkStatusOk('pl',r)).sort(makeWorkComparator(
@@ -7950,7 +7956,7 @@ const FK_MODULES = {
   },
   tender: {
     label:'Tender',
-    title:'Daftar Perjanjian/Kontrak',
+    title:'Dokumen Perjanjian/Kontrak',
     noKontrakLabel:'No. Kontrak',
     stacked:true,
     list: ()=> [...records_tender].filter(r=>fkStatusOk('tender',r)).sort(makeWorkComparator(
@@ -8291,7 +8297,7 @@ async function renderFkView(){
   const cfg=FK_MODULES[modul];
   const thNok=document.getElementById('fk-view-th-nok'); if(thNok) thNok.textContent=cfg.noKontrakLabel;
   /* Judul halaman mengikuti modul yang dipilih pada segmen di kanan atas. */
-  const ttl=document.getElementById('fk-view-title'); if(ttl) ttl.textContent=cfg.title||'Daftar Perjanjian/Kontrak';
+  const ttl=document.getElementById('fk-view-title'); if(ttl) ttl.textContent=cfg.title||'Dokumen Perjanjian/Kontrak';
   fkSetSearchPlaceholder('view', cfg);
   // Tombol "Tambah Data" hanya untuk yang berhak mengubah modul ini —
   // untuk user di Pengadaan Langsung & Tender tombol dihilangkan sepenuhnya
@@ -10214,7 +10220,7 @@ function renderDpengDocList(){
   if(subEl) subEl.textContent=(dpengBidang(rec)||'—')+' · '+terisi+' dari '+docs.length+' dokumen sudah terunggah';
   if(!docs.length){ body.innerHTML='<div class="dpeng-list-empty">Pekerjaan ini belum memiliki jenis dokumen. Gunakan tombol Ubah untuk memilih dokumen.</div>'; return; }
   const rid=fkEsc(String(rec.id));
-  body.innerHTML='<div class="dpeng-list-hint">Arahkan kursor ke nama dokumen yang berkasnya sudah ada — klik untuk membuka pratinjau.</div>'+
+  body.innerHTML='<div class="dpeng-list-hint">Klik baris dokumen yang berkasnya sudah ada untuk membuka pratinjau.</div>'+
     '<ol class="dpeng-list-items">'+docs.map((d,i)=>{
       const label=fkEsc(d.label||dpengDocLabel(d.group,d.key));
       const has=!!d.path;
@@ -10222,20 +10228,32 @@ function renderDpengDocList(){
       const meta = has
         ? '<span class="dpeng-list-file" title="'+fkEsc(d.nama_file||'')+'">'+fkEsc(d.nama_file||'Terunggah')+'</span>'
         : '<span class="dpeng-list-none">Belum diunggah</span>';
-      /* Pratinjau dibuka dengan mengklik NAMA DOKUMEN (hanya bila berkas ada).
-         Penanda visualnya: teks berubah biru & bergaris bawah saat disorot. */
+      /* SELURUH BARIS DAPAT DIKLIK (7 Agu 2026), meniru daftar dokumen pada
+         TOR/KAK. Dulu hanya NAMA dokumen yang menjadi tautan: sasarannya kecil,
+         dan satu-satunya petunjuk bahwa baris itu bisa dibuka adalah teks yang
+         berubah biru & bergaris bawah tepat saat kursor mengenainya — di luar
+         beberapa piksel itu, baris tampak mati. Kini seluruh kartu adalah
+         sasaran klik dan diberi tanda panah di ujung kanan, sehingga niatnya
+         terbaca sebelum kursor menyentuh apa pun.
+
+         <li> dipakai sebagai tombol, bukan dibungkus <a>: baris ini memuat
+         beberapa unsur (nomor, lencana, nama, nama berkas) dan membungkusnya
+         dalam tautan akan membuat pembaca layar mengeja seluruhnya sebagai satu
+         nama tautan yang panjang. role=button + tabindex memberi perilaku yang
+         sama tanpa efek samping itu. */
       const buka='dpengPreview(\''+rid+'\',\''+fkEsc(d.key)+'\')';
-      const labelHtml = has
-        ? '<span class="dpeng-list-label is-link" tabindex="0" role="button"'+
+      const labelHtml = '<span class="dpeng-list-label">'+label+'</span>';
+      const attr = has
+        ? ' class="dpeng-list-item has-file" tabindex="0" role="button"'+
           ' title="Klik untuk membuka pratinjau"'+
           ' onclick="'+buka+'"'+
-          ' onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();'+buka+';}">'+label+'</span>'
-        : '<span class="dpeng-list-label">'+label+'</span>';
-      const attr = has ? ' class="dpeng-list-item has-file"' : ' class="dpeng-list-item no-file"';
+          ' onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();'+buka+';}"'
+        : ' class="dpeng-list-item no-file"';
       return '<li'+attr+'>'+
         '<span class="dpeng-list-no">'+(i+1)+'</span>'+
         tag+
         '<span class="dpeng-list-main">'+labelHtml+meta+'</span>'+
+        (has?'<span class="dpeng-list-go" aria-hidden="true">&rsaquo;</span>':'')+
       '</li>';
     }).join('')+'</ol>';
 }
@@ -11093,8 +11111,8 @@ function materiKatOverlay(inner){
   if(!ov){
     ov=document.createElement('div'); ov.id='materi-kat-ov'; ov.className='materi-kat-ov';
     document.body.appendChild(ov);
-    ov.onclick=function(e){ if(e.target===ov) materiKatClose(); };
   }
+  pasangTolakTutup('materi-kat-ov');   /* klik latar -> bergetar, tidak menutup */
   ov.innerHTML='<div class="materi-kat-modal" role="dialog" aria-modal="true">'+inner+'</div>';
   ov.style.display='flex';
   setTimeout(function(){ const el=document.getElementById('materi-kat-input'); if(el){ el.focus(); el.select(); } },60);
@@ -13671,7 +13689,8 @@ function pnwProfilSnapshot(){ const st=pnwState; return { pilih: JSON.parse(JSON
 function pnwProfilCount(snap){ let n=0; Object.values((snap&&snap.syarat)||{}).forEach(katObj=>Object.values(katObj||{}).forEach(arr=>{ (arr||[]).forEach(v=>{ if(String(v==null?'':v).trim()) n++; }); })); return n; }
 function pnwProfilOverlay(inner){
   let ov=document.getElementById('pnw-profil-ov');
-  if(!ov){ ov=document.createElement('div'); ov.id='pnw-profil-ov'; ov.className='pnw-profil-ov'; document.body.appendChild(ov); ov.onclick=(e)=>{ if(e.target===ov) pnwProfilClose(); }; }
+  if(!ov){ ov=document.createElement('div'); ov.id='pnw-profil-ov'; ov.className='pnw-profil-ov'; document.body.appendChild(ov); }
+  pasangTolakTutup('pnw-profil-ov');   /* klik latar -> bergetar, tidak menutup */
   ov.innerHTML='<div class="pnw-profil-modal" role="dialog">'+inner+'</div>'; ov.style.display='flex';
 }
 function pnwProfilClose(){ const ov=document.getElementById('pnw-profil-ov'); if(ov) ov.style.display='none'; }
@@ -20161,13 +20180,18 @@ document.getElementById('confirm-overlay').addEventListener('click',e=>{ if(e.ta
 /* Modal "Lihat" (Monitoring, Daftar Pekerjaan, Kontrak Rinci) — klik di luar
    kotak TIDAK menutup, melainkan menggetarkan. Lihat pasangTolakTutup. */
 pasangTolakTutup('detail-overlay');
-document.getElementById('cp-overlay').addEventListener('click',e=>{ if(e.target.id==='cp-overlay')closeChangePass(); });
-document.getElementById('pn-doc-overlay').addEventListener('click',e=>{ if(e.target.id==='pn-doc-overlay')pnDocModalCancel(); });
-document.getElementById('hps-ana-overlay').addEventListener('click',e=>{ if(e.target.id==='hps-ana-overlay')closeHpsAnaPicker(); });
-document.getElementById('dp-picker-overlay').addEventListener('click',e=>{ if(e.target.id==='dp-picker-overlay')closeDpPicker(); });
+pasangTolakTutup('cp-overlay');
+pasangTolakTutup('pn-doc-overlay');
+pasangTolakTutup('hps-ana-overlay');
+pasangTolakTutup('dp-picker-overlay');
 /* Modal PRATINJAU DOKUMEN — dipakai bersama SELURUH modul (TOR/KAK, RAB,
    Pakta Integritas, SPK/Kontrak, HPS, Analisa, Jadwal, Kelengkapan Dokumen),
    jadi satu baris ini berlaku untuk pratinjau di semua menu. */
 pasangTolakTutup('pn-preview-overlay');
+/* Daftar dokumen pada Dokumen Pengadaan — perlakuan yang sama: klik di latar
+   menggetarkan, tidak menutup. Penutup lama dipasang sebagai atribut onclick
+   di index.html dan sudah dilepas dari sana. */
+pasangTolakTutup('dpeng-list-overlay');
+pasangTolakTutup('spk-dok-overlay');   /* pemilih bagian dokumen SPK / Perjanjian-Kontrak */
 
 

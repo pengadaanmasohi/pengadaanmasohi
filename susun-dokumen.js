@@ -2964,6 +2964,59 @@ function torIntroSejajar(html, judulX){
     return box.innerHTML;
   }catch(e){ return s; }
 }
+/* ===================== INDEN BARIS PERTAMA PARAGRAF (ketentuan 7 Agu 2026) ====
+   "Isi klausul yang terdiri dari BEBERAPA paragraf diberi inden baris pertama
+   otomatis; klausul yang hanya SATU paragraf tidak perlu."
+
+   Alasan aturannya tipografis: inden baris pertama adalah PENANDA PEMISAH antar
+   paragraf. Kalau paragrafnya cuma satu, tidak ada yang perlu dipisahkan — inden
+   di sana hanya membuat blok teks tampak menggantung tanpa sebab.
+
+   TIDAK ADA CSS BARU. Kelas `klp` ("Paragraf (menjorok)") sudah ada sejak semula
+   dengan inden P_FIRST = 425 twip = 0,75 cm, sudah terdaftar di SPK_CLS2STY
+   sebagai gaya Word "Klausul Paragraf", dan sudah menjadi pilihan di editor
+   klausul. Jadi yang dilakukan di sini hanya MENUKAR KELAS kl0 -> klp pada
+   paragraf yang memenuhi syarat: hasilnya seragam dengan klausul yang diketik
+   langsung di aplikasi, dan tetap kembali menjadi gaya "Klausul Paragraf" bila
+   klausulnya diunduh ulang sebagai template Word.
+
+   YANG DIHITUNG SEBAGAI "PARAGRAF" hanyalah paragraf PROSA (kelas kl0):
+     - butir bernomor (kl1/kl2) tidak ikut — itu daftar, bukan paragraf, dan
+       indennya sudah diatur mesin penomoran;
+     - baris kosong dari Enter (data-blank) tidak ikut;
+     - blok foto & paragraf tanpa teks tidak ikut — sebuah gambar bukan paragraf,
+       dan menghitungnya akan membuat klausul satu-paragraf-plus-foto ikut
+       terinden padahal seharusnya tidak;
+     - baris "Label : nilai" (.spk-kv) berupa <div>, jadi memang tidak terjaring.
+
+   Dijalankan SESUDAH spkPruneKlausul supaya paragraf contoh yang dibuang tidak
+   ikut terhitung — kalau tidak, klausul berisi satu paragraf + satu contoh akan
+   salah dinilai "dua paragraf". */
+function torIndenParagraf(html){
+  var s=String(html==null?'':html);
+  if(s.indexOf('kl0')<0) return s;
+  try{
+    var box=document.createElement('div'); box.innerHTML=s;
+    var anak=box.children, calon=[], i, el;
+    for(i=0;i<anak.length;i++){
+      el=anak[i];
+      if(el.tagName!=='P') continue;
+      if(!/\bkl0\b/.test(el.className||'')) continue;
+      if(el.getAttribute('data-blank')==='1') continue;
+      if(el.classList && (el.classList.contains('spk-blank')||el.classList.contains('spk-ph'))) continue;
+      if(el.querySelector && el.querySelector('img')) continue;
+      if(el.querySelector && el.querySelector('span.n')) continue;      /* butir bernomor terbungkus */
+      if(!String(el.textContent||'').replace(/[\s ⁣]/g,'')) continue;
+      calon.push(el);
+    }
+    if(calon.length<2) return s;                 /* satu paragraf -> tanpa inden */
+    calon.forEach(function(p){
+      p.className=String(p.className||'').replace(/\bkl0\b/,'klp').trim();
+    });
+    return box.innerHTML;
+  }catch(e){ console.error('torIndenParagraf:', e); return s; }
+}
+
 function torKlTidy(html){
   var h=String(html==null?'':html);
   try{ h=spkPkSubNumberFix(spkPkBoxMark(h)); }catch(e){}
@@ -3670,10 +3723,10 @@ function torDocHtml(data, klausul, opts){
      klausul berbentuk "II.3" dan butir di dalamnya bernomor mulai 1 lagi
      (persis lampiran TOR Word). Nomor butir dibiarkan apa adanya dari template. */
   const pre=klausul.map((k,i)=> spkKvGroup(spkKlItalicAsing(spkBoldPihak(spkNomorToNo(spkNumberFix(spkTidyKeyValue(
-      spkStripFontStyle(spkPruneKlausul(spkMerge(
+      torIndenParagraf(spkStripFontStyle(spkPruneKlausul(spkMerge(
         torIsOverview(k.judul) ? torTanpaTebal(spkSortDefinisiIf(k.judul, k.isi||''))
                                : spkSortDefinisiIf(k.judul, k.isi||''),
-        ctx), str[i].urut, data))
+        ctx), str[i].urut, data)))
     )))))));
   try{ SPK_HANG_OVR = spkKumpulHang(pre.map(function(x){ try{ return spkPkBoxMark(x); }catch(e2){ return x; } })); }
   catch(e){ SPK_HANG_OVR=null; }
@@ -4258,10 +4311,22 @@ function torPiKertasCss(){
 function torPiOrang(data, peran){
   const d=data||{};
   if(peran==='direksi') return {nama:d.nama_direksi||'', jab:d.jabatan_direksi||'', nip:d.nip_direksi||''};
+  /* Pejabat Pelaksana Pengadaan — dipakai Pakta Integritas pada dokumen SPK &
+     Perjanjian/Kontrak. Sumbernya kelompok field "Pejabat Pelaksana Pengadaan"
+     pada langkah Data Kontrak (lihat SPK_PLS_KEYS di susun-kontrak.js). */
+  if(peran==='pelaksana') return {nama:d.nama_pelaksana||'', jab:d.jabatan_pelaksana||'', nip:d.nip_pelaksana||''};
   return {nama:d.nama_pengguna||'', jab:d.jabatan_pengguna||'', nip:d.nip_pengguna||''};
 }
 function torPiJudul(peran){
-  return 'Pakta Integritas '+(peran==='direksi'?'Direksi Pekerjaan':'Pengguna Barang/Jasa');
+  if(peran==='direksi')   return 'Pakta Integritas Direksi Pekerjaan';
+  if(peran==='pelaksana') return 'Pakta Integritas Pejabat Pelaksana Pengadaan';
+  return 'Pakta Integritas Pengguna Barang/Jasa';
+}
+/* Benar bila pakta sedang dibangun untuk dokumen SPK / Perjanjian-Kontrak,
+   bukan TOR/KAK. Dibaca dari data yang dikirim, BUKAN dari spkState — satu
+   dokumen bisa dicetak dari daftar tanpa pernah dibuka di form. */
+function torPiUntukKontrak(data){
+  try{ return !!(data && data.__doktype!=='TOR'); }catch(e){ return false; }
 }
 /* Perkiraan Pekerjaan: utamakan Jumlah Total RAB, mundur ke taksiran awal. */
 function torPiNilai(data){
@@ -4311,9 +4376,22 @@ function torPiDocHtml(data, peran){
          seluruh baris lain di blok ini cukup satu baris. */
       brs('Satuan / Unit Kerja', esc(ctx.unit_singkat||TOR_SINGKATAN_UNIT||''))+
       brs('Nama Pekerjaan', esc(data.nama_pekerjaan||'\u2014'))+
-      brs('Perkiraan Pekerjaan', esc(rp(torPiNilai(data))))+
-      brs('No. Anggaran', angg)+
-      brs('No. PRK', prk.length?prk.map(esc).join('<br>'):'\u2014')+
+      /* TIGA BARIS TERAKHIR BERBEDA MENURUT BENTUK DOKUMEN (7 Agu 2026).
+         TOR/KAK belum punya kontrak, jadi yang bermakna di sana adalah taksiran
+         nilai beserta sumber dananya: Perkiraan Pekerjaan, No. Anggaran, No. PRK.
+         Pada SPK & Perjanjian/Kontrak ketiganya sudah tergantikan oleh angka
+         dan nomor yang PASTI — persis seperti berkas acuan "PI PJ LAKSDA":
+         Nilai Pekerjaan, No. Kontrak, lalu tanggal kontraknya.
+         Selebihnya (kop, blok identitas, pilihan peran, 9 butir komitmen, dua
+         paragraf penutup, dan blok tanda tangan) SAMA PERSIS untuk keduanya —
+         itulah sebabnya satu fungsi ini dipakai bersama, bukan disalin. */
+      (torPiUntukKontrak(data)
+        ? ( brs('Nilai Pekerjaan', esc(rp(spkNum(data.nilai_pekerjaan)||0)))+
+            brs('No. Kontrak', esc(data.nomor_kontrak||'\u2014'))+
+            brs('Tanggal', esc(data.tanggal_kontrak?spkDateLong(data.tanggal_kontrak):'\u2014')) )
+        : ( brs('Perkiraan Pekerjaan', esc(rp(torPiNilai(data))))+
+            brs('No. Anggaran', angg)+
+            brs('No. PRK', prk.length?prk.map(esc).join('<br>'):'\u2014') ))+
     '</tbody></table>'+
     '<p class="pi-p">selanjutnya disebut PIHAK YANG MENANDATANGANI PAKTA INTEGRITAS.</p>'+
     '<p class="pi-p">Dengan ini saya menyatakan dan berkomitmen untuk:</p>'+

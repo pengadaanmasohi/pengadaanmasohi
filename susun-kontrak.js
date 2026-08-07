@@ -74,6 +74,16 @@ const SPK_DEF_AKTA_PENDIRIAN = 'akta Notaris No. (no. akta..) tanggal (tgl. akta
 const SPK_DEF_AKTA_PERUBAHAN = 'akta Notaris No. (no. akta...) tanggal (tgl. akta...) dibuat dihadapan Notaris (nama notaris...), yang disahkan berdasarkan Surat Keputusan Menteri Hukum dan Hak Asasi Manusia No. (no. SK...) tanggal (tgl. SK...)';
 /* Field SK Pimpinan Unit — dipakai untuk fitur "default = data terakhir disimpan" */
 const SPK_SK_KEYS = ['nama_pengguna','jabatan_pengguna','no_sk','tgl_sk','nama_unit','singkatan_unit','lokasi_unit'];
+/* Field Pejabat Pelaksana Pengadaan — perlakuannya PERSIS sama dengan SK
+   Pimpinan Unit: bawaannya diambil dari kontrak terakhir yang disimpan, dan
+   hanya terbuka untuk diisi bila "Perubahan?" dijawab Ya. Dipisahkan sebagai
+   daftar tersendiri (bukan digabung ke SPK_SK_KEYS) karena kedua kelompok itu
+   berubah pada waktu yang berbeda — pejabat pelaksana berganti jauh lebih
+   sering daripada SK pimpinan unit, dan menggabungkannya berarti mengubah satu
+   memaksa mengetik ulang yang lain.
+   Nama kuncinya juga menjadi kode isian: {{nama_pelaksana}}, {{jabatan_pelaksana}},
+   {{nip_pelaksana}}. */
+const SPK_PLS_KEYS = ['nama_pelaksana','jabatan_pelaksana','nip_pelaksana'];
 
 /* =========================================================================
    BENTUK KONTRAK — Surat Perintah Kerja (SPK) vs Perjanjian/Kontrak (PK)
@@ -213,6 +223,17 @@ const SPK_FIELD_GROUPS = [
     {k:'telp_unit', l:'Telepon Unit', t:'text', only:'PK', def:''},
     {k:'fax_unit', l:'Fax Unit', t:'text', only:'PK', def:''},
     {k:'email_unit', l:'Email Unit', t:'text', span:2, only:'PK', def:''},
+  ]},
+  /* Pejabat Pelaksana Pengadaan — mengisi Pakta Integritas Pejabat Pelaksana
+     Pengadaan pada dokumen SPK & Perjanjian/Kontrak. Sakelar "Perubahan?"
+     bekerja sama persis dengan milik SK Pimpinan Unit: Tidak (atau belum
+     dipilih) -> ketiga field terkunci & dikembalikan ke data terakhir yang
+     disimpan; Ya -> terbuka untuk diisi. */
+  { sec:'Pejabat Pelaksana Pengadaan', fields:[
+    {k:'perubahan_pelaksana', l:'Perubahan?', t:'select', opts:['Ya','Tidak'], def:''},
+    {k:'nama_pelaksana', l:'Nama Pejabat Pelaksana', t:'text', span:2, lockedBy:'perubahan_pelaksana', def:''},
+    {k:'jabatan_pelaksana', l:'Jabatan Pejabat Pelaksana', t:'text', span:2, lockedBy:'perubahan_pelaksana', def:''},
+    {k:'nip_pelaksana', l:'NIP Pejabat Pelaksana', t:'text', lockedBy:'perubahan_pelaksana', def:''},
   ]},
   { sec:'Informasi Penyedia', fields:[
     {k:'nama_perusahaan', l:'Nama Perusahaan', t:'text', span:2, def:''},
@@ -1248,6 +1269,47 @@ function spkApplyLastSk(data){
   SPK_SK_KEYS.forEach(k=>{ if(last[k]!=null && String(last[k]).trim()!=='') data[k]=last[k]; });
   return data;
 }
+/* ---- Pejabat Pelaksana Pengadaan: bawaan = data TERAKHIR DISIMPAN ----
+   Mesinnya kembar dengan SK Pimpinan Unit di atas, termasuk cadangan
+   localStorage-nya. Cadangan itu bukan hiasan: records_spk dimuat dari Supabase
+   secara asinkron, sehingga form kontrak baru yang dibuka lebih dulu akan
+   menemukan daftar yang masih kosong dan bawaannya "kadang muncul kadang
+   tidak" — persis pola kegagalan yang dulu diperbaiki pada SK Pimpinan Unit. */
+const SPK_PLS_DEF_CACHE='spk_pls_def_v1';
+function spkPlsCacheSave(o){
+  try{
+    if(o && SPK_PLS_KEYS.some(k=>String(o[k]||'').trim()!=='')){
+      localStorage.setItem(SPK_PLS_DEF_CACHE, JSON.stringify(o));
+    }
+  }catch(e){}
+}
+function spkPlsCacheLoad(){
+  try{
+    const s=localStorage.getItem(SPK_PLS_DEF_CACHE);
+    if(!s) return null;
+    const o=JSON.parse(s);
+    return (o && typeof o==='object') ? o : null;
+  }catch(e){ return null; }
+}
+function spkLastPlsData(){
+  const out={};
+  const list=(typeof records_spk!=='undefined' && Array.isArray(records_spk))?records_spk:[];
+  for(let i=0;i<list.length;i++){
+    const d=(list[i] && list[i].data && typeof list[i].data==='object')?list[i].data:null;
+    if(!d) continue;
+    if(!SPK_PLS_KEYS.some(k=>String(d[k]||'').trim()!=='')) continue;
+    SPK_PLS_KEYS.forEach(k=>{ out[k]=d[k]!=null?d[k]:''; });
+    spkPlsCacheSave(out);
+    return out;
+  }
+  const cached=spkPlsCacheLoad();
+  return cached || out;
+}
+function spkApplyLastPls(data){
+  const last=spkLastPlsData();
+  SPK_PLS_KEYS.forEach(k=>{ if(last[k]!=null && String(last[k]).trim()!=='') data[k]=last[k]; });
+  return data;
+}
 function spkBlankState(){
   const data={};
   SPK_FIELDS_FLAT.forEach(f=>{ data[f.k]= (f.def!=null? f.def : ''); });
@@ -1260,6 +1322,8 @@ function spkBlankState(){
   data.akta_pendirian = spkAktaPendirianSync(data.akta_pendirian, data.ada_akta_perubahan);
   // SK Pimpinan Unit: default = data terakhir disimpan
   spkApplyLastSk(data);
+  // Pejabat Pelaksana Pengadaan: default = data terakhir disimpan
+  spkApplyLastPls(data);
   // default: semua klausul aktif terpilih
   const sel=spkKlPasalOnly(records_klausul).filter(k=>k.aktif!==false).map(k=>String(k.id));
   return { data:data, sel:sel, khsIdx:0 };
@@ -2099,6 +2163,7 @@ function spkSwitchChange(el){
   var k=el.getAttribute('data-k')||'';
   var v=(el.value==='Ya')?'Ya':'Tidak';
   if(k==='perubahan'){ spkSetPerubahan(v); return; }
+  if(k==='perubahan_pelaksana'){ spkSetPerubahanPls(v); return; }
   if(k==='ada_akta_perubahan'){ spkSetAdaAktaPerubahan(v); return; }
   spkSet(k,v); renderSpkSusun();
 }
@@ -2110,6 +2175,16 @@ function spkSetPerubahan(v){
   if(!spkState) return;
   spkState.data.perubahan=v;
   if(String(v)!=='Ya') spkApplyLastSk(spkState.data);
+  spkRefreshAuto();
+  renderSpkSusun();
+}
+/* "Perubahan?" pada Pejabat Pelaksana Pengadaan — kembar dengan spkSetPerubahan:
+   - Ya    -> ketiga field dibuka untuk diisi/diubah
+   - Tidak -> dikunci & dikembalikan ke data terakhir disimpan (default) */
+function spkSetPerubahanPls(v){
+  if(!spkState) return;
+  spkState.data.perubahan_pelaksana=v;
+  if(String(v)!=='Ya') spkApplyLastPls(spkState.data);
   spkRefreshAuto();
   renderSpkSusun();
 }
@@ -2839,17 +2914,74 @@ function spkDeleteRecord(id){
       toast('Kontrak dihapus','ok'); renderSpkView();
     }});
 }
+/* ===================== PEMILIH BAGIAN DOKUMEN (7 Agu 2026) =====================
+   Tombol "Lihat" tidak lagi langsung membuka pratinjau, melainkan menawarkan
+   TIGA bagian dokumen — sejajar dengan TOR/KAK:
+     1. Surat Perintah Kerja / Perjanjian-Kontrak : sampul + daftar isi + isi
+     2. Lampiran ...                              : sampul lampiran + isinya
+     3. Pakta Integritas Pejabat Pelaksana Pengadaan
+
+   KETENTUAN: bagian 1 TIDAK lagi memuat lampiran — lampirannya berdiri sendiri
+   sebagai bagian 2, bukan sekadar lompatan ke halaman lampiran di berkas yang
+   sama. Konsekuensinya Cetak/PDF pun mengikuti bagian yang sedang dibuka, jadi
+   tiap bagian dapat dicetak terpisah.
+
+   Perjanjian/Kontrak KHS ikut menyesuaikan dengan sendirinya: judul bagian 1 & 2
+   diambil dari spkDokTitle/spkLampTitle yang memang sudah sadar bentuk, dan
+   pemilih penyedia pada kepala pratinjau tetap bekerja seperti biasa. */
+let spkDokPilih={ data:null, klausul:null };
+function spkDokBagianList(data){
+  return [
+    { mode:'utama',    judul:spkDokTitle(data),  ket:'Sampul, daftar isi, dan isi kontrak' },
+    { mode:'lampiran', judul:spkLampTitle(data), ket:'Sampul lampiran dan rincian nilai pekerjaan' },
+    { mode:'pakta',    judul:'Pakta Integritas Pejabat Pelaksana Pengadaan',
+      ket:'SMAP — ditandatangani Pejabat Pelaksana Pengadaan' }
+  ];
+}
+function spkOpenDokList(data, klausul){
+  spkDokPilih={ data:data||{}, klausul:klausul||[] };
+  const ov=document.getElementById('spk-dok-overlay');
+  if(!ov){ spkOpenPreview(data, klausul, 'utama'); return; }   /* cadangan bila markup tak ada */
+  const t=document.getElementById('spk-dok-title');
+  const sub=document.getElementById('spk-dok-sub');
+  const body=document.getElementById('spk-dok-body');
+  if(t) t.textContent=(data&&data.nama_pekerjaan)||spkDokTitle(data)||'Dokumen Kontrak';
+  if(sub) sub.textContent=[(data&&data.nomor_kontrak)||'', spkDokTitle(data)].filter(Boolean).join(' · ');
+  if(body){
+    body.innerHTML='<div class="dpeng-list-hint">Klik bagian dokumen untuk membuka pratinjaunya.</div>'+
+      '<ol class="dpeng-list-items">'+spkDokBagianList(data).map(function(b,i){
+        const buka="spkDokBuka('"+b.mode+"')";
+        return '<li class="dpeng-list-item has-file" tabindex="0" role="button"'+
+          ' title="Klik untuk membuka pratinjau" onclick="'+buka+'"'+
+          ' onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();'+buka+';}">'+
+          '<span class="dpeng-list-no">'+(i+1)+'</span>'+
+          '<span class="dpeng-list-main"><span class="dpeng-list-label">'+fkEsc(b.judul)+'</span>'+
+            '<span class="dpeng-list-file">'+fkEsc(b.ket)+'</span></span>'+
+          '<span class="dpeng-list-go" aria-hidden="true">&rsaquo;</span></li>';
+      }).join('')+'</ol>';
+  }
+  ov.classList.add('show');
+}
+function spkCloseDokList(){
+  const ov=document.getElementById('spk-dok-overlay'); if(ov) ov.classList.remove('show');
+}
+function spkDokBuka(mode){
+  const d=spkDokPilih.data||{}, kl=spkDokPilih.klausul||[];
+  spkCloseDokList();
+  spkOpenPreview(d, kl, mode);
+}
+
 /* Pratinjau dari record tersimpan */
 function spkPreviewRecord(id){
   const rec=(records_spk||[]).find(r=>String(r.id)===String(id)); if(!rec) return;
-  spkOpenPreview(rec.data||{}, (Array.isArray(rec.klausul)?rec.klausul:[]));
+  spkOpenDokList(rec.data||{}, (Array.isArray(rec.klausul)?rec.klausul:[]));
 }
 /* Pratinjau dari form yang sedang disusun */
 function spkPreviewCurrent(){
   if(!spkState){ toast('Data belum diisi','warn'); return; }
   const kl=spkSelectedClauses();
   if(!kl.length){ toast('Pilih minimal satu klausul untuk pratinjau','warn'); return; }
-  spkOpenPreview(spkState.data, kl);
+  spkOpenDokList(spkState.data, kl);
 }
 
 /* ============ SPASI BARIS: ARTI "1,15" DI WORD vs DI CSS ============
@@ -3226,8 +3358,12 @@ function spkDocCss(){
   /* BARIS KOSONG dari Word (Enter): tinggi dikunci satu baris, tidak boleh
      ikut perataan/inden apa pun, dan tidak pernah kolaps walau isinya hanya
      &nbsp;. Lihat _flushBlank() pada spkWordXmlToKlausul. */
-  '.spk-cl p.spk-blank{margin-left:0;padding-left:0;text-indent:0;text-align:left;'+
-    'height:1.15em;min-height:1.15em;line-height:'+spkLHCss(1.15)+'}'+
+  /* Tinggi = SATU BARIS TEKS PENUH (line-height yang sama dengan .spk-cl p),
+     bukan 1,15em yang justru lebih pendek daripada baris berisi, dan TANPA
+     margin — sehingga satu Enter menambah tepat satu baris seperti di Word.
+     Uraian lengkap beserta angka ukurnya ada di _flushBlank(). */
+  '.spk-cl p.spk-blank{margin:0;margin-left:0;padding-left:0;text-indent:0;text-align:left;'+
+    'height:'+spkLHCss(1.15)+'em;min-height:'+spkLHCss(1.15)+'em;line-height:'+spkLHCss(1.15)+'}'+
   /* Kotak spasi awal paragraf (lihat spkKeepWS): ATOM bagi mesin justifikasi,
      jadi lebarnya tidak pernah ikut diregangkan seperti &nbsp; polos. */
   '.spk-cl .spk-lead{display:inline-block;white-space:pre;letter-spacing:0;word-spacing:0}'+
@@ -9594,13 +9730,30 @@ function spkDocBodyHtml(data, klausul, pyNo){
      klausul otomatis dilewati (tanpa italic bertumpuk). */
   return '<div class="spk-doc'+(_isPkDoc?' spk-pk':' spk-spk')+(_py?' spk-khs-set':'')+'"'+
       (_py?(' data-py="'+_py+'" data-py-nama="'+esc(data.nama_perusahaan||('Penyedia '+_py))+'"'):'')+'>'+
-      spkKlItalicAsing(cover+toc+isi+coverLamp+lampiran)+
+      spkKlItalicAsing(
+        SPK_BAGIAN==='utama'    ? (cover+toc+isi) :
+        SPK_BAGIAN==='lampiran' ? (coverLamp+lampiran) :
+                                  (cover+toc+isi+coverLamp+lampiran))+
     '</div>';
 }
 
 /* Penyedia yang dicetak pada Perjanjian/Kontrak KHS: 0 = SEMUA, 1..N = satu saja.
    Diisi oleh pemilih "sheet" di kepala pratinjau sebelum dokumen dibangun. */
 let SPK_KHS_ONLY = 0;
+/* BAGIAN DOKUMEN YANG SEDANG DIBANGUN (7 Agu 2026).
+   Dokumen SPK / Perjanjian-Kontrak kini terbit sebagai TIGA bagian terpisah,
+   sejajar dengan cara TOR/KAK menyajikan dokumennya:
+     1. Surat Perintah Kerja / Perjanjian-Kontrak  -> sampul + daftar isi + isi
+     2. Lampiran ...                               -> sampul lampiran + isinya
+     3. Pakta Integritas Pejabat Pelaksana Pengadaan (dibangun torPiDocHtml)
+   '' = seluruhnya dalam satu berkas (perilaku lama; tetap dipakai oleh
+   pemanggil mana pun yang belum menentukan bagian).
+
+   Dipasang sebagai sakelar modul, bukan parameter, karena spkDocHtml dipanggil
+   dari banyak tempat (pratinjau, cetak, unduh) dan menambah parameter berarti
+   menyentuh semuanya. Polanya sama persis dengan SPK_KHS_ONLY di atas, termasuk
+   kewajiban MENGEMBALIKANNYA ke '' sesudah dipakai. */
+let SPK_BAGIAN = '';
 function spkDocHtml(data, klausul){
   data=data||{};
   const _isPkDoc = spkIsPkFam(data);
@@ -9829,9 +9982,14 @@ function spkKisiScript(){
    Memakai modal pratinjau bersama (pn-preview-overlay) yang sama persis dengan
    Rekap HPS: header dengan tombol Perbesar + Cetak/PDF + tutup, isi berupa iframe. */
 let spkPreviewData=null, spkPreviewKlausul=null;
+/* Bagian dokumen yang sedang dipratinjau: 'utama' | 'lampiran' | 'pakta'.
+   Dibaca spkPreviewRender() DAN spkPrint(), sehingga yang tercetak selalu sama
+   dengan yang terlihat — bukan dokumen lengkap. */
+let spkPreviewBagian='utama';
 
-function spkOpenPreview(data, klausul){
+function spkOpenPreview(data, klausul, bagian){
   spkPreviewData=data; spkPreviewKlausul=klausul;
+  spkPreviewBagian=(bagian==='lampiran'||bagian==='pakta')?bagian:'utama';
   /* Perjanjian/Kontrak KHS: pratinjau LANGSUNG membuka Penyedia 1 (bukan
      seluruh penyedia sekaligus), supaya tidak berat & langsung terbaca.
      Penyedia lain dipilih lewat "sheet" di kepala modal; dokumennya dibangun
@@ -9914,7 +10072,19 @@ function spkPreviewRender(){
   var ifr=document.getElementById('fkl-preview-frame'); if(!ifr) return;
   var data=spkPreviewData||{}, klausul=spkPreviewKlausul||[];
   SPK_KHS_ONLY = spkIsKhsOf(data) ? (parseInt(spkKhsPreviewSel,10)||0) : 0;
-  var html=spkDocHtml(data, klausul);
+  var html;
+  if(spkPreviewBagian==='pakta'){
+    /* Pakta Integritas memakai mesin yang SAMA dengan pakta TOR/KAK
+       (torPiDocHtml di susun-dokumen.js) — tiga baris terakhir blok datanya
+       menyesuaikan sendiri untuk dokumen kontrak. Satu tata letak, satu tempat
+       perbaikan. */
+    try{ html=torPiDocHtml(data,'pelaksana'); }
+    catch(e){ console.error('pakta SPK:', e); html='<p>Pakta Integritas belum dapat dibangun.</p>'; }
+  }else{
+    SPK_BAGIAN=spkPreviewBagian;
+    html=spkDocHtml(data, klausul);
+    SPK_BAGIAN='';
+  }
   SPK_KHS_ONLY=0;
   var doc=ifr.contentWindow.document; doc.open(); doc.write(html); doc.close();
   /* Setelah pratinjau HTML tergambar, coba tingkatkan jadi PDF sungguhan lewat
@@ -9961,7 +10131,13 @@ function spkPrint(_lewatiPdf){
      Safari (iPad) mencetak lembar kosong dari bingkai berukuran nol. */
   ifr.style.cssText='position:fixed;left:-10000px;top:0;width:820px;height:1160px;border:0;opacity:0;pointer-events:none';
   document.body.appendChild(ifr);
-  const doc=ifr.contentWindow.document; doc.open(); doc.write(spkDocHtml(data, klausul)); doc.close();
+  let _html;
+  if(spkPreviewBagian==='pakta'){
+    try{ _html=torPiDocHtml(data,'pelaksana'); }catch(e){ console.error('pakta SPK:', e); _html=''; }
+  }else{
+    SPK_BAGIAN=spkPreviewBagian; _html=spkDocHtml(data, klausul); SPK_BAGIAN='';
+  }
+  const doc=ifr.contentWindow.document; doc.open(); doc.write(_html); doc.close();
 
   const bebas=()=>{ const f=document.getElementById('spk-print-frame'); if(f) f.remove(); spkPrintBusy=false; };
   const go=()=>{
@@ -10100,7 +10276,7 @@ function spkKlProfilSnapshot(){
 function spkKlProfilOverlay(inner){
   let ov=document.getElementById('pnw-profil-ov');
   if(!ov){ ov=document.createElement('div'); ov.id='pnw-profil-ov'; ov.className='pnw-profil-ov'; document.body.appendChild(ov); }
-  ov.onclick=(e)=>{ if(e.target===ov) spkKlProfilClose(); };
+  try{ pasangTolakTutup('pnw-profil-ov'); }catch(e){}   /* klik latar -> bergetar */
   ov.innerHTML='<div class="pnw-profil-modal" role="dialog">'+inner+'</div>'; ov.style.display='flex';
 }
 function spkKlProfilClose(){ const ov=document.getElementById('pnw-profil-ov'); if(ov) ov.style.display='none'; }
@@ -10248,7 +10424,7 @@ function spkPyProfilBarHtml(){
 function spkPyProfilOverlay(inner){
   let ov=document.getElementById('pnw-profil-ov');
   if(!ov){ ov=document.createElement('div'); ov.id='pnw-profil-ov'; ov.className='pnw-profil-ov'; document.body.appendChild(ov); }
-  ov.onclick=(e)=>{ if(e.target===ov) spkPyProfilClose(); };
+  try{ pasangTolakTutup('pnw-profil-ov'); }catch(e){}   /* klik latar -> bergetar */
   ov.innerHTML='<div class="pnw-profil-modal" role="dialog">'+inner+'</div>'; ov.style.display='flex';
 }
 function spkPyProfilClose(){ const ov=document.getElementById('pnw-profil-ov'); if(ov) ov.style.display='none'; }
@@ -10926,14 +11102,42 @@ function spkDocxTemplateBlob(judul, isiHtml, noKl){
   var judulXml = PK
     ? spkPXml2('KlausulPasal', numPr, '') + spkPXml('KlausulJudul', judulRuns)
     : spkPXml2('KlausulJudul', numPr, judulRuns);
+  /* ---- BARIS JUDUL DIBENTENGI (ketentuan 7 Agu 2026) ----
+     "Isi klausul di bawah judul, di-backspace atau di-block bagaimanapun, tidak
+     boleh mencapai baris judul."
+
+     CARANYA: baris judul dibungkus content control (w:sdt) ber-kunci
+     `sdtContentLocked`. Nilai itu mengunci DUA hal sekaligus menurut ECMA-376:
+     kotaknya tidak dapat dihapus, DAN isinya tidak dapat diubah. Word lalu
+     menolak backspace yang merambat naik dari isi klausul, Ctrl+A lalu Delete,
+     maupun pilihan blok yang melintasi baris judul — baris itu tersisa utuh.
+     Ini pilihan yang paling ketat di antara tiga mekanisme Word (dua lainnya:
+     `sdtLocked` yang hanya melindungi kotaknya, dan documentProtection yang
+     mengunci seluruh dokumen kecuali daerah yang diizinkan).
+
+     KONSEKUENSI YANG DISENGAJA: judul TIDAK LAGI bisa diketik di Word — juga
+     saat mengganti "JUDUL KLAUSUL" pada klausul baru. Karena itu kotak Judul
+     Klausul di popup Unggah Klausul dibuka kembali (dulu display:none) beserta
+     tombol miringnya; di sanalah judul sekarang ditulis. Kedua perubahan itu
+     SATU paket — melepas salah satunya membuat klausul baru tidak bisa dinamai.
+
+     PEMBACANYA IKUT DISESUAIKAN: spkWordXmlToKlausul dulu hanya menyusuri anak
+     LANGSUNG <w:body>, sehingga paragraf yang pindah ke dalam <w:sdtContent>
+     akan terlewat dan judulnya hilang saat template diunggah kembali. Lihat
+     spkBodyBlocks() di sana. */
+  judulXml =
+    '<w:sdt><w:sdtPr>'+
+      '<w:alias w:val="Judul Klausul"/><w:tag w:val="spk-judul-klausul"/>'+
+      '<w:id w:val="418271"/><w:lock w:val="sdtContentLocked"/>'+
+    '</w:sdtPr><w:sdtContent>'+judulXml+'</w:sdtContent></w:sdt>';
   var body =
     guide('PETUNJUK (baris abu-abu ini otomatis DIABAIKAN saat diunggah — boleh dibiarkan):')+
     guide('1) Ketik isi klausul HANYA di bawah baris judul. Halaman sudah diatur A4, Portrait, margin Normal 2,54 cm, huruf Inter 11.')+
     guide('2) Gunakan Style Word: "Klausul Isi" (teks biasa), "Klausul Butir 1" (nomor 1.1.), "Klausul Butir 2" (huruf a.), "Klausul Paragraf" (paragraf menjorok).')+
     guide('3) Penomoran butir boleh memakai penomoran otomatis Word ATAU diketik manual (mis. 1.1. / a.) lalu TAB — keduanya terbaca sama persis.')+
     (PK
-      ? guide('4) Baris "PASAL n" memakai penomoran otomatis Word dan rata tengah — jangan diketik ulang; cukup ubah NAMA PASAL pada baris di bawahnya.')
-      : guide('4) Nomor judul klausul memakai penomoran otomatis Word (bukan angka yang diketik) — cukup ubah teks judulnya saja.'))+
+      ? guide('4) Baris "PASAL n" & NAMA PASAL TERKUNCI — Word akan menolak setiap pengetikan, backspace, maupun Ctrl+A lalu hapus di baris itu, sehingga judul tidak bisa terhapus tak sengaja saat menyunting isi. Nama pasal diubah di kotak "Judul Klausul" pada aplikasi.')
+      : guide('4) Baris judul klausul TERKUNCI — Word akan menolak setiap pengetikan, backspace, maupun Ctrl+A lalu hapus di baris itu, sehingga judul tidak bisa terhapus tak sengaja saat menyunting isi. Judul diubah di kotak "Judul Klausul" pada aplikasi.'))+
     guide('5) Placeholder seperti {{nama_pekerjaan}}, {{nilai_rp}}, {{jangka_waktu_hari}} tetap boleh dipakai.')+
     judulXml;
   var isi=spkHtmlToWordParas(isiHtml);
@@ -11464,7 +11668,31 @@ function spkWordXmlToKlausul(xmlText, stylesXml, numberingXml){
   /* --- Lintasan 1: kumpulkan blok level-atas BERURUTAN (paragraf & tabel) ---
      Penting: tabel Word (mis. blok "Nama : nilai") ikut dibaca sebagai satu
      kesatuan, bukan diratakan jadi paragraf lepas yang menyatu. */
-  var blocks=[], kids=body.childNodes, i;
+  /* Anak-anak <w:body> yang RATA — content control (<w:sdt>) dibongkar sehingga
+     paragraf di dalamnya diperlakukan seolah berada langsung di body.
+     WAJIB ADA sejak baris judul dibungkus content control ber-kunci di
+     spkDocxTemplateBlob: tanpa ini paragraf judul berpindah satu tingkat ke
+     dalam <w:sdtContent>, luput dari penelusuran anak-langsung, dan judul
+     klausul HILANG begitu template diunggah kembali.
+     Berlaku umum, bukan hanya untuk template buatan aplikasi: berkas Word dari
+     mana pun bisa memakai content control (mis. bidang isian formulir), dan
+     isinya tetap teks paragraf biasa yang layak dibaca. Penelusuran dibuat
+     bersarang karena sdt boleh mengandung sdt lain. */
+  var blocks=[], i;
+  var kids=(function ratakan(node, dalam){
+    var out=[], c=node.childNodes, j;
+    for(j=0;j<c.length;j++){
+      var n=c[j]; if(n.nodeType!==1) continue;
+      if(n.localName==='sdt'){
+        if(dalam>8) continue;                                  /* jaga-jaga dari sarang tak wajar */
+        var isi=n.getElementsByTagNameNS(SPK_W_NS,'sdtContent')[0];
+        if(isi) out=out.concat(ratakan(isi, dalam+1));
+        continue;
+      }
+      out.push(n);
+    }
+    return out;
+  })(body, 0);
   for(i=0;i<kids.length;i++){
     var nd=kids[i]; if(nd.nodeType!==1) continue;
     var ln=nd.localName;
@@ -11501,10 +11729,37 @@ function spkWordXmlToKlausul(xmlText, stylesXml, numberingXml){
      kosong dan bisa terbuang atau tingginya kolaps. Tinggi baris dipasang
      SEBARIS (bukan hanya lewat CSS) supaya ruangnya tetap ada apa pun yang
      terjadi pada isi teksnya. */
+  /* JARAK ENTER = PERSIS SATU BARIS, SEPERTI WORD (7 Agu 2026).
+     Terukur pada template "Klausul Lingkup Pekerjaan" (Inter 11, spasi baris
+     1,15) — jarak antar-baris yang dilompati satu Enter:
+        Word    : 29,40 pt  (14,70 pt sebaris; Enter menambah TEPAT 1 baris)
+        website : 39,96 pt  (Enter menambah 18,64 pt) -> 36% lebih longgar.
+     Dua sebabnya sekaligus, dan keduanya diperbaiki di sini:
+       (a) tingginya 1,15em = 12,65 pt, padahal SATU BARIS teks di dokumen ini
+           setinggi line-height-nya (1,15 x SPK_LH_K = 15,31 pt). Jadi baris
+           kosongnya justru LEBIH PENDEK daripada baris berisi — Enter tidak
+           pernah menghasilkan "satu baris kosong" yang sebenarnya;
+       (b) ia masih membawa margin-bawah 6 pt, dan paragraf di atasnya juga
+           6 pt, sehingga satu Enter diam-diam menambah 12 pt jarak paragraf
+           EKSTRA yang tidak ada padanannya di Word.
+     Sekarang tingginya memakai satuan line-height yang sama dengan baris teks
+     dan marginnya dinolkan, sehingga satu Enter menambah tepat satu baris —
+     dua Enter berturut-turut pun tepat dua baris.
+
+     Jarak antar-paragraf 6 pt milik aplikasi SENGAJA tidak diusik: jarak itu
+     ada ada-tidaknya Enter, jadi ia bukan bagian dari "jarak Enter" (lihat
+     ketentuan 7 Agu 2026 "geometri Word diabaikan" di spkWordXmlToKlausul).
+
+     Tinggi tetap dipasang SEBARIS, bukan hanya lewat CSS — alasannya sama
+     seperti pengerasan 28 Jul 2026 di bawah: isinya hanya &nbsp;, sedangkan
+     hampir seluruh penyaring di pipeline menguji "kosong" dengan
+     replace(/[\s ]/g,''), sehingga paragraf ini bisa terbuang atau
+     tingginya kolaps bila hanya mengandalkan kelas. */
+  var _blankH=(typeof spkLHCss==='function' ? (spkLHCss(1.15)||'1.392') : '1.392')+'em';
   var _flushBlank=function(){
     while(_blank>0){
-      html+='<p class="kl0 spk-blank" data-blank="1" style="margin:0 0 6pt;margin-left:0;text-indent:0;'+
-            'height:1.15em;min-height:1.15em">&nbsp;</p>';
+      html+='<p class="kl0 spk-blank" data-blank="1" style="margin:0;margin-left:0;text-indent:0;'+
+            'height:'+_blankH+';min-height:'+_blankH+'">&nbsp;</p>';
       _blank--;
     }
   };
@@ -11631,21 +11886,29 @@ function spkWordXmlToKlausul(xmlText, stylesXml, numberingXml){
 /* ================= MODAL: UBAH / TAMBAH KLAUSUL (via template Word) ================= */
 var spkKlDoc = { rec:null, isi:'', no:1, fileName:'', dirty:false, docx:'', bentuk:'' };
 
-/* Bentuk tata letak yang dipakai popup template. Diambil dari pilihan pengguna
-   bila sudah ada, kalau belum mengikuti bentuk yang sedang aktif. */
+/* Bentuk tata letak template — DITURUNKAN DARI KONTEKS, tidak lagi dipilih
+   sendiri (7 Agu 2026).
+
+   Pemilih "Tata letak" DIHAPUS. Dulu ia ada untuk satu kemungkinan saja:
+   Pustaka Klausul boleh dibuka tanpa kontrak yang sedang disusun, dan saat itu
+   bentuk bawaannya 'SPK' — sehingga template Perjanjian/Kontrak akan terbangun
+   memakai kisi inden SPK. Kemungkinan itu ternyata tidak nyata: halaman Pustaka
+   Klausul yang berdiri sendiri MEMANG pustaka SPK (openSpkKlausul memuat
+   SPK_KLAUSUL_TABLE), pustaka PK hanya dicapai dari Susun Kontrak berbentuk PK
+   (spkIsPk() benar), dan pustaka TOR selalu memakai kisi SPK
+   (torBlankState: bentuk_kontrak='SPK'). Di ketiga tempat itu konteksnya sudah
+   menentukan jawabannya, jadi pemilihnya hanya menambah satu keputusan yang
+   bisa salah — pada TOR ia bahkan bisa menghasilkan template ber-"PASAL n"
+   yang tidak pernah dipakai TOR.
+
+   Arah sebaliknya tetap aman: saat template DIUNGGAH, bentuknya dikenali dari
+   isi berkasnya sendiri lewat spkDetectBentukFromDocx(), bukan dari pemilih —
+   jadi template PK yang diunggah di mana pun tetap terbaca sebagai PK. */
 function spkKlDocBentuk(){
-  var el=document.getElementById('spk-kldoc-bentuk');
-  if(el && el.value) return (el.value==='PK')?'PK':'SPK';
   if(spkKlDoc.bentuk) return spkKlDoc.bentuk;
   return (typeof spkIsPk==='function' && spkIsPk()) ? 'PK' : 'SPK';
 }
 function spkKlDocPk(){ return spkKlDocBentuk()==='PK'; }
-/* Ganti bentuk -> pratinjau & kop ikut menyesuaikan */
-function spkKlDocBentukUbah(){
-  var el=document.getElementById('spk-kldoc-bentuk');
-  spkKlDoc.bentuk = (el && el.value==='PK') ? 'PK' : 'SPK';
-  try{ spkKlDocHead(); spkKlDocPreview(); }catch(e){}
-}
 
 function spkKlausulOpenEditor(k){
   var isEdit=!!(k && k.id);
@@ -11676,22 +11939,35 @@ function spkKlausulOpenEditor(k){
       '</div>'+
       '<div class="spk-ov-body">'+
         '<div class="spk-kldoc-top">'+
-          /* Judul klausul otomatis mengikuti judul pada template .docx (tebal & miring ikut terbawa) — disimpan tersembunyi */
-          '<div id="spk-kldoc-judul" class="spk-kldoc-jinput" contenteditable="true" spellcheck="false" style="display:none">'+(isEdit?spkJudulSan(k.judul||''):'')+'</div>'+
+          /* JUDUL KLAUSUL DIKETIK DI SINI, BUKAN DI WORD (7 Agu 2026).
+             Dulu kotak ini disembunyikan karena judul selalu diambil dari baris
+             "Klausul Judul" pada berkas .docx. Sejak baris itu DIKUNCI TOTAL di
+             template (content control `sdtContentLocked` — lihat
+             spkDocxTemplateBlob), Word menolak setiap pengetikan di sana, jadi
+             harus ada satu tempat lain untuk menamai klausul — kalau tidak,
+             klausul baru akan terjebak selamanya pada teks "JUDUL KLAUSUL".
+
+             Judul yang diketik di sini tetap ikut tercetak ke template saat
+             diunduh, dan tetap ditimpa oleh judul berkas bila template lama
+             (yang judulnya belum terkunci) diunggah — perilaku lama tidak
+             hilang, hanya bertambah jalan masuk. */
+          /* SATU BARIS: kotak Judul Klausul + tombol miring di KIRI, tombol
+             Download Template di KANAN (tata letak 7 Agu 2026).
+             Judul di sini ditulis TANPA NOMOR — nomornya dibangkitkan sendiri
+             oleh dokumen (penomoran otomatis Word pada template, counter CSS
+             pada pratinjau), jadi nomor yang diketik manual justru akan
+             tergandakan. Pratinjau nomornya ada di baris kop di bawahnya. */
           '<div class="spk-kldoc-tools">'+
-            '<button type="button" class="btn btn-teal btn-sm" onclick="spkKlDocDownload()">'+
+            '<div class="spk-kldoc-jwrap">'+
+              '<div id="spk-kldoc-judul" class="spk-kldoc-jinput" contenteditable="true" spellcheck="false"'+
+                ' data-ph="Nama klausul, tanpa nomor" oninput="spkKlDocJudulInput()">'+
+                (isEdit?spkJudulSan(k.judul||''):'')+'</div>'+
+              '<button type="button" class="spk-kldoc-jbtn" title="Miringkan teks terpilih"'+
+                ' onmousedown="event.preventDefault()" onclick="spkKlDocItalic()"><i>I</i></button>'+
+            '</div>'+
+            '<button type="button" class="btn btn-teal btn-sm spk-kldoc-dl" onclick="spkKlDocDownload()">'+
               '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg> Download Template (.docx)</button>'+
             '<input type="file" id="spk-kldoc-file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="display:none" onchange="spkKlDocUpload(event)">'+
-            /* Pemilih bentuk tata letak template. Nilai bawaan mengikuti bentuk
-               yang sedang aktif, tetapi tetap bisa diubah — sebab Pustaka Klausul
-               boleh dibuka tanpa kontrak yang sedang disusun (state bawaannya
-               'SPK'), dan tanpa pemilih ini template Perjanjian/Kontrak akan
-               terbangun memakai kisi inden SPK. */
-            '<label class="spk-kldoc-bentuk">Tata letak'+
-              '<select id="spk-kldoc-bentuk" onchange="spkKlDocBentukUbah()">'+
-                '<option value="SPK"'+(spkKlDocPk()?'':' selected')+'>Surat Perintah Kerja</option>'+
-                '<option value="PK"'+(spkKlDocPk()?' selected':'')+'>Perjanjian/Kontrak</option>'+
-              '</select></label>'+
             '<span class="spk-kldoc-meta" id="spk-kldoc-meta"></span>'+
           '</div>'+
           /* Kotak Unggah File: telusuri berkas + Drag and drop (selalu tampil) */
@@ -11723,6 +11999,58 @@ function spkKlDocJudul(){
   return el ? spkJudulSan(String(el.innerHTML||'').replace(/<br\s*\/?>/gi,' ').trim()) : '';
 }
 function spkKlDocJudulPlain(){ return spkJudulPlain(spkKlDocJudul()); }
+/* ---- JUDUL KLAUSUL SELALU HURUF BESAR SAAT DIKETIK (7 Agu 2026) ----
+   Judul klausul memang SELALU tercetak kapital: kop klausul memakai
+   `text-transform:uppercase` dan judul dari template dinaikkan lewat
+   spkJudulCase(...,'upper'). Yang belum seragam hanya KOTAK ISIANNYA — di sana
+   huruf kecil bertahan sampai disimpan, sehingga tampilannya berbeda dari hasil
+   akhirnya. Di sini hurufnya dinaikkan langsung saat diketik.
+
+   BUKAN `text-transform` CSS: itu hanya mengubah TAMPILAN, sedangkan nilai yang
+   tersimpan tetap huruf kecil — judul di Daftar Isi, pustaka klausul, dan
+   template Word yang diunduh akan tetap huruf kecil.
+
+   KARET (kursor) DIPULIHKAN SETELAHNYA. Menulis ulang nodeValue memindahkan
+   karet ke awal simpul, jadi posisinya disimpan dulu lalu dipasang kembali.
+   Aman karena toUpperCase() pada huruf Latin TIDAK mengubah panjang teks —
+   offset lama tetap sah — dan simpul teksnya sendiri tidak diganti, hanya
+   isinya. Penggantian dilewati bila panjangnya berubah (mis. 'ß' -> 'SS'),
+   supaya karet tidak pernah meleset.
+
+   Tag <i>/<b>/<u> tidak tersentuh: yang ditelusuri hanya simpul TEKS. */
+function spkKlDocJudulUpper(){
+  var el=document.getElementById('spk-kldoc-judul'); if(!el) return;
+  var sel=null, simpan=null;
+  try{
+    sel=window.getSelection();
+    if(sel && sel.rangeCount){
+      var r=sel.getRangeAt(0);
+      if(el.contains(r.startContainer) && el.contains(r.endContainer))
+        simpan={a:r.startContainer, ao:r.startOffset, b:r.endContainer, bo:r.endOffset};
+    }
+  }catch(e){}
+  var ubah=false;
+  try{
+    var w=document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null, false), n;
+    while((n=w.nextNode())){
+      var t=String(n.nodeValue||''), u=t.toUpperCase();
+      if(u!==t && u.length===t.length){ n.nodeValue=u; ubah=true; }
+    }
+  }catch(e){ return; }
+  if(ubah && simpan && sel){
+    try{
+      var r2=document.createRange();
+      r2.setStart(simpan.a, simpan.ao); r2.setEnd(simpan.b, simpan.bo);
+      sel.removeAllRanges(); sel.addRange(r2);
+    }catch(e){}
+  }
+}
+/* Satu penangan untuk kotak judul: naikkan huruf, lalu segarkan kop pratinjau. */
+function spkKlDocJudulInput(){
+  try{ spkKlDocJudulUpper(); }catch(e){}
+  try{ spkKlDocHead(); }catch(e){}
+  spkKlDoc.dirty=true;
+}
 /* Miringkan bagian judul yang dipilih (tombol I / Ctrl+I) */
 function spkKlDocItalic(){
   var el=document.getElementById('spk-kldoc-judul'); if(!el) return;
@@ -11946,12 +12274,9 @@ async function spkKlDocReadFile(file){
          "inden dasar" yang dikurangkan benar. Tanpa ini, berkas PK yang dibaca
          memakai grid SPK indennya runtuh ke ~0 -> web rata padahal Word rapi. */
       var _bentukFile = spkDetectBentukFromDocx(sty, num) || spkKlDocBentuk();
-      /* Samakan dropdown & state supaya unduh/pratinjau berikutnya konsisten. */
-      try{
-        var _bsel=document.getElementById('spk-kldoc-bentuk');
-        if(_bsel) _bsel.value=_bentukFile;
-        spkKlDoc.bentuk=_bentukFile;
-      }catch(eB){}
+      /* Samakan state supaya unduh/pratinjau berikutnya konsisten. (Pemilih
+         "Tata letak" sudah dihapus 7 Agu 2026 — lihat spkKlDocBentuk.) */
+      try{ spkKlDoc.bentuk=_bentukFile; }catch(eB){}
       var res=spkWithDX(_bentukFile, function(){
         return spkWordXmlToKlausul(dec.decode(xml), sty, num);
       });
