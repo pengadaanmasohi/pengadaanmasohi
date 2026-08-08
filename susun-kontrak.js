@@ -11095,6 +11095,95 @@ const SPK_NUMPR_JUDUL='<w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr
    bisa digeser dengan tangan — juga tidak oleh isi yang di-paste dari dokumen
    lain (format langsung yang dibawa paste ikut dibuang Word).
    ============================================================================ */
+/* ============================================================================
+   KOTAK PEMISAH JUDUL & ISI KLAUSUL PADA TEMPLATE .docx (8 Agu 2026)
+   ----------------------------------------------------------------------------
+   KETENTUAN: "pisahkan judul dengan isi klausul lewat teks box ... lebar teks
+   box isi adalah batas kiri sampai dengan tulisan judul klausul, batas kanan
+   batas margin, border garis luar yang agak tipis dan support auto numbering."
+
+   Karena judul dan isi berada di DUA WADAH BERBEDA, Backspace/Delete di dalam
+   salah satunya tidak pernah merambat ke yang lain — itulah sebabnya penguncian
+   lama (content control ber-kunci + documentProtection) DIBUANG di sesi ini.
+
+   KENAPA <w:tbl> SATU SEL, BUKAN <w:drawing> TEXT BOX:
+   text box mengambang di Word TIDAK PERNAH pecah antar halaman — begitu isi
+   klausul lebih panjang dari sisa halaman, kelebihannya terpotong & tidak
+   terlihat sama sekali. Tabel satu sel tampil persis sama (garis luar tipis,
+   lebar & inden yang sama, isi bisa diketik bebas, penomoran otomatis Word
+   tetap jalan) TAPI mengalir ke halaman berikutnya seperti teks biasa. Untuk
+   template klausul yang bisa berhalaman-halaman, itu satu-satunya pilihan yang
+   aman. Ganti SPK_DOCX_KOTAK ke false untuk kembali ke susunan lama (tanpa
+   kotak) bila suatu saat diperlukan.
+
+   GEOMETRI (twip, titik nol = margin kiri kertas):
+     kotak JUDUL : isi mulai di 0            -> nomor klausul menggantung di 0
+     kotak ISI   : isi mulai di JUDUL_HANG   -> tepat di bawah TEKS judul
+     kedua kotak berakhir di batas margin kanan.
+   Teks di dalam kotak menjorok SPK_KOTAK_PAD_X (1,5 mm) dari garis supaya tidak
+   menempel; karena PAD yang sama dipakai kedua kotak, TEKS judul dan TEKS isi
+   tetap segaris. Garis kanan kedua kotak berhenti tepat di margin kanan.
+
+   REBASING: seluruh isi klausul kini hidup di dalam kotak yang sudah menjorok
+   JUDUL_HANG, jadi setiap w:ind w:left dikurangi nilai itu (spkKotakOfs) —
+   kalau tidak, indennya terhitung dua kali. w:hanging & w:firstLine bersifat
+   relatif sehingga TIDAK ikut dikurangi.
+   ============================================================================ */
+var SPK_DOCX_KOTAK      = true;    // saklar: kotak pemisah judul/isi di template .docx
+var SPK_KOTAK_PAD_X     = 85;      // 1,5 mm jarak teks -> garis kiri/kanan
+var SPK_KOTAK_PAD_Y     = 57;      // 1,0 mm jarak teks -> garis atas/bawah
+var SPK_KOTAK_GARIS_SZ  = 4;       // 1/8 pt; 4 = 0,5 pt (garis luar "agak tipis")
+var SPK_KOTAK_GARIS_CLR = 'A6A6A6';
+/* Batas kiri kotak ISI = kolom teks judul klausul. SPK 425 (0,75 cm); PK 0. */
+function spkKotakInd(){ var D=spkDX(); return Math.max(0, +(D.JUDUL_HANG||0)); }
+/* Nilai yang dikurangkan dari setiap w:ind w:left di dalam kotak isi. */
+function spkKotakOfs(){ return SPK_DOCX_KOTAK ? spkKotakInd() : 0; }
+/* Lebar bidang teks halaman (margin kiri -> margin kanan). */
+function spkKotakBidang(){ var D=spkDX(); return (D.A4_W||11906) - 2*(D.MARGIN||1440); }
+/* Satu kotak: tabel 1x1 bergaris tipis, dari x0 sampai batas margin kanan.
+   `tag` ditulis sebagai w:tblCaption -> penanda yang dibaca kembali oleh
+   spkKotakTbl() saat template diunggah, supaya pembungkusnya dibongkar dan
+   tidak ikut terbaca sebagai tabel isi klausul. */
+function spkKotakTblXml(isiXml, x0, tag){
+  /* TEPI KIRI kotak = x0 (kotak judul di margin kiri, kotak isi tepat di kolom
+     teks judul); teksnya sendiri menjorok SPK_KOTAK_PAD_X ke dalam supaya tidak
+     menempel garis. Karena PAD yang sama dipakai kedua kotak, teks judul dan
+     teks isi tetap SEGARIS. Sengaja TIDAK memakai w:tblInd negatif — Word tidak
+     selalu menghormatinya. */
+  var W=spkKotakBidang(), ind=Math.max(0,Math.round(x0)), w=W-ind;
+  var isi=String(isiXml||'');
+  /* Sel Word WAJIB berakhir dengan paragraf (tidak boleh berakhir dengan tabel). */
+  if(!isi.replace(/\s+/g,'') || /<\/w:tbl>\s*$/.test(isi)) isi+=spkPXml('KlausulIsi','');
+  var sisi=['top','left','bottom','right'].map(function(k){
+    return '<w:'+k+' w:val="single" w:sz="'+SPK_KOTAK_GARIS_SZ+'" w:space="0" w:color="'+SPK_KOTAK_GARIS_CLR+'"/>';
+  }).join('');
+  var bd='<w:tblBorders>'+sisi+
+    '<w:insideH w:val="none" w:sz="0" w:space="0" w:color="auto"/>'+
+    '<w:insideV w:val="none" w:sz="0" w:space="0" w:color="auto"/></w:tblBorders>';
+  /* Urutan anak <w:tblPr> mengikuti CT_TblPrBase: tblW, tblInd, tblBorders,
+     tblLayout, tblCellMar, tblCaption. */
+  var pr='<w:tblPr>'+
+    '<w:tblW w:w="'+w+'" w:type="dxa"/>'+
+    '<w:tblInd w:w="'+ind+'" w:type="dxa"/>'+
+    bd+
+    '<w:tblLayout w:type="fixed"/>'+
+    '<w:tblCellMar>'+
+      '<w:top w:w="'+SPK_KOTAK_PAD_Y+'" w:type="dxa"/><w:left w:w="'+SPK_KOTAK_PAD_X+'" w:type="dxa"/>'+
+      '<w:bottom w:w="'+SPK_KOTAK_PAD_Y+'" w:type="dxa"/><w:right w:w="'+SPK_KOTAK_PAD_X+'" w:type="dxa"/>'+
+    '</w:tblCellMar>'+
+    '<w:tblCaption w:val="'+tag+'"/>'+
+  '</w:tblPr>';
+  return '<w:tbl>'+pr+'<w:tblGrid><w:gridCol w:w="'+w+'"/></w:tblGrid>'+
+    '<w:tr><w:tc><w:tcPr><w:tcW w:w="'+w+'" w:type="dxa"/></w:tcPr>'+isi+'</w:tc></w:tr></w:tbl>';
+}
+/* Paragraf sela: WAJIB ada di antara dua tabel, kalau tidak Word menyatukan
+   keduanya menjadi satu tabel dan pemisahannya hilang. Dibuat setipis mungkin
+   (6 pt) supaya kedua kotak tetap berdekatan. */
+function spkKotakSelaXml(){
+  return spkPXml2('KlausulIsi',
+    '<w:ind w:left="0" w:firstLine="0"/>'+
+    '<w:spacing w:before="0" w:after="0" w:line="120" w:lineRule="exact"/>','');
+}
 function spkBatasInden(){ var D=spkDX(); return Math.max(0, +(D.JUDUL_HANG||0)); }
 /* ============================================================================
    word/settings.xml — PENGUNCIAN FORMAT (8 Agu 2026)
@@ -11116,13 +11205,16 @@ function spkBatasInden(){ var D=spkDX(); return Math.max(0, +(D.JUDUL_HANG||0));
    bawaan Word yang tidak dipakai dokumen ini dikunci, sehingga isi yang
    di-paste tidak bisa membawa masuk gaya berinden 0 dari dokumen asalnya.
    ============================================================================ */
-/* SATU SAKLAR. Set false bila pembatasan format Word ternyata terlalu ketat
-   untuk alur kerja (mis. tombol Bullets/Numbering Word ikut mati karena
-   penomoran otomatis dihitung sebagai FORMAT LANGSUNG). Mematikannya hanya
-   melepas <w:documentProtection>; batas inden pada docDefaults + gaya Normal,
-   inden langsung pada baris judul, dan penguncian content control baris judul
-   TETAP berlaku. */
-var SPK_DOCX_KUNCI_FORMAT = true;
+/* DIMATIKAN 8 Agu 2026 ATAS PERMINTAAN — "hapus penyebab disable pada gambar".
+   Pembatasan format Word inilah yang membuat kotak nama & ukuran huruf kosong
+   dan hampir seluruh tombol grup Font/Paragraf abu-abu, TERMASUK tombol Bullets
+   & Numbering — padahal template ini justru harus "support auto numbering".
+   Penggantinya bukan penguncian lagi melainkan PEMISAHAN WADAH: judul dan isi
+   klausul berada di dua kotak berbeda (lihat spkKotakTblXml), sehingga hapus di
+   salah satunya tidak pernah mencapai yang lain.
+   Dibiarkan sebagai saklar (bukan dihapus) supaya mudah dihidupkan lagi bila
+   suatu saat pembatasan format benar-benar dibutuhkan. */
+var SPK_DOCX_KUNCI_FORMAT = false;
 function spkSettingsXml(){
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
   '<w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'+
@@ -11132,6 +11224,11 @@ function spkSettingsXml(){
 }
 function spkStylesXml(){
   var D=spkDX(), BATAS=spkBatasInden();
+  /* Semua gaya isi klausul hidup DI DALAM kotak isi yang sudah menjorok
+     JUDUL_HANG, jadi w:ind w:left-nya dikurangi offset itu (lihat spkKotakOfs).
+     Gaya baris JUDUL sengaja TIDAK ikut — ia berada di kotak judul yang isinya
+     mulai tepat di margin kiri. */
+  var _KO=spkKotakOfs(), _L=function(v){ return Math.max(0, Math.round((+v||0)-_KO)); };
   /* HAPUS LEFT TAB (permintaan 22 Jul 2026): tab kiri manual mengganggu saat
      mengedit teks & mengatur inden di Word. Awal teks butir kini bersandar pada
      HANGING INDENT — Word otomatis membuat perhentian tab di posisi inden kiri,
@@ -11152,7 +11249,7 @@ function spkStylesXml(){
     /* PK: nomor 2 digit dirata-kanankan lewat SATU tab kanan (titik penutup lurus);
        nomor 1 digit tidak memakai tab ini (dibiarkan rata kiri, lihat spkHtmlToWordParas).
        Awal teks bersandar pada hanging indent — tanpa tab kiri manual. */
-    tab1='<w:tabs><w:tab w:val="right" w:pos="'+(D.L1-D.GAP)+'"/></w:tabs>';
+    tab1='<w:tabs><w:tab w:val="right" w:pos="'+Math.max(0,_L(D.L1)-D.GAP)+'"/></w:tabs>';
   }
   /* --- Gaya judul klausul ---
      SPK : satu baris rata KIRI, nomor menggantung  -> persis seperti semula.
@@ -11181,27 +11278,25 @@ function spkStylesXml(){
     '</w:rPr></w:rPrDefault>'+
     '<w:pPrDefault><w:pPr>'+
       '<w:spacing w:after="120" w:line="276" w:lineRule="auto"/>'+
-      '<w:ind w:left="'+BATAS+'"/>'+
+      '<w:ind w:left="'+_L(BATAS)+'"/>'+
       '<w:jc w:val="both"/>'+
     '</w:pPr></w:pPrDefault></w:docDefaults>'+
-    /* Gaya bawaan Word yang tidak dipakai dokumen ini DIKUNCI: saat pembatasan
-       format aktif, isi yang di-paste tidak bisa membawa masuk gaya asing yang
-       indennya 0 — Word memetakannya ke Normal, yang batas indennya di bawah. */
-    '<w:latentStyles w:defLockedState="1" w:defUIPriority="99" w:defSemiHidden="1" '+
-      'w:defUnhideWhenUsed="1" w:defQFormat="0" w:count="376"/>'+
-    /* Normal = jaring pengaman batas inden kiri (lihat spkBatasInden). */
+    /* <w:latentStyles w:defLockedState="1"> DIBUANG 8 Agu 2026: penguncian gaya
+       hanya berlaku saat pembatasan format aktif, dan pembatasan itu sudah
+       dilepas. Membiarkannya hanya membuat galeri Styles Word tampak setengah
+       mati tanpa memberi manfaat apa pun. */
     '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/>'+
-      '<w:pPr><w:ind w:left="'+BATAS+'"/></w:pPr></w:style>'+
+      '<w:pPr><w:ind w:left="'+_L(BATAS)+'"/></w:pPr></w:style>'+
     judulSty+
     /* Isi klausul: SPK menjorok 0,75 cm; PK mulai tepat di batas margin kiri */
-    spkStyXml('KlausulIsi','Klausul Isi','<w:ind w:left="'+D.BASE+'"/>','','')+
-    spkStyXml('KlausulParagraf','Klausul Paragraf','<w:ind w:left="'+D.BASE+'" w:firstLine="'+D.P_FIRST+'"/>','','')+
-    spkStyXml('KlausulButir1','Klausul Butir 1','<w:ind w:left="'+D.L1+'" w:hanging="'+D.L1_HANG+'"/>',tab1,'')+
-    spkStyXml('KlausulButir2','Klausul Butir 2','<w:ind w:left="'+D.L2+'" w:hanging="'+D.L2_HANG+'"/>',tab2,'')+
-    spkStyXml('KlausulDeskripsi','Klausul Deskripsi','<w:ind w:left="'+D.DESC+'"/>','','')+
-    spkStyXml('KlausulParagraf1','Klausul Paragraf 1','<w:ind w:left="'+D.L1+'" w:firstLine="'+D.P_FIRST+'"/>','','')+
-    spkStyXml('KlausulParagraf2','Klausul Paragraf 2','<w:ind w:left="'+D.L2+'" w:firstLine="'+D.P_FIRST+'"/>','','')+
-    spkStyXml('PetunjukTemplate','Petunjuk Template','<w:ind w:left="'+BATAS+'"/>',
+    spkStyXml('KlausulIsi','Klausul Isi','<w:ind w:left="'+_L(D.BASE)+'"/>','','')+
+    spkStyXml('KlausulParagraf','Klausul Paragraf','<w:ind w:left="'+_L(D.BASE)+'" w:firstLine="'+D.P_FIRST+'"/>','','')+
+    spkStyXml('KlausulButir1','Klausul Butir 1','<w:ind w:left="'+_L(D.L1)+'" w:hanging="'+D.L1_HANG+'"/>',tab1,'')+
+    spkStyXml('KlausulButir2','Klausul Butir 2','<w:ind w:left="'+_L(D.L2)+'" w:hanging="'+D.L2_HANG+'"/>',tab2,'')+
+    spkStyXml('KlausulDeskripsi','Klausul Deskripsi','<w:ind w:left="'+_L(D.DESC)+'"/>','','')+
+    spkStyXml('KlausulParagraf1','Klausul Paragraf 1','<w:ind w:left="'+_L(D.L1)+'" w:firstLine="'+D.P_FIRST+'"/>','','')+
+    spkStyXml('KlausulParagraf2','Klausul Paragraf 2','<w:ind w:left="'+_L(D.L2)+'" w:firstLine="'+D.P_FIRST+'"/>','','')+
+    spkStyXml('PetunjukTemplate','Petunjuk Template','<w:ind w:left="0"/>',
       '<w:spacing w:after="60" w:line="240" w:lineRule="auto"/><w:jc w:val="left"/>',
       '<w:i/><w:color w:val="808080"/><w:sz w:val="18"/><w:szCs w:val="18"/>', 'KlausulIsi')+
   '</w:styles>';
@@ -11260,7 +11355,11 @@ function spkCssLen(v, unit){
 function spkPPrFromCss(el){
   var st=el && el.style ? el.style : null;
   if(!st) return '';
-  var hasInd=false, base=spkWxBase(), left=base, hang=0, first=0;
+  /* Isi klausul ditulis DI DALAM kotak isi yang sudah menjorok spkKotakOfs(),
+     jadi w:ind w:left dikurangi nilai itu (kalau tidak, indennya dobel).
+     spkWxBase() sendiri sengaja TIDAK diubah: ia dipakai dua arah (tulis & baca)
+     dan pembacanya mengembalikan offset kotak lewat SPK_RD_KOTAK. */
+  var hasInd=false, base=spkWxBase()-spkKotakOfs(), left=base, hang=0, first=0;
   var ml=spkCssLen(st.marginLeft,'cm');
   if(ml!=null){ left=base+spkCmTw(ml); hasInd=true; }
   var ti=spkCssLen(st.textIndent,'cm');
@@ -11372,7 +11471,7 @@ function spkKvTableXml(rows){
     ['top','left','bottom','right','insideH','insideV'].map(function(s){
       return '<w:'+s+' w:val="none" w:sz="0" w:space="0" w:color="auto"/>'; }).join('')+
     '</w:tblBorders>';
-  var pr='<w:tblPr><w:tblW w:w="0" w:type="auto"/><w:tblInd w:w="'+spkWxBase()+'" w:type="dxa"/>'+borders+
+  var pr='<w:tblPr><w:tblW w:w="0" w:type="auto"/><w:tblInd w:w="'+Math.max(0,spkWxBase()-spkKotakOfs())+'" w:type="dxa"/>'+borders+
     '<w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="0" w:type="dxa"/>'+
     '<w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr>';
   var grid='<w:tblGrid><w:gridCol w:w="'+W1+'"/><w:gridCol w:w="'+W2+'"/><w:gridCol w:w="'+W3+'"/></w:tblGrid>';
@@ -11449,96 +11548,51 @@ function spkHtmlToWordParas(html){
 /* Berkas template .docx siap unduh */
 function spkDocxTemplateBlob(judul, isiHtml, noKl){
   var enc=new TextEncoder(), D=spkDX(), PK=!!D.PUSAT;
-  var guide=function(t){ return spkPXml('PetunjukTemplate', spkRunXml(t,{})); };
-  /* numPr TIDAK LAGI dipasang di sini — sudah pindah ke definisi gaya
+  /* numPr TIDAK dipasang di sini — sudah pindah ke definisi gaya
      (SPK_NUMPR_JUDUL di spkStylesXml). Lihat catatan di atas spkStyXml. */
   var judulRuns = spkJudulPlain(judul) ? spkRunsFromHtml(spkJudulSan(judul))
                                        : spkRunXml(PK?'NAMA PASAL':'JUDUL KLAUSUL',{});
-  /* SPK : SATU baris — nomor otomatis + judul, rata kiri (seperti semula).
+  /* SPK : SATU baris — nomor otomatis + judul, rata kiri.
      PK  : DUA baris rata tengah — "PASAL n" (bernomor otomatis, tanpa teks)
            lalu nama pasal di bawahnya, persis seperti tampilan Lihat. */
-  /* ---- TEKS JUDUL BOLEH DIUBAH, NOMOR & INDENNYA TIDAK (8 Agu 2026) ----
-     KETENTUAN: "judul teks hanya bisa diklik di situ untuk mengubah judul
-     pekerjaan, tetapi saat di-backspace tidak sampai menyentuh bagian
-     penomoran dan jaraknya terhadap teks."
+  /* ---- PENGUNCIAN BARIS JUDUL DIBUANG (8 Agu 2026, permintaan) ----
+     Dulu teks judul dibungkus content control <w:sdt> ber-`sdtLocked` + jenis
+     <w:text/> supaya Backspace tidak dapat menyentuh nomor klausul, dan seluruh
+     baris judul dibungkus sekali lagi supaya tidak ikut terhapus.
 
-     Teks judulnya dibungkus content control BERJENIS TEKS BIASA (<w:text/>).
-     Jenis inilah kuncinya — bukan sekadar penguncian:
-       - isinya tetap bisa diklik & diketik, jadi judul boleh diganti di Word;
-       - kendali jenis ini TIDAK BOLEH memuat tanda paragraf, sehingga Word
-         menolak Enter di dalamnya;
-       - dan yang paling dicari: Backspace di awal teks tidak punya tempat
-         untuk melangkah keluar. Nomor otomatis beserta jarak nomor->teks
-         (hanging indent) berada DI LUAR kendali ini — pada paragrafnya — jadi
-         tidak pernah bisa tersentuh, terhapus, atau tergeser.
-     `sdtLocked` melengkapi: kotaknya sendiri tidak dapat dihapus, sehingga
-     baris judul tidak bisa lenyap walau seluruh dokumen diblok lalu dihapus.
-
-     CATATAN PERUBAHAN: sebelumnya seluruh baris judul memakai
-     `sdtContentLocked` — benar-benar tidak bisa diketik di Word sama sekali.
-     Itu memenuhi "Ctrl+A lalu hapus tidak menyentuh judul", tetapi menutup
-     satu-satunya cara menamai klausul dari Word. Susunan sekarang menjaga
-     KEDUANYA sejauh yang bisa dijamin Word: strukturnya (nomor, indent,
-     barisnya sendiri) kebal, teksnya tetap milik pengguna. */
-  var judulTeks =
-    '<w:sdt><w:sdtPr>'+
-      '<w:alias w:val="Judul Klausul"/><w:tag w:val="spk-judul-klausul-teks"/>'+
-      '<w:id w:val="418272"/><w:lock w:val="sdtLocked"/><w:text/>'+
-    '</w:sdtPr><w:sdtContent>'+judulRuns+'</w:sdtContent></w:sdt>';
-  /* INDEN BARIS JUDUL DIPASANG LANGSUNG PADA PARAGRAFNYA, bukan hanya lewat
-     gaya. Dua lapis dengan sengaja: pembatasan format Word (spkSettingsXml)
-     sudah mematikan tombol inden & penggaris, tetapi bila suatu saat proteksi
-     itu dilepas, geometri judulnya tetap tertulis di berkas — nomor tetap
-     menggantung di 0 dan teksnya tetap di kolom batas. */
+     KETENTUAN ITU DICABUT: judul dan isi klausul kini berada di DUA KOTAK
+     BERBEDA (spkKotakTblXml), jadi hapus di dalam kotak isi memang tidak punya
+     jalan untuk mencapai baris judul — penguncian tidak diperlukan lagi, dan
+     baris judul kembali menjadi teks Word biasa yang bebas diketik. */
   var indJudul = PK ? '<w:ind w:left="0" w:firstLine="0"/>'
                     : '<w:ind w:left="'+D.JUDUL_HANG+'" w:hanging="'+D.JUDUL_HANG+'"/>';
   var judulXml = PK
-    ? spkPXml2('KlausulPasal', indJudul, '') + spkPXml2('KlausulJudul', indJudul, judulTeks)
-    : spkPXml2('KlausulJudul', indJudul, judulTeks);
-  /* ---- BARIS JUDUL DIBENTENGI (ketentuan 7 Agu 2026) ----
-     "Isi klausul di bawah judul, di-backspace atau di-block bagaimanapun, tidak
-     boleh mencapai baris judul."
-
-     CARANYA: baris judul dibungkus content control (w:sdt) ber-kunci
-     `sdtContentLocked`. Nilai itu mengunci DUA hal sekaligus menurut ECMA-376:
-     kotaknya tidak dapat dihapus, DAN isinya tidak dapat diubah. Word lalu
-     menolak backspace yang merambat naik dari isi klausul, Ctrl+A lalu Delete,
-     maupun pilihan blok yang melintasi baris judul — baris itu tersisa utuh.
-     Ini pilihan yang paling ketat di antara tiga mekanisme Word (dua lainnya:
-     `sdtLocked` yang hanya melindungi kotaknya, dan documentProtection yang
-     mengunci seluruh dokumen kecuali daerah yang diizinkan).
-
-     KONSEKUENSI YANG DISENGAJA: judul TIDAK LAGI bisa diketik di Word — juga
-     saat mengganti "JUDUL KLAUSUL" pada klausul baru. Karena itu kotak Judul
-     Klausul di popup Unggah Klausul dibuka kembali (dulu display:none) beserta
-     tombol miringnya; di sanalah judul sekarang ditulis. Kedua perubahan itu
-     SATU paket — melepas salah satunya membuat klausul baru tidak bisa dinamai.
-
-     PEMBACANYA IKUT DISESUAIKAN: spkWordXmlToKlausul dulu hanya menyusuri anak
-     LANGSUNG <w:body>, sehingga paragraf yang pindah ke dalam <w:sdtContent>
-     akan terlewat dan judulnya hilang saat template diunggah kembali. Lihat
-     spkBodyBlocks() di sana. */
-  judulXml =
-    '<w:sdt><w:sdtPr>'+
-      '<w:alias w:val="Judul Klausul"/><w:tag w:val="spk-judul-klausul"/>'+
-      '<w:id w:val="418271"/><w:lock w:val="sdtLocked"/>'+
-    '</w:sdtPr><w:sdtContent>'+judulXml+'</w:sdtContent></w:sdt>';
-  var body =
-    guide('PETUNJUK (baris abu-abu ini otomatis DIABAIKAN saat diunggah — boleh dibiarkan):')+
-    guide('1) Ketik isi klausul HANYA di bawah baris judul. Halaman sudah diatur A4, Portrait, margin Normal 2,54 cm, huruf Inter 11.')+
-    guide('2) Gunakan Style Word: "Klausul Isi" (teks biasa), "Klausul Butir 1" (nomor 1.1.), "Klausul Butir 2" (huruf a.), "Klausul Paragraf" (paragraf menjorok).')+
-    guide('3) Penomoran butir boleh memakai penomoran otomatis Word ATAU diketik manual (mis. 1.1. / a.) lalu TAB — keduanya terbaca sama persis.')+
-    (PK
-      ? guide('4) NAMA PASAL boleh diketik langsung di sini. Nomor "PASAL n" beserta jaraknya ke teks TERKUNCI: Backspace, Delete, maupun Enter di baris itu tidak dapat menyentuhnya, dan barisnya tidak ikut terhapus saat Ctrl+A lalu hapus.')
-      : guide('4) JUDUL KLAUSUL boleh diketik langsung di sini. Nomornya beserta jaraknya ke teks TERKUNCI: Backspace, Delete, maupun Enter di baris itu tidak dapat menyentuhnya, dan barisnya tidak ikut terhapus saat Ctrl+A lalu hapus.'))+
-    guide('5) Placeholder seperti {{nama_pekerjaan}}, {{nilai_rp}}, {{jangka_waktu_hari}} tetap boleh dipakai.')+
-    guide('6) BATAS INDEN KIRI dokumen ini terkunci sejajar dengan teks judul: tombol inden & penggaris Word sengaja dimatikan, dan isi yang di-paste dari dokumen lain otomatis dirapikan ke batas itu. Mengetik, Enter, gambar, tabel, dan pilihan gaya Klausul tetap berjalan seperti biasa.')+
-    judulXml;
-  var isi=spkHtmlToWordParas(isiHtml);
-  body += isi || spkPXml('KlausulIsi','');
+    ? spkPXml2('KlausulPasal', indJudul, '') + spkPXml2('KlausulJudul', indJudul, judulRuns)
+    : spkPXml2('KlausulJudul', indJudul, judulRuns);
+  /* ---- BARIS PETUNJUK ABU-ABU DIHAPUS (8 Agu 2026, permintaan) ----
+     Enam paragraf bergaya "Petunjuk Template" di kepala berkas dibuang: kotak
+     judul & kotak isi sudah menjelaskan sendiri ke mana harus mengetik, jadi
+     petunjuknya hanya menambah baris yang harus dihapus sendiri oleh pemakai.
+     Gaya "Petunjuk Template" & penyaring `key.indexOf('petunjuk')===0` di
+     spkWordXmlToKlausul SENGAJA DIPERTAHANKAN — template yang terlanjur
+     diunduh sebelum hari ini masih membawa baris itu, dan baris tersebut harus
+     tetap diabaikan saat diunggah kembali. */
+  var body = '';
+  var isi=spkHtmlToWordParas(isiHtml) || spkPXml('KlausulIsi','');
+  if(SPK_DOCX_KOTAK){
+    /* Judul -> kotak atas (isinya mulai di margin kiri, nomor menggantung di 0).
+       Isi   -> kotak bawah (isinya mulai di kolom TEKS judul, berakhir di margin
+                kanan). Paragraf sela di antaranya WAJIB: tanpa itu Word
+                menggabungkan kedua tabel menjadi satu. */
+    body += spkKotakTblXml(judulXml, 0, 'spk-kotak-judul')+
+            spkKotakSelaXml()+
+            spkKotakTblXml(isi, spkKotakInd(), 'spk-kotak-isi');
+  }else{
+    body += judulXml + isi;
+  }
   /* Word mensyaratkan paragraf setelah tabel: jika isi berakhir dengan tabel,
      tambahkan satu paragraf kosong sebelum sectPr agar berkas tetap sah. */
-  if(/<\/w:tbl>\s*$/.test(body)) body += spkPXml('KlausulIsi','');
+  if(/<\/w:tbl>\s*$/.test(body)) body += spkKotakSelaXml();
   var docXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
     '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+
       body+
@@ -11897,7 +11951,8 @@ function spkWTblToHtml(tbl){
       var tp=tbl.getElementsByTagNameNS(SPK_W_NS,'tblPr')[0];
       var ti=tp?tp.getElementsByTagNameNS(SPK_W_NS,'tblInd')[0]:null;
       var tiw=ti?(+ti.getAttributeNS(SPK_W_NS,'w')||0):0;
-      var mlCm=Math.round(((tiw-(typeof spkWxBase==='function'?spkWxBase():0))/566.93)*100)/100;
+      var _dasar=(typeof spkWxBase==='function'?spkWxBase():0)-(+SPK_RD_KOTAK||0);
+      var mlCm=Math.round(((tiw-_dasar)/566.93)*100)/100;
       if(mlCm) rowSty+='margin-left:'+mlCm+'cm;';
     }catch(eTi){}
     rowSty = rowSty ? (' style="'+rowSty+'"') : '';
@@ -12050,6 +12105,60 @@ function spkKeepWS(html){
   }
   return bag.join('');
 }
+/* ============================================================================
+   MENGENALI KOTAK PEMISAH JUDUL/ISI SAAT TEMPLATE DIUNGGAH KEMBALI
+   ----------------------------------------------------------------------------
+   Kotak yang dipasang spkKotakTblXml() adalah <w:tbl> satu baris satu sel yang
+   diberi penanda w:tblCaption "spk-kotak-judul" / "spk-kotak-isi". Pembungkus
+   itu HARUS dibongkar di sini: kalau tidak, seluruh klausul akan terbaca
+   sebagai satu tabel (spkWTblToHtml) dan judulnya hilang.
+   Tabel "Label : nilai" tidak pernah salah kena — ia selalu 2 atau 3 kolom.
+   ============================================================================ */
+function spkKotakTblTag(tbl){
+  try{
+    var pr=tbl.getElementsByTagNameNS(SPK_W_NS,'tblPr')[0]; if(!pr) return '';
+    var cap=pr.getElementsByTagNameNS(SPK_W_NS,'tblCaption')[0] ||
+            pr.getElementsByTagNameNS(SPK_W_NS,'tblDescription')[0];
+    var v=cap?String(cap.getAttributeNS(SPK_W_NS,'val')||cap.getAttribute('w:val')||''):'';
+    return /^spk-kotak/.test(v) ? v : '';
+  }catch(e){ return ''; }
+}
+/* Sel tunggal kotak, atau null bila tabelnya bukan pembungkus 1x1. */
+function spkKotakTblSel(tbl){
+  if(!tbl || tbl.nodeType!==1 || tbl.localName!=='tbl') return null;
+  var trs=[], c=tbl.firstChild;
+  while(c){ if(c.nodeType===1 && c.localName==='tr') trs.push(c); c=c.nextSibling; }
+  if(trs.length!==1) return null;
+  var tcs=[], d=trs[0].firstChild;
+  while(d){ if(d.nodeType===1 && d.localName==='tc') tcs.push(d); d=d.nextSibling; }
+  return tcs.length===1 ? tcs[0] : null;
+}
+/* Besar penggeseran inden di dalam kotak = w:tblInd-nya.
+   PENTING: jarak dalam sel (tblCellMar) TIDAK ikut dihitung — w:ind di dalam
+   sel memang sudah diukur dari tepi teks sel, bukan dari garis kotak. Ikut
+   menghitungnya membuat tabel kv terbaca menjorok 0,15 cm secara semu. */
+function spkKotakTblOfs(tbl){
+  /* Titik mulai ISI kotak = w:tblInd + jarak dalam sel sebelah kiri (tblCellMar).
+     Padding WAJIB ikut: penulis menggeser tepi kotak SPK_KOTAK_PAD_X ke kiri lalu
+     mengembalikannya sebagai jarak dalam sel, jadi tblInd saja kurang 85 twip dan
+     tabel kv di dalam kotak akan terbaca menjorok 1,5 mm ke kiri. */
+  var ti=0, pad=0;
+  try{
+    var pr=tbl.getElementsByTagNameNS(SPK_W_NS,'tblPr')[0]; if(!pr) return 0;
+    var t=pr.getElementsByTagNameNS(SPK_W_NS,'tblInd')[0];
+    if(t) ti=+t.getAttributeNS(SPK_W_NS,'w')||0;
+    var cm=pr.getElementsByTagNameNS(SPK_W_NS,'tblCellMar')[0];
+    if(cm){
+      var lf=cm.getElementsByTagNameNS(SPK_W_NS,'left')[0];
+      if(lf) pad=+lf.getAttributeNS(SPK_W_NS,'w')||0;
+    }
+  }catch(e){ return 0; }
+  return Math.max(0, ti+pad);
+}
+/* Inden kotak ISI pada berkas yang sedang dibaca (0 bila tanpa kotak).
+   Dipakai spkWTblToHtml supaya tabel kv di DALAM kotak tetap terbaca menjorok
+   sama seperti berkas lama yang tanpa kotak. */
+var SPK_RD_KOTAK = 0;
 /* Paragraf kosong hasil tombol Enter di template (bukan blok contoh) */
 function spkIsBlankP(el){
   return !!(el && el.nodeType===1 && el.getAttribute && el.getAttribute('data-blank')==='1');
@@ -12076,6 +12185,7 @@ function spkWordXmlToKlausul(xmlText, stylesXml, numberingXml){
      mana pun bisa memakai content control (mis. bidang isian formulir), dan
      isinya tetap teks paragraf biasa yang layak dibaca. Penelusuran dibuat
      bersarang karena sdt boleh mengandung sdt lain. */
+  SPK_RD_KOTAK=0;
   var blocks=[], i;
   var kids=(function ratakan(node, dalam){
     var out=[], c=node.childNodes, j;
@@ -12086,6 +12196,17 @@ function spkWordXmlToKlausul(xmlText, stylesXml, numberingXml){
         var isi=n.getElementsByTagNameNS(SPK_W_NS,'sdtContent')[0];
         if(isi) out=out.concat(ratakan(isi, dalam+1));
         continue;
+      }
+      /* Kotak pemisah judul/isi -> dibongkar, isinya diperlakukan seolah berada
+         langsung di body. Tabel kv (2-3 kolom) tidak pernah kena. */
+      if(n.localName==='tbl' && dalam<=2){
+        var sel=spkKotakTblSel(n);
+        if(sel){
+          var tag=spkKotakTblTag(n);
+          if(tag!=='spk-kotak-judul') SPK_RD_KOTAK=spkKotakTblOfs(n);
+          out=out.concat(ratakan(sel, dalam+1));
+          continue;
+        }
       }
       out.push(n);
     }
@@ -12603,121 +12724,230 @@ async function spkDefinisiDocxSortedBlob(u8){
 }
 
 /* ============================================================================
-   MENGUNCI BARIS JUDUL PADA BERKAS .docx YANG SUDAH ADA
+   MERAPIKAN BERKAS .docx YANG SUDAH ADA (8 Agu 2026)
    ----------------------------------------------------------------------------
-   spkDocxTemplateBlob() membentengi baris judul sejak 7 Agu 2026 — tetapi hanya
-   pada template yang DIBANGUN ULANG dari isi HTML. Klausul yang menyimpan
-   berkas aslinya (spkKlDoc.docx, hasil unggahan) diunduh APA ADANYA supaya
-   penomoran & tata letak Word tidak berubah sedikit pun; akibatnya seluruh
-   klausul yang diunggah sebelum tanggal itu masih membawa judul telanjang —
-   Ctrl+A lalu Delete di Word tetap menyapunya.
+   spkDocxTemplateBlob() sudah membangun template baru dengan susunan yang
+   diminta: judul & isi klausul di DUA KOTAK berbeda, tanpa penguncian apa pun.
+   Tetapi klausul yang menyimpan berkas ASLINYA (spkKlDoc.docx, hasil unggahan)
+   diunduh apa adanya supaya penomoran otomatis & tata letak Word tidak berubah
+   sedikit pun — jadi berkas lama masih membawa tiga hal yang sudah dicabut:
 
-   Fungsi ini menutup celah itu tanpa menyentuh apa pun yang lain: berkasnya
-   dibongkar, HANYA baris judulnya dibungkus content control ber-kunci
-   (sdtContentLocked), lalu dibungkus ulang. Seluruh part lain (styles,
-   numbering, gambar, dsb.) dikembalikan byte demi byte.
+     1) <w:documentProtection w:formatting="1"> — pembatasan format Word yang
+        membuat kotak nama & ukuran huruf kosong dan seluruh grup Font/Paragraf
+        abu-abu (persis tangkapan layar yang dikirim), termasuk tombol Numbering;
+     2) content control ber-kunci di baris judul (w:sdt tag "spk-judul-klausul")
+        yang membatasi Backspace/Delete di sana;
+     3) belum ada kotak pemisah judul & isi.
 
-   Mengembalikan null bila tidak ada yang perlu dikerjakan atau strukturnya tak
-   dikenali — pemanggilnya lalu memakai berkas asli, persis seperti dulu. Jadi
-   kegagalan di sini tidak pernah membuat unduhan ikut gagal.
+   Ketiganya ditambal di sini, tepat sebelum berkasnya diunduh. Part lain
+   dikembalikan byte demi byte. Gagal di mana pun -> null/false, dan pemanggilnya
+   memakai berkas aslinya seperti dulu, jadi unduhan tidak pernah ikut gagal.
    ============================================================================ */
-function spkDocxKunciJudulXml(xml){
+
+/* --- Melepas <w:sdt> penanda judul: anak-anaknya dinaikkan ke tempat sdt. --- */
+function spkDocxLepasSdtJudul(doc){
+  var ubah=false, i, sdts=doc.getElementsByTagNameNS(SPK_W_NS,'sdt');
+  var daftar=[]; for(i=0;i<sdts.length;i++) daftar.push(sdts[i]);   // salin: DOM live
+  for(i=0;i<daftar.length;i++){
+    var sd=daftar[i];
+    var pr=sd.getElementsByTagNameNS(SPK_W_NS,'sdtPr')[0];
+    var tg=pr?pr.getElementsByTagNameNS(SPK_W_NS,'tag')[0]:null;
+    var tv=tg?String(tg.getAttributeNS(SPK_W_NS,'val')||''):'';
+    if(tv.indexOf('spk-judul-klausul')!==0) continue;
+    var isi=sd.getElementsByTagNameNS(SPK_W_NS,'sdtContent')[0];
+    var par=sd.parentNode; if(!par) continue;
+    if(isi){ while(isi.firstChild) par.insertBefore(isi.firstChild, sd); }
+    par.removeChild(sd); ubah=true;
+  }
+  return ubah;
+}
+
+/* --- Menggeser seluruh w:ind w:left & w:tblInd sebesar -ofs (rekursif). ---
+   Dipakai saat isi klausul dipindahkan ke dalam kotak yang sudah menjorok ofs;
+   tanpa ini indennya terhitung dua kali. w:hanging & w:firstLine RELATIF, jadi
+   sengaja tidak disentuh. */
+function spkDocxGeserInd(node, ofs){
+  if(!ofs) return;
+  var i, ind=node.getElementsByTagNameNS(SPK_W_NS,'ind');
+  for(i=0;i<ind.length;i++){
+    var el=ind[i], nm='left', L=el.getAttributeNS(SPK_W_NS,'left');
+    if(L==null||L===''){ L=el.getAttributeNS(SPK_W_NS,'start'); if(L!=null&&L!=='') nm='start'; }
+    if(L==null||L==='') continue;
+    el.setAttributeNS(SPK_W_NS,'w:'+nm, String(Math.max(0, (+L||0)-ofs)));
+  }
+  var ti=node.getElementsByTagNameNS(SPK_W_NS,'tblInd');
+  for(i=0;i<ti.length;i++){
+    var t=ti[i], W=t.getAttributeNS(SPK_W_NS,'w');
+    if(W==null||W==='') continue;
+    t.setAttributeNS(SPK_W_NS,'w:w', String(Math.max(0, (+W||0)-ofs)));
+  }
+}
+
+/* --- word/document.xml: lepas kunci judul + bungkus judul & isi dalam kotak. ---
+   `kotak` = kolom teks judul klausul dalam twip (dibaca dari berkasnya sendiri,
+   lihat spkDocxKotakLebar). Mengembalikan XML baru, atau null bila tak ada yang
+   perlu dikerjakan / strukturnya tak dikenali. */
+function spkDocxKotakXml(xml, kotak){
   try{
-    /* Sudah terkunci (template baru / sudah pernah ditambal) -> tidak ada kerja. */
-    if(String(xml).indexOf('spk-judul-klausul')>=0) return null;
-    var doc=new DOMParser().parseFromString(xml,'application/xml');
+    var teks=String(xml);
+    var sudahKotak = teks.indexOf('spk-kotak-isi')>=0;
+    var adaSdt     = teks.indexOf('spk-judul-klausul')>=0;
+    if(sudahKotak && !adaSdt) return null;                 // sudah rapi
+    var doc=new DOMParser().parseFromString(teks,'application/xml');
     if(doc.getElementsByTagName('parsererror').length) return null;
     var body=doc.getElementsByTagNameNS(SPK_W_NS,'body')[0]; if(!body) return null;
 
-    /* Nama style paragraf (w:pStyle). '' bila bukan paragraf / tanpa style. */
+    var ubah=spkDocxLepasSdtJudul(doc);
+    if(sudahKotak){                                        // kotaknya sudah ada
+      if(!ubah) return null;
+      var x0=new XMLSerializer().serializeToString(doc);
+      if(x0.indexOf('<?xml')!==0) x0='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+x0;
+      return x0;
+    }
+
     var styleOf=function(el){
       if(!el || el.nodeType!==1 || el.localName!=='p') return '';
       var pPr=el.getElementsByTagNameNS(SPK_W_NS,'pPr')[0]; if(!pPr) return '';
       var ps=pPr.getElementsByTagNameNS(SPK_W_NS,'pStyle')[0]; if(!ps) return '';
       return ps.getAttributeNS(SPK_W_NS,'val')||'';
     };
-    /* Anak-langsung <w:body>, tanpa sectPr. */
     var kids=[], c=body.firstChild;
     while(c){ if(c.nodeType===1 && c.localName!=='sectPr') kids.push(c); c=c.nextSibling; }
 
-    /* Baris judul = paragraf ber-style "KlausulJudul".
-       Pada Perjanjian/Kontrak judulnya DUA paragraf: "KlausulPasal" (nomor
-       otomatis, tanpa teks) diikuti "KlausulJudul" — keduanya ikut dibungkus,
-       kalau tidak nomor pasalnya masih bisa terhapus sendirian. */
-    var mulai=-1, jml=0;
-    for(var i=0;i<kids.length;i++){
+    /* Baris judul = paragraf ber-style "KlausulJudul"; pada Perjanjian/Kontrak
+       didahului "KlausulPasal" (nomor otomatis) yang ikut masuk kotak. */
+    var mulai=-1, jml=0, i;
+    for(i=0;i<kids.length;i++){
       var st=styleOf(kids[i]);
       if(st==='KlausulPasal' && styleOf(kids[i+1])==='KlausulJudul'){ mulai=i; jml=2; break; }
       if(st==='KlausulJudul'){ mulai=i; jml=1; break; }
     }
-    if(mulai<0) return null;                       // struktur tak dikenali -> biarkan apa adanya
+    if(mulai<0) return ubah ? (function(){
+      var x1=new XMLSerializer().serializeToString(doc);
+      if(x1.indexOf('<?xml')!==0) x1='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+x1;
+      return x1;
+    })() : null;
 
-    var buatSdt=function(tag,id,extraPr){
+    var KOT=Math.max(0, Math.round(+kotak||0));
+    var buat=function(x0v, tag){
       var f=new DOMParser().parseFromString(
-        '<w:sdt xmlns:w="'+SPK_W_NS+'"><w:sdtPr>'+
-          '<w:alias w:val="Judul Klausul"/><w:tag w:val="'+tag+'"/>'+
-          '<w:id w:val="'+id+'"/><w:lock w:val="sdtLocked"/>'+(extraPr||'')+
-        '</w:sdtPr><w:sdtContent/></w:sdt>','application/xml');
+        spkKotakTblXml('', x0v, tag).replace('<w:tbl>','<w:tbl xmlns:w="'+SPK_W_NS+'">'),
+        'application/xml');
       if(f.getElementsByTagName('parsererror').length) return null;
-      return doc.importNode(f.documentElement,true);
+      var t=doc.importNode(f.documentElement,true);
+      var sel=spkKotakTblSel(t); if(!sel) return null;
+      while(sel.firstChild) sel.removeChild(sel.firstChild);      // buang paragraf isian
+      return {tbl:t, sel:sel};
     };
-    var sdt=buatSdt('spk-judul-klausul','418271',''); if(!sdt) return null;
-    var isi=sdt.getElementsByTagNameNS(SPK_W_NS,'sdtContent')[0]; if(!isi) return null;
+    var kj=buat(0,'spk-kotak-judul'), ki=buat(KOT,'spk-kotak-isi');
+    if(!kj || !ki) return null;
 
-    body.insertBefore(sdt, kids[mulai]);
-    for(var n=0;n<jml;n++) isi.appendChild(kids[mulai+n]);   // paragrafnya DIPINDAH, bukan disalin
+    /* --- kotak judul --- */
+    body.insertBefore(kj.tbl, kids[mulai]);
+    for(i=0;i<jml;i++) kj.sel.appendChild(kids[mulai+i]);          // DIPINDAH, bukan disalin
 
-    /* Teks judulnya dibungkus kendali TEKS BIASA supaya tetap bisa diketik,
-       sementara nomor & jarak nomor->teks (milik paragraf, di LUAR kendali)
-       tidak dapat disentuh Backspace. Sama persis dengan yang dibangun
-       spkDocxTemplateBlob — lihat catatan panjang di sana. */
-    var pJudul=null;
-    for(var q=0;q<jml;q++){ if(styleOf(kids[mulai+q])==='KlausulJudul'){ pJudul=kids[mulai+q]; break; } }
-    if(pJudul){
-      var sdtT=buatSdt('spk-judul-klausul-teks','418272','<w:text/>');
-      var isiT=sdtT && sdtT.getElementsByTagNameNS(SPK_W_NS,'sdtContent')[0];
-      if(isiT){
-        /* Hanya run (w:r) yang dipindah; pPr tetap di paragrafnya. */
-        var runs=[], cc=pJudul.firstChild;
-        while(cc){ if(cc.nodeType===1 && cc.localName==='r') runs.push(cc); cc=cc.nextSibling; }
-        if(runs.length){
-          pJudul.insertBefore(sdtT, runs[0]);
-          for(var q2=0;q2<runs.length;q2++) isiT.appendChild(runs[q2]);
-        }
+    /* --- paragraf sela (wajib: dua tabel bersebelahan akan disatukan Word) --- */
+    var selaF=new DOMParser().parseFromString(
+      spkKotakSelaXml().replace('<w:p>','<w:p xmlns:w="'+SPK_W_NS+'">'),'application/xml');
+    if(selaF.getElementsByTagName('parsererror').length) return null;
+    var sela=doc.importNode(selaF.documentElement,true);
+    body.insertBefore(sela, kj.tbl.nextSibling);
+
+    /* --- kotak isi: SEMUA blok sesudah baris judul --- */
+    var sisa=[], d=sela.nextSibling;
+    while(d){ if(d.nodeType===1 && d.localName!=='sectPr') sisa.push(d); d=d.nextSibling; }
+    body.insertBefore(ki.tbl, sela.nextSibling);
+    for(i=0;i<sisa.length;i++) ki.sel.appendChild(sisa[i]);
+    spkDocxGeserInd(ki.sel, KOT);
+    /* Sel Word wajib berakhir dengan paragraf. */
+    var akhir=ki.sel.lastChild;
+    while(akhir && akhir.nodeType!==1) akhir=akhir.previousSibling;
+    if(!akhir || akhir.localName!=='p'){
+      var pF=new DOMParser().parseFromString(
+        spkPXml('KlausulIsi','').replace('<w:p>','<w:p xmlns:w="'+SPK_W_NS+'">'),'application/xml');
+      if(!pF.getElementsByTagName('parsererror').length) ki.sel.appendChild(doc.importNode(pF.documentElement,true));
+    }
+    /* Paragraf sesudah tabel terakhir — syarat sah <w:body>. */
+    var ekor=ki.tbl.nextSibling;
+    while(ekor && (ekor.nodeType!==1 || ekor.localName==='sectPr')) ekor=ekor.nextSibling;
+    if(!ekor){
+      var eF=new DOMParser().parseFromString(
+        spkKotakSelaXml().replace('<w:p>','<w:p xmlns:w="'+SPK_W_NS+'">'),'application/xml');
+      if(!eF.getElementsByTagName('parsererror').length){
+        var sect=body.getElementsByTagNameNS(SPK_W_NS,'sectPr')[0];
+        var pe=doc.importNode(eF.documentElement,true);
+        if(sect && sect.parentNode===body) body.insertBefore(pe, sect); else body.appendChild(pe);
       }
     }
 
     var outXml=new XMLSerializer().serializeToString(doc);
     if(outXml.indexOf('<?xml')!==0) outXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+outXml;
     return outXml;
-  }catch(e){ console.error('[SPK] bungkus judul .docx gagal:', e); return null; }
+  }catch(e){ console.error('[SPK] pasang kotak .docx gagal:', e); return null; }
+}
+
+/* Kolom teks judul klausul (twip) menurut BERKAS ITU SENDIRI — dibaca dari gaya
+   "Klausul Judul" miliknya, bukan dari kisi aplikasi, karena berkas lama bisa
+   memakai kisi bentuk yang berbeda (SPK 425 / PK 0). */
+function spkDocxKotakLebar(stylesXml){
+  try{
+    var yd=new DOMParser().parseFromString(String(stylesXml||''),'application/xml');
+    if(yd.getElementsByTagName('parsererror').length) return 0;
+    var sty=yd.getElementsByTagNameNS(SPK_W_NS,'style'), i;
+    for(i=0;i<sty.length;i++){
+      var el=sty[i];
+      var nm=el.getElementsByTagNameNS(SPK_W_NS,'name')[0];
+      var nmv=nm?spkStyNorm(nm.getAttributeNS(SPK_W_NS,'val')||''):'';
+      var sid=spkStyNorm(el.getAttributeNS(SPK_W_NS,'styleId')||'');
+      if(nmv!=='klausuljudul' && sid!=='klausuljudul') continue;
+      var pPr=el.getElementsByTagNameNS(SPK_W_NS,'pPr')[0]; if(!pPr) return 0;
+      var ind=pPr.getElementsByTagNameNS(SPK_W_NS,'ind')[0]; if(!ind) return 0;
+      var L=ind.getAttributeNS(SPK_W_NS,'left');
+      if(L==null||L==='') L=ind.getAttributeNS(SPK_W_NS,'start');
+      return (L==null||L==='') ? 0 : Math.max(0,+L||0);
+    }
+  }catch(e){}
+  return 0;
+}
+
+/* word/styles.xml: gaya isi klausul digeser -ofs (gaya JUDUL tidak, ia berada
+   di kotak judul yang mulai tepat di margin kiri). Mengembalikan XML baru atau
+   null bila tidak ada yang berubah. */
+function spkDocxRebaseStylesXml(stylesXml, ofs){
+  if(!ofs) return null;
+  try{
+    var yd=new DOMParser().parseFromString(String(stylesXml||''),'application/xml');
+    if(yd.getElementsByTagName('parsererror').length) return null;
+    var sty=yd.getElementsByTagNameNS(SPK_W_NS,'style'), i, ubah=false;
+    var lewati={klausuljudul:1, klausulpasal:1, petunjuktemplate:1};
+    for(i=0;i<sty.length;i++){
+      var el=sty[i];
+      var nm=el.getElementsByTagNameNS(SPK_W_NS,'name')[0];
+      var nmv=nm?spkStyNorm(nm.getAttributeNS(SPK_W_NS,'val')||''):'';
+      var sid=spkStyNorm(el.getAttributeNS(SPK_W_NS,'styleId')||'');
+      if(lewati[nmv]||lewati[sid]) continue;
+      spkDocxGeserInd(el, ofs); ubah=true;
+    }
+    var dd=yd.getElementsByTagNameNS(SPK_W_NS,'docDefaults')[0];
+    if(dd){ spkDocxGeserInd(dd, ofs); ubah=true; }
+    if(!ubah) return null;
+    var x=new XMLSerializer().serializeToString(yd);
+    if(x.indexOf('<?xml')!==0) x='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+x;
+    return x;
+  }catch(e){ console.error('[SPK] rebase styles.xml gagal:', e); return null; }
 }
 
 /* ============================================================================
-   PROTEKSI FORMAT & BATAS INDEN PADA BERKAS .docx YANG SUDAH ADA (8 Agu 2026)
+   MELEPAS PEMBATASAN FORMAT PADA BERKAS .docx YANG SUDAH ADA (8 Agu 2026)
    ----------------------------------------------------------------------------
-   Template yang DIBANGUN ULANG sudah membawa word/settings.xml ber-
-   documentProtection (lihat spkSettingsXml) dan gaya Normal ber-batas inden
-   (lihat spkBatasInden). Klausul yang menyimpan berkas aslinya diunduh apa
-   adanya, jadi berkas lama belum punya keduanya — di sinilah ditambalkan,
-   tepat sebelum diunduh, tanpa menyentuh part yang lain.
-
-   Dua tambalan:
-     1) word/settings.xml  -> <w:documentProtection w:formatting="1"
-        w:enforcement="1"/> disisipkan sebagai anak PERTAMA (urutan CT_Settings
-        menempatkannya di depan defaultTabStop dkk. yang biasa ditulis Word).
-        documentProtection lama, kalau ada, dibuang lebih dulu supaya tidak
-        bentrok. Part-nya didaftarkan di [Content_Types].xml dan
-        word/_rels/document.xml.rels bila belum ada.
-     2) word/styles.xml    -> batas inden kiri dibaca dari gaya "Klausul Judul"
-        milik berkas itu sendiri (w:ind@w:left), lalu dipasang pada gaya Normal
-        + docDefaults. Dibaca dari berkasnya, bukan dari kisi aplikasi, karena
-        berkas lama bisa saja memakai kisi bentuk yang berbeda.
-
-   Mengembalikan true bila ada yang berubah. Kegagalan apa pun -> false, dan
-   pemanggilnya memakai berkas aslinya seperti dulu.
+   Kebalikan dari spkDocxProteksiZip yang lama: <w:documentProtection> beserta
+   <w:styleLockTheme>/<w:styleLockQFSet> DIBUANG dari word/settings.xml, dan
+   penguncian gaya bawaan (<w:latentStyles w:defLockedState="1">) dilepas di
+   word/styles.xml. Itulah tiga hal yang membuat grup Font & Paragraf Word
+   abu-abu — termasuk tombol Numbering yang justru dibutuhkan template ini.
+   Mengembalikan true bila ada yang berubah.
    ============================================================================ */
-function spkDocxProteksiZip(zip){
+function spkDocxLepasProteksiZip(zip){
   var berubah=false;
   var dec=new TextDecoder(), enc=new TextEncoder();
   var ser=function(doc){
@@ -12725,107 +12955,40 @@ function spkDocxProteksiZip(zip){
     if(x.indexOf('<?xml')!==0) x='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+x;
     return enc.encode(x);
   };
-  /* ---- 1. settings.xml ---- */
   try{
-    if(!SPK_DOCX_KUNCI_FORMAT) throw 0;
-    var sx = zip['word/settings.xml']
-      ? dec.decode(zip['word/settings.xml'])
-      : '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
-        '<w:settings xmlns:w="'+SPK_W_NS+'"/>';
-    var sd=new DOMParser().parseFromString(sx,'application/xml');
-    if(!sd.getElementsByTagName('parsererror').length){
-      var root=sd.documentElement;
-      var lama=root.getElementsByTagNameNS(SPK_W_NS,'documentProtection')[0];
-      var perlu=true;
-      if(lama){
-        var f=lama.getAttributeNS(SPK_W_NS,'formatting'), e2=lama.getAttributeNS(SPK_W_NS,'enforcement');
-        perlu = !((f==='1'||f==='true') && (e2==='1'||e2==='true'));
-        if(perlu && lama.parentNode) lama.parentNode.removeChild(lama);
-      }
-      if(perlu){
-        var dp=sd.createElementNS(SPK_W_NS,'w:documentProtection');
-        dp.setAttributeNS(SPK_W_NS,'w:formatting','1');
-        dp.setAttributeNS(SPK_W_NS,'w:enforcement','1');
-        root.insertBefore(dp, root.firstChild);
-        zip['word/settings.xml']=ser(sd);
-        berubah=true;
+    if(zip['word/settings.xml']){
+      var sd=new DOMParser().parseFromString(dec.decode(zip['word/settings.xml']),'application/xml');
+      if(!sd.getElementsByTagName('parsererror').length){
+        var buang=['documentProtection','styleLockTheme','styleLockQFSet'], k, i, hit=false;
+        for(k=0;k<buang.length;k++){
+          var ns=sd.getElementsByTagNameNS(SPK_W_NS,buang[k]), arr=[];
+          for(i=0;i<ns.length;i++) arr.push(ns[i]);
+          for(i=0;i<arr.length;i++){ if(arr[i].parentNode){ arr[i].parentNode.removeChild(arr[i]); hit=true; } }
+        }
+        if(hit){ zip['word/settings.xml']=ser(sd); berubah=true; }
       }
     }
-  }catch(e){ if(e) console.error('[SPK] pasang proteksi settings.xml:', e); }
-
-  /* Daftarkan part-nya bila baru dibuat. */
-  if(berubah){
-    try{
-      var CT='[Content_Types].xml';
-      if(zip[CT]){
-        var ct=dec.decode(zip[CT]);
-        if(ct.indexOf('/word/settings.xml')<0){
-          ct=ct.replace('</Types>','<Override PartName="/word/settings.xml" '+
-            'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/></Types>');
-          zip[CT]=enc.encode(ct);
-        }
-      }
-      var RL='word/_rels/document.xml.rels';
-      if(zip[RL]){
-        var rl=dec.decode(zip[RL]);
-        if(rl.indexOf('relationships/settings')<0){
-          var rid='rIdKunciSettings';
-          rl=rl.replace('</Relationships>','<Relationship Id="'+rid+'" '+
-            'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" '+
-            'Target="settings.xml"/></Relationships>');
-          zip[RL]=enc.encode(rl);
-        }
-      }
-    }catch(e){ console.error('[SPK] daftarkan settings.xml:', e); }
-  }
-
-  /* ---- 2. batas inden pada styles.xml ---- */
+  }catch(e){ console.error('[SPK] lepas proteksi settings.xml:', e); }
   try{
     if(zip['word/styles.xml']){
       var yd=new DOMParser().parseFromString(dec.decode(zip['word/styles.xml']),'application/xml');
       if(!yd.getElementsByTagName('parsererror').length){
-        var sty=yd.getElementsByTagNameNS(SPK_W_NS,'style'), i, el, batas=null, normal=null;
-        var indLeft=function(pPr){
-          if(!pPr) return null;
-          var ind=pPr.getElementsByTagNameNS(SPK_W_NS,'ind')[0]; if(!ind) return null;
-          var L=ind.getAttributeNS(SPK_W_NS,'left');
-          if(L==null||L==='') L=ind.getAttributeNS(SPK_W_NS,'start');
-          return (L==null||L==='') ? null : (+L||0);
-        };
-        for(i=0;i<sty.length;i++){
-          el=sty[i];
-          var nm=el.getElementsByTagNameNS(SPK_W_NS,'name')[0];
-          var nmv=nm?spkStyNorm(nm.getAttributeNS(SPK_W_NS,'val')||''):'';
-          var sid=spkStyNorm(el.getAttributeNS(SPK_W_NS,'styleId')||'');
-          if(nmv==='klausuljudul'||sid==='klausuljudul'){
-            var v=indLeft(el.getElementsByTagNameNS(SPK_W_NS,'pPr')[0]);
-            if(v!=null) batas=v;
-          }
-          if(nmv==='normal'||sid==='normal') normal=el;
-        }
-        if(batas!=null && batas>0 && normal){
-          var pPrN=normal.getElementsByTagNameNS(SPK_W_NS,'pPr')[0];
-          if(!pPrN){
-            pPrN=yd.createElementNS(SPK_W_NS,'w:pPr');
-            normal.appendChild(pPrN);
-          }
-          var indN=pPrN.getElementsByTagNameNS(SPK_W_NS,'ind')[0];
-          var kini=indLeft(pPrN);
-          if(kini==null || kini<batas){
-            if(!indN){ indN=yd.createElementNS(SPK_W_NS,'w:ind'); pPrN.appendChild(indN); }
-            indN.setAttributeNS(SPK_W_NS,'w:left',String(batas));
-            zip['word/styles.xml']=ser(yd);
-            berubah=true;
+        var ls=yd.getElementsByTagNameNS(SPK_W_NS,'latentStyles')[0];
+        if(ls){
+          var v=ls.getAttributeNS(SPK_W_NS,'defLockedState');
+          if(v==='1'||v==='true'){
+            ls.setAttributeNS(SPK_W_NS,'w:defLockedState','0');
+            zip['word/styles.xml']=ser(yd); berubah=true;
           }
         }
       }
     }
-  }catch(e){ console.error('[SPK] pasang batas inden styles.xml:', e); }
-
+  }catch(e){ console.error('[SPK] lepas kunci gaya styles.xml:', e); }
   return berubah;
 }
 
-async function spkDocxKunciJudulBlob(u8){
+/* Satu putaran perapian untuk berkas .docx yang tersimpan. */
+async function spkDocxRapikanBlob(u8){
   try{
     var ab=(u8 && u8.buffer) ? u8.buffer : u8;
     var zip=await spkUnzip(ab);
@@ -12833,20 +12996,27 @@ async function spkDocxKunciJudulBlob(u8){
     var dec=new TextDecoder(), enc=new TextEncoder();
     var xml=dec.decode(part), ubah=false;
 
-    var baru=spkDocxKunciJudulXml(xml);
-    if(baru){ xml=baru; ubah=true; }
+    var styles = zip['word/styles.xml'] ? dec.decode(zip['word/styles.xml']) : '';
+    var perluKotak = SPK_DOCX_KOTAK && xml.indexOf('spk-kotak-isi')<0;
+    var KOT = perluKotak ? spkDocxKotakLebar(styles) : 0;
 
-    /* Proteksi format & batas inden DISELALUKAN — berkas yang judulnya sudah
-       terbungkus pun belum tentu sudah membawa keduanya. */
-    if(spkDocxProteksiZip(zip)) ubah=true;
+    var baru=SPK_DOCX_KOTAK ? spkDocxKotakXml(xml, KOT) : null;
+    if(baru){
+      xml=baru; ubah=true;
+      if(perluKotak && KOT>0 && styles){
+        var st2=spkDocxRebaseStylesXml(styles, KOT);
+        if(st2) zip['word/styles.xml']=enc.encode(st2);
+      }
+    }
+    if(spkDocxLepasProteksiZip(zip)) ubah=true;
 
-    if(!ubah) return null;                        // tidak ada yang perlu dikerjakan
+    if(!ubah) return null;
     var files=[];
     for(var nm in zip){ if(!Object.prototype.hasOwnProperty.call(zip,nm)) continue;
       files.push({ name:nm, data:(nm==='word/document.xml') ? enc.encode(xml) : zip[nm] });
     }
     return spkZipBuild(files);
-  }catch(e){ console.error('[SPK] kunci judul .docx gagal:', e); return null; }
+  }catch(e){ console.error('[SPK] rapikan .docx gagal:', e); return null; }
 }
 
 async function spkKlDocDownload(){
@@ -12870,15 +13040,14 @@ async function spkKlDocDownload(){
         /* Non-definisi: kembalikan berkas asli apa adanya (SAMA PERSIS). */
         blob=new Blob([spkB642u8(spkKlDoc.docx)], {type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
       }
-      /* BARIS JUDUL DIKUNCI JUGA PADA BERKAS LAMA.
-         Template yang diunggah sebelum 7 Agu 2026 belum membawa content control
-         ber-kunci, sehingga Ctrl+A lalu Delete di Word masih menyapu judulnya.
-         Di sini judul itu dibentengi tepat sebelum berkasnya diunduh — sisa
-         berkasnya tidak disentuh sama sekali. Gagal? blob lama tetap dipakai. */
+      /* BERKAS LAMA IKUT DIRAPIKAN (8 Agu 2026): pembatasan format & content
+         control ber-kunci dilepas, lalu judul & isi klausul dibungkus dua kotak
+         terpisah seperti template baru. Sisa berkasnya tidak disentuh sama
+         sekali. Gagal? blob lama tetap dipakai. */
       try{
-        var _terkunci=await spkDocxKunciJudulBlob(new Uint8Array(await blob.arrayBuffer()));
-        if(_terkunci) blob=_terkunci;
-      }catch(e){ console.error('[SPK] kunci judul saat unduh:', e); }
+        var _rapi=await spkDocxRapikanBlob(new Uint8Array(await blob.arrayBuffer()));
+        if(_rapi) blob=_rapi;
+      }catch(e){ console.error('[SPK] rapikan saat unduh:', e); }
     }
     if(!blob){
       /* Belum ada berkas asli (atau struktur tak dikenali) -> bangun ulang dari isi HTML. */
