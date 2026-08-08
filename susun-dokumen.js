@@ -3262,8 +3262,94 @@ function torKlTidy(html){
   }finally{
     window.SPK_PK_LEAD=_lead; window.SPK_PK_LEAD_ANGKA=_leadA;
   }
+  try{ out=torRapatTingkat(out); }catch(e){ console.error('torRapatTingkat:', e); }
   try{ out=torIntroSejajar(out, torJudulX()); }catch(e){}
   return out;
+}
+/* ---- LANGKAH INDEN ANTAR-TINGKAT DIKUNCI (8 Agu 2026) ----
+   Laporan: "jarak inden dari 1.2 ke a sudah pas, tapi dari b ke 1 jauh."
+   Terukur pada tangkapan layar: langkah tingkat-1 -> tingkat-2 = 21 px,
+   sedangkan tingkat-2 -> tingkat-3 = 48 px.
+
+   spkPkIndentStd() sendiri SEHARUSNYA sudah menghasilkan langkah yang sama
+   untuk keduanya (base anak = base induk + lebar kotak induk + LEAD), dan
+   Tahap 4d di sana bahkan memangkas jorokan yang berlebih. Pada dokumen uji —
+   termasuk saat lantai lebar se-dokumen (SPK_HANG_OVR) ikut aktif — memang
+   keluar 0,30 cm untuk kedua langkah. Karena penyebab di dokumen nyata tidak
+   bisa direproduksi, yang dikunci di sini adalah HASIL AKHIRNYA: pendekatan
+   yang persis sama dengan Tahap 4d, hanya saja berlaku DUA ARAH (terlalu jauh
+   dirapatkan, terlalu dekat direnggangkan) sehingga langkahnya selalu tepat
+   TOR_KL_LEAD berapa pun hasil hitungan di atasnya.
+
+   Cara kerja: paragraf ditelusuri berurutan sambil menumpuk kolom teks tiap
+   tingkat. Induk sebuah butir = butir terakhir yang penandanya mulai LEBIH
+   KIRI. Penanda & kolom teks digeser BERSAMAAN (hanya margin-left yang
+   diubah), jadi gantungan (text-indent) dan lebar kotak nomor tidak tersentuh
+   sama sekali — perataan nomor & jeda nomor->teks tetap milik mesin SPK.
+
+   Butir tingkat-1 (tidak punya induk di atasnya) TIDAK PERNAH digeser: titik
+   tolaknya kolom teks judul, urusan spkPkIndentStd. Berlaku TOR/KAK saja. */
+/* Tepi kiri penanda yang BENAR-BENAR TERLIHAT.
+   Deret ANGKA selalu dirata-KANANkan di dalam kotaknya (ketentuan 22 Jul 2026,
+   supaya jeda penanda->teks selalu = padding). Bila kotak itu DILEBARKAN oleh
+   lantai lebar se-dokumen (spkKumpulHang, kuncinya hanya JUMLAH RUAS — jadi
+   deret "1./2." di tingkat-3 ikut memakai lantai milik deret "1./2./10." di
+   tingkat-1 klausul lain), kelebihan lebarnya muncul sebagai ruang KOSONG di
+   sisi KIRI glif. Akibatnya tepi kotak sudah tepat satu langkah dari induknya,
+   tetapi angkanya sendiri tampak jauh lebih menjorok — persis laporan "dari b
+   ke 1 jauh".
+   Kelebihan itu dihitung dengan pengukur yang SAMA dengan yang dipakai mesin
+   saat membangun kotaknya (spkPkTextWidthCm + SPK_NUM_GAP, digit dikanonkan
+   ke '0'), sehingga kelonggaran pengukurannya saling meniadakan. */
+function torPenandaTepi(p, sp){
+  var ml=parseFloat(p.style.marginLeft)||0, ti=parseFloat(p.style.textIndent)||0;
+  var kiri=ml+ti;
+  try{
+    if(String(sp.style.textAlign||'').trim()!=='right') return kiri;
+    var lebar=parseFloat(sp.style.width||sp.style.minWidth)||0;
+    var tok=String(sp.textContent||'').replace(/[\s\u00A0]+/g,'');
+    if(!lebar || !/^(?:[0-9]+[.)])+$/.test(tok)) return kiri;
+    /* Penjaga typeof mengikuti pola torBoxW/torDocCss di berkas ini: SPK_NUM_GAP
+       adalah `const` di susun-kontrak.js, jadi ia hidup di lingkup leksikal
+       global — terjangkau dari sini SELAMA berkasnya benar-benar termuat lebih
+       dulu. Tanpa penjaga, satu ReferenceError akan tertelan blok catch dan
+       fungsi ini diam-diam tidak berbuat apa-apa. */
+    var gap=(typeof SPK_NUM_GAP!=='undefined') ? SPK_NUM_GAP : 0.12;
+    var alami=Math.max(0.4, Math.round((spkPkTextWidthCm(tok.replace(/[0-9]/g,'0'))+gap)*100)/100);
+    if(lebar>alami+0.005) kiri+=(lebar-alami);
+  }catch(e){}
+  return kiri;
+}
+function torRapatTingkat(html){
+  var s=String(html==null?'':html);
+  if(s.indexOf('class="n')<0) return s;
+  try{
+    var box=document.createElement('div'); box.innerHTML=s;
+    var ps=box.querySelectorAll('p'), tum=[], i, ubah=false;
+    for(i=0;i<ps.length;i++){
+      var p=ps[i], sp=p.querySelector('span.n');
+      if(!sp) continue;                                  /* paragraf tanpa penanda */
+      var ml=parseFloat(p.style.marginLeft)||0;          /* kolom teks butir */
+      var pen0=torPenandaTepi(p, sp);                    /* tepi penanda TERLIHAT, asli */
+      /* Silsilah dinilai dari posisi ASLI, bukan yang sudah dikoreksi. Kalau
+         memakai posisi hasil koreksi, butir kedua sebuah deret akan menyangka
+         butir pertama (yang baru saja digeser ke kiri) sebagai INDUKNYA, lalu
+         ikut menjorok lagi satu langkah — deret "1./2." pecah jadi bertingkat. */
+      while(tum.length && tum[tum.length-1].pen0>=pen0-0.001) tum.pop();
+      if(tum.length){
+        var induk=tum[tum.length-1];
+        var selisih=(induk.kol+TOR_KL_LEAD)-pen0;
+        if(Math.abs(selisih)>0.005){
+          ml=Math.round((ml+selisih)*100)/100;
+          p.style.marginLeft=ml.toFixed(2)+'cm';
+          p.style.paddingLeft='0cm';
+          ubah=true;
+        }
+      }
+      tum.push({pen0:pen0, kol:ml});
+    }
+    return ubah ? box.innerHTML : s;
+  }catch(e){ console.error('torRapatTingkat:', e); return s; }
 }
 
 /* ===================== 9b. FOTO DI DALAM KLAUSUL TOR/KAK =====================

@@ -13084,6 +13084,112 @@ function spkDocxLepasProteksiZip(zip){
   return berubah;
 }
 
+/* ============================================================================
+   MERAPATKAN BARIS JUDUL & MENYERAGAMKAN GARIS KOTAK PADA .docx YANG SUDAH ADA
+   (8 Agu 2026)
+   ----------------------------------------------------------------------------
+   KENAPA PERLU FUNGSI TERSENDIRI: begitu sebuah klausul pernah diunggah dari
+   Word, spkKlDocDownload() mengembalikan BYTE ASLI berkas itu (lihat catatan
+   "fidelitas" di sana) dan TIDAK pernah membangun ulang lewat
+   spkDocxTemplateBlob(). Akibatnya dua ketentuan template — baris judul tanpa
+   spasi sebelum/sesudah, dan garis kotak hitam solid 3/4 pt — hanya berlaku
+   untuk klausul yang belum punya berkas asli. Di sini keduanya diterapkan pada
+   berkas yang sudah ada, tanpa membangun ulang apa pun: hanya <w:spacing> pada
+   paragraf judul dan <w:tblBorders> pada kotaknya yang disentuh, sehingga
+   penomoran otomatis Word, gambar, tabel, dan seluruh isi klausul tetap utuh.
+
+   HANYA TAMPILAN TEMPLATE WORD. Spasi paragraf judul tidak pernah dibaca saat
+   template diunggah kembali (spkWordXmlToKlausul hanya mengambil TEKS judulnya
+   lalu `continue`), dan jarak judul di web tetap dari .spk-cl-h. Isi klausul
+   TIDAK disentuh sama sekali — jarak paragrafnya tetap apa adanya milik
+   klausul itu.
+   ============================================================================ */
+/* styleId milik gaya judul (KlausulJudul / KlausulPasal), termasuk id yang
+   ditulis ulang Word — dicocokkan lewat w:name pada styles.xml. */
+function spkDocxIdJudul(stylesXml){
+  var ids={ klausuljudul:1, klausulpasal:1 };
+  try{
+    var yd=new DOMParser().parseFromString(String(stylesXml||''),'application/xml');
+    if(yd.getElementsByTagName('parsererror').length) return ids;
+    var sty=yd.getElementsByTagNameNS(SPK_W_NS,'style'), i;
+    for(i=0;i<sty.length;i++){
+      var nm=sty[i].getElementsByTagNameNS(SPK_W_NS,'name')[0];
+      var nv=nm?spkStyNorm(nm.getAttributeNS(SPK_W_NS,'val')||''):'';
+      if(nv==='klausuljudul' || nv==='klausulpasal'){
+        var sid=sty[i].getAttributeNS(SPK_W_NS,'styleId')||'';
+        if(sid) ids[spkStyNorm(sid)]=1;
+      }
+    }
+  }catch(e){}
+  return ids;
+}
+/* Sisipkan/ubah <w:spacing before=0 after=0> pada sebuah <w:pPr>.
+   Urutan anak CT_PPr dijaga: spacing WAJIB sebelum ind/jc/rPr/sectPr. */
+function spkDocxSpasiNol(doc, pPr){
+  var sp=pPr.getElementsByTagNameNS(SPK_W_NS,'spacing')[0];
+  if(sp && sp.parentNode!==pPr) sp=null;                 /* milik anak lain -> abaikan */
+  if(!sp){
+    sp=doc.createElementNS(SPK_W_NS,'w:spacing');
+    var urut={ind:1, contextualSpacing:1, mirrorIndents:1, suppressOverlap:1, jc:1,
+              textDirection:1, textAlignment:1, outlineLvl:1, rPr:1, sectPr:1, pPrChange:1};
+    var acuan=null, c=pPr.firstChild;
+    while(c){ if(c.nodeType===1 && urut[c.localName]){ acuan=c; break; } c=c.nextSibling; }
+    pPr.insertBefore(sp, acuan);                          /* acuan null -> append */
+  }
+  var b=sp.getAttributeNS(SPK_W_NS,'before'), a=sp.getAttributeNS(SPK_W_NS,'after');
+  if(b==='0' && a==='0') return false;
+  sp.setAttributeNS(SPK_W_NS,'w:before','0');
+  sp.setAttributeNS(SPK_W_NS,'w:after','0');
+  return true;
+}
+function spkDocxJudulRapatXml(xml, stylesXml){
+  try{
+    var doc=new DOMParser().parseFromString(String(xml||''),'application/xml');
+    if(doc.getElementsByTagName('parsererror').length) return null;
+    var body=doc.getElementsByTagNameNS(SPK_W_NS,'body')[0]; if(!body) return null;
+    var ids=spkDocxIdJudul(stylesXml), ubah=false, i;
+
+    /* (1) Baris judul -> spasi sebelum & sesudah dinolkan. */
+    var ps=doc.getElementsByTagNameNS(SPK_W_NS,'p');
+    for(i=0;i<ps.length;i++){
+      var pPr=ps[i].getElementsByTagNameNS(SPK_W_NS,'pPr')[0]; if(!pPr) continue;
+      var st=pPr.getElementsByTagNameNS(SPK_W_NS,'pStyle')[0]; if(!st) continue;
+      if(!ids[spkStyNorm(st.getAttributeNS(SPK_W_NS,'val')||'')]) continue;
+      if(spkDocxSpasiNol(doc, pPr)) ubah=true;
+    }
+
+    /* (2) Garis kotak judul & isi -> hitam solid 3/4 pt.
+       DIBATASI pada tabel 1x1 yang menjadi ANAK LANGSUNG <w:body> — itulah
+       kotak pemisah buatan spkKotakTblXml. Tabel di DALAM isi klausul (mis.
+       tabel data yang diketik sendiri di Word) tidak pernah tersentuh. */
+    var c=body.firstChild;
+    while(c){
+      if(c.nodeType===1 && c.localName==='tbl' && spkKotakTblSel(c)){
+        var pr=c.getElementsByTagNameNS(SPK_W_NS,'tblPr')[0];
+        var bd=pr?pr.getElementsByTagNameNS(SPK_W_NS,'tblBorders')[0]:null;
+        if(bd){
+          var sisi=['top','left','bottom','right'], k;
+          for(k=0;k<sisi.length;k++){
+            var g=bd.getElementsByTagNameNS(SPK_W_NS,sisi[k])[0]; if(!g) continue;
+            if(g.getAttributeNS(SPK_W_NS,'sz')===String(SPK_KOTAK_GARIS_SZ) &&
+               g.getAttributeNS(SPK_W_NS,'color')===SPK_KOTAK_GARIS_CLR) continue;
+            g.setAttributeNS(SPK_W_NS,'w:val','single');
+            g.setAttributeNS(SPK_W_NS,'w:sz',String(SPK_KOTAK_GARIS_SZ));
+            g.setAttributeNS(SPK_W_NS,'w:color',SPK_KOTAK_GARIS_CLR);
+            ubah=true;
+          }
+        }
+      }
+      c=c.nextSibling;
+    }
+
+    if(!ubah) return null;
+    var x=new XMLSerializer().serializeToString(doc);
+    if(x.indexOf('<?xml')!==0) x='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+x;
+    return x;
+  }catch(e){ console.error('[SPK] rapatkan baris judul gagal:', e); return null; }
+}
+
 /* Satu putaran perapian untuk berkas .docx yang tersimpan. */
 async function spkDocxRapikanBlob(u8){
   try{
@@ -13105,6 +13211,11 @@ async function spkDocxRapikanBlob(u8){
         if(st2) zip['word/styles.xml']=enc.encode(st2);
       }
     }
+    /* Baris judul dirapatkan & garis kotak diseragamkan SESUDAH pembungkusan
+       kotak, supaya kotak yang baru saja dibuat ikut terkena. */
+    var _jd=spkDocxJudulRapatXml(xml, styles);
+    if(_jd){ xml=_jd; ubah=true; }
+
     if(spkDocxLepasProteksiZip(zip)) ubah=true;
 
     if(!ubah) return null;
