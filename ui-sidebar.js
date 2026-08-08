@@ -291,16 +291,35 @@ function initRailSentuh(){
     if(t && t.nodeType===1 && (t===el || el.contains(t))) return;
     el.classList.remove('is-open');
   }, true);
-  /* Memilih menu juga menciutkan rail kembali */
-  el.addEventListener('click', function(e){
+  /* MEMILIH MENU TIDAK LAGI MENCIUTKAN RAIL — 8 Agu 2026.
+
+     Dulu di sini ada pendengar 'click' yang menciutkan rail 180 ms sesudah
+     sebuah '.topnav-link/.topnav-item' diketuk. Niatnya baik (mengembalikan
+     ruang layar), tetapi di iPad hasilnya: rail terbuka lalu langsung menutup
+     lagi sebelum sempat memilih apa pun.
+
+     Sebabnya ada pada pasangan penjaga di atas. Ketukan pertama pada rail yang
+     menciut ditangkap di 'pointerdown', dilebarkan, lalu di-preventDefault()
+     supaya ketukan itu TIDAK ikut menjalankan menunya. Di Safari iOS/iPadOS
+     preventDefault() pada pointerdown tidak selalu membatalkan 'click' yang
+     menyusul — dan bila jari kebetulan mendarat tepat di atas sebuah ikon
+     menu, click itu tetap datang, cocok dengan '.topnav-item', lalu pendengar
+     tadi menciutkan rail 180 ms kemudian. Jadi satu ketukan menghasilkan
+     buka-lalu-tutup, persis seperti yang dilaporkan.
+
+     Sekarang perilakunya disamakan dengan desktop: rail tetap terbuka selama
+     pengguna masih berurusan dengan navigasi — termasuk saat membuka grup
+     bertingkat seperti Monitoring / Form / File Dokumen yang submenunya baru
+     muncul sesudah induknya diketuk — dan baru menciut bila diketuk DI LUAR
+     sidebar (penjaga tepat di atas ini), sama seperti kursor yang meninggalkan
+     area sidebar pada tampilan desktop. Tombol Esc ditambahkan sebagai jalan
+     keluar kedua bagi pemakai papan ketik. */
+  document.addEventListener('keydown', function(e){
+    if(e.key!=='Escape') return;
     if(!document.documentElement.classList.contains('mode-rail')) return;
-    if(!noHover()) return;
-    var t=e.target;
-    if(t && t.closest && t.closest('.topnav-link,.topnav-item')){
-      setTimeout(function(){
-        if(!el.classList.contains('is-pinned')) el.classList.remove('is-open');
-      }, 180);
-    }
+    if(!el.classList.contains('is-open')) return;
+    if(el.classList.contains('is-pinned')) return;
+    el.classList.remove('is-open');
   });
   window.addEventListener('resize', terapkanModeRail);
   /* Dulu: satu setTimeout 120 ms sesudah orientationchange. Di iOS,
@@ -529,7 +548,14 @@ function updateCrumb(){
   if(!label) label=headingText(document.querySelector('.view.active h2'))||'Dashboard';
   now.textContent=label||'Dashboard';
   if(path) path.textContent=trail.join(' › ');
-  document.title=(label?label+' · ':'')+'Monitoring Pengadaan Masohi';
+  /* Judul hanya DITULIS bila memang berubah. Fungsi ini dipanggil ulang setiap
+     kali kelas di dalam #topnav berubah — sering kali tanpa perpindahan
+     halaman sama sekali. Setiap penulisan document.title membuat Safari
+     menggambar ulang tab, dan penggambaran ulang itulah yang menjatuhkan ikon
+     PLN dari tab (lihat penjaga <script id="ikon-tab"> di index.html). Menahan
+     penulisan yang tidak perlu memangkas pemicunya di sumbernya. */
+  var judul=(label?label+' · ':'')+'Monitoring Pengadaan Masohi';
+  if(document.title!==judul) document.title=judul;
 }
 /* Menu aktif diubah dari banyak tempat di app.js (showView, *MarkActive, dst.).
    Daripada menambal semuanya, cukup pantau perubahan kelas di dalam #topnav. */
@@ -799,6 +825,234 @@ function watchPreviewOverlay(){
   terapkan();
 }
 
+/* ---------- 6. KOTAK PILIHAN LEBAR PENUH (selx) — 8 Agu 2026 ----------
+   Gejala: di Tracking Pengadaan, kotak "Pilih Pekerjaan" melebar penuh
+   (± 1100 px) tetapi daftar pilihannya muncul sebagai kotak sempit ± 240 px,
+   sehingga nama pekerjaan yang panjang terpotong menjadi tiga baris rapat.
+
+   Itu BUKAN kesalahan CSS halaman ini. Daftar pilihan sebuah <select> digambar
+   oleh sistem operasi, bukan oleh halaman: di iPadOS ia berupa popover dengan
+   lebar maksimum tersendiri, di Safari macOS pun lebarnya ditentukan peramban.
+   Tidak ada satu pun properti CSS — width, min-width, appearance — yang bisa
+   menyentuhnya. Satu-satunya jalan adalah tidak memakai daftar bawaan sistem.
+
+   Yang dikerjakan di sini: <select> aslinya TETAP ADA di dokumen (semua kode
+   lama yang membaca .value, menyetel .innerHTML, atau memasang onchange terus
+   berjalan apa adanya), hanya disembunyikan dari mata dan jari. Di sebelahnya
+   dipasang tombol berpenampilan sama persis, dan daftar pilihannya digambar
+   sendiri selebar tombolnya — nama panjang boleh turun baris dengan lega.
+   Memilih salah satu isi menyetel selectedIndex lalu melepas peristiwa
+   'change', jadi onchange="trkPick(this.value)" di index.html tetap terpanggil.
+
+   Sasarannya select.trk-select (Tracking Pengadaan, Kelola Tracking, dan kotak
+   "ulang dari"). Kotak pilihan lain di aplikasi ini isinya pendek-pendek dan
+   tidak mengalami masalah yang sama, jadi sengaja tidak ikut diubah. */
+var SELX_PILIH='select.trk-select';
+var selxPanel=null, selxBtn=null;
+
+function selxTeks(o){ return ((o&&o.textContent)||'').replace(/\s+/g,' ').trim(); }
+
+function selxSegarkan(sel){
+  var btn=sel.__selxBtn; if(!btn) return;
+  var o=sel.options[sel.selectedIndex];
+  var sp=btn.querySelector('.selx-teks');
+  if(sp) sp.textContent=selxTeks(o)||'\u2014';
+  btn.classList.toggle('is-kosong', !sel.value);
+  btn.disabled=!!sel.disabled;
+}
+
+function selxBikin(sel){
+  if(sel.__selxBtn) return;
+  sel.setAttribute('data-selx','1');
+  var kelas=sel.className;                 /* dibaca SEBELUM .selx-asli dipasang */
+  var btn=document.createElement('button');
+  btn.type='button';
+  btn.className=kelas+' selx-btn';
+  btn.setAttribute('aria-haspopup','listbox');
+  btn.setAttribute('aria-expanded','false');
+  if(sel.id) btn.id=sel.id+'-btn';
+  btn.innerHTML='<span class="selx-teks"></span>'
+    +'<svg class="selx-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
+  sel.classList.add('selx-asli');
+  sel.setAttribute('tabindex','-1');
+  sel.setAttribute('aria-hidden','true');
+  sel.parentNode.insertBefore(btn, sel.nextSibling);
+  sel.__selxBtn=btn; btn.__selxSel=sel;
+  /* <label for="trk-pick"> masih menunjuk select yang kini tersembunyi, jadi
+     mengetuk tulisan "Pilih Pekerjaan" tidak lagi membuka apa pun. Ketukannya
+     diarahkan ulang ke tombol pengganti. */
+  if(sel.id){
+    try{
+      var lb=document.querySelector('label[for="'+sel.id+'"]');
+      if(lb) lb.addEventListener('click', function(e){ e.preventDefault(); selxBuka(sel); });
+    }catch(e){}
+  }
+
+  btn.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); selxBuka(sel); });
+  btn.addEventListener('keydown', function(e){
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'||e.key==='Enter'||e.key===' '){
+      e.preventDefault(); selxBuka(sel);
+    }
+  });
+  sel.addEventListener('change', function(){ selxSegarkan(sel); });
+  /* Daftar pilihannya diisi ulang dari banyak tempat lewat innerHTML
+     (trkFillPick), dan keadaan disabled-nya bisa berubah — label tombol ikut
+     disegarkan tanpa perlu menambal satu per satu pemanggilnya. */
+  try{
+    new MutationObserver(function(){ selxSegarkan(sel); })
+      .observe(sel,{childList:true,subtree:true,attributes:true,attributeFilter:['disabled']});
+  }catch(e){}
+  selxSegarkan(sel);
+}
+
+function selxLetakkan(){
+  if(!selxPanel||!selxBtn) return;
+  var r=selxBtn.getBoundingClientRect();
+  var vh=window.innerHeight||document.documentElement.clientHeight||0;
+  var vw=window.innerWidth ||document.documentElement.clientWidth ||0;
+  var lebar=Math.min(Math.max(r.width, 220), vw-16);
+  var kiri=r.left;
+  if(kiri+lebar>vw-8) kiri=vw-8-lebar;
+  if(kiri<8) kiri=8;
+  selxPanel.style.left=Math.round(kiri)+'px';
+  selxPanel.style.width=Math.round(lebar)+'px';
+  var ruangBawah=vh-r.bottom-12, ruangAtas=r.top-12;
+  if(ruangBawah>=200 || ruangBawah>=ruangAtas){
+    selxPanel.style.top=Math.round(r.bottom+6)+'px';
+    selxPanel.style.bottom='auto';
+    selxPanel.style.maxHeight=Math.max(140, Math.round(ruangBawah))+'px';
+  }else{
+    selxPanel.style.top='auto';
+    selxPanel.style.bottom=Math.round(vh-r.top+6)+'px';
+    selxPanel.style.maxHeight=Math.max(140, Math.round(ruangAtas))+'px';
+  }
+}
+
+function selxTutup(kembalikanFokus){
+  var p=selxPanel, b=selxBtn;
+  selxPanel=null; selxBtn=null;
+  if(b){ b.classList.remove('is-open'); b.setAttribute('aria-expanded','false'); }
+  if(p){
+    p.classList.remove('show');
+    setTimeout(function(){ if(p.parentNode) p.parentNode.removeChild(p); }, 160);
+  }
+  if(kembalikanFokus && b){ try{ b.focus({preventScroll:true}); }catch(e){ try{ b.focus(); }catch(e2){} } }
+}
+
+function selxPilih(sel, i){
+  var o=sel.options[i]; if(!o||o.disabled) return;
+  var berubah=(sel.selectedIndex!==i);
+  sel.selectedIndex=i;
+  selxSegarkan(sel);
+  selxTutup(false);
+  if(!berubah) return;                      /* sama seperti <select> bawaan */
+  try{ sel.dispatchEvent(new Event('change',{bubbles:true})); }
+  catch(e){
+    try{ var ev=document.createEvent('HTMLEvents'); ev.initEvent('change',true,false); sel.dispatchEvent(ev); }catch(e2){}
+  }
+}
+
+function selxBuka(sel){
+  var sudahIni = (selxBtn && selxBtn.__selxSel===sel);
+  selxTutup(false);
+  if(sudahIni || sel.disabled) return;      /* ketukan kedua = menutup */
+  var btn=sel.__selxBtn; if(!btn) return;
+
+  var p=document.createElement('div');
+  p.className='selx-panel';
+  p.setAttribute('role','listbox');
+  var opsi=Array.prototype.slice.call(sel.options);
+  if(!opsi.length){
+    p.innerHTML='<div class="selx-kosong">Tidak ada pilihan</div>';
+  }else{
+    opsi.forEach(function(o,i){
+      var b=document.createElement('button');
+      b.type='button';
+      b.className='selx-opt'+(i===sel.selectedIndex?' is-pilih':'');
+      b.setAttribute('role','option');
+      b.setAttribute('aria-selected', i===sel.selectedIndex?'true':'false');
+      if(o.disabled) b.disabled=true;
+      b.textContent=selxTeks(o);
+      b.__i=i;
+      b.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); selxPilih(sel,i); });
+      p.appendChild(b);
+    });
+  }
+  document.body.appendChild(p);
+  selxPanel=p; selxBtn=btn;
+  btn.classList.add('is-open'); btn.setAttribute('aria-expanded','true');
+  selxLetakkan();
+  requestAnimationFrame(function(){ if(selxPanel===p) p.classList.add('show'); });
+  var aktif=p.querySelector('.selx-opt.is-pilih');
+  if(aktif){ try{ aktif.scrollIntoView({block:'nearest'}); }catch(e){} }
+}
+
+function selxPasang(){
+  document.querySelectorAll(SELX_PILIH+':not([data-selx])').forEach(selxBikin);
+}
+
+function initSelectLebar(){
+  selxPasang();
+  /* Kotak pilihan di Kelola Tracking dibuat ulang lewat innerHTML setiap kali
+     halamannya digambar, jadi pemasangannya tidak bisa sekali seumur hidup.
+     Pemantauannya ditunda 120 ms dan penyaringnya :not([data-selx]) — murah,
+     dan tidak mungkin berputar sendiri karena tombol yang disisipkan bukan
+     <select>. */
+  var t=null;
+  try{
+    new MutationObserver(function(){
+      clearTimeout(t); t=setTimeout(selxPasang,120);
+    }).observe(document.body,{childList:true,subtree:true});
+  }catch(e){}
+  var orig=window.showView;
+  if(typeof orig==='function'){
+    window.showView=function(){ var r=orig.apply(this,arguments); setTimeout(selxPasang,60); return r; };
+  }
+
+  /* Ketukan di luar daftar menutupnya. Fase CAPTURE, sama alasannya dengan
+     penjaga laci di bagian 1b: elemen di bawah jari kerap menghentikan
+     penyebaran peristiwa. */
+  document.addEventListener('pointerdown', function(e){
+    if(!selxPanel) return;
+    var t=e.target;
+    if(t && t.nodeType===1 && (selxPanel.contains(t) || (selxBtn && selxBtn.contains(t)))) return;
+    selxTutup(false);
+  }, true);
+  document.addEventListener('keydown', function(e){
+    if(!selxPanel) return;
+    if(e.key==='Escape'||e.key==='Tab'){ if(e.key==='Escape') e.preventDefault(); selxTutup(e.key==='Escape'); return; }
+    var list=Array.prototype.slice.call(selxPanel.querySelectorAll('.selx-opt:not([disabled])'));
+    if(!list.length) return;
+    var pos=list.indexOf(selxPanel.querySelector('.selx-opt.is-fokus'));
+    if(pos<0) pos=list.indexOf(selxPanel.querySelector('.selx-opt.is-pilih'));
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'||e.key==='Home'||e.key==='End'){
+      e.preventDefault();
+      if(e.key==='Home') pos=0;
+      else if(e.key==='End') pos=list.length-1;
+      else pos=Math.max(0, Math.min(list.length-1, (pos<0?(e.key==='ArrowDown'?-1:list.length):pos) + (e.key==='ArrowDown'?1:-1)));
+      list.forEach(function(b){ b.classList.remove('is-fokus'); });
+      list[pos].classList.add('is-fokus');
+      try{ list[pos].scrollIntoView({block:'nearest'}); }catch(err){}
+      return;
+    }
+    if(e.key==='Enter'||e.key===' '){
+      e.preventDefault();
+      var f=selxPanel.querySelector('.selx-opt.is-fokus');
+      if(f && selxBtn) selxPilih(selxBtn.__selxSel, f.__i);
+    }
+  });
+  /* Halaman digulir / jendela berubah ukuran -> daftar mengikuti tombolnya.
+     Gulir DI DALAM daftar itu sendiri tentu tidak ikut dihitung. */
+  window.addEventListener('scroll', function(e){
+    if(!selxPanel) return;
+    var t=e.target;
+    if(t && t.nodeType===1 && selxPanel.contains(t)) return;
+    selxLetakkan();
+  }, true);
+  window.addEventListener('resize', function(){ if(selxPanel) selxLetakkan(); });
+  window.addEventListener('orientationchange', function(){ selxTutup(false); });
+}
+
 /* ---------- start ---------- */
 function init(){
   setTips();
@@ -807,6 +1061,7 @@ function init(){
   initTutupDiLuar();
   initRailSentuh();
   initAjakRail();
+  initSelectLebar();
   initIsyaratGeser();
   watchActive();
   hookRole();

@@ -10300,3 +10300,88 @@ html{
    aman, tidak ada yang rusak.
    ============================================================================ */
 .pnw-profil-head:not(:has(.pnw-profil-upload)){ padding-right:0 !important; }
+
+/* ============================================================================
+   KOTAK PILIHAN LEBAR PENUH (selx) — 8 Agu 2026
+   ----------------------------------------------------------------------------
+   Pasangan dari bagian 6 di ui-sidebar.js. Daftar pilihan sebuah <select>
+   digambar oleh sistem operasi dan lebarnya tidak bisa disentuh CSS — di iPad
+   ia muncul sebagai popover sempit sehingga nama pekerjaan yang panjang
+   terpotong jadi tiga baris. Di sini disediakan penggantinya: <select> aslinya
+   disembunyikan (TETAP ada di dokumen supaya kode lama tidak perlu diubah),
+   tombol .selx-btn menirunya, dan .selx-panel menggambar daftarnya sendiri
+   selebar tombol.
+
+   .selx-btn sengaja tidak menyalin ulang tampilan .trk-select: kelas itu ikut
+   dipasang oleh ui-sidebar.js, jadi warna, tinggi, sudut, dan bayangannya
+   otomatis sama — kalau .trk-select diubah kelak, tombolnya ikut berubah
+   sendiri. Di sini hanya ditulis yang khas tombol.
+   ========================================================================== */
+select.selx-asli{
+  position:absolute !important;
+  width:1px; height:1px; padding:0; margin:-1px;
+  border:0; opacity:0; pointer-events:none;
+  overflow:hidden; white-space:nowrap;
+  clip:rect(0 0 0 0); clip-path:inset(50%);
+}
+.selx-btn{
+  display:flex; align-items:center; gap:10px;
+  text-align:left; font:inherit; font-size:14px; line-height:1.25;
+  appearance:none; -webkit-appearance:none;
+}
+.selx-btn .selx-teks{
+  flex:1 1 auto; min-width:0;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.selx-btn .selx-caret{
+  flex:0 0 auto; width:16px; height:16px; opacity:.5;
+  transition:transform .18s ease;
+}
+.selx-btn.is-open .selx-caret{ transform:rotate(180deg); opacity:.9 }
+.selx-btn.is-kosong .selx-teks{ color:#8a8f8e }
+.selx-btn.is-open{
+  border-color:#18b394;
+  box-shadow:0 0 0 3px rgba(24,179,148,.10),0 3px 8px rgba(0,0,0,.06);
+}
+.selx-btn:disabled{ opacity:.6; cursor:not-allowed; background:#f4f6f6 }
+
+/* Daftar pilihannya. position:fixed + penempatan dari JS supaya tidak pernah
+   terpotong oleh induk yang overflow-nya tersembunyi (mis. .table-wrap). */
+.selx-panel{
+  position:fixed; z-index:12050;
+  box-sizing:border-box;
+  background:#fff; border:1px solid #dcdedd; border-radius:14px;
+  box-shadow:0 18px 44px rgba(0,0,0,.16),0 2px 8px rgba(0,0,0,.08);
+  padding:6px; overflow:auto; -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+  opacity:0; transform:translateY(-6px);
+  transition:opacity .14s ease, transform .14s ease;
+}
+.selx-panel.show{ opacity:1; transform:none }
+.selx-opt{
+  display:block; box-sizing:border-box; width:100%;
+  position:relative;
+  margin:0; padding:10px 12px 10px 34px;
+  background:transparent; border:0; border-radius:10px;
+  font:inherit; font-size:14px; line-height:1.45; color:#222;
+  text-align:left; cursor:pointer;
+  /* Inilah inti perbaikannya: nama pekerjaan yang panjang boleh turun baris
+     dengan lega, bukan diperas ke dalam kotak sempit bawaan sistem. */
+  white-space:normal; overflow-wrap:anywhere;
+}
+.selx-opt + .selx-opt{ margin-top:2px }
+.selx-opt:hover, .selx-opt.is-fokus{ background:#eefaf7 }
+.selx-opt.is-pilih{ background:#e3f6f1; color:#0d7f6a; font-weight:600 }
+.selx-opt.is-pilih::before{
+  content:'\2713';
+  position:absolute; left:12px; top:10px;
+  font-size:13px; font-weight:700; line-height:1.45;
+}
+.selx-opt:disabled{ opacity:.45; cursor:default; background:transparent }
+.selx-kosong{ padding:14px 12px; text-align:center; color:#8a8f8e; font-size:13.5px }
+
+/* Layar sentuh: sasaran jari dibuat lebih tinggi. */
+@media (hover:none){
+  .selx-opt{ padding-top:12px; padding-bottom:12px }
+  .selx-opt.is-pilih::before{ top:12px }
+}
