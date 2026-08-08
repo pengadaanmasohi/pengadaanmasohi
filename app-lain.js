@@ -1023,7 +1023,31 @@ var PROFIL_TRASH_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentCol
 var PROFIL_DL_ICON    = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>';
 var PROFIL_UP_ICON    = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>';
 
-/* Tombol ikon "Unggah Profil" (kanan atas dialog Muat) */
+/* ============================================================================
+   TOMBOL UNGGAH PROFIL PINDAH KE DIALOG SIMPAN (8 Agu 2026)
+   ----------------------------------------------------------------------------
+   Dulu tombol ini berada di kanan atas dialog MUAT Profil. Tempatnya memang
+   kurang pas: dialog Muat isinya daftar profil yang SUDAH ada — semua aksinya
+   (Muat / Hapus / Unduh) bekerja pada baris yang sudah tampil di situ —
+   sedangkan mengunggah berkas justru MENAMBAH profil baru, satu keluarga
+   dengan Simpan Profil. Sekarang tombolnya menempel di dialog SIMPAN.
+
+   Perilakunya TIDAK berubah: berkas .json yang diunggah tetap disimpan lalu
+   DIMUAT otomatis (profilUploadPrompt -> PROFIL_REG[kind].doLoad). Karena
+   seluruh dialog profil memakai satu overlay (#pnw-profil-ov), doLoad ikut
+   menutup dialog Simpan yang terbuka di belakangnya — jadi alurnya tetap
+   berakhir rapi seperti dulu.
+
+   Ruang di kanan kepala dialog ikut berpindah dengan sendirinya: aturan
+   `.pnw-profil-head:not(:has(.pnw-profil-upload))` di style.css hanya
+   menyisakan tempat pada kepala yang benar-benar memuat tombol ini.
+   ============================================================================ */
+/* Pembungkus aman: app-lain.js bisa saja belum termuat saat dialog dibangun.
+   Dipakai oleh keempat dialog Simpan Profil. */
+function profilUploadHtml(kind){
+  try{ return profilUploadBtnHtml(kind); }catch(e){ return ''; }
+}
+/* Tombol ikon "Unggah Profil" (kanan atas dialog Simpan) */
 function profilUploadBtnHtml(kind){
   return '<button type="button" class="pnw-profil-upload pf-ic-up" title="Unggah profil dari berkas" aria-label="Unggah Profil" onclick="profilUploadPrompt(\''+kind+'\')">'+PROFIL_UP_ICON+'</button>';
 }

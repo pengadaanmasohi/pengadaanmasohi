@@ -435,6 +435,10 @@ function profilSaveEnsureStyle(){
   var st=document.createElement('style'); st.id='profil-save-style'; st.textContent=css;
   (document.head||document.documentElement).appendChild(st);
 }
+/* Tombol "Unggah Profil" di kanan atas dialog Simpan Profil. Definisi
+   sebenarnya ada di app-lain.js (profilUploadHtml/profilUploadBtnHtml); di sini
+   hanya cadangan supaya dialog tetap terbangun walau berkas itu gagal termuat. */
+if(typeof window.profilUploadHtml!=='function'){ window.profilUploadHtml=function(){ return ''; }; }
 /* Apakah sebuah nama profil sudah ada pada jenis (kind) tertentu? */
 function profilSaveExists(kind, name){
   var v=String(name==null?'':name).trim().toLowerCase(); if(!v) return false;
@@ -7590,7 +7594,7 @@ function jpProfilOpenSave(){
   if(!jpState || !jpState.tahapan.length){ toast('Belum ada tahapan untuk disimpan','warn'); return; }
   const snap=jpProfilSnapshot(); const cnt=snap.tahapan.length;
   jpProfilOverlay(
-    '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Simpan Profil Jadwal</div>'+
+    '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Simpan Profil Jadwal'+profilUploadHtml('jadwal')+'</div>'+
     '<div class="pnw-profil-sub">Menyimpan <b>'+cnt+'</b> Tahapan Pengadaan dan membaca <b>semua</b> sifat jadwalnya: durasi Awal\u2192Akhir tiap tahapan (dalam <b>hari kerja</b>), jarak tanggal antar tahapan (menyambung / mulai bersamaan / berjarak N hari kerja, termasuk tumpang tindih), serta <b>Jam Awal</b> dan <b>Jam Akhir</b> setiap tahapan. Tanggal mati tidak ikut tersimpan \u2014 saat dimuat, semuanya dihitung ulang dari Titik Mulai.</div>'+
     profilSaveBoxHtml('jadwal','jp-profil-name','jpProfilDoSave()','Nama profil (mis. Pengadaan Langsung Standar)')+
     '<div class="pnw-profil-actions"><button type="button" class="btn btn-red" data-modal onclick="jpProfilClose()">'+BTN_IC_BATAL+'Batal</button>'+
@@ -7614,7 +7618,7 @@ function jpProfilOpenLoad(){
     '<div class="pnw-profil-item-btns">'+profilActionBtns('jadwal',p.name)+'</div></div>'
   ).join('');
   jpProfilOverlay(
-    '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6M9 14h6"/></svg>Muat Profil Jadwal'+profilUploadBtnHtml('jadwal')+'</div>'+
+    '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6M9 14h6"/></svg>Muat Profil Jadwal</div>'+
     '<div class="pnw-profil-sub">Tanggal dihitung ulang dari <b>Titik Mulai</b>, mengikuti sifat yang terekam (hari kerja, Sabtu/Minggu &amp; hari libur dilompati). <b>Jam bergeser relatif</b> mengikuti Jam Mulai \u2014 durasi jam tiap tahapan tetap (mendukung selisih zona WIB/WIT). <b>Isian saat ini akan diganti.</b></div>'+
     '<div class="pnw-profil-list">'+items+'</div>'+
     '<div class="pnw-profil-actions"><button type="button" class="btn btn-ghost" onclick="jpProfilClose()">Tutup</button></div>'
@@ -14061,7 +14065,7 @@ function pnwProfilOpenSave(){
   const cnt=pnwProfilCount(pnwProfilSnapshot());
   if(!cnt){ toast('Belum ada uraian persyaratan untuk disimpan','warn'); return; }
   pnwProfilOverlay(
-    '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Simpan Profil Persyaratan</div>'+
+    '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Simpan Profil Persyaratan'+profilUploadHtml('syarat')+'</div>'+
     '<div class="pnw-profil-sub">Menyimpan <b>'+cnt+'</b> uraian persyaratan (beserta kategori terpilih) agar bisa dipakai lagi tanpa mengetik ulang.</div>'+
     profilSaveBoxHtml('syarat','pnw-profil-name','pnwProfilDoSave()','Nama profil (mis. Pengadaan Barang Standar)')+
     '<div class="pnw-profil-actions"><button type="button" class="btn btn-red" data-modal onclick="pnwProfilClose()">'+BTN_IC_BATAL+'Batal</button>'+
@@ -14084,7 +14088,7 @@ function pnwProfilOpenLoad(){
     '<div class="pnw-profil-item-btns">'+profilActionBtns('syarat',p.name)+'</div></div>'
   ).join('');
   pnwProfilOverlay(
-    '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Muat Profil Persyaratan'+profilUploadBtnHtml('syarat')+'</div>'+
+    '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>Muat Profil Persyaratan</div>'+
     '<div class="pnw-profil-sub">Pilih profil untuk mengisi uraian persyaratan. <b>Isian saat ini akan diganti.</b></div>'+
     '<div class="pnw-profil-list">'+items+'</div>'+
     '<div class="pnw-profil-actions"><button type="button" class="btn btn-ghost" onclick="pnwProfilClose()">Tutup</button></div>'

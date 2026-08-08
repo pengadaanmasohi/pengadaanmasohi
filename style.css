@@ -3308,7 +3308,7 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
 .spk-edit-body textarea{width:100%;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;line-height:1.5}
 .spk-edit-hint{font-size:11.5px;color:#6B7885;margin-top:8px}
 .spk-ov-foot{padding:12px 18px;border-top:1px solid #DfE4E9;display:flex;justify-content:flex-end}
-.spk-edit-body code,#spk-klausul-content code{background:#eef3f7;color:#0E7C86;padding:1px 5px;border-radius:5px;font-size:11.5px}
+.spk-edit-body code,#spk-klausul-content code,.spk-klausul-host code{background:#eef3f7;color:#0E7C86;padding:1px 5px;border-radius:5px;font-size:11.5px}
 /* ===== Editor WYSIWYG bergaya dokumen SPK ===== */
 .spk-we-wrap{display:flex;flex-direction:column;background:#fff}
 .spk-we-toolbar{background:#fff;border-bottom:1px solid #e5eaee;padding:7px 10px;position:sticky;top:0;z-index:5}
@@ -10278,3 +10278,25 @@ html{
   .toolbar .toolbar-search{flex:0 0 auto}
   .toolbar .toolbar-search .search-elegant-box{width:300px}
 }
+
+/* ============================================================================
+   DIALOG SIMPAN PROFIL — SATU TAMPILAN UNTUK SEMUA MENU (8 Agu 2026)
+   ----------------------------------------------------------------------------
+   Keempat dialog Simpan Profil (Jadwal, Persyaratan, Klausul SPK/PK/TOR-KAK,
+   Penyedia) memang sudah memakai satu susunan yang sama: .pnw-profil-head +
+   .pnw-profil-sub + profilSaveBoxHtml() + .pnw-profil-actions. Yang belum
+   seragam hanya SATU hal — lebar judulnya.
+
+   Sebabnya: .pnw-profil-head menyisakan ruang di kanan (padding-right 150px,
+   lalu ditimpa 70px, lalu 60px) untuk tombol Unggah Profil. Tombol itu HANYA
+   ada di dialog MUAT Profil; di dialog SIMPAN ruang itu kosong dan justru
+   memaksa judul panjang seperti "Simpan Profil Klausul TOR/KAK" atau
+   "Simpan Profil Persyaratan" turun ke baris kedua, sedangkan
+   "Simpan Profil Penyedia" yang lebih pendek tetap satu baris.
+
+   Ruangnya kini hanya disisakan pada kepala dialog yang benar-benar memuat
+   tombolnya, sehingga seluruh dialog Simpan Profil tampil persis sama.
+   Peramban tanpa :has() mengabaikan aturan ini dan kembali ke perilaku lama —
+   aman, tidak ada yang rusak.
+   ============================================================================ */
+.pnw-profil-head:not(:has(.pnw-profil-upload)){ padding-right:0 !important; }

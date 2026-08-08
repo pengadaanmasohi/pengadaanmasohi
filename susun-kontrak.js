@@ -2629,7 +2629,7 @@ function renderSpkSusun(){
   }else if(spkStep===2){
     cont.innerHTML =
       stepper+
-      '<div id="spk-klausul-content"></div>'+
+      '<div id="spk-klausul-content" class="spk-klausul-host"></div>'+
       '<div class="jp-actions" style="justify-content:space-between;margin-top:4px">'+
         '<button class="btn btn-ghost" onclick="spkGoStep(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 12H5M11 6l-6 6 6 6"/></svg> Kembali</button>'+
         '<span style="display:flex;gap:10px">'+
@@ -10284,8 +10284,48 @@ function spkPrint(_lewatiPdf){
 
 /* ================= HALAMAN: UBAH KLAUSUL KONTRAK ================= */
 function openSpkKlausul(){ refreshDataKlausul().then(()=>{ renderSpkKlausul(); showView('spk-klausul'); }); }
+/* ============================================================================
+   PENCARI WADAH PUSTAKA KLAUSUL (8 Agu 2026)
+   ----------------------------------------------------------------------------
+   GEJALA: Langkah 2 "Ubah Klausul" pada Penyusunan Dokumen Pengadaan SERING
+   tampil kosong — stepper & tombol Kembali/Berikutnya ada, tetapi daerah
+   pustaka klausul di antaranya hampa.
+
+   SEBABNYA satu: DUA id yang sama di satu halaman.
+     - renderSpkSusun()  langkah 2 menulis <div id="spk-klausul-content"> ke
+       dalam #spk-susun-content (index.html baris 2220)
+     - renderTorSusun()  langkah 2 menulis <div id="spk-klausul-content"> ke
+       dalam #tor-susun-content (index.html baris 2318)
+   Halaman yang tidak aktif TIDAK dibongkar dari DOM — .view hanya kehilangan
+   kelas .active — sehingga begitu Susun Kontrak pernah dibuka sampai langkah 2,
+   markup-nya menetap. getElementById() selalu mengembalikan yang PERTAMA dalam
+   urutan dokumen, dan #spk-susun-content berada di ATAS #tor-susun-content.
+   Akibatnya renderSpkKlausul() menulis pustaka klausul TOR ke halaman Susun
+   Kontrak yang sedang tersembunyi, sedangkan wadah milik TOR tidak pernah
+   disentuh -> kosong. Itu pula sebabnya gejalanya "sering", bukan "selalu":
+   hanya muncul setelah Susun Kontrak langkah 2 pernah dirender di sesi yang
+   sama. Efek sampingnya sama berbahayanya walau tak terlihat — pustaka klausul
+   halaman Kontrak diam-diam tertimpa isi dokumen TOR.
+
+   PERBAIKANNYA dua lapis supaya tidak terulang lewat jalur lain:
+     1) id-nya tidak lagi kembar — wadah TOR memakai id "tor-klausul-content";
+     2) pencariannya tidak lagi bergantung pada id, melainkan pada kelas
+        .spk-klausul-host DI DALAM .view yang sedang aktif. Jadi seandainya
+        kelak ada halaman ketiga yang meminjam mesin klausul ini, ia otomatis
+        menulis ke wadahnya sendiri tanpa perlu menyentuh fungsi ini lagi.
+   ============================================================================ */
+function spkKlausulHostEl(){
+  var all=document.querySelectorAll('.spk-klausul-host'), i;
+  /* Jalan mundur: markup lama yang belum berkelas. */
+  if(!all.length) return document.getElementById('spk-klausul-content');
+  if(all.length===1) return all[0];
+  for(i=0;i<all.length;i++){ try{ if(all[i].closest('.view.active')) return all[i]; }catch(e){} }
+  /* Cadangan terakhir: yang benar-benar terlihat di layar. */
+  for(i=0;i<all.length;i++){ if(all[i].offsetParent) return all[i]; }
+  return all[0];
+}
 function renderSpkKlausul(){
-  const cont=document.getElementById('spk-klausul-content'); if(!cont) return;
+  const cont=spkKlausulHostEl(); if(!cont) return;
   spkKlEnsurePeraturan();
   /* Entri "Uraian Peraturan" hanya berlaku pada Perjanjian/Kontrak & KHS —
      pada Surat Perintah Kerja preamble-nya tidak memuat daftar peraturan,
@@ -10496,7 +10536,7 @@ function spkKlProfilOpenSave(){
   if(!snap.length){ toast('Belum ada klausul untuk disimpan','warn'); return; }
   const list=spkKlProfilAll();
   spkKlProfilOverlay(
-    '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Simpan Profil Klausul '+spkKlKindLabel()+'</div>'+
+    '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Simpan Profil Klausul '+spkKlKindLabel()+profilUploadHtml(spkKlKind())+'</div>'+
     '<div class="pnw-profil-sub">Menyimpan <b>'+snap.length+'</b> klausul (judul, isi, urutan, status aktif) sebagai satu profil yang dapat dimuat kembali kapan saja.</div>'+
     profilSaveBoxHtml(spkKlKind(),'spk-klprofil-name','spkKlProfilDoSave()','Nama profil (mis. '+spkKlKindLabel()+' Konstruksi Standar)')+
     '<div class="pnw-profil-actions"><button type="button" class="btn btn-red" data-modal onclick="spkKlProfilClose()">'+BTN_IC_BATAL+'Batal</button>'+
@@ -10520,7 +10560,7 @@ function spkKlProfilOpenLoad(){
     '<div class="pnw-profil-item-btns">'+profilActionBtns(spkKlKind(),p.name)+'</div></div>'
   ).join('');
   spkKlProfilOverlay(
-    '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6M9 14h6"/></svg>Muat Profil Klausul '+spkKlKindLabel()+profilUploadBtnHtml(spkKlKind())+'</div>'+
+    '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6M9 14h6"/></svg>Muat Profil Klausul '+spkKlKindLabel()+'</div>'+
     '<div class="pnw-profil-sub">Pustaka klausul saat ini akan <b>diganti</b> oleh isi profil. Keadaan sebelumnya disimpan sementara sehingga dapat dikembalikan lewat <b>Batalkan Pilihan</b>.</div>'+
     '<div class="pnw-profil-list">'+items+'</div>'
   );
@@ -10645,7 +10685,7 @@ function spkPyProfilOpenSave(){
   if(!adaIsi){ toast('Isi data penyedia dulu sebelum menyimpan profil','warn'); return; }
   const list=spkPyProfilAll();
   spkPyProfilOverlay(
-    '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Simpan Profil Penyedia</div>'+
+    '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Simpan Profil Penyedia'+profilUploadHtml(SPK_PY_PROFIL_KIND)+'</div>'+
     '<div class="pnw-profil-sub">Menyimpan seluruh data <b>Informasi Penyedia</b> (nama perusahaan, lokasi, pimpinan, rekening, penawaran, akta) sebagai satu profil yang dapat dimuat kembali kapan saja.</div>'+
     profilSaveBoxHtml(SPK_PY_PROFIL_KIND,'spk-pyprofil-name','spkPyProfilDoSave()','Nama profil (mis. PT Seram Indo Pratama)')+
     '<div class="pnw-profil-actions"><button type="button" class="btn btn-red" data-modal onclick="spkPyProfilClose()">'+BTN_IC_BATAL+'Batal</button>'+
@@ -10669,7 +10709,7 @@ function spkPyProfilOpenLoad(){
       '<div class="pnw-profil-item-btns">'+profilActionBtns('penyedia',p.name)+'</div></div>';
   }).join('');
   spkPyProfilOverlay(
-    '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6M9 14h6"/></svg>Muat Profil Penyedia'+profilUploadBtnHtml('penyedia')+'</div>'+
+    '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M12 11v6M9 14h6"/></svg>Muat Profil Penyedia</div>'+
     '<div class="pnw-profil-sub">Data <b>Informasi Penyedia</b> saat ini akan <b>diganti</b> oleh isi profil. Keadaan sebelumnya disimpan sementara sehingga dapat dikembalikan lewat <b>Batalkan Pilihan</b>.</div>'+
     '<div class="pnw-profil-list">'+items+'</div>'
   );
@@ -11030,8 +11070,68 @@ function spkStyXml(id, name, ind, extraP, extraR, next, numPr){
 }
 /* Penomoran otomatis baris judul, dipasang di dalam GAYA (bukan pada paragraf). */
 const SPK_NUMPR_JUDUL='<w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr>';
+/* ============================================================================
+   BATAS INDEN KIRI DOKUMEN (8 Agu 2026)
+   ----------------------------------------------------------------------------
+   KETENTUAN: "kunci inden sejajar dengan teks judul agar saat paste maupun
+   hapus, tidak melewati batas inden kiri."
+
+   Batasnya = KOLOM TEKS JUDUL KLAUSUL, yaitu D.JUDUL_HANG:
+     SPK -> 425 twip (0,75 cm); nomor "1." menggantung di 0, teksnya di 0,75 cm
+     PK  -> 0 (judul rata tengah, isi klausul mulai tepat di margin kiri)
+
+   Nilai itu DIBEKUKAN di dua tempat sekaligus, dan keduanya perlu:
+     a) <w:pPrDefault> pada docDefaults -> berlaku untuk paragraf yang sama
+        sekali tidak membawa gaya;
+     b) gaya "Normal" -> setiap paragraf hasil PASTE yang gayanya tidak dikenal
+        (Word memetakannya ke Normal saat pembatasan format aktif) mendarat
+        TEPAT di kolom teks judul, bukan di margin kiri kertas.
+   Seluruh gaya Klausul* menyebut w:ind left-nya sendiri (>= batas ini), jadi
+   tidak satu pun berubah tata letaknya. Yang berubah hanya NASIB paragraf liar:
+   dulu jatuh ke 0, sekarang berhenti di batas.
+
+   Pelengkapnya ada di spkSettingsXml(): pembatasan format Word membuat tombol
+   inden, penggaris, dan kotak dialog Paragraph mati, sehingga batas ini tidak
+   bisa digeser dengan tangan — juga tidak oleh isi yang di-paste dari dokumen
+   lain (format langsung yang dibawa paste ikut dibuang Word).
+   ============================================================================ */
+function spkBatasInden(){ var D=spkDX(); return Math.max(0, +(D.JUDUL_HANG||0)); }
+/* ============================================================================
+   word/settings.xml — PENGUNCIAN FORMAT (8 Agu 2026)
+   ----------------------------------------------------------------------------
+   <w:documentProtection w:formatting="1" w:enforcement="1"/> menyalakan
+   "Limit formatting to a selection of styles" milik Word. Akibatnya:
+     - inden kiri/kanan, penggaris, dan dialog Paragraph DIMATIKAN, jadi baris
+       judul tidak bisa DIGESER dan isi klausul tidak bisa ditarik melewati
+       batas inden kiri;
+     - format LANGSUNG yang terbawa saat paste dari dokumen lain dibuang Word,
+       lalu paragrafnya dipetakan ke gaya yang diizinkan -> mendarat di batas
+       inden, bukan di margin kertas.
+   Yang TIDAK ikut dimatikan: mengetik, Enter, menyisipkan gambar/tabel, dan
+   memilih gaya Klausul* dari galeri Styles. Itu disengaja — seluruh alur
+   pengisian klausul di Word tetap utuh. Sengaja TANPA kata sandi: bila suatu
+   saat perlu, penggunanya masih bisa Review > Restrict Editing > Stop
+   Protection, dan tidak ada yang terkunci permanen di luar jangkauan.
+   <w:latentStyles w:defLockedState="1"> di spkStylesXml melengkapinya: gaya
+   bawaan Word yang tidak dipakai dokumen ini dikunci, sehingga isi yang
+   di-paste tidak bisa membawa masuk gaya berinden 0 dari dokumen asalnya.
+   ============================================================================ */
+/* SATU SAKLAR. Set false bila pembatasan format Word ternyata terlalu ketat
+   untuk alur kerja (mis. tombol Bullets/Numbering Word ikut mati karena
+   penomoran otomatis dihitung sebagai FORMAT LANGSUNG). Mematikannya hanya
+   melepas <w:documentProtection>; batas inden pada docDefaults + gaya Normal,
+   inden langsung pada baris judul, dan penguncian content control baris judul
+   TETAP berlaku. */
+var SPK_DOCX_KUNCI_FORMAT = true;
+function spkSettingsXml(){
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+  '<w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'+
+    '<w:documentProtection w:formatting="1" w:enforcement="1"/>'+
+    '<w:styleLockTheme w:val="1"/><w:styleLockQFSet w:val="1"/>'+
+  '</w:settings>';
+}
 function spkStylesXml(){
-  var D=spkDX();
+  var D=spkDX(), BATAS=spkBatasInden();
   /* HAPUS LEFT TAB (permintaan 22 Jul 2026): tab kiri manual mengganggu saat
      mengedit teks & mengatur inden di Word. Awal teks butir kini bersandar pada
      HANGING INDENT — Word otomatis membuat perhentian tab di posisi inden kiri,
@@ -11080,9 +11180,18 @@ function spkStylesXml(){
       '<w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="id-ID"/>'+
     '</w:rPr></w:rPrDefault>'+
     '<w:pPrDefault><w:pPr>'+
-      '<w:spacing w:after="120" w:line="276" w:lineRule="auto"/><w:jc w:val="both"/>'+
+      '<w:spacing w:after="120" w:line="276" w:lineRule="auto"/>'+
+      '<w:ind w:left="'+BATAS+'"/>'+
+      '<w:jc w:val="both"/>'+
     '</w:pPr></w:pPrDefault></w:docDefaults>'+
-    '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>'+
+    /* Gaya bawaan Word yang tidak dipakai dokumen ini DIKUNCI: saat pembatasan
+       format aktif, isi yang di-paste tidak bisa membawa masuk gaya asing yang
+       indennya 0 — Word memetakannya ke Normal, yang batas indennya di bawah. */
+    '<w:latentStyles w:defLockedState="1" w:defUIPriority="99" w:defSemiHidden="1" '+
+      'w:defUnhideWhenUsed="1" w:defQFormat="0" w:count="376"/>'+
+    /* Normal = jaring pengaman batas inden kiri (lihat spkBatasInden). */
+    '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/>'+
+      '<w:pPr><w:ind w:left="'+BATAS+'"/></w:pPr></w:style>'+
     judulSty+
     /* Isi klausul: SPK menjorok 0,75 cm; PK mulai tepat di batas margin kiri */
     spkStyXml('KlausulIsi','Klausul Isi','<w:ind w:left="'+D.BASE+'"/>','','')+
@@ -11092,7 +11201,7 @@ function spkStylesXml(){
     spkStyXml('KlausulDeskripsi','Klausul Deskripsi','<w:ind w:left="'+D.DESC+'"/>','','')+
     spkStyXml('KlausulParagraf1','Klausul Paragraf 1','<w:ind w:left="'+D.L1+'" w:firstLine="'+D.P_FIRST+'"/>','','')+
     spkStyXml('KlausulParagraf2','Klausul Paragraf 2','<w:ind w:left="'+D.L2+'" w:firstLine="'+D.P_FIRST+'"/>','','')+
-    spkStyXml('PetunjukTemplate','Petunjuk Template','<w:ind w:left="0"/>',
+    spkStyXml('PetunjukTemplate','Petunjuk Template','<w:ind w:left="'+BATAS+'"/>',
       '<w:spacing w:after="60" w:line="240" w:lineRule="auto"/><w:jc w:val="left"/>',
       '<w:i/><w:color w:val="808080"/><w:sz w:val="18"/><w:szCs w:val="18"/>', 'KlausulIsi')+
   '</w:styles>';
@@ -11376,9 +11485,16 @@ function spkDocxTemplateBlob(judul, isiHtml, noKl){
       '<w:alias w:val="Judul Klausul"/><w:tag w:val="spk-judul-klausul-teks"/>'+
       '<w:id w:val="418272"/><w:lock w:val="sdtLocked"/><w:text/>'+
     '</w:sdtPr><w:sdtContent>'+judulRuns+'</w:sdtContent></w:sdt>';
+  /* INDEN BARIS JUDUL DIPASANG LANGSUNG PADA PARAGRAFNYA, bukan hanya lewat
+     gaya. Dua lapis dengan sengaja: pembatasan format Word (spkSettingsXml)
+     sudah mematikan tombol inden & penggaris, tetapi bila suatu saat proteksi
+     itu dilepas, geometri judulnya tetap tertulis di berkas — nomor tetap
+     menggantung di 0 dan teksnya tetap di kolom batas. */
+  var indJudul = PK ? '<w:ind w:left="0" w:firstLine="0"/>'
+                    : '<w:ind w:left="'+D.JUDUL_HANG+'" w:hanging="'+D.JUDUL_HANG+'"/>';
   var judulXml = PK
-    ? spkPXml('KlausulPasal', '') + spkPXml('KlausulJudul', judulTeks)
-    : spkPXml('KlausulJudul', judulTeks);
+    ? spkPXml2('KlausulPasal', indJudul, '') + spkPXml2('KlausulJudul', indJudul, judulTeks)
+    : spkPXml2('KlausulJudul', indJudul, judulTeks);
   /* ---- BARIS JUDUL DIBENTENGI (ketentuan 7 Agu 2026) ----
      "Isi klausul di bawah judul, di-backspace atau di-block bagaimanapun, tidak
      boleh mencapai baris judul."
@@ -11416,6 +11532,7 @@ function spkDocxTemplateBlob(judul, isiHtml, noKl){
       ? guide('4) NAMA PASAL boleh diketik langsung di sini. Nomor "PASAL n" beserta jaraknya ke teks TERKUNCI: Backspace, Delete, maupun Enter di baris itu tidak dapat menyentuhnya, dan barisnya tidak ikut terhapus saat Ctrl+A lalu hapus.')
       : guide('4) JUDUL KLAUSUL boleh diketik langsung di sini. Nomornya beserta jaraknya ke teks TERKUNCI: Backspace, Delete, maupun Enter di baris itu tidak dapat menyentuhnya, dan barisnya tidak ikut terhapus saat Ctrl+A lalu hapus.'))+
     guide('5) Placeholder seperti {{nama_pekerjaan}}, {{nilai_rp}}, {{jangka_waktu_hari}} tetap boleh dipakai.')+
+    guide('6) BATAS INDEN KIRI dokumen ini terkunci sejajar dengan teks judul: tombol inden & penggaris Word sengaja dimatikan, dan isi yang di-paste dari dokumen lain otomatis dirapikan ke batas itu. Mengetik, Enter, gambar, tabel, dan pilihan gaya Klausul tetap berjalan seperti biasa.')+
     judulXml;
   var isi=spkHtmlToWordParas(isiHtml);
   body += isi || spkPXml('KlausulIsi','');
@@ -11436,6 +11553,7 @@ function spkDocxTemplateBlob(judul, isiHtml, noKl){
     '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'+
     '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>'+
     '<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>'+
+    (SPK_DOCX_KUNCI_FORMAT ? '<Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/>' : '')+
     '</Types>';
   var rels='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
     '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
@@ -11445,15 +11563,18 @@ function spkDocxTemplateBlob(judul, isiHtml, noKl){
     '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
     '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'+
     '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>'+
+    (SPK_DOCX_KUNCI_FORMAT ? '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" Target="settings.xml"/>' : '')+
     '</Relationships>';
-  return spkZipBuild([
+  var parts=[
     {name:'[Content_Types].xml', data:enc.encode(ct)},
     {name:'_rels/.rels',         data:enc.encode(rels)},
     {name:'word/document.xml',   data:enc.encode(docXml)},
     {name:'word/_rels/document.xml.rels', data:enc.encode(drels)},
     {name:'word/styles.xml',     data:enc.encode(spkStylesXml())},
     {name:'word/numbering.xml',  data:enc.encode(spkNumberingXml(noKl||1))}
-  ]);
+  ];
+  if(SPK_DOCX_KUNCI_FORMAT) parts.push({name:'word/settings.xml', data:enc.encode(spkSettingsXml())});
+  return spkZipBuild(parts);
 }
 
 /* ================= OOXML: pembaca template ================= */
@@ -12500,15 +12621,10 @@ async function spkDefinisiDocxSortedBlob(u8){
    dikenali — pemanggilnya lalu memakai berkas asli, persis seperti dulu. Jadi
    kegagalan di sini tidak pernah membuat unduhan ikut gagal.
    ============================================================================ */
-async function spkDocxKunciJudulBlob(u8){
+function spkDocxKunciJudulXml(xml){
   try{
-    var ab=(u8 && u8.buffer) ? u8.buffer : u8;
-    var zip=await spkUnzip(ab);
-    var part=zip['word/document.xml']; if(!part) return null;
-    var dec=new TextDecoder(), enc=new TextEncoder();
-    var xml=dec.decode(part);
-    /* Sudah terkunci (template baru / sudah pernah ditambal) -> jangan disentuh. */
-    if(xml.indexOf('spk-judul-klausul')>=0) return null;
+    /* Sudah terkunci (template baru / sudah pernah ditambal) -> tidak ada kerja. */
+    if(String(xml).indexOf('spk-judul-klausul')>=0) return null;
     var doc=new DOMParser().parseFromString(xml,'application/xml');
     if(doc.getElementsByTagName('parsererror').length) return null;
     var body=doc.getElementsByTagNameNS(SPK_W_NS,'body')[0]; if(!body) return null;
@@ -12573,9 +12689,161 @@ async function spkDocxKunciJudulBlob(u8){
 
     var outXml=new XMLSerializer().serializeToString(doc);
     if(outXml.indexOf('<?xml')!==0) outXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+outXml;
+    return outXml;
+  }catch(e){ console.error('[SPK] bungkus judul .docx gagal:', e); return null; }
+}
+
+/* ============================================================================
+   PROTEKSI FORMAT & BATAS INDEN PADA BERKAS .docx YANG SUDAH ADA (8 Agu 2026)
+   ----------------------------------------------------------------------------
+   Template yang DIBANGUN ULANG sudah membawa word/settings.xml ber-
+   documentProtection (lihat spkSettingsXml) dan gaya Normal ber-batas inden
+   (lihat spkBatasInden). Klausul yang menyimpan berkas aslinya diunduh apa
+   adanya, jadi berkas lama belum punya keduanya — di sinilah ditambalkan,
+   tepat sebelum diunduh, tanpa menyentuh part yang lain.
+
+   Dua tambalan:
+     1) word/settings.xml  -> <w:documentProtection w:formatting="1"
+        w:enforcement="1"/> disisipkan sebagai anak PERTAMA (urutan CT_Settings
+        menempatkannya di depan defaultTabStop dkk. yang biasa ditulis Word).
+        documentProtection lama, kalau ada, dibuang lebih dulu supaya tidak
+        bentrok. Part-nya didaftarkan di [Content_Types].xml dan
+        word/_rels/document.xml.rels bila belum ada.
+     2) word/styles.xml    -> batas inden kiri dibaca dari gaya "Klausul Judul"
+        milik berkas itu sendiri (w:ind@w:left), lalu dipasang pada gaya Normal
+        + docDefaults. Dibaca dari berkasnya, bukan dari kisi aplikasi, karena
+        berkas lama bisa saja memakai kisi bentuk yang berbeda.
+
+   Mengembalikan true bila ada yang berubah. Kegagalan apa pun -> false, dan
+   pemanggilnya memakai berkas aslinya seperti dulu.
+   ============================================================================ */
+function spkDocxProteksiZip(zip){
+  var berubah=false;
+  var dec=new TextDecoder(), enc=new TextEncoder();
+  var ser=function(doc){
+    var x=new XMLSerializer().serializeToString(doc);
+    if(x.indexOf('<?xml')!==0) x='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+x;
+    return enc.encode(x);
+  };
+  /* ---- 1. settings.xml ---- */
+  try{
+    if(!SPK_DOCX_KUNCI_FORMAT) throw 0;
+    var sx = zip['word/settings.xml']
+      ? dec.decode(zip['word/settings.xml'])
+      : '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+        '<w:settings xmlns:w="'+SPK_W_NS+'"/>';
+    var sd=new DOMParser().parseFromString(sx,'application/xml');
+    if(!sd.getElementsByTagName('parsererror').length){
+      var root=sd.documentElement;
+      var lama=root.getElementsByTagNameNS(SPK_W_NS,'documentProtection')[0];
+      var perlu=true;
+      if(lama){
+        var f=lama.getAttributeNS(SPK_W_NS,'formatting'), e2=lama.getAttributeNS(SPK_W_NS,'enforcement');
+        perlu = !((f==='1'||f==='true') && (e2==='1'||e2==='true'));
+        if(perlu && lama.parentNode) lama.parentNode.removeChild(lama);
+      }
+      if(perlu){
+        var dp=sd.createElementNS(SPK_W_NS,'w:documentProtection');
+        dp.setAttributeNS(SPK_W_NS,'w:formatting','1');
+        dp.setAttributeNS(SPK_W_NS,'w:enforcement','1');
+        root.insertBefore(dp, root.firstChild);
+        zip['word/settings.xml']=ser(sd);
+        berubah=true;
+      }
+    }
+  }catch(e){ if(e) console.error('[SPK] pasang proteksi settings.xml:', e); }
+
+  /* Daftarkan part-nya bila baru dibuat. */
+  if(berubah){
+    try{
+      var CT='[Content_Types].xml';
+      if(zip[CT]){
+        var ct=dec.decode(zip[CT]);
+        if(ct.indexOf('/word/settings.xml')<0){
+          ct=ct.replace('</Types>','<Override PartName="/word/settings.xml" '+
+            'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/></Types>');
+          zip[CT]=enc.encode(ct);
+        }
+      }
+      var RL='word/_rels/document.xml.rels';
+      if(zip[RL]){
+        var rl=dec.decode(zip[RL]);
+        if(rl.indexOf('relationships/settings')<0){
+          var rid='rIdKunciSettings';
+          rl=rl.replace('</Relationships>','<Relationship Id="'+rid+'" '+
+            'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/settings" '+
+            'Target="settings.xml"/></Relationships>');
+          zip[RL]=enc.encode(rl);
+        }
+      }
+    }catch(e){ console.error('[SPK] daftarkan settings.xml:', e); }
+  }
+
+  /* ---- 2. batas inden pada styles.xml ---- */
+  try{
+    if(zip['word/styles.xml']){
+      var yd=new DOMParser().parseFromString(dec.decode(zip['word/styles.xml']),'application/xml');
+      if(!yd.getElementsByTagName('parsererror').length){
+        var sty=yd.getElementsByTagNameNS(SPK_W_NS,'style'), i, el, batas=null, normal=null;
+        var indLeft=function(pPr){
+          if(!pPr) return null;
+          var ind=pPr.getElementsByTagNameNS(SPK_W_NS,'ind')[0]; if(!ind) return null;
+          var L=ind.getAttributeNS(SPK_W_NS,'left');
+          if(L==null||L==='') L=ind.getAttributeNS(SPK_W_NS,'start');
+          return (L==null||L==='') ? null : (+L||0);
+        };
+        for(i=0;i<sty.length;i++){
+          el=sty[i];
+          var nm=el.getElementsByTagNameNS(SPK_W_NS,'name')[0];
+          var nmv=nm?spkStyNorm(nm.getAttributeNS(SPK_W_NS,'val')||''):'';
+          var sid=spkStyNorm(el.getAttributeNS(SPK_W_NS,'styleId')||'');
+          if(nmv==='klausuljudul'||sid==='klausuljudul'){
+            var v=indLeft(el.getElementsByTagNameNS(SPK_W_NS,'pPr')[0]);
+            if(v!=null) batas=v;
+          }
+          if(nmv==='normal'||sid==='normal') normal=el;
+        }
+        if(batas!=null && batas>0 && normal){
+          var pPrN=normal.getElementsByTagNameNS(SPK_W_NS,'pPr')[0];
+          if(!pPrN){
+            pPrN=yd.createElementNS(SPK_W_NS,'w:pPr');
+            normal.appendChild(pPrN);
+          }
+          var indN=pPrN.getElementsByTagNameNS(SPK_W_NS,'ind')[0];
+          var kini=indLeft(pPrN);
+          if(kini==null || kini<batas){
+            if(!indN){ indN=yd.createElementNS(SPK_W_NS,'w:ind'); pPrN.appendChild(indN); }
+            indN.setAttributeNS(SPK_W_NS,'w:left',String(batas));
+            zip['word/styles.xml']=ser(yd);
+            berubah=true;
+          }
+        }
+      }
+    }
+  }catch(e){ console.error('[SPK] pasang batas inden styles.xml:', e); }
+
+  return berubah;
+}
+
+async function spkDocxKunciJudulBlob(u8){
+  try{
+    var ab=(u8 && u8.buffer) ? u8.buffer : u8;
+    var zip=await spkUnzip(ab);
+    var part=zip['word/document.xml']; if(!part) return null;
+    var dec=new TextDecoder(), enc=new TextEncoder();
+    var xml=dec.decode(part), ubah=false;
+
+    var baru=spkDocxKunciJudulXml(xml);
+    if(baru){ xml=baru; ubah=true; }
+
+    /* Proteksi format & batas inden DISELALUKAN — berkas yang judulnya sudah
+       terbungkus pun belum tentu sudah membawa keduanya. */
+    if(spkDocxProteksiZip(zip)) ubah=true;
+
+    if(!ubah) return null;                        // tidak ada yang perlu dikerjakan
     var files=[];
     for(var nm in zip){ if(!Object.prototype.hasOwnProperty.call(zip,nm)) continue;
-      files.push({ name:nm, data:(nm==='word/document.xml') ? enc.encode(outXml) : zip[nm] });
+      files.push({ name:nm, data:(nm==='word/document.xml') ? enc.encode(xml) : zip[nm] });
     }
     return spkZipBuild(files);
   }catch(e){ console.error('[SPK] kunci judul .docx gagal:', e); return null; }

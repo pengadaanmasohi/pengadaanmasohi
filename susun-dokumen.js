@@ -1647,12 +1647,13 @@ function renderTorSusun(){
   }else if(torStep===2){
     cont.innerHTML=
       stepper+
-      '<div id="spk-klausul-content"></div>'+
+      '<div id="tor-klausul-content" class="spk-klausul-host"></div>'+
       '<div class="jp-actions" style="justify-content:space-between;margin-top:4px">'+
         '<button class="btn btn-ghost" onclick="torGoStep(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 12H5M11 6l-6 6 6 6"/></svg> Kembali</button>'+
         '<button class="btn btn-teal" onclick="torGoStep(3)">Berikutnya: Pilih Klausul <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>'+
       '</div>';
     try{ renderSpkKlausul(); }catch(e){ console.error(e); }
+    torKlausulJaring();
   }else if(torStep===3){
     cont.innerHTML=
       stepper+
@@ -2087,6 +2088,22 @@ function torKlausulAktifSemua(on){
    Dengan mengarahkan spkState ke torState, seluruh mesin itu (termasuk unduh /
    unggah template Word dan editor WYSIWYG) langsung bekerja untuk dokumen TOR
    TANPA menduplikasi kodenya. */
+/* Jaring pengaman langkah 2: bila wadah pustaka klausul tetap kosong sesudah
+   renderSpkKlausul() (mis. mesin klausulnya melempar galat dan tertangkap diam
+   -diam oleh try/catch di renderTorSusun), berikan keterangan + tombol muat
+   ulang. Halaman kosong tanpa penjelasan adalah kegagalan yang paling
+   membingungkan; apa pun sebabnya, penggunanya harus tahu ada yang salah dan
+   punya satu langkah untuk mencobanya lagi. */
+function torKlausulJaring(){
+  try{
+    var host=document.querySelector('#tor-susun-content .spk-klausul-host');
+    if(!host || host.children.length) return;
+    host.innerHTML='<div class="form-card"><div class="empty" style="padding:26px">'+
+      '<div>Pustaka klausul gagal ditampilkan.</div>'+
+      '<div style="margin-top:12px"><button type="button" class="btn btn-teal btn-sm" onclick="renderTorSusun()">Muat ulang</button></div>'+
+    '</div></div>';
+  }catch(e){ console.error('torKlausulJaring:', e); }
+}
 function torBridgeKlausul(){
   if(!torState) return;
   try{
@@ -2139,11 +2156,11 @@ function torRelabelKlausul(){
   try{
     /* PENJAGA MUTLAK: hanya bekerja bila wadah pustaka klausul memang bersarang
        di dalam halaman Penyusunan TOR/KAK. Pada halaman "Ubah Klausul Kontrak"
-       milik Susun Kontrak, #spk-klausul-content berada di luar #tor-susun-content
+       milik Susun Kontrak, wadahnya berada di luar #tor-susun-content
        sehingga querySelector di bawah mengembalikan null dan fungsi ini langsung
        berhenti — mustahil menyentuh Pustaka Klausul SPK/PK walau spkState kebetulan
        masih mengarah ke dokumen TOR. */
-    const cont=document.querySelector('#tor-susun-content #spk-klausul-content'); if(!cont) return;
+    const cont=document.querySelector('#tor-susun-content .spk-klausul-host'); if(!cont) return;
     const t=cont.querySelector('.form-section-title > span');
     if(t) t.innerHTML=t.innerHTML.replace('Pustaka Klausul SPK','Pustaka Klausul TOR/KAK');
     const h=cont.querySelector('.hps-hint');
