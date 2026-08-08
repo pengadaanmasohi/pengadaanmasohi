@@ -5018,10 +5018,25 @@ table.ac-list thead th{ box-shadow:inset 0 -2px 0 rgba(0,0,0,.10); }
 .trk-scene{background:#ffffff;border:1px solid #ececec;border-radius:18px;padding:22px;box-shadow:0 10px 30px rgba(0,0,0,.05),0 2px 6px rgba(0,0,0,.03)}
 .trk-scene *{box-sizing:border-box}
 .trk-toolbar{margin-bottom:16px}
-.trk-pickbox{width:100%}
+/* ---- KOTAK PILIH PEKERJAAN: LEBARNYA TIDAK BOLEH DITENTUKAN ISINYA ----
+   Di Safari iPad, <select> ber-tampilan bawaan kadang menyusut mengikuti lebar
+   teks pilihannya, bukan lebar wadahnya — meski sudah diberi width:100%.
+   Pemicunya sizing "shrink-to-fit" pada kontrol native: selama elemennya masih
+   inline-block, lebar isi ikut diperhitungkan.
+
+   Tiga penegasan di bawah menutup jalan itu tanpa mengubah tampilan sama
+   sekali (panah bawaan tetap dipakai, sama seperti seluruh dropdown lain di
+   aplikasi ini):
+     display:block      -> keluar dari perhitungan lebar-isi inline
+     min-width:0        -> membatalkan lebar minimum bawaan kontrol
+     max-width:100%     -> nama pekerjaan yang panjang tidak melebarkan kotak
+     box-sizing         -> padding tidak menambah lebar (ditegaskan ulang di
+                           sini; .trk-scene * sudah menyetelnya, tetapi aturan
+                           ini harus tetap benar bila kotaknya dipindah)   */
+.trk-pickbox{width:100%;min-width:0;display:block}
 .trk-label{display:block;font-size:12.5px;color:#555;margin:0 0 6px;font-weight:600}
 .trk-label-sub{font-weight:400;color:#999}
-.trk-select{width:100%;height:42px;border:1px solid #dcdedd;border-radius:12px;background:#ffffff;color:#222;font-size:14px;padding:0 12px;box-shadow:0 3px 8px rgba(0,0,0,.06),inset 0 1px 0 #fff;outline:none;appearance:auto;cursor:pointer}
+.trk-select{display:block;width:100%;min-width:0;max-width:100%;box-sizing:border-box;height:42px;border:1px solid #dcdedd;border-radius:12px;background:#ffffff;color:#222;font-size:14px;padding:0 12px;box-shadow:0 3px 8px rgba(0,0,0,.06),inset 0 1px 0 #fff;outline:none;appearance:auto;cursor:pointer}
 .trk-select:focus{border-color:#18b394;box-shadow:0 0 0 3px rgba(24,179,148,.10),0 3px 8px rgba(0,0,0,.06)}
 .trk-card{background:#ffffff;border:1px solid #eceded;border-radius:16px;box-shadow:0 10px 24px rgba(0,0,0,.07),0 2px 6px rgba(0,0,0,.04),inset 0 1px 0 #fff;padding:18px 20px;margin-bottom:16px}
 .trk-card-t{margin:0 0 12px;font-size:14.5px;font-weight:700;color:#222}

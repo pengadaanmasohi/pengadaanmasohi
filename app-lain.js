@@ -1184,6 +1184,48 @@ function trkFindDp(nama){
     return trkNamaKey(s.nama!=null&&s.nama!==''?s.nama:r.nama)===k;
   })||null;
 }
+/* ============================================================================
+   CAKUPAN BIDANG PADA TRACKING PENGADAAN (8 Agu 2026)
+   ----------------------------------------------------------------------------
+   Akun user hanya boleh melihat pekerjaan bidangnya sendiri — aturan yang sudah
+   berlaku di Daftar Pengadaan & Dokumen Kontrak, tetapi belum di sini.
+
+   Bidang sebuah pekerjaan TIDAK disimpan pada data tracking; ia dicari ke
+   sumber aslinya, berurutan:
+     1. Monitoring (SPBJ / Pengadaan Langsung / Tender) -> bidang_pelaksana
+     2. Data Pekerjaan (records_dp)                     -> info.bidang_pelaksana
+   Urutan ini disengaja: Monitoring adalah data yang paling terjaga, sedangkan
+   Data Pekerjaan bisa saja belum terisi bidangnya.
+
+   GAGAL-TERTUTUP. Bila bidang sebuah pekerjaan tidak ditemukan di mana pun,
+   pekerjaan itu DISEMBUNYIKAN dari akun user, bukan ditampilkan. Alasannya
+   sama dengan inBidang() di app.js: data tanpa bidang tidak bisa dibuktikan
+   milik siapa, dan menampilkannya berarti membocorkan pekerjaan bidang lain
+   setiap kali ada satu isian yang kebetulan kosong. Untuk admin fungsi ini
+   tidak pernah dipakai, jadi tidak ada yang hilang dari layarnya.
+   ============================================================================ */
+function trkBidangOf(nama){
+  try{
+    var mon=trkFindMon(nama);
+    if(mon && mon.rec && mon.rec.bidang_pelaksana) return String(mon.rec.bidang_pelaksana);
+    var dp=trkFindDp(nama);
+    if(dp){
+      var st=(dp.state && dp.state.info) ? dp.state.info : {};
+      if(st.bidang_pelaksana) return String(st.bidang_pelaksana);
+    }
+  }catch(e){}
+  return '';
+}
+/* Boleh dilihat akun yang sedang masuk? Admin: selalu. User berbidang: hanya
+   bidangnya. Memakai normBidang/inBidang dari app.js supaya perbandingannya
+   sama persis dengan modul lain (huruf besar-kecil & spasi ganda diabaikan). */
+function trkBolehLihat(nama){
+  try{
+    if(typeof isUser!=='function' || !isUser()) return true;
+    if(typeof bidangSemua==='function' && bidangSemua()) return true;
+    return inBidang({ bidang_pelaksana: trkBidangOf(nama) });
+  }catch(e){ return true; }   /* app.js belum siap -> jangan sampai layar kosong */
+}
 function trkFindMon(nama){
   const k=trkNamaKey(nama);
   let r=(typeof records!=='undefined'?records:[]).find(x=>trkNamaKey(x.nama_pekerjaan)===k);
@@ -1348,6 +1390,10 @@ function trkFillPick(id, tersimpanSaja){
   const cur=trkSel;
   let nama=trkDpNames();
   if(tersimpanSaja) nama=nama.filter(nm=>!!trkGetRec(nm));
+  /* Pagar cakupan bidang — lihat trkBolehLihat. Ditempatkan di SATU pintu
+     masuk daftar ini supaya kotak pilihan, pilihan aktif, dan tampilan di
+     bawahnya semuanya memakai himpunan yang sama. */
+  nama=nama.filter(nm=>trkBolehLihat(nm));
   /* Pilihan yang sedang aktif tetapi TIDAK ada lagi di daftar (mis. trackingnya
      baru dihapus) dilepas, supaya kotaknya tidak menampilkan nama yang isinya
      sudah tiada. */
@@ -1400,6 +1446,10 @@ function trkItemHtml(o){
 }
 function renderTrackUser(){
   const box=document.getElementById('trk-user'); if(!box) return;
+  /* Pagar kedua: pilihan yang sudah terlanjur tersimpan di trkSel (mis. sisa
+     sesi admin sebelumnya di tab yang sama, atau nilai yang disetel dari
+     tempat lain) tidak boleh lolos ke layar akun user. */
+  if(trkSel && !trkBolehLihat(trkSel)) trkSel='';
   if(!trkSel){
     box.innerHTML='<div class="trk-card trk-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M12 19h4.5a3.5 3.5 0 0 0 0-7h-9a3.5 3.5 0 0 1 0-7H12"/></svg>'
       +'<p>Pilih pekerjaan di atas untuk melihat tracking pengadaannya.</p></div>';
