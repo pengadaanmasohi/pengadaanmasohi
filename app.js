@@ -8661,9 +8661,11 @@ async function renderFkView(){
 
 function fkEmptyRow(mode){
   const msg = 'Data tidak tersedia';
-  /* Daftar "Dokumen Perjanjian/Kontrak" (view) punya 2 kolom lebih banyak
-     (Penyedia & Nilai Pekerjaan) daripada daftar Input Data. */
-  const kolom = (mode==='view') ? 8 : 6;
+  /* Daftar "Dokumen Perjanjian/Kontrak" (view) punya 1 kolom lebih banyak
+     (Penyedia) daripada daftar Input Data. Angka ini WAJIB ikut berubah setiap
+     kali susunan kolom berubah; kalau terlewat, baris "Data tidak tersedia"
+     berhenti di tengah tabel alih-alih membentang penuh. */
+  const kolom = (mode==='view') ? 7 : 6;
   return `<tr><td colspan="${kolom}"><div class="empty">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
     <div>${msg}</div>
@@ -8692,15 +8694,20 @@ function fkRenderRows(mode, modul, cfg, rows, meta, tb, pg){
     const dropAttrs = (mode==='input' && fkCanModify(modul, r))
       ? ` ondragover="fkRowDragOver(event,this)" ondragleave="fkRowDragLeave(event,this)" ondrop="fkRowDrop(event,'${modul}','${rid}',this)"`
       : '';
-    /* Penyedia & Nilai Pekerjaan HANYA pada daftar "Dokumen Perjanjian/Kontrak"
-       (mode view). Daftar Input Data sengaja dibiarkan ramping — isinya antrean
-       kontrak yang menunggu diunggah, bukan rujukan data kontrak.
+    /* Penyedia HANYA pada daftar "Dokumen Perjanjian/Kontrak" (mode view).
+       Daftar Input Data sengaja dibiarkan ramping — isinya antrean kontrak yang
+       menunggu diunggah, bukan rujukan data kontrak.
        Kelas selnya sama persis dengan tabel Monitoring supaya lebar & perataan
        angkanya seragam; `wrap-penyedia` dipakai saat satu pekerjaan punya lebih
-       dari satu penyedia (Tender), yang menumpuk beberapa baris dalam satu sel. */
-    const kolomPenyediaNilai = (mode==='view')
-      ? `<td class="col-penyedia">${cfg.penyediaCell(r)}</td>` +
-        `<td class="${stacked?'wrap-penyedia col-nilai':'col-nilai'}">${cfg.nilai(r)}</td>`
+       dari satu penyedia (Tender), yang menumpuk beberapa baris dalam satu sel.
+
+       NILAI PEKERJAAN DIHAPUS 8 Agu 2026. Sempat ikut ditampilkan di sini,
+       tetapi dengan 8 kolom lebar minimum tabel (±1.240px) melewati lebar
+       halaman pada layar ≤1360px: muncul geser kiri-kanan dan kolom Aksi
+       terpotong di tepi kanan. `cfg.nilai` & `cfg.penyediaCell` di FK_MODULES
+       SENGAJA dibiarkan utuh — keduanya sudah ada sebelum kolom ini dibuat. */
+    const kolomPenyedia = (mode==='view')
+      ? `<td class="col-penyedia">${cfg.penyediaCell(r)}</td>`
       : '';
     return `<tr>
       <td class="col-no">${start+i+1}</td>
@@ -8708,7 +8715,7 @@ function fkRenderRows(mode, modul, cfg, rows, meta, tb, pg){
       <td class="${kontrakCls}">${noKontrak}</td>
       <td class="cell-center col-date">${tgl}</td>
       <td class="fk-col-bidang wrap-cell">${fkEsc(bidang)}</td>
-      ${kolomPenyediaNilai}
+      ${kolomPenyedia}
       <td class="fk-actcell"${dropAttrs}><div class="fk-actions">${aksi}</div></td>
     </tr>`;
   }).join('');
@@ -20548,6 +20555,30 @@ pasangTolakTutup('pn-preview-overlay');
    di index.html dan sudah dilepas dari sana. */
 pasangTolakTutup('dpeng-list-overlay');
 pasangTolakTutup('spk-dok-overlay');   /* pemilih bagian dokumen SPK / Perjanjian-Kontrak */
+
+/* ---- SISA POP-UP DIDAFTARKAN — 8 Agu 2026 -----------------------------------
+   Sampai kemarin daftar di atas belum lengkap, sehingga perilaku "klik di luar
+   kotak" berbeda-beda menurut pop-up mana yang kebetulan terbuka:
+
+     Unggah File Kontrak  -> TERTUTUP (penutup dipasang sebagai atribut onclick
+     Unggah Template      -> TERTUTUP  di index.html, terpisah dari daftar ini)
+     Hasil Unggah Template-> diam saja
+     Pilih Dokumen        -> diam saja
+
+   Ketiga perilaku itu sekarang disatukan: kotaknya BERGETAR sambil menyorot
+   tombol tutup. Dua atribut onclick penutup sudah dilepas dari index.html —
+   kalau tidak, keduanya berjalan lebih dulu dan pop-up tetap tertutup sebelum
+   getarannya sempat terlihat.
+
+   Getarannya sendiri tidak perlu gaya baru: aturan umum `.overlay .modal.menolak`
+   di index.html sudah mencakup keempatnya (semua memakai kelas `.modal` di dalam
+   `.overlay`). Begitu pula gelembung Google Terjemahan — pasangTolakTutup
+   menahan seleksi klik-ganda di latar, dan `.overlay{user-select:none}` di
+   index.html menutup sisanya. */
+pasangTolakTutup('fk-upload-overlay');   /* Unggah File Kontrak */
+pasangTolakTutup('tpl-up-overlay');      /* Unggah Template */
+pasangTolakTutup('imp-res-overlay');     /* Hasil Unggah Template */
+pasangTolakTutup('dpeng-doc-overlay');   /* Pilih Dokumen (Dokumen Pengadaan) */
 
 
 /* ============================================================================

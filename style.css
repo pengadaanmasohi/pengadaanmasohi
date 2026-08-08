@@ -809,7 +809,50 @@ td.cell-center{text-align:center}
 .modal.wide{max-width:720px}
 .detail-head{background:linear-gradient(100deg,var(--teal-dark),var(--teal));color:#fff;padding:20px 26px;display:flex;justify-content:space-between;align-items:center}
 .detail-head h3{font-family:'Plus Jakarta Sans',sans-serif;font-size:15.5px;font-weight:800;letter-spacing:.2px}
-.detail-close{background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:8px;font-size:16px;display:grid;place-items:center}
+/* ============================================================================
+   TOMBOL TUTUP BAKU SELURUH POP-UP                                — 8 Agu 2026
+   ----------------------------------------------------------------------------
+   Bentuknya DISAMAKAN dengan tombol tutup pada pemilih Dokumen TOR/KAK
+   (`.tor-dk-hd .x`, disuntikkan torEnsureStyle() di susun-dokumen.js):
+   keping merah bergradasi 32x32, sudut 9px, ikon silang SVG putih 15px.
+
+   Kenapa MERAH, bukan kotak putih transparan seperti sebelumnya: di seluruh
+   aplikasi merah sudah berarti "mengakhiri" (tombol Hapus di tabel, tombol
+   Batal, tombol tutup pratinjau). Kotak putih .2 di atas kepala teal nyaris
+   tidak terlihat — itulah yang membuat tombol tutup mudah terlewat, dan
+   sekarang menjadi SATU-SATUNYA jalan keluar dari pop-up (klik di latar tidak
+   lagi menutup, lihat pasangTolakTutup di app.js). Jalan keluar tunggal wajib
+   mencolok.
+
+   Kenapa ikonnya SVG, bukan karakter &times;: sisi kosong &times; berbeda-beda
+   menurut muka huruf sehingga silangnya tidak pernah benar-benar di tengah
+   kotak. `font-size:0` tetap dipasang sebagai jaring pengaman — kalau kelak
+   ada tombol baru yang masih memakai &times;, karakternya tersembunyi dan
+   yang tampak hanya keping merahnya (bukan silang melenceng).      */
+.detail-close{
+  -webkit-appearance:none;appearance:none;
+  flex:0 0 32px;width:32px;height:32px;min-width:32px;min-height:32px;
+  padding:0;border:0;border-radius:9px;line-height:0;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:0;
+  background:linear-gradient(135deg,#D33A3A,#e25151);color:#fff;
+  box-shadow:0 2px 6px rgba(6,30,36,.30);
+  transition:filter .15s ease,box-shadow .2s ease}
+/* Warna ikon diwarisi dari tombolnya lewat currentColor — satu-satunya tempat
+   warna ditentukan adalah properti `color` di atas. */
+.detail-close svg{width:15px;height:15px;display:block;
+  stroke:currentColor;fill:none;stroke-width:2}
+.detail-close:hover{filter:brightness(1.08);box-shadow:0 4px 10px rgba(6,30,36,.36)}
+.detail-close:focus-visible{outline:2px solid #fff;outline-offset:2px}
+/* KEPALA MERAH -> KEPING DIBALIK.
+   Pop-up "Hasil Unggah Template" mewarnai kepalanya menurut hasil: hijau
+   (semua masuk), kuning (sebagian), MERAH (tidak ada yang masuk). Keping merah
+   di atas kepala merah praktis lenyap. Pelajaran yang sama sudah didapat saat
+   menggarap pop-up TOR/KAK: warna yang bagus di atas satu latar belum tentu
+   bagus di atas latar lain. Maka pada kepala merah keping & ikonnya ditukar —
+   keping putih, ikon merah. Bahasa warnanya tetap sama. */
+.detail-head.tone-err .detail-close{
+  background:#fff;color:#D33A3A;box-shadow:0 2px 6px rgba(6,30,36,.22)}
 .detail-body{padding:18px 26px 26px;max-height:66vh;overflow-y:auto;background:#f6f9fa}
 /* #5: setiap kelompok tampil sebagai tabel ber-border; judul = header ter-mark */
 .detail-group{margin-bottom:18px;border-radius:12px;box-shadow:0 3px 12px rgba(16,40,50,.06);overflow:hidden}
@@ -4457,9 +4500,31 @@ body.ac-no-gantisandi #btn-change-pass{ display:none !important; }
 /* MERAH, SEPERTI TOMBOL TUTUP PRATINJAU TOR/KAK (7 Agu 2026).
    flex:none + min-width/min-height menahan ukurannya: tanpa itu, judul panel
    yang panjang meregangkan baris kepala dan tombolnya ikut menyusut/tergeser. */
+/* DISAMAKAN PERSIS dengan tombol tutup TOR/KAK — 8 Agu 2026.
+   Sebelumnya panel Akun & Penyimpanan memakai angkanya sendiri (34px, sudut
+   10px, silang berupa KARAKTER &times; setinggi 1,4rem), sehingga dua panel ini
+   satu-satunya yang berbeda dari seluruh pop-up lain. Sekarang: 32x32, sudut
+   9px, ikon silang 15px.
+
+   Ikonnya digambar lewat ::before + mask, BUKAN dengan mengubah markup:
+   panel ini dibangun di app-lain.js, dan menggambar ikon dari CSS membuat
+   perubahan ini berdiri sendiri di satu berkas. `font-size:0` menyembunyikan
+   karakter &times; yang masih ada di markup — kalau dibiarkan, silangnya
+   bertumpuk dua. Kalau kelak markup-nya diganti <svg>, aturan :has(svg) di
+   bawah otomatis mematikan ::before dan memakai SVG itu. */
 .ac-x{ background:linear-gradient(135deg,#D33A3A,#e25151); border:0; color:#fff;
-  flex:none; min-width:34px; min-height:34px; width:34px; height:34px; border-radius:10px;
-  font-size:1.4rem; line-height:1; cursor:pointer; transition:background .15s; }
+  flex:none; min-width:32px; min-height:32px; width:32px; height:32px; border-radius:9px;
+  padding:0; font-size:0; line-height:0; cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center;
+  box-shadow:0 2px 6px rgba(6,30,36,.30);
+  transition:filter .15s ease, box-shadow .2s ease; }
+.ac-x::before{ content:""; width:15px; height:15px; flex:none;
+  background-color:currentColor;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M18 6 6 18M6 6l12 12'/%3E%3C/svg%3E") center/15px 15px no-repeat;
+          mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M18 6 6 18M6 6l12 12'/%3E%3C/svg%3E") center/15px 15px no-repeat; }
+.ac-x:has(svg)::before{ display:none }
+.ac-x svg{ width:15px; height:15px; display:block;
+  stroke:currentColor; fill:none; stroke-width:2 }
 .ac-x:hover{ filter:brightness(1.08); box-shadow:0 4px 10px rgba(6,30,36,.36); }
 .ac-x:focus-visible{ outline:2px solid #fff; outline-offset:2px; }
 /* Getaran "tutup dulu" — bahasa isyarat yang sama dengan pratinjau TOR/KAK.
@@ -5737,14 +5802,14 @@ table tfoot tr:hover td{ background:inherit !important; color:inherit; }
 #dpeng-list-overlay{z-index:96}
 .dpeng-list-modal{max-width:820px}
 .dpeng-list-modal .detail-head{align-items:flex-start;gap:14px}
-/* Tombol tutup: MERAH seperti pratinjau TOR/KAK, dan ukurannya tidak boleh
-   ikut mengecil/bergeser saat nama pekerjaan panjang. `flex:none` + min-width
-   & min-height menahannya; tanpa itu, judul yang melipat dua-tiga baris
-   meregangkan baris kepala dan tombolnya jadi korban pertama. */
-.dpeng-list-modal .detail-close{flex:none;min-width:34px;min-height:34px;width:34px;height:34px;
-  background:linear-gradient(135deg,#D33A3A,#e25151);border-radius:10px}
-.dpeng-list-modal .detail-close:hover{filter:brightness(1.08);box-shadow:0 4px 10px rgba(6,30,36,.36)}
-.dpeng-list-modal .detail-close:focus-visible{outline:2px solid #fff;outline-offset:2px}
+/* Tombol tutup: warna, ukuran, ikon, sorot, & cincin fokus SELURUHNYA datang
+   dari aturan baku `.detail-close` (blok "TOMBOL TUTUP BAKU SELURUH POP-UP",
+   ~baris 812) — 8 Agu 2026. Dulu semuanya ditulis ulang di sini dengan ukuran
+   34px/sudut 10px, jadi tombol tutup pop-up ini SATU-SATUNYA yang berbeda
+   sendiri dari pop-up lain. Yang masih perlu ditegaskan khusus di sini hanya
+   larangan MENGECIL: judul yang melipat dua-tiga baris meregangkan baris
+   kepala, dan tanpa `flex:none` tombolnya jadi korban pertama. */
+.dpeng-list-modal .detail-close{flex:none}
 /* Getarannya TIDAK didefinisikan ulang di sini: aturan umum
    `.overlay .modal.menolak` di index.html sudah mencakup kotak ini (kelasnya
    `modal wide dpeng-list-modal` di dalam `.overlay`), dan menulis aturan kembar
@@ -9612,20 +9677,26 @@ button.act[disabled],button.act[disabled]:hover{
   color:#fff;
 }
 /* --- Sebelumnya / Berikutnya ---
-   Semula kuning; diganti BIRU atas pilihan user (8 Agu 2026, "warna biru
-   lebih enak dipandang"). Birunya memakai gradasi indigo yang sudah ada di
-   aplikasi (.btn-indigo) — bukan biru baru — supaya tetap satu keluarga
-   warna. Tetap terbedakan dari nomor halaman aktif yang teal: indigo jauh
-   lebih ke ungu, teal ke hijau, jadi keduanya tidak pernah tertukar
-   walaupun bersebelahan. */
+   RIWAYAT WARNA: kuning -> indigo -> WARNA JUDUL TABEL (8 Agu 2026, permintaan
+   terakhir user: "jadikan warna biru tua seperti pada warna judul tabel").
+   Nilainya diambil apa adanya dari aturan kepala tabel (~baris 1940):
+       th{background:#0E7C86; border-color:#0b6b74}
+   Sengaja ditulis sebagai angka yang sama persis, bukan var(--teal), supaya
+   terbaca jelas bahwa sumbernya adalah kepala tabel — kalau kelak warna kepala
+   tabel diubah, KEDUANYA harus diubah bersama.
+
+   Karena kini sewarna dengan nomor halaman AKTIF, keduanya dibedakan dengan
+   cara lain: nomor aktif memakai GRADASI teal->cyan (lebih terang & berkilau),
+   sedangkan Sebelumnya/Berikutnya rata tanpa gradasi — persis kepala tabel di
+   atasnya. Sisi rata vs berkilau itulah pembedanya, bukan lagi rona warna. */
 .pagination .pg-btn:not(.pg-num){
-  background:linear-gradient(135deg,#3a56d4,#5b8def);
-  border:1px solid #2f49b8;
+  background:#0E7C86;
+  border:1px solid #0b6b74;
   color:#fff;
 }
 .pagination .pg-btn:not(.pg-num):hover:not(:disabled){
-  background:linear-gradient(135deg,#4763e0,#6d9bf5);
-  border-color:#3a56d4;
+  background:#0b6b74;
+  border-color:#095e66;
   color:#fff;
 }
 .pagination .pg-btn:not(.pg-num):disabled{
@@ -10121,4 +10192,89 @@ html{
 #spk-kldoc-ov .spk-we-wbtn.close:focus-visible{
   outline:2px solid #fff;outline-offset:2px;
   box-shadow:0 2px 6px rgba(6,30,36,.30);
+}
+
+
+/* ============================================================================
+   LEBAR "BIDANG" & "CARI" DISERAGAMKAN SELURUH MENU            — 8 Agu 2026
+   ----------------------------------------------------------------------------
+   ACUAN = bilah filter Dokumen Perjanjian/Kontrak (#view-fk-view):
+       Bidang Pelaksana  270 px
+       Cari              300 px
+
+   Sebelum ini ketiganya berbeda-beda menurut menu, sebagian karena tambalan
+   yang ditulis di waktu berlainan:
+
+     Monitoring (KR/PL/Tender)  Bidang `width:max-content` (LEBARNYA IKUT ISI —
+                                jadi berubah-ubah), Cari 300px yang MEMUAI
+     File Kontrak / Dok. Pengadaan   Bidang 270px, Cari 300–390px
+     Materi & Peraturan         Kategori 230px
+     Penetapan Nomor, Kelengkapan, Jadwal, TOR, SPK, RHO, HPS, Analisa, DP
+                                Cari 316px (di dalam .page-head, bukan toolbar)
+
+   Ketiganya dipatok mati (min = max = width) supaya benar-benar SAMA, bukan
+   sekadar "kurang lebih sama": selama lebarnya masih boleh memuai/menyusut,
+   dua menu dengan jumlah filter berbeda akan selalu tampil berbeda.
+
+   ---- KENAPA AMBANGNYA 1325px, BUKAN 1301px SEPERTI BLOK SEBELUMNYA ----
+   Bilah TERPADAT adalah Monitoring: Bidang 270 + Status 158 + Tahun 158 +
+   Cari 300 + Reset 118 + Input Data ±118 = 1.122px, ditambah 5 jarak 10px dan
+   padding bilah 2x16px = ±1.204px. Ruang isi halaman = min(1320, lebar layar
+   − rail 72) − padding 2x24. Agar 1.204px itu muat, layar harus ≥ 1.325px.
+   Di bawah itu aturan lama yang sudah ada (rentang 1201–1300 dan 768–1200)
+   tetap berlaku — angka-angkanya memang disusun supaya bilah tidak pecah dua
+   baris, dan menimpanya di sini akan mengulang persis bug yang baru diperbaiki
+   pagi ini. Jadi keseragaman ini berlaku di layar desktop, tempat perbandingan
+   antar-menu memang dilakukan.
+
+   `!important` dipakai karena hampir semua aturan yang ditimpa juga memakainya
+   (mis. `.toolbar.fk-toolbar #fk-view-bidang{...!important}`); pemilih di sini
+   ditulis sama panjang atau lebih khusus supaya menang pada lapisan itu.
+   ============================================================================ */
+@media (min-width:1325px){
+
+  /* ---- 1. Bidang Pelaksana / Kategori = 270px ---- */
+  .toolbar .filter-field > select[id$="bidang"],
+  .toolbar.fk-toolbar .filter-field > select[id$="bidang"],
+  .toolbar.fk-toolbar #fk-view-bidang,
+  .toolbar.fk-toolbar #fk-input-bidang,
+  .toolbar.fk-toolbar #dpeng-view-bidang,
+  .toolbar.fk-toolbar #materi-view-kategori{
+    min-width:270px !important;
+    max-width:270px !important;
+    width:270px !important;
+    /* Pilihan terpanjang ("Keselamatan, Kesehatan Kerja, Lingkungan dan
+       Keamanan") masih lebih lebar daripada 270px — dipotong elipsis, bukan
+       dibiarkan terpenggal di tengah huruf. Isi lengkapnya tetap terbaca saat
+       daftarnya dibuka. */
+    text-overflow:ellipsis; overflow:hidden; white-space:nowrap}
+
+  /* ---- 2. Kotak Cari = 300px ----
+     Tiga keluarga kotak Cari yang berbeda wadah, disebut semuanya:
+       a. .toolbar .toolbar-search            -> Monitoring KR/PL/Tender
+       b. .toolbar.fk-toolbar .fk-search      -> File Kontrak, Dok. Pengadaan,
+                                                 Materi & Peraturan
+       c. .page-head .pn-head-search          -> Penetapan Nomor, Kelengkapan,
+                                                 Jadwal, TOR, SPK, RHO, HPS,
+                                                 Analisa, Daftar Pekerjaan   */
+  .toolbar .filter-field.toolbar-search input,
+  .toolbar.fk-toolbar .filter-field.fk-search input,
+  .toolbar.fk-toolbar .fk-search.search-elegant input,
+  .page-head .pn-head-search input,
+  .toolbar #filter-search,
+  .toolbar #filter-pl-search,
+  .toolbar #filter-tender-search,
+  .toolbar #fkl-view-search,
+  .toolbar #pn-lihat-search{
+    min-width:300px !important;
+    max-width:300px !important;
+    width:300px !important}
+
+  /* Kotaknya berhenti memuai. Tanpa ini, `flex:1 1 300px` (dipasang 7 Agu agar
+     Cari menyerap sisa lebar bilah) tetap meregangkan pembungkusnya walau
+     <input> di dalamnya sudah dipatok — hasilnya kotak 300px mengambang di
+     tengah ruang kosong. Sisa lebar sekarang diserap kelompok tombol, yang
+     memang sudah didorong ke kanan oleh `margin-left:auto`. */
+  .toolbar .toolbar-search{flex:0 0 auto}
+  .toolbar .toolbar-search .search-elegant-box{width:300px}
 }
