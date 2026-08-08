@@ -12138,22 +12138,18 @@ function spkKotakTblSel(tbl){
    sel memang sudah diukur dari tepi teks sel, bukan dari garis kotak. Ikut
    menghitungnya membuat tabel kv terbaca menjorok 0,15 cm secara semu. */
 function spkKotakTblOfs(tbl){
-  /* Titik mulai ISI kotak = w:tblInd + jarak dalam sel sebelah kiri (tblCellMar).
-     Padding WAJIB ikut: penulis menggeser tepi kotak SPK_KOTAK_PAD_X ke kiri lalu
-     mengembalikannya sebagai jarak dalam sel, jadi tblInd saja kurang 85 twip dan
-     tabel kv di dalam kotak akan terbaca menjorok 1,5 mm ke kiri. */
-  var ti=0, pad=0;
+  /* HANYA w:tblInd — jarak dalam sel (tblCellMar) SENGAJA TIDAK ikut.
+     Tepi kiri kotak isi = kolom teks judul (mis. 425), lalu teksnya menjorok
+     lagi SPK_KOTAK_PAD_X supaya tidak menempel garis. Padding itu geseran
+     FISIK yang dialami judul dan isi sama besar; ia tidak pernah ikut
+     dikurangkan dari w:ind saat menulis (spkKotakOfs = tblInd saja), jadi ia
+     juga tidak boleh ditambahkan saat membaca — kalau ikut, tabel kv di dalam
+     kotak melenceng 1,5 mm. */
   try{
     var pr=tbl.getElementsByTagNameNS(SPK_W_NS,'tblPr')[0]; if(!pr) return 0;
-    var t=pr.getElementsByTagNameNS(SPK_W_NS,'tblInd')[0];
-    if(t) ti=+t.getAttributeNS(SPK_W_NS,'w')||0;
-    var cm=pr.getElementsByTagNameNS(SPK_W_NS,'tblCellMar')[0];
-    if(cm){
-      var lf=cm.getElementsByTagNameNS(SPK_W_NS,'left')[0];
-      if(lf) pad=+lf.getAttributeNS(SPK_W_NS,'w')||0;
-    }
+    var t=pr.getElementsByTagNameNS(SPK_W_NS,'tblInd')[0]; if(!t) return 0;
+    return Math.max(0, +t.getAttributeNS(SPK_W_NS,'w')||0);
   }catch(e){ return 0; }
-  return Math.max(0, ti+pad);
 }
 /* Inden kotak ISI pada berkas yang sedang dibaca (0 bila tanpa kotak).
    Dipakai spkWTblToHtml supaya tabel kv di DALAM kotak tetap terbaca menjorok
@@ -12783,21 +12779,62 @@ function spkDocxGeserInd(node, ofs){
   }
 }
 
+/* --- Membuang baris PETUNJUK abu-abu dari berkas .docx yang sudah ada. -------
+   Template yang diunduh SEBELUM 8 Agu 2026 membawa 5-6 paragraf bergaya
+   "Petunjuk Template" di kepala berkas. Berkas itu disimpan apa adanya di
+   spkKlDoc.docx, jadi menghapus baris petunjuk dari spkDocxTemplateBlob() saja
+   TIDAK cukup — klausul lama tetap mengunduh petunjuknya. Dibuang di sini.
+
+   Pencocokan dilakukan pada styleId DAN pada NAMA gaya (dibaca dari
+   word/styles.xml): Word boleh menulis ulang styleId, tetapi w:name-nya tetap.
+   Penyaring `key.indexOf('petunjuk')===0` di spkWordXmlToKlausul TETAP ada
+   sebagai jaring pengaman untuk berkas yang tak sempat dirapikan. */
+function spkDocxBuangPetunjuk(doc, stylesXml){
+  var ids={}, i;
+  try{
+    var yd=new DOMParser().parseFromString(String(stylesXml||''),'application/xml');
+    if(!yd.getElementsByTagName('parsererror').length){
+      var sty=yd.getElementsByTagNameNS(SPK_W_NS,'style');
+      for(i=0;i<sty.length;i++){
+        var nm=sty[i].getElementsByTagNameNS(SPK_W_NS,'name')[0];
+        var nv=nm?spkStyNorm(nm.getAttributeNS(SPK_W_NS,'val')||''):'';
+        if(nv.indexOf('petunjuk')===0){
+          var sid=sty[i].getAttributeNS(SPK_W_NS,'styleId')||'';
+          if(sid) ids[spkStyNorm(sid)]=1;
+        }
+      }
+    }
+  }catch(e){}
+  var buang=[], ps=doc.getElementsByTagNameNS(SPK_W_NS,'p');
+  for(i=0;i<ps.length;i++){
+    var pPr=ps[i].getElementsByTagNameNS(SPK_W_NS,'pPr')[0]; if(!pPr) continue;
+    var st=pPr.getElementsByTagNameNS(SPK_W_NS,'pStyle')[0]; if(!st) continue;
+    var v=spkStyNorm(st.getAttributeNS(SPK_W_NS,'val')||'');
+    if(v.indexOf('petunjuk')===0 || ids[v]) buang.push(ps[i]);
+  }
+  for(i=0;i<buang.length;i++){ if(buang[i].parentNode) buang[i].parentNode.removeChild(buang[i]); }
+  return buang.length>0;
+}
+
 /* --- word/document.xml: lepas kunci judul + bungkus judul & isi dalam kotak. ---
    `kotak` = kolom teks judul klausul dalam twip (dibaca dari berkasnya sendiri,
    lihat spkDocxKotakLebar). Mengembalikan XML baru, atau null bila tak ada yang
    perlu dikerjakan / strukturnya tak dikenali. */
-function spkDocxKotakXml(xml, kotak){
+function spkDocxKotakXml(xml, kotak, stylesXml){
   try{
     var teks=String(xml);
     var sudahKotak = teks.indexOf('spk-kotak-isi')>=0;
     var adaSdt     = teks.indexOf('spk-judul-klausul')>=0;
-    if(sudahKotak && !adaSdt) return null;                 // sudah rapi
+    /* Baris petunjuk bisa ada pada berkas yang SUDAH berkotak (dirapikan oleh
+       versi sebelumnya), jadi jangan keluar lebih dulu — periksa dulu. */
+    var adaPetunjuk = /w:val="[^"]*[Pp]etunjuk/.test(teks);
+    if(sudahKotak && !adaSdt && !adaPetunjuk) return null;  // sudah rapi
     var doc=new DOMParser().parseFromString(teks,'application/xml');
     if(doc.getElementsByTagName('parsererror').length) return null;
     var body=doc.getElementsByTagNameNS(SPK_W_NS,'body')[0]; if(!body) return null;
 
     var ubah=spkDocxLepasSdtJudul(doc);
+    if(spkDocxBuangPetunjuk(doc, stylesXml)) ubah=true;
     if(sudahKotak){                                        // kotaknya sudah ada
       if(!ubah) return null;
       var x0=new XMLSerializer().serializeToString(doc);
@@ -13000,7 +13037,7 @@ async function spkDocxRapikanBlob(u8){
     var perluKotak = SPK_DOCX_KOTAK && xml.indexOf('spk-kotak-isi')<0;
     var KOT = perluKotak ? spkDocxKotakLebar(styles) : 0;
 
-    var baru=SPK_DOCX_KOTAK ? spkDocxKotakXml(xml, KOT) : null;
+    var baru=SPK_DOCX_KOTAK ? spkDocxKotakXml(xml, KOT, styles) : null;
     if(baru){
       xml=baru; ubah=true;
       if(perluKotak && KOT>0 && styles){
