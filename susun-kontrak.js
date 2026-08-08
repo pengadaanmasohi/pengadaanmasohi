@@ -10990,13 +10990,46 @@ var SPK_STY2CLS = { klausulisi:'kl0', klausulparagraf:'klp', klausulparagraf1:'k
                     klausulbutir1:'kl1', klausulbutir2:'kl2', klausuldeskripsi:'kldesc' };
 function spkStyNorm(s){ return String(s==null?'':s).toLowerCase().replace(/[^a-z0-9]/g,''); }
 
-function spkStyXml(id, name, ind, extraP, extraR){
+/* ============================================================================
+   GAYA PARAGRAF — `next` & `numPr` (8 Agu 2026)
+   ----------------------------------------------------------------------------
+   KETENTUAN: "saat Enter dari baris Judul Klausul, baris baru JANGAN ikut
+   format judul (bernomor & tebal); langsung jadi format isi klausul beserta
+   jarak barisnya."
+
+   Dua hal diperlukan, dan KEDUANYA wajib — satu saja tidak cukup:
+
+   1. `w:next` — "gaya untuk paragraf berikutnya". Inilah yang membuat Word
+      memberi gaya Klausul Isi pada baris baru begitu Enter ditekan di ujung
+      baris judul. Tanpa ini Word mengulang gaya yang sama, jadi baris baru
+      ikut tebal & huruf besar.
+
+   2. NOMOR PINDAH KE DALAM GAYA. Dulu penomoran otomatis dipasang sebagai
+      FORMAT LANGSUNG pada paragraf judulnya (spkPXml2 + numPr). Format
+      langsung ikut terbawa ketika Word memecah paragraf — jadi walaupun
+      gayanya sudah berganti ke Klausul Isi, baris barunya TETAP anggota
+      daftar bernomor dan memunculkan nomor berikutnya (persis "I.3." kosong
+      yang terlihat di layar). Dengan numPr berada di dalam definisi GAYA
+      Judul, baris baru yang bergaya Klausul Isi tidak membawa apa pun:
+      nomornya hilang dengan sendirinya.
+
+   Pembaca template TIDAK terpengaruh: spkWordXmlToKlausul mengenali baris
+   judul dari NAMA GAYA-nya ('klausuljudul'), bukan dari penomorannya.
+   Bonus: spkDefinisiDocxSortedBlob dulu melihat judul sebagai butir bernomor
+   ilvl-0 dan berpeluang ikut mengurutkannya bersama daftar definisi; kini
+   judulnya tidak lagi ber-numPr langsung, jadi selalu tinggal di tempat.
+   ============================================================================ */
+function spkStyXml(id, name, ind, extraP, extraR, next, numPr){
   return '<w:style w:type="paragraph" w:customStyle="1" w:styleId="'+id+'">'+
-    '<w:name w:val="'+name+'"/><w:basedOn w:val="Normal"/><w:qFormat/>'+
-    '<w:pPr>'+(ind||'')+(extraP||'')+'</w:pPr>'+
+    '<w:name w:val="'+name+'"/><w:basedOn w:val="Normal"/>'+
+    (next ? '<w:next w:val="'+next+'"/>' : '')+
+    '<w:qFormat/>'+
+    '<w:pPr>'+(numPr||'')+(ind||'')+(extraP||'')+'</w:pPr>'+
     (extraR ? '<w:rPr>'+extraR+'</w:rPr>' : '')+
   '</w:style>';
 }
+/* Penomoran otomatis baris judul, dipasang di dalam GAYA (bukan pada paragraf). */
+const SPK_NUMPR_JUDUL='<w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr>';
 function spkStylesXml(){
   var D=spkDX();
   /* HAPUS LEFT TAB (permintaan 22 Jul 2026): tab kiri manual mengganggu saat
@@ -11025,17 +11058,21 @@ function spkStylesXml(){
      SPK : satu baris rata KIRI, nomor menggantung  -> persis seperti semula.
      PK  : dua baris rata TENGAH — "PASAL n" (gaya Klausul Pasal, bernomor
            otomatis) lalu nama pasal (gaya Klausul Judul) di bawahnya. */
+  /* `next` (gaya paragraf berikutnya) & `numPr` (penomoran otomatis) — lihat
+     catatan panjang di atas spkStyXml. PK: "PASAL n" -> nama pasal -> isi;
+     SPK: judul -> isi. Nomornya ikut gaya, bukan format langsung, supaya tidak
+     terbawa saat Word memecah paragraf. */
   var judulSty = D.PUSAT
     ? spkStyXml('KlausulPasal','Klausul Pasal','<w:ind w:left="0" w:firstLine="0"/>',
         '<w:spacing w:before="240" w:after="0" w:line="276" w:lineRule="auto"/><w:jc w:val="center"/>',
-        '<w:b/><w:caps/>')+
+        '<w:b/><w:caps/>', 'KlausulJudul', SPK_NUMPR_JUDUL)+
       spkStyXml('KlausulJudul','Klausul Judul','<w:ind w:left="0" w:firstLine="0"/>',
         '<w:spacing w:before="0" w:after="120" w:line="276" w:lineRule="auto"/><w:jc w:val="center"/>',
-        '<w:b/><w:caps/>')
+        '<w:b/><w:caps/>', 'KlausulIsi')
     : spkStyXml('KlausulJudul','Klausul Judul',
         '<w:ind w:left="'+D.JUDUL_HANG+'" w:hanging="'+D.JUDUL_HANG+'"/>',
         tabH+'<w:spacing w:before="240" w:after="60" w:line="276" w:lineRule="auto"/><w:jc w:val="left"/>',
-        '<w:b/><w:caps/>');
+        '<w:b/><w:caps/>', 'KlausulIsi', SPK_NUMPR_JUDUL);
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
   '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'+
     '<w:docDefaults><w:rPrDefault><w:rPr>'+
@@ -11057,7 +11094,7 @@ function spkStylesXml(){
     spkStyXml('KlausulParagraf2','Klausul Paragraf 2','<w:ind w:left="'+D.L2+'" w:firstLine="'+D.P_FIRST+'"/>','','')+
     spkStyXml('PetunjukTemplate','Petunjuk Template','<w:ind w:left="0"/>',
       '<w:spacing w:after="60" w:line="240" w:lineRule="auto"/><w:jc w:val="left"/>',
-      '<w:i/><w:color w:val="808080"/><w:sz w:val="18"/><w:szCs w:val="18"/>')+
+      '<w:i/><w:color w:val="808080"/><w:sz w:val="18"/><w:szCs w:val="18"/>', 'KlausulIsi')+
   '</w:styles>';
 }
 /* Penomoran OTOMATIS Word untuk baris judul klausul (bukan angka yang diketik).
@@ -11304,15 +11341,44 @@ function spkHtmlToWordParas(html){
 function spkDocxTemplateBlob(judul, isiHtml, noKl){
   var enc=new TextEncoder(), D=spkDX(), PK=!!D.PUSAT;
   var guide=function(t){ return spkPXml('PetunjukTemplate', spkRunXml(t,{})); };
-  var numPr='<w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr>';
+  /* numPr TIDAK LAGI dipasang di sini — sudah pindah ke definisi gaya
+     (SPK_NUMPR_JUDUL di spkStylesXml). Lihat catatan di atas spkStyXml. */
   var judulRuns = spkJudulPlain(judul) ? spkRunsFromHtml(spkJudulSan(judul))
                                        : spkRunXml(PK?'NAMA PASAL':'JUDUL KLAUSUL',{});
   /* SPK : SATU baris — nomor otomatis + judul, rata kiri (seperti semula).
      PK  : DUA baris rata tengah — "PASAL n" (bernomor otomatis, tanpa teks)
            lalu nama pasal di bawahnya, persis seperti tampilan Lihat. */
+  /* ---- TEKS JUDUL BOLEH DIUBAH, NOMOR & INDENNYA TIDAK (8 Agu 2026) ----
+     KETENTUAN: "judul teks hanya bisa diklik di situ untuk mengubah judul
+     pekerjaan, tetapi saat di-backspace tidak sampai menyentuh bagian
+     penomoran dan jaraknya terhadap teks."
+
+     Teks judulnya dibungkus content control BERJENIS TEKS BIASA (<w:text/>).
+     Jenis inilah kuncinya — bukan sekadar penguncian:
+       - isinya tetap bisa diklik & diketik, jadi judul boleh diganti di Word;
+       - kendali jenis ini TIDAK BOLEH memuat tanda paragraf, sehingga Word
+         menolak Enter di dalamnya;
+       - dan yang paling dicari: Backspace di awal teks tidak punya tempat
+         untuk melangkah keluar. Nomor otomatis beserta jarak nomor->teks
+         (hanging indent) berada DI LUAR kendali ini — pada paragrafnya — jadi
+         tidak pernah bisa tersentuh, terhapus, atau tergeser.
+     `sdtLocked` melengkapi: kotaknya sendiri tidak dapat dihapus, sehingga
+     baris judul tidak bisa lenyap walau seluruh dokumen diblok lalu dihapus.
+
+     CATATAN PERUBAHAN: sebelumnya seluruh baris judul memakai
+     `sdtContentLocked` — benar-benar tidak bisa diketik di Word sama sekali.
+     Itu memenuhi "Ctrl+A lalu hapus tidak menyentuh judul", tetapi menutup
+     satu-satunya cara menamai klausul dari Word. Susunan sekarang menjaga
+     KEDUANYA sejauh yang bisa dijamin Word: strukturnya (nomor, indent,
+     barisnya sendiri) kebal, teksnya tetap milik pengguna. */
+  var judulTeks =
+    '<w:sdt><w:sdtPr>'+
+      '<w:alias w:val="Judul Klausul"/><w:tag w:val="spk-judul-klausul-teks"/>'+
+      '<w:id w:val="418272"/><w:lock w:val="sdtLocked"/><w:text/>'+
+    '</w:sdtPr><w:sdtContent>'+judulRuns+'</w:sdtContent></w:sdt>';
   var judulXml = PK
-    ? spkPXml2('KlausulPasal', numPr, '') + spkPXml('KlausulJudul', judulRuns)
-    : spkPXml2('KlausulJudul', numPr, judulRuns);
+    ? spkPXml('KlausulPasal', '') + spkPXml('KlausulJudul', judulTeks)
+    : spkPXml('KlausulJudul', judulTeks);
   /* ---- BARIS JUDUL DIBENTENGI (ketentuan 7 Agu 2026) ----
      "Isi klausul di bawah judul, di-backspace atau di-block bagaimanapun, tidak
      boleh mencapai baris judul."
@@ -11339,7 +11405,7 @@ function spkDocxTemplateBlob(judul, isiHtml, noKl){
   judulXml =
     '<w:sdt><w:sdtPr>'+
       '<w:alias w:val="Judul Klausul"/><w:tag w:val="spk-judul-klausul"/>'+
-      '<w:id w:val="418271"/><w:lock w:val="sdtContentLocked"/>'+
+      '<w:id w:val="418271"/><w:lock w:val="sdtLocked"/>'+
     '</w:sdtPr><w:sdtContent>'+judulXml+'</w:sdtContent></w:sdt>';
   var body =
     guide('PETUNJUK (baris abu-abu ini otomatis DIABAIKAN saat diunggah — boleh dibiarkan):')+
@@ -11347,8 +11413,8 @@ function spkDocxTemplateBlob(judul, isiHtml, noKl){
     guide('2) Gunakan Style Word: "Klausul Isi" (teks biasa), "Klausul Butir 1" (nomor 1.1.), "Klausul Butir 2" (huruf a.), "Klausul Paragraf" (paragraf menjorok).')+
     guide('3) Penomoran butir boleh memakai penomoran otomatis Word ATAU diketik manual (mis. 1.1. / a.) lalu TAB — keduanya terbaca sama persis.')+
     (PK
-      ? guide('4) Baris "PASAL n" & NAMA PASAL TERKUNCI — Word akan menolak setiap pengetikan, backspace, maupun Ctrl+A lalu hapus di baris itu, sehingga judul tidak bisa terhapus tak sengaja saat menyunting isi. Nama pasal diubah di kotak "Judul Klausul" pada aplikasi.')
-      : guide('4) Baris judul klausul TERKUNCI — Word akan menolak setiap pengetikan, backspace, maupun Ctrl+A lalu hapus di baris itu, sehingga judul tidak bisa terhapus tak sengaja saat menyunting isi. Judul diubah di kotak "Judul Klausul" pada aplikasi.'))+
+      ? guide('4) NAMA PASAL boleh diketik langsung di sini. Nomor "PASAL n" beserta jaraknya ke teks TERKUNCI: Backspace, Delete, maupun Enter di baris itu tidak dapat menyentuhnya, dan barisnya tidak ikut terhapus saat Ctrl+A lalu hapus.')
+      : guide('4) JUDUL KLAUSUL boleh diketik langsung di sini. Nomornya beserta jaraknya ke teks TERKUNCI: Backspace, Delete, maupun Enter di baris itu tidak dapat menyentuhnya, dan barisnya tidak ikut terhapus saat Ctrl+A lalu hapus.'))+
     guide('5) Placeholder seperti {{nama_pekerjaan}}, {{nilai_rp}}, {{jangka_waktu_hari}} tetap boleh dipakai.')+
     judulXml;
   var isi=spkHtmlToWordParas(isiHtml);
@@ -12138,14 +12204,20 @@ function spkKlausulOpenEditor(k){
   if(!ov){
     ov=document.createElement('div'); ov.id='spk-kldoc-ov'; ov.className='spk-ov';
     document.body.appendChild(ov);
-    ov.addEventListener('click', function(e){ if(e.target.id==='spk-kldoc-ov') spkKlDocAskClose(); });
+    /* KLIK DI LATAR TIDAK LAGI MENUTUP (8 Agu 2026) — disamakan dengan seluruh
+       pop-up lain. Dulu satu klik meleset di luar kotak langsung membuang
+       seluruh isian: judul yang sudah diketik dan berkas .docx yang sudah
+       ditarik ke sini ikut hilang, tanpa peringatan apa pun.
+       pasangTolakTutup() menggantinya dengan getaran + sorot tombol tutup,
+       persis pop-up pilih dokumen & pratinjau file. */
+    try{ pasangTolakTutup('spk-kldoc-ov'); }catch(e){}
   }
   ov.innerHTML=
     '<div class="spk-ov-modal spk-ov-we" style="height:auto;max-height:92vh;width:min(530px,96vw)">'+
       '<div class="spk-ov-head spk-we-head">'+
         '<span class="spk-ov-title">Unggah Klausul Kontrak</span>'+
         '<div class="spk-we-wbtns">'+
-          '<button type="button" class="spk-we-wbtn close" title="Tutup" onclick="spkKlDocAskClose()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>'+
+          '<button type="button" class="spk-we-wbtn close" title="Tutup" aria-label="Tutup" onclick="spkKlDocAskClose()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>'+
         '</div>'+
       '</div>'+
       '<div class="spk-ov-body">'+
@@ -12464,17 +12536,40 @@ async function spkDocxKunciJudulBlob(u8){
     }
     if(mulai<0) return null;                       // struktur tak dikenali -> biarkan apa adanya
 
-    var frag=new DOMParser().parseFromString(
-      '<w:sdt xmlns:w="'+SPK_W_NS+'"><w:sdtPr>'+
-        '<w:alias w:val="Judul Klausul"/><w:tag w:val="spk-judul-klausul"/>'+
-        '<w:id w:val="418271"/><w:lock w:val="sdtContentLocked"/>'+
-      '</w:sdtPr><w:sdtContent/></w:sdt>','application/xml');
-    if(frag.getElementsByTagName('parsererror').length) return null;
-    var sdt=doc.importNode(frag.documentElement,true);
+    var buatSdt=function(tag,id,extraPr){
+      var f=new DOMParser().parseFromString(
+        '<w:sdt xmlns:w="'+SPK_W_NS+'"><w:sdtPr>'+
+          '<w:alias w:val="Judul Klausul"/><w:tag w:val="'+tag+'"/>'+
+          '<w:id w:val="'+id+'"/><w:lock w:val="sdtLocked"/>'+(extraPr||'')+
+        '</w:sdtPr><w:sdtContent/></w:sdt>','application/xml');
+      if(f.getElementsByTagName('parsererror').length) return null;
+      return doc.importNode(f.documentElement,true);
+    };
+    var sdt=buatSdt('spk-judul-klausul','418271',''); if(!sdt) return null;
     var isi=sdt.getElementsByTagNameNS(SPK_W_NS,'sdtContent')[0]; if(!isi) return null;
 
     body.insertBefore(sdt, kids[mulai]);
     for(var n=0;n<jml;n++) isi.appendChild(kids[mulai+n]);   // paragrafnya DIPINDAH, bukan disalin
+
+    /* Teks judulnya dibungkus kendali TEKS BIASA supaya tetap bisa diketik,
+       sementara nomor & jarak nomor->teks (milik paragraf, di LUAR kendali)
+       tidak dapat disentuh Backspace. Sama persis dengan yang dibangun
+       spkDocxTemplateBlob — lihat catatan panjang di sana. */
+    var pJudul=null;
+    for(var q=0;q<jml;q++){ if(styleOf(kids[mulai+q])==='KlausulJudul'){ pJudul=kids[mulai+q]; break; } }
+    if(pJudul){
+      var sdtT=buatSdt('spk-judul-klausul-teks','418272','<w:text/>');
+      var isiT=sdtT && sdtT.getElementsByTagNameNS(SPK_W_NS,'sdtContent')[0];
+      if(isiT){
+        /* Hanya run (w:r) yang dipindah; pPr tetap di paragrafnya. */
+        var runs=[], cc=pJudul.firstChild;
+        while(cc){ if(cc.nodeType===1 && cc.localName==='r') runs.push(cc); cc=cc.nextSibling; }
+        if(runs.length){
+          pJudul.insertBefore(sdtT, runs[0]);
+          for(var q2=0;q2<runs.length;q2++) isiT.appendChild(runs[q2]);
+        }
+      }
+    }
 
     var outXml=new XMLSerializer().serializeToString(doc);
     if(outXml.indexOf('<?xml')!==0) outXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+outXml;

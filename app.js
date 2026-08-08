@@ -5634,7 +5634,7 @@ function bunyiTolak(){
    kelasnya sudah menempel dan peramban menganggap tidak ada yang berubah. */
 function tolakTutupModal(ov){
   if(!ov) return;
-  const mdl=ov.querySelector('.modal, .tor-dk-mdl, .pn-preview-modal, .ac-panel, .st-panel, .pnw-profil-modal, .materi-kat-modal');
+  const mdl=ov.querySelector('.modal, .tor-dk-mdl, .pn-preview-modal, .ac-panel, .st-panel, .pnw-profil-modal, .materi-kat-modal, .spk-ov-modal');
   if(!mdl) return;
   /* Bunyi penolakan DIMATIKAN atas permintaan pengguna (Agu 2026).
      Isyarat visualnya — getaran modal + sorot tombol tutup — sudah cukup

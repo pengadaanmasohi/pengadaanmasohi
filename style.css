@@ -3558,11 +3558,9 @@ table.rho-matrix thead th{ border-color:#3f9ba3; }
 .spk-kldoc-jinput:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,124,134,.15)}
 .spk-kldoc-jinput:empty:before{content:attr(data-ph);color:#9AA7B2}
 .spk-kldoc-jinput i,.spk-kldoc-jinput em{font-style:italic}
-/* Judul kini DIKETIK DI SINI karena baris judul pada template Word dikunci total
-   (content control sdtContentLocked), sehingga Word menolak pengetikan di sana.
-   Kotak judul + tombol miring MENGISI sisa baris di kiri, tombol Download
-   Template menempel di kanan (tata letak 7 Agu 2026, menggantikan pemilih
-   "Tata letak" yang dihapus). */
+/* Judul boleh diketik DI SINI maupun langsung di Word (sejak 8 Agu 2026 baris
+   judul memakai content control berjenis teks biasa — lihat spkDocxTemplateBlob).
+   Tata letak barisnya diatur ulang di bagian 39 pada akhir berkas ini. */
 .spk-kldoc-jwrap{flex:1 1 240px;min-width:200px}
 .spk-kldoc-tools .spk-kldoc-dl{flex:0 0 auto;margin-left:auto}
 .spk-kldoc-jbtn i{font-style:italic;font-family:Georgia,"Times New Roman",serif}
@@ -9902,4 +9900,201 @@ html{
   -webkit-text-size-adjust:100%;
      -moz-text-size-adjust:100%;
           text-size-adjust:100%;
+}
+
+/* ============================================================
+   39. POP-UP "UNGGAH KLAUSUL KONTRAK" — BARIS ALAT
+   ------------------------------------------------------------
+   KETENTUAN 8 Agu 2026:
+     - kotak Judul Klausul + tombol miring = SATU baris penuh,
+     - tombol "Download Template (.docx)" TURUN ke baris bawah,
+       menempel di kanan,
+     - tinggi kotak judul sedikit diturunkan,
+     - tombol miring dirapikan dengan ukuran presisi.
+
+   Dipakai GRID, bukan flex-wrap. Alasannya: dengan flex-wrap,
+   letak tiap tombol bergantung pada lebar sisa — keterangan
+   "Berkas .docx tersimpan" yang panjangnya berubah-ubah bisa
+   mendorong tombol Download naik atau turun sendiri. Grid dua
+   kolom mengunci petanya: baris atas selalu milik judul, baris
+   bawah selalu "keterangan di kiri, Download di kanan", berapa
+   pun panjang keterangannya.
+
+   Ditulis di akhir berkas supaya menang urutan atas aturan
+   .spk-kldoc-* yang lebih awal, tanpa perlu !important.
+   ============================================================ */
+.spk-kldoc-tools{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  grid-template-areas:
+    "judul judul"
+    "meta  unduh";
+  align-items:center;
+  gap:10px 12px;
+  margin-top:11px;
+}
+.spk-kldoc-tools .spk-kldoc-jwrap{grid-area:judul;min-width:0}
+.spk-kldoc-tools .spk-kldoc-meta{grid-area:meta;min-width:0}
+.spk-kldoc-tools .spk-kldoc-dl{grid-area:unduh;justify-self:end;margin-left:0}
+
+/* Kotak judul: tinggi diturunkan 42 -> 38 px, padding ikut dirapatkan supaya
+   teksnya tetap berada tepat di tengah tinggi barunya. */
+.spk-kldoc-jwrap{gap:8px}
+.spk-kldoc-jinput{
+  min-height:38px;
+  padding:8px 13px;
+  line-height:1.4;
+}
+
+/* ---- Tombol MIRINGKAN (I) ----
+   Persegi 38x38 — sama persis dengan tinggi kotak judul di sebelahnya, jadi
+   kedua sisi baris berakhir di garis yang sama. Ukurannya dikunci lewat
+   flex-basis + width + height sekaligus: flex-basis saja tidak cukup karena
+   `align-items:stretch` pada pembungkusnya akan memanjangkannya mengikuti
+   kotak judul yang tingginya boleh tumbuh saat judul memakai dua baris. */
+.spk-kldoc-jbtn{
+  flex:0 0 38px;width:38px;height:38px;align-self:flex-start;
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:0;border:1px solid #cdd9de;border-radius:10px;
+  background:linear-gradient(180deg,#ffffff,#f2f6f8);
+  color:#33454b;cursor:pointer;
+  box-shadow:0 1px 2px rgba(16,40,50,.07), inset 0 1px 0 #fff;
+  transition:background .16s ease,border-color .16s ease,color .16s ease,
+             box-shadow .18s ease,transform .12s ease;
+}
+/* `display:block` WAJIB: transform tidak berlaku pada elemen inline, dan tanpa
+   pergeseran setengah piksel ini huruf "I" serif duduk sedikit terlalu rendah
+   terhadap tengah tombol (garis dasar serif lebih berat di bawah). */
+.spk-kldoc-jbtn i{
+  display:block;font-style:italic;font-family:Georgia,"Times New Roman",serif;
+  font-size:17px;font-weight:600;line-height:1;letter-spacing:.5px;
+  transform:translateY(-.5px);
+}
+.spk-kldoc-jbtn:hover{
+  background:linear-gradient(180deg,#f0f9fa,#e2f1f3);
+  border-color:#0e7c86;color:#0e7c86;
+  box-shadow:0 2px 7px rgba(14,124,134,.17), inset 0 1px 0 #fff;
+}
+.spk-kldoc-jbtn:active{
+  transform:translateY(1px);
+  box-shadow:0 1px 2px rgba(14,124,134,.16);
+}
+.spk-kldoc-jbtn:focus-visible{
+  outline:none;border-color:var(--teal);
+  box-shadow:0 0 0 3px rgba(14,124,134,.16);
+}
+
+/* Layar sempit: keterangan & tombol Download menumpuk, tombol tetap di kanan. */
+@media (max-width:520px){
+  .spk-kldoc-tools{grid-template-columns:minmax(0,1fr);
+    grid-template-areas:"judul" "meta" "unduh"}
+  .spk-kldoc-tools .spk-kldoc-dl{justify-self:stretch}
+}
+
+/* ============================================================
+   40. POP-UP "UNGGAH KLAUSUL KONTRAK" — TOLAK TUTUP & TOMBOL X
+   ------------------------------------------------------------
+   KETENTUAN 8 Agu 2026: pop-up ini disamakan dengan pop-up lain —
+   klik di latar TIDAK menutupnya, melainkan menggetarkan kotaknya
+   sambil menyorot tombol tutup; dan tombol silangnya memakai
+   bentuk yang sama dengan tombol Tutup pada pratinjau file/TOR
+   (keping merah bersudut lengkung, ikon silang putih).
+
+   Kenapa ini penting di sini, bukan sekadar konsistensi rasa:
+   pop-up ini menyimpan pekerjaan yang belum tersimpan — judul
+   yang sudah diketik dan berkas .docx yang sudah ditarik masuk.
+   Dulu satu klik meleset di luar kotak membuang semuanya.
+
+   Getarannya memakai keyframes tor-dk-getar / tor-dk-sorot yang
+   sudah dipakai pop-up lain, jadi tidak ada gerak baru yang
+   perlu dihafal mata.
+   ============================================================ */
+#spk-kldoc-ov .spk-ov-modal.menolak{
+  animation:tor-dk-getar .4s cubic-bezier(.36,.07,.19,.97) both;
+}
+#spk-kldoc-ov .spk-ov-modal.menolak .spk-we-wbtn.close{
+  animation:tor-dk-sorot .4s ease-in-out 2;
+}
+@media (prefers-reduced-motion:reduce){
+  #spk-kldoc-ov .spk-ov-modal.menolak{animation:none}
+  #spk-kldoc-ov .spk-ov-modal.menolak .spk-we-wbtn.close{
+    animation:tor-dk-sorot .5s ease-in-out 2}
+}
+
+/* ---- Tombol Tutup: sama dengan kepala modal pratinjau ----
+   Ukuran 32x32 dengan ikon 15px — angka yang sama persis dipakai
+   #pn-preview-overlay, sehingga kedua pop-up terasa sekeluarga.
+   Pembungkusnya (.spk-we-wbtns) diberi jarak kanan supaya keping
+   merahnya tidak menempel di tepi kepala modal. */
+#spk-kldoc-ov .spk-we-wbtns{align-items:center;padding-right:12px}
+#spk-kldoc-ov .spk-we-wbtn.close{
+  width:32px;height:32px;flex:0 0 32px;padding:0;
+  border:none;border-radius:9px;line-height:0;
+  background:linear-gradient(135deg,#D33A3A,#e25151);color:#fff;
+  box-shadow:0 2px 6px rgba(6,30,36,.30);
+  transition:filter .15s ease,box-shadow .2s ease;
+}
+#spk-kldoc-ov .spk-we-wbtn.close svg{
+  width:15px;height:15px;display:block;
+  stroke:currentColor;fill:none;stroke-width:2;
+}
+#spk-kldoc-ov .spk-we-wbtn.close:hover{
+  background:linear-gradient(135deg,#D33A3A,#e25151);
+  filter:brightness(1.08);
+  box-shadow:0 4px 10px rgba(6,30,36,.36);
+}
+#spk-kldoc-ov .spk-we-wbtn.close:active{filter:brightness(.96)}
+#spk-kldoc-ov .spk-we-wbtn.close:focus-visible{
+  outline:none;
+  box-shadow:0 0 0 3px rgba(255,255,255,.55),0 2px 6px rgba(6,30,36,.30);
+}
+
+/* ============================================================
+   41. "UNGGAH KLAUSUL KONTRAK" — BINGKAI & KEPALA DISERAGAMKAN
+   ------------------------------------------------------------
+   KETENTUAN 8 Agu 2026: isinya tetap, tetapi bingkai & latar
+   judulnya mengikuti pop-up pemilih dokumen (.tor-dk-*) —
+   kepala bergradasi teal dengan judul putih tebal, sudut modal
+   lebih membulat, bayangan lebih dalam.
+
+   Angka-angkanya DISALIN PERSIS dari torEnsureStyle()
+   (susun-dokumen.js), bukan dikira-kira:
+     kepala    linear-gradient(90deg,#0E7C86,#12A0A8), padding 16/18
+     modal     border-radius 16px, bayangan 0 24px 60px rgba(10,30,40,.28)
+   Dengan begitu dua pop-up ini benar-benar sekeluarga, dan bila
+   kelak warnanya diubah, satu-satunya tempat yang perlu dicari
+   adalah kedua blok bersaudara ini.
+
+   Kepala lamanya biru tua pekat (#12303f) — sisa dari masa
+   pop-up ini bergaya "jendela editor" dengan tombol sepenuh
+   tinggi kepala. Gaya itu sudah tidak dipakai di mana pun lagi.
+   ============================================================ */
+#spk-kldoc-ov .spk-ov-modal{
+  border-radius:16px;
+  box-shadow:0 24px 60px rgba(10,30,40,.28);
+}
+#spk-kldoc-ov .spk-ov-head.spk-we-head{
+  background:linear-gradient(90deg,#0E7C86,#12A0A8);
+  border-bottom:none;
+  padding:16px 18px;
+  align-items:center;
+  gap:12px;
+}
+/* Judul MELIPAT, tombol tidak mengecil — pasangan min-width:0 +
+   overflow-wrap:anywhere sama seperti .tor-dk-hd .jd: tanpa min-width:0
+   satu kata panjang tanpa spasi akan mendorong tombol tutup keluar tepi. */
+#spk-kldoc-ov .spk-we-head .spk-ov-title{
+  flex:1 1 auto;min-width:0;
+  color:#fff;font-weight:800;font-size:14px;line-height:1.35;
+  letter-spacing:.01em;
+  white-space:normal;overflow-wrap:anywhere;word-break:break-word;
+}
+#spk-kldoc-ov .spk-we-wbtns{
+  flex:none;align-items:center;padding-right:0;margin-left:auto;
+}
+/* Cincin fokus putih — sama dengan .tor-dk-hd .x, dan lebih terbaca di atas
+   kepala teal daripada bayangan putih yang dipakai sebelumnya. */
+#spk-kldoc-ov .spk-we-wbtn.close:focus-visible{
+  outline:2px solid #fff;outline-offset:2px;
+  box-shadow:0 2px 6px rgba(6,30,36,.30);
 }
