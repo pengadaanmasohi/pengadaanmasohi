@@ -9852,3 +9852,54 @@ button.act[disabled]:not(#_a):not(#_b),
   background:rgba(12,28,38,.45);padding:20px;
 }
 .tor-dk-ov.show{display:flex}
+
+/* ============================================================
+   37. TIRAI SESI — .app-shell disembunyikan selama animasi masuk
+   ------------------------------------------------------------
+   BUG: Dashboard terlihat di balik lapisan "Selamat Datang" yang
+   masih memudar masuk (±0,42 detik pertama sesudah menekan Masuk).
+
+   #view-dashboard sudah ber-kelas "active" di index.html sejak
+   halaman dimuat, jadi ia SELALU tergambar — selama ini hanya
+   kebetulan tertutup layar login. Begitu layar login pergi lebih
+   dulu daripada lapisan penggantinya menjadi pekat, isinya
+   menyembul.
+
+   Kelas ini dipasang & dilepas oleh sesiTirai() di app.js; lihat
+   catatan panjang di sana untuk urutan waktunya.
+
+   `visibility`, BUKAN `display`: kotak tata letaknya harus tetap
+   ada supaya kartu & grafik Dashboard dapat mengukur lebarnya
+   sendiri saat digambar di balik lapisan. Dengan display:none
+   lebarnya terbaca 0 dan grafiknya lahir gepeng.
+
+   Lapisan sesi (#login-anim, #login-screen, #logout-anim) berada
+   DI LUAR .app-shell di index.html, jadi tidak ikut tersembunyi.
+   ============================================================ */
+body.sesi-tirai .app-shell{visibility:hidden}
+
+/* ============================================================
+   38. UKURAN TEKS TIDAK BOLEH DIKARANG PERAMBAN
+   ------------------------------------------------------------
+   Safari iOS & Chrome Android punya "penggelembungan teks
+   otomatis": pada sebagian tata letak — paling sering setelah
+   layar diputar ke lanskap — keduanya MEMBESARKAN sendiri huruf
+   di dalam blok yang dianggap terlalu lebar, tanpa mengubah
+   apa pun yang lain. Akibatnya tabel & kartu yang sama persis
+   tampil dengan huruf lebih besar di tablet daripada di desktop,
+   dan tata letaknya jadi berdesakan.
+
+   Berkas ini tidak pernah menyetelnya, jadi nilainya `auto` —
+   yaitu izin penuh bagi peramban untuk mengarang. Dikunci 100%
+   di sini: satu-satunya penentu ukuran huruf adalah aturan CSS
+   di berkas ini, sama di desktop maupun tablet.
+
+   BUKAN pengganti `user-scalable=no` — pengguna tetap bebas
+   mencubit-zoom; yang dilarang hanyalah penskalaan diam-diam
+   yang tidak pernah diminta siapa pun.
+   ============================================================ */
+html{
+  -webkit-text-size-adjust:100%;
+     -moz-text-size-adjust:100%;
+          text-size-adjust:100%;
+}

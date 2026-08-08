@@ -233,14 +233,25 @@ function initTutupDiLuar(){
    sidebar yang terlanjur terbuka. Perhitungan ambangnya diambil dari
    window.__MODE_RAIL supaya satu-satunya sumber aturan, dan tetap ada
    cadangan seandainya skrip awal itu dihapus orang. */
-var RAIL_MIN_W = 700;    /* iPad Mini potret = 744px  — cadangan saja */
-var RAIL_MIN_H = 600;    /* ponsel lanskap ±400px -> tetap laci */
+var RAIL_MIN_W    = 700;   /* lebar tata letak: ruang minimum rail + isi — cadangan saja */
+var RAIL_MIN_SISI = 500;   /* sisi pendek perangkat: pembeda tablet vs ponsel */
+/* Cadangan sisiPendekMaks bila skrip <head> dihapus orang. Aturannya HARUS
+   sama persis dengan yang di index.html — lihat catatan panjang di sana untuk
+   alasan tiap angkanya. */
+var __railSisiMaks = 0;
+function railUkur(){
+  var d=document.documentElement;
+  var w=Math.round(Math.max((d&&d.clientWidth)||0,  window.innerWidth||0));
+  var h=Math.round(Math.max((d&&d.clientHeight)||0, window.innerHeight||0));
+  if(w>0 && h>0) __railSisiMaks=Math.max(__railSisiMaks, Math.min(w,h));
+  return {w:w, h:h, sisi:__railSisiMaks};
+}
 function modeRail(){
   var M=window.__MODE_RAIL;
   if(M && typeof M.hitung==='function') return M.hitung();
   if(!noHover()) return !isSmall();                 /* perangkat berkursor: seperti dulu */
-  return window.innerWidth  >= RAIL_MIN_W
-      && window.innerHeight >= RAIL_MIN_H;          /* tablet sentuh */
+  var u=railUkur();
+  return u.sisi >= RAIL_MIN_SISI && u.w >= RAIL_MIN_W;   /* tablet sentuh */
 }
 function terapkanModeRail(){
   var M=window.__MODE_RAIL, rail;

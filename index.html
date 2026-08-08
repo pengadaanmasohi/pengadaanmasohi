@@ -100,23 +100,76 @@
      permintaan jaringan lagi, dan justru penundaan itulah yang jadi masalah. -->
 <script id="mode-rail-awal">
 (function(){
-  /* Ambang tablet. iPad Mini potret 744x1133, iPad 10 lanskap 1180x820,
-     iPad Pro 11 lanskap 1194x834 -> semuanya rail.
-     Ponsel lanskap (mis. 844x390) gagal di syarat TINGGI -> tetap laci. */
-  var MIN_W=700, MIN_H=600;
+  /* ==========================================================================
+     MODE RAIL — DUA PERTANYAAN TERPISAH, BUKAN SATU
+     --------------------------------------------------------------------------
+     BUG: di iPad & tablet Android posisi lanskap, sidebar KADANG hilang dan
+     berganti tombol ☰ di tengah pemakaian.
+
+     Penyebabnya rumus lama membaca visualViewport — yaitu ukuran yang BENAR-
+     BENAR TERLIHAT — lalu menuntut tinggi >= 600. Padahal angka itu menyusut
+     terus-menerus oleh hal-hal yang sama sekali tidak ada hubungannya dengan
+     "ini tablet atau ponsel":
+       - bilah alamat peramban muncul/menghilang saat halaman digulir
+         (tablet 1024x600 tersisa ~500 -> jatuh ke laci),
+       - pengguna mencubit-zoom (visualViewport mengecil mengikuti zoom),
+       - papan ketik di layar terbuka.
+     Setiap kali angkanya melintasi 600, modenya berbalik — itulah "kadang
+     hilang" yang terlihat pengguna.
+
+     Sekarang pertanyaannya DIPISAH menjadi dua, masing-masing dengan ukuran
+     yang tepat untuk menjawabnya:
+
+       1. "Perangkat ini tablet atau ponsel?"  -> SISI TERPENDEK TERBESAR yang
+          pernah terukur sepanjang sesi (sisiPendekMaks). Sifatnya menaik saja:
+          bilah alat & zoom hanya bisa MENGECILKAN ukuran sesaat, jadi nilai
+          terbesarnya tetap mewakili perangkatnya. Ponsel terbesar hari ini
+          bersisi pendek 440 px (iPhone 16 Pro Max) dan tidak pernah bisa
+          menyentuh 500, sedangkan tablet terkecil (1024x600) menyentuhnya
+          bahkan dengan bilah alat terbuka. Jawaban ini TIDAK PERNAH berbalik
+          di tengah jalan — dan itulah inti perbaikannya.
+
+       2. "Apakah ruangnya cukup untuk rail + isi?" -> LEBAR TATA LETAK saat
+          ini. Dipakai apa adanya (tidak diingat-ingat) supaya Split View /
+          Stage Manager di iPad yang menyempitkan jendela sampai < 700 px tetap
+          turun ke laci, sebagaimana mestinya.
+
+     LEBAR TATA LETAK, BUKAN VISUAL: documentElement.clientWidth tidak berubah
+     saat pengguna mencubit-zoom maupun saat papan ketik muncul — persis yang
+     kita mau. innerWidth dipakai sebagai pembanding karena di iOS clientWidth
+     sesekali masih berisi nilai sebelum layar diputar; diambil yang terbesar.
+     ========================================================================== */
+  var MIN_SISI=500;    /* sisi pendek perangkat: pembeda tablet vs ponsel */
+  var MIN_W=700;       /* lebar tata letak: ruang minimum untuk rail + isi   */
   function cocok(q){ try{ return window.matchMedia(q).matches; }catch(e){ return false; } }
   function noHover(){ return cocok('(hover:none)'); }
-  /* Ukuran yang dipakai adalah ukuran layar yang BENAR-BENAR TERLIHAT.
-     visualViewport dipakai lebih dulu karena di iOS innerWidth/innerHeight
-     sering masih berisi ukuran sebelum layar diputar. */
-  function lebar(){ try{ return Math.round((window.visualViewport&&window.visualViewport.width)||window.innerWidth||0); }catch(e){ return window.innerWidth||0; } }
-  function tinggi(){ try{ return Math.round((window.visualViewport&&window.visualViewport.height)||window.innerHeight||0); }catch(e){ return window.innerHeight||0; } }
+  function lebar(){
+    try{
+      var d=document.documentElement;
+      return Math.round(Math.max((d&&d.clientWidth)||0, window.innerWidth||0));
+    }catch(e){ return window.innerWidth||0; }
+  }
+  function tinggi(){
+    try{
+      var d=document.documentElement;
+      return Math.round(Math.max((d&&d.clientHeight)||0, window.innerHeight||0));
+    }catch(e){ return window.innerHeight||0; }
+  }
+  /* Sisi terpendek TERBESAR yang pernah terukur. Diperbarui tiap pengukuran,
+     dan hanya boleh naik. Tidak bergantung orientasi: ponsel memberi 430 baik
+     dalam posisi tegak maupun rebah, tablet memberi 600-834. */
+  var sisiPendekMaks=0;
+  function catatUkuran(){
+    var w=lebar(), h=tinggi();
+    if(w>0 && h>0) sisiPendekMaks=Math.max(sisiPendekMaks, Math.min(w,h));
+    return sisiPendekMaks;
+  }
   function hitung(){
     /* Perangkat berkursor (desktop/laptop): seperti dulu — rail selama
        jendelanya lebih lebar dari 1024px. */
     if(!noHover()) return !cocok('(max-width:1024px)');
     /* Layar sentuh: tablet ikut tampilan desktop, ponsel tetap laci. */
-    return lebar()>=MIN_W && tinggi()>=MIN_H;
+    return catatUkuran()>=MIN_SISI && lebar()>=MIN_W;
   }
   function terapkan(){
     var h=document.documentElement, rail=hitung();
@@ -124,7 +177,8 @@
     h.classList.toggle('sentuh', noHover());
     return rail;
   }
-  window.__MODE_RAIL={ MIN_W:MIN_W, MIN_H:MIN_H, hitung:hitung, terapkan:terapkan };
+  window.__MODE_RAIL={ MIN_W:MIN_W, MIN_SISI:MIN_SISI, hitung:hitung, terapkan:terapkan,
+                       sisiPendek:function(){ return sisiPendekMaks; } };
   terapkan();
   /* Dipasang di sini juga (bukan hanya di ui-sidebar.js) supaya mode tetap
      benar walau berkas itu gagal dimuat sama sekali. */

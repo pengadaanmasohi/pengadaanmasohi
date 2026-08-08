@@ -1217,6 +1217,7 @@ async function spkInit(){
   records_klausul = spkKlDefault();
   await refreshDataSpk();
   await spkKlMigrateLibraryToProfile();
+  await spkKlProfilMigrasiPk();      /* pisahkan profil klausul Tender/PK dari daftar SPK */
   try{ rerenderActiveView(); }catch(e){}
 }
 
@@ -10327,7 +10328,7 @@ function renderSpkKlausul(){
   cont.innerHTML=
     '<div class="form-card">'+
       '<div class="form-section-title" style="justify-content:space-between">'+
-        '<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg> Pustaka Klausul SPK '+tagProfil+'</span>'+
+        '<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg> Pustaka Klausul '+fkEsc(spkKlKindLabel())+' '+tagProfil+'</span>'+
         '<span class="spk-klbar">'+
           '<button type="button" class="jp-profil-btn is-save" title="Simpan Profil" onclick="spkKlProfilOpenSave()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg><span>Simpan Profil</span></button>'+
           '<button type="button" class="jp-profil-btn is-load" title="Muat Profil" onclick="spkKlProfilOpenLoad()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg><span>Muat Profil</span></button>'+
@@ -10375,6 +10376,107 @@ function spkKlKindLabel(){
   var k=spkKlKind();
   return (k==='klausul_tor') ? 'TOR/KAK' : (k==='klausul_pk' ? 'Perjanjian/Kontrak' : 'SPK');
 }
+/* ============================================================================
+   PEMISAHAN PROFIL KLAUSUL PK <-> SPK (8 Agu 2026)
+   ----------------------------------------------------------------------------
+   Gudangnya memang sudah dipisah sejak 5 Agu 2026 — tetapi hanya untuk profil
+   yang DISIMPAN SESUDAH tanggal itu. Seluruh profil yang lahir pada masa satu
+   gudang tetap duduk di kind 'klausul', yaitu gudang yang kini menjadi milik
+   SPK. Akibatnya profil yang sebenarnya dibuat untuk pekerjaan TENDER
+   (Perjanjian/Kontrak) masih nongol di daftar SPK, dan itulah yang terasa
+   "profilnya masih tercampur antara PK dan SPK".
+
+   Fungsi di bawah memindahkannya SEKALI JALAN: profil di 'klausul' yang
+   berciri PK/Tender dipindahkan ke 'klausul_pk'.
+
+   ---- CARA MENGENALI "BERCIRI PK/TENDER" ----
+   Yang dipakai bukan tebakan dari nama saja, melainkan bukti dari ISI profil:
+
+   1. KODE ISIAN KHUSUS PK. Sejumlah field hanya ada pada form
+      Perjanjian/Kontrak (only:'PK') — No. RKS, No. SPPBJ, No. BA Hasil
+      Pengadaan, Sampul 2, Telepon/Fax/Email Penyedia, dan seterusnya. Sebuah
+      klausul yang memuat {{no_rks}} atau {{no_sppbj}} MUSTAHIL ditulis untuk
+      SPK: kode itu tidak akan pernah terisi di sana. Daftarnya diturunkan
+      langsung dari SPK_FIELDS_FLAT, jadi ikut terbarui sendiri bila kelak ada
+      field only:'PK' yang ditambah atau dibuang.
+   2. JUDUL BERBUNYI "PASAL". Dokumen PK menomori bagiannya sebagai PASAL,
+      sedangkan SPK memakai KLAUSUL.
+   3. NAMA PROFIL menyebut Tender / Perjanjian / PK sebagai kata utuh.
+
+   Nomor 1 & 2 membaca isi; nomor 3 hanya jaring terakhir untuk profil yang
+   isinya masih kerangka kosong.
+
+   ---- KESELAMATAN DATA ----
+   Salin dulu ke gudang tujuan, hapus dari gudang asal HANYA bila salinannya
+   benar-benar berhasil. Bila nama yang sama sudah ada di 'klausul_pk',
+   profilnya DIBIARKAN di tempat — menimpa profil PK yang sudah dipakai jauh
+   lebih merugikan daripada meninggalkan satu profil di daftar yang keliru.
+   Penjaga "sudah pernah jalan" disimpan di localStorage; menghapus kuncinya
+   akan menjalankan pemeriksaan ini lagi, dan itu aman karena profil yang sudah
+   pindah tidak lagi ditemukan di gudang asal.
+   ============================================================================ */
+const SPK_KL_MIG_PK_KEY='spk_klausul_split_pk_v1';
+/* Key field yang HANYA ada pada Perjanjian/Kontrak.
+   Key yang dipakai dua bentuk sekaligus (mis. metode_pengadaan — ada versi
+   only:'SPK' dan only:'PK') SENGAJA dibuang: kehadirannya tidak membuktikan
+   apa pun. */
+function spkPkOnlyKeys(){
+  var semua={}, pk={};
+  (typeof SPK_FIELDS_FLAT!=='undefined' ? SPK_FIELDS_FLAT : []).forEach(function(f){
+    if(!f || !f.k) return;
+    semua[f.k]=(semua[f.k]||0)+1;
+    if(f.only==='PK') pk[f.k]=(pk[f.k]||0)+1;
+  });
+  return Object.keys(pk).filter(function(k){ return pk[k]===semua[k]; });
+}
+function spkKlProfilCiriPk(p){
+  try{
+    var items=(p && p.items) || [];
+    var keys=spkPkOnlyKeys();
+    for(var i=0;i<items.length;i++){
+      var it=items[i]||{};
+      var teks=String(it.judul||'')+' '+String(it.isi||'');
+      /* 1. kode isian khusus PK */
+      for(var j=0;j<keys.length;j++){
+        if(teks.indexOf('{{'+keys[j]+'}}')>=0) return 'kode {{'+keys[j]+'}}';
+      }
+      /* 2. judul bergaya PASAL */
+      if(/\bpasal\b/i.test(String(it.judul||''))) return 'judul memuat "PASAL"';
+    }
+    /* 3. nama profil */
+    if(/(^|[^a-z])(tender|perjanjian|pk)([^a-z]|$)/i.test(String(p&&p.name||''))) return 'nama profil';
+  }catch(e){}
+  return '';
+}
+async function spkKlProfilMigrasiPk(){
+  try{
+    try{ if(localStorage.getItem(SPK_KL_MIG_PK_KEY)==='1') return; }catch(e){ return; }
+    var asal=(profilesGet('klausul')||[]).slice();
+    if(!asal.length){ try{ localStorage.setItem(SPK_KL_MIG_PK_KEY,'1'); }catch(e){} return; }
+    var pindah=[], bentrok=[];
+    for(var i=0;i<asal.length;i++){
+      var p=asal[i]; if(!p || !p.name) continue;
+      var alasan=spkKlProfilCiriPk(p); if(!alasan) continue;
+      if(typeof profilSaveExists==='function' && profilSaveExists('klausul_pk', p.name)){
+        bentrok.push(p.name); continue;
+      }
+      var salinan=null;
+      try{ salinan=JSON.parse(JSON.stringify(p)); }catch(e){ salinan=p; }
+      if(!(await profilesUpsert('klausul_pk', salinan))) continue;   // gagal salin -> jangan hapus
+      if(await profilesDelete('klausul', p.name)) pindah.push(p.name+' ('+alasan+')');
+    }
+    try{ localStorage.setItem(SPK_KL_MIG_PK_KEY,'1'); }catch(e){}
+    if(pindah.length){
+      console.info('[PROFIL KLAUSUL] dipindahkan ke Perjanjian/Kontrak:', pindah);
+      if(typeof toast==='function')
+        toast(pindah.length+' profil klausul Tender/PK dipindahkan ke daftar Perjanjian/Kontrak','ok');
+    }
+    if(bentrok.length){
+      console.warn('[PROFIL KLAUSUL] tidak dipindahkan, nama sudah dipakai di Perjanjian/Kontrak:', bentrok);
+    }
+  }catch(err){ console.error('spkKlProfilMigrasiPk:', err); }
+}
+
 /* Profil Klausul kini tersimpan di Supabase, terpisah per bentuk dokumen. */
 function spkKlProfilAll(){ return profilesGet(spkKlKind()); }
 function spkKlProfilSnapshot(){
@@ -10396,7 +10498,7 @@ function spkKlProfilOpenSave(){
   spkKlProfilOverlay(
     '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Simpan Profil Klausul '+spkKlKindLabel()+'</div>'+
     '<div class="pnw-profil-sub">Menyimpan <b>'+snap.length+'</b> klausul (judul, isi, urutan, status aktif) sebagai satu profil yang dapat dimuat kembali kapan saja.</div>'+
-    profilSaveBoxHtml(spkKlKind(),'spk-klprofil-name','spkKlProfilDoSave()','Nama profil (mis. SPK Konstruksi Standar)')+
+    profilSaveBoxHtml(spkKlKind(),'spk-klprofil-name','spkKlProfilDoSave()','Nama profil (mis. '+spkKlKindLabel()+' Konstruksi Standar)')+
     '<div class="pnw-profil-actions"><button type="button" class="btn btn-red" data-modal onclick="spkKlProfilClose()">'+BTN_IC_BATAL+'Batal</button>'+
     '<button type="button" class="btn btn-green" data-modal id="spk-klprofil-name-btn" onclick="spkKlProfilDoSave()">'+BTN_IC_SIMPAN+'Simpan Profil</button></div>'
   );
@@ -12307,6 +12409,83 @@ async function spkDefinisiDocxSortedBlob(u8){
   }catch(e){ console.error('[SPK] urut definisi .docx gagal:', e); return null; }
 }
 
+/* ============================================================================
+   MENGUNCI BARIS JUDUL PADA BERKAS .docx YANG SUDAH ADA
+   ----------------------------------------------------------------------------
+   spkDocxTemplateBlob() membentengi baris judul sejak 7 Agu 2026 — tetapi hanya
+   pada template yang DIBANGUN ULANG dari isi HTML. Klausul yang menyimpan
+   berkas aslinya (spkKlDoc.docx, hasil unggahan) diunduh APA ADANYA supaya
+   penomoran & tata letak Word tidak berubah sedikit pun; akibatnya seluruh
+   klausul yang diunggah sebelum tanggal itu masih membawa judul telanjang —
+   Ctrl+A lalu Delete di Word tetap menyapunya.
+
+   Fungsi ini menutup celah itu tanpa menyentuh apa pun yang lain: berkasnya
+   dibongkar, HANYA baris judulnya dibungkus content control ber-kunci
+   (sdtContentLocked), lalu dibungkus ulang. Seluruh part lain (styles,
+   numbering, gambar, dsb.) dikembalikan byte demi byte.
+
+   Mengembalikan null bila tidak ada yang perlu dikerjakan atau strukturnya tak
+   dikenali — pemanggilnya lalu memakai berkas asli, persis seperti dulu. Jadi
+   kegagalan di sini tidak pernah membuat unduhan ikut gagal.
+   ============================================================================ */
+async function spkDocxKunciJudulBlob(u8){
+  try{
+    var ab=(u8 && u8.buffer) ? u8.buffer : u8;
+    var zip=await spkUnzip(ab);
+    var part=zip['word/document.xml']; if(!part) return null;
+    var dec=new TextDecoder(), enc=new TextEncoder();
+    var xml=dec.decode(part);
+    /* Sudah terkunci (template baru / sudah pernah ditambal) -> jangan disentuh. */
+    if(xml.indexOf('spk-judul-klausul')>=0) return null;
+    var doc=new DOMParser().parseFromString(xml,'application/xml');
+    if(doc.getElementsByTagName('parsererror').length) return null;
+    var body=doc.getElementsByTagNameNS(SPK_W_NS,'body')[0]; if(!body) return null;
+
+    /* Nama style paragraf (w:pStyle). '' bila bukan paragraf / tanpa style. */
+    var styleOf=function(el){
+      if(!el || el.nodeType!==1 || el.localName!=='p') return '';
+      var pPr=el.getElementsByTagNameNS(SPK_W_NS,'pPr')[0]; if(!pPr) return '';
+      var ps=pPr.getElementsByTagNameNS(SPK_W_NS,'pStyle')[0]; if(!ps) return '';
+      return ps.getAttributeNS(SPK_W_NS,'val')||'';
+    };
+    /* Anak-langsung <w:body>, tanpa sectPr. */
+    var kids=[], c=body.firstChild;
+    while(c){ if(c.nodeType===1 && c.localName!=='sectPr') kids.push(c); c=c.nextSibling; }
+
+    /* Baris judul = paragraf ber-style "KlausulJudul".
+       Pada Perjanjian/Kontrak judulnya DUA paragraf: "KlausulPasal" (nomor
+       otomatis, tanpa teks) diikuti "KlausulJudul" — keduanya ikut dibungkus,
+       kalau tidak nomor pasalnya masih bisa terhapus sendirian. */
+    var mulai=-1, jml=0;
+    for(var i=0;i<kids.length;i++){
+      var st=styleOf(kids[i]);
+      if(st==='KlausulPasal' && styleOf(kids[i+1])==='KlausulJudul'){ mulai=i; jml=2; break; }
+      if(st==='KlausulJudul'){ mulai=i; jml=1; break; }
+    }
+    if(mulai<0) return null;                       // struktur tak dikenali -> biarkan apa adanya
+
+    var frag=new DOMParser().parseFromString(
+      '<w:sdt xmlns:w="'+SPK_W_NS+'"><w:sdtPr>'+
+        '<w:alias w:val="Judul Klausul"/><w:tag w:val="spk-judul-klausul"/>'+
+        '<w:id w:val="418271"/><w:lock w:val="sdtContentLocked"/>'+
+      '</w:sdtPr><w:sdtContent/></w:sdt>','application/xml');
+    if(frag.getElementsByTagName('parsererror').length) return null;
+    var sdt=doc.importNode(frag.documentElement,true);
+    var isi=sdt.getElementsByTagNameNS(SPK_W_NS,'sdtContent')[0]; if(!isi) return null;
+
+    body.insertBefore(sdt, kids[mulai]);
+    for(var n=0;n<jml;n++) isi.appendChild(kids[mulai+n]);   // paragrafnya DIPINDAH, bukan disalin
+
+    var outXml=new XMLSerializer().serializeToString(doc);
+    if(outXml.indexOf('<?xml')!==0) outXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+outXml;
+    var files=[];
+    for(var nm in zip){ if(!Object.prototype.hasOwnProperty.call(zip,nm)) continue;
+      files.push({ name:nm, data:(nm==='word/document.xml') ? enc.encode(outXml) : zip[nm] });
+    }
+    return spkZipBuild(files);
+  }catch(e){ console.error('[SPK] kunci judul .docx gagal:', e); return null; }
+}
+
 async function spkKlDocDownload(){
   try{
     var jd=spkKlDocJudul(), jp=spkJudulPlain(jd);
@@ -12328,6 +12507,15 @@ async function spkKlDocDownload(){
         /* Non-definisi: kembalikan berkas asli apa adanya (SAMA PERSIS). */
         blob=new Blob([spkB642u8(spkKlDoc.docx)], {type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
       }
+      /* BARIS JUDUL DIKUNCI JUGA PADA BERKAS LAMA.
+         Template yang diunggah sebelum 7 Agu 2026 belum membawa content control
+         ber-kunci, sehingga Ctrl+A lalu Delete di Word masih menyapu judulnya.
+         Di sini judul itu dibentengi tepat sebelum berkasnya diunduh — sisa
+         berkasnya tidak disentuh sama sekali. Gagal? blob lama tetap dipakai. */
+      try{
+        var _terkunci=await spkDocxKunciJudulBlob(new Uint8Array(await blob.arrayBuffer()));
+        if(_terkunci) blob=_terkunci;
+      }catch(e){ console.error('[SPK] kunci judul saat unduh:', e); }
     }
     if(!blob){
       /* Belum ada berkas asli (atau struktur tak dikenali) -> bangun ulang dari isi HTML. */

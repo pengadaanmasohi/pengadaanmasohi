@@ -1287,11 +1287,79 @@ async function submitChangePass(){
     if(btn){ btn.disabled=false; btn.textContent='Simpan'; }
   }
 }
+/* ============================================================================
+   TIRAI SESI — DASHBOARD TIDAK BOLEH BOCOR SEBELUM ANIMASINYA SELESAI
+   ----------------------------------------------------------------------------
+   BUG: selama ±0,42 detik pertama sesudah tombol Masuk ditekan, Dashboard
+   terlihat JELAS di balik lapisan "Selamat Datang" yang sedang memudar masuk.
+
+   Penyebabnya pertemuan dua hal yang masing-masing tampak wajar:
+     1. #view-dashboard sudah ber-kelas "active" di index.html sejak halaman
+        dimuat — jadi Dashboard SELALU tergambar; selama ini ia hanya kebetulan
+        tertutup layar login (#login-screen, pekat, z-index 300).
+     2. playLoginAnim() menyembunyikan layar login SEKETIKA, sedangkan lapisan
+        penggantinya (#login-anim) masuk lewat @keyframes loIn yang mulai dari
+        opacity:0.
+   Hasilnya ada jendela beberapa ratus milidetik ketika penutupnya sudah pergi
+   tetapi penggantinya masih tembus pandang — dan Dashboard menyembul di sana.
+
+   Dua lapis penjagaan dipasang, sengaja tidak cuma satu:
+
+   a. TIRAI (kelas .sesi-tirai pada <body>) — .app-shell disembunyikan selama
+      urusan sesi berlangsung, dan baru diangkat pada frame yang SAMA dengan
+      dimulainya fade-out. Ini jaminannya: seketat apa pun waktunya meleset,
+      tidak ada yang bisa terlihat.
+      Dipakai `visibility:hidden`, BUKAN `display:none`: kotak tata letaknya
+      harus tetap ada supaya grafik & kartu Dashboard bisa mengukur dirinya
+      sendiri saat digambar di balik lapisan. Dengan display:none lebarnya
+      terbaca 0 dan grafiknya lahir gepeng.
+
+   b. LAYAR LOGIN DITAHAN sampai lapisan benar-benar pekat. Ini bagian
+      rasanya: yang terlihat memudar di belakang "Selamat Datang" adalah kartu
+      login — bukan ruang kosong.
+
+   Tirai selalu punya waktu paksa-angkat: sekali pun ada janji yang menggantung,
+   pengguna tidak mungkin terkurung menatap halaman kosong. */
+let __sesiTiraiTimer=null;
+function sesiTirai(on){
+  try{
+    document.body.classList.toggle('sesi-tirai', !!on);
+    clearTimeout(__sesiTiraiTimer); __sesiTiraiTimer=null;
+    if(on){
+      /* Pagar pengaman: SESI_TUNGGU_MAKS + animasi + kelonggaran. Tanpa ini,
+         satu galat tak terduga di jalur finish() akan meninggalkan aplikasi
+         tersembunyi selamanya — kerusakan yang jauh lebih parah daripada
+         bocornya Dashboard yang sedang kita cegah. */
+      __sesiTiraiTimer=setTimeout(function(){
+        document.body.classList.remove('sesi-tirai');
+        console.warn('[SESI] tirai diangkat paksa — jalur normal tidak pernah sampai.');
+      }, SESI_TUNGGU_MAKS + 2500);
+    }
+  }catch(e){}
+}
+/* Layar login ditahan sampai #login-anim benar-benar PEKAT (akhir @keyframes
+   loIn), baru disembunyikan. animationend dipakai supaya tepat mengikuti durasi
+   yang tertulis di CSS; setTimeout hanyalah cadangan untuk hal-hal yang membuat
+   peristiwa itu tidak pernah datang — tab disembunyikan, animasi dimatikan
+   pengguna (prefers-reduced-motion), atau peramban lama. */
+function tutupLayarLoginSesudahPekat(anim, loginScreen){
+  if(!loginScreen) return;
+  let sudah=false;
+  const tutup=function(){
+    if(sudah) return; sudah=true;
+    loginScreen.style.display='none';
+    if(anim) anim.removeEventListener('animationend', onEnd);
+  };
+  const onEnd=function(e){ if(!e || e.animationName==='loIn') tutup(); };
+  if(anim) anim.addEventListener('animationend', onEnd);
+  setTimeout(tutup, 600);              /* loIn 420 ms + kelonggaran */
+}
 function playLoginAnim(role, done){
   const anim=document.getElementById('login-anim');
-  // Sembunyikan layar login di balik overlay agar transisi mulus
   const loginScreen=document.getElementById('login-screen');
-  if(loginScreen) loginScreen.style.display='none';
+  /* Tirai dipasang LEBIH DULU, sebelum apa pun yang lain — termasuk sebelum
+     layar login boleh berpikir untuk pergi. */
+  sesiTirai(true);
   // Subteks sesuai peran
   const subs={admin:'Masuk sebagai Admin',user:'Masuk sebagai User'};
   const sub=document.getElementById('login-anim-sub');
@@ -1307,8 +1375,13 @@ function playLoginAnim(role, done){
                            masih kosong, walau hanya satu frame. */
   const finish=()=>{
     done&&done();                              // masuk ke aplikasi (enterApp)
-    if(!anim) return;
+    if(!anim){ sesiTirai(false); return; }
     setelahLukis(()=>{
+      /* TIRAI DIANGKAT TEPAT DI SINI — satu frame dengan dimulainya fade-out,
+         jadi Dashboard baru terlihat ketika lapisannya memang sudah mulai
+         pergi. Urutannya penting: angkat dulu, baru fade-out; kalau terbalik,
+         ada satu frame lapisan sudah menipis di atas layar yang masih kosong. */
+      sesiTirai(false);
       anim.classList.add('fade-out');
       /* 450 ms = tepat durasi @keyframes loOut, sama dengan animasi keluar
          (performLogout). Dulu 500 ms — sisa dari animasi liOut yang sudah
@@ -1319,6 +1392,8 @@ function playLoginAnim(role, done){
   if(anim){
     anim.classList.remove('fade-out');
     anim.classList.add('show');
+    /* Layar login BARU pergi sesudah lapisan pekat (lihat fungsinya di atas). */
+    tutupLayarLoginSesudahPekat(anim, loginScreen);
     sfxSession('in');             // arpeggio naik, seiring animasi "Selamat Datang"
     /* Pemuatan data DITEMBAK SEKARANG, bukan sesudah jeda: selama 900 ms
        animasi berjalan, permintaan ke Supabase sudah dalam perjalanan. Pada
@@ -1327,6 +1402,9 @@ function playLoginAnim(role, done){
        kini sudah berisi saat lapisannya terangkat. */
     tungguSesiSiap(mulaiPrefetchSesi(role), SESI_ANIM_MS).then(finish, finish);
   }else{
+    /* Tanpa lapisan animasi tidak ada yang perlu ditunggu pekat — layar login
+       langsung pergi, dan tirai diangkat di dalam finish(). */
+    if(loginScreen) loginScreen.style.display='none';
     finish();
   }
 }
@@ -1832,6 +1910,12 @@ function tutupSemuaOverlaySesi(){
 function performLogout(){
   stopIdleTimer();   // hentikan pemantauan idle
   tutupSemuaOverlaySesi();   // jangan tinggalkan pop-up mengambang di layar login
+  /* Tirai sesi (lihat sesiTirai) selalu dilepas di sini. Pada keadaan normal ia
+     memang sudah terangkat sejak masuk; ini penjaga untuk keluar yang terjadi
+     di tengah animasi masuk — mis. sesi kedaluwarsa atau pengguna menekan
+     Keluar sebelum "Selamat Datang" selesai — supaya layar login tidak muncul
+     di atas .app-shell yang masih tersembunyi. */
+  sesiTirai(false);
   const anim=document.getElementById('logout-anim');
   /* Menampilkan kembali layar login DIPISAH dan dijalankan paling akhir di
      dalam `finally`.
