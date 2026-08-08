@@ -1017,6 +1017,83 @@ function requireBidangSimpan(rec){
   return false;
 }
 
+/* ============================================================================
+   FILTER "BIDANG PELAKSANA" TERKUNCI UNTUK AKUN USER
+   ----------------------------------------------------------------------------
+   Daftar sudah disaring per bidang di getFilteredRecords*() — tetapi dropdown
+   filternya masih memuat SELURUH bidang. Akibatnya akun user bisa memilih
+   bidang lain, lalu melihat tabel kosong dan menyimpulkan datanya hilang,
+   padahal memang tidak pernah boleh dilihat.
+
+   Karena itu dropdown dikunci pada bidang akun: pilihan lain DILEPAS (bukan
+   sekadar dinonaktifkan) sehingga yang muncul hanya bidangnya sendiri, dan
+   kontrolnya tidak bisa dibuka.
+
+   Kenapa bukan `disabled`: kontrol yang disabled tidak menerima peristiwa
+   tetikus sama sekali, jadi kursor "not-allowed" tidak pernah tampil — padahal
+   justru kursor itulah isyarat paling jelas bahwa bidang ini memang terkunci,
+   bukan sedang rusak. pointer-events dimatikan pada <select>-nya dan kursor
+   dipasang pada pembungkusnya (.filter-field), sehingga nilainya tetap terbaca
+   biasa oleh renderTable*() / fkFilter*().
+
+   Dipanggil dari applyRole(), jadi ikut MELEPAS kunci saat admin masuk di tab
+   yang sama tanpa halaman dimuat ulang.
+   ============================================================================ */
+const FILTER_BIDANG_IDS = [
+  'filter-bidang',          // Monitoring > Daftar Pengadaan — SPBJ / Kontrak Rinci
+  'filter-pl-bidang',       // Monitoring > Daftar Pengadaan — Pengadaan Langsung
+  'filter-tender-bidang',   // Monitoring > Daftar Pengadaan — Tender
+  'fk-input-bidang',        // File Dokumen > Dokumen Kontrak — Input Data
+  'fk-view-bidang'          // File Dokumen > Dokumen Kontrak — Lihat Data
+];
+function kunciSatuFilterBidang(el){
+  if(!el) return;
+  const bungkus = el.closest ? el.closest('.filter-field') : null;
+  const kunci = isUser() && !bidangSemua();
+  if(kunci){
+    /* Pilihan lain dilepas dari daftar; "Semua Bidang" (value kosong) ikut
+       dilepas supaya tidak ada satu pun pilihan yang terlihat lebih luas
+       daripada hak akses akunnya. */
+    [...el.options].forEach(o=>{
+      const cocok = normBidang(o.value||o.textContent)===normBidang(currentBidang);
+      o.hidden   = !cocok;
+      o.disabled = !cocok;
+    });
+    if(![...el.options].some(o=>!o.hidden)){
+      /* Bidang akun belum ada di daftar (mis. bidang baru) -> tambahkan. */
+      const opt=document.createElement('option');
+      opt.value=currentBidang; opt.textContent=currentBidang;
+      el.appendChild(opt);
+    }
+    el.value = currentBidang;
+    el.style.pointerEvents='none';
+    el.style.background='#eef3f4';
+    el.style.color='#5b7176';
+    el.style.cursor='not-allowed';
+    el.setAttribute('tabindex','-1');
+    el.setAttribute('aria-readonly','true');
+    el.title='Terkunci pada bidang akun Anda: '+bidangLabel();
+    if(bungkus){ bungkus.style.cursor='not-allowed'; bungkus.title=el.title; }
+  }else{
+    [...el.options].forEach(o=>{ o.hidden=false; o.disabled=false; });
+    el.style.pointerEvents='';
+    el.style.background='';
+    el.style.color='';
+    el.style.cursor='';
+    el.removeAttribute('tabindex');
+    el.removeAttribute('aria-readonly');
+    el.title='';
+    if(bungkus){ bungkus.style.cursor=''; bungkus.title=''; }
+  }
+}
+function kunciFilterBidang(){
+  FILTER_BIDANG_IDS.forEach(id=>kunciSatuFilterBidang(document.getElementById(id)));
+}
+/* Tombol "Reset" tiap halaman mengosongkan seluruh filter — termasuk Bidang.
+   Dipanggil sesudahnya supaya nilainya kembali ke bidang akun, bukan kosong
+   ("Semua Bidang") yang tak pernah boleh dipilih akun user. */
+function pulihkanFilterBidang(){ kunciFilterBidang(); }
+
 /* ---- Hak ubah/hapus dokumen Perjanjian/Kontrak per-modul ----
    Dipanggil dengan `rec` (baris data) untuk keputusan per-baris, atau TANPA
    argumen kedua untuk pertanyaan tingkat modul ("modul ini bisa diubah sama
@@ -1422,6 +1499,11 @@ function applyRole(role){
     const ada=[...items].some(it=>it.style.display!=='none');
     g.style.display = ada ? '' : 'none';
   });
+
+  /* Filter Bidang Pelaksana dikunci pada bidang akun (lihat kunciFilterBidang).
+     Dijalankan SEBELUM tabel digambar supaya tabel pertama yang tampil sudah
+     memakai nilai filter yang benar. */
+  kunciFilterBidang();
 
   renderTable();
   renderTablePl();
@@ -2903,6 +2985,7 @@ function resetFilters(){
   const st=document.getElementById('filter-status'); if(st) st.value='';
   const t=document.getElementById('filter-tahun'); if(t) t.value='';
   document.getElementById('filter-search').value='';
+  pulihkanFilterBidang();      /* akun user: Bidang kembali terkunci, bukan kosong */
   currentPage=1;
   renderTable();
 }
@@ -5177,6 +5260,7 @@ function renderPaginationPl(page,totalPages){
 function goToPagePl(p){ currentPagePl=p; withQuickLoader('Memuat', ()=>{ renderTablePl(); document.querySelector('#view-list-pl .panel').scrollIntoView({behavior:'smooth',block:'nearest'}); }, 550); }
 function resetFiltersPl(){
   ['filter-pl-bidang','filter-pl-tahapan','filter-pl-tahun','filter-pl-search'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  pulihkanFilterBidang();      /* akun user: Bidang kembali terkunci, bukan kosong */
   currentPagePl=1; renderTablePl();
 }
 
@@ -6611,6 +6695,7 @@ function renderPaginationTender(page,totalPages){
 function goToPageTender(p){ currentPageTender=p; withQuickLoader('Memuat', ()=>{ renderTableTender(); document.querySelector('#view-list-tender .panel').scrollIntoView({behavior:'smooth',block:'nearest'}); }, 550); }
 function resetFiltersTender(){
   ['filter-tender-bidang','filter-tender-tahapan','filter-tender-tahun','filter-tender-search'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  pulihkanFilterBidang();      /* akun user: Bidang kembali terkunci, bukan kosong */
   currentPageTender=1; renderTableTender();
 }
 
@@ -8365,6 +8450,7 @@ function fkEsc(s){ return String(s==null?'':s).replace(/[&<>"']/g,m=>({'&':'&amp
 function openFkInput(modul){
   if(!FK_MODULES[modul]) modul='kr';
   if(fkState.input.modul!==modul){ fkState.input.page=1; fkClearFilters('input'); }
+  kunciFilterBidang();
   fkState.input.modul=modul; showView('fk-input');
 }
 function openFkView(modul){
@@ -8372,6 +8458,7 @@ function openFkView(modul){
   if(!canInput()){ toast('Menu ini tidak tersedia untuk akun Anda','warn'); return; }
   if(!FK_MODULES[modul]) modul='kr';
   if(fkState.view.modul!==modul){ fkState.view.page=1; fkClearFilters('view'); }
+  kunciFilterBidang();
   fkState.view.modul=modul; showView('fk-view');
 }
 /* ---- Filter (Bidang Pelaksana) & Cari (Nama Pekerjaan) ---- */
@@ -8386,6 +8473,12 @@ function fkApplyFilters(mode, cfg, rows){
   const fb=document.getElementById('fk-'+mode+'-bidang')?.value||'';
   const ft=document.getElementById('fk-'+mode+'-tahun')?.value||'';
   const fs=(document.getElementById('fk-'+mode+'-search')?.value||'').toLowerCase().trim();
+  /* CAKUPAN BIDANG AKUN — pagar, bukan filter layar.
+     Filter "Bidang Pelaksana" di atas sudah dikunci ke bidang akun
+     (kunciFilterBidang), tetapi pagar ini tetap dipasang di SATU pintu masuk
+     daftar supaya baris bidang lain tidak pernah lolos walau elemen filternya
+     hilang atau nilainya sempat kosong. */
+  if(isUser() && !bidangSemua()) rows=rows.filter(r=>inBidang({bidang_pelaksana:cfg.bidang(r)}));
   if(!fb && !ft && !fs) return rows;
   return rows.filter(r=>{
     if(fb && String(cfg.bidang(r)||'')!==fb) return false;
@@ -8405,6 +8498,7 @@ function fkClearFilters(mode){
   const b=document.getElementById('fk-'+mode+'-bidang'); if(b) b.value='';
   const t=document.getElementById('fk-'+mode+'-tahun'); if(t) t.value='';
   const s=document.getElementById('fk-'+mode+'-search'); if(s) s.value='';
+  pulihkanFilterBidang();      /* akun user: Bidang kembali terkunci, bukan kosong */
 }
 function fkFilterInput(){ fkState.input.page=1; renderFkInput(); }
 function fkFilterView(){ fkState.view.page=1; renderFkView(); }

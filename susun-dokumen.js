@@ -127,6 +127,21 @@ const TOR_KLAS_JENIS = {
 };
 const TOR_BIDANG_OPTS = (typeof BIDANG_OPTS!=='undefined' && BIDANG_OPTS.length) ? BIDANG_OPTS
                       : ((typeof PN_BIDANG_OPTS!=='undefined') ? PN_BIDANG_OPTS : []);
+/* ---- Cakupan bidang akun ----
+   Mengembalikan NAMA BIDANG bila akun yang sedang masuk adalah akun user yang
+   terikat satu bidang; null untuk admin (atau user "semua bidang").
+
+   Sengaja memakai pengecekan `typeof` terhadap penjaga di app.js: berkas ini
+   dimuat sesudah app.js, tetapi bila suatu saat urutannya berubah modul ini
+   tidak boleh ikut gagal — yang terjadi paling buruk hanyalah kuncinya tidak
+   terpasang, bukan halaman yang berhenti tergambar. */
+function torBidangKunci(){
+  try{
+    if(typeof isUser!=='function' || !isUser()) return null;
+    if(typeof bidangSemua==='function' && bidangSemua()) return null;
+    return (typeof currentBidang!=='undefined' && currentBidang) ? String(currentBidang) : null;
+  }catch(e){ return null; }
+}
 const TOR_RISIKO_OPTS  = ['Risiko Rendah','Risiko Menengah','Risiko Tinggi'];
 const TOR_ANGGARAN_OPTS= ['Investasi','Operasi'];
 /* TOR_METODE_OPTS dihapus 6 Agu 2026 bersama field "Metode Pengadaan" \u2014
@@ -622,6 +637,9 @@ function torBlankState(){
      tidak lagi otomatis dianggap DAN.01.03. Kode isian {{jenis_pengadaan}}
      ikut kosong sampai klasifikasinya dipilih (diturunkan di torExtendCtx). */
   d.kode_klasifikasi=d.kode_klasifikasi||'';
+  /* Akun user terikat bidang: dokumen baru langsung membawa bidangnya, tanpa
+     menunggu form digambar (lihat torBidangKunci & torFieldInput). */
+  const bkunci=torBidangKunci(); if(bkunci) d.pelaksana=bkunci;
   /* Pengguna Barang/Jasa: bawaan = data terakhir disimpan (lihat torApplyLastPengguna) */
   torApplyLastPengguna(d);
   d.tgl_dokumen=d.tgl_dokumen||torTodayISO();
@@ -1198,6 +1216,26 @@ function torFieldInput(f){
         '</div>'+
         '<div class="tor-sw-val'+(isOn?' on':'')+'"><span class="dt"></span>'+fkEsc(isOn?on:off)+'</div>'+
       '</div>';
+    }
+    /* ---- BIDANG PELAKSANA: TERKUNCI pada bidang akun ----
+       Akun user hanya boleh menyusun dokumen atas nama bidangnya sendiri.
+       Pilihan bidang lain — termasuk "— pilih —" — DILEPAS dari daftar, jadi
+       yang muncul hanya bidangnya, dan dropdown-nya tidak dapat dibuka
+       (kursor "not-allowed").
+
+       `disabled` sengaja TIDAK dipakai: kontrol yang disabled tidak menerima
+       peristiwa tetikus, sehingga kursor "not-allowed" tidak pernah tampil.
+       pointer-events dimatikan pada <select>-nya dan kursornya dipasang pada
+       pembungkus .field, jadi isyaratnya tetap terlihat. */
+    const bkunci = torBidangKunci();
+    if(bkunci && f.k==='pelaksana'){
+      if(String(d[f.k]||'')!==bkunci) d[f.k]=bkunci;   /* nilainya DIPAKSA, bukan sekadar terpilih */
+      const tip='Terkunci pada bidang akun Anda: '+bkunci;
+      return '<div class="field"'+span+' style="cursor:not-allowed" title="'+fkEsc(tip)+'">'+
+        '<label>'+torLbl(f)+'</label>'+
+        '<select id="tor-fld-'+f.k+'" tabindex="-1" aria-readonly="true" title="'+fkEsc(tip)+'"'+
+        ' style="background:#eef3f4;color:#5b7176;cursor:not-allowed;pointer-events:none">'+
+        '<option value="'+fkEsc(bkunci)+'" selected>'+fkEsc(bkunci)+'</option></select></div>';
     }
     const opts=(f.opts||[]).map(o=>{
       const ov=(o&&o.v!=null)?o.v:o, ol=(o&&o.l!=null)?o.l:o;
@@ -4604,6 +4642,15 @@ function openTorView(){
 function torViewRows(){
   const fs=(document.getElementById('tor-view-search')?.value||'').toLowerCase().trim();
   let rows=(records_tor||[]).slice();
+  /* CAKUPAN BIDANG AKUN — penyaring pertama, sebelum kotak Cari.
+     Bidang Pelaksana pada form sudah dikunci ke bidang akun, jadi daftarnya
+     pun hanya boleh memuat dokumen bidang itu; kalau tidak, akun user masih
+     bisa membuka & mengubah dokumen bidang lain lewat tombol pada baris. */
+  const bkunci = torBidangKunci();
+  if(bkunci){
+    const n=s=>String(s==null?'':s).trim().toLowerCase().replace(/\s+/g,' ');
+    rows=rows.filter(r=>n(r.bidang_pelaksana||r.bidang)===n(bkunci));
+  }
   if(fs) rows=rows.filter(r=>
     String(r.no_dokumen||'').toLowerCase().includes(fs) ||
     String(r.nama_pekerjaan||'').toLowerCase().includes(fs) ||
