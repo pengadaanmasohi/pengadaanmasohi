@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" translate="no" class="notranslate">
 <head>
 <template id="__bundler_thumbnail" data-bg-color="#0E7C86">
   <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
@@ -9,6 +9,20 @@
 </template>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<!-- ====== GOOGLE TERJEMAHAN DIMATIKAN UNTUK HALAMAN INI ======
+     Gelembung/ikon Google Terjemahan menyembul di atas halaman setiap kali ada
+     teks terpilih — termasuk saat pengguna sekadar memblok judul klausul untuk
+     menggantinya. Di layar yang penuh pop-up, ikon melayang itu menutupi isi
+     dan sekali terklik akan MENERJEMAHKAN SELURUH ANTARMUKA: nama menu, label
+     kolom, bahkan isi dokumen kontrak yang justru tidak boleh berubah kata.
+
+     Halaman ini memang seluruhnya berbahasa Indonesia dan tidak pernah perlu
+     diterjemahkan, jadi ditandai notranslate dengan tiga cara sekaligus —
+     atribut translate="no" (standar HTML5), kelas .notranslate (bentuk lama
+     yang masih dibaca Google), dan meta di bawah ini. Ketiganya dipakai
+     bersama karena versi peramban & ekstensi yang berbeda membaca penanda yang
+     berbeda pula. -->
+<meta name="google" content="notranslate">
 <title>Monitoring Pengadaan — PT PLN (Persero) UP3 Masohi</title>
 
 <!-- ====== Kartu pratinjau tautan (WhatsApp, Telegram, Facebook, dsb.) ======
@@ -320,12 +334,13 @@
    "pilih kata", dan begitu ada teks terpilih ia memunculkan gelembung
    Google Terjemahan di atas halaman. Latarnya sendiri dibuat tidak dapat
    diseleksi; isi modalnya dikembalikan agar teks dokumen tetap bisa disalin. */
-.overlay,#pn-preview-overlay,.tor-dk-ov{
+.overlay,#pn-preview-overlay,.tor-dk-ov,.spk-ov{
   -webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;
   -webkit-touch-callout:none}
 .overlay .modal,
 #pn-preview-overlay .pn-preview-modal,
-.tor-dk-ov .tor-dk-mdl{
+.tor-dk-ov .tor-dk-mdl,
+.spk-ov .spk-ov-modal{
   -webkit-user-select:text;-moz-user-select:text;-ms-user-select:text;user-select:text;
   -webkit-touch-callout:default}
 </style>

@@ -10073,12 +10073,21 @@ html{
   border-radius:16px;
   box-shadow:0 24px 60px rgba(10,30,40,.28);
 }
+/* Tinggi kepala DITENTUKAN tombol X, bukan dikira-kira: 32px (tombol) + 10px
+   atas + 10px bawah = 52px pas. Judulnya (14px x 1.35 = 19px) lebih pendek dari
+   tombol, jadi ia yang menyesuaikan diri ke tengah — bukan sebaliknya.
+
+   Padding kiri-kanan 16px, sama persis dengan .spk-kldoc-top di bawahnya:
+   dengan begitu huruf pertama judul lurus dengan tepi kotak isian, dan tepi
+   kanan tombol X lurus dengan tepi kanan tombol miring. Sebelumnya 18px —
+   selisih 2px yang tidak kelihatan sendiri-sendiri, tetapi membuat kedua tepi
+   modal ini tidak pernah benar-benar segaris. */
 #spk-kldoc-ov .spk-ov-head.spk-we-head{
   background:linear-gradient(90deg,#0E7C86,#12A0A8);
   border-bottom:none;
-  padding:16px 18px;
+  padding:10px 16px;
   align-items:center;
-  gap:12px;
+  gap:10px;
 }
 /* Judul MELIPAT, tombol tidak mengecil — pasangan min-width:0 +
    overflow-wrap:anywhere sama seperti .tor-dk-hd .jd: tanpa min-width:0
