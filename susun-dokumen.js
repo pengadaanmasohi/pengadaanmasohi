@@ -1340,6 +1340,23 @@ function torEnsureStyle(){
     '#tor-susun-content .spk-stepper{gap:12px}'+
     '#tor-susun-content .spk-stp{flex:0 0 auto}'+
     '#tor-susun-content .spk-stp-line{max-width:none;min-width:24px}'+
+    /* ---- Pemilih Bagian pada tombol "+ Klausul" ---- */
+    '.tor-babpick-list{display:flex;flex-direction:column;gap:10px;margin-top:4px}'+
+    '.tor-babpick-opt{display:flex;align-items:center;gap:13px;width:100%;text-align:left;cursor:pointer;'+
+      'padding:13px 15px;border:1px solid #dbe6e7;border-radius:13px;font-family:inherit;'+
+      'background:linear-gradient(180deg,#ffffff,#f3f9fa);'+
+      'box-shadow:0 4px 12px rgba(9,60,66,.07), inset 0 1px 0 rgba(255,255,255,.9);'+
+      'transition:transform .14s ease, box-shadow .14s ease, border-color .14s ease}'+
+    '.tor-babpick-opt:hover{transform:translateY(-1px);border-color:#bfe0e2;'+
+      'box-shadow:0 9px 20px rgba(9,60,66,.13)}'+
+    '.tor-babpick-opt:active{transform:translateY(0)}'+
+    '.tor-babpick-opt .rom{flex:0 0 auto;width:38px;height:38px;border-radius:11px;display:inline-flex;'+
+      'align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#fff;'+
+      'background:linear-gradient(180deg,#17959f,#0a5e66);'+
+      'box-shadow:0 5px 13px rgba(14,124,134,.34), inset 0 1px 0 rgba(255,255,255,.38)}'+
+    '.tor-babpick-opt .tx{display:flex;flex-direction:column;gap:2px;min-width:0}'+
+    '.tor-babpick-opt .tx b{font-size:13px;color:#0b3d42;font-weight:800}'+
+    '.tor-babpick-opt .tx span{font-size:11.5px;color:#5a6b70}'+
     /* Daftar dokumen pada menu aksi */
     '.tor-dk-ov{position:fixed;inset:0;z-index:9000;display:none;align-items:center;justify-content:center;'+
       'background:rgba(12,28,38,.45);padding:20px}'+
@@ -2088,6 +2105,115 @@ function torKlausulAktifSemua(on){
    Dengan mengarahkan spkState ke torState, seluruh mesin itu (termasuk unduh /
    unggah template Word dan editor WYSIWYG) langsung bekerja untuk dokumen TOR
    TANPA menduplikasi kodenya. */
+/* ============================================================================
+   TAMBAH KLAUSUL -> PILIH BAGIAN DULU (8 Agu 2026)
+   ----------------------------------------------------------------------------
+   KETENTUAN: "di bagian tambah klausul saat di klik kita bisa pilih Bagian I
+   (bertambah di Bagian I) dan Bagian II (bertambah di Bagian II)".
+
+   Sebelumnya tombol "+ Klausul" (milik Susun Kontrak, dipinjam TOR) SELALU
+   menempelkan klausul baru di ujung daftar — artinya selalu masuk bagian
+   TERAKHIR. Untuk menaruhnya di Bagian I, penggunanya harus menambah dulu lalu
+   menaikkannya berkali-kali dengan tombol panah.
+
+   PENYISIPANNYA, bukan sekadar penanda bab. Nomor bab tiap klausul dihitung
+   torBabPlan() secara BERURUTAN dan tidak boleh mundur (bab yang lebih kecil
+   sesudah bab besar akan ditarik naik mengikuti yang di atasnya). Jadi menaruh
+   `bab:1` pada klausul yang duduk di ujung daftar tidak akan membuatnya masuk
+   Bagian I — ia tetap terbaca sebagai bagian terakhir. Karena itu klausul baru
+   benar-benar DISISIPKAN tepat sebelum klausul pertama yang bagiannya lebih
+   besar, lalu `urutan` seluruh daftar dinomori ulang (kelipatan 10) persis
+   seperti yang dilakukan spkKlausulMove/spkKlausulDelete.
+
+   YANG DITAWARKAN hanya bagian yang boleh memuat banyak klausul (TOR_BAB tanpa
+   penanda `tunggal`) — hari ini I. PENDAHULUAN dan II. PETUNJUK TEKNIS.
+   III. PENUTUP sengaja tidak masuk daftar: isinya sudah dibangkitkan otomatis
+   dari TOR_PENUTUP_TEKS, dan bila memang perlu klausul sendiri di sana,
+   jalurnya tetap ada lewat klik lencana nomor (torBabPindah).
+
+   Susun Kontrak & Perjanjian/Kontrak TIDAK tersentuh: tambalan spkKlausulNew di
+   bawah hanya aktif saat mesin klausul sedang dipinjam dokumen TOR.
+   ============================================================================ */
+/* Bagian yang boleh menerima klausul baru. */
+function torBabPilihan(){
+  var out=[];
+  TOR_BAB.forEach(function(B,i){ if(!B.tunggal) out.push({no:i+1, rom:B.rom, nama:B.nama}); });
+  return out;
+}
+function torKlausulTambahClose(){
+  var ov=document.getElementById('tor-babpick-ov'); if(ov) ov.style.display='none';
+}
+function torKlausulTambahOpen(){
+  if(typeof requireInput==='function' && !requireInput()) return;
+  var opsi=torBabPilihan();
+  /* Cuma satu pilihan -> tidak ada yang perlu ditanyakan. */
+  if(opsi.length<2){ torKlausulTambah(opsi.length?opsi[0].no:1); return; }
+  try{ torEnsureStyle(); }catch(e){}
+  var list=(records_klausul||[]).filter(function(k){ return k && !k.sys; });
+  var jml={}; torBabPlan(list).forEach(function(b){ jml[b]=(jml[b]||0)+1; });
+  var ov=document.getElementById('tor-babpick-ov');
+  if(!ov){
+    ov=document.createElement('div'); ov.id='tor-babpick-ov'; ov.className='pnw-profil-ov';
+    document.body.appendChild(ov);
+  }
+  try{ pasangTolakTutup('tor-babpick-ov'); }catch(e){}
+  var tombol=opsi.map(function(o){
+    var n=jml[o.no]||0;
+    return '<button type="button" class="tor-babpick-opt" onclick="torKlausulTambah('+o.no+')">'+
+        '<span class="rom">'+fkEsc(o.rom)+'</span>'+
+        '<span class="tx"><b>Bagian '+fkEsc(o.rom)+' \u2014 '+fkEsc(o.nama)+'</b>'+
+          '<span>'+n+' klausul saat ini</span></span>'+
+      '</button>';
+  }).join('');
+  ov.innerHTML='<div class="pnw-profil-modal" role="dialog">'+
+    '<div class="pnw-profil-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Tambah Klausul</div>'+
+    '<div class="pnw-profil-sub">Pilih <b>bagian</b> tempat klausul baru diletakkan. Klausul disisipkan di '+
+      '<b>akhir bagian itu</b>, dan penomorannya (I.1, I.2 \u2026 II.1, II.2 \u2026) langsung menyesuaikan.</div>'+
+    '<div class="tor-babpick-list">'+tombol+'</div>'+
+    '<div class="pnw-profil-actions">'+
+      '<button type="button" class="btn btn-ghost" onclick="torKlausulTambahClose()">Batal</button>'+
+    '</div>'+
+  '</div>';
+  ov.style.display='flex';
+}
+/* Sisipkan klausul baru pada bagian `bab`. */
+function torKlausulTambah(bab){
+  torKlausulTambahClose();
+  if(typeof requireInput==='function' && !requireInput()) return;
+  try{
+    bab=parseInt(bab,10);
+    if(!(bab>=1 && bab<=TOR_BAB.length)) bab=1;
+
+    var all=records_klausul||[];
+    /* Klausul non-sistem beserta letak aslinya di dalam records_klausul. */
+    var list=[], pos=[];
+    all.forEach(function(k,i){ if(k && !k.sys){ list.push(k); pos.push(i); } });
+    var plan=torBabPlan(list);
+
+    /* Titik sisip = tepat SEBELUM klausul pertama yang bagiannya lebih besar.
+       Bila tidak ada, klausul baru menjadi yang terakhir di antara klausul
+       non-sistem (entri sistem, bila ada, tetap di tempatnya). */
+    var sisip = pos.length ? (pos[pos.length-1]+1) : all.length;
+    for(var i=0;i<plan.length;i++){ if(plan[i]>bab){ sisip=pos[i]; break; } }
+
+    var nPasal=1;
+    try{ nPasal=spkKlPasalOnly(all).length+1; }catch(e){ nPasal=list.length+1; }
+    var ph=(typeof SPK_KL_PLACEHOLDER!=='undefined') ? SPK_KL_PLACEHOLDER
+         : '<p class="kl0 spk-ph">Isi Klausul ....................</p>';
+    var uid=(typeof spkKlUid==='function') ? spkKlUid() : torUid();
+    var recNew={ id:uid, judul:'KLAUSUL '+nPasal, isi:ph, urutan:0, aktif:true, bab:bab };
+
+    all.splice(sisip, 0, recNew);
+    all.forEach(function(k,n){ k.urutan=(n+1)*10; });
+    records_klausul=all;
+    if(typeof spkState!=='undefined' && spkState && Array.isArray(spkState.sel)) spkState.sel.push(String(recNew.id));
+    spkKlSync();
+  }catch(err){ console.error('torKlausulTambah:', err); toast('Gagal menambah klausul: '+errMsg(err),'err'); return; }
+  var B=TOR_BAB[bab-1];
+  toast('Klausul baru ditambahkan di Bagian '+(B?B.rom:bab),'ok');
+  renderSpkKlausul();
+}
+
 /* Jaring pengaman langkah 2: bila wadah pustaka klausul tetap kosong sesudah
    renderSpkKlausul() (mis. mesin klausulnya melempar galat dan tertangkap diam
    -diam oleh try/catch di renderTorSusun), berikan keterangan + tombol muat
@@ -5622,6 +5748,16 @@ const TOR_VIEWS = { 'tor-view':'renderTorView', 'tor-susun':'renderTorSusun' };
       return r;
     };
     window.renderSpkKlausul.__tor=1;
+  }
+
+  /* Tombol "+ Klausul" -> tanya bagiannya dulu (lihat torKlausulTambahOpen). */
+  if(typeof spkKlausulNew==='function' && !spkKlausulNew.__tor){
+    var _new=spkKlausulNew;
+    window.spkKlausulNew=function(){
+      if(torPinjam()){ try{ torKlausulTambahOpen(); return; }catch(e){ console.error('torKlausulTambahOpen:', e); } }
+      return _new.apply(this, arguments);
+    };
+    window.spkKlausulNew.__tor=1;
   }
 
   if(typeof spkKlProfilSnapshot==='function' && !spkKlProfilSnapshot.__tor){
