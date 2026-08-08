@@ -3187,6 +3187,18 @@ function torIndenParagraf(html){
       if(el.classList && (el.classList.contains('spk-blank')||el.classList.contains('spk-ph'))) continue;
       if(el.querySelector && el.querySelector('img')) continue;
       if(el.querySelector && el.querySelector('span.n')) continue;      /* butir bernomor terbungkus */
+      /* BUTIR BERNOMOR YANG NOMORNYA MASIH BERUPA TEKS (8 Agu 2026).
+         Fungsi ini berjalan SEBELUM spkNumberFix, jadi butir dari template Word
+         belum punya <span class="n"> — penjaga di baris atas belum berlaku
+         untuknya dan seluruh butir "1.1.", "a.", "1." ikut terhitung sebagai
+         PARAGRAF. Akibatnya klausul yang di Word hanya berisi SATU paragraf
+         pengantar + satu daftar bernomor dinilai "banyak paragraf", lalu
+         pengantarnya diberi inden baris pertama 0,75 cm yang di Word memang
+         tidak ada (laporan: "jangan membuat spasi paragraf sendiri, jika di
+         Word tidak ada spasi paragraf"). Penanda nomor di awal teks dikenali
+         dengan pola yang sama dengan spkNumberFix. */
+      if(/^(?:(?:\d+\.)+|\d+[.)]|[A-Za-z][.)])[\s\u00a0]/.test(
+           String(el.textContent||'').replace(/\u00a0/g,' ').replace(/^\s+/,''))) continue;
       if(!String(el.textContent||'').replace(/[\s ⁣]/g,'')) continue;
       calon.push(el);
     }
@@ -3198,10 +3210,58 @@ function torIndenParagraf(html){
   }catch(e){ console.error('torIndenParagraf:', e); return s; }
 }
 
+/* ---- AWALAN NOMOR BUTIR MILIK TEMPLATE ----
+   Mengembalikan angka yang dipakai sebagai RUAS PERTAMA butir "X.Y" di dalam
+   sebuah klausul, dibaca dari isi klausul itu sendiri. Bila satu klausul
+   memakai lebih dari satu awalan (mis. campuran "1.1." & "2.1."), yang dipilih
+   adalah awalan TERBANYAK — sama seperti cara spkRenumberKlausul menebak nomor
+   lama, jadi perilakunya sudah teruji. Bila klausul sama sekali tidak punya
+   butir majemuk, dipakai `cadangan` (nomor urut klausul) supaya penomoran
+   otomatis tetap punya titik tolak. */
+function torButirPrefix(html, cadangan){
+  var fb=parseInt(cadangan,10); if(!(fb>=1)) fb=1;
+  try{
+    var box=document.createElement('div'); box.innerHTML=String(html==null?'':html);
+    var anak=box.children, i, t, m, hitung={}, best=0, pilih=0;
+    for(i=0;i<anak.length;i++){
+      t=String(anak[i].textContent||'').replace(/\u00A0/g,' ').replace(/\s+/g,' ').replace(/^\s+/,'');
+      m=/^(\d{1,2})\.(\d{1,2})\.?(?![\d.])/.exec(t);
+      if(!m) continue;
+      var a=parseInt(m[1],10); if(!(a>=1)) continue;
+      hitung[a]=(hitung[a]||0)+1;
+      if(hitung[a]>best){ best=hitung[a]; pilih=a; }
+    }
+    return pilih>0 ? pilih : fb;
+  }catch(e){ return fb; }
+}
+
+/* ---- JOROKAN ANAK KHUSUS TOR/KAK (8 Agu 2026, permintaan) ----
+   Laporan: "dari 1.2 ke a. tidak ada inden — penomoran a. dan kata Makan
+   sejajar; begitu pula dari b. ke 1."
+   Penyebabnya nilai SPK_PK_LEAD / SPK_PK_LEAD_ANGKA = 0,15 cm (diseragamkan
+   22 Jul 2026 untuk SPK & PK). 0,15 cm hanya ~5,7 px di layar, jadi penanda
+   anak jatuh nyaris tepat di kolom teks induknya dan hubungan induk-anak tidak
+   terbaca — apalagi pada TOR/KAK yang bisa punya tiga tingkat berturut-turut
+   (1.1. -> a. -> 1.).
+   Nilainya DINAIKKAN KHUSUS TOR/KAK saja, bukan diubah di susun-kontrak.js:
+   Surat Perintah Kerja & Perjanjian/Kontrak tetap 0,15 cm persis seperti
+   sekarang. Caranya kedua konstanta itu dipinjam sebentar selama spkPkTidy()
+   berjalan lalu DIKEMBALIKAN di blok finally — spkPkTidy sinkron, jadi tidak
+   ada kemungkinan nilainya bocor ke render lain.
+   Yang ikut bergeser HANYA tingkat ke-2 dan seterusnya. Deret tingkat-1 tidak
+   bergerak sedikit pun karena titik tolaknya SPK_PK_LEAD_JUDUL (tidak diubah),
+   dan blok pengantar tetap diluruskan torIntroSejajar() sesudahnya. */
+var TOR_KL_LEAD = 0.30;                 /* jarak penanda anak dari teks induk (cm) */
 function torKlTidy(html){
   var h=String(html==null?'':html);
   try{ h=spkPkSubNumberFix(spkPkBoxMark(h)); }catch(e){}
-  var out=spkPkTidy(h, false);
+  var _lead=SPK_PK_LEAD, _leadA=SPK_PK_LEAD_ANGKA, out;
+  try{
+    window.SPK_PK_LEAD=TOR_KL_LEAD; window.SPK_PK_LEAD_ANGKA=TOR_KL_LEAD;
+    out=spkPkTidy(h, false);
+  }finally{
+    window.SPK_PK_LEAD=_lead; window.SPK_PK_LEAD_ANGKA=_leadA;
+  }
   try{ out=torIntroSejajar(out, torJudulX()); }catch(e){}
   return out;
 }
@@ -3902,13 +3962,30 @@ function torDocHtml(data, klausul, opts){
   /* spkRenumberKlausul SENGAJA TIDAK dipakai di sini: fungsi itu menulis ulang
      butir "X.Y" mengikuti NOMOR URUT klausul, sementara pada TOR/KAK nomor
      klausul berbentuk "II.3" dan butir di dalamnya bernomor mulai 1 lagi
-     (persis lampiran TOR Word). Nomor butir dibiarkan apa adanya dari template. */
-  const pre=klausul.map((k,i)=> spkKvGroup(spkKlItalicAsing(spkBoldPihak(spkNomorToNo(spkNumberFix(spkTidyKeyValue(
-      torIndenParagraf(spkStripFontStyle(spkPruneKlausul(spkMerge(
-        torIsOverview(k.judul) ? torTanpaTebal(spkSortDefinisiIf(k.judul, k.isi||''))
-                               : spkSortDefinisiIf(k.judul, k.isi||''),
-        ctx), str[i].urut, data)))
-    )))))));
+     (persis lampiran TOR Word). Nomor butir dibiarkan apa adanya dari template.
+
+     PERBAIKAN 8 Agu 2026 (laporan: "nomor pada pratinjau klausul beda dengan
+     template Word; ikuti saja penomoran yang sudah dibuat di template").
+     Niat di atas selama ini bocor lewat pintu belakang: spkPruneKlausul()
+     — yang dipanggil untuk membuang butir contoh — MENOMORI ULANG setiap butir
+     tingkat-1 menjadi `klNo + "." + urutan`, dan `klNo` yang dikirim dari sini
+     adalah NOMOR URUT KLAUSUL (str[i].urut). Akibatnya butir "1.1., 1.2." yang
+     diketik di template Word berubah menjadi "6.1., 6.2." pada klausul ke-6 —
+     persis yang dilaporkan, dan justru hal yang komentar di atas ingin cegah.
+     Sekarang awalannya diambil dari BERKASNYA SENDIRI lewat torButirPrefix():
+     "1.1., 1.2." tetap "1.1., 1.2.", "2.1." tetap "2.1.". Penomoran ULANGNYA
+     tetap jalan — jadi bila satu butir dibuang karena masih berisi contoh,
+     sisanya tetap rapat (1.1, 1.2, 1.3) tanpa nomor yang bolong. */
+  const pre=klausul.map((k,i)=>{
+    const mentah=spkMerge(
+      torIsOverview(k.judul) ? torTanpaTebal(spkSortDefinisiIf(k.judul, k.isi||''))
+                             : spkSortDefinisiIf(k.judul, k.isi||''),
+      ctx);
+    const awalan=torButirPrefix(mentah, str[i].urut);
+    return spkKvGroup(spkKlItalicAsing(spkBoldPihak(spkNomorToNo(spkNumberFix(spkTidyKeyValue(
+      torIndenParagraf(spkStripFontStyle(spkPruneKlausul(mentah, awalan, data)))
+    ))))));
+  });
   try{ SPK_HANG_OVR = spkKumpulHang(pre.map(function(x){ try{ return spkPkBoxMark(x); }catch(e2){ return x; } })); }
   catch(e){ SPK_HANG_OVR=null; }
   /* Judul bab dibungkus .spk-clause tersendiri (bukan sekadar <div> bebas) agar

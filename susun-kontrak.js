@@ -11132,8 +11132,13 @@ const SPK_NUMPR_JUDUL='<w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr
 var SPK_DOCX_KOTAK      = true;    // saklar: kotak pemisah judul/isi di template .docx
 var SPK_KOTAK_PAD_X     = 85;      // 1,5 mm jarak teks -> garis kiri/kanan
 var SPK_KOTAK_PAD_Y     = 57;      // 1,0 mm jarak teks -> garis atas/bawah
-var SPK_KOTAK_GARIS_SZ  = 4;       // 1/8 pt; 4 = 0,5 pt (garis luar "agak tipis")
-var SPK_KOTAK_GARIS_CLR = 'A6A6A6';
+/* KETENTUAN 8 Agu 2026 (permintaan) — GARIS KOTAK = HITAM SOLID 3/4 pt.
+   Nilainya diambil dari template Word acuan: <w:sz w:val="6"/> (satuan 1/8 pt,
+   jadi 6 = 0,75 pt) dengan <w:color w:val="auto"/> (= hitam otomatis Word).
+   Dulu 0,5 pt abu-abu (A6A6A6): di layar memang tipis, tetapi saat dicetak
+   garisnya nyaris hilang sehingga batas kotak judul/isi tidak terbaca. */
+var SPK_KOTAK_GARIS_SZ  = 6;       // 1/8 pt; 6 = 3/4 pt (sama dengan template Word)
+var SPK_KOTAK_GARIS_CLR = 'auto';  // hitam solid (w:color="auto")
 /* Batas kiri kotak ISI = kolom teks judul klausul. SPK 425 (0,75 cm); PK 0. */
 function spkKotakInd(){ var D=spkDX(); return Math.max(0, +(D.JUDUL_HANG||0)); }
 /* Nilai yang dikurangkan dari setiap w:ind w:left di dalam kotak isi. */
@@ -11564,8 +11569,21 @@ function spkDocxTemplateBlob(judul, isiHtml, noKl){
      BERBEDA (spkKotakTblXml), jadi hapus di dalam kotak isi memang tidak punya
      jalan untuk mencapai baris judul — penguncian tidak diperlukan lagi, dan
      baris judul kembali menjadi teks Word biasa yang bebas diketik. */
-  var indJudul = PK ? '<w:ind w:left="0" w:firstLine="0"/>'
-                    : '<w:ind w:left="'+D.JUDUL_HANG+'" w:hanging="'+D.JUDUL_HANG+'"/>';
+  /* ---- SPASI SEBELUM/SESUDAH BARIS JUDUL DINOLKAN — TEMPLATE .docx SAJA ----
+     (8 Agu 2026, permintaan: "di bagian teks judul remove before/after spacing
+     seperti pada template word").
+     Gaya "Klausul Judul" membawa spacing before 12 pt / after 3 pt. Jarak itu
+     BENAR untuk dokumen jadi dan TETAP DIPAKAI di render HTML (.spk-cl-h di
+     spkDocCss tidak disentuh sama sekali). Tetapi di dalam KOTAK judul template
+     .docx — yang tingginya hanya satu baris — jarak itu membuat teks judul
+     mengambang jauh dari garis kotak dan kotaknya jadi tinggi tanpa guna.
+     Karena itu di template saja jaraknya dinolkan lewat pPr langsung; definisi
+     gayanya di spkStylesXml SENGAJA tidak diubah, supaya paragraf lain yang
+     memakai gaya itu (dan dokumen yang sudah ada) tidak ikut berubah.
+     Urutan anak <w:pPr> mengikuti CT_PPr: pStyle -> numPr -> spacing -> ind. */
+  var spJudul = '<w:spacing w:before="0" w:after="0"/>';
+  var indJudul = spJudul + (PK ? '<w:ind w:left="0" w:firstLine="0"/>'
+                    : '<w:ind w:left="'+D.JUDUL_HANG+'" w:hanging="'+D.JUDUL_HANG+'"/>');
   var judulXml = PK
     ? spkPXml2('KlausulPasal', indJudul, '') + spkPXml2('KlausulJudul', indJudul, judulRuns)
     : spkPXml2('KlausulJudul', indJudul, judulRuns);
@@ -11764,7 +11782,25 @@ function spkParaCss(eff, noInd){
   var line=+eff.sp.line||240, lr=eff.sp.lineRule||'auto';
   /* Word "auto" (kelipatan) -> line-height CSS DENGAN koreksi SPK_LH_K, sama seperti
      isi kontrak lainnya, supaya "1,15" di Word tampil "1,15" di web (bukan spasi tunggal). */
-  return 'line-height:'+((lr==='auto') ? (Math.round(line/240*SPK_LH_K*1000)/1000) : (spkTwPt(line)+'pt'))+';';
+  var css='line-height:'+((lr==='auto') ? (Math.round(line/240*SPK_LH_K*1000)/1000) : (spkTwPt(line)+'pt'))+';';
+  /* ---- JARAK ANTAR-PARAGRAF MENGIKUTI WORD (8 Agu 2026, permintaan) ----
+     "jangan membuat spasi paragraf sendiri, jika di Word tidak ada spasi paragraf."
+     Aturan bawaan `.spk-cl p{margin:0 0 6pt}` memberi jarak 6 pt di bawah SETIAP
+     paragraf. Pada template klausul yang di Word memang rapat
+     (<w:spacing w:after="0"/> — bentuk yang dipakai seluruh template buatan
+     aplikasi ini), jarak itu tidak punya padanan sama sekali: satu blok butir
+     yang di Word menyatu jadi renggang di render, dan bedanya menumpuk makin
+     jauh tiap butir.
+     Karena itu spasi sebelum & sesudah paragraf dikembalikan APA ADANYA dari
+     berkas Word. Ini pengecualian KEDUA (setelah jarak baris) atas ketentuan
+     "geometri Word diabaikan" 7 Agu 2026 — dan sengaja hanya dua itu: inden
+     kiri, inden gantung, inden baris pertama & perataan TETAP diabaikan, karena
+     ketiganya yang dulu membuat template berantakan menular ke dokumen.
+     `before` hanya ditulis bila > 0 supaya aturan kelas yang memasang jarak atas
+     sendiri (mis. `.spk-cl p.tor-foto`) tidak ikut tertimpa gaya sebaris. */
+  if((+eff.sp.before||0)>0) css+='margin-top:'+spkTwPt(+eff.sp.before||0)+'pt;';
+  if(eff.sp.after!=null)    css+='margin-bottom:'+spkTwPt(+eff.sp.after||0)+'pt;';
+  return css;
 }
 /* Kotak nomor = PERSIS seperti Word:
      - RATA KANAN (w:lvlJc=right): lebar kotak TETAP selebar hanging Word. Nomor
@@ -12392,8 +12428,32 @@ function spkWordXmlToKlausul(xmlText, stylesXml, numberingXml){
     /* Identitas DAFTAR Word (numId) — bukan geometri; dipakai spkPkIndentStd
        untuk memisahkan silsilah nomor antar-daftar. */
     var wnAttr=(b.numId?(' data-wnum="'+spkXmlEsc(String(b.numId))+'"'):'');
+    /* ---- KEDALAMAN BUTIR MENGIKUTI INDEN BERTINGKAT WORD (8 Agu 2026) ----
+       PERMINTAAN: "perhatikan inden penomoran bertingkat pada Word — jika
+       setelah penomoran b. ada 1. dan 2., berarti 1. dan 2. adalah bagian dari
+       b.; terkadang saat penulisan tingkat inden huruf bisa di atas nomor dan
+       sebaliknya."
+       Itu tidak bisa diturunkan dari bentuk penandanya: "1." bisa berarti
+       tingkat-1 (daftar pembuka) ATAU tingkat-3 (anak dari "b."), dan yang
+       membedakan HANYA indennya di Word. Karena itu inden kiri EFEKTIF paragraf
+       (definisi level penomoran + <w:ind> langsung) ditanam kembali sebagai
+       data-wleft — atribut yang memang sudah dibaca spkPkIndentStd().
+       INI TIDAK MEMBATALKAN ketentuan "geometri Word diabaikan" 7 Agu 2026:
+       nilai twip-nya tidak pernah dipakai sebagai jarak. spkPkLeftRankLevels()
+       hanya mengurutkannya menjadi PERINGKAT KOLOM (kiri ke kanan, toleransi
+       0,25 cm) untuk menentukan SIAPA ANAK SIAPA; posisi & jarak tetap dihitung
+       kisi aplikasi. Silsilah nomor pun tetap mengalahkannya untuk nomor
+       MAJEMUK ("2.1." selalu satu tingkat di bawah "2."), sehingga yang benar-
+       benar bergantung pada inden Word hanya daftar bernomor TUNGGAL (1./2.),
+       daftar huruf, dan bullet — persis kasus yang dilaporkan.
+       SPK_RD_KOTAK dikurangkan supaya nilainya relatif terhadap tepi kertas
+       (isi klausul hidup di dalam kotak yang sudah menjorok), sama seperti saat
+       template ditulis di spkPPrFromCss. */
+    var _wl=(eff.ind && eff.ind.left!=null)
+      ? (Math.round(+eff.ind.left||0) - (+SPK_RD_KOTAK||0)) : null;
+    var wlAttr=(_wl!=null ? (' data-wleft="'+_wl+'"') : '');
     _flushBlank();                                          /* baris kosong sebelum blok ini */
-    html += '<p class="'+cls+'"'+wnAttr+' style="'+css+'">'+out+'</p>';
+    html += '<p class="'+cls+'"'+wnAttr+wlAttr+' style="'+css+'">'+out+'</p>';
   }
   return { judul:judul, html:html };
 }
